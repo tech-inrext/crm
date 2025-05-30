@@ -1,6 +1,6 @@
 import dbConnect from "../../lib/mongodb";
 import User from "../../models/User";
-import Employee from "../../models/Employee"; // ✅ Import Employee
+import Employee from "../../models/Employee"; 
 
 export default async function handler(req, res) {
   await dbConnect();
@@ -10,7 +10,7 @@ export default async function handler(req, res) {
       const { name, email, phone, address, gender, designation } = req.body;
 
       let newUser;
-      
+
 
       if (designation) {
         // ✅ Save as Employee
@@ -35,8 +35,10 @@ export default async function handler(req, res) {
 
       await newUser.save();
 
+
       res.status(201).json({ success: true, data: newUser });
     } catch (error) {
+
       res.status(400).json({ success: false, error: error.message });
     }
   } else {

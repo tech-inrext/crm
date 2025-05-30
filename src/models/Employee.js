@@ -7,6 +7,7 @@ const employeeSchema = new mongoose.Schema({
   departmentId: { type: String },
   managerId: { type: String },
   designation: { type: String },
+  
 });
 
 // Extend User using discriminator
