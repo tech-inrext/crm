@@ -10,6 +10,7 @@ export default async function handler(req, res) {
       const { name, email, phone, address, gender, designation } = req.body;
 
       let newUser;
+      
 
       if (designation) {
         // ✅ Save as Employee
