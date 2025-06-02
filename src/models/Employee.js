@@ -24,6 +24,11 @@ const employeeSchema = new mongoose.Schema({
     maxlength: [50, "Designation must be at most 50 characters long"],
     required: [true, "Designation is required"],
   },
+  role: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Role",
+    required: true,
+  },
 });
 
 // Extend User using discriminator

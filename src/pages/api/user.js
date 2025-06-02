@@ -18,7 +18,8 @@ export default async function handler(req, res) {
         joiningDate,
         designation,
         managerId,
-        departmentId
+        departmentId,
+        role
       } = req.body;
 
       let newUser;
@@ -36,7 +37,8 @@ export default async function handler(req, res) {
           joiningDate,
           designation,
           managerId,
-          departmentId
+          departmentId,
+          role
         });
       } else {
         // Save as regular User
