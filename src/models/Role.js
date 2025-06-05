@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 
+const modules = ["employee", "user", "lead"];
+
 const roleSchema = new mongoose.Schema(
   {
     name: {
@@ -8,19 +10,18 @@ const roleSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
-    description: {
-      type: String,
-      trim: true,
-      maxlength: [200, "Description can be max 200 characters"],
+    read: {
+      type: [String],
+      enum: modules,
     },
-    permissions: [
-      {
-        type: String,
-        trim: true,
-        lowercase: true,
-        enum: ["createLead", "read", "write", "delete"],
-      },
-    ],
+    write: {
+      type: [String],
+      enum: modules,
+    },
+    delete: {
+      type: [String],
+      enum: modules,
+    },
   },
   { timestamps: true }
 );
