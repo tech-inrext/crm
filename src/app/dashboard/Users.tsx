@@ -21,12 +21,12 @@ import MySearchBar from "@/components/ui/MySearchBar";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import { useSyncExternalStore } from "react";
-import TableMap, { TableHeader } from "@/components/ui/TableMap";
+import TableMap, {TableHeaderType } from "@/components/ui/TableMap";
 import type { Employee } from "@/types/employee";
 
 // Table header definition: supports both data and action columns
 
-const header: TableHeader<Employee>[] = [
+const header: TableHeaderType<Employee>[] = [
   { label: "Name", dataKey: "name" },
   { label: "Email", dataKey: "email" },
   { label: "Phone", dataKey: "phone" },
@@ -34,7 +34,7 @@ const header: TableHeader<Employee>[] = [
   { label: "Status", dataKey: "status" },
   {
     label: "Actions",
-    component: (row: Employee, handlers) => (
+    component: (row, handlers) => (
       <>
         <IconButton
           aria-label="edit"
@@ -215,7 +215,7 @@ const Users: React.FC = () => {
           mb: 2,
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 700, flex: 1 }}>
+        <Typography variant="h6" sx={{ fontWeight: 700, flex: 1, color: "#000" }}>
           Employees
         </Typography>
         <MySearchBar
@@ -247,14 +247,14 @@ const Users: React.FC = () => {
           }}
         >
           <TableContainer sx={{ minWidth: isMobile ? 600 : undefined }}>
-            <TableMap<Employee>
+            <TableMap
               data={filtered.slice(
                 page * rowsPerPage,
                 page * rowsPerPage + rowsPerPage
               )}
-              header={header}
-              onEdit={handleOpen}
-              onDelete={handleDelete}
+              header={header as any}
+              onEdit={handleOpen as any}
+              onDelete={handleDelete as any}
             />
           </TableContainer>
           <TablePagination

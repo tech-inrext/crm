@@ -1,14 +1,11 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
-import TextField from "@mui/material/TextField";
 import Paper from "@mui/material/Paper";
-import ListItem from "@mui/material/ListItem";
-import ListItemText from "@mui/material/ListItemText";
-import Checkbox from "@mui/material/Checkbox";
-import FormControlLabel from "@mui/material/FormControlLabel";
-import rolesData from "../../data/roles.json";
 import MyButton from "@/components/ui/MyButton";
+import RoleCard from "../../components/ui/RoleCard";
+import AddRoleDialog from "../../components/ui/AddRoleDialog";
+import rolesJson from "@/data/roles.json";
 
 interface RoleWithPermissions {
   name: string;
@@ -18,43 +15,55 @@ interface RoleWithPermissions {
 const LOCAL_ROLES_KEY = "roles";
 const LOCAL_ROLE_NAMES_KEY = "roleNames";
 
+const MODULES = ["Users", "Roles", "Leads"];
+const PERMISSIONS = ["read", "write", "delete"];
+
 const getMergedRoles = (): RoleWithPermissions[] => {
   const saved =
     typeof window !== "undefined"
       ? localStorage.getItem(LOCAL_ROLES_KEY)
       : null;
   let merged: RoleWithPermissions[] = [];
+  // Use roles.json as the base
+  const defaultRoles = (rolesJson as RoleWithPermissions[]).map((role) => ({
+    name: role.name,
+    permissions: MODULES.flatMap((mod) =>
+      role.permissions.map((perm) => `${mod}:${perm}`)
+    ),
+  }));
   if (saved) {
     const localRoles = JSON.parse(saved) as RoleWithPermissions[];
     const map = new Map<string, RoleWithPermissions>();
-    (rolesData as RoleWithPermissions[]).forEach((r) => map.set(r.name, r));
+    defaultRoles.forEach((r) => map.set(r.name, r));
     localRoles.forEach((r) => map.set(r.name, r));
     merged = Array.from(map.values());
   } else {
-    merged = rolesData as RoleWithPermissions[];
+    merged = defaultRoles;
   }
   return merged;
 };
 
-const Roles: React.FC = () => {
+const Roles = () => {
   const [roles, setRoles] = useState<RoleWithPermissions[]>([]);
-  const [input, setInput] = useState("");
-  const [permissions, setPermissions] = useState<{
-    read: boolean;
-    write: boolean;
-  }>({
-    read: false,
-    write: false,
-  });
+  const [addOpen, setAddOpen] = useState(false);
+  const [roleName, setRoleName] = useState("");
+  const [modulePerms, setModulePerms] = useState<
+    Record<string, Record<string, boolean>>
+  >(() =>
+    Object.fromEntries(
+      MODULES.map((m) => [m, { read: false, write: false, delete: false }])
+    )
+  );
   const [editIdx, setEditIdx] = useState<number | null>(null);
-  const [editInput, setEditInput] = useState("");
-  const [editPermissions, setEditPermissions] = useState<{
-    read: boolean;
-    write: boolean;
-  }>({
-    read: false,
-    write: false,
-  });
+  const [editRoleName, setEditRoleName] = useState("");
+  const [editModulePerms, setEditModulePerms] = useState<
+    Record<string, Record<string, boolean>>
+  >(() =>
+    Object.fromEntries(
+      MODULES.map((m) => [m, { read: false, write: false, delete: false }])
+    )
+  );
+  const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
 
   // Load roles on mount
   useEffect(() => {
@@ -69,277 +78,198 @@ const Roles: React.FC = () => {
     localStorage.setItem(LOCAL_ROLE_NAMES_KEY, JSON.stringify(roleNames));
   }, [roles]);
 
-  const handleAdd = useCallback(() => {
-    const trimmed = input.trim();
-    if (
-      trimmed &&
-      !roles.map((r) => r.name.toLowerCase()).includes(trimmed.toLowerCase()) &&
-      (permissions.read || permissions.write)
-    ) {
-      setRoles([
-        {
-          name: trimmed,
-          permissions: Object.entries(permissions)
-            .filter(([, v]) => v)
-            .map(([k]) => k),
-        },
-        ...roles,
-      ]);
-      setInput("");
-      setPermissions({ read: false, write: false });
+  const handleAddRole = () => {
+    const trimmed = roleName.trim();
+    if (!trimmed) return;
+    // Flatten module permissions into a string[]
+    const permissions: string[] = [];
+    for (const mod of MODULES) {
+      for (const perm of PERMISSIONS) {
+        if (modulePerms[mod][perm]) permissions.push(`${mod}:${perm}`);
+      }
     }
-  }, [input, permissions, roles]);
-
-  const handleDelete = useCallback((name: string) => {
-    setRoles((prev) => prev.filter((r) => r.name !== name));
-  }, []);
-
-  const openEdit = useCallback(
-    (idx: number) => {
-      setEditIdx(idx);
-      setEditInput(roles[idx].name);
-      setEditPermissions({
-        read: roles[idx].permissions.includes("read"),
-        write: roles[idx].permissions.includes("write"),
-      });
-    },
-    [roles]
-  );
-
-  const handleEditSave = useCallback(() => {
-    if (editIdx === null) return;
-    const trimmed = editInput.trim();
-    if (!trimmed || (!editPermissions.read && !editPermissions.write)) return;
-    setRoles((prev) =>
-      prev.map((r, i) =>
-        i === editIdx
-          ? {
-              name: trimmed,
-              permissions: Object.entries(editPermissions)
-                .filter(([, v]) => v)
-                .map(([k]) => k),
-            }
-          : r
+    if (!permissions.length) return;
+    setRoles([{ name: trimmed, permissions }, ...roles]);
+    setAddOpen(false);
+    setRoleName("");
+    setModulePerms(
+      Object.fromEntries(
+        MODULES.map((m) => [m, { read: false, write: false, delete: false }])
       )
     );
-    setEditIdx(null);
-    setEditInput("");
-    setEditPermissions({ read: false, write: false });
-  }, [editIdx, editInput, editPermissions]);
+  };
 
-  const handleEditCancel = useCallback(() => {
+  const openEdit = (idx: number) => {
+    setEditIdx(idx);
+    setEditRoleName(roles[idx].name);
+    // Parse permissions into module-wise object
+    const perms: Record<string, Record<string, boolean>> = Object.fromEntries(
+      MODULES.map((m) => [m, { read: false, write: false, delete: false }])
+    );
+    roles[idx].permissions.forEach((p) => {
+      const [mod, perm] = p.split(":");
+      if (perms[mod] && perm) perms[mod][perm] = true;
+    });
+    setEditModulePerms(perms);
+  };
+
+  const handleEditSave = () => {
+    if (editIdx === null) return;
+    const trimmed = editRoleName.trim();
+    if (!trimmed) return;
+    const permissions: string[] = [];
+    for (const mod of MODULES) {
+      for (const perm of PERMISSIONS) {
+        if (editModulePerms[mod][perm]) permissions.push(`${mod}:${perm}`);
+      }
+    }
+    if (!permissions.length) return;
+    setRoles((prev) =>
+      prev.map((r, i) => (i === editIdx ? { name: trimmed, permissions } : r))
+    );
     setEditIdx(null);
-    setEditInput("");
-    setEditPermissions({ read: false, write: false });
-  }, []);
+    setEditRoleName("");
+    setEditModulePerms(
+      Object.fromEntries(
+        MODULES.map((m) => [m, { read: false, write: false, delete: false }])
+      )
+    );
+  };
+
+  const handleEditCancel = () => {
+    setEditIdx(null);
+    setEditRoleName("");
+    setEditModulePerms(
+      Object.fromEntries(
+        MODULES.map((m) => [m, { read: false, write: false, delete: false }])
+      )
+    );
+  };
+
+  // NoRoles component for empty state
+  const NoRoles = () => (
+    <Box sx={{ textAlign: "center", py: 3, color: "#888", width: "100%" }}>
+      No roles added yet.
+    </Box>
+  );
 
   return (
-    <Box sx={{ mt: 2, ml: 2, maxWidth: 400 }}>
-      <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 2 }}>
-        Add Roles
+    <Box sx={{ mt: 2, ml: { xs: 0, sm: 2 }, maxWidth: 700, width: "100%" }}>
+      <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 2, color: "#000" }}>
+        Roles & Permissions
       </Typography>
-      <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
-        <TextField
-          size="small"
-          label="Role name"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") handleAdd();
-          }}
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={permissions.read}
-              onChange={(e) =>
-                setPermissions((p) => ({ ...p, read: e.target.checked }))
-              }
-            />
-          }
-          label="Read"
-        />
-        <FormControlLabel
-          control={
-            <Checkbox
-              checked={permissions.write}
-              onChange={(e) =>
-                setPermissions((p) => ({ ...p, write: e.target.checked }))
-              }
-            />
-          }
-          label="Write"
-        />
-        <MyButton
-          variant="contained"
-          onClick={handleAdd}
-          sx={{
-            bgcolor: "#fff",
-            color: "#1a237e",
-            "&:hover": { bgcolor: "#f0f0f0" },
-          }}
-        >
-          Add
-        </MyButton>
-      </Box>
+      <MyButton
+        variant="contained"
+        onClick={() => setAddOpen(true)}
+        sx={{
+          bgcolor: "#1976d2",
+          color: "#fff",
+          fontWeight: 600,
+          minWidth: 120,
+          width: { xs: "100%", sm: "auto" },
+          mb: { xs: 2, sm: 0 },
+        }}
+      >
+        Add
+      </MyButton>
+      <AddRoleDialog
+        open={addOpen}
+        roleName={roleName}
+        modulePerms={modulePerms}
+        modules={MODULES}
+        permissions={PERMISSIONS}
+        onRoleNameChange={(e) => setRoleName(e.target.value)}
+        onPermChange={(mod, perm, checked) =>
+          setModulePerms((mp) => ({
+            ...mp,
+            [mod]: { ...mp[mod], [perm]: checked },
+          }))
+        }
+        onClose={() => setAddOpen(false)}
+        onAdd={handleAddRole}
+        canAdd={
+          !!roleName.trim() &&
+          Object.values(modulePerms).some((m) => Object.values(m).some(Boolean))
+        }
+      />
       <Paper
         variant="outlined"
-        sx={{ p: 2, bgcolor: "#f5f7fa", boxShadow: 2, borderRadius: 2 }}
+        sx={{
+          p: { xs: 1, sm: 2 },
+          bgcolor: "#fff",
+          boxShadow: 2,
+          borderRadius: 2,
+          mt: 3,
+          width: "100%",
+          overflowX: "auto",
+        }}
       >
+        <Typography
+          sx={{ fontWeight: 600, fontSize: 18, mb: 2, color: "#1a237e" }}
+        >
+          All Roles
+        </Typography>
         <Box
           sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+            display: "flex",
+            flexWrap: "wrap",
             gap: 2,
+            justifyContent: { xs: "center", sm: "flex-start" },
+            width: "100%",
           }}
         >
-          {roles.length === 0 && (
-            <ListItem>
-              <ListItemText primary="No roles added yet." />
-            </ListItem>
-          )}
-          {roles.map((role, idx) => (
-            <Box key={role.name + String(idx)}>
-              <ListItem
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  flexDirection: "column",
-                  borderBottom: "none",
-                  py: 2,
-                  px: 2,
-                  bgcolor: "#fff",
-                  borderRadius: 2,
-                  mb: 0,
-                  boxShadow: 1,
-                  transition: "box-shadow 0.2s",
-                  "&:hover": { boxShadow: 4, bgcolor: "#f0f4ff" },
-                  minHeight: 100,
-                }}
-              >
-                <Box sx={{ width: "100%" }}>
-                  {editIdx === idx ? (
-                    <>
-                      <TextField
-                        size="small"
-                        label="Role name"
-                        value={editInput}
-                        onChange={(e) => setEditInput(e.target.value)}
-                        sx={{ mb: 1, width: "100%" }}
-                      />
-                      <Box sx={{ display: "flex", gap: 2, mb: 1 }}>
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              checked={editPermissions.read}
-                              onChange={(e) =>
-                                setEditPermissions((p) => ({
-                                  ...p,
-                                  read: e.target.checked,
-                                }))
-                              }
-                            />
-                          }
-                          label="Read"
-                        />
-                        <FormControlLabel
-                          control={
-                            <Checkbox
-                              checked={editPermissions.write}
-                              onChange={(e) =>
-                                setEditPermissions((p) => ({
-                                  ...p,
-                                  write: e.target.checked,
-                                }))
-                              }
-                            />
-                          }
-                          label="Write"
-                        />
-                      </Box>
-                      <Box sx={{ display: "flex", gap: 1 }}>
-                        <MyButton
-                          size="small"
-                          variant="contained"
-                          onClick={handleEditSave}
-                        >
-                          Save
-                        </MyButton>
-                        <MyButton
-                          size="small"
-                          onClick={handleEditCancel}
-                          color="inherit"
-                        >
-                          Cancel
-                        </MyButton>
-                      </Box>
-                    </>
-                  ) : (
-                    <>
-                      <Typography
-                        variant="subtitle1"
-                        sx={{
-                          fontWeight: 700,
-                          color: "#1a237e",
-                          letterSpacing: 0.2,
-                        }}
-                      >
-                        {role.name}
-                      </Typography>
-                      {Array.isArray(role.permissions) &&
-                        role.permissions.length > 0 && (
-                          <Box
-                            sx={{
-                              mt: 0.5,
-                              display: "flex",
-                              gap: 1,
-                              flexWrap: "wrap",
-                            }}
-                          >
-                            {role.permissions.map((p) => (
-                              <Box
-                                key={p}
-                                sx={{
-                                  display: "inline-block",
-                                  px: 1.5,
-                                  py: 0.5,
-                                  bgcolor:
-                                    p === "write" ? "#e3f2fd" : "#ede7f6",
-                                  color: p === "write" ? "#1976d2" : "#5e35b1",
-                                  borderRadius: 1,
-                                  fontSize: 13,
-                                  fontWeight: 500,
-                                  letterSpacing: 0.5,
-                                }}
-                              >
-                                {p.charAt(0).toUpperCase() + p.slice(1)}
-                              </Box>
-                            ))}
-                          </Box>
-                        )}
-                      <Box sx={{ display: "flex", gap: 1, mt: 1 }}>
-                        <MyButton
-                          size="small"
-                          variant="outlined"
-                          onClick={() => openEdit(idx)}
-                        >
-                          Edit
-                        </MyButton>
-                        <MyButton
-                          size="small"
-                          color="error"
-                          variant="outlined"
-                          onClick={() => handleDelete(role.name)}
-                        >
-                          Delete
-                        </MyButton>
-                      </Box>
-                    </>
-                  )}
-                </Box>
-              </ListItem>
-            </Box>
-          ))}
+          {roles.length === 0 && <NoRoles />}
+          {roles.map((role, idx) => {
+            const isExpanded = editIdx === null && idx === expandedIdx;
+            return (
+              <React.Fragment key={role.name + String(idx)}>
+                <RoleCard
+                  role={role}
+                  idx={idx}
+                  isExpanded={isExpanded}
+                  isEditing={editIdx === idx}
+                  editRoleName={editRoleName}
+                  onEditChange={(e) => setEditRoleName(e.target.value)}
+                  onEditSave={handleEditSave}
+                  onEditCancel={handleEditCancel}
+                  onEditClick={(e) => {
+                    e.stopPropagation();
+                    openEdit(idx);
+                  }}
+                  onExpand={() => {
+                    if (editIdx !== idx)
+                      setExpandedIdx(idx === expandedIdx ? null : idx);
+                  }}
+                  modules={MODULES}
+                  permissions={PERMISSIONS}
+                />
+                {editIdx === idx && (
+                  <AddRoleDialog
+                    open={true}
+                    roleName={editRoleName}
+                    modulePerms={editModulePerms}
+                    modules={MODULES}
+                    permissions={PERMISSIONS}
+                    onRoleNameChange={(e) => setEditRoleName(e.target.value)}
+                    onPermChange={(mod, perm, checked) =>
+                      setEditModulePerms((mp) => ({
+                        ...mp,
+                        [mod]: { ...mp[mod], [perm]: checked },
+                      }))
+                    }
+                    onClose={handleEditCancel}
+                    onAdd={handleEditSave}
+                    canAdd={
+                      !!editRoleName.trim() &&
+                      Object.values(editModulePerms).some((m) =>
+                        Object.values(m).some(Boolean)
+                      )
+                    }
+                  />
+                )}
+              </React.Fragment>
+            );
+          })}
         </Box>
       </Paper>
     </Box>

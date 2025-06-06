@@ -7,11 +7,19 @@ import {
   TableBody,
 } from "@mui/material";
 
-interface TableActionHandlers<T> {
+export interface TableActionHandlers<T> {
   onEdit: (row: T) => void;
   onDelete: (row: T) => void;
 }
 
+export interface Employee {
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  status: string;
+  // add more fields if necessary
+}
 interface TableHeader<T> {
   label: string;
   dataKey?: keyof T;
@@ -51,5 +59,15 @@ function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
   );
 }
 
-export type { TableHeader, TableActionHandlers };
 export default React.memo(TableMap);
+export type TableHeaderType<T> =
+  | {
+      label: string;
+      dataKey: keyof T;
+      component?: never;
+    }
+  | {
+      label: string;
+      dataKey?: never;
+      component: (row: T, handlers: TableActionHandlers<T>) => React.ReactNode;
+    };

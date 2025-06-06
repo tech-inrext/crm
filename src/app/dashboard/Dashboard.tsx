@@ -140,7 +140,9 @@ const Dashboard: React.FC = () => {
     content = <Roles />;
   } else {
     content = (
-      <Typography sx={{ mt: 2, ml: 2, fontWeight: 500, fontSize: 18 }}>
+      <Typography
+        sx={{ mt: 2, ml: 2, fontWeight: 500, fontSize: 18, color: "#000" }}
+      >
         Dashboard content will be displayed here
       </Typography>
     );
@@ -169,7 +171,7 @@ const Dashboard: React.FC = () => {
               sx={{
                 "& .MuiDrawer-paper": {
                   width: 220,
-                  bgcolor: "#181C1F",
+                  bgcolor: "#fafcfd",
                   color: "#fff",
                   borderRight: "1px solid #23272A",
                 },
@@ -190,7 +192,7 @@ const Dashboard: React.FC = () => {
                 width: 260,
                 minWidth: 260,
                 flexShrink: 0,
-                bgcolor: "#181C1F",
+                bgcolor: "#f8fafc",
                 color: "#fff",
                 boxShadow: 1,
                 height: "calc(100vh - 56px)",
@@ -219,7 +221,7 @@ const Dashboard: React.FC = () => {
             p: 3,
             overflow: "auto",
             minHeight: 0,
-            bgcolor: "#181C1F",
+            bgcolor: "#f2f5f7",
             color: "#fff",
           }}
         >

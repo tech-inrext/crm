@@ -1,5 +1,16 @@
 [
-  { "name": "Admin", "permissions": ["read", "write"] },
-  { "name": "Manager", "permissions": ["read"] },
-  { "name": "Employee", "permissions": ["read"] }
+  { "name": "Admin", "permissions": ["read", "write", "delete"] },
+  { "name": "Manager", "permissions": ["read", "write"] },
+  { "name": "Employee", "permissions": ["read"] },
+  { "name": "HR", "permissions": ["read", "write"] },
+  { "name": "IT Support", "permissions": ["read", "write"] },
+  { "name": "Finance", "permissions": ["read", "write"] },
+  { "name": "Supervisor", "permissions": ["read", "write"] },
+  { "name": "Auditor", "permissions": ["read"] },
+  { "name": "Developer", "permissions": ["read", "write"] },
+  { "name": "Project Lead", "permissions": ["read", "write"] },
+  { "name": "Intern", "permissions": ["read"] },
+  { "name": "Consultant", "permissions": ["read", "write"] },
+  { "name": "Operations", "permissions": ["read", "write"] },
+  { "name": "Executive", "permissions": ["read", "write", "delete"] }
 ]
