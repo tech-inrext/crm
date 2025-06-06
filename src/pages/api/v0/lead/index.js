@@ -1,6 +1,10 @@
 import dbConnect from "../../../../lib/mongodb";
 import Lead from "../../../../models/Lead";
+import cookie from "cookie";
+import { userAuth } from "../../../../middlewares/auth";
+import { checkPermission } from "../../../../utils/checkPermission"; // ✅ import checkPermission function
 
+// ✅ Create Lead (WRITE Access Required)
 const createLead = async (req, res) => {
   try {
     const {
@@ -18,8 +22,7 @@ const createLead = async (req, res) => {
       nextFollowUp,
     } = req.body;
 
-    console.log("lead created");
-    // Basic validation (can be extended)
+    // Basic validation
     if (!leadId || !fullName || !phone || !propertyType) {
       return res
         .status(400)
@@ -43,17 +46,17 @@ const createLead = async (req, res) => {
 
     await newLead.save();
 
-    res.status(201).json({ success: true, data: newLead });
+    return res.status(201).json({ success: true, data: newLead });
   } catch (error) {
-    // console.error("Error creating lead:", error.message);
-    res.status(500).json({
+    return res.status(500).json({
       success: false,
-      message: "Error creating lead:",
+      message: "Error creating lead",
       error: error.message,
     });
   }
 };
 
+// ✅ Get All Leads (READ Access Required)
 const getAllLeads = async (req, res) => {
   try {
     const allLeads = await Lead.find({});
@@ -61,20 +64,59 @@ const getAllLeads = async (req, res) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch roles",
+      message: "Failed to fetch leads",
       error: error.message,
     });
   }
 };
 
-export default async function handler(req, res) {
+// ✅ Middleware Wrapper for Authentication
+function withAuth(handler) {
+  return async (req, res) => {
+    const parsedCookies = cookie.parse(req.headers.cookie || "");
+    req.cookies = parsedCookies;
+    await userAuth(req, res, () => handler(req, res));
+  };
+}
+
+// ✅ Main Handler With Role-Based Permission Checks
+const handler = async (req, res) => {
   await dbConnect();
 
-  if (req.method === "POST") {
-    return createLead(req, res);
-  } else if (req.method === "GET") {
-    return getAllLeads(req, res);
-  } else {
-    return res.status(405).json({ success: false, message: "Method not allowed" });
+  const loggedInEmployee = req.employee;
+  const roleId = loggedInEmployee?.role;
+
+  if (!loggedInEmployee || !roleId) {
+    return res.status(401).json({ success: false, message: "Unauthorized" });
   }
-}
+
+  // 🔒 READ Operation
+  if (req.method === "GET") {
+    const hasAccess = await checkPermission(roleId, "read", "lead");
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have READ access to leads",
+      });
+    }
+    return getAllLeads(req, res);
+  }
+
+  // ✏️ WRITE Operation
+  if (req.method === "POST") {
+    const hasAccess = await checkPermission(roleId, "write", "lead");
+    if (!hasAccess) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have WRITE access to leads",
+      });
+    }
+    return createLead(req, res);
+  }
+
+  return res
+    .status(405)
+    .json({ success: false, message: "Method not allowed" });
+};
+
+export default withAuth(handler);
