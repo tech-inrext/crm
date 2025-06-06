@@ -1,0 +1,5 @@
+[
+  { "name": "Admin", "permissions": ["read", "write"] },
+  { "name": "Manager", "permissions": ["read"] },
+  { "name": "Employee", "permissions": ["read"] }
+]
