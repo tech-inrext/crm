@@ -12,10 +12,11 @@ import {
   DialogActions,
   CircularProgress,
   useMediaQuery,
+  Alert,
 } from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
-import employeesData from "../../data/employees.json";
+import axios from "axios";
 import MySearchBar from "@/components/ui/MySearchBar";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
@@ -23,28 +24,38 @@ import { useSyncExternalStore } from "react";
 import TableMap from "@/components/ui/TableMap";
 import Pagination from "@/components/ui/Pagination";
 
+type TableActionHandlers<T> = {
+  onEdit: (row: T) => void;
+  onDelete: (row: T) => void;
+};
+type TableHeader<T> = {
+  label: string;
+  dataKey?: keyof T;
+  component?: (row: T, handlers: TableActionHandlers<T>) => React.ReactNode;
+};
+
 // Table header definition: supports both data and action columns
 
 export interface Employee {
+  _id?: string; // MongoDB _id, optional for type safety
+  id?: string; // fallback for legacy or API data
   name: string;
   email: string;
   phone: string;
   role: string;
   status: string;
+  address?: string;
+  designation?: string;
+  managerId?: string;
+  departmentId?: string;
+  gender?: string;
+  age?: number;
+  altPhone?: string;
+  joiningDate?: string;
   // add more fields if necessary
 }
 
-const header: Array<{
-  label: string;
-  dataKey?: keyof Employee;
-  component?: (
-    row: Employee,
-    handlers: {
-      onEdit: (row: Employee) => void;
-      onDelete: (row: Employee) => void;
-    }
-  ) => React.ReactNode;
-}> = [
+const header: TableHeader<Employee>[] = [
   { label: "Name", dataKey: "name" },
   { label: "Email", dataKey: "email" },
   { label: "Phone", dataKey: "phone" },
@@ -52,7 +63,7 @@ const header: Array<{
   { label: "Status", dataKey: "status" },
   {
     label: "Actions",
-    component: (row, handlers) => (
+    component: (row: Employee, handlers: TableActionHandlers<Employee>) => (
       <>
         <IconButton
           aria-label="edit"
@@ -88,7 +99,7 @@ let lastRolesString: string | null = null;
 let lastRolesArray: string[] = [];
 function subscribeToRoles(callback: () => void) {
   const handler = (e: StorageEvent) => {
-    if (e.key === "roles") callback();
+    if (e.key === "roleNames") callback(); // Changed from "roles" to "roleNames"
   };
   window.addEventListener("storage", handler);
   return () => window.removeEventListener("storage", handler);
@@ -101,11 +112,48 @@ function useLiveRoles(): string[] {
       try {
         // Read from 'roleNames' for dropdown compatibility
         const saved = localStorage.getItem("roleNames");
+
+        // If no data, return empty array
+        if (!saved || saved === "null" || saved === "undefined") {
+          lastRolesString = null;
+          lastRolesArray = [];
+          return lastRolesArray;
+        }
+
+        // If same as cached, return cached
         if (saved === lastRolesString) return lastRolesArray;
+
         lastRolesString = saved;
-        lastRolesArray = saved ? JSON.parse(saved) : [];
+        const parsed = JSON.parse(saved);
+
+        // Ensure we always return an array of strings
+        if (Array.isArray(parsed)) {
+          lastRolesArray = parsed
+            .map((role) => {
+              // Handle both string and object formats
+              if (typeof role === "string") {
+                return role.trim();
+              } else if (role && typeof role === "object" && role.name) {
+                return String(role.name).trim();
+              } else if (role && typeof role === "object" && role.value) {
+                return String(role.value).trim();
+              } else {
+                return String(role).trim();
+              }
+            })
+            .filter((role) => role && role.length > 0); // Remove empty strings
+        } else {
+          lastRolesArray = [];
+        }
+
+        console.log("Loaded roles from localStorage:", lastRolesArray);
         return lastRolesArray;
-      } catch {
+      } catch (error) {
+        console.error("Error parsing roles from localStorage:", error);
+        console.log(
+          "Raw localStorage value:",
+          localStorage.getItem("roleNames")
+        );
         lastRolesString = null;
         lastRolesArray = [];
         return lastRolesArray;
@@ -114,6 +162,8 @@ function useLiveRoles(): string[] {
     () => []
   );
 }
+
+const API_BASE = "/api/v0/employee";
 
 const Users: React.FC = () => {
   const [mounted, setMounted] = useState(false);
@@ -125,6 +175,12 @@ const Users: React.FC = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    email?: string;
+    phone?: string;
+    general?: string;
+  }>({});
   // Pagination state for new UI
   const [page, setPage] = useState(0); // 0-based index for correct pagination
   const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -136,14 +192,23 @@ const Users: React.FC = () => {
     setMounted(true);
   }, []);
 
-  // Load employees from JSON file (no API call)
+  // Load employees from API
   useEffect(() => {
     setLoading(true);
-    setTimeout(() => {
-      setEmployees(employeesData as Employee[]);
-      setFiltered(employeesData as Employee[]);
-      setLoading(false);
-    }, 300);
+    axios
+      .get(API_BASE)
+      .then((res) => {
+        // API returns { success: true, data: employees[] }
+        const employeesData = res.data.data || res.data;
+        setEmployees(employeesData);
+        setFiltered(employeesData);
+      })
+      .catch((error) => {
+        console.error("Failed to load employees:", error);
+        setEmployees([]);
+        setFiltered([]);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   // Filter employees
@@ -157,11 +222,12 @@ const Users: React.FC = () => {
     );
     setPage(0);
   }, [search, employees]);
-
   // Modal open/close
   const handleOpen = useCallback((emp?: Employee) => {
+    setError(null);
+    setFieldErrors({});
     if (emp) {
-      setEditId(emp._id);
+      setEditId(emp._id || emp.id || null); // Use _id, fallback to id
       setForm({
         name: emp.name,
         email: emp.email,
@@ -175,41 +241,91 @@ const Users: React.FC = () => {
     }
     setOpen(true);
   }, []);
-
   const handleClose = useCallback(() => {
     setOpen(false);
     setEditId(null);
     setForm(defaultForm);
-  }, []);
-
-  // Add/Edit employee (in-memory only)
+    setError(null);
+    setFieldErrors({});
+  }, []); // Add/Edit employee (API)
   const handleSave = useCallback(async () => {
     setSaving(true);
-    let newList: Employee[];
-    if (editId) {
-      // Edit existing
-      newList = employees.map((e) =>
-        e._id === editId ? { ...e, ...form } : e
-      );
-    } else {
-      // Add new
-      const newEmployee: Employee = {
-        _id: (Date.now() + Math.random()).toString(),
-        ...form,
-        dateJoined: new Date().toISOString().slice(0, 10),
-      };
-      newList = [newEmployee, ...employees];
-    }
-    setEmployees(newList);
-    setOpen(false);
-    setSaving(false);
-  }, [editId, form, employees]);
+    setError(null);
+    setFieldErrors({});
 
-  // Delete employee (in-memory only)
+    try {
+      if (editId) {
+        // Edit - use PATCH instead of PUT to match API
+        await axios.patch(`${API_BASE}/${editId}`, form);
+        setEmployees((prev) =>
+          prev.map((e) => ((e._id || e.id) === editId ? { ...e, ...form } : e))
+        );
+      } else {
+        // Add - need to include required fields for API
+        const employeeData = {
+          ...form,
+          address: form.address || "Default Address",
+          designation: form.designation || "Employee",
+          managerId: form.managerId || "default-manager",
+          departmentId: form.departmentId || "default-dept",
+          status: form.status || "Active",
+        };
+        const res = await axios.post(API_BASE, employeeData);
+        const newEmployee = res.data.data || res.data;
+        setEmployees((prev) => [newEmployee, ...prev]);
+      }
+      setOpen(false);
+    } catch (error: unknown) {
+      console.error("Failed to save employee:", error);
+
+      // Handle specific error responses
+      const axiosError = error as {
+        response?: { status?: number; data?: { message?: string } };
+        message?: string;
+      };
+      if (axiosError.response?.status === 409) {
+        const errorMessage =
+          axiosError.response.data?.message ||
+          "Employee with this email or phone already exists";
+
+        // Parse specific field errors from the message
+        if (errorMessage.toLowerCase().includes("email")) {
+          setFieldErrors({ email: "This email is already in use" });
+        } else if (errorMessage.toLowerCase().includes("phone")) {
+          setFieldErrors({ phone: "This phone number is already in use" });
+        } else {
+          setFieldErrors({
+            email: "This email may already be in use",
+            phone: "This phone number may already be in use",
+          });
+        }
+        setError("Employee with this email or phone already exists");
+      } else if (axiosError.response?.status === 400) {
+        const errorMessage =
+          axiosError.response.data?.message || "Invalid data provided";
+        setError(`Validation error: ${errorMessage}`);
+        setFieldErrors({ general: errorMessage });
+      } else {
+        setError(
+          `Failed to save employee: ${axiosError.message || "Unknown error"}`
+        );
+      }
+    }
+    setSaving(false);
+  }, [editId, form]);
+
+  // Delete employee (API)
   const handleDelete = useCallback(async (emp: Employee) => {
+    const empId = emp._id || emp.id;
+    if (!empId) return;
     if (!window.confirm(`Delete employee ${emp.name}?`)) return;
     setSaving(true);
-    setEmployees((prev) => prev.filter((e) => e._id !== emp._id));
+    try {
+      await axios.delete(`${API_BASE}/${empId}`);
+      setEmployees((prev) => prev.filter((e) => (e._id || e.id) !== empId));
+    } catch {
+      // Optionally show error
+    }
     setSaving(false);
   }, []);
 
@@ -299,9 +415,12 @@ const Users: React.FC = () => {
             <TableContainer sx={{ minWidth: isMobile ? 600 : undefined }}>
               <TableMap
                 data={pagedEmployees}
-                header={header as any}
-                onEdit={(row: any) => handleOpen(row)}
-                onDelete={(row: any) => handleDelete(row)}
+                // @ts-expect-error: TableMap is not generic, so we must suppress type error here
+                header={header}
+                // @ts-expect-error: TableMap is not generic, so we must suppress type error here
+                onEdit={handleOpen}
+                // @ts-expect-error: TableMap is not generic, so we must suppress type error here
+                onDelete={handleDelete}
               />
             </TableContainer>
             <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
@@ -326,16 +445,23 @@ const Users: React.FC = () => {
       >
         <DialogTitle id="employee-dialog-title">
           {editId ? "Edit Employee" : "Add Employee"}
-        </DialogTitle>
+        </DialogTitle>{" "}
         <DialogContent
           sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
         >
+          {error && (
+            <Alert severity="error" sx={{ mb: 1 }}>
+              {error}
+            </Alert>
+          )}{" "}
           <TextField
             label="Name"
             value={form.name}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setForm((f) => ({ ...f, name: e.target.value }))
-            }
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setForm((f) => ({ ...f, name: e.target.value }));
+              // Clear general error when user starts making changes
+              if (error) setError(null);
+            }}
             required
             autoFocus
             inputProps={{ "aria-label": "Employee name" }}
@@ -343,50 +469,74 @@ const Users: React.FC = () => {
           <TextField
             label="Email"
             value={form.email}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setForm((f) => ({ ...f, email: e.target.value }))
-            }
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setForm((f) => ({ ...f, email: e.target.value }));
+              // Clear email error when user starts typing
+              if (fieldErrors.email) {
+                setFieldErrors((prev) => ({ ...prev, email: undefined }));
+              }
+            }}
             required
             type="email"
+            error={!!fieldErrors.email}
+            helperText={fieldErrors.email || ""}
             inputProps={{ "aria-label": "Employee email" }}
           />
           <TextField
             label="Phone"
             value={form.phone}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setForm((f) => ({ ...f, phone: e.target.value }))
-            }
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setForm((f) => ({ ...f, phone: e.target.value }));
+              // Clear phone error when user starts typing
+              if (fieldErrors.phone) {
+                setFieldErrors((prev) => ({ ...prev, phone: undefined }));
+              }
+            }}
             required
+            error={!!fieldErrors.phone}
+            helperText={fieldErrors.phone || ""}
             inputProps={{ "aria-label": "Employee phone" }}
           />
           <TextField
             label="Role"
             select
-            value={form.role}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setForm((f) => ({ ...f, role: e.target.value }))
-            }
+            value={form.role || ""}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setForm((f) => ({ ...f, role: e.target.value }));
+              if (error) setError(null);
+            }}
             required
             inputProps={{ "aria-label": "Employee role" }}
+            error={!form.role}
+            helperText={!form.role ? "Please select a role" : ""}
           >
+            <MenuItem value="" disabled>
+              Select a role...
+            </MenuItem>
             {liveRoles.length === 0 ? (
-              <MenuItem value="" disabled>
-                No roles available
+              <MenuItem value="default-role">
+                Default Role (No roles configured)
               </MenuItem>
             ) : (
-              liveRoles.map((role) => (
-                <MenuItem key={role} value={role}>
-                  {role}
-                </MenuItem>
-              ))
+              liveRoles
+                .filter(
+                  (role) =>
+                    role && typeof role === "string" && role.trim() !== ""
+                ) // Enhanced safety filter
+                .map((role) => (
+                  <MenuItem key={role} value={role}>
+                    {role}
+                  </MenuItem>
+                ))
             )}
-          </TextField>
+          </TextField>{" "}
           <TextField
             label="Status"
             value={form.status}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              setForm((f) => ({ ...f, status: e.target.value }))
-            }
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setForm((f) => ({ ...f, status: e.target.value }));
+              if (error) setError(null);
+            }}
             required
             inputProps={{ "aria-label": "Employee status" }}
           />

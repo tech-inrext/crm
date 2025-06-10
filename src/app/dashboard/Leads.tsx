@@ -10,13 +10,15 @@ import {
   CircularProgress,
   Button,
 } from "@mui/material";
-import leadsData from "../../data/leads.json" assert { type: "json" };
+import axios from "axios";
 import MySearchBar from "@/components/ui/MySearchBar";
 import LeadsTableHeader from "../../components/ui/LeadsTableHeader";
 import LeadsTableRow from "../../components/ui/LeadsTableRow";
 import LeadDialog from "../../components/ui/LeadDialog";
 
-interface Lead {
+// Frontend Lead interface (matching current UI structure)
+export interface Lead {
+  _id?: string;
   id: string;
   name: string;
   contact: string;
@@ -25,6 +27,56 @@ interface Lead {
   status: string;
   value: string;
 }
+
+// API Lead interface (matching backend model)
+interface APILead {
+  _id: string;
+  leadId: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  propertyType: string;
+  location?: string;
+  budgetRange?: string;
+  status: string;
+  source?: string;
+  assignedTo?: string;
+  followUpNotes?: Array<{ note: string; date: string }>;
+  nextFollowUp?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+const API_BASE = "/api/v0/lead";
+
+// Transform API lead to frontend format
+const transformAPILead = (apiLead: APILead): Lead => {
+  return {
+    _id: apiLead._id,
+    id: apiLead.leadId,
+    name: apiLead.fullName,
+    contact: apiLead.phone,
+    email: apiLead.email || "",
+    phone: apiLead.phone,
+    status: apiLead.status,
+    value: apiLead.budgetRange || "Not specified",
+  };
+};
+
+// Transform frontend lead to API format
+const transformToAPILead = (lead: Omit<Lead, "_id">): Partial<APILead> => {
+  return {
+    leadId: lead.id,
+    fullName: lead.name,
+    email: lead.email,
+    phone: lead.phone,
+    propertyType: "Buy", // Default - could be made configurable
+    location: "Not specified", // Default
+    budgetRange: lead.value !== "Not specified" ? lead.value : undefined,
+    status: lead.status || "New",
+    source: "Web Form", // Default
+  };
+};
 
 const header = [
   { label: "Company", dataKey: "name" },
@@ -41,12 +93,13 @@ const Leads: React.FC = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [filtered, setFiltered] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState<Omit<Lead, "id">>({
+  const [form, setForm] = useState<Omit<Lead, "id" | "_id">>({
     name: "",
     contact: "",
     email: "",
@@ -54,20 +107,30 @@ const Leads: React.FC = () => {
     status: "",
     value: "",
   });
-  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
-
   useEffect(() => {
-    setLoading(true);
-    setTimeout(() => {
-      setLeads(leadsData as Lead[]);
-      setFiltered(leadsData as Lead[]);
-      setLoading(false);
-    }, 300);
+    loadLeads();
   }, []);
+
+  const loadLeads = async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(API_BASE);
+      const apiLeads = response.data.data || response.data;
+      const transformedLeads = apiLeads.map(transformAPILead);
+      setLeads(transformedLeads);
+      setFiltered(transformedLeads);
+    } catch (error) {
+      console.error("Failed to load leads:", error);
+      setLeads([]);
+      setFiltered([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
     const q = search.toLowerCase();
@@ -94,7 +157,6 @@ const Leads: React.FC = () => {
     setRowsPerPage(parseInt(e.target.value, 10));
     setPage(0);
   };
-
   // Modal open/close
   const handleOpen = (lead?: Lead) => {
     if (lead) {
@@ -131,30 +193,76 @@ const Leads: React.FC = () => {
       status: "",
       value: "",
     });
-  };
-  // Add/Edit lead (in-memory only)
-  const handleSave = () => {
+  }; // Add/Edit lead via API
+  const handleSave = async () => {
     setSaving(true);
-    let newList: Lead[];
-    if (editId) {
-      newList = leads.map((l) =>
-        l.id === editId ? { id: editId, ...form } : l
-      );
-    } else {
-      const newLead: Lead = {
-        id: (Date.now() + Math.random()).toString(),
-        ...form,
-      };
-      newList = [newLead, ...leads];
+    try {
+      if (editId) {
+        // Update existing lead
+        const leadToUpdate = leads.find((l) => l.id === editId);
+        if (leadToUpdate && leadToUpdate._id) {
+          const apiData = transformToAPILead({ id: editId, ...form });
+          await axios.patch(`${API_BASE}/${leadToUpdate._id}`, apiData);
+
+          const updatedLead = { ...leadToUpdate, ...form };
+          const newList = leads.map((l) => (l.id === editId ? updatedLead : l));
+          setLeads(newList);
+          setFiltered(
+            newList.filter(
+              (l) =>
+                l.name.toLowerCase().includes(search.toLowerCase()) ||
+                l.contact.toLowerCase().includes(search.toLowerCase()) ||
+                l.email.toLowerCase().includes(search.toLowerCase()) ||
+                l.phone.toLowerCase().includes(search.toLowerCase()) ||
+                l.status.toLowerCase().includes(search.toLowerCase())
+            )
+          );
+        }
+      } else {
+        // Create new lead
+        const newLeadId = `LEAD-${Date.now()}`;
+        const apiData = transformToAPILead({ id: newLeadId, ...form });
+        const response = await axios.post(API_BASE, apiData);
+        const createdLead = transformAPILead(
+          response.data.data || response.data
+        );
+
+        const newList = [createdLead, ...leads];
+        setLeads(newList);
+        setFiltered([createdLead, ...filtered]);
+      }
+      handleClose();
+    } catch (error) {
+      console.error("Failed to save lead:", error);
+    } finally {
+      setSaving(false);
     }
-    setLeads(newList);
-    setOpen(false);
-    setSaving(false);
-  };
-  // Delete lead (in-memory only)
-  const handleDelete = (lead: Lead) => {
+  }; // Delete lead via API
+  const handleDelete = async (lead: Lead) => {
     if (!window.confirm(`Delete lead ${lead.name}?`)) return;
-    setLeads((prev) => prev.filter((l) => l.id !== lead.id));
+
+    if (!lead._id) {
+      console.error("Lead ID not found");
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_BASE}/${lead._id}`);
+      const newList = leads.filter((l) => l.id !== lead.id);
+      setLeads(newList);
+      setFiltered(
+        newList.filter(
+          (l) =>
+            l.name.toLowerCase().includes(search.toLowerCase()) ||
+            l.contact.toLowerCase().includes(search.toLowerCase()) ||
+            l.email.toLowerCase().includes(search.toLowerCase()) ||
+            l.phone.toLowerCase().includes(search.toLowerCase()) ||
+            l.status.toLowerCase().includes(search.toLowerCase())
+        )
+      );
+    } catch (error) {
+      console.error("Failed to delete lead:", error);
+    }
   };
 
   if (!mounted)
@@ -193,10 +301,11 @@ const Leads: React.FC = () => {
               placeholder="Search leads"
             />
           </Box>
-        </Box>
+        </Box>{" "}
         <Button
           variant="contained"
           onClick={() => handleOpen()}
+          disabled={saving}
           sx={{
             minWidth: 120,
             width: { xs: "100%", sm: "auto" },
@@ -206,7 +315,7 @@ const Leads: React.FC = () => {
             boxShadow: 2,
           }}
         >
-          Add Lead
+          {saving ? <CircularProgress size={20} color="inherit" /> : "Add Lead"}
         </Button>
       </Box>
       {loading ? (

@@ -7,16 +7,15 @@ import {
   TextField,
   Button,
   CircularProgress,
-  Box,
 } from "@mui/material";
 import { Lead } from "../../app/dashboard/Leads";
 
 interface LeadDialogProps {
   open: boolean;
   editId: string | null;
-  form: Omit<Lead, "id">;
+  form: Omit<Lead, "id" | "_id">;
   saving: boolean;
-  onChange: (field: keyof Omit<Lead, "id">, value: string) => void;
+  onChange: (field: keyof Omit<Lead, "id" | "_id">, value: string) => void;
   onClose: () => void;
   onSave: () => void;
 }
