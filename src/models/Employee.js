@@ -87,6 +87,19 @@ const employeeSchema = new mongoose.Schema(
       ref: "Role",
       required: true,
     },
+    password: {
+      type: String,
+      required: true,
+      minlength: 6,
+    },
+    isPasswordReset: {
+      type: Boolean,
+      default: false,
+    },
+    passwordLastResetAt: {
+    type: Date,
+    default: Date.now,
+  },
   },
   { timestamps: true }
 );

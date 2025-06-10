@@ -1,10 +1,10 @@
-// get method
-// post method
-// patch method
-
 import dbConnect from "../../../../lib/mongodb";
 import Role from "../../../../models/Role";
+import cookie from "cookie";
+import { userAuth } from "../../../../middlewares/auth";
+import { checkPermission } from "@/utils/checkPermission"; // ✅ Make sure this utility is created
 
+// ✅ GET role by ID (only if has READ permission)
 const getRoleById = async (req, res) => {
   const { id } = req.query;
 
@@ -22,11 +22,13 @@ const getRoleById = async (req, res) => {
   }
 };
 
+// ✅ PATCH (update role permissions, not name)
 const updateRoleDetails = async (req, res) => {
   const { id } = req.query;
   const { name, ...rest } = req.body;
+
   try {
-    // Prevent changing the 'name' field
+    // Prevent role name update
     if (name) {
       return res.status(400).json({
         success: false,
@@ -52,16 +54,56 @@ const updateRoleDetails = async (req, res) => {
   }
 };
 
-export default async function handler(req, res) {
+// ✅ Auth wrapper for cookies and token handling
+function withAuth(handler) {
+  return async (req, res) => {
+    const parsedCookies = cookie.parse(req.headers.cookie || "");
+    req.cookies = parsedCookies;
+    await userAuth(req, res, () => handler(req, res));
+  };
+}
+
+// ✅ Final handler with RBAC
+const handler = async (req, res) => {
   await dbConnect();
 
-  if (req.method === "GET") {
-    getRoleById(req, res);
-  } else if (req.method === "PATCH") {
-    updateRoleDetails(req, res);
-  } else {
-    return res
-      .status(405)
-      .json({ success: false, error: "Method Not Allowed" });
+  const loggedInEmployee = req.employee;
+  const roleId = loggedInEmployee?.role;
+
+  if (!loggedInEmployee || !roleId) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized access",
+    });
   }
-}
+
+  // ✅ READ Role
+  if (req.method === "GET") {
+    const hasReadAccess = await checkPermission(roleId, "read", "role");
+    if (!hasReadAccess) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have READ access on role",
+      });
+    }
+    return getRoleById(req, res);
+  }
+
+  // ✅ UPDATE Role
+  if (req.method === "PATCH") {
+    const hasWriteAccess = await checkPermission(roleId, "write", "role");
+    if (!hasWriteAccess) {
+      return res.status(403).json({
+        success: false,
+        message: "You do not have WRITE access on role",
+      });
+    }
+    return updateRoleDetails(req, res);
+  }
+
+  return res
+    .status(405)
+    .json({ success: false, message: "Method not allowed" });
+};
+
+export default withAuth(handler);
