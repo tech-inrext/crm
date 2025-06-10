@@ -6,6 +6,7 @@ import MyButton from "@/components/ui/MyButton";
 import RoleCard from "../../components/ui/RoleCard";
 import AddRoleDialog from "../../components/ui/AddRoleDialog";
 import rolesJson from "@/data/roles.json";
+import Pagination from "@/components/ui/Pagination";
 
 interface RoleWithPermissions {
   name: string;
@@ -64,6 +65,9 @@ const Roles = () => {
     )
   );
   const [expandedIdx, setExpandedIdx] = useState<number | null>(null);
+  // Pagination state
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
 
   // Load roles on mount
   useEffect(() => {
@@ -153,6 +157,9 @@ const Roles = () => {
     </Box>
   );
 
+  // Paginate roles
+  const pagedRoles = roles.slice((page - 1) * pageSize, page * pageSize);
+
   return (
     <Box sx={{ mt: 2, ml: { xs: 0, sm: 2 }, maxWidth: 700, width: "100%" }}>
       <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 2, color: "#000" }}>
@@ -219,31 +226,32 @@ const Roles = () => {
           }}
         >
           {roles.length === 0 && <NoRoles />}
-          {roles.map((role, idx) => {
-            const isExpanded = editIdx === null && idx === expandedIdx;
+          {pagedRoles.map((role, idx) => {
+            const realIdx = (page - 1) * pageSize + idx;
+            const isExpanded = editIdx === null && realIdx === expandedIdx;
             return (
-              <React.Fragment key={role.name + String(idx)}>
+              <React.Fragment key={role.name + String(realIdx)}>
                 <RoleCard
                   role={role}
-                  idx={idx}
+                  idx={realIdx}
                   isExpanded={isExpanded}
-                  isEditing={editIdx === idx}
+                  isEditing={editIdx === realIdx}
                   editRoleName={editRoleName}
                   onEditChange={(e) => setEditRoleName(e.target.value)}
                   onEditSave={handleEditSave}
                   onEditCancel={handleEditCancel}
                   onEditClick={(e) => {
                     e.stopPropagation();
-                    openEdit(idx);
+                    openEdit(realIdx);
                   }}
                   onExpand={() => {
-                    if (editIdx !== idx)
-                      setExpandedIdx(idx === expandedIdx ? null : idx);
+                    if (editIdx !== realIdx)
+                      setExpandedIdx(realIdx === expandedIdx ? null : realIdx);
                   }}
                   modules={MODULES}
                   permissions={PERMISSIONS}
                 />
-                {editIdx === idx && (
+                {editIdx === realIdx && (
                   <AddRoleDialog
                     open={true}
                     roleName={editRoleName}
@@ -271,6 +279,13 @@ const Roles = () => {
             );
           })}
         </Box>
+        <Pagination
+          page={page}
+          pageSize={pageSize}
+          total={roles.length}
+          onPageChange={setPage}
+          onPageSizeChange={setPageSize}
+        />
       </Paper>
     </Box>
   );

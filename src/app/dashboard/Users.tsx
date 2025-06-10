@@ -11,7 +11,6 @@ import {
   DialogContent,
   DialogActions,
   CircularProgress,
-  TablePagination,
   useMediaQuery,
 } from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
@@ -21,12 +20,31 @@ import MySearchBar from "@/components/ui/MySearchBar";
 import TextField from "@mui/material/TextField";
 import MenuItem from "@mui/material/MenuItem";
 import { useSyncExternalStore } from "react";
-import TableMap, {TableHeaderType } from "@/components/ui/TableMap";
-import type { Employee } from "@/types/employee";
+import TableMap from "@/components/ui/TableMap";
+import Pagination from "@/components/ui/Pagination";
 
 // Table header definition: supports both data and action columns
 
-const header: TableHeaderType<Employee>[] = [
+export interface Employee {
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  status: string;
+  // add more fields if necessary
+}
+
+const header: Array<{
+  label: string;
+  dataKey?: keyof Employee;
+  component?: (
+    row: Employee,
+    handlers: {
+      onEdit: (row: Employee) => void;
+      onDelete: (row: Employee) => void;
+    }
+  ) => React.ReactNode;
+}> = [
   { label: "Name", dataKey: "name" },
   { label: "Email", dataKey: "email" },
   { label: "Phone", dataKey: "phone" },
@@ -107,7 +125,8 @@ const Users: React.FC = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
-  const [page, setPage] = useState(0);
+  // Pagination state for new UI
+  const [page, setPage] = useState(0); // 0-based index for correct pagination
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -194,88 +213,110 @@ const Users: React.FC = () => {
     setSaving(false);
   }, []);
 
-  // Pagination
-  const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
-  const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
+  // Pagination handlers for custom Pagination
+  const handlePageChange = (newPage: number) => setPage(newPage);
+  const handleRowsPerPageChange = (size: number) => {
+    setRowsPerPage(size);
     setPage(0);
   };
 
+  // Paginate filtered employees
+  const pagedEmployees = filtered.slice(
+    page * rowsPerPage,
+    page * rowsPerPage + rowsPerPage
+  );
   if (!mounted)
     return <div style={{ minHeight: "100vh", background: "#181C1F" }} />;
 
   return (
     <Box sx={{ mt: 2, mx: isMobile ? 0 : 2 }}>
-      <Box
+      <Paper
         sx={{
-          display: "flex",
-          flexDirection: isMobile ? "column" : "row",
-          alignItems: isMobile ? "stretch" : "center",
-          gap: 2,
-          mb: 2,
+          width: "100%",
+          maxWidth: 1200, // increased from 900 to 1200 for a wider card
+          minWidth: isMobile ? 0 : 900, // increased minWidth for desktop
+          mx: "auto",
+          borderRadius: 3,
+          boxShadow: 3,
+          bgcolor: theme.palette.mode === "dark" ? "#23272A" : "#f5f7fa", // match Leads
+          p: { xs: 1, sm: 2 }, // match Leads
+          overflowX: "auto", // match Leads
         }}
       >
-        <Typography variant="h6" sx={{ fontWeight: 700, flex: 1, color: "#000" }}>
-          Employees
-        </Typography>
-        <MySearchBar
-          value={search}
-          onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-            setSearch(e.target.value)
-          }
-          placeholder="Search by name or role"
-        />
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() => handleOpen(undefined)}
-          sx={{ minWidth: 120 }}
-        >
-          Add Employee
-        </Button>
-      </Box>
-      {loading ? (
-        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Paper
+        <Box
           sx={{
-            width: "100%",
-            overflowX: isMobile ? "auto" : "hidden",
-            boxShadow: isMobile ? 0 : 3,
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            alignItems: { xs: "stretch", sm: "center" },
+            gap: 2,
+            mb: 2,
           }}
         >
-          <TableContainer sx={{ minWidth: isMobile ? 600 : undefined }}>
-            <TableMap
-              data={filtered.slice(
-                page * rowsPerPage,
-                page * rowsPerPage + rowsPerPage
-              )}
-              header={header as any}
-              onEdit={handleOpen as any}
-              onDelete={handleDelete as any}
-            />
-          </TableContainer>
-          <TablePagination
-            component="div"
-            count={filtered.length}
-            page={page}
-            onPageChange={handleChangePage}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={[5, 10, 25]}
-            labelRowsPerPage="Rows"
+          <Typography
+            variant="h6"
             sx={{
-              ".MuiTablePagination-toolbar": {
-                flexDirection: isMobile ? "column" : "row",
-                alignItems: isMobile ? "flex-start" : "center",
-                gap: isMobile ? 1 : 0,
-              },
+              fontWeight: 700,
+              flex: 1,
+              color: theme.palette.mode === "dark" ? "#fff" : "#000",
+              fontSize: { xs: 20, sm: 24 }, // match Leads
             }}
-          />
-        </Paper>
-      )}
+          >
+            Employees
+          </Typography>
+          <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: 220 } }}>
+            <Box sx={{ width: "100%" }}>
+              <MySearchBar
+                value={search}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setSearch(e.target.value)
+                }
+                placeholder="Search by name or role"
+              />
+            </Box>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={() => handleOpen(undefined)}
+            sx={{
+              minWidth: 120,
+              width: { xs: "100%", sm: "auto" },
+              fontWeight: 600,
+              bgcolor: "#1976d2",
+              color: "#fff",
+              boxShadow: 2,
+            }}
+          >
+            Add Employee
+          </Button>
+        </Box>
+        {loading ? (
+          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+            <CircularProgress />
+          </Box>
+        ) : (
+          <>
+            <TableContainer sx={{ minWidth: isMobile ? 600 : undefined }}>
+              <TableMap
+                data={pagedEmployees}
+                header={header as any}
+                onEdit={(row: any) => handleOpen(row)}
+                onDelete={(row: any) => handleDelete(row)}
+              />
+            </TableContainer>
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+              <Pagination
+                page={page}
+                pageSize={rowsPerPage}
+                total={filtered.length}
+                onPageChange={handlePageChange}
+                pageSizeOptions={[5, 10, 25]}
+                onPageSizeChange={handleRowsPerPageChange}
+              />
+            </Box>
+          </>
+        )}
+      </Paper>
       <Dialog
         open={open}
         onClose={handleClose}

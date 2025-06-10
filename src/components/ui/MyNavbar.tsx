@@ -20,7 +20,7 @@ const MyNavbar: React.FC<MyNavbarProps> = ({ sidebarOpen, setSidebarOpen }) => (
       alignItems: 'center',
       px: { xs: 2, sm: 2 },
       py: 1,
-      bgcolor: '#4e6374',
+      bgcolor: '#181C1F',
       height: 56,
       boxShadow: 1,
       flexDirection: 'row',
