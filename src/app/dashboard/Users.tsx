@@ -97,69 +97,79 @@ const defaultForm: Omit<Employee, "_id" | "dateJoined"> = {
 // Helper to subscribe to roles changes in localStorage
 let lastRolesString: string | null = null;
 let lastRolesArray: string[] = [];
+
 function subscribeToRoles(callback: () => void) {
   const handler = (e: StorageEvent) => {
-    if (e.key === "roleNames") callback(); // Changed from "roles" to "roleNames"
+    if (e.key === "roleNames") {
+      // Reset cache when storage changes
+      lastRolesString = null;
+      lastRolesArray = [];
+      callback();
+    }
   };
   window.addEventListener("storage", handler);
   return () => window.removeEventListener("storage", handler);
 }
 
+// Cached getSnapshot function to prevent infinite loops
+const getSnapshotForRoles = () => {
+  try {
+    // Read from 'roleNames' for dropdown compatibility
+    const saved = localStorage.getItem("roleNames");
+
+    // If no data, return cached empty array
+    if (!saved || saved === "null" || saved === "undefined") {
+      if (lastRolesString !== null || lastRolesArray.length > 0) {
+        lastRolesString = null;
+        lastRolesArray = [];
+      }
+      return lastRolesArray;
+    }
+
+    // If same as cached, return cached reference
+    if (saved === lastRolesString) {
+      return lastRolesArray;
+    }
+
+    // Parse and cache new data
+    lastRolesString = saved;
+    const parsed = JSON.parse(saved);
+
+    // Ensure we always return an array of strings
+    if (Array.isArray(parsed)) {
+      lastRolesArray = parsed
+        .map((role) => {
+          // Handle both string and object formats
+          if (typeof role === "string") {
+            return role.trim();
+          } else if (role && typeof role === "object" && role.name) {
+            return String(role.name).trim();
+          } else if (role && typeof role === "object" && role.value) {
+            return String(role.value).trim();
+          } else {
+            return String(role).trim();
+          }
+        })
+        .filter((role) => role && role.length > 0); // Remove empty strings
+    } else {
+      lastRolesArray = [];
+    }
+
+    return lastRolesArray;
+  } catch (error) {
+    console.error("Error parsing roles from localStorage:", error);
+    console.log("Raw localStorage value:", localStorage.getItem("roleNames"));
+    lastRolesString = null;
+    lastRolesArray = [];
+    return lastRolesArray;
+  }
+};
+
 function useLiveRoles(): string[] {
   return useSyncExternalStore(
     subscribeToRoles,
-    () => {
-      try {
-        // Read from 'roleNames' for dropdown compatibility
-        const saved = localStorage.getItem("roleNames");
-
-        // If no data, return empty array
-        if (!saved || saved === "null" || saved === "undefined") {
-          lastRolesString = null;
-          lastRolesArray = [];
-          return lastRolesArray;
-        }
-
-        // If same as cached, return cached
-        if (saved === lastRolesString) return lastRolesArray;
-
-        lastRolesString = saved;
-        const parsed = JSON.parse(saved);
-
-        // Ensure we always return an array of strings
-        if (Array.isArray(parsed)) {
-          lastRolesArray = parsed
-            .map((role) => {
-              // Handle both string and object formats
-              if (typeof role === "string") {
-                return role.trim();
-              } else if (role && typeof role === "object" && role.name) {
-                return String(role.name).trim();
-              } else if (role && typeof role === "object" && role.value) {
-                return String(role.value).trim();
-              } else {
-                return String(role).trim();
-              }
-            })
-            .filter((role) => role && role.length > 0); // Remove empty strings
-        } else {
-          lastRolesArray = [];
-        }
-
-        console.log("Loaded roles from localStorage:", lastRolesArray);
-        return lastRolesArray;
-      } catch (error) {
-        console.error("Error parsing roles from localStorage:", error);
-        console.log(
-          "Raw localStorage value:",
-          localStorage.getItem("roleNames")
-        );
-        lastRolesString = null;
-        lastRolesArray = [];
-        return lastRolesArray;
-      }
-    },
-    () => []
+    getSnapshotForRoles,
+    () => [] // Server-side snapshot (empty array)
   );
 }
 

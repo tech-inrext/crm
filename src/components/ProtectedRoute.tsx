@@ -5,21 +5,20 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { Box, CircularProgress, Typography } from "@mui/material";
 
-export default function Home() {
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!loading) {
-      if (user) {
-        router.push("/dashboard");
-      } else {
-        router.push("/login");
-      }
+    if (!loading && !user) {
+      router.push("/login");
     }
   }, [user, loading, router]);
 
-  // Show loading spinner while checking authentication
   if (loading) {
     return (
       <Box
@@ -34,11 +33,17 @@ export default function Home() {
       >
         <CircularProgress size={60} sx={{ color: "white", mb: 2 }} />
         <Typography variant="h6" sx={{ color: "white" }}>
-          Loading...
+          Authenticating...
         </Typography>
       </Box>
     );
   }
 
-  return null; // This component will redirect, so no need to render anything
-}
+  if (!user) {
+    return null; // Will redirect to login
+  }
+
+  return <>{children}</>;
+};
+
+export default ProtectedRoute;
