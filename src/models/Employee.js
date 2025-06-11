@@ -17,10 +17,9 @@ const employeeSchema = new mongoose.Schema(
       trim: true,
       validate: {
         validator: function (value) {
-          // More flexible validation for testing - accept any 10+ digit number
-          return /^\d{10,}$/.test(value.replace(/[\s\-\(\)]/g, ""));
+          return validator.isMobilePhone(value, "en-IN");
         },
-        message: "Phone number must be at least 10 digits",
+        message: "Invalid Indian phone number",
       },
     },
     email: {
@@ -98,13 +97,12 @@ const employeeSchema = new mongoose.Schema(
       default: false,
     },
     passwordLastResetAt: {
-      type: Date,
-      default: Date.now,
-    },
+    type: Date,
+    default: Date.now,
+  },
   },
   { timestamps: true }
 );
 
-const Employee =
-  mongoose.models.Employee || mongoose.model("Employee", employeeSchema);
+const Employee = mongoose.models.Employee || mongoose.model("Employee", employeeSchema);
 export default Employee;

@@ -2,7 +2,6 @@ import dbConnect from "../../../../lib/mongodb";
 import Role from "../../../../models/Role";
 import cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
-import { checkPermission } from "@/utils/checkPermission"; // ✅ Make sure this utility is created
 
 // ✅ GET role by ID (only if has READ permission)
 const getRoleById = async (req, res) => {
@@ -66,39 +65,14 @@ function withAuth(handler) {
 // ✅ Final handler with RBAC
 const handler = async (req, res) => {
   await dbConnect();
-  // Skip authentication for testing
-  // const loggedInEmployee = req.employee;
-  // const roleId = loggedInEmployee?.role;
 
-  // if (!loggedInEmployee || !roleId) {
-  //   return res.status(401).json({
-  //     success: false,
-  //     message: "Unauthorized access",
-  //   });
-  // }
   // ✅ READ Role
   if (req.method === "GET") {
-    // Skip permission check for testing
-    // const hasReadAccess = await checkPermission(roleId, "read", "role");
-    // if (!hasReadAccess) {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: "You do not have READ access on role",
-    //   });
-    // }
     return getRoleById(req, res);
   }
 
   // ✅ UPDATE Role
   if (req.method === "PATCH") {
-    // Skip permission check for testing
-    // const hasWriteAccess = await checkPermission(roleId, "write", "role");
-    // if (!hasWriteAccess) {
-    //   return res.status(403).json({
-    //     success: false,
-    //     message: "You do not have WRITE access on role",
-    //   });
-    // }
     return updateRoleDetails(req, res);
   }
 
@@ -107,5 +81,4 @@ const handler = async (req, res) => {
     .json({ success: false, message: "Method not allowed" });
 };
 
-// Export handler directly without authentication middleware for testing
-export default handler;
+export default withAuth(handler);
