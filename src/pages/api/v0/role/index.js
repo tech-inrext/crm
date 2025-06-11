@@ -2,7 +2,6 @@ import dbConnect from "@/lib/mongodb";
 import Role from "@/models/Role";
 import cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
-import { checkPermission } from "@/utils/checkPermission"; // ✅ Reusable permission checker
 
 // ✅ Create a new role (requires WRITE access on "role")
 const createRole = async (req, res) => {
@@ -70,37 +69,14 @@ function withAuth(handler) {
 const handler = async (req, res) => {
   await dbConnect();
 
-  const loggedInEmployee = req.employee;
-  const roleId = loggedInEmployee?.role;
-
-  if (!loggedInEmployee || !roleId) {
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized access",
-    });
-  }
 
   // ✅ Handle GET (read permission required)
   if (req.method === "GET") {
-    const hasReadAccess = await checkPermission(roleId, "read", "role");
-    if (!hasReadAccess) {
-      return res.status(403).json({
-        success: false,
-        message: "You do not have permission to view roles",
-      });
-    }
     return getAllRoles(req, res);
   }
 
   // ✅ Handle POST (write permission required)
   if (req.method === "POST") {
-    const hasWriteAccess = await checkPermission(roleId, "write", "role");
-    if (!hasWriteAccess) {
-      return res.status(403).json({
-        success: false,
-        message: "You do not have permission to create roles",
-      });
-    }
     return createRole(req, res);
   }
 
