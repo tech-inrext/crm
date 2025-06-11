@@ -2,7 +2,6 @@ import dbConnect from "../../../../lib/mongodb";
 import Role from "../../../../models/Role";
 import cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
-import { checkPermission } from "@/utils/checkPermission"; // ✅ Make sure this utility is created
 
 // ✅ GET role by ID (only if has READ permission)
 const getRoleById = async (req, res) => {
@@ -67,37 +66,13 @@ function withAuth(handler) {
 const handler = async (req, res) => {
   await dbConnect();
 
-  const loggedInEmployee = req.employee;
-  const roleId = loggedInEmployee?.role;
-
-  if (!loggedInEmployee || !roleId) {
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized access",
-    });
-  }
-
   // ✅ READ Role
   if (req.method === "GET") {
-    const hasReadAccess = await checkPermission(roleId, "read", "role");
-    if (!hasReadAccess) {
-      return res.status(403).json({
-        success: false,
-        message: "You do not have READ access on role",
-      });
-    }
     return getRoleById(req, res);
   }
 
   // ✅ UPDATE Role
   if (req.method === "PATCH") {
-    const hasWriteAccess = await checkPermission(roleId, "write", "role");
-    if (!hasWriteAccess) {
-      return res.status(403).json({
-        success: false,
-        message: "You do not have WRITE access on role",
-      });
-    }
     return updateRoleDetails(req, res);
   }
 

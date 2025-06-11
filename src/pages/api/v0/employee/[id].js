@@ -2,7 +2,6 @@ import dbConnect from "../../../../lib/mongodb";
 import Employee from "../../../../models/Employee";
 import cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
-import { checkPermission } from "../../../../utils/checkPermission"; // utility for permission check
 
 // ✅ GET: Fetch employee by ID
 const getEmployeeById = async (req, res) => {
@@ -112,37 +111,11 @@ function withAuth(handler) {
 const handler = async (req, res) => {
   await dbConnect();
 
-  const loggedInUser = req.employee; // set by userAuth middleware
-  const roleId = loggedInUser?.role;
-
-  if (!loggedInUser || !roleId) {
-    return res.status(401).json({
-      success: false,
-      message: "Unauthorized",
-    });
-  }
-
   if (req.method === "GET") {
-    // Check if user has READ access to employee
-    const hasReadAccess = await checkPermission(roleId, "read", "employee");
-    if (!hasReadAccess) {
-      return res.status(403).json({
-        success: false,
-        message: "You do not have permission to view employee details",
-      });
-    }
     return getEmployeeById(req, res);
   }
 
   if (req.method === "PATCH") {
-    // Check if user has WRITE access to employee
-    const hasWriteAccess = await checkPermission(roleId, "write", "employee");
-    if (!hasWriteAccess) {
-      return res.status(403).json({
-        success: false,
-        message: "You do not have permission to update employee details",
-      });
-    }
     return updateEmployeeDetails(req, res);
   }
 

@@ -2,7 +2,6 @@ import dbConnect from "../../../../lib/mongodb";
 import Lead from "../../../../models/Lead";
 import cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
-import { checkPermission } from "../../../../utils/checkPermission"; // ✅ Utility function to check permissions
 
 // ✅ GET handler – Fetch a single Lead by ID
 const getLeadById = async (req, res) => {
@@ -86,34 +85,13 @@ function withAuth(handler) {
 const handler = async (req, res) => {
   await dbConnect(); // Connect to DB
 
-  const loggedInEmployee = req.employee;
-  const roleId = loggedInEmployee?.role;
-
-  if (!loggedInEmployee || !roleId) {
-    return res.status(401).json({ success: false, message: "Unauthorized" });
-  }
-
   // 🔐 Read Access
   if (req.method === "GET") {
-    const hasReadAccess = await checkPermission(roleId, "read", "lead");
-    if (!hasReadAccess) {
-      return res.status(403).json({
-        success: false,
-        message: "You do not have READ access to this resource",
-      });
-    }
     return getLeadById(req, res);
   }
 
   // 🔐 Write Access
   if (req.method === "PATCH") {
-    const hasWriteAccess = await checkPermission(roleId, "write", "lead");
-    if (!hasWriteAccess) {
-      return res.status(403).json({
-        success: false,
-        message: "You do not have WRITE access to this resource",
-      });
-    }
     return updateLeadDetails(req, res);
   }
 
