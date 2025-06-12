@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
+import { PermissionsProvider } from "../contexts/PermissionsContext";
 import MuiRootProvider from "../components/ui/MuiRootProvider";
 
 const geistSans = Geist({
@@ -29,8 +30,11 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
+        {" "}
         <MuiRootProvider>
-          <AuthProvider>{children}</AuthProvider>
+          <AuthProvider>
+            <PermissionsProvider>{children}</PermissionsProvider>
+          </AuthProvider>
         </MuiRootProvider>
       </body>
     </html>

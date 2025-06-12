@@ -11,6 +11,8 @@ import useMediaQuery from "@mui/material/useMediaQuery";
 import Leads from "./Leads";
 import Users from "./Users";
 import Roles from "./Roles";
+import { usePermissions } from "../../contexts/PermissionsContext";
+import PermissionGuard from "../../components/PermissionGuard";
 
 // Toolbar actions (placeholder for user/account)
 export const DashboardToolbarActions: React.FC = () => (
@@ -26,6 +28,7 @@ export type SidebarLink =
   | {
       label: string;
       href: string;
+      module?: string;
       icon?: React.ReactNode;
       children?: SidebarLink[];
     };
@@ -35,6 +38,7 @@ const Dashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState("dashboard");
+  const { hasReadAccess, loading: permissionsLoading } = usePermissions();
 
   // Use a more specific breakpoint to avoid hydration issues
   const isMobile = useMediaQuery("(max-width: 600px)", {
@@ -44,9 +48,8 @@ const Dashboard: React.FC = () => {
   React.useEffect(() => {
     setMounted(true);
   }, []);
-
   // Show loading state without complex styling to avoid hydration errors
-  if (!mounted) {
+  if (!mounted || permissionsLoading) {
     return (
       <Box
         sx={{
@@ -62,8 +65,8 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  // Sidebar navigation structure matching the image
-  const sidebarLinks: SidebarLink[] = [
+  // Sidebar navigation structure with permission-based filtering
+  const allSidebarLinks: SidebarLink[] = [
     {
       label: "Dashboard",
       href: "dashboard",
@@ -86,6 +89,7 @@ const Dashboard: React.FC = () => {
     {
       label: "Leads",
       href: "leads",
+      module: "lead",
       icon: (
         <svg
           width="24"
@@ -106,6 +110,7 @@ const Dashboard: React.FC = () => {
     {
       label: "Users",
       href: "users",
+      module: "employee",
       icon: (
         <svg
           width="24"
@@ -127,6 +132,7 @@ const Dashboard: React.FC = () => {
     {
       label: "Roles",
       href: "roles",
+      module: "role",
       icon: (
         <svg
           width="24"
@@ -143,14 +149,32 @@ const Dashboard: React.FC = () => {
       ),
     },
   ];
-
+  // Filter sidebar links based on permissions
+  const sidebarLinks = allSidebarLinks.filter((link) => {
+    if ("kind" in link) return true; // Always show headers and dividers
+    if (!("module" in link)) return true; // Always show dashboard
+    if (!link.module) return true; // Show links without module specified
+    return hasReadAccess(link.module);
+  });
   let content;
   if (selected === "leads") {
-    content = <Leads />;
+    content = (
+      <PermissionGuard module="lead" action="read" hideWhenNoAccess>
+        <Leads />
+      </PermissionGuard>
+    );
   } else if (selected === "users") {
-    content = <Users />;
+    content = (
+      <PermissionGuard module="employee" action="read" hideWhenNoAccess>
+        <Users />
+      </PermissionGuard>
+    );
   } else if (selected === "roles") {
-    content = <Roles />;
+    content = (
+      <PermissionGuard module="role" action="read" hideWhenNoAccess>
+        <Roles />
+      </PermissionGuard>
+    );
   } else {
     content = (
       <Typography

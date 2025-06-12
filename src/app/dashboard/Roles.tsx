@@ -8,6 +8,7 @@ import AddRoleDialog from "../../components/ui/AddRoleDialog";
 import Pagination from "../../components/ui/Pagination";
 import { CircularProgress } from "@mui/material";
 import axios from "axios";
+import PermissionGuard from "../../components/PermissionGuard";
 
 interface RoleWithPermissions {
   _id?: string;
@@ -240,16 +241,24 @@ const Roles = () => {
       }
     }
     if (!permissions.length) return;
-
     const updatedRole = { ...role, name: trimmed, permissions };
     const apiRole = transformToAPIRole(updatedRole);
 
-    setSaving(true);
+    console.log("Attempting to update role:", { roleId: role._id, apiRole }); // Debug log    setSaving(true);
     try {
-      await axios.patch(`${API_BASE}/${role._id}`, apiRole, {
+      const response = await axios.patch(`${API_BASE}/${role._id}`, apiRole, {
         withCredentials: true,
       });
-      setRoles((prev) => prev.map((r, i) => (i === editIdx ? updatedRole : r)));
+
+      console.log("Role update response:", response.data); // Debug log
+
+      // Update the role in the local state with the response data
+      const updatedRoleFromAPI = transformAPIRole(
+        response.data.data || response.data
+      );
+      setRoles((prev) =>
+        prev.map((r, i) => (i === editIdx ? updatedRoleFromAPI : r))
+      );
 
       // Update localStorage for Users page
       const roleNames = roles.map((r, i) => (i === editIdx ? trimmed : r.name));
@@ -269,6 +278,17 @@ const Roles = () => {
       );
     } catch (error) {
       console.error("Failed to update role:", error);
+
+      // Show user-friendly error message
+      let errorMessage = "Failed to update role";
+      if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+
+      // You could show a toast notification here
+      alert(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -298,24 +318,27 @@ const Roles = () => {
   const pagedRoles = roles.slice((page - 1) * pageSize, page * pageSize);
   return (
     <Box sx={{ mt: 2, ml: { xs: 0, sm: 2 }, maxWidth: 700, width: "100%" }}>
+      {" "}
       <Typography sx={{ fontWeight: 700, fontSize: 20, mb: 2, color: "#000" }}>
         Roles & Permissions
       </Typography>
-      <MyButton
-        variant="contained"
-        onClick={() => setAddOpen(true)}
-        disabled={saving}
-        sx={{
-          bgcolor: "#1976d2",
-          color: "#fff",
-          fontWeight: 600,
-          minWidth: 120,
-          width: { xs: "100%", sm: "auto" },
-          mb: { xs: 2, sm: 0 },
-        }}
-      >
-        {saving ? <CircularProgress size={20} color="inherit" /> : "Add"}
-      </MyButton>
+      <PermissionGuard module="role" action="write" hideWhenNoAccess>
+        <MyButton
+          variant="contained"
+          onClick={() => setAddOpen(true)}
+          disabled={saving}
+          sx={{
+            bgcolor: "#1976d2",
+            color: "#fff",
+            fontWeight: 600,
+            minWidth: 120,
+            width: { xs: "100%", sm: "auto" },
+            mb: { xs: 2, sm: 0 },
+          }}
+        >
+          {saving ? <CircularProgress size={20} color="inherit" /> : "Add"}
+        </MyButton>
+      </PermissionGuard>
       <AddRoleDialog
         open={addOpen}
         roleName={roleName}

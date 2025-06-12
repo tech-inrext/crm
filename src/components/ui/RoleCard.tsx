@@ -5,6 +5,7 @@ import Typography from "@mui/material/Typography";
 import MyButton from "./MyButton";
 import EditIcon from "@mui/icons-material/Edit";
 import TextField from "@mui/material/TextField";
+import PermissionGuard from "../PermissionGuard";
 
 interface RoleCardProps {
   role: { name: string; permissions: string[] };
@@ -87,17 +88,19 @@ const RoleCard: React.FC<RoleCardProps> = ({
             onClick={onEditCancel}
           >
             Cancel
-          </MyButton>
+          </MyButton>{" "}
         </>
       ) : (
-        <MyButton
-          size="small"
-          variant="outlined"
-          sx={{ ml: 2, minWidth: 36, p: 0 }}
-          onClick={onEditClick}
-        >
-          <EditIcon sx={{ fontSize: 22, color: "#1976d2" }} />
-        </MyButton>
+        <PermissionGuard module="role" action="write" hideWhenNoAccess>
+          <MyButton
+            size="small"
+            variant="outlined"
+            sx={{ ml: 2, minWidth: 36, p: 0 }}
+            onClick={onEditClick}
+          >
+            <EditIcon sx={{ fontSize: 22, color: "#1976d2" }} />
+          </MyButton>
+        </PermissionGuard>
       )}
     </Box>
     {isExpanded && (

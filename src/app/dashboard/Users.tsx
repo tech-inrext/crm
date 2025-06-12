@@ -25,6 +25,7 @@ import TableMap, {
   TableActionHandlers,
 } from "../../components/ui/TableMap";
 import Pagination from "../../components/ui/Pagination";
+import PermissionGuard from "../../components/PermissionGuard";
 // Use React 18's useSyncExternalStore or provide a simple fallback for React 17
 const useSyncExternalStore =
   React.useSyncExternalStore ||
@@ -75,22 +76,26 @@ const header: TableHeader<Employee>[] = [
     label: "Actions",
     component: (row: Employee, handlers: TableActionHandlers<Employee>) => (
       <>
-        <IconButton
-          aria-label="edit"
-          onClick={() => handlers.onEdit(row)}
-          size="small"
-        >
-          <Edit fontSize="inherit" />
-        </IconButton>
+        <PermissionGuard module="employee" action="write" hideWhenNoAccess>
+          <IconButton
+            aria-label="edit"
+            onClick={() => handlers.onEdit(row)}
+            size="small"
+          >
+            <Edit fontSize="inherit" />
+          </IconButton>
+        </PermissionGuard>
 
-        <IconButton
-          aria-label="delete"
-          onClick={() => handlers.onDelete(row)}
-          size="small"
-          color="error"
-        >
-          <Delete fontSize="inherit" />
-        </IconButton>
+        <PermissionGuard module="employee" action="delete" hideWhenNoAccess>
+          <IconButton
+            aria-label="delete"
+            onClick={() => handlers.onDelete(row)}
+            size="small"
+            color="error"
+          >
+            <Delete fontSize="inherit" />
+          </IconButton>
+        </PermissionGuard>
       </>
     ),
   },
@@ -202,7 +207,8 @@ const Users: React.FC = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);  const [fieldErrors, setFieldErrors] = useState<{
+  const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
     phone?: string;
     role?: string;
@@ -287,17 +293,38 @@ const Users: React.FC = () => {
     setSaving(true);
     setError(null);
     setFieldErrors({});
-
     try {
+      // Clean up form data before sending
+      const cleanedForm = { ...form };
+
+      // Remove empty optional fields to avoid validation issues
+      if (!cleanedForm.managerId?.trim()) {
+        delete cleanedForm.managerId;
+      }
+      if (!cleanedForm.departmentId?.trim()) {
+        delete cleanedForm.departmentId;
+      }
+      if (!cleanedForm.altPhone?.trim()) {
+        delete cleanedForm.altPhone;
+      }
+      if (!cleanedForm.gender?.trim()) {
+        delete cleanedForm.gender;
+      }
+      if (!cleanedForm.age) {
+        delete cleanedForm.age;
+      }
+
       if (editId) {
         // Edit - use PATCH instead of PUT to match API
-        await axios.patch(`${API_BASE}/${editId}`, form);
+        await axios.patch(`${API_BASE}/${editId}`, cleanedForm);
         setEmployees((prev) =>
-          prev.map((e) => ((e._id || e.id) === editId ? { ...e, ...form } : e))
+          prev.map((e) =>
+            (e._id || e.id) === editId ? { ...e, ...cleanedForm } : e
+          )
         );
       } else {
-        // Add - send all form data to API
-        const res = await axios.post(API_BASE, form);
+        // Add - send cleaned form data to API
+        const res = await axios.post(API_BASE, cleanedForm);
         const newEmployee = res.data.data || res.data;
         setEmployees((prev) => [newEmployee, ...prev]);
       }
@@ -415,23 +442,25 @@ const Users: React.FC = () => {
                 }
                 placeholder="Search by name or role"
               />
-            </Box>
+            </Box>{" "}
           </Box>
-          <Button
-            variant="contained"
-            startIcon={<Add />}
-            onClick={() => handleOpen(undefined)}
-            sx={{
-              minWidth: 120,
-              width: { xs: "100%", sm: "auto" },
-              fontWeight: 600,
-              bgcolor: "#1976d2",
-              color: "#fff",
-              boxShadow: 2,
-            }}
-          >
-            Add Employee
-          </Button>
+          <PermissionGuard module="employee" action="write" hideWhenNoAccess>
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() => handleOpen(undefined)}
+              sx={{
+                minWidth: 120,
+                width: { xs: "100%", sm: "auto" },
+                fontWeight: 600,
+                bgcolor: "#1976d2",
+                color: "#fff",
+                boxShadow: 2,
+              }}
+            >
+              Add Employee
+            </Button>
+          </PermissionGuard>
         </Box>
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
@@ -540,7 +569,8 @@ const Users: React.FC = () => {
             error={!!fieldErrors.phone}
             helperText={fieldErrors.phone || ""}
             inputProps={{ "aria-label": "Employee phone" }}
-          />          <TextField
+          />{" "}
+          <TextField
             label="Role"
             select
             value={form.role || ""}

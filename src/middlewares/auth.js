@@ -5,6 +5,47 @@ import { checkPermission } from "../utils/checkPermission";
 
 const MODULES = ["lead", "employee", "role"];
 
+// Simple token verification without permission checking
+export async function verifyToken(req, res, next) {
+  try {
+    await dbConnect();
+    const { token } = req.cookies;
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required: No token provided",
+      });
+    }
+
+    const decodeObj = jwt.verify(token, "rahul@123");
+    const { _id } = decodeObj;
+
+    const employee = await Employee.findById(_id).populate("role");
+    if (!employee) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication failed: User not found",
+      });
+    }
+
+    // Set user in request for permission middleware
+    req.user = employee;
+    next();
+  } catch (err) {
+    console.log("Auth Error Details:", {
+      error: err.message,
+      url: req.url,
+      method: req.method,
+      cookies: req.cookies,
+    });
+    return res.status(401).json({
+      success: false,
+      message: "Authentication failed: " + err.message,
+    });
+  }
+}
+
 export async function userAuth(req, res, next) {
   try {
     await dbConnect();

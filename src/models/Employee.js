@@ -66,12 +66,22 @@ const employeeSchema = new mongoose.Schema(
     departmentId: {
       type: String,
       trim: true,
-      minlength: [2, "Department ID must be at least 2 characters long"],
+      validate: {
+        validator: function (value) {
+          return !value || value.length >= 2;
+        },
+        message: "Department ID must be at least 2 characters long if provided",
+      },
     },
     managerId: {
       type: String,
       trim: true,
-      minlength: [2, "Manager ID must be at least 2 characters long"],
+      validate: {
+        validator: function (value) {
+          return !value || value.length >= 2;
+        },
+        message: "Manager ID must be at least 2 characters long if provided",
+      },
     },
     designation: {
       type: String,
@@ -81,9 +91,9 @@ const employeeSchema = new mongoose.Schema(
       required: [true, "Designation is required"],
     },
     role: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Role",
+      type: String,
       required: true,
+      trim: true,
     },
     password: {
       type: String,

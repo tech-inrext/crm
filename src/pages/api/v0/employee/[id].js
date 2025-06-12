@@ -1,7 +1,7 @@
 import dbConnect from "../../../../lib/mongodb";
 import Employee from "../../../../models/Employee";
-import cookie from "cookie";
-import { userAuth } from "../../../../middlewares/auth";
+import { verifyToken } from "../../../../middlewares/auth";
+import { checkPermission } from "../../../../middlewares/permissions";
 
 // ✅ GET: Fetch employee by ID
 const getEmployeeById = async (req, res) => {
@@ -30,6 +30,34 @@ const getEmployeeById = async (req, res) => {
   }
 };
 
+// ✅ DELETE: Delete employee by ID
+const deleteEmployee = async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    const employee = await Employee.findByIdAndDelete(id);
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        error: "Employee not found",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Employee deleted successfully",
+      data: employee,
+    });
+  } catch (error) {
+    console.error("Error deleting employee:", error);
+    return res.status(500).json({
+      success: false,
+      error: "Server Error: " + error.message,
+    });
+  }
+};
+
 // ✅ PATCH: Update allowed fields only
 const updateEmployeeDetails = async (req, res) => {
   const { id } = req.query;
@@ -38,21 +66,21 @@ const updateEmployeeDetails = async (req, res) => {
     req.body;
 
   // Fields that are NOT allowed to be updated
-  const notAllowedFields = ["phone", "email", "joiningDate", "departmentId"];
+  // const notAllowedFields = ["phone", "email", "joiningDate"];
 
-  const requestFields = Object.keys(req.body);
-  const invalidFields = requestFields.filter((field) =>
-    notAllowedFields.includes(field)
-  );
+  // const requestFields = Object.keys(req.body);
+  // const invalidFields = requestFields.filter((field) =>
+  // notAllowedFields.includes(field)
+  //);
 
-  if (invalidFields.length > 0) {
-    return res.status(400).json({
-      success: false,
-      message: `You are not allowed to update these field(s): ${invalidFields.join(
-        ", "
-      )}`,
-    });
-  }
+  // if (invalidFields.length > 0) {
+  //   return res.status(400).json({
+  //     success: false,
+  //     message: `You are not allowed to update these field(s): ${invalidFields.join(
+  //       ", "
+  //     )}`,
+  //   });
+  // }
 
   // Build the update object dynamically
   const updateFields = {
@@ -92,25 +120,55 @@ const updateEmployeeDetails = async (req, res) => {
   }
 };
 
-// ✅ Auth Wrapper
-function withAuth(handler) {
-  return async (req, res) => {
-    const parsedCookies = cookie.parse(req.headers.cookie || "");
-    req.cookies = parsedCookies;
-    await userAuth(req, res, () => handler(req, res));
-  };
-}
-
 // ✅ Main Handler with Permission Check
 const handler = async (req, res) => {
   await dbConnect();
 
+  // Apply authentication middleware
+  await new Promise((resolve, reject) => {
+    verifyToken(req, res, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+
   if (req.method === "GET") {
-    return getEmployeeById(req, res);
+    // Check read permission for employee module
+    return new Promise((resolve, reject) => {
+      checkPermission("employee", "read")(req, res, (err) => {
+        if (err) reject(err);
+        else {
+          getEmployeeById(req, res);
+          resolve();
+        }
+      });
+    });
   }
 
   if (req.method === "PATCH") {
-    return updateEmployeeDetails(req, res);
+    // Check write permission for employee module
+    return new Promise((resolve, reject) => {
+      checkPermission("employee", "write")(req, res, (err) => {
+        if (err) reject(err);
+        else {
+          updateEmployeeDetails(req, res);
+          resolve();
+        }
+      });
+    });
+  }
+
+  if (req.method === "DELETE") {
+    // Check delete permission for employee module
+    return new Promise((resolve, reject) => {
+      checkPermission("employee", "delete")(req, res, (err) => {
+        if (err) reject(err);
+        else {
+          deleteEmployee(req, res);
+          resolve();
+        }
+      });
+    });
   }
 
   // Unsupported method

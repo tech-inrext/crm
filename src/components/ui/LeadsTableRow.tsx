@@ -2,6 +2,7 @@ import React from "react";
 import { TableCell, TableRow, IconButton } from "@mui/material";
 import { Edit, Delete } from "@mui/icons-material";
 import { Lead } from "../../app/dashboard/Leads";
+import PermissionGuard from "../PermissionGuard";
 
 interface LeadsTableRowProps {
   row: Lead;

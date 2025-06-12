@@ -15,6 +15,9 @@ import MySearchBar from "../../components/ui/MySearchBar";
 import LeadsTableHeader from "../../components/ui/LeadsTableHeader";
 import LeadsTableRow from "../../components/ui/LeadsTableRow";
 import LeadDialog from "../../components/ui/LeadDialog";
+import PermissionGuard from "../../components/PermissionGuard";
+import { Edit, Delete } from "@mui/icons-material";
+import { IconButton } from "@mui/material";
 
 // Frontend Lead interface (matching current UI structure)
 export interface Lead {
@@ -80,12 +83,40 @@ const transformToAPILead = (lead: Omit<Lead, "_id">): Partial<APILead> => {
 
 const header = [
   { label: "Company", dataKey: "name" },
-  { label: "Contact", dataKey: "contact" },
   { label: "Email", dataKey: "email" },
   { label: "Phone", dataKey: "phone" },
   { label: "Status", dataKey: "status" },
   { label: "Value", dataKey: "value" },
-  { label: "Actions" },
+  {
+    label: "Actions",
+    component: (
+      row: Lead,
+      handlers: { onEdit: (lead: Lead) => void; onDelete: (lead: Lead) => void }
+    ) => (
+      <>
+        <PermissionGuard module="lead" action="write" hideWhenNoAccess>
+          <IconButton
+            aria-label="edit"
+            onClick={() => handlers.onEdit(row)}
+            size="small"
+            sx={{ mr: 1 }}
+          >
+            <Edit fontSize="small" />
+          </IconButton>
+        </PermissionGuard>
+        <PermissionGuard module="lead" action="delete" hideWhenNoAccess>
+          <IconButton
+            aria-label="delete"
+            onClick={() => handlers.onDelete(row)}
+            size="small"
+            color="error"
+          >
+            <Delete fontSize="small" />
+          </IconButton>
+        </PermissionGuard>
+      </>
+    ),
+  },
 ];
 
 const Leads: React.FC = () => {
@@ -300,23 +331,29 @@ const Leads: React.FC = () => {
               }
               placeholder="Search leads"
             />
-          </Box>
+          </Box>{" "}
         </Box>{" "}
-        <Button
-          variant="contained"
-          onClick={() => handleOpen()}
-          disabled={saving}
-          sx={{
-            minWidth: 120,
-            width: { xs: "100%", sm: "auto" },
-            fontWeight: 600,
-            bgcolor: "#1976d2",
-            color: "#fff",
-            boxShadow: 2,
-          }}
-        >
-          {saving ? <CircularProgress size={20} color="inherit" /> : "Add Lead"}
-        </Button>
+        <PermissionGuard module="lead" action="write" hideWhenNoAccess>
+          <Button
+            variant="contained"
+            onClick={() => handleOpen()}
+            disabled={saving}
+            sx={{
+              minWidth: 120,
+              width: { xs: "100%", sm: "auto" },
+              fontWeight: 600,
+              bgcolor: "#1976d2",
+              color: "#fff",
+              boxShadow: 2,
+            }}
+          >
+            {saving ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              "Add Lead"
+            )}
+          </Button>
+        </PermissionGuard>
       </Box>
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>

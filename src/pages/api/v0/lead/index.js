@@ -1,7 +1,7 @@
 import dbConnect from "../../../../lib/mongodb";
 import Lead from "../../../../models/Lead";
-import cookie from "cookie";
-import { userAuth } from "../../../../middlewares/auth";
+import { verifyToken } from "../../../../middlewares/auth";
+import { checkPermission } from "../../../../middlewares/permissions";
 
 // ✅ Create Lead (WRITE Access Required)
 const createLead = async (req, res) => {
@@ -69,27 +69,42 @@ const getAllLeads = async (req, res) => {
   }
 };
 
-// ✅ Middleware Wrapper for Authentication
-function withAuth(handler) {
-  return async (req, res) => {
-    const parsedCookies = cookie.parse(req.headers.cookie || "");
-    req.cookies = parsedCookies;
-    await userAuth(req, res, () => handler(req, res));
-  };
-}
-
 // ✅ Main Handler With Role-Based Permission Checks
 const handler = async (req, res) => {
   await dbConnect();
 
+  // Apply authentication middleware
+  await new Promise((resolve, reject) => {
+    verifyToken(req, res, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+
   // 🔒 READ Operation
   if (req.method === "GET") {
-    return getAllLeads(req, res);
+    return new Promise((resolve, reject) => {
+      checkPermission("lead", "read")(req, res, (err) => {
+        if (err) reject(err);
+        else {
+          getAllLeads(req, res);
+          resolve();
+        }
+      });
+    });
   }
 
   // ✏️ WRITE Operation
   if (req.method === "POST") {
-    return createLead(req, res);
+    return new Promise((resolve, reject) => {
+      checkPermission("lead", "write")(req, res, (err) => {
+        if (err) reject(err);
+        else {
+          createLead(req, res);
+          resolve();
+        }
+      });
+    });
   }
 
   return res
@@ -97,5 +112,5 @@ const handler = async (req, res) => {
     .json({ success: false, message: "Method not allowed" });
 };
 
-// Export handler directly without authentication middleware for testing
+// Export handler with authentication and permission middleware
 export default handler;

@@ -2,6 +2,8 @@ import dbConnect from "../../../../lib/mongodb";
 import Employee from "../../../../models/Employee";
 import Role from "../../../../models/Role"; // role model
 import bcrypt from "bcrypt";
+import { checkPermission } from "../../../../middlewares/permissions";
+import { verifyToken } from "../../../../middlewares/auth";
 
 // ✅ Create new employee (WRITE Access Required)
 const createEmployee = async (req, res) => {
@@ -54,22 +56,21 @@ const createEmployee = async (req, res) => {
           .status(400)
           .json({ success: false, message: `Role '${role}' not found` });
       }
-    }
-
-    // ✅ Create new employee
+    } // ✅ Create new employee
     const newEmployee = new Employee({
       name,
       email,
       phone,
       password: hashedPassword,
-      altPhone,
+      altPhone: altPhone || undefined,
       address,
-      gender,
-      age,
+      gender: gender || undefined,
+      age: age || undefined,
       joiningDate: joiningDate ? new Date(joiningDate) : undefined,
       designation,
-      managerId,
-      departmentId,
+      managerId: managerId && managerId.trim() ? managerId : undefined,
+      departmentId:
+        departmentId && departmentId.trim() ? departmentId : undefined,
       role,
     });
 
@@ -114,16 +115,42 @@ const getAllEmployees = async (req, res) => {
   }
 };
 
-// ✅ Main Handler
+// ✅ Main Handler with permission checks
 const handler = async (req, res) => {
   await dbConnect();
 
+  // Apply authentication middleware
+  await new Promise((resolve, reject) => {
+    verifyToken(req, res, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+
   if (req.method === "GET") {
-    return getAllEmployees(req, res);
+    // Check read permission for employee module
+    return new Promise((resolve, reject) => {
+      checkPermission("employee", "read")(req, res, (err) => {
+        if (err) reject(err);
+        else {
+          getAllEmployees(req, res);
+          resolve();
+        }
+      });
+    });
   }
 
   if (req.method === "POST") {
-    return createEmployee(req, res);
+    // Check write permission for employee module
+    return new Promise((resolve, reject) => {
+      checkPermission("employee", "write")(req, res, (err) => {
+        if (err) reject(err);
+        else {
+          createEmployee(req, res);
+          resolve();
+        }
+      });
+    });
   }
 
   return res
@@ -131,5 +158,5 @@ const handler = async (req, res) => {
     .json({ success: false, message: "Method not allowed" });
 };
 
-// Export handler directly without authentication middleware for testing
+// Export handler with authentication and permission middleware
 export default handler;
