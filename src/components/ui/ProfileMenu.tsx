@@ -8,7 +8,7 @@ import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import { Logout, Person, Settings } from "@mui/icons-material";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "../../contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
 const ProfileMenu: React.FC = () => {

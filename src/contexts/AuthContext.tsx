@@ -3,6 +3,9 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 
+// Configure axios to include credentials
+axios.defaults.withCredentials = true;
+
 interface User {
   _id: string;
   name: string;
@@ -37,48 +40,82 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const checkAuth = async () => {
     try {
-      const response = await axios.get("/api/v0/employee/loggedInUserProfile");
+      // Try the enhanced profile endpoint that supports multiple auth methods
+      const response = await axios.get("/api/v0/employee/profileEnhanced", {
+        withCredentials: true,
+        timeout: 5000,
+      });
+
       if (response.data.success && response.data.data) {
+        console.log("✅ Authentication successful:", response.data.data);
         setUser(response.data.data);
       } else {
+        console.log("❌ Authentication failed:", response.data.message);
         setUser(null);
       }
-    } catch (error) {
-      console.log("Not authenticated:", error);
+    } catch (error: any) {
+      console.log(
+        "❌ Auth check error:",
+        error.response?.data?.message || error.message
+      );
       setUser(null);
     } finally {
       setLoading(false);
     }
   };
 
-  const clearSession = async () => {
-    try {
-      await axios.post("/api/v0/employee/logout");
-    } catch (error) {
-      console.error("Logout error:", error);
-    } finally {
-      setUser(null);
-    }
-  };
-
   const login = async (email: string, password: string) => {
-    const response = await axios.post("/api/v0/employee/login", {
-      email,
-      password,
-    });
+    try {
+      const response = await axios.post(
+        "/api/v0/employee/login",
+        {
+          email,
+          password,
+        },
+        {
+          withCredentials: true,
+          timeout: 10000,
+        }
+      );
 
-    if (response.data.success) {
-      setUser(response.data.employee);
-    } else {
-      throw new Error(response.data.message || "Login failed");
+      if (response.data.success) {
+        console.log("✅ Login successful:", response.data.employee);
+
+        // Set user from login response
+        setUser(response.data.employee);
+
+        // Also verify auth check works after login
+        setTimeout(() => {
+          checkAuth();
+        }, 100);
+      } else {
+        throw new Error(response.data.message || "Login failed");
+      }
+    } catch (error: any) {
+      console.error(
+        "❌ Login error:",
+        error.response?.data?.message || error.message
+      );
+      throw new Error(error.response?.data?.message || "Login failed");
     }
   };
 
   const logout = async () => {
     try {
-      await axios.post("/api/v0/employee/logout");
-    } catch (error) {
-      console.error("Logout error:", error);
+      await axios.post(
+        "/api/v0/employee/logout",
+        {},
+        {
+          withCredentials: true,
+          timeout: 5000,
+        }
+      );
+      console.log("✅ Logout successful");
+    } catch (error: any) {
+      console.error(
+        "❌ Logout error:",
+        error.response?.data?.message || error.message
+      );
     } finally {
       setUser(null);
     }
@@ -88,64 +125,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     checkAuth();
   }, []);
 
-  // Aggressive session management - clear session when user leaves page
+  // Simplified activity tracking (no aggressive session management)
   useEffect(() => {
     if (!user) return;
 
-    const handleVisibilityChange = () => {
-      if (document.hidden) {
-        console.log("Page hidden - clearing session");
-        clearSession();
-      }
-    };
-
-    const handleWindowBlur = () => {
-      console.log("Window blur - clearing session");
-      clearSession();
-    };
-
-    const handleBeforeUnload = () => {
-      console.log("Page unload - clearing session");
-      clearSession();
-    };
-
-    const handlePageHide = () => {
-      console.log("Page hide - clearing session");
-      clearSession();
-    };
-
-    // Add event listeners
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    window.addEventListener("blur", handleWindowBlur);
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    window.addEventListener("pagehide", handlePageHide);
-
-    // Auto-logout after 5 minutes of inactivity
+    // Only auto-logout after very long inactivity (2 hours)
     let inactivityTimer: NodeJS.Timeout;
 
     const resetInactivityTimer = () => {
       clearTimeout(inactivityTimer);
       inactivityTimer = setTimeout(() => {
-        console.log("Inactivity timeout - clearing session");
-        clearSession();
-      }, 5 * 60 * 1000); // 5 minutes
+        console.log("⏰ Long inactivity timeout - logging out");
+        logout();
+      }, 2 * 60 * 60 * 1000); // 2 hours
     };
 
     const handleActivity = () => {
       resetInactivityTimer();
     };
 
-    // Track user activity
-    const activityEvents = [
-      "mousedown",
-      "mousemove",
-      "keypress",
-      "scroll",
-      "touchstart",
-      "click",
-    ];
+    // Track minimal user activity
+    const activityEvents = ["mousedown", "keypress", "touchstart"];
     activityEvents.forEach((event) => {
-      document.addEventListener(event, handleActivity, true);
+      document.addEventListener(event, handleActivity, { passive: true });
     });
 
     // Start inactivity timer
@@ -153,15 +155,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Cleanup
     return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      window.removeEventListener("blur", handleWindowBlur);
-      window.removeEventListener("beforeunload", handleBeforeUnload);
-      window.removeEventListener("pagehide", handlePageHide);
-
       activityEvents.forEach((event) => {
-        document.removeEventListener(event, handleActivity, true);
+        document.removeEventListener(event, handleActivity);
       });
-
       clearTimeout(inactivityTimer);
     };
   }, [user]);

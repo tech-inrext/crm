@@ -2,7 +2,7 @@
 
 import React, { useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "@/contexts/AuthContext";
+import { useAuth } from "../contexts/AuthContext";
 import { Box, CircularProgress, Typography } from "@mui/material";
 
 interface ProtectedRouteProps {
@@ -19,6 +19,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     }
   }, [user, loading, router]);
 
+  // Simplified loading state to avoid hydration issues
   if (loading) {
     return (
       <Box
@@ -28,7 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
           alignItems: "center",
           justifyContent: "center",
           minHeight: "100vh",
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+          backgroundColor: "#667eea",
         }}
       >
         <CircularProgress size={60} sx={{ color: "white", mb: 2 }} />

@@ -12,15 +12,7 @@ export interface TableActionHandlers<T> {
   onDelete: (row: T) => void;
 }
 
-export interface Employee {
-  name: string;
-  email: string;
-  phone: string;
-  role: string;
-  status: string;
-  // add more fields if necessary
-}
-interface TableHeader<T> {
+export interface TableHeader<T> {
   label: string;
   dataKey?: keyof T;
   component?: (row: T, handlers: TableActionHandlers<T>) => React.ReactNode;
@@ -59,7 +51,7 @@ function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
   );
 }
 
-export default React.memo(TableMap);
+export default TableMap as <T>(props: TableMapProps<T>) => JSX.Element;
 export type TableHeaderType<T> =
   | {
       label: string;

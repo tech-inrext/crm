@@ -2,7 +2,7 @@ import React from "react";
 import Paper from "@mui/material/Paper";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
-import MyButton from "@/components/ui/MyButton";
+import MyButton from "./MyButton";
 import EditIcon from "@mui/icons-material/Edit";
 import TextField from "@mui/material/TextField";
 

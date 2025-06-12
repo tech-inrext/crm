@@ -67,13 +67,11 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       trim: true,
       minlength: [2, "Department ID must be at least 2 characters long"],
-      required: [true, "Department ID is required"],
     },
     managerId: {
       type: String,
       trim: true,
       minlength: [2, "Manager ID must be at least 2 characters long"],
-      required: [true, "Manager ID is required"],
     },
     designation: {
       type: String,
@@ -97,12 +95,13 @@ const employeeSchema = new mongoose.Schema(
       default: false,
     },
     passwordLastResetAt: {
-    type: Date,
-    default: Date.now,
-  },
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );
 
-const Employee = mongoose.models.Employee || mongoose.model("Employee", employeeSchema);
+const Employee =
+  mongoose.models.Employee || mongoose.model("Employee", employeeSchema);
 export default Employee;

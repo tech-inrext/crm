@@ -7,7 +7,7 @@ import TextField from "@mui/material/TextField";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
-import MyButton from "@/components/ui/MyButton";
+import MyButton from "./MyButton";
 
 interface AddRoleDialogProps {
   open: boolean;

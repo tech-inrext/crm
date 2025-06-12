@@ -13,26 +13,38 @@ import {
   CircularProgress,
   useMediaQuery,
   Alert,
+  TextField,
+  MenuItem,
 } from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import axios from "axios";
-import MySearchBar from "@/components/ui/MySearchBar";
-import TextField from "@mui/material/TextField";
-import MenuItem from "@mui/material/MenuItem";
-import { useSyncExternalStore } from "react";
-import TableMap from "@/components/ui/TableMap";
-import Pagination from "@/components/ui/Pagination";
+import MySearchBar from "../../components/ui/MySearchBar";
+import TableMap, {
+  TableHeader,
+  TableActionHandlers,
+} from "../../components/ui/TableMap";
+import Pagination from "../../components/ui/Pagination";
+// Use React 18's useSyncExternalStore or provide a simple fallback for React 17
+const useSyncExternalStore =
+  React.useSyncExternalStore ||
+  ((
+    subscribe: (callback: () => void) => () => void,
+    getSnapshot: () => unknown
+  ) => {
+    const [, forceUpdate] = React.useReducer((x: number) => x + 1, 0);
 
-type TableActionHandlers<T> = {
-  onEdit: (row: T) => void;
-  onDelete: (row: T) => void;
-};
-type TableHeader<T> = {
-  label: string;
-  dataKey?: keyof T;
-  component?: (row: T, handlers: TableActionHandlers<T>) => React.ReactNode;
-};
+    React.useEffect(() => {
+      const unsubscribe = subscribe(() => {
+        forceUpdate();
+      });
+      return unsubscribe;
+    }, [subscribe]);
+
+    return getSnapshot();
+  });
+
+// Remove duplicate type definitions since we're importing from TableMap
 
 // Table header definition: supports both data and action columns
 
@@ -43,7 +55,6 @@ export interface Employee {
   email: string;
   phone: string;
   role: string;
-  status: string;
   address?: string;
   designation?: string;
   managerId?: string;
@@ -60,7 +71,6 @@ const header: TableHeader<Employee>[] = [
   { label: "Email", dataKey: "email" },
   { label: "Phone", dataKey: "phone" },
   { label: "Role", dataKey: "role" },
-  { label: "Status", dataKey: "status" },
   {
     label: "Actions",
     component: (row: Employee, handlers: TableActionHandlers<Employee>) => (
@@ -91,7 +101,14 @@ const defaultForm: Omit<Employee, "_id" | "dateJoined"> = {
   email: "",
   phone: "",
   role: "",
-  status: "",
+  address: "",
+  designation: "",
+  managerId: "",
+  departmentId: "",
+  gender: "",
+  age: undefined,
+  altPhone: "",
+  joiningDate: "",
 };
 
 // Helper to subscribe to roles changes in localStorage
@@ -185,10 +202,10 @@ const Users: React.FC = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(defaultForm);
   const [saving, setSaving] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{
+  const [error, setError] = useState<string | null>(null);  const [fieldErrors, setFieldErrors] = useState<{
     email?: string;
     phone?: string;
+    role?: string;
     general?: string;
   }>({});
   // Pagination state for new UI
@@ -232,6 +249,7 @@ const Users: React.FC = () => {
     );
     setPage(0);
   }, [search, employees]);
+
   // Modal open/close
   const handleOpen = useCallback((emp?: Employee) => {
     setError(null);
@@ -243,7 +261,14 @@ const Users: React.FC = () => {
         email: emp.email,
         phone: emp.phone,
         role: emp.role,
-        status: emp.status,
+        address: emp.address || "",
+        designation: emp.designation || "",
+        managerId: emp.managerId || "",
+        departmentId: emp.departmentId || "",
+        gender: emp.gender || "",
+        age: emp.age,
+        altPhone: emp.altPhone || "",
+        joiningDate: emp.joiningDate || "",
       });
     } else {
       setEditId(null);
@@ -271,16 +296,8 @@ const Users: React.FC = () => {
           prev.map((e) => ((e._id || e.id) === editId ? { ...e, ...form } : e))
         );
       } else {
-        // Add - need to include required fields for API
-        const employeeData = {
-          ...form,
-          address: form.address || "Default Address",
-          designation: form.designation || "Employee",
-          managerId: form.managerId || "default-manager",
-          departmentId: form.departmentId || "default-dept",
-          status: form.status || "Active",
-        };
-        const res = await axios.post(API_BASE, employeeData);
+        // Add - send all form data to API
+        const res = await axios.post(API_BASE, form);
         const newEmployee = res.data.data || res.data;
         setEmployees((prev) => [newEmployee, ...prev]);
       }
@@ -422,14 +439,13 @@ const Users: React.FC = () => {
           </Box>
         ) : (
           <>
+            {" "}
             <TableContainer sx={{ minWidth: isMobile ? 600 : undefined }}>
-              <TableMap
+              {" "}
+              <TableMap<Employee>
                 data={pagedEmployees}
-                // @ts-expect-error: TableMap is not generic, so we must suppress type error here
                 header={header}
-                // @ts-expect-error: TableMap is not generic, so we must suppress type error here
                 onEdit={handleOpen}
-                // @ts-expect-error: TableMap is not generic, so we must suppress type error here
                 onDelete={handleDelete}
               />
             </TableContainer>
@@ -445,25 +461,43 @@ const Users: React.FC = () => {
             </Box>
           </>
         )}
-      </Paper>
+      </Paper>{" "}
       <Dialog
         open={open}
         onClose={handleClose}
         fullWidth
-        maxWidth="sm"
+        maxWidth="md"
         aria-labelledby="employee-dialog-title"
+        PaperProps={{
+          sx: {
+            maxHeight: "90vh",
+            height: "auto",
+          },
+        }}
       >
         <DialogTitle id="employee-dialog-title">
           {editId ? "Edit Employee" : "Add Employee"}
         </DialogTitle>{" "}
         <DialogContent
-          sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+          sx={{
+            display: "flex",
+            flexDirection: "column",
+            gap: 2,
+            mt: 1,
+            maxHeight: "70vh",
+            overflowY: "auto",
+            px: 3,
+          }}
         >
+          {" "}
           {error && (
             <Alert severity="error" sx={{ mb: 1 }}>
               {error}
             </Alert>
-          )}{" "}
+          )}
+          <Typography variant="h6" sx={{ mt: 1, mb: 1, fontWeight: 600 }}>
+            Basic Information
+          </Typography>
           <TextField
             label="Name"
             value={form.name}
@@ -506,19 +540,22 @@ const Users: React.FC = () => {
             error={!!fieldErrors.phone}
             helperText={fieldErrors.phone || ""}
             inputProps={{ "aria-label": "Employee phone" }}
-          />
-          <TextField
+          />          <TextField
             label="Role"
             select
             value={form.role || ""}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
               setForm((f) => ({ ...f, role: e.target.value }));
               if (error) setError(null);
+              // Clear role error when user selects a role
+              if (fieldErrors.role) {
+                setFieldErrors((prev) => ({ ...prev, role: undefined }));
+              }
             }}
             required
             inputProps={{ "aria-label": "Employee role" }}
-            error={!form.role}
-            helperText={!form.role ? "Please select a role" : ""}
+            error={!!fieldErrors.role}
+            helperText={fieldErrors.role || ""}
           >
             <MenuItem value="" disabled>
               Select a role...
@@ -539,17 +576,128 @@ const Users: React.FC = () => {
                   </MenuItem>
                 ))
             )}
-          </TextField>{" "}
+          </TextField>
+          <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+            Additional Information
+          </Typography>{" "}
           <TextField
-            label="Status"
-            value={form.status}
+            label="Address"
+            value={form.address || ""}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setForm((f) => ({ ...f, status: e.target.value }));
-              if (error) setError(null);
+              setForm((f) => ({ ...f, address: e.target.value }));
             }}
             required
-            inputProps={{ "aria-label": "Employee status" }}
+            multiline
+            rows={2}
+            inputProps={{ "aria-label": "Employee address" }}
+          />{" "}
+          <TextField
+            label="Designation"
+            value={form.designation || ""}
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              setForm((f) => ({ ...f, designation: e.target.value }));
+            }}
+            required
+            inputProps={{ "aria-label": "Employee designation" }}
           />
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              flexDirection: { xs: "column", sm: "row" },
+            }}
+          >
+            <TextField
+              label="Manager ID"
+              value={form.managerId || ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setForm((f) => ({ ...f, managerId: e.target.value }));
+              }}
+              inputProps={{ "aria-label": "Employee manager ID" }}
+              sx={{ flex: 1 }}
+            />
+
+            <TextField
+              label="Department ID"
+              value={form.departmentId || ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setForm((f) => ({ ...f, departmentId: e.target.value }));
+              }}
+              inputProps={{ "aria-label": "Employee department ID" }}
+              sx={{ flex: 1 }}
+            />
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              flexDirection: { xs: "column", sm: "row" },
+            }}
+          >
+            {" "}
+            <TextField
+              label="Gender"
+              select
+              value={form.gender || ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setForm((f) => ({ ...f, gender: e.target.value }));
+              }}
+              required
+              inputProps={{ "aria-label": "Employee gender" }}
+              sx={{ flex: 1 }}
+            >
+              <MenuItem value="">Select gender...</MenuItem>
+              <MenuItem value="Male">Male</MenuItem>
+              <MenuItem value="Female">Female</MenuItem>
+              <MenuItem value="Other">Other</MenuItem>
+              <MenuItem value="Prefer not to say">Prefer not to say</MenuItem>
+            </TextField>{" "}
+            <TextField
+              label="Age"
+              type="number"
+              value={form.age || ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                const value = e.target.value
+                  ? parseInt(e.target.value)
+                  : undefined;
+                setForm((f) => ({ ...f, age: value }));
+              }}
+              required
+              inputProps={{ "aria-label": "Employee age", min: 18, max: 100 }}
+              sx={{ flex: 1 }}
+            />
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              gap: 2,
+              flexDirection: { xs: "column", sm: "row" },
+            }}
+          >
+            <TextField
+              label="Alternative Phone"
+              value={form.altPhone || ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setForm((f) => ({ ...f, altPhone: e.target.value }));
+              }}
+              inputProps={{ "aria-label": "Employee alternative phone" }}
+              sx={{ flex: 1 }}
+            />{" "}
+            <TextField
+              label="Joining Date"
+              type="date"
+              value={form.joiningDate || ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setForm((f) => ({ ...f, joiningDate: e.target.value }));
+              }}
+              required
+              InputLabelProps={{
+                shrink: true,
+              }}
+              inputProps={{ "aria-label": "Employee joining date" }}
+              sx={{ flex: 1 }}
+            />
+          </Box>
         </DialogContent>
         <DialogActions>
           <Button onClick={handleClose} disabled={saving}>

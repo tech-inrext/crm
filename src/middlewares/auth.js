@@ -1,12 +1,11 @@
 import jwt from "jsonwebtoken";
-import Role from "../models/Role"
 import Employee from "../models/Employee";
 import dbConnect from "../lib/mongodb";
 import { checkPermission } from "../utils/checkPermission";
 
 const MODULES = ["lead", "employee", "role"];
 
-export async function userAuth (req, res, next){
+export async function userAuth(req, res, next) {
   try {
     await dbConnect();
     const { token } = req.cookies;
@@ -16,12 +15,11 @@ export async function userAuth (req, res, next){
     if (!token) {
       throw new Error("Token is not valid");
     }
-
     const decodeObj = jwt.verify(token, "rahul@123");
     const { _id } = decodeObj;
-    console.log("hello",decodeObj)
+    console.log("hello", decodeObj);
 
-    const employee = await Employee.findById(_id);
+    const employee = await Employee.findById(_id).populate("role");
     if (!employee) {
       throw new Error("User not found");
     }
@@ -55,6 +53,12 @@ export async function userAuth (req, res, next){
 
     next();
   } catch (err) {
+    console.log("Auth Error Details:", {
+      error: err.message,
+      url: req.url,
+      method: req.method,
+      cookies: req.cookies,
+    });
     res.status(400).json({ message: "Auth Error: " + err.message });
   }
-};
+}

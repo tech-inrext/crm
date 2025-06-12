@@ -8,7 +8,6 @@ import MyNavbar from "../../components/ui/MyNavbar";
 import Typography from "@mui/material/Typography";
 import Drawer from "@mui/material/Drawer";
 import useMediaQuery from "@mui/material/useMediaQuery";
-import { useTheme } from "@mui/material/styles";
 import Leads from "./Leads";
 import Users from "./Users";
 import Roles from "./Roles";
@@ -36,17 +35,31 @@ const Dashboard: React.FC = () => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState("dashboard");
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Use a more specific breakpoint to avoid hydration issues
+  const isMobile = useMediaQuery("(max-width: 600px)", {
+    noSsr: true, // This prevents SSR mismatch
+  });
 
   React.useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Only render after mount to guarantee SSR/CSR parity
+  // Show loading state without complex styling to avoid hydration errors
   if (!mounted) {
-    // Render a minimal placeholder to avoid hydration errors
-    return <div style={{ minHeight: "100vh", background: "#181C1F" }} />;
+    return (
+      <Box
+        sx={{
+          minHeight: "100vh",
+          backgroundColor: "#181C1F",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+        }}
+      >
+        <Typography sx={{ color: "white" }}>Loading...</Typography>
+      </Box>
+    );
   }
 
   // Sidebar navigation structure matching the image

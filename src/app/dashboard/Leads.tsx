@@ -11,7 +11,7 @@ import {
   Button,
 } from "@mui/material";
 import axios from "axios";
-import MySearchBar from "@/components/ui/MySearchBar";
+import MySearchBar from "../../components/ui/MySearchBar";
 import LeadsTableHeader from "../../components/ui/LeadsTableHeader";
 import LeadsTableRow from "../../components/ui/LeadsTableRow";
 import LeadDialog from "../../components/ui/LeadDialog";

@@ -2,10 +2,10 @@ import React, { useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Paper from "@mui/material/Paper";
-import MyButton from "@/components/ui/MyButton";
+import MyButton from "../../components/ui/MyButton";
 import RoleCard from "../../components/ui/RoleCard";
 import AddRoleDialog from "../../components/ui/AddRoleDialog";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "../../components/ui/Pagination";
 import { CircularProgress } from "@mui/material";
 import axios from "axios";
 
@@ -142,7 +142,7 @@ const Roles = () => {
   const loadRoles = async () => {
     setLoading(true);
     try {
-      const response = await axios.get(API_BASE);
+      const response = await axios.get(API_BASE, { withCredentials: true });
       const apiRoles = response.data.data || response.data;
       const transformedRoles = apiRoles.map(transformAPIRole);
       setRoles(transformedRoles);
@@ -180,7 +180,9 @@ const Roles = () => {
 
     setSaving(true);
     try {
-      const response = await axios.post(API_BASE, apiRole);
+      const response = await axios.post(API_BASE, apiRole, {
+        withCredentials: true,
+      });
       const createdRole = transformAPIRole(response.data.data || response.data);
       setRoles([createdRole, ...roles]);
 
@@ -244,7 +246,9 @@ const Roles = () => {
 
     setSaving(true);
     try {
-      await axios.patch(`${API_BASE}/${role._id}`, apiRole);
+      await axios.patch(`${API_BASE}/${role._id}`, apiRole, {
+        withCredentials: true,
+      });
       setRoles((prev) => prev.map((r, i) => (i === editIdx ? updatedRole : r)));
 
       // Update localStorage for Users page
