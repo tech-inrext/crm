@@ -1,9 +1,8 @@
-// /pages/api/employees/login.js
+// Alternative login endpoint using localStorage approach for testing
 import dbConnect from "../../../../lib/mongodb";
 import Employee from "../../../../models/Employee";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import cookie from "cookie";
 
 export default async function handler(req, res) {
   await dbConnect();
@@ -17,8 +16,9 @@ export default async function handler(req, res) {
   const { email, password } = req.body;
 
   try {
-    const employee = await Employee.findOne({ email });
-    console.log(employee);
+    const employee = await Employee.findOne({ email }).populate("role");
+    console.log("Employee found:", employee);
+
     if (!employee) {
       return res
         .status(404)
@@ -49,39 +49,31 @@ export default async function handler(req, res) {
         success: false,
         message: "Your password has expired. Please reset it to continue.",
       });
-    } // ✅ Generate JWT Token
+    }
+
+    // ✅ Generate JWT Token
     const token = jwt.sign({ _id: employee._id }, "rahul@123", {
       expiresIn: "7d",
     });
 
-    // ✅ Set token in HTTP-only cookie with development-friendly settings
-    const cookieOptions = {
-      httpOnly: true,
-      secure: false, // Set to false for development over HTTP
-      maxAge: 60 * 60 * 24 * 7, // 7 days
-      sameSite: "lax", // More permissive than "strict" for development
-      path: "/",
-    };
-
-    const cookieString = cookie.serialize("token", token, cookieOptions);
-    res.setHeader("Set-Cookie", cookieString);
-
-    console.log("=== LOGIN DEBUG ===");
+    console.log("=== LOGIN SUCCESS (LOCALSTORAGE MODE) ===");
     console.log("Generated token:", token);
-    console.log("Cookie options:", cookieOptions);
-    console.log("Cookie string:", cookieString);
-    console.log("Environment:", process.env.NODE_ENV);
+    console.log("Employee role:", employee.role);
 
+    // Return user data with token (for localStorage approach)
     res.status(200).json({
       success: true,
       message: "Login successful",
-      employee,
-      debug: {
-        tokenGenerated: !!token,
-        cookieSet: !!cookieString,
-        environment: process.env.NODE_ENV || "development",
-        cookieHeader: cookieString,
+      employee: {
+        _id: employee._id,
+        name: employee.name,
+        email: employee.email,
+        phone: employee.phone,
+        role: employee.role?.name || "No Role",
+        designation: employee.designation,
+        address: employee.address,
       },
+      token: token, // Include token in response for localStorage
     });
   } catch (err) {
     res.status(500).json({ success: false, message: `Error : ${err.message}` });

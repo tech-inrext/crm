@@ -57,7 +57,7 @@ const leadSchema = new mongoose.Schema(
       trim: true,
     },
     assignedTo: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Employee",
     },
     followUpNotes: [
