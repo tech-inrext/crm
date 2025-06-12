@@ -62,8 +62,19 @@ const deleteEmployee = async (req, res) => {
 const updateEmployeeDetails = async (req, res) => {
   const { id } = req.query;
 
-  const { name, altPhone, address, gender, age, designation, managerId, role } =
-    req.body;
+  const {
+    name,
+    altPhone,
+    phone,
+    email,
+    address,
+    gender,
+    age,
+    designation,
+    departmentId,
+    managerId,
+    role,
+  } = req.body;
 
   // Fields that are NOT allowed to be updated
   // const notAllowedFields = ["phone", "email", "joiningDate"];
@@ -81,11 +92,13 @@ const updateEmployeeDetails = async (req, res) => {
   //     )}`,
   //   });
   // }
-
   // Build the update object dynamically
   const updateFields = {
     ...(name && { name }),
     ...(altPhone && { altPhone }),
+    ...(phone && { phone }),
+    ...(email && { email }),
+    ...(departmentId && { departmentId }),
     ...(address && { address }),
     ...(gender && { gender }),
     ...(age && { age }),

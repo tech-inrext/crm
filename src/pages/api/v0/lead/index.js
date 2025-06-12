@@ -6,6 +6,8 @@ import { checkPermission } from "../../../../middlewares/permissions";
 // ✅ Create Lead (WRITE Access Required)
 const createLead = async (req, res) => {
   try {
+    console.log("📧 Received lead data:", JSON.stringify(req.body, null, 2));
+
     const {
       leadId,
       fullName,
@@ -23,30 +25,103 @@ const createLead = async (req, res) => {
 
     // Basic validation
     if (!leadId || !fullName || !phone || !propertyType) {
+      console.log("❌ Validation failed:", {
+        leadId,
+        fullName,
+        phone,
+        propertyType,
+      });
       return res
         .status(400)
         .json({ success: false, message: "Missing required fields" });
+    } // Parse and validate nextFollowUp date if provided
+    let parsedNextFollowUp = null;
+    if (nextFollowUp) {
+      try {
+        parsedNextFollowUp = new Date(nextFollowUp);
+        if (isNaN(parsedNextFollowUp.getTime())) {
+          parsedNextFollowUp = null;
+        }
+      } catch (dateError) {
+        console.log(
+          "Invalid nextFollowUp date:",
+          nextFollowUp,
+          dateError.message
+        );
+        parsedNextFollowUp = null;
+      }
     }
 
-    const newLead = new Lead({
+    // Validate phone number format (only digits, 10-15 characters)
+    if (phone && !/^\d{10,15}$/.test(phone)) {
+      console.log("❌ Invalid phone format:", phone);
+      return res
+        .status(400)
+        .json({
+          success: false,
+          message: "Phone number must contain only digits (10-15 characters)",
+        });
+    }
+
+    console.log("✅ Creating lead with data:", {
       leadId,
       fullName,
-      email,
+      email: email || "none",
       phone,
       propertyType,
-      location,
-      budgetRange,
+      location: location || "none",
+      budgetRange: budgetRange || "none",
       status,
-      source,
-      assignedTo,
-      followUpNotes,
-      nextFollowUp,
+      source: source || "none",
+      assignedTo: assignedTo || "none",
+      followUpNotes: followUpNotes || [],
+      nextFollowUp: parsedNextFollowUp,
     });
-
+    const newLead = new Lead({
+      leadId,
+      fullName: fullName?.trim(),
+      email: email && email.trim() ? email.trim() : undefined, // Don't save empty emails
+      phone: phone?.trim(),
+      propertyType,
+      location: location && location.trim() ? location.trim() : undefined,
+      budgetRange:
+        budgetRange && budgetRange.trim() ? budgetRange.trim() : undefined,
+      status,
+      source: source && source.trim() ? source.trim() : undefined,
+      assignedTo:
+        assignedTo && assignedTo.trim() ? assignedTo.trim() : undefined,
+      followUpNotes: followUpNotes || [],
+      nextFollowUp: parsedNextFollowUp,
+    });
     await newLead.save();
 
+    console.log("✅ Lead created successfully:", newLead._id);
     return res.status(201).json({ success: true, data: newLead });
   } catch (error) {
+    console.error("❌ Error creating lead:", error);
+
+    // Handle MongoDB validation errors
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.values(error.errors).map(
+        (err) => err.message
+      );
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: validationErrors,
+        error: error.message,
+      });
+    }
+
+    // Handle duplicate key errors
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Lead ID already exists",
+        error: error.message,
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Error creating lead",

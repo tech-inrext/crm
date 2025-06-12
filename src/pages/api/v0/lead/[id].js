@@ -29,20 +29,20 @@ const updateLeadDetails = async (req, res) => {
 
   try {
     // ❌ Disallowed fields – cannot be updated
-    const notAllowedFields = ["phone", "email"];
-    const attemptedFields = Object.keys(req.body);
-    const invalidFields = attemptedFields.filter((field) =>
-      notAllowedFields.includes(field)
-    );
+    // const notAllowedFields = ["phone", "email"];
+    // const attemptedFields = Object.keys(req.body);
+    // const invalidFields = attemptedFields.filter((field) =>
+    //   notAllowedFields.includes(field)
+    // );
 
-    if (invalidFields.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `You are not allowed to update these field(s): ${invalidFields.join(
-          ", "
-        )}`,
-      });
-    }
+    // if (invalidFields.length > 0) {
+    //   return res.status(400).json({
+    //     success: false,
+    //     message: `You are not allowed to update these field(s): ${invalidFields.join(
+    //       ", "
+    //     )}`,
+    //   });
+    // }
 
     // ✅ Only allowed fields are picked for update
     const updateFields = {

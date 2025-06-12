@@ -184,7 +184,6 @@ const Dashboard: React.FC = () => {
       </Typography>
     );
   }
-
   return (
     <Box
       sx={{
@@ -192,11 +191,33 @@ const Dashboard: React.FC = () => {
         minHeight: "100vh",
         flexDirection: "column",
         bgcolor: "background.default",
+        position: "relative",
       }}
     >
-      {/* Header/Navbar */}
-      <MyNavbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-      <Box sx={{ display: "flex", flex: 1, minHeight: 0 }}>
+      {/* Header/Navbar - Fixed at top */}
+      <Box
+        sx={{
+          position: "fixed",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1200,
+          bgcolor: "background.paper",
+          borderBottom: "1px solid",
+          borderColor: "divider",
+        }}
+      >
+        <MyNavbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
+      </Box>{" "}
+      {/* Main layout container with top padding for fixed navbar */}
+      <Box
+        sx={{
+          display: "flex",
+          flex: 1,
+          pt: "56px", // Account for navbar height (56px from MyNavbar)
+          minHeight: "100vh",
+        }}
+      >
         {/* Only render sidebar/drawer after mount to avoid hydration errors */}
         {mounted &&
           (isMobile ? (
@@ -206,11 +227,15 @@ const Dashboard: React.FC = () => {
               onClose={() => setSidebarOpen(false)}
               ModalProps={{ keepMounted: true }}
               sx={{
+                zIndex: 1300,
                 "& .MuiDrawer-paper": {
-                  width: 220,
+                  width: 260,
                   bgcolor: "#fafcfd",
                   color: "#fff",
                   borderRight: "1px solid #23272A",
+                  top: "56px", // Start below fixed navbar
+                  height: "calc(100vh - 56px)",
+                  overflow: "auto",
                 },
               }}
             >
@@ -232,12 +257,13 @@ const Dashboard: React.FC = () => {
                 bgcolor: "#f8fafc",
                 color: "#fff",
                 boxShadow: 1,
+                position: "fixed",
+                left: 0,
+                top: "56px", // Start below fixed navbar
                 height: "calc(100vh - 56px)",
-                display: "block",
-                position: "relative",
-                zIndex: 1000,
+                zIndex: 1100,
                 borderRight: "1px solid #23272A",
-                overflow: "hidden",
+                overflow: "auto",
               }}
             >
               <MySidebar
@@ -250,19 +276,30 @@ const Dashboard: React.FC = () => {
               />
             </Box>
           ))}
-        {/* Main content */}
+
+        {/* Main content with proper spacing for fixed sidebar */}
         <Box
           component="main"
           sx={{
             flex: 1,
-            p: 3,
-            overflow: "auto",
-            minHeight: 0,
+            marginLeft: isMobile ? 0 : "260px", // Account for fixed sidebar width
+            minHeight: "calc(100vh - 56px)",
             bgcolor: "#f2f5f7",
             color: "#fff",
+            overflow: "auto",
+            position: "relative",
           }}
         >
-          {content}
+          {/* Content wrapper with padding */}
+          <Box
+            sx={{
+              p: 3,
+              minHeight: "100%",
+              overflow: "visible",
+            }}
+          >
+            {content}
+          </Box>
         </Box>
       </Box>
     </Box>
