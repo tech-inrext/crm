@@ -4,7 +4,7 @@ import Employee from "../models/Employee";
 import dbConnect from "../lib/mongodb";
 import { checkPermission } from "../utils/checkPermission";
 
-const MODULES = ["lead", "employee", "role"];
+const MODULES = ["lead", "employee", "role","department"];
 
 export async function userAuth (req, res, next){
   try {
