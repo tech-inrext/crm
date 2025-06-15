@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, memo, useCallback } from "react";
 import {
   Box,
   Typography,
@@ -40,7 +40,18 @@ import LeadsTableRow from "../../components/ui/LeadsTableRow";
 import LeadDialog, { LeadFormData } from "../../components/ui/LeadDialog";
 import PermissionGuard from "../../components/PermissionGuard";
 
-// Frontend Lead interface (for display in table)
+// Constants & Types
+const API_BASE = "/api/v0/lead";
+const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
+const STATUS_COLORS = {
+  new: "#2196F3",
+  contacted: "#FF9800",
+  "site visit": "#9C27B0",
+  closed: "#4CAF50",
+  dropped: "#F44336",
+  default: "#757575",
+} as const;
+
 export interface Lead {
   _id?: string;
   id: string;
@@ -52,7 +63,6 @@ export interface Lead {
   value: string;
 }
 
-// API Lead interface (matching backend model)
 interface APILead {
   _id: string;
   leadId: string;
@@ -71,11 +81,37 @@ interface APILead {
   updatedAt: string;
 }
 
-const API_BASE = "/api/v0/lead";
+// Consolidated style constants
+const GRADIENTS = {
+  primary: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+  paper: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+  button: "linear-gradient(45deg, #667eea, #764ba2)",
+  buttonHover: "linear-gradient(45deg, #5a6fd8, #6a42a0)",
+};
 
-// Transform API lead to frontend format for table display
-const transformAPILead = (apiLead: APILead): Lead => {
-  return {
+const COMMON_STYLES = {
+  roundedPaper: {
+    borderRadius: 4,
+    background: GRADIENTS.paper,
+    border: "1px solid rgba(255,255,255,0.2)",
+    backdropFilter: "blur(10px)",
+  },
+  iconButton: (bg: string, hover?: string) => ({
+    backgroundColor: bg,
+    color: "white",
+    "&:hover": { backgroundColor: hover || `${bg}99` },
+  }),
+  gradientText: {
+    background: GRADIENTS.button,
+    backgroundClip: "text",
+    WebkitBackgroundClip: "text",
+    WebkitTextFillColor: "transparent",
+  },
+};
+
+// Utility functions as object for better organization
+const utils = {
+  transformAPILead: (apiLead: APILead): Lead => ({
     _id: apiLead._id,
     id: apiLead.leadId,
     name: apiLead.fullName,
@@ -84,12 +120,9 @@ const transformAPILead = (apiLead: APILead): Lead => {
     phone: apiLead.phone,
     status: apiLead.status,
     value: apiLead.budgetRange || "Not specified",
-  };
-};
+  }),
 
-// Transform API lead to form data for editing
-const transformAPILeadToForm = (apiLead: APILead): LeadFormData => {
-  return {
+  transformAPILeadToForm: (apiLead: APILead): LeadFormData => ({
     fullName: apiLead.fullName,
     email: apiLead.email || "",
     phone: apiLead.phone,
@@ -106,44 +139,67 @@ const transformAPILeadToForm = (apiLead: APILead): LeadFormData => {
       note: note.note,
       date: new Date(note.date).toISOString().split("T")[0],
     })),
-  };
-};
+  }),
 
-// Transform form data to API format
-const transformFormToAPI = (
-  formData: LeadFormData,
-  leadId?: string
-): Partial<APILead> => {
-  // Clean phone number - remove all non-digit characters
-  const cleanPhone = formData.phone.replace(/\D/g, "");
+  transformFormToAPI: (
+    formData: LeadFormData,
+    leadId?: string
+  ): Partial<APILead> => {
+    const cleanPhone = formData.phone.replace(/\D/g, "");
+    const apiData: Partial<APILead> = {
+      fullName: formData.fullName.trim(),
+      email: formData.email?.trim() || undefined,
+      phone: cleanPhone,
+      propertyType: formData.propertyType,
+      location: formData.location?.trim() || undefined,
+      budgetRange: formData.budgetRange?.trim() || undefined,
+      status: formData.status,
+      source: formData.source?.trim() || undefined,
+      assignedTo: formData.assignedTo?.trim() || undefined,
+      nextFollowUp:
+        formData.nextFollowUp && formData.nextFollowUp.trim()
+          ? new Date(formData.nextFollowUp).toISOString()
+          : undefined,
+      followUpNotes: formData.followUpNotes
+        .filter((note) => note.note.trim())
+        .map((note) => ({
+          note: note.note.trim(),
+          date: new Date(note.date).toISOString(),
+        })),
+    };
+    if (leadId) apiData.leadId = leadId;
+    return apiData;
+  },
 
-  const apiData: Partial<APILead> = {
-    fullName: formData.fullName.trim(),
-    email: formData.email?.trim() || undefined, // Don't send empty string
-    phone: cleanPhone,
-    propertyType: formData.propertyType,
-    location: formData.location?.trim() || undefined,
-    budgetRange: formData.budgetRange?.trim() || undefined,
-    status: formData.status,
-    source: formData.source?.trim() || undefined,
-    assignedTo: formData.assignedTo?.trim() || undefined,
-    nextFollowUp:
-      formData.nextFollowUp && formData.nextFollowUp.trim()
-        ? new Date(formData.nextFollowUp).toISOString()
-        : undefined,
-    followUpNotes: formData.followUpNotes
-      .filter((note) => note.note.trim()) // Only include non-empty notes
-      .map((note) => ({
-        note: note.note.trim(),
-        date: new Date(note.date).toISOString(),
-      })),
-  };
+  getStatusColor: (status: string): string =>
+    STATUS_COLORS[status.toLowerCase() as keyof typeof STATUS_COLORS] ||
+    STATUS_COLORS.default,
 
-  if (leadId) {
-    apiData.leadId = leadId;
-  }
+  calculateStats: (leads: Lead[]) => ({
+    total: leads.length,
+    new: leads.filter((l) => l.status === "New").length,
+    contacted: leads.filter((l) => l.status === "Contacted").length,
+    closed: leads.filter((l) => l.status === "Closed").length,
+    conversion:
+      leads.length > 0
+        ? (
+            (leads.filter((l) => l.status === "Closed").length / leads.length) *
+            100
+          ).toFixed(1)
+        : "0",
+  }),
 
-  return apiData;
+  filterLeads: (leads: Lead[], searchQuery: string): Lead[] => {
+    const q = searchQuery.toLowerCase();
+    return leads.filter(
+      (l) =>
+        l.name.toLowerCase().includes(q) ||
+        l.contact.toLowerCase().includes(q) ||
+        l.email.toLowerCase().includes(q) ||
+        l.phone.toLowerCase().includes(q) ||
+        l.status.toLowerCase().includes(q)
+    );
+  },
 };
 
 // Default form data
@@ -161,328 +217,69 @@ const defaultFormData: LeadFormData = {
   followUpNotes: [],
 };
 
-const Leads: React.FC = () => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+// Memoized Components
+const StatusChip = memo(({ status }: { status: string }) => (
+  <Chip
+    label={status}
+    size="small"
+    sx={{
+      backgroundColor: utils.getStatusColor(status),
+      color: "white",
+      fontWeight: 600,
+      fontSize: "0.75rem",
+      minWidth: "80px",
+    }}
+  />
+));
+StatusChip.displayName = "StatusChip";
 
-  const [mounted, setMounted] = useState(false);
-  const [leads, setLeads] = useState<Lead[]>([]);
-  const [apiLeads, setApiLeads] = useState<APILead[]>([]); // Store original API data
-  const [filtered, setFiltered] = useState<Lead[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState("");
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [open, setOpen] = useState(false);
-  const [editId, setEditId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<LeadFormData>(defaultFormData);
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
-
-  // Header configuration for the table
-  const header = [
-    { label: "Name", dataKey: "name" },
-    { label: "Email", dataKey: "email" },
-    { label: "Phone", dataKey: "phone" },
-    { label: "Status", dataKey: "status" },
-    { label: "Budget", dataKey: "value" },
-    {
-      label: "Actions",
-      component: (
-        row: Lead,
-        handlers: {
-          onEdit: (lead: Lead) => void;
-          onDelete: (lead: Lead) => void;
-        }
-      ) => (
-        <Stack direction="row" spacing={1} justifyContent="center">
-          <PermissionGuard module="lead" action="write" hideWhenNoAccess>
-            <Tooltip title="Edit Lead">
-              <IconButton
-                aria-label="edit"
-                onClick={() => handlers.onEdit(row)}
-                size="small"
-                sx={{
-                  backgroundColor: "primary.main",
-                  color: "white",
-                  "&:hover": { backgroundColor: "primary.dark" },
-                }}
-              >
-                <Edit fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </PermissionGuard>
-          <PermissionGuard module="lead" action="delete" hideWhenNoAccess>
-            <Tooltip title="Delete Lead">
-              <IconButton
-                aria-label="delete"
-                onClick={() => handlers.onDelete(row)}
-                size="small"
-                sx={{
-                  backgroundColor: "error.main",
-                  color: "white",
-                  "&:hover": { backgroundColor: "error.dark" },
-                }}
-              >
-                <Delete fontSize="small" />
-              </IconButton>
-            </Tooltip>
-          </PermissionGuard>
+const LoadingSkeleton = memo(() => (
+  <Box sx={{ mt: 2 }}>
+    {Array.from({ length: 6 }).map((_, index) => (
+      <Card key={index} sx={{ mb: 2, p: 2 }}>
+        <Stack spacing={1}>
+          <Skeleton variant="text" width="60%" height={24} />
+          <Skeleton variant="text" width="40%" height={20} />
+          <Skeleton variant="rectangular" width="100%" height={60} />
         </Stack>
-      ),
-    },
-  ];
+      </Card>
+    ))}
+  </Box>
+));
+LoadingSkeleton.displayName = "LoadingSkeleton";
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+const StatsCard = memo(
+  ({
+    value,
+    label,
+    color,
+  }: {
+    value: string | number;
+    label: string;
+    color: string;
+  }) => (
+    <Card elevation={3} sx={{ textAlign: "center", p: 2, borderRadius: 3 }}>
+      <Typography variant="h4" fontWeight={700} color={color}>
+        {value}
+      </Typography>
+      <Typography variant="body2" color="text.secondary">
+        {label}
+      </Typography>
+    </Card>
+  )
+);
+StatsCard.displayName = "StatsCard";
 
-  useEffect(() => {
-    loadLeads();
-  }, []);
-
-  const loadLeads = async () => {
-    setLoading(true);
-    try {
-      const response = await axios.get(API_BASE);
-      const apiLeadsData = response.data.data || response.data;
-      const transformedLeads = apiLeadsData.map(transformAPILead);
-      setApiLeads(apiLeadsData); // Store original API data
-      setLeads(transformedLeads);
-      setFiltered(transformedLeads);
-    } catch (error) {
-      console.error("Failed to load leads:", error);
-      setApiLeads([]);
-      setLeads([]);
-      setFiltered([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    const q = search.toLowerCase();
-    setFiltered(
-      leads.filter(
-        (l) =>
-          l.name.toLowerCase().includes(q) ||
-          l.contact.toLowerCase().includes(q) ||
-          l.email.toLowerCase().includes(q) ||
-          l.phone.toLowerCase().includes(q) ||
-          l.status.toLowerCase().includes(q)
-      )
-    );
-    setPage(0);
-  }, [search, leads]);
-
-  const rows = useMemo(
-    () => filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [filtered, page, rowsPerPage]
-  );
-
-  const handleChangePage = (_: unknown, newPage: number) => setPage(newPage);
-  const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
-  };
-
-  // Modal open/close
-  const handleOpen = (lead?: Lead) => {
-    if (lead) {
-      // Find the original API data for this lead
-      const originalApiLead = apiLeads.find(
-        (apiLead) => apiLead.leadId === lead.id
-      );
-      if (originalApiLead) {
-        setEditId(lead.id);
-        setFormData(transformAPILeadToForm(originalApiLead));
-      }
-    } else {
-      setEditId(null);
-      setFormData(defaultFormData);
-    }
-    setOpen(true);
-  };
-
-  const handleClose = () => {
-    setOpen(false);
-    setEditId(null);
-    setFormData(defaultFormData);
-  };
-
-  // Add/Edit lead via API with new form structure
-  const handleSave = async (values: LeadFormData) => {
-    setSaving(true);
-    try {
-      if (editId) {
-        // Update existing lead
-        const leadToUpdate = apiLeads.find((l) => l.leadId === editId);
-        if (leadToUpdate && leadToUpdate._id) {
-          const apiData = transformFormToAPI(values, editId);
-          const response = await axios.patch(
-            `${API_BASE}/${leadToUpdate._id}`,
-            apiData
-          );
-          const updatedApiLead = response.data.data || response.data;
-
-          // Update both API leads and display leads
-          const newApiLeads = apiLeads.map((l) =>
-            l.leadId === editId ? updatedApiLead : l
-          );
-          const newDisplayLeads = newApiLeads.map(transformAPILead);
-
-          setApiLeads(newApiLeads);
-          setLeads(newDisplayLeads);
-          setFiltered(
-            newDisplayLeads.filter(
-              (l) =>
-                l.name.toLowerCase().includes(search.toLowerCase()) ||
-                l.contact.toLowerCase().includes(search.toLowerCase()) ||
-                l.email.toLowerCase().includes(search.toLowerCase()) ||
-                l.phone.toLowerCase().includes(search.toLowerCase()) ||
-                l.status.toLowerCase().includes(search.toLowerCase())
-            )
-          );
-        }
-      } else {
-        // Create new lead
-        const newLeadId = `LEAD-${Date.now()}`;
-        const apiData = transformFormToAPI(values, newLeadId);
-        const response = await axios.post(API_BASE, apiData);
-        const createdApiLead = response.data.data || response.data;
-        const createdDisplayLead = transformAPILead(createdApiLead);
-
-        const newApiLeads = [createdApiLead, ...apiLeads];
-        const newDisplayLeads = [createdDisplayLead, ...leads];
-
-        setApiLeads(newApiLeads);
-        setLeads(newDisplayLeads);
-        setFiltered([createdDisplayLead, ...filtered]);
-      }
-      handleClose();
-    } catch (error) {
-      console.error("Failed to save lead:", error);
-
-      // Show detailed error message to user
-      if (error.response?.data?.errors) {
-        // Validation errors from MongoDB
-        const errorMessages = error.response.data.errors.join(", ");
-        alert(`Validation Error: ${errorMessages}`);
-      } else if (error.response?.data?.message) {
-        // Custom error message from API
-        alert(`Error: ${error.response.data.message}`);
-      } else if (error.response?.data?.error) {
-        // General error from API
-        alert(`Error: ${error.response.data.error}`);
-      } else {
-        // Network or other errors
-        alert(
-          "Failed to save lead. Please check your connection and try again."
-        );
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  // Delete lead via API
-  const handleDelete = async (lead: Lead) => {
-    if (!window.confirm(`Delete lead ${lead.name}?`)) return;
-
-    if (!lead._id) {
-      console.error("Lead ID not found");
-      return;
-    }
-
-    try {
-      await axios.delete(`${API_BASE}/${lead._id}`);
-      const newApiLeads = apiLeads.filter((l) => l.leadId !== lead.id);
-      const newDisplayLeads = leads.filter((l) => l.id !== lead.id);
-
-      setApiLeads(newApiLeads);
-      setLeads(newDisplayLeads);
-      setFiltered(
-        newDisplayLeads.filter(
-          (l) =>
-            l.name.toLowerCase().includes(search.toLowerCase()) ||
-            l.contact.toLowerCase().includes(search.toLowerCase()) ||
-            l.email.toLowerCase().includes(search.toLowerCase()) ||
-            l.phone.toLowerCase().includes(search.toLowerCase()) ||
-            l.status.toLowerCase().includes(search.toLowerCase())
-        )
-      );
-    } catch (error) {
-      console.error("Failed to delete lead:", error);
-    }
-  };
-  // Enhanced stats calculation
-  const stats = useMemo(() => {
-    return {
-      total: leads.length,
-      new: leads.filter((l) => l.status === "New").length,
-      contacted: leads.filter((l) => l.status === "Contacted").length,
-      closed: leads.filter((l) => l.status === "Closed").length,
-      conversion:
-        leads.length > 0
-          ? (
-              (leads.filter((l) => l.status === "Closed").length /
-                leads.length) *
-              100
-            ).toFixed(1)
-          : "0",
-    };
-  }, [leads]);
-
-  // Status color mapping
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case "new":
-        return "#2196F3";
-      case "contacted":
-        return "#FF9800";
-      case "site visit":
-        return "#9C27B0";
-      case "closed":
-        return "#4CAF50";
-      case "dropped":
-        return "#F44336";
-      default:
-        return "#757575";
-    }
-  };
-
-  // Get status chip variant
-  const getStatusChip = (status: string) => (
-    <Chip
-      label={status}
-      size="small"
-      sx={{
-        backgroundColor: getStatusColor(status),
-        color: "white",
-        fontWeight: 600,
-        fontSize: "0.75rem",
-        minWidth: "80px",
-      }}
-    />
-  );
-
-  // Loading skeleton component
-  const LoadingSkeleton = () => (
-    <Box sx={{ mt: 2 }}>
-      {Array.from({ length: 6 }).map((_, index) => (
-        <Card key={index} sx={{ mb: 2, p: 2 }}>
-          <Stack spacing={1}>
-            <Skeleton variant="text" width="60%" height={24} />
-            <Skeleton variant="text" width="40%" height={20} />
-            <Skeleton variant="rectangular" width="100%" height={60} />
-          </Stack>
-        </Card>
-      ))}
-    </Box>
-  );
-
-  // Enhanced Card View Component
-  const LeadCard = ({ lead }: { lead: Lead }) => (
+const LeadCard = memo(
+  ({
+    lead,
+    onEdit,
+    onDelete,
+  }: {
+    lead: Lead;
+    onEdit: (lead: Lead) => void;
+    onDelete: (lead: Lead) => void;
+  }) => (
     <Card
       elevation={2}
       sx={{
@@ -495,12 +292,11 @@ const Leads: React.FC = () => {
         },
         border: "1px solid",
         borderColor: "divider",
-        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+        background: GRADIENTS.paper,
       }}
     >
       <CardContent sx={{ p: 3 }}>
         <Stack spacing={2}>
-          {/* Header with Avatar and Status */}
           <Box
             sx={{
               display: "flex",
@@ -511,7 +307,7 @@ const Leads: React.FC = () => {
             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
               <Avatar
                 sx={{
-                  bgcolor: getStatusColor(lead.status),
+                  bgcolor: utils.getStatusColor(lead.status),
                   width: 48,
                   height: 48,
                   fontSize: "1.2rem",
@@ -529,12 +325,11 @@ const Leads: React.FC = () => {
                 </Typography>
               </Box>
             </Box>
-            {getStatusChip(lead.status)}
+            <StatusChip status={lead.status} />
           </Box>
 
           <Divider />
 
-          {/* Contact Information */}
           <Stack spacing={1}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <Email sx={{ color: "text.secondary", fontSize: 18 }} />
@@ -556,20 +351,16 @@ const Leads: React.FC = () => {
             </Box>
           </Stack>
 
-          {/* Actions */}
           <Box
             sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}
           >
+            {" "}
             <PermissionGuard module="lead" action="write" hideWhenNoAccess>
               <Tooltip title="Edit Lead">
                 <IconButton
-                  onClick={() => handleOpen(lead)}
+                  onClick={() => onEdit(lead)}
                   size="small"
-                  sx={{
-                    backgroundColor: "primary.main",
-                    color: "white",
-                    "&:hover": { backgroundColor: "primary.dark" },
-                  }}
+                  sx={COMMON_STYLES.iconButton("primary.main", "primary.dark")}
                 >
                   <Edit fontSize="small" />
                 </IconButton>
@@ -578,13 +369,9 @@ const Leads: React.FC = () => {
             <PermissionGuard module="lead" action="delete" hideWhenNoAccess>
               <Tooltip title="Delete Lead">
                 <IconButton
-                  onClick={() => handleDelete(lead)}
+                  onClick={() => onDelete(lead)}
                   size="small"
-                  sx={{
-                    backgroundColor: "error.main",
-                    color: "white",
-                    "&:hover": { backgroundColor: "error.dark" },
-                  }}
+                  sx={COMMON_STYLES.iconButton("error.main", "error.dark")}
                 >
                   <Delete fontSize="small" />
                 </IconButton>
@@ -594,7 +381,225 @@ const Leads: React.FC = () => {
         </Stack>
       </CardContent>
     </Card>
+  )
+);
+LeadCard.displayName = "LeadCard";
+
+const Leads: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  // State management
+  const [mounted, setMounted] = useState(false);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [apiLeads, setApiLeads] = useState<APILead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  const [formData, setFormData] = useState<LeadFormData>(defaultFormData);
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+
+  // Memoized calculations
+  const stats = useMemo(() => utils.calculateStats(leads), [leads]);
+
+  const filtered = useMemo(
+    () => utils.filterLeads(leads, search),
+    [leads, search]
   );
+
+  const rows = useMemo(
+    () => filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
+    [filtered, page, rowsPerPage]
+  );
+
+  // Memoized header configuration
+  const header = useMemo(
+    () => [
+      { label: "Name", dataKey: "name" },
+      { label: "Email", dataKey: "email" },
+      { label: "Phone", dataKey: "phone" },
+      { label: "Status", dataKey: "status" },
+      { label: "Budget", dataKey: "value" },
+      {
+        label: "Actions",
+        component: (
+          row: Lead,
+          handlers: {
+            onEdit: (lead: Lead) => void;
+            onDelete: (lead: Lead) => void;
+          }
+        ) => (
+          <Stack direction="row" spacing={1} justifyContent="center">
+            {" "}
+            <PermissionGuard module="lead" action="write" hideWhenNoAccess>
+              <Tooltip title="Edit Lead">
+                <IconButton
+                  aria-label="edit"
+                  onClick={() => handlers.onEdit(row)}
+                  size="small"
+                  sx={COMMON_STYLES.iconButton("primary.main", "primary.dark")}
+                >
+                  <Edit fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </PermissionGuard>
+            <PermissionGuard module="lead" action="delete" hideWhenNoAccess>
+              <Tooltip title="Delete Lead">
+                <IconButton
+                  aria-label="delete"
+                  onClick={() => handlers.onDelete(row)}
+                  size="small"
+                  sx={COMMON_STYLES.iconButton("error.main", "error.dark")}
+                >
+                  <Delete fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </PermissionGuard>
+          </Stack>
+        ),
+      },
+    ],
+    []
+  );
+
+  // Optimized event handlers with useCallback
+  const loadLeads = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await axios.get(API_BASE);
+      const apiLeadsData = response.data.data || response.data;
+      const transformedLeads = apiLeadsData.map(utils.transformAPILead);
+      setApiLeads(apiLeadsData);
+      setLeads(transformedLeads);
+    } catch (error) {
+      console.error("Failed to load leads:", error);
+      setApiLeads([]);
+      setLeads([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  const handleOpen = useCallback(
+    (lead?: Lead) => {
+      if (lead) {
+        const originalApiLead = apiLeads.find(
+          (apiLead) => apiLead.leadId === lead.id
+        );
+        if (originalApiLead) {
+          setEditId(lead.id);
+          setFormData(utils.transformAPILeadToForm(originalApiLead));
+        }
+      } else {
+        setEditId(null);
+        setFormData(defaultFormData);
+      }
+      setOpen(true);
+    },
+    [apiLeads]
+  );
+
+  const handleClose = useCallback(() => {
+    setOpen(false);
+    setEditId(null);
+    setFormData(defaultFormData);
+  }, []);
+
+  const handleSave = useCallback(
+    async (values: LeadFormData) => {
+      setSaving(true);
+      try {
+        if (editId) {
+          const leadToUpdate = apiLeads.find((l) => l.leadId === editId);
+          if (leadToUpdate && leadToUpdate._id) {
+            const apiData = utils.transformFormToAPI(values, editId);
+            const response = await axios.patch(
+              `${API_BASE}/${leadToUpdate._id}`,
+              apiData
+            );
+            const updatedApiLead = response.data.data || response.data;
+
+            const newApiLeads = apiLeads.map((l) =>
+              l.leadId === editId ? updatedApiLead : l
+            );
+            const newDisplayLeads = newApiLeads.map(utils.transformAPILead);
+
+            setApiLeads(newApiLeads);
+            setLeads(newDisplayLeads);
+          }
+        } else {
+          const newLeadId = `LEAD-${Date.now()}`;
+          const apiData = utils.transformFormToAPI(values, newLeadId);
+          const response = await axios.post(API_BASE, apiData);
+          const createdApiLead = response.data.data || response.data;
+          const createdDisplayLead = utils.transformAPILead(createdApiLead);
+
+          setApiLeads([createdApiLead, ...apiLeads]);
+          setLeads([createdDisplayLead, ...leads]);
+        }
+        handleClose();
+      } catch (error) {
+        console.error("Failed to save lead:", error);
+        const errorMessage =
+          error.response?.data?.errors?.join(", ") ||
+          error.response?.data?.message ||
+          error.response?.data?.error ||
+          "Failed to save lead. Please check your connection and try again.";
+        alert(`Error: ${errorMessage}`);
+      } finally {
+        setSaving(false);
+      }
+    },
+    [editId, apiLeads, leads, handleClose]
+  );
+  const handleDelete = useCallback(
+    async (lead: Lead) => {
+      if (!window.confirm(`Delete lead ${lead.name}?`) || !lead._id) {
+        if (!lead._id) console.error("Lead ID not found");
+        return;
+      }
+
+      try {
+        await axios.delete(`${API_BASE}/${lead._id}`);
+        const newApiLeads = apiLeads.filter((l) => l.leadId !== lead.id);
+        const newDisplayLeads = leads.filter((l) => l.id !== lead.id);
+        setApiLeads(newApiLeads);
+        setLeads(newDisplayLeads);
+      } catch (error) {
+        console.error("Failed to delete lead:", error);
+      }
+    },
+    [apiLeads, leads]
+  );
+  const handleChangePage = useCallback(
+    (_: unknown, newPage: number) => setPage(newPage),
+    []
+  );
+  const handleChangeRowsPerPage = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setRowsPerPage(parseInt(e.target.value, 10));
+      setPage(0);
+    },
+    []
+  );
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearch(e.target.value);
+      setPage(0);
+    },
+    []
+  );
+  // Effects
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  useEffect(() => {
+    loadLeads();
+  }, [loadLeads]);
 
   if (!mounted)
     return <div style={{ minHeight: "100vh", background: "#f5f7fa" }} />;
@@ -605,21 +610,18 @@ const Leads: React.FC = () => {
         mt: { xs: 1, md: 3 },
         mx: { xs: 1, md: 3 },
         width: "calc(100% - 16px)",
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        background: GRADIENTS.primary,
         borderRadius: 4,
         p: { xs: 2, md: 4 },
         minHeight: "100vh",
       }}
     >
-      {/* Enhanced Header Section */}
+      {/* Enhanced Header Section */}{" "}
       <Paper
         elevation={8}
         sx={{
           p: { xs: 2, md: 4 },
-          borderRadius: 4,
-          background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-          border: "1px solid rgba(255,255,255,0.2)",
-          backdropFilter: "blur(10px)",
+          ...COMMON_STYLES.roundedPaper,
           mb: 3,
         }}
       >
@@ -633,50 +635,22 @@ const Leads: React.FC = () => {
             mb: 4,
           }}
         >
-          <Card
-            elevation={3}
-            sx={{ textAlign: "center", p: 2, borderRadius: 3 }}
-          >
-            <Typography variant="h4" fontWeight={700} color="primary.main">
-              {stats.total}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Total Leads
-            </Typography>
-          </Card>
-          <Card
-            elevation={3}
-            sx={{ textAlign: "center", p: 2, borderRadius: 3 }}
-          >
-            <Typography variant="h4" fontWeight={700} color="info.main">
-              {stats.new}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              New Leads
-            </Typography>
-          </Card>
-          <Card
-            elevation={3}
-            sx={{ textAlign: "center", p: 2, borderRadius: 3 }}
-          >
-            <Typography variant="h4" fontWeight={700} color="success.main">
-              {stats.closed}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Closed Deals
-            </Typography>
-          </Card>
-          <Card
-            elevation={3}
-            sx={{ textAlign: "center", p: 2, borderRadius: 3 }}
-          >
-            <Typography variant="h4" fontWeight={700} color="warning.main">
-              {stats.conversion}%
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Conversion Rate
-            </Typography>
-          </Card>
+          <StatsCard
+            value={stats.total}
+            label="Total Leads"
+            color="primary.main"
+          />
+          <StatsCard value={stats.new} label="New Leads" color="info.main" />
+          <StatsCard
+            value={stats.closed}
+            label="Closed Deals"
+            color="success.main"
+          />
+          <StatsCard
+            value={`${stats.conversion}%`}
+            label="Conversion Rate"
+            color="warning.main"
+          />
         </Box>
         {/* Action Bar */}
         <Box
@@ -688,6 +662,8 @@ const Leads: React.FC = () => {
             mb: 2,
           }}
         >
+          {" "}
+          {/* Controls: Title, View Toggle, Search, Add Button */}
           <Typography
             variant="h4"
             sx={{
@@ -695,90 +671,72 @@ const Leads: React.FC = () => {
               flex: 1,
               color: "text.primary",
               fontSize: { xs: 24, sm: 28, md: 32 },
-              background: "linear-gradient(45deg, #667eea, #764ba2)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
+              ...COMMON_STYLES.gradientText,
             }}
           >
             Leads Management
           </Typography>
+          <Stack direction="row" spacing={2} alignItems="center">
+            {/* View Toggle */}
+            {[
+              { mode: "table", icon: ViewList, title: "Table View" },
+              { mode: "cards", icon: ViewModule, title: "Card View" },
+            ].map(({ mode, icon: Icon, title }) => (
+              <Tooltip key={mode} title={title}>
+                <IconButton
+                  onClick={() => setViewMode(mode as "table" | "cards")}
+                  sx={{
+                    backgroundColor:
+                      viewMode === mode ? "primary.main" : "action.hover",
+                    color: viewMode === mode ? "white" : "text.primary",
+                    "&:hover": { backgroundColor: "primary.dark" },
+                  }}
+                >
+                  <Icon />
+                </IconButton>
+              </Tooltip>
+            ))}
 
-          {/* View Toggle Buttons */}
-          <Box sx={{ display: "flex", gap: 1 }}>
-            <Tooltip title="Table View">
-              <IconButton
-                onClick={() => setViewMode("table")}
+            {/* Search */}
+            <Box sx={{ minWidth: 280 }}>
+              <MySearchBar
+                value={search}
+                onChange={handleSearchChange}
+                placeholder="Search leads by name, email, phone..."
+              />
+            </Box>
+
+            {/* Add Button */}
+            <PermissionGuard module="lead" action="write" hideWhenNoAccess>
+              <Button
+                variant="contained"
+                startIcon={<PersonAdd />}
+                onClick={() => handleOpen()}
+                disabled={saving}
                 sx={{
-                  backgroundColor:
-                    viewMode === "table" ? "primary.main" : "action.hover",
-                  color: viewMode === "table" ? "white" : "text.primary",
-                  "&:hover": { backgroundColor: "primary.dark" },
+                  minWidth: 160,
+                  height: 48,
+                  borderRadius: 3,
+                  fontWeight: 700,
+                  background: GRADIENTS.button,
+                  boxShadow: "0 8px 16px rgba(102, 126, 234, 0.3)",
+                  "&:hover": {
+                    background: GRADIENTS.buttonHover,
+                    boxShadow: "0 12px 24px rgba(102, 126, 234, 0.4)",
+                    transform: "translateY(-2px)",
+                  },
                 }}
               >
-                <ViewList />
-              </IconButton>
-            </Tooltip>
-            <Tooltip title="Card View">
-              <IconButton
-                onClick={() => setViewMode("cards")}
-                sx={{
-                  backgroundColor:
-                    viewMode === "cards" ? "primary.main" : "action.hover",
-                  color: viewMode === "cards" ? "white" : "text.primary",
-                  "&:hover": { backgroundColor: "primary.dark" },
-                }}
-              >
-                <ViewModule />
-              </IconButton>
-            </Tooltip>
-          </Box>
-
-          {/* Search Bar */}
-          <Box
-            sx={{ flex: { xs: 1, lg: 2 }, minWidth: { xs: "100%", sm: 280 } }}
-          >
-            <MySearchBar
-              value={search}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setSearch(e.target.value)
-              }
-              placeholder="Search leads by name, email, phone..."
-            />
-          </Box>
-
-          {/* Add Lead Button */}
-          <PermissionGuard module="lead" action="write" hideWhenNoAccess>
-            <Button
-              variant="contained"
-              startIcon={<PersonAdd />}
-              onClick={() => handleOpen()}
-              disabled={saving}
-              sx={{
-                minWidth: 160,
-                height: 48,
-                borderRadius: 3,
-                fontWeight: 700,
-                fontSize: "1rem",
-                background: "linear-gradient(45deg, #667eea, #764ba2)",
-                boxShadow: "0 8px 16px rgba(102, 126, 234, 0.3)",
-                "&:hover": {
-                  background: "linear-gradient(45deg, #5a6fd8, #6a42a0)",
-                  boxShadow: "0 12px 24px rgba(102, 126, 234, 0.4)",
-                  transform: "translateY(-2px)",
-                },
-              }}
-            >
-              {saving ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                "Add Lead"
-              )}
-            </Button>
-          </PermissionGuard>
+                {saving ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  "Add Lead"
+                )}
+              </Button>
+            </PermissionGuard>
+          </Stack>
         </Box>
       </Paper>
-
       {/* Content Area */}
       {loading ? (
         <LoadingSkeleton />
@@ -799,19 +757,20 @@ const Leads: React.FC = () => {
               }}
             >
               {rows.map((lead) => (
-                <LeadCard key={lead.id} lead={lead} />
+                <LeadCard
+                  key={lead.id}
+                  lead={lead}
+                  onEdit={handleOpen}
+                  onDelete={handleDelete}
+                />
               ))}
             </Box>
           ) : (
-            /* Table View */
-            <Paper
+            /* Table View */ <Paper
               elevation={8}
               sx={{
-                borderRadius: 4,
+                ...COMMON_STYLES.roundedPaper,
                 overflow: "hidden",
-                background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-                border: "1px solid rgba(255,255,255,0.2)",
-                backdropFilter: "blur(10px)",
               }}
             >
               <TableContainer sx={{ maxHeight: "70vh" }}>
@@ -841,7 +800,7 @@ const Leads: React.FC = () => {
                   onPageChange={handleChangePage}
                   rowsPerPage={rowsPerPage}
                   onRowsPerPageChange={handleChangeRowsPerPage}
-                  rowsPerPageOptions={[5, 10, 25, 50]}
+                  rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
                   labelRowsPerPage="Rows per page:"
                   sx={{
                     ".MuiTablePagination-toolbar": { px: 0 },
@@ -857,7 +816,6 @@ const Leads: React.FC = () => {
           )}
         </>
       )}
-
       {/* Floating Action Button for Mobile */}
       {isMobile && (
         <PermissionGuard module="lead" action="write" hideWhenNoAccess>
@@ -870,9 +828,9 @@ const Leads: React.FC = () => {
               position: "fixed",
               bottom: 24,
               right: 24,
-              background: "linear-gradient(45deg, #667eea, #764ba2)",
+              background: GRADIENTS.button,
               "&:hover": {
-                background: "linear-gradient(45deg, #5a6fd8, #6a42a0)",
+                background: GRADIENTS.buttonHover,
               },
             }}
           >
@@ -880,7 +838,6 @@ const Leads: React.FC = () => {
           </Fab>
         </PermissionGuard>
       )}
-
       {/* Lead Dialog */}
       <LeadDialog
         open={open}

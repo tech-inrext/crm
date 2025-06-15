@@ -1,25 +1,122 @@
 "use client";
 
-import React, { useState } from "react";
-import Box from "@mui/material/Box";
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  memo,
+  lazy,
+  Suspense,
+} from "react";
+import { Box, Typography, Drawer, useMediaQuery } from "@mui/material";
 import MySidebar from "../../components/ui/MySidebar";
 import MyAvatar from "../../components/ui/MyAvatar";
 import MyNavbar from "../../components/ui/MyNavbar";
-import Typography from "@mui/material/Typography";
-import Drawer from "@mui/material/Drawer";
-import useMediaQuery from "@mui/material/useMediaQuery";
-import Leads from "./Leads";
-import Users from "./Users";
-import Roles from "./Roles";
 import { usePermissions } from "../../contexts/PermissionsContext";
 import PermissionGuard from "../../components/PermissionGuard";
 
-// Toolbar actions (placeholder for user/account)
-export const DashboardToolbarActions: React.FC = () => (
+// Lazy load heavy components for better performance
+const Leads = lazy(() => import("./Leads"));
+const Users = lazy(() => import("./Users"));
+const Roles = lazy(() => import("./Roles"));
+
+// Constants for better performance and reusability
+const NAVBAR_HEIGHT = 56;
+const SIDEBAR_WIDTH = 260;
+const MOBILE_BREAKPOINT = "(max-width: 600px)";
+
+// SVG Icons as constants to avoid re-creation
+const DashboardIcon = memo(() => (
+  <svg
+    width="24"
+    height="24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M3 9h18" />
+    <path d="M9 21V9" />
+  </svg>
+));
+DashboardIcon.displayName = "DashboardIcon";
+
+const LeadsIcon = memo(() => (
+  <svg
+    width="24"
+    height="24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="7" height="9" rx="1" />
+    <rect x="14" y="3" width="7" height="5" rx="1" />
+    <rect x="14" y="12" width="7" height="9" rx="1" />
+    <rect x="3" y="16" width="7" height="5" rx="1" />
+  </svg>
+));
+LeadsIcon.displayName = "LeadsIcon";
+
+const UsersIcon = memo(() => (
+  <svg
+    width="24"
+    height="24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M21 15V6.5A2.5 2.5 0 0 0 18.5 4h-13A2.5 2.5 0 0 0 3 6.5V15" />
+    <path d="M21 15v2.5A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5V15" />
+    <path d="M7 10h10" />
+    <path d="M7 14h5" />
+  </svg>
+));
+UsersIcon.displayName = "UsersIcon";
+
+const RolesIcon = memo(() => (
+  <svg
+    width="24"
+    height="24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.5"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <path d="M7 7h10v10H7z" />
+  </svg>
+));
+RolesIcon.displayName = "RolesIcon";
+
+// Loading component for Suspense
+const ComponentLoader = memo(() => (
+  <Box
+    sx={{
+      display: "flex",
+      justifyContent: "center",
+      alignItems: "center",
+      height: "200px",
+    }}
+  >
+    <Typography>Loading...</Typography>
+  </Box>
+));
+ComponentLoader.displayName = "ComponentLoader";
+
+// Toolbar actions (memoized for performance)
+export const DashboardToolbarActions = memo(() => (
   <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
     <MyAvatar src="/avatar.png" alt="User" />
   </Box>
-);
+));
+DashboardToolbarActions.displayName = "DashboardToolbarActions";
 
 // Update SidebarLink type to support headers and dividers
 export type SidebarLink =
@@ -39,15 +136,93 @@ const Dashboard: React.FC = () => {
   const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState("dashboard");
   const { hasReadAccess, loading: permissionsLoading } = usePermissions();
-
-  // Use a more specific breakpoint to avoid hydration issues
-  const isMobile = useMediaQuery("(max-width: 600px)", {
+  // Use optimized breakpoint
+  const isMobile = useMediaQuery(MOBILE_BREAKPOINT, {
     noSsr: true, // This prevents SSR mismatch
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     setMounted(true);
   }, []);
+
+  // Memoized sidebar links for better performance
+  const allSidebarLinks = useMemo<SidebarLink[]>(
+    () => [
+      {
+        label: "Dashboard",
+        href: "dashboard",
+        icon: <DashboardIcon />,
+      },
+      {
+        label: "Leads",
+        href: "leads",
+        module: "lead",
+        icon: <LeadsIcon />,
+      },
+      {
+        label: "Users",
+        href: "users",
+        module: "employee",
+        icon: <UsersIcon />,
+      },
+      { kind: "divider" },
+      {
+        label: "Roles",
+        href: "roles",
+        module: "role",
+        icon: <RolesIcon />,
+      },
+    ],
+    []
+  );
+
+  // Filter sidebar links based on permissions (memoized)
+  const sidebarLinks = useMemo(() => {
+    return allSidebarLinks.filter((link) => {
+      if ("kind" in link) return true; // Always show headers and dividers
+      if (!("module" in link)) return true; // Always show dashboard
+      if (!link.module) return true; // Show links without module specified
+      return hasReadAccess(link.module);
+    });
+  }, [allSidebarLinks, hasReadAccess]);
+
+  // Memoized content rendering
+  const content = useMemo(() => {
+    if (selected === "leads") {
+      return (
+        <PermissionGuard module="lead" action="read" hideWhenNoAccess>
+          <Suspense fallback={<ComponentLoader />}>
+            <Leads />
+          </Suspense>
+        </PermissionGuard>
+      );
+    } else if (selected === "users") {
+      return (
+        <PermissionGuard module="employee" action="read" hideWhenNoAccess>
+          <Suspense fallback={<ComponentLoader />}>
+            <Users />
+          </Suspense>
+        </PermissionGuard>
+      );
+    } else if (selected === "roles") {
+      return (
+        <PermissionGuard module="role" action="read" hideWhenNoAccess>
+          <Suspense fallback={<ComponentLoader />}>
+            <Roles />
+          </Suspense>
+        </PermissionGuard>
+      );
+    } else {
+      return (
+        <Typography
+          sx={{ mt: 2, ml: 2, fontWeight: 500, fontSize: 18, color: "#000" }}
+        >
+          Dashboard content will be displayed here
+        </Typography>
+      );
+    }
+  }, [selected]);
+
   // Show loading state without complex styling to avoid hydration errors
   if (!mounted || permissionsLoading) {
     return (
@@ -65,125 +240,6 @@ const Dashboard: React.FC = () => {
     );
   }
 
-  // Sidebar navigation structure with permission-based filtering
-  const allSidebarLinks: SidebarLink[] = [
-    {
-      label: "Dashboard",
-      href: "dashboard",
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <path d="M3 9h18" />
-          <path d="M9 21V9" />
-        </svg>
-      ),
-    },
-    {
-      label: "Leads",
-      href: "leads",
-      module: "lead",
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="3" y="3" width="7" height="9" rx="1" />
-          <rect x="14" y="3" width="7" height="5" rx="1" />
-          <rect x="14" y="12" width="7" height="9" rx="1" />
-          <rect x="3" y="16" width="7" height="5" rx="1" />
-        </svg>
-      ),
-    },
-    {
-      label: "Users",
-      href: "users",
-      module: "employee",
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <path d="M21 15V6.5A2.5 2.5 0 0 0 18.5 4h-13A2.5 2.5 0 0 0 3 6.5V15" />
-          <path d="M21 15v2.5A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5V15" />
-          <path d="M7 10h10" />
-          <path d="M7 14h5" />
-        </svg>
-      ),
-    },
-    { kind: "divider" },
-    {
-      label: "Roles",
-      href: "roles",
-      module: "role",
-      icon: (
-        <svg
-          width="24"
-          height="24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        >
-          <rect x="3" y="3" width="18" height="18" rx="2" />
-          <path d="M7 7h10v10H7z" />
-        </svg>
-      ),
-    },
-  ];
-  // Filter sidebar links based on permissions
-  const sidebarLinks = allSidebarLinks.filter((link) => {
-    if ("kind" in link) return true; // Always show headers and dividers
-    if (!("module" in link)) return true; // Always show dashboard
-    if (!link.module) return true; // Show links without module specified
-    return hasReadAccess(link.module);
-  });
-  let content;
-  if (selected === "leads") {
-    content = (
-      <PermissionGuard module="lead" action="read" hideWhenNoAccess>
-        <Leads />
-      </PermissionGuard>
-    );
-  } else if (selected === "users") {
-    content = (
-      <PermissionGuard module="employee" action="read" hideWhenNoAccess>
-        <Users />
-      </PermissionGuard>
-    );
-  } else if (selected === "roles") {
-    content = (
-      <PermissionGuard module="role" action="read" hideWhenNoAccess>
-        <Roles />
-      </PermissionGuard>
-    );
-  } else {
-    content = (
-      <Typography
-        sx={{ mt: 2, ml: 2, fontWeight: 500, fontSize: 18, color: "#000" }}
-      >
-        Dashboard content will be displayed here
-      </Typography>
-    );
-  }
   return (
     <Box
       sx={{
@@ -214,7 +270,7 @@ const Dashboard: React.FC = () => {
         sx={{
           display: "flex",
           flex: 1,
-          pt: "56px", // Account for navbar height (56px from MyNavbar)
+          pt: `${NAVBAR_HEIGHT}px`, // Account for navbar height
           minHeight: "100vh",
         }}
       >
@@ -229,12 +285,12 @@ const Dashboard: React.FC = () => {
               sx={{
                 zIndex: 1300,
                 "& .MuiDrawer-paper": {
-                  width: 260,
+                  width: SIDEBAR_WIDTH,
                   bgcolor: "#fafcfd",
                   color: "#fff",
                   borderRight: "1px solid #23272A",
-                  top: "56px", // Start below fixed navbar
-                  height: "calc(100vh - 56px)",
+                  top: `${NAVBAR_HEIGHT}px`, // Start below fixed navbar
+                  height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
                   overflow: "auto",
                 },
               }}
@@ -251,16 +307,16 @@ const Dashboard: React.FC = () => {
           ) : (
             <Box
               sx={{
-                width: 260,
-                minWidth: 260,
+                width: SIDEBAR_WIDTH,
+                minWidth: SIDEBAR_WIDTH,
                 flexShrink: 0,
                 bgcolor: "#f8fafc",
                 color: "#fff",
                 boxShadow: 1,
                 position: "fixed",
                 left: 0,
-                top: "56px", // Start below fixed navbar
-                height: "calc(100vh - 56px)",
+                top: `${NAVBAR_HEIGHT}px`, // Start below fixed navbar
+                height: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
                 zIndex: 1100,
                 borderRight: "1px solid #23272A",
                 overflow: "auto",
@@ -282,8 +338,8 @@ const Dashboard: React.FC = () => {
           component="main"
           sx={{
             flex: 1,
-            marginLeft: isMobile ? 0 : "260px", // Account for fixed sidebar width
-            minHeight: "calc(100vh - 56px)",
+            marginLeft: isMobile ? 0 : `${SIDEBAR_WIDTH}px`, // Account for fixed sidebar width
+            minHeight: `calc(100vh - ${NAVBAR_HEIGHT}px)`,
             bgcolor: "#f2f5f7",
             color: "#fff",
             overflow: "auto",
