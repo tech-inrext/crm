@@ -37,26 +37,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-
   const checkAuth = async () => {
     try {
-      // Try the enhanced profile endpoint that supports multiple auth methods
-      const response = await axios.get("/api/v0/employee/profileEnhanced", {
+      // Use the working profile endpoint
+      const response = await axios.get("/api/v0/employee/loggedInUserProfile", {
         withCredentials: true,
         timeout: 5000,
       });
 
       if (response.data.success && response.data.data) {
         console.log("✅ Authentication successful:", response.data.data);
-        setUser(response.data.data);
-      } else {
+        setUser(response.data.data);      } else {
         console.log("❌ Authentication failed:", response.data.message);
         setUser(null);
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } }; message?: string };
       console.log(
         "❌ Auth check error:",
-        error.response?.data?.message || error.message
+        axiosError.response?.data?.message || axiosError.message || "Unknown error"
       );
       setUser(null);
     } finally {
@@ -79,24 +78,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       if (response.data.success) {
-        console.log("✅ Login successful:", response.data.employee);
-
-        // Set user from login response
+        console.log("✅ Login successful:", response.data.employee);        // Set user from login response
         setUser(response.data.employee);
 
         // Also verify auth check works after login
         setTimeout(() => {
           checkAuth();
-        }, 100);
-      } else {
+        }, 100);      } else {
         throw new Error(response.data.message || "Login failed");
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } }; message?: string };
       console.error(
         "❌ Login error:",
-        error.response?.data?.message || error.message
+        axiosError.response?.data?.message || axiosError.message || "Unknown error"
       );
-      throw new Error(error.response?.data?.message || "Login failed");
+      throw new Error(axiosError.response?.data?.message || "Login failed");
     }
   };
 
@@ -108,13 +105,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         {
           withCredentials: true,
           timeout: 5000,
-        }
-      );
+        }      );
       console.log("✅ Logout successful");
-    } catch (error: any) {
+    } catch (error: unknown) {
+      const axiosError = error as { response?: { data?: { message?: string } }; message?: string };
       console.error(
         "❌ Logout error:",
-        error.response?.data?.message || error.message
+        axiosError.response?.data?.message || axiosError.message || "Unknown error"
       );
     } finally {
       setUser(null);

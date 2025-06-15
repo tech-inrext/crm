@@ -17,11 +17,10 @@ export async function verifyToken(req, res, next) {
         message: "Authentication required: No token provided",
       });
     }
-
     const decodeObj = jwt.verify(token, "rahul@123");
     const { _id } = decodeObj;
 
-    const employee = await Employee.findById(_id).populate("role");
+    const employee = await Employee.findById(_id);
     if (!employee) {
       return res.status(401).json({
         success: false,
@@ -60,7 +59,7 @@ export async function userAuth(req, res, next) {
     const { _id } = decodeObj;
     console.log("hello", decodeObj);
 
-    const employee = await Employee.findById(_id).populate("role");
+    const employee = await Employee.findById(_id);
     if (!employee) {
       throw new Error("User not found");
     }

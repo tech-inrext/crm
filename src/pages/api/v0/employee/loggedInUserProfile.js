@@ -6,13 +6,13 @@ async function getProfile(req, res) {
   await dbConnect();
 
   if (req.method !== "GET") {
-    return res.status(405).json({ success: false, message: "Method not allowed" });
+    return res
+      .status(405)
+      .json({ success: false, message: "Method not allowed" });
   }
 
   try {
-    const user = req.employee;
-
-    // You may customize what fields to return
+    const user = req.employee; // You may customize what fields to return
     res.status(200).json({
       success: true,
       data: {
@@ -20,7 +20,7 @@ async function getProfile(req, res) {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role?.name,
+        role: user.role,
         gender: user.gender,
         address: user.address,
         designation: user.designation,
@@ -30,7 +30,13 @@ async function getProfile(req, res) {
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to fetch profile", error: error.message });
+    res
+      .status(500)
+      .json({
+        success: false,
+        message: "Failed to fetch profile",
+        error: error.message,
+      });
   }
 }
 

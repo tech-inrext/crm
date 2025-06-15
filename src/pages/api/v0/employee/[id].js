@@ -6,9 +6,8 @@ import { checkPermission } from "../../../../middlewares/permissions";
 // ✅ GET: Fetch employee by ID
 const getEmployeeById = async (req, res) => {
   const { id } = req.query;
-
   try {
-    const employee = await Employee.findById(id).populate("role");
+    const employee = await Employee.findById(id);
 
     if (!employee) {
       return res.status(404).json({
@@ -112,7 +111,7 @@ const updateEmployeeDetails = async (req, res) => {
       id,
       { $set: updateFields },
       { new: true }
-    ).populate("role");
+    );
 
     if (!updatedEmployee) {
       return res.status(404).json({
