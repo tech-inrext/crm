@@ -9,8 +9,8 @@ import React, {
   Suspense,
 } from "react";
 import { Box, Typography, Drawer, useMediaQuery } from "@mui/material";
+import Image from "next/image";
 import MySidebar from "../../components/ui/MySidebar";
-import MyAvatar from "../../components/ui/MyAvatar";
 import MyNavbar from "../../components/ui/MyNavbar";
 import { usePermissions } from "../../contexts/PermissionsContext";
 import PermissionGuard from "../../components/PermissionGuard";
@@ -25,74 +25,35 @@ const NAVBAR_HEIGHT = 56;
 const SIDEBAR_WIDTH = 260;
 const MOBILE_BREAKPOINT = "(max-width: 600px)";
 
-// SVG Icons as constants to avoid re-creation
+// Reusable Icon Component for better maintainability
+const AppIcon = memo(
+  ({ src, alt, size = 24 }: { src: string; alt: string; size?: number }) => (
+    <Image
+      src={src}
+      alt={alt}
+      width={size}
+      height={size}
+      style={{
+        display: "block",
+      }}
+      priority={false}
+      unoptimized // For small icons, optimization overhead might not be worth it
+    />
+  )
+);
+AppIcon.displayName = "AppIcon";
+
+// Icon instances
 const DashboardIcon = memo(() => (
-  <svg
-    width="24"
-    height="24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <path d="M3 9h18" />
-    <path d="M9 21V9" />
-  </svg>
+  <AppIcon src="/dasboard.png" alt="Dashboard" />
 ));
+const LeadsIcon = memo(() => <AppIcon src="/leads.png" alt="Leads" />);
+const UsersIcon = memo(() => <AppIcon src="/users.png" alt="Users" />);
+const RolesIcon = memo(() => <AppIcon src="/roles.png" alt="Roles" />);
+
 DashboardIcon.displayName = "DashboardIcon";
-
-const LeadsIcon = memo(() => (
-  <svg
-    width="24"
-    height="24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="3" width="7" height="9" rx="1" />
-    <rect x="14" y="3" width="7" height="5" rx="1" />
-    <rect x="14" y="12" width="7" height="9" rx="1" />
-    <rect x="3" y="16" width="7" height="5" rx="1" />
-  </svg>
-));
 LeadsIcon.displayName = "LeadsIcon";
-
-const UsersIcon = memo(() => (
-  <svg
-    width="24"
-    height="24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M21 15V6.5A2.5 2.5 0 0 0 18.5 4h-13A2.5 2.5 0 0 0 3 6.5V15" />
-    <path d="M21 15v2.5A2.5 2.5 0 0 1 18.5 20h-13A2.5 2.5 0 0 1 3 17.5V15" />
-    <path d="M7 10h10" />
-    <path d="M7 14h5" />
-  </svg>
-));
 UsersIcon.displayName = "UsersIcon";
-
-const RolesIcon = memo(() => (
-  <svg
-    width="24"
-    height="24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.5"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <path d="M7 7h10v10H7z" />
-  </svg>
-));
 RolesIcon.displayName = "RolesIcon";
 
 // Loading component for Suspense
@@ -109,14 +70,6 @@ const ComponentLoader = memo(() => (
   </Box>
 ));
 ComponentLoader.displayName = "ComponentLoader";
-
-// Toolbar actions (memoized for performance)
-export const DashboardToolbarActions = memo(() => (
-  <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-    <MyAvatar src="/avatar.png" alt="User" />
-  </Box>
-));
-DashboardToolbarActions.displayName = "DashboardToolbarActions";
 
 // Update SidebarLink type to support headers and dividers
 export type SidebarLink =

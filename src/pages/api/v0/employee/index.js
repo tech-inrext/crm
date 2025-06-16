@@ -21,6 +21,8 @@ const createEmployee = async (req, res) => {
       managerId,
       departmentId,
       role,
+      roles,
+      currentRole,
     } = req.body;
 
     const dummyPassword = "Inrext@123";
@@ -46,15 +48,21 @@ const createEmployee = async (req, res) => {
       return res
         .status(409)
         .json({ success: false, message: "Employee already exists" });
-    }
-
-    // 🔍 Validate role exists
-    if (role) {
-      const foundRole = await Role.findOne({ name: role });
-      if (!foundRole) {
-        return res
-          .status(400)
-          .json({ success: false, message: `Role '${role}' not found` });
+    } // 🔍 Validate roles exist
+    const rolesToValidate = roles && roles.length > 0 ? roles : [role];
+    if (rolesToValidate.length > 0) {
+      for (const roleName of rolesToValidate) {
+        if (roleName) {
+          const foundRole = await Role.findOne({ name: roleName });
+          if (!foundRole) {
+            return res
+              .status(400)
+              .json({
+                success: false,
+                message: `Role '${roleName}' not found`,
+              });
+          }
+        }
       }
     } // ✅ Create new employee
     const newEmployee = new Employee({
@@ -72,6 +80,8 @@ const createEmployee = async (req, res) => {
       departmentId:
         departmentId && departmentId.trim() ? departmentId : undefined,
       role,
+      roles: roles && roles.length > 0 ? roles : [role],
+      currentRole: currentRole || (roles && roles.length > 0 ? roles[0] : role),
     });
 
     await newEmployee.save();

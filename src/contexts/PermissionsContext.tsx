@@ -44,7 +44,10 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchUserPermissions = useCallback(async () => {
-    if (!user?.role) {
+    const activeRole = user?.currentRole || user?.role;
+
+    if (!activeRole) {
+      console.log("🔍 PermissionsContext: No active role found");
       setPermissions(null);
       setLoading(false);
       return;
@@ -52,6 +55,10 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       setLoading(true);
+
+      console.log(
+        `🔍 PermissionsContext: Fetching permissions for role "${activeRole}"`
+      );
 
       // Use the new permissions API endpoint
       const response = await axios.get("/api/v0/employee/permissions", {
@@ -73,7 +80,7 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setLoading(false);
     }
-  }, [user?.role]);
+  }, [user?.currentRole, user?.role]);
 
   const hasReadAccess = (module: string): boolean => {
     if (!permissions) return false;

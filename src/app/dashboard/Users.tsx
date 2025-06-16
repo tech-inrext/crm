@@ -15,6 +15,12 @@ import {
   Alert,
   TextField,
   MenuItem,
+  Chip,
+  FormControl,
+  InputLabel,
+  Select,
+  OutlinedInput,
+  SelectChangeEvent,
 } from "@mui/material";
 import { Edit, Delete, Add } from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
@@ -56,6 +62,8 @@ export interface Employee {
   email: string;
   phone: string;
   role: string;
+  roles?: string[]; // Multiple roles support
+  currentRole?: string; // Active role for the session
   address?: string;
   designation?: string;
   managerId?: string;
@@ -71,7 +79,23 @@ const header: TableHeader<Employee>[] = [
   { label: "Name", dataKey: "name" },
   { label: "Email", dataKey: "email" },
   { label: "Phone", dataKey: "phone" },
-  { label: "Role", dataKey: "role" },
+  { label: "Primary Role", dataKey: "role" },
+  {
+    label: "All Roles",
+    component: (row: Employee) => (
+      <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+        {(row.roles || [row.role]).map((role, index) => (
+          <Chip
+            key={`${role}-${index}`}
+            label={role}
+            size="small"
+            variant={role === row.role ? "filled" : "outlined"}
+            color={role === row.role ? "primary" : "default"}
+          />
+        ))}
+      </Box>
+    ),
+  },
   {
     label: "Actions",
     component: (row: Employee, handlers: TableActionHandlers<Employee>) => (
@@ -106,6 +130,8 @@ const defaultForm: Omit<Employee, "_id" | "dateJoined"> = {
   email: "",
   phone: "",
   role: "",
+  roles: [],
+  currentRole: "",
   address: "",
   designation: "",
   managerId: "",
@@ -206,6 +232,7 @@ const Users: React.FC = () => {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState(defaultForm);
+  const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<{
@@ -255,7 +282,6 @@ const Users: React.FC = () => {
     );
     setPage(0);
   }, [search, employees]);
-
   // Modal open/close
   const handleOpen = useCallback((emp?: Employee) => {
     setError(null);
@@ -267,6 +293,8 @@ const Users: React.FC = () => {
         email: emp.email,
         phone: emp.phone,
         role: emp.role,
+        roles: emp.roles || [emp.role],
+        currentRole: emp.currentRole || emp.role,
         address: emp.address || "",
         designation: emp.designation || "",
         managerId: emp.managerId || "",
@@ -276,9 +304,11 @@ const Users: React.FC = () => {
         altPhone: emp.altPhone || "",
         joiningDate: emp.joiningDate || "",
       });
+      setSelectedRoles(emp.roles || [emp.role]);
     } else {
       setEditId(null);
       setForm(defaultForm);
+      setSelectedRoles([]);
     }
     setOpen(true);
   }, []);
@@ -286,6 +316,7 @@ const Users: React.FC = () => {
     setOpen(false);
     setEditId(null);
     setForm(defaultForm);
+    setSelectedRoles([]);
     setError(null);
     setFieldErrors({});
   }, []); // Add/Edit employee (API)
@@ -295,7 +326,15 @@ const Users: React.FC = () => {
     setFieldErrors({});
     try {
       // Clean up form data before sending
-      const cleanedForm = { ...form };
+      const cleanedForm = { ...form }; // Add roles and currentRole
+      if (selectedRoles.length === 0) {
+        setFieldErrors({ role: "Please select at least one role" });
+        setSaving(false);
+        return;
+      }
+
+      cleanedForm.roles = selectedRoles;
+      cleanedForm.currentRole = selectedRoles[0];
 
       // Remove empty optional fields to avoid validation issues
       if (!cleanedForm.managerId?.trim()) {
@@ -366,7 +405,7 @@ const Users: React.FC = () => {
       }
     }
     setSaving(false);
-  }, [editId, form]);
+  }, [editId, form, selectedRoles]);
 
   // Delete employee (API)
   const handleDelete = useCallback(async (emp: Employee) => {
@@ -382,6 +421,24 @@ const Users: React.FC = () => {
     }
     setSaving(false);
   }, []);
+  const handleRoleChange = (event: SelectChangeEvent<string[]>) => {
+    const value = event.target.value;
+    const newRoles = typeof value === "string" ? value.split(",") : value;
+    setSelectedRoles(newRoles);
+
+    // Update form with primary role (first selected role)
+    if (newRoles.length > 0) {
+      setForm((f) => ({ ...f, role: newRoles[0] }));
+    } else {
+      // Clear role if no roles selected
+      setForm((f) => ({ ...f, role: "" }));
+    }
+
+    if (error) setError(null);
+    if (fieldErrors.role) {
+      setFieldErrors((prev) => ({ ...prev, role: undefined }));
+    }
+  };
 
   // Pagination handlers for custom Pagination
   const handlePageChange = (newPage: number) => setPage(newPage);
@@ -501,21 +558,25 @@ const Users: React.FC = () => {
           sx: {
             maxHeight: "90vh",
             height: "auto",
+            borderRadius: 2,
           },
         }}
       >
-        <DialogTitle id="employee-dialog-title">
-          {editId ? "Edit Employee" : "Add Employee"}
-        </DialogTitle>{" "}
+        <DialogTitle id="employee-dialog-title" sx={{ pb: 1 }}>
+          <Typography variant="h5" component="div" sx={{ fontWeight: 600 }}>
+            {editId ? "Edit Employee" : "Add Employee"}
+          </Typography>
+        </DialogTitle>
         <DialogContent
           sx={{
             display: "flex",
             flexDirection: "column",
-            gap: 2,
+            gap: 1,
             mt: 1,
             maxHeight: "70vh",
             overflowY: "auto",
             px: 3,
+            pb: 3,
           }}
         >
           {" "}
@@ -523,210 +584,297 @@ const Users: React.FC = () => {
             <Alert severity="error" sx={{ mb: 1 }}>
               {error}
             </Alert>
-          )}
-          <Typography variant="h6" sx={{ mt: 1, mb: 1, fontWeight: 600 }}>
+          )}{" "}
+          <Typography variant="h6" sx={{ mt: 1, mb: 2, fontWeight: 600 }}>
             Basic Information
           </Typography>
-          <TextField
-            label="Name"
-            value={form.name}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setForm((f) => ({ ...f, name: e.target.value }));
-              // Clear general error when user starts making changes
-              if (error) setError(null);
-            }}
-            required
-            autoFocus
-            inputProps={{ "aria-label": "Employee name" }}
-          />
-          <TextField
-            label="Email"
-            value={form.email}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setForm((f) => ({ ...f, email: e.target.value }));
-              // Clear email error when user starts typing
-              if (fieldErrors.email) {
-                setFieldErrors((prev) => ({ ...prev, email: undefined }));
-              }
-            }}
-            required
-            type="email"
-            error={!!fieldErrors.email}
-            helperText={fieldErrors.email || ""}
-            inputProps={{ "aria-label": "Employee email" }}
-          />
-          <TextField
-            label="Phone"
-            value={form.phone}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setForm((f) => ({ ...f, phone: e.target.value }));
-              // Clear phone error when user starts typing
-              if (fieldErrors.phone) {
-                setFieldErrors((prev) => ({ ...prev, phone: undefined }));
-              }
-            }}
-            required
-            error={!!fieldErrors.phone}
-            helperText={fieldErrors.phone || ""}
-            inputProps={{ "aria-label": "Employee phone" }}
-          />{" "}
-          <TextField
-            label="Role"
-            select
-            value={form.role || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setForm((f) => ({ ...f, role: e.target.value }));
-              if (error) setError(null);
-              // Clear role error when user selects a role
-              if (fieldErrors.role) {
-                setFieldErrors((prev) => ({ ...prev, role: undefined }));
-              }
-            }}
-            required
-            inputProps={{ "aria-label": "Employee role" }}
-            error={!!fieldErrors.role}
-            helperText={fieldErrors.role || ""}
-          >
-            <MenuItem value="" disabled>
-              Select a role...
-            </MenuItem>
-            {liveRoles.length === 0 ? (
-              <MenuItem value="default-role">
-                Default Role (No roles configured)
-              </MenuItem>
-            ) : (
-              liveRoles
-                .filter(
-                  (role) =>
-                    role && typeof role === "string" && role.trim() !== ""
-                ) // Enhanced safety filter
-                .map((role) => (
-                  <MenuItem key={role} value={role}>
-                    {role}
-                  </MenuItem>
-                ))
-            )}
-          </TextField>
-          <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
-            Additional Information
-          </Typography>{" "}
-          <TextField
-            label="Address"
-            value={form.address || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setForm((f) => ({ ...f, address: e.target.value }));
-            }}
-            required
-            multiline
-            rows={2}
-            inputProps={{ "aria-label": "Employee address" }}
-          />{" "}
-          <TextField
-            label="Designation"
-            value={form.designation || ""}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setForm((f) => ({ ...f, designation: e.target.value }));
-            }}
-            required
-            inputProps={{ "aria-label": "Employee designation" }}
-          />
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              flexDirection: { xs: "column", sm: "row" },
-            }}
-          >
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
             <TextField
-              label="Manager ID"
-              value={form.managerId || ""}
+              label="Name"
+              value={form.name}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setForm((f) => ({ ...f, managerId: e.target.value }));
+                setForm((f) => ({ ...f, name: e.target.value }));
+                // Clear general error when user starts making changes
+                if (error) setError(null);
               }}
-              inputProps={{ "aria-label": "Employee manager ID" }}
-              sx={{ flex: 1 }}
+              required
+              autoFocus
+              inputProps={{ "aria-label": "Employee name" }}
+            />
+
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexDirection: { xs: "column", sm: "row" },
+              }}
+            >
+              <TextField
+                label="Email"
+                value={form.email}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setForm((f) => ({ ...f, email: e.target.value }));
+                  // Clear email error when user starts typing
+                  if (fieldErrors.email) {
+                    setFieldErrors((prev) => ({ ...prev, email: undefined }));
+                  }
+                }}
+                required
+                type="email"
+                error={!!fieldErrors.email}
+                helperText={fieldErrors.email || ""}
+                inputProps={{ "aria-label": "Employee email" }}
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                label="Phone"
+                value={form.phone}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setForm((f) => ({ ...f, phone: e.target.value }));
+                  // Clear phone error when user starts typing
+                  if (fieldErrors.phone) {
+                    setFieldErrors((prev) => ({ ...prev, phone: undefined }));
+                  }
+                }}
+                required
+                error={!!fieldErrors.phone}
+                helperText={fieldErrors.phone || ""}
+                inputProps={{ "aria-label": "Employee phone" }}
+                sx={{ flex: 1 }}
+              />
+            </Box>
+            <Box sx={{ mb: 2 }}>
+              <Typography variant="subtitle1" sx={{ mb: 1, fontWeight: 600 }}>
+                Role Assignment
+              </Typography>
+              <FormControl fullWidth required error={!!fieldErrors.role}>
+                <InputLabel>Select Roles</InputLabel>
+                <Select<string[]>
+                  multiple
+                  value={selectedRoles}
+                  onChange={handleRoleChange}
+                  input={<OutlinedInput label="Select Roles" />}
+                  renderValue={(selected) => (
+                    <Box
+                      sx={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: 0.5,
+                        py: 0.5,
+                      }}
+                    >
+                      {Array.isArray(selected)
+                        ? selected.map((value, index) => (
+                            <Chip
+                              key={value}
+                              label={value}
+                              size="small"
+                              color={index === 0 ? "primary" : "default"}
+                              variant={index === 0 ? "filled" : "outlined"}
+                            />
+                          ))
+                        : null}
+                    </Box>
+                  )}
+                  MenuProps={{
+                    PaperProps: {
+                      style: {
+                        maxHeight: 224,
+                        width: 250,
+                      },
+                    },
+                  }}
+                  sx={{
+                    "& .MuiSelect-select": {
+                      minHeight: "56px",
+                    },
+                  }}
+                >
+                  {liveRoles.length === 0 ? (
+                    <MenuItem value="default-role">
+                      Default Role (No roles configured)
+                    </MenuItem>
+                  ) : (
+                    liveRoles
+                      .filter(
+                        (role) =>
+                          role && typeof role === "string" && role.trim() !== ""
+                      )
+                      .map((role) => (
+                        <MenuItem key={role} value={role}>
+                          <Box
+                            sx={{
+                              display: "flex",
+                              alignItems: "center",
+                              width: "100%",
+                            }}
+                          >
+                            <Typography variant="body2">{role}</Typography>
+                            {selectedRoles.includes(role) && (
+                              <Box sx={{ ml: "auto" }}>
+                                <Chip
+                                  label={
+                                    selectedRoles.indexOf(role) === 0
+                                      ? "Primary"
+                                      : "Secondary"
+                                  }
+                                  size="small"
+                                  color={
+                                    selectedRoles.indexOf(role) === 0
+                                      ? "primary"
+                                      : "default"
+                                  }
+                                  variant="outlined"
+                                />
+                              </Box>
+                            )}
+                          </Box>
+                        </MenuItem>
+                      ))
+                  )}
+                </Select>
+                {selectedRoles.length > 0 && (
+                  <Typography
+                    variant="caption"
+                    color="text.secondary"
+                    sx={{ mt: 1 }}
+                  >
+                    First selected role ({selectedRoles[0]}) will be the primary
+                    role
+                  </Typography>
+                )}
+                {fieldErrors.role && (
+                  <Typography variant="caption" color="error" sx={{ mt: 0.5 }}>
+                    {fieldErrors.role}
+                  </Typography>
+                )}{" "}
+              </FormControl>
+            </Box>
+          </Box>
+          <Typography variant="h6" sx={{ mt: 3, mb: 2, fontWeight: 600 }}>
+            Additional Information
+          </Typography>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+            <TextField
+              label="Address"
+              value={form.address || ""}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                setForm((f) => ({ ...f, address: e.target.value }));
+              }}
+              required
+              multiline
+              rows={2}
+              inputProps={{ "aria-label": "Employee address" }}
             />
 
             <TextField
-              label="Department ID"
-              value={form.departmentId || ""}
+              label="Designation"
+              value={form.designation || ""}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setForm((f) => ({ ...f, departmentId: e.target.value }));
-              }}
-              inputProps={{ "aria-label": "Employee department ID" }}
-              sx={{ flex: 1 }}
-            />
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              flexDirection: { xs: "column", sm: "row" },
-            }}
-          >
-            {" "}
-            <TextField
-              label="Gender"
-              select
-              value={form.gender || ""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setForm((f) => ({ ...f, gender: e.target.value }));
+                setForm((f) => ({ ...f, designation: e.target.value }));
               }}
               required
-              inputProps={{ "aria-label": "Employee gender" }}
-              sx={{ flex: 1 }}
+              inputProps={{ "aria-label": "Employee designation" }}
+            />
+
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexDirection: { xs: "column", sm: "row" },
+              }}
             >
-              <MenuItem value="">Select gender...</MenuItem>
-              <MenuItem value="Male">Male</MenuItem>
-              <MenuItem value="Female">Female</MenuItem>
-              <MenuItem value="Other">Other</MenuItem>
-              <MenuItem value="Prefer not to say">Prefer not to say</MenuItem>
-            </TextField>{" "}
-            <TextField
-              label="Age"
-              type="number"
-              value={form.age || ""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const value = e.target.value
-                  ? parseInt(e.target.value)
-                  : undefined;
-                setForm((f) => ({ ...f, age: value }));
+              <TextField
+                label="Manager ID"
+                value={form.managerId || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setForm((f) => ({ ...f, managerId: e.target.value }));
+                }}
+                inputProps={{ "aria-label": "Employee manager ID" }}
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                label="Department ID"
+                value={form.departmentId || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setForm((f) => ({ ...f, departmentId: e.target.value }));
+                }}
+                inputProps={{ "aria-label": "Employee department ID" }}
+                sx={{ flex: 1 }}
+              />
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexDirection: { xs: "column", sm: "row" },
               }}
-              required
-              inputProps={{ "aria-label": "Employee age", min: 18, max: 100 }}
-              sx={{ flex: 1 }}
-            />
-          </Box>
-          <Box
-            sx={{
-              display: "flex",
-              gap: 2,
-              flexDirection: { xs: "column", sm: "row" },
-            }}
-          >
-            <TextField
-              label="Alternative Phone"
-              value={form.altPhone || ""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setForm((f) => ({ ...f, altPhone: e.target.value }));
+            >
+              <TextField
+                label="Gender"
+                select
+                value={form.gender || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setForm((f) => ({ ...f, gender: e.target.value }));
+                }}
+                required
+                inputProps={{ "aria-label": "Employee gender" }}
+                sx={{ flex: 1 }}
+              >
+                <MenuItem value="">Select gender...</MenuItem>
+                <MenuItem value="Male">Male</MenuItem>
+                <MenuItem value="Female">Female</MenuItem>
+                <MenuItem value="Other">Other</MenuItem>
+                <MenuItem value="Prefer not to say">Prefer not to say</MenuItem>
+              </TextField>
+              <TextField
+                label="Age"
+                type="number"
+                value={form.age || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const value = e.target.value
+                    ? parseInt(e.target.value)
+                    : undefined;
+                  setForm((f) => ({ ...f, age: value }));
+                }}
+                required
+                inputProps={{ "aria-label": "Employee age", min: 18, max: 100 }}
+                sx={{ flex: 1 }}
+              />{" "}
+            </Box>
+
+            <Box
+              sx={{
+                display: "flex",
+                gap: 2,
+                flexDirection: { xs: "column", sm: "row" },
               }}
-              inputProps={{ "aria-label": "Employee alternative phone" }}
-              sx={{ flex: 1 }}
-            />{" "}
-            <TextField
-              label="Joining Date"
-              type="date"
-              value={form.joiningDate || ""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                setForm((f) => ({ ...f, joiningDate: e.target.value }));
-              }}
-              required
-              InputLabelProps={{
-                shrink: true,
-              }}
-              inputProps={{ "aria-label": "Employee joining date" }}
-              sx={{ flex: 1 }}
-            />
+            >
+              <TextField
+                label="Alternative Phone"
+                value={form.altPhone || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setForm((f) => ({ ...f, altPhone: e.target.value }));
+                }}
+                inputProps={{ "aria-label": "Employee alternative phone" }}
+                sx={{ flex: 1 }}
+              />
+              <TextField
+                label="Joining Date"
+                type="date"
+                value={form.joiningDate || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  setForm((f) => ({ ...f, joiningDate: e.target.value }));
+                }}
+                required
+                InputLabelProps={{
+                  shrink: true,
+                }}
+                inputProps={{ "aria-label": "Employee joining date" }}
+                sx={{ flex: 1 }}
+              />
+            </Box>
           </Box>
         </DialogContent>
         <DialogActions>

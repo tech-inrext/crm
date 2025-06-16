@@ -70,12 +70,22 @@ export default async function handler(req, res) {
     console.log("Generated token:", token);
     console.log("Cookie options:", cookieOptions);
     console.log("Cookie string:", cookieString);
-    console.log("Environment:", process.env.NODE_ENV);
+    console.log("Environment:", process.env.NODE_ENV); // Determine available roles and current role
+    const userRoles =
+      employee.roles && employee.roles.length > 0
+        ? employee.roles
+        : [employee.role];
+    const currentRole = employee.currentRole || employee.role;
 
     res.status(200).json({
       success: true,
       message: "Login successful",
-      employee,
+      employee: {
+        ...employee.toObject(),
+        roles: userRoles,
+        currentRole: currentRole,
+        hasMultipleRoles: userRoles.length > 1,
+      },
       debug: {
         tokenGenerated: !!token,
         cookieSet: !!cookieString,

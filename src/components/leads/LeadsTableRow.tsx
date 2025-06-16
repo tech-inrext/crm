@@ -1,6 +1,6 @@
 import React from "react";
 import { TableCell, TableRow, Chip } from "@mui/material";
-import { Lead } from "../../app/dashboard/Leads";
+import type { LeadDisplay as Lead } from "../../types/lead";
 
 interface LeadsTableRowProps {
   row: Lead;

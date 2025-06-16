@@ -60,7 +60,6 @@ const deleteEmployee = async (req, res) => {
 // ✅ PATCH: Update allowed fields only
 const updateEmployeeDetails = async (req, res) => {
   const { id } = req.query;
-
   const {
     name,
     altPhone,
@@ -73,6 +72,8 @@ const updateEmployeeDetails = async (req, res) => {
     departmentId,
     managerId,
     role,
+    roles,
+    currentRole,
   } = req.body;
 
   // Fields that are NOT allowed to be updated
@@ -90,8 +91,7 @@ const updateEmployeeDetails = async (req, res) => {
   //       ", "
   //     )}`,
   //   });
-  // }
-  // Build the update object dynamically
+  // }  // Build the update object dynamically
   const updateFields = {
     ...(name && { name }),
     ...(altPhone && { altPhone }),
@@ -104,7 +104,14 @@ const updateEmployeeDetails = async (req, res) => {
     ...(designation && { designation }),
     ...(managerId && { managerId }),
     ...(role && { role }),
+    ...(roles && { roles }),
+    ...(currentRole && { currentRole }),
   };
+
+  // If roles are provided but currentRole is not, set currentRole to the first role
+  if (roles && roles.length > 0 && !currentRole) {
+    updateFields.currentRole = roles[0];
+  }
 
   try {
     const updatedEmployee = await Employee.findByIdAndUpdate(

@@ -17,18 +17,23 @@ export const checkPermission = (module, action) => {
           success: false,
           message: "User not authenticated",
         });
-      }
+      } // Get the active role (currentRole takes precedence over role)
+      const activeRole = user.currentRole || user.role;
 
       // If user has no role, deny access
-      if (!user.role) {
+      if (!activeRole) {
         return res.status(403).json({
           success: false,
           message: "Access denied: No role assigned",
         });
       }
 
+      console.log(
+        `🔍 Permission check: User ${user.name} using role "${activeRole}" for ${action} on ${module}`
+      );
+
       // Fetch the role from database
-      const role = await Role.findOne({ name: user.role });
+      const role = await Role.findOne({ name: activeRole });
 
       if (!role) {
         return res.status(403).json({
@@ -66,25 +71,48 @@ export const checkPermission = (module, action) => {
  */
 export const getUserPermissions = async (user) => {
   try {
-    if (!user || !user.role) {
+    // Get the active role (currentRole takes precedence over role)
+    const activeRole = user.currentRole || user.role;
+
+    if (!user || !activeRole) {
+      console.log(
+        `🔍 getUserPermissions: No active role for user ${
+          user?.name || "unknown"
+        }`
+      );
       return { read: [], write: [], delete: [] };
     }
 
-    const role = await Role.findOne({ name: user.role });
+    console.log(
+      `🔍 getUserPermissions: Getting permissions for user ${user.name} with role "${activeRole}"`
+    );
+
+    const role = await Role.findOne({ name: activeRole });
 
     if (!role) {
+      console.log(
+        `🔍 getUserPermissions: Role "${activeRole}" not found in database`
+      );
       return { read: [], write: [], delete: [] };
     }
 
-    return {
+    const permissions = {
       read: role.read || [],
       write: role.write || [],
       delete: role.delete || [],
     };
+
+    console.log(
+      `🔍 getUserPermissions: Permissions for role "${activeRole}":`,
+      permissions
+    );
+
+    return permissions;
   } catch (error) {
     console.error("Error getting user permissions:", error);
     return { read: [], write: [], delete: [] };
   }
 };
 
-export default { checkPermission, getUserPermissions };
+const permissions = { checkPermission, getUserPermissions };
+export default permissions;

@@ -1,4 +1,8 @@
-import React, { useEffect, useState, useMemo, memo, useCallback } from "react";
+// React & Core
+import React, { useEffect, useState, useMemo, useCallback } from "react";
+import axios from "axios";
+
+// MUI Components
 import {
   Box,
   Typography,
@@ -9,381 +13,68 @@ import {
   TablePagination,
   CircularProgress,
   Button,
-  Card,
-  CardContent,
-  Chip,
-  Avatar,
-  Skeleton,
-  useTheme,
-  useMediaQuery,
   Fab,
   Tooltip,
   Stack,
-  Divider,
   IconButton,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
+
+// MUI Icons
 import {
+  Add,
   Edit,
   Delete,
-  Add,
   PersonAdd,
-  Phone,
-  Email,
-  TrendingUp,
   ViewModule,
   ViewList,
 } from "@mui/icons-material";
-import axios from "axios";
+
+// Custom Components
 import MySearchBar from "../../components/ui/MySearchBar";
-import LeadsTableHeader from "../../components/ui/LeadsTableHeader";
-import LeadsTableRow from "../../components/ui/LeadsTableRow";
-import LeadDialog, { LeadFormData } from "../../components/ui/LeadDialog";
+import LeadsTableHeader from "../../components/leads/LeadsTableHeader";
+import LeadsTableRow from "../../components/leads/LeadsTableRow";
+import LeadDialog, { LeadFormData } from "../../components/leads/LeadDialog";
 import PermissionGuard from "../../components/PermissionGuard";
+
+// Shared Types
+import type { Lead as APILead, LeadDisplay as Lead } from "../../types/lead";
+
+// Backend utilities
+import {
+  transformAPILead,
+  transformAPILeadToForm,
+  transformFormToAPI,
+  calculateLeadStats,
+  getDefaultLeadFormData,
+} from "../../utils/leadUtils";
 
 // Constants & Types
 const API_BASE = "/api/v0/lead";
 const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
-const STATUS_COLORS = {
-  new: "#2196F3",
-  contacted: "#FF9800",
-  "site visit": "#9C27B0",
-  closed: "#4CAF50",
-  dropped: "#F44336",
-  default: "#757575",
-} as const;
 
-export interface Lead {
-  _id?: string;
-  id: string;
-  name: string;
-  contact: string;
-  email: string;
-  phone: string;
-  status: string;
-  value: string;
-}
+// Import lead components and styles
+import {
+  LoadingSkeleton,
+  StatsCard,
+  LeadCard,
+  GRADIENTS,
+  COMMON_STYLES,
+} from "../../components/leads";
 
-interface APILead {
-  _id: string;
-  leadId: string;
-  fullName: string;
-  email: string;
-  phone: string;
-  propertyType: string;
-  location?: string;
-  budgetRange?: string;
-  status: string;
-  source?: string;
-  assignedTo?: string;
-  followUpNotes?: Array<{ note: string; date: string }>;
-  nextFollowUp?: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Consolidated style constants
-const GRADIENTS = {
-  primary: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-  paper: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-  button: "linear-gradient(45deg, #667eea, #764ba2)",
-  buttonHover: "linear-gradient(45deg, #5a6fd8, #6a42a0)",
+// Frontend-only utility functions (UI-related)
+const filterLeads = (leads: Lead[], searchQuery: string): Lead[] => {
+  const q = searchQuery.toLowerCase();
+  return leads.filter(
+    (l) =>
+      l.name.toLowerCase().includes(q) ||
+      l.contact.toLowerCase().includes(q) ||
+      l.email.toLowerCase().includes(q) ||
+      l.phone.toLowerCase().includes(q) ||
+      l.status.toLowerCase().includes(q)
+  );
 };
-
-const COMMON_STYLES = {
-  roundedPaper: {
-    borderRadius: 4,
-    background: GRADIENTS.paper,
-    border: "1px solid rgba(255,255,255,0.2)",
-    backdropFilter: "blur(10px)",
-  },
-  iconButton: (bg: string, hover?: string) => ({
-    backgroundColor: bg,
-    color: "white",
-    "&:hover": { backgroundColor: hover || `${bg}99` },
-  }),
-  gradientText: {
-    background: GRADIENTS.button,
-    backgroundClip: "text",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
-  },
-};
-
-// Utility functions as object for better organization
-const utils = {
-  transformAPILead: (apiLead: APILead): Lead => ({
-    _id: apiLead._id,
-    id: apiLead.leadId,
-    name: apiLead.fullName,
-    contact: apiLead.phone,
-    email: apiLead.email || "",
-    phone: apiLead.phone,
-    status: apiLead.status,
-    value: apiLead.budgetRange || "Not specified",
-  }),
-
-  transformAPILeadToForm: (apiLead: APILead): LeadFormData => ({
-    fullName: apiLead.fullName,
-    email: apiLead.email || "",
-    phone: apiLead.phone,
-    propertyType: apiLead.propertyType,
-    location: apiLead.location || "",
-    budgetRange: apiLead.budgetRange || "",
-    status: apiLead.status,
-    source: apiLead.source || "",
-    assignedTo: apiLead.assignedTo || "",
-    nextFollowUp: apiLead.nextFollowUp
-      ? new Date(apiLead.nextFollowUp).toISOString().split("T")[0]
-      : "",
-    followUpNotes: (apiLead.followUpNotes || []).map((note) => ({
-      note: note.note,
-      date: new Date(note.date).toISOString().split("T")[0],
-    })),
-  }),
-
-  transformFormToAPI: (
-    formData: LeadFormData,
-    leadId?: string
-  ): Partial<APILead> => {
-    const cleanPhone = formData.phone.replace(/\D/g, "");
-    const apiData: Partial<APILead> = {
-      fullName: formData.fullName.trim(),
-      email: formData.email?.trim() || undefined,
-      phone: cleanPhone,
-      propertyType: formData.propertyType,
-      location: formData.location?.trim() || undefined,
-      budgetRange: formData.budgetRange?.trim() || undefined,
-      status: formData.status,
-      source: formData.source?.trim() || undefined,
-      assignedTo: formData.assignedTo?.trim() || undefined,
-      nextFollowUp:
-        formData.nextFollowUp && formData.nextFollowUp.trim()
-          ? new Date(formData.nextFollowUp).toISOString()
-          : undefined,
-      followUpNotes: formData.followUpNotes
-        .filter((note) => note.note.trim())
-        .map((note) => ({
-          note: note.note.trim(),
-          date: new Date(note.date).toISOString(),
-        })),
-    };
-    if (leadId) apiData.leadId = leadId;
-    return apiData;
-  },
-
-  getStatusColor: (status: string): string =>
-    STATUS_COLORS[status.toLowerCase() as keyof typeof STATUS_COLORS] ||
-    STATUS_COLORS.default,
-
-  calculateStats: (leads: Lead[]) => ({
-    total: leads.length,
-    new: leads.filter((l) => l.status === "New").length,
-    contacted: leads.filter((l) => l.status === "Contacted").length,
-    closed: leads.filter((l) => l.status === "Closed").length,
-    conversion:
-      leads.length > 0
-        ? (
-            (leads.filter((l) => l.status === "Closed").length / leads.length) *
-            100
-          ).toFixed(1)
-        : "0",
-  }),
-
-  filterLeads: (leads: Lead[], searchQuery: string): Lead[] => {
-    const q = searchQuery.toLowerCase();
-    return leads.filter(
-      (l) =>
-        l.name.toLowerCase().includes(q) ||
-        l.contact.toLowerCase().includes(q) ||
-        l.email.toLowerCase().includes(q) ||
-        l.phone.toLowerCase().includes(q) ||
-        l.status.toLowerCase().includes(q)
-    );
-  },
-};
-
-// Default form data
-const defaultFormData: LeadFormData = {
-  fullName: "",
-  email: "",
-  phone: "",
-  propertyType: "",
-  location: "",
-  budgetRange: "",
-  status: "New",
-  source: "",
-  assignedTo: "",
-  nextFollowUp: "",
-  followUpNotes: [],
-};
-
-// Memoized Components
-const StatusChip = memo(({ status }: { status: string }) => (
-  <Chip
-    label={status}
-    size="small"
-    sx={{
-      backgroundColor: utils.getStatusColor(status),
-      color: "white",
-      fontWeight: 600,
-      fontSize: "0.75rem",
-      minWidth: "80px",
-    }}
-  />
-));
-StatusChip.displayName = "StatusChip";
-
-const LoadingSkeleton = memo(() => (
-  <Box sx={{ mt: 2 }}>
-    {Array.from({ length: 6 }).map((_, index) => (
-      <Card key={index} sx={{ mb: 2, p: 2 }}>
-        <Stack spacing={1}>
-          <Skeleton variant="text" width="60%" height={24} />
-          <Skeleton variant="text" width="40%" height={20} />
-          <Skeleton variant="rectangular" width="100%" height={60} />
-        </Stack>
-      </Card>
-    ))}
-  </Box>
-));
-LoadingSkeleton.displayName = "LoadingSkeleton";
-
-const StatsCard = memo(
-  ({
-    value,
-    label,
-    color,
-  }: {
-    value: string | number;
-    label: string;
-    color: string;
-  }) => (
-    <Card elevation={3} sx={{ textAlign: "center", p: 2, borderRadius: 3 }}>
-      <Typography variant="h4" fontWeight={700} color={color}>
-        {value}
-      </Typography>
-      <Typography variant="body2" color="text.secondary">
-        {label}
-      </Typography>
-    </Card>
-  )
-);
-StatsCard.displayName = "StatsCard";
-
-const LeadCard = memo(
-  ({
-    lead,
-    onEdit,
-    onDelete,
-  }: {
-    lead: Lead;
-    onEdit: (lead: Lead) => void;
-    onDelete: (lead: Lead) => void;
-  }) => (
-    <Card
-      elevation={2}
-      sx={{
-        borderRadius: 3,
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        "&:hover": {
-          elevation: 8,
-          transform: "translateY(-4px)",
-          boxShadow: "0 12px 24px rgba(0,0,0,0.1)",
-        },
-        border: "1px solid",
-        borderColor: "divider",
-        background: GRADIENTS.paper,
-      }}
-    >
-      <CardContent sx={{ p: 3 }}>
-        <Stack spacing={2}>
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Avatar
-                sx={{
-                  bgcolor: utils.getStatusColor(lead.status),
-                  width: 48,
-                  height: 48,
-                  fontSize: "1.2rem",
-                  fontWeight: 700,
-                }}
-              >
-                {lead.name.charAt(0).toUpperCase()}
-              </Avatar>
-              <Box>
-                <Typography variant="h6" fontWeight={700} color="text.primary">
-                  {lead.name}
-                </Typography>
-                <Typography variant="body2" color="text.secondary">
-                  ID: {lead.id}
-                </Typography>
-              </Box>
-            </Box>
-            <StatusChip status={lead.status} />
-          </Box>
-
-          <Divider />
-
-          <Stack spacing={1}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Email sx={{ color: "text.secondary", fontSize: 18 }} />
-              <Typography variant="body2" color="text.primary">
-                {lead.email || "Not provided"}
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Phone sx={{ color: "text.secondary", fontSize: 18 }} />
-              <Typography variant="body2" color="text.primary">
-                {lead.phone}
-              </Typography>
-            </Box>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <TrendingUp sx={{ color: "text.secondary", fontSize: 18 }} />
-              <Typography variant="body2" color="text.primary" fontWeight={600}>
-                {lead.value}
-              </Typography>
-            </Box>
-          </Stack>
-
-          <Box
-            sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 2 }}
-          >
-            {" "}
-            <PermissionGuard module="lead" action="write" hideWhenNoAccess>
-              <Tooltip title="Edit Lead">
-                <IconButton
-                  onClick={() => onEdit(lead)}
-                  size="small"
-                  sx={COMMON_STYLES.iconButton("primary.main", "primary.dark")}
-                >
-                  <Edit fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </PermissionGuard>
-            <PermissionGuard module="lead" action="delete" hideWhenNoAccess>
-              <Tooltip title="Delete Lead">
-                <IconButton
-                  onClick={() => onDelete(lead)}
-                  size="small"
-                  sx={COMMON_STYLES.iconButton("error.main", "error.dark")}
-                >
-                  <Delete fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            </PermissionGuard>
-          </Box>
-        </Stack>
-      </CardContent>
-    </Card>
-  )
-);
-LeadCard.displayName = "LeadCard";
 
 const Leads: React.FC = () => {
   const theme = useTheme();
@@ -400,16 +91,14 @@ const Leads: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<LeadFormData>(defaultFormData);
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
-
-  // Memoized calculations
-  const stats = useMemo(() => utils.calculateStats(leads), [leads]);
-
-  const filtered = useMemo(
-    () => utils.filterLeads(leads, search),
-    [leads, search]
+  const [formData, setFormData] = useState<LeadFormData>(
+    getDefaultLeadFormData()
   );
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  // Memoized calculations
+  const stats = useMemo(() => calculateLeadStats(leads), [leads]);
+
+  const filtered = useMemo(() => filterLeads(leads, search), [leads, search]);
 
   const rows = useMemo(
     () => filtered.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
@@ -472,7 +161,7 @@ const Leads: React.FC = () => {
     try {
       const response = await axios.get(API_BASE);
       const apiLeadsData = response.data.data || response.data;
-      const transformedLeads = apiLeadsData.map(utils.transformAPILead);
+      const transformedLeads = apiLeadsData.map(transformAPILead);
       setApiLeads(apiLeadsData);
       setLeads(transformedLeads);
     } catch (error) {
@@ -492,21 +181,20 @@ const Leads: React.FC = () => {
         );
         if (originalApiLead) {
           setEditId(lead.id);
-          setFormData(utils.transformAPILeadToForm(originalApiLead));
+          setFormData(transformAPILeadToForm(originalApiLead));
         }
       } else {
         setEditId(null);
-        setFormData(defaultFormData);
+        setFormData(getDefaultLeadFormData());
       }
       setOpen(true);
     },
     [apiLeads]
   );
-
   const handleClose = useCallback(() => {
     setOpen(false);
     setEditId(null);
-    setFormData(defaultFormData);
+    setFormData(getDefaultLeadFormData());
   }, []);
 
   const handleSave = useCallback(
@@ -516,7 +204,7 @@ const Leads: React.FC = () => {
         if (editId) {
           const leadToUpdate = apiLeads.find((l) => l.leadId === editId);
           if (leadToUpdate && leadToUpdate._id) {
-            const apiData = utils.transformFormToAPI(values, editId);
+            const apiData = transformFormToAPI(values, editId);
             const response = await axios.patch(
               `${API_BASE}/${leadToUpdate._id}`,
               apiData
@@ -526,17 +214,17 @@ const Leads: React.FC = () => {
             const newApiLeads = apiLeads.map((l) =>
               l.leadId === editId ? updatedApiLead : l
             );
-            const newDisplayLeads = newApiLeads.map(utils.transformAPILead);
+            const newDisplayLeads = newApiLeads.map(transformAPILead);
 
             setApiLeads(newApiLeads);
             setLeads(newDisplayLeads);
           }
         } else {
           const newLeadId = `LEAD-${Date.now()}`;
-          const apiData = utils.transformFormToAPI(values, newLeadId);
+          const apiData = transformFormToAPI(values, newLeadId);
           const response = await axios.post(API_BASE, apiData);
           const createdApiLead = response.data.data || response.data;
-          const createdDisplayLead = utils.transformAPILead(createdApiLead);
+          const createdDisplayLead = transformAPILead(createdApiLead);
 
           setApiLeads([createdApiLead, ...apiLeads]);
           setLeads([createdDisplayLead, ...leads]);

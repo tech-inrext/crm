@@ -95,6 +95,18 @@ const employeeSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    // New field for multiple roles
+    roles: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    // Current active role for the session
+    currentRole: {
+      type: String,
+      trim: true,
+    },
     password: {
       type: String,
       required: true,
