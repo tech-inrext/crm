@@ -3,7 +3,7 @@ import Employee from "../models/Employee";
 import dbConnect from "../lib/mongodb";
 import { checkPermission } from "../utils/checkPermission";
 
-const MODULES = ["lead", "employee", "role","department"];
+const MODULES = ["lead", "employee", "role", "department"];
 
 // Simple token verification without permission checking
 export async function verifyToken(req, res, next) {
@@ -74,10 +74,8 @@ export async function userAuth(req, res, next) {
     // ✍️ Determine action from method
     let action = "read";
     if (["POST", "PATCH"].includes(req.method)) action = "write";
-    if (req.method === "DELETE") action = "delete";
-
-    // 🛡️ Check permission
-    const roleId = employee.role;
+    if (req.method === "DELETE") action = "delete"; // 🛡️ Check permission - use currentRole for multiple roles support
+    const roleId = employee.currentRole || employee.role; // Fallback to old role field if currentRole not set
     const hasAccess = await checkPermission(roleId, action, moduleName);
 
     if (!hasAccess) {

@@ -1,6 +1,13 @@
 import dbConnect from "../../../../lib/mongodb";
 import { userAuth } from "../../../../middlewares/auth";
-import cookie from "cookie";
+
+// More robust cookie import for deployment
+let cookie;
+try {
+  cookie = require("cookie");
+} catch (err) {
+  console.error("Failed to import cookie package:", err);
+}
 
 async function getProfile(req, res) {
   await dbConnect();
@@ -47,7 +54,27 @@ async function getProfile(req, res) {
 }
 
 export default async function handler(req, res) {
-  const parsedCookies = cookie.parse(req.headers.cookie || "");
+  // Robust cookie parsing for deployment
+  let parsedCookies = {};
+  try {
+    if (cookie && cookie.parse) {
+      parsedCookies = cookie.parse(req.headers.cookie || "");
+    } else {
+      // Fallback: manual cookie parsing
+      const cookieHeader = req.headers.cookie || "";
+      const cookies = cookieHeader.split(";");
+      for (let cookieItem of cookies) {
+        const [name, value] = cookieItem.trim().split("=");
+        if (name && value) {
+          parsedCookies[name] = value;
+        }
+      }
+    }
+  } catch (cookieError) {
+    console.error("Cookie parsing error:", cookieError);
+    parsedCookies = {};
+  }
+
   req.cookies = parsedCookies;
 
   await userAuth(req, res, () => getProfile(req, res));
