@@ -288,39 +288,48 @@ const Leads: React.FC = () => {
   useEffect(() => {
     loadLeads();
   }, [loadLeads]);
-
   if (!mounted)
-    return <div style={{ minHeight: "100vh", background: "#f5f7fa" }} />;
-
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: "50vh",
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
   return (
     <Box
       sx={{
-        mt: { xs: 1, md: 3 },
-        mx: { xs: 1, md: 3 },
-        width: "calc(100% - 16px)",
-        background: GRADIENTS.primary,
-        borderRadius: 4,
-        p: { xs: 2, md: 4 },
+        p: { xs: 2, sm: 3, md: 4 }, // Increased padding
+        pt: { xs: 3, sm: 4, md: 5 }, // Extra top padding for better visibility
         minHeight: "100vh",
+        bgcolor: "background.default",
       }}
     >
-      {/* Enhanced Header Section */}{" "}
+      {" "}
+      {/* Mobile-First Header Section */}
       <Paper
-        elevation={8}
+        elevation={2}
         sx={{
-          p: { xs: 2, md: 4 },
-          ...COMMON_STYLES.roundedPaper,
-          mb: 3,
+          p: { xs: 3, sm: 4, md: 5 }, // Increased padding
+          borderRadius: { xs: 2, md: 3 },
+          mb: { xs: 3, md: 4 }, // Increased bottom margin
+          mt: { xs: 1, md: 2 }, // Added top margin
+          background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
         }}
       >
         {" "}
-        {/* Stats Cards */}
+        {/* Stats Cards - Mobile First Grid */}
         <Box
           sx={{
             display: "grid",
             gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" },
-            gap: 3,
-            mb: 4,
+            gap: { xs: 2, sm: 3 },
+            mb: { xs: 3, md: 4 },
           }}
         >
           <StatsCard
@@ -339,90 +348,118 @@ const Leads: React.FC = () => {
             label="Conversion Rate"
             color="warning.main"
           />
-        </Box>
-        {/* Action Bar */}
-        <Box
-          sx={{
-            display: "flex",
-            flexDirection: { xs: "column", lg: "row" },
-            alignItems: { xs: "stretch", lg: "center" },
-            gap: 2,
-            mb: 2,
-          }}
-        >
-          {" "}
-          {/* Controls: Title, View Toggle, Search, Add Button */}
+        </Box>{" "}
+        {/* Mobile-First Action Bar */}
+        <Box sx={{ mb: { xs: 2, md: 3 } }}>
+          {/* Title */}
           <Typography
             variant="h4"
             sx={{
-              fontWeight: 800,
-              flex: 1,
+              fontWeight: 700,
               color: "text.primary",
-              fontSize: { xs: 24, sm: 28, md: 32 },
-              ...COMMON_STYLES.gradientText,
+              fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
+              mb: { xs: 2, md: 3 },
+              textAlign: { xs: "center", sm: "left" },
             }}
           >
             Leads Management
           </Typography>
-          <Stack direction="row" spacing={2} alignItems="center">
-            {/* View Toggle */}
-            {[
-              { mode: "table", icon: ViewList, title: "Table View" },
-              { mode: "cards", icon: ViewModule, title: "Card View" },
-            ].map(({ mode, icon: Icon, title }) => (
-              <Tooltip key={mode} title={title}>
-                <IconButton
-                  onClick={() => setViewMode(mode as "table" | "cards")}
-                  sx={{
-                    backgroundColor:
-                      viewMode === mode ? "primary.main" : "action.hover",
-                    color: viewMode === mode ? "white" : "text.primary",
-                    "&:hover": { backgroundColor: "primary.dark" },
-                  }}
-                >
-                  <Icon />
-                </IconButton>
-              </Tooltip>
-            ))}
 
-            {/* Search */}
-            <Box sx={{ minWidth: 280 }}>
+          {/* Controls - Stacked on mobile */}
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: { xs: 2, md: 3 },
+              alignItems: { xs: "stretch", md: "center" },
+            }}
+          >
+            {/* Search Bar - Full width on mobile */}
+            <Box sx={{ flex: { xs: "none", md: 1 }, order: { xs: 1, md: 2 } }}>
               <MySearchBar
+                placeholder="Search leads..."
                 value={search}
                 onChange={handleSearchChange}
-                placeholder="Search leads by name, email, phone..."
+                sx={{
+                  width: "100%",
+                  "& .MuiOutlinedInput-root": {
+                    fontSize: { xs: "14px", sm: "16px" },
+                  },
+                }}
               />
             </Box>
 
-            {/* Add Button */}
-            <PermissionGuard module="lead" action="write" hideWhenNoAccess>
-              <Button
-                variant="contained"
-                startIcon={<PersonAdd />}
-                onClick={() => handleOpen()}
-                disabled={saving}
-                sx={{
-                  minWidth: 160,
-                  height: 48,
-                  borderRadius: 3,
-                  fontWeight: 700,
-                  background: GRADIENTS.button,
-                  boxShadow: "0 8px 16px rgba(102, 126, 234, 0.3)",
-                  "&:hover": {
-                    background: GRADIENTS.buttonHover,
-                    boxShadow: "0 12px 24px rgba(102, 126, 234, 0.4)",
-                    transform: "translateY(-2px)",
-                  },
-                }}
-              >
-                {saving ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  "Add Lead"
-                )}
-              </Button>
-            </PermissionGuard>
-          </Stack>
+            {/* Action Buttons */}
+            <Box
+              sx={{
+                display: "flex",
+                gap: { xs: 1, sm: 2 },
+                justifyContent: { xs: "space-between", md: "flex-end" },
+                order: { xs: 2, md: 1 },
+              }}
+            >
+              {/* View Toggle - Compact on mobile */}
+              <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }}>
+                {[
+                  { mode: "table", icon: ViewList, title: "Table View" },
+                  { mode: "cards", icon: ViewModule, title: "Card View" },
+                ].map(({ mode, icon: Icon, title }) => (
+                  <Tooltip key={mode} title={title}>
+                    <IconButton
+                      onClick={() => setViewMode(mode as "table" | "cards")}
+                      size={isMobile ? "small" : "medium"}
+                      sx={{
+                        backgroundColor:
+                          viewMode === mode ? "primary.main" : "action.hover",
+                        color: viewMode === mode ? "white" : "text.primary",
+                        "&:hover": { backgroundColor: "primary.dark" },
+                      }}
+                    >
+                      <Icon fontSize={isMobile ? "small" : "medium"} />
+                    </IconButton>
+                  </Tooltip>
+                ))}
+              </Stack>
+              {/* Add Button */}
+              <Box sx={{ minWidth: 280 }}>
+                <MySearchBar
+                  value={search}
+                  onChange={handleSearchChange}
+                  placeholder="Search leads by name, email, phone..."
+                />
+              </Box>{" "}
+              {/* Add Button */}
+              <PermissionGuard module="lead" action="write" hideWhenNoAccess>
+                <Button
+                  variant="contained"
+                  startIcon={<PersonAdd />}
+                  onClick={() => handleOpen()}
+                  disabled={saving}
+                  size={isMobile ? "medium" : "large"}
+                  sx={{
+                    minWidth: { xs: "auto", sm: 160 },
+                    height: { xs: 44, sm: 48 },
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    fontSize: { xs: "0.875rem", sm: "1rem" },
+                    boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+                    "&:hover": {
+                      boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
+                      transform: "translateY(-1px)",
+                    },
+                  }}
+                >
+                  {saving ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : isMobile ? (
+                    <Add />
+                  ) : (
+                    "Add Lead"
+                  )}
+                </Button>
+              </PermissionGuard>
+            </Box>
+          </Box>
         </Box>
       </Paper>
       {/* Content Area */}

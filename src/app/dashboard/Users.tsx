@@ -454,9 +454,14 @@ const Users: React.FC = () => {
   );
   if (!mounted)
     return <div style={{ minHeight: "100vh", background: "#181C1F" }} />;
-
   return (
-    <Box sx={{ mt: 2, mx: isMobile ? 0 : 2 }}>
+    <Box
+      sx={{
+        mt: { xs: 3, sm: 4, md: 5 },
+        mx: isMobile ? 1 : 2,
+        pt: { xs: 2, md: 3 },
+      }}
+    >
       <Paper
         sx={{
           width: "100%",
@@ -466,7 +471,7 @@ const Users: React.FC = () => {
           borderRadius: 3,
           boxShadow: 3,
           bgcolor: theme.palette.mode === "dark" ? "#23272A" : "#f5f7fa", // match Leads
-          p: { xs: 1, sm: 2 }, // match Leads
+          p: { xs: 2, sm: 3, md: 4 }, // Increased padding for better spacing
           overflowX: "auto", // match Leads
         }}
       >

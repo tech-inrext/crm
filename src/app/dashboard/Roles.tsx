@@ -510,29 +510,31 @@ const Roles = () => {
 
   if (!mounted)
     return <div style={{ minHeight: "100vh", background: "#f5f7fa" }} />;
-
   return (
     <Box
       sx={{
-        mt: { xs: 1, md: 3 },
-        mx: { xs: 1, md: 3 },
+        mt: { xs: 3, sm: 4, md: 5 }, // Increased top margin
+        pt: { xs: 2, md: 3 }, // Added top padding
+        mx: { xs: 2, md: 3 }, // Increased horizontal margin
         width: "calc(100% - 16px)",
         background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         borderRadius: 4,
-        p: { xs: 2, md: 4 },
+        p: { xs: 3, md: 4 }, // Increased padding
         minHeight: "100vh",
       }}
     >
+      {" "}
       {/* Enhanced Header Section */}
       <Paper
         elevation={8}
         sx={{
-          p: { xs: 2, md: 4 },
+          p: { xs: 3, md: 5 }, // Increased padding
           borderRadius: 4,
           background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
           border: "1px solid rgba(255,255,255,0.2)",
           backdropFilter: "blur(10px)",
-          mb: 3,
+          mb: { xs: 3, md: 4 }, // Added responsive bottom margin
+          mt: { xs: 1, md: 2 }, // Added top margin
         }}
       >
         {" "}
@@ -677,7 +679,6 @@ const Roles = () => {
           </PermissionGuard>
         </Box>
       </Paper>
-
       {/* Content Area */}
       {loading ? (
         <LoadingSkeleton />
@@ -877,7 +878,6 @@ const Roles = () => {
           )}
         </>
       )}
-
       {/* Floating Action Button for Mobile */}
       {isMobile && (
         <PermissionGuard module="role" action="write" hideWhenNoAccess>
@@ -900,7 +900,6 @@ const Roles = () => {
           </Fab>
         </PermissionGuard>
       )}
-
       {/* Add Role Dialog */}
       <AddRoleDialog
         open={addOpen}

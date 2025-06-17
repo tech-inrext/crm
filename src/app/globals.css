@@ -4,34 +4,63 @@
   --background: #ffffff;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --mobile-padding: 16px;
+  --tablet-padding: 24px;
+  --desktop-padding: 32px;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  overflow-x: hidden; /* Prevent horizontal scroll */
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
 }
 
-/* Ensure smooth scrolling and proper layout for fixed sidebar */
 html {
   scroll-behavior: smooth;
 }
 
+/* Mobile-first responsive container */
+.container {
+  width: 100%;
+  padding: 0 var(--mobile-padding);
+  margin: 0 auto;
+}
+
+@media (min-width: 768px) {
+  .container {
+    padding: 0 var(--tablet-padding);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 var(--desktop-padding);
+    max-width: 1200px;
+  }
+}
+
 /* Custom scrollbar for content areas */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #c1c1c1;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: background 0.2s ease;
 }
 
@@ -39,14 +68,88 @@ html {
   background: #a8a8a8;
 }
 
-/* Ensure content doesn't go under fixed elements */
+/* Mobile-first main content layout */
 .main-content {
-  padding-top: 56px; /* Account for fixed navbar */
-  margin-left: 0;
+  width: 100%;
+  min-height: calc(100vh - 56px);
+  padding: var(--mobile-padding);
+  margin-top: 56px; /* Account for fixed navbar */
+  transition: all 0.3s ease;
 }
 
-@media (min-width: 600px) {
+/* Tablet adjustments */
+@media (min-width: 768px) {
   .main-content {
-    margin-left: 260px; /* Account for fixed sidebar on desktop */
+    padding: var(--tablet-padding);
+    margin-top: 64px; /* Larger navbar on tablet */
+  }
+}
+
+/* Desktop with sidebar */
+@media (min-width: 1024px) {
+  .main-content {
+    margin-left: 260px;
+    padding: var(--desktop-padding);
+    margin-top: 0; /* No top margin when sidebar is present */
+  }
+}
+
+/* Mobile utilities */
+.mobile-only {
+  display: block;
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none;
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+}
+
+/* Responsive text sizes */
+.text-responsive-sm {
+  font-size: 0.875rem;
+}
+
+.text-responsive-base {
+  font-size: 1rem;
+}
+
+.text-responsive-lg {
+  font-size: 1.125rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-sm {
+    font-size: 0.9375rem;
+  }
+  
+  .text-responsive-base {
+    font-size: 1.125rem;
+  }
+  
+  .text-responsive-lg {
+    font-size: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-responsive-sm {
+    font-size: 1rem;
+  }
+  
+  .text-responsive-base {
+    font-size: 1.25rem;
+  }
+  
+  .text-responsive-lg {
+    font-size: 1.5rem;
   }
 }
