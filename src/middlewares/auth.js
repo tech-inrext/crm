@@ -69,12 +69,12 @@ export async function userAuth(req, res, next) {
     // 🔍 Determine moduleName from URL
     const url = req.url.toLowerCase();
     const moduleName = MODULES.find((mod) => url.includes(mod));
-    if (!moduleName) throw new Error("Unknown moduleName in route");
-
-    // ✍️ Determine action from method
+    if (!moduleName) throw new Error("Unknown moduleName in route"); // ✍️ Determine action from method
     let action = "read";
     if (["POST", "PATCH"].includes(req.method)) action = "write";
-    if (req.method === "DELETE") action = "delete"; // 🛡️ Check permission - use currentRole for multiple roles support
+    if (req.method === "DELETE") action = "delete";
+
+    // 🛡️ Check permission - use currentRole for multiple roles support
     const roleId = employee.currentRole || employee.role; // Fallback to old role field if currentRole not set
     const hasAccess = await checkPermission(roleId, action, moduleName);
 
