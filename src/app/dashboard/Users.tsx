@@ -160,7 +160,7 @@ function subscribeToRoles(callback: () => void) {
 }
 
 // Cached getSnapshot function to prevent infinite loops
-const getSnapshotForRoles = () => {
+const getSnapshotForRoles = (): string[] => {
   try {
     // Read from 'roleNames' for dropdown compatibility
     const saved = localStorage.getItem("roleNames");
@@ -214,11 +214,12 @@ const getSnapshotForRoles = () => {
 };
 
 function useLiveRoles(): string[] {
-  return useSyncExternalStore(
+  const result = useSyncExternalStore(
     subscribeToRoles,
     getSnapshotForRoles,
-    () => [] // Server-side snapshot (empty array)
+    () => [] as string[] // Server-side snapshot (empty array with proper type)
   );
+  return result as string[];
 }
 
 const API_BASE = "/api/v0/employee";
