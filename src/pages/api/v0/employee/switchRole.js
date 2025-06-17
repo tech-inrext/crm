@@ -18,19 +18,27 @@ const handler = async (req, res) => {
 
   console.log("🔄 SwitchRole API: Cookies received:", req.cookies);
   console.log("🔄 SwitchRole API: Headers:", req.headers.cookie);
-
-  // Apply authentication middleware
-  await new Promise((resolve, reject) => {
-    verifyToken(req, res, (err) => {
-      if (err) {
-        console.log("❌ SwitchRole API: Auth failed:", err);
-        reject(err);
-      } else {
-        console.log("✅ SwitchRole API: Auth successful");
-        resolve();
-      }
+  // Apply authentication middleware with proper error handling
+  try {
+    await new Promise((resolve, reject) => {
+      verifyToken(req, res, (err) => {
+        if (err) {
+          console.log("❌ SwitchRole API: Auth failed:", err);
+          return reject(err);
+        } else {
+          console.log("✅ SwitchRole API: Auth successful");
+          return resolve();
+        }
+      });
     });
-  });
+  } catch (authError) {
+    console.error("❌ SwitchRole API: Authentication error:", authError);
+    return res.status(401).json({
+      success: false,
+      message:
+        "Authentication failed: " + (authError.message || "Unknown error"),
+    });
+  }
 
   try {
     const { role } = req.body;
