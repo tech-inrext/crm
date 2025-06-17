@@ -1,7 +1,7 @@
 "use client";
 import * as React from "react";
 import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
-import { CacheProvider } from "@emotion/react";
+import { CacheProvider, EmotionCache } from "@emotion/react";
 import createCache from "@emotion/cache";
 
 // Create emotion cache
@@ -22,7 +22,7 @@ export default function MuiRootProvider({
   emotionCache = clientSideEmotionCache,
 }: {
   children: React.ReactNode;
-  emotionCache?: any;
+  emotionCache?: EmotionCache;
 }) {
   return (
     <CacheProvider value={emotionCache}>
