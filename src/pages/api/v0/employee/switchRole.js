@@ -1,6 +1,13 @@
 import dbConnect from "../../../../lib/mongodb";
 import { verifyToken } from "../../../../middlewares/auth";
-import cookie from "cookie";
+
+// More robust cookie import for deployment
+let cookie;
+try {
+  cookie = require("cookie");
+} catch (err) {
+  console.error("Failed to import cookie package:", err);
+}
 
 const handler = async (req, res) => {
   await dbConnect();
@@ -11,9 +18,29 @@ const handler = async (req, res) => {
       message: "Method not allowed",
     });
   }
-
-  // Parse cookies from headers
-  const parsedCookies = cookie.parse(req.headers.cookie || "");
+  // Parse cookies from headers with fallback
+  let parsedCookies = {};
+  try {
+    if (cookie && cookie.parse) {
+      parsedCookies = cookie.parse(req.headers.cookie || "");
+      console.log("Cookie parsed using cookie package");
+    } else {
+      // Fallback manual cookie parsing
+      const cookieHeader = req.headers.cookie || "";
+      if (cookieHeader) {
+        parsedCookies = Object.fromEntries(
+          cookieHeader.split(';').map(c => {
+            const [key, value] = c.trim().split('=');
+            return [key, value];
+          })
+        );
+        console.log("Cookie parsed manually (fallback)");
+      }
+    }
+  } catch (cookieError) {
+    console.error("Cookie parsing error:", cookieError);
+    parsedCookies = {};
+  }
   req.cookies = parsedCookies;
 
   console.log("🔄 SwitchRole API: Cookies received:", req.cookies);
