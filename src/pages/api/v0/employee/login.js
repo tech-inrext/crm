@@ -49,29 +49,50 @@ export default async function handler(req, res) {
         success: false,
         message: "Your password has expired. Please reset it to continue.",
       });
-    }
-
-    // ✅ Generate JWT Token
+    } // ✅ Generate JWT Token
     const token = jwt.sign({ _id: employee._id }, "rahul@123", {
       expiresIn: "7d",
     });
 
-    // ✅ Set token in HTTP-only cookie
-    res.setHeader(
-      "Set-Cookie",
-      cookie.serialize("token", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        maxAge: 60 * 60 * 24 * 7, // 7 days
-        sameSite: "strict",
-        path: "/",
-      })
-    );
+    // ✅ Set token in HTTP-only cookie with development-friendly settings
+    const cookieOptions = {
+      httpOnly: true,
+      secure: false, // Set to false for development over HTTP
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      sameSite: "lax", // More permissive than "strict" for development
+      path: "/",
+    };
 
-    console.log(token);
-    res
-      .status(200)
-      .json({ success: true, message: "Login successful", employee });
+    const cookieString = cookie.serialize("token", token, cookieOptions);
+    res.setHeader("Set-Cookie", cookieString);
+
+    console.log("=== LOGIN DEBUG ===");
+    console.log("Generated token:", token);
+    console.log("Cookie options:", cookieOptions);
+    console.log("Cookie string:", cookieString);
+    console.log("Environment:", process.env.NODE_ENV); // Determine available roles and current role
+    const userRoles =
+      employee.roles && employee.roles.length > 0
+        ? employee.roles
+        : [employee.role];
+    const currentRole = employee.currentRole || employee.role;
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      employee: {
+        ...employee.toObject(),
+        roles: userRoles,
+        currentRole: currentRole,
+        hasMultipleRoles: userRoles.length > 1,
+      },
+      debug: {
+        tokenGenerated: !!token,
+        cookieSet: !!cookieString,
+        environment: process.env.NODE_ENV || "development",
+        cookieHeader: cookieString,
+      },
+    });
   } catch (err) {
     res.status(500).json({ success: false, message: `Error : ${err.message}` });
   }

@@ -66,14 +66,22 @@ const employeeSchema = new mongoose.Schema(
     departmentId: {
       type: String,
       trim: true,
-      minlength: [2, "Department ID must be at least 2 characters long"],
-      required: [true, "Department ID is required"],
+      validate: {
+        validator: function (value) {
+          return !value || value.length >= 2;
+        },
+        message: "Department ID must be at least 2 characters long if provided",
+      },
     },
     managerId: {
       type: String,
       trim: true,
-      minlength: [2, "Manager ID must be at least 2 characters long"],
-      required: [true, "Manager ID is required"],
+      validate: {
+        validator: function (value) {
+          return !value || value.length >= 2;
+        },
+        message: "Manager ID must be at least 2 characters long if provided",
+      },
     },
     designation: {
       type: String,
@@ -83,9 +91,21 @@ const employeeSchema = new mongoose.Schema(
       required: [true, "Designation is required"],
     },
     role: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Role",
+      type: String,
       required: true,
+      trim: true,
+    },
+    // New field for multiple roles
+    roles: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    // Current active role for the session
+    currentRole: {
+      type: String,
+      trim: true,
     },
     password: {
       type: String,
@@ -97,12 +117,13 @@ const employeeSchema = new mongoose.Schema(
       default: false,
     },
     passwordLastResetAt: {
-    type: Date,
-    default: Date.now,
-  },
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );
 
-const Employee = mongoose.models.Employee || mongoose.model("Employee", employeeSchema);
+const Employee =
+  mongoose.models.Employee || mongoose.model("Employee", employeeSchema);
 export default Employee;

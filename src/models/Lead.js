@@ -1,6 +1,12 @@
 import mongoose from "mongoose";
 import validator from "validator";
 
+/**
+ * @typedef {import('../types/lead').Lead} Lead
+ * @typedef {import('../types/lead').PropertyType} PropertyType
+ * @typedef {import('../types/lead').LeadStatus} LeadStatus
+ */
+
 const leadSchema = new mongoose.Schema(
   {
     leadId: {
@@ -57,7 +63,7 @@ const leadSchema = new mongoose.Schema(
       trim: true,
     },
     assignedTo: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       ref: "Employee",
     },
     followUpNotes: [

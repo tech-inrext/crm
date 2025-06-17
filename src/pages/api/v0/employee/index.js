@@ -2,9 +2,8 @@ import dbConnect from "../../../../lib/mongodb";
 import Employee from "../../../../models/Employee";
 import Role from "../../../../models/Role"; // role model
 import bcrypt from "bcrypt";
-import cookie from "cookie";
-import { userAuth } from "../../../../middlewares/auth";
-
+import { checkPermission } from "../../../../middlewares/permissions";
+import { verifyToken } from "../../../../middlewares/auth";
 
 // ✅ Create new employee (WRITE Access Required)
 const createEmployee = async (req, res) => {
@@ -22,56 +21,88 @@ const createEmployee = async (req, res) => {
       managerId,
       departmentId,
       role,
+      roles,
+      currentRole,
     } = req.body;
 
     const dummyPassword = "Inrext@123";
     const hashedPassword = await bcrypt.hash(dummyPassword, 10);
 
     // 🔍 Field validation
-    if (
-      !name ||
-      !email ||
-      !phone ||
-      !address ||
-      !designation ||
-      !managerId ||
-      !departmentId ||
-      !role
-    ) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing required fields" });
-    }
-
-    // 🚫 Check duplicate email/phone
+    // if (
+    //   !name ||
+    //   !email ||
+    //   !phone ||
+    //   !address ||
+    //   !designation ||
+    //   !managerId ||
+    //   !departmentId ||
+    //   !role
+    // ) {
+    //   return res
+    //     .status(400)
+    //     .json({ success: false, message: "Missing required fields" });
+    // }    // 🚫 Check duplicate email/phone
     const exists = await Employee.findOne({ $or: [{ email }, { phone }] });
     if (exists) {
       return res
         .status(409)
         .json({ success: false, message: "Employee already exists" });
-    }
-
-    // ✅ Create new employee
+    } // 🔍 Validate roles exist
+    const rolesToValidate = roles && roles.length > 0 ? roles : [role];
+    if (rolesToValidate.length > 0) {
+      for (const roleName of rolesToValidate) {
+        if (roleName) {
+          const foundRole = await Role.findOne({ name: roleName });
+          if (!foundRole) {
+            return res
+              .status(400)
+              .json({
+                success: false,
+                message: `Role '${roleName}' not found`,
+              });
+          }
+        }
+      }
+    } // ✅ Create new employee
     const newEmployee = new Employee({
       name,
       email,
       phone,
       password: hashedPassword,
-      altPhone,
+      altPhone: altPhone || undefined,
       address,
-      gender,
-      age,
+      gender: gender || undefined,
+      age: age || undefined,
       joiningDate: joiningDate ? new Date(joiningDate) : undefined,
       designation,
-      managerId,
-      departmentId,
+      managerId: managerId && managerId.trim() ? managerId : undefined,
+      departmentId:
+        departmentId && departmentId.trim() ? departmentId : undefined,
       role,
+      roles: roles && roles.length > 0 ? roles : [role],
+      currentRole: currentRole || (roles && roles.length > 0 ? roles[0] : role),
     });
 
     await newEmployee.save();
 
     return res.status(201).json({ success: true, data: newEmployee });
   } catch (error) {
+    console.error("Error creating employee:", error);
+
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      const validationErrors = Object.values(error.errors).map(
+        (err) => err.message
+      );
+      return res.status(400).json({
+        success: false,
+        message: "Validation failed",
+        errors: validationErrors,
+        error: error.message,
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Error creating employee",
@@ -94,25 +125,42 @@ const getAllEmployees = async (req, res) => {
   }
 };
 
-// ✅ Middleware Wrapper
-function withAuth(handler) {
-  return async (req, res) => {
-    const parsedCookies = cookie.parse(req.headers.cookie || "");
-    req.cookies = parsedCookies;
-    await userAuth(req, res, () => handler(req, res));
-  };
-}
-
-// ✅ Main Handler
+// ✅ Main Handler with permission checks
 const handler = async (req, res) => {
   await dbConnect();
 
+  // Apply authentication middleware
+  await new Promise((resolve, reject) => {
+    verifyToken(req, res, (err) => {
+      if (err) reject(err);
+      else resolve();
+    });
+  });
+
   if (req.method === "GET") {
-    return getAllEmployees(req, res);
+    // Check read permission for employee module
+    return new Promise((resolve, reject) => {
+      checkPermission("employee", "read")(req, res, (err) => {
+        if (err) reject(err);
+        else {
+          getAllEmployees(req, res);
+          resolve();
+        }
+      });
+    });
   }
 
   if (req.method === "POST") {
-    return createEmployee(req, res);
+    // Check write permission for employee module
+    return new Promise((resolve, reject) => {
+      checkPermission("employee", "write")(req, res, (err) => {
+        if (err) reject(err);
+        else {
+          createEmployee(req, res);
+          resolve();
+        }
+      });
+    });
   }
 
   return res
@@ -120,5 +168,5 @@ const handler = async (req, res) => {
     .json({ success: false, message: "Method not allowed" });
 };
 
-export default withAuth(handler);
-
+// Export handler with authentication and permission middleware
+export default handler;
