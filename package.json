@@ -21,6 +21,7 @@
     "mongodb": "^6.16.0",
     "mongoose": "^8.15.1",
     "next": "15.3.2",
+    "nodemailer": "^7.0.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "use-sync-external-store": "^1.5.0",

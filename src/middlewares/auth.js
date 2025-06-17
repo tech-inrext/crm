@@ -3,7 +3,7 @@ import Employee from "../models/Employee";
 import dbConnect from "../lib/mongodb";
 import { checkPermission } from "../utils/checkPermission";
 
-const MODULES = ["lead", "employee", "role"];
+const MODULES = ["lead", "employee", "role","department"];
 
 // Simple token verification without permission checking
 export async function verifyToken(req, res, next) {
