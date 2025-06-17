@@ -454,20 +454,26 @@ const Users: React.FC = () => {
   );
   if (!mounted)
     return <div style={{ minHeight: "100vh", background: "#181C1F" }} />;
-
   return (
-    <Box sx={{ mt: 2, mx: isMobile ? 0 : 2 }}>
+    <Box
+      sx={{
+        mt: { xs: 0.5, sm: 1, md: 2 }, // Much smaller margins
+        mx: { xs: 0.5, sm: 1, md: 2 }, // Reduced horizontal margins
+        pt: { xs: 0.5, sm: 1, md: 2 }, // Smaller top padding
+        overflow: "hidden", // Prevent horizontal scroll
+      }}
+    >
       <Paper
         sx={{
           width: "100%",
-          maxWidth: 1200, // increased from 900 to 1200 for a wider card
-          minWidth: isMobile ? 0 : 900, // increased minWidth for desktop
+          maxWidth: { xs: "100%", md: 1200 }, // Full width on mobile
+          minWidth: 0, // Allow shrinking on mobile
           mx: "auto",
-          borderRadius: 3,
-          boxShadow: 3,
-          bgcolor: theme.palette.mode === "dark" ? "#23272A" : "#f5f7fa", // match Leads
-          p: { xs: 1, sm: 2 }, // match Leads
-          overflowX: "auto", // match Leads
+          borderRadius: { xs: 1, sm: 2, md: 3 }, // Smaller border radius on mobile
+          boxShadow: { xs: 1, sm: 2, md: 3 }, // Reduced shadow on mobile
+          bgcolor: theme.palette.mode === "dark" ? "#23272A" : "#f5f7fa",
+          p: { xs: 0.5, sm: 1, md: 2 }, // Much smaller padding
+          overflowX: "auto",
         }}
       >
         <Box

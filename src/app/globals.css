@@ -4,34 +4,98 @@
   --background: #ffffff;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  --mobile-padding: 8px;
+  --tablet-padding: 16px;
+  --desktop-padding: 24px;
+  /* New responsive variables */
+  --mobile-font-sm: 12px;
+  --mobile-font-base: 14px;
+  --mobile-font-lg: 16px;
+  --mobile-spacing-xs: 4px;
+  --mobile-spacing-sm: 8px;
+  --mobile-spacing-md: 12px;
+  --mobile-spacing-lg: 16px;
+}
+
+* {
+  box-sizing: border-box;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
-  overflow-x: hidden; /* Prevent horizontal scroll */
+  overflow-x: hidden;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  /* Ensure minimum touch target size */
+  -webkit-tap-highlight-color: transparent;
 }
 
-/* Ensure smooth scrolling and proper layout for fixed sidebar */
 html {
   scroll-behavior: smooth;
+  /* Prevent zoom on double tap for iOS */
+  touch-action: manipulation;
+}
+
+/* Enhanced mobile-first responsive container */
+.container {
+  width: 100%;
+  padding: 0 var(--mobile-padding);
+  margin: 0 auto;
+}
+
+/* Small screens - phones in portrait */
+@media (max-width: 480px) {
+  :root {
+    --mobile-padding: 4px;
+    --mobile-font-sm: 11px;
+    --mobile-font-base: 13px;
+    --mobile-font-lg: 15px;
+  }
+  
+  .container {
+    padding: 0 var(--mobile-padding);
+  }
+}
+
+/* Medium screens - phones in landscape, small tablets */
+@media (min-width: 481px) and (max-width: 767px) {
+  :root {
+    --mobile-padding: 8px;
+  }
+}
+
+/* Tablets */
+@media (min-width: 768px) {
+  .container {
+    padding: 0 var(--tablet-padding);
+  }
+}
+
+/* Desktop */
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 var(--desktop-padding);
+    max-width: 1200px;
+  }
 }
 
 /* Custom scrollbar for content areas */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
   background: #f1f1f1;
-  border-radius: 4px;
+  border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
   background: #c1c1c1;
-  border-radius: 4px;
+  border-radius: 3px;
   transition: background 0.2s ease;
 }
 
@@ -39,14 +103,234 @@ html {
   background: #a8a8a8;
 }
 
-/* Ensure content doesn't go under fixed elements */
+/* Mobile-first main content layout */
 .main-content {
-  padding-top: 56px; /* Account for fixed navbar */
-  margin-left: 0;
+  width: 100%;
+  min-height: calc(100vh - 56px);
+  padding: var(--mobile-padding);
+  margin-top: 56px; /* Account for fixed navbar */
+  transition: all 0.3s ease;
 }
 
-@media (min-width: 600px) {
+/* Tablet adjustments */
+@media (min-width: 768px) {
   .main-content {
-    margin-left: 260px; /* Account for fixed sidebar on desktop */
+    padding: var(--tablet-padding);
+    margin-top: 64px; /* Larger navbar on tablet */
+  }
+}
+
+/* Desktop with sidebar */
+@media (min-width: 1024px) {
+  .main-content {
+    margin-left: 260px;
+    padding: var(--desktop-padding);
+    margin-top: 0; /* No top margin when sidebar is present */
+  }
+}
+
+/* Mobile utilities */
+.mobile-only {
+  display: block;
+}
+
+.desktop-only {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .mobile-only {
+    display: none;
+  }
+  
+  .desktop-only {
+    display: block;
+  }
+}
+
+/* Responsive text sizes */
+.text-responsive-sm {
+  font-size: 0.875rem;
+}
+
+.text-responsive-base {
+  font-size: 1rem;
+}
+
+.text-responsive-lg {
+  font-size: 1.125rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-sm {
+    font-size: 0.9375rem;
+  }
+  
+  .text-responsive-base {
+    font-size: 1.125rem;
+  }
+  
+  .text-responsive-lg {
+    font-size: 1.25rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .text-responsive-sm {
+    font-size: 1rem;
+  }
+  
+  .text-responsive-base {
+    font-size: 1.25rem;
+  }
+  
+  .text-responsive-lg {
+    font-size: 1.5rem;
+  }
+}
+
+/* Mobile-optimized responsive styles */
+.mobile-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mobile-spacing-sm);
+}
+
+@media (min-width: 768px) {
+  .mobile-stack {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--tablet-padding);
+  }
+}
+
+/* Touch-friendly button sizes */
+.touch-button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: var(--mobile-spacing-sm) var(--mobile-spacing-md);
+}
+
+/* Responsive grid system */
+.responsive-grid {
+  display: grid;
+  gap: var(--mobile-spacing-sm);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 480px) {
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--mobile-spacing-md);
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--tablet-padding);
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--desktop-padding);
+  }
+}
+
+/* Mobile-friendly forms */
+.mobile-form input,
+.mobile-form select,
+.mobile-form textarea {
+  font-size: 16px !important; /* Prevents zoom on iOS */
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* Responsive tables */
+.responsive-table {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.responsive-table table {
+  min-width: 600px;
+}
+
+@media (max-width: 767px) {
+  .responsive-table table {
+    font-size: var(--mobile-font-sm);
+  }
+  
+  .responsive-table th,
+  .responsive-table td {
+    padding: var(--mobile-spacing-xs) var(--mobile-spacing-sm);
+  }
+}
+
+/* Mobile navigation styles */
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-around;
+  padding: var(--mobile-spacing-sm);
+  z-index: 1000;
+}
+
+@media (min-width: 1024px) {
+  .mobile-nav {
+    display: none;
+  }
+}
+
+/* Improved focus states for accessibility */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+a:focus {
+  outline: 2px solid #0066cc;
+  outline-offset: 2px;
+}
+
+/* Prevent horizontal scroll on mobile */
+.overflow-hidden-mobile {
+  overflow-x: hidden;
+}
+
+/* Mobile-friendly spacing utilities */
+.p-mobile {
+  padding: var(--mobile-padding);
+}
+
+.m-mobile {
+  margin: var(--mobile-padding);
+}
+
+.gap-mobile {
+  gap: var(--mobile-spacing-md);
+}
+
+/* Dark mode support for mobile */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #121212;
+    --foreground: #ffffff;
+  }
+  
+  .mobile-form input,
+  .mobile-form select,
+  .mobile-form textarea {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border-color: #444;
   }
 }
