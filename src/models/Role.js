@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const modules = ["employee", "user", "lead","role"];
+const modules = ["employee", "user", "lead","role","department"];
 
 const roleSchema = new mongoose.Schema(
   {
