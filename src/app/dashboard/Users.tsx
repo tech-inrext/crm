@@ -457,22 +457,23 @@ const Users: React.FC = () => {
   return (
     <Box
       sx={{
-        mt: { xs: 3, sm: 4, md: 5 },
-        mx: isMobile ? 1 : 2,
-        pt: { xs: 2, md: 3 },
+        mt: { xs: 0.5, sm: 1, md: 2 }, // Much smaller margins
+        mx: { xs: 0.5, sm: 1, md: 2 }, // Reduced horizontal margins
+        pt: { xs: 0.5, sm: 1, md: 2 }, // Smaller top padding
+        overflow: "hidden", // Prevent horizontal scroll
       }}
     >
       <Paper
         sx={{
           width: "100%",
-          maxWidth: 1200, // increased from 900 to 1200 for a wider card
-          minWidth: isMobile ? 0 : 900, // increased minWidth for desktop
+          maxWidth: { xs: "100%", md: 1200 }, // Full width on mobile
+          minWidth: 0, // Allow shrinking on mobile
           mx: "auto",
-          borderRadius: 3,
-          boxShadow: 3,
-          bgcolor: theme.palette.mode === "dark" ? "#23272A" : "#f5f7fa", // match Leads
-          p: { xs: 2, sm: 3, md: 4 }, // Increased padding for better spacing
-          overflowX: "auto", // match Leads
+          borderRadius: { xs: 1, sm: 2, md: 3 }, // Smaller border radius on mobile
+          boxShadow: { xs: 1, sm: 2, md: 3 }, // Reduced shadow on mobile
+          bgcolor: theme.palette.mode === "dark" ? "#23272A" : "#f5f7fa",
+          p: { xs: 0.5, sm: 1, md: 2 }, // Much smaller padding
+          overflowX: "auto",
         }}
       >
         <Box

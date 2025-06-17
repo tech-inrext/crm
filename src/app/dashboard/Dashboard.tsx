@@ -97,12 +97,13 @@ const Dashboard: React.FC = () => {
   const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState("dashboard");
   const { hasReadAccess, loading: permissionsLoading } = usePermissions();
+  // Enhanced mobile-first responsive breakpoints
+  const isMobile = useMediaQuery(theme.breakpoints.down("md")); // Changed from lg to md for better mobile support
+  const isTablet = useMediaQuery(theme.breakpoints.between("md", "lg"));
+  const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Mobile-first responsive breakpoints
-  const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
-
-  // Sidebar should always be open on desktop, controllable on mobile
-  const sidebarIsOpen = isMobile ? sidebarOpen : true;
+  // Sidebar should always be open on desktop, controllable on mobile and tablet
+  const sidebarIsOpen = isMobile || isTablet ? sidebarOpen : true;
 
   useEffect(() => {
     setMounted(true);
@@ -244,20 +245,23 @@ const Dashboard: React.FC = () => {
         component="main"
         sx={{
           flexGrow: 1,
-          pt: { xs: 8, lg: 3 }, // More top padding - account for navbar on mobile + extra space on desktop
-          pb: 3, // Bottom padding for better spacing
-          pl: { xs: 0, lg: "260px" }, // Always account for sidebar on desktop
+          pt: { xs: 7, sm: 8, md: 6, lg: 3 }, // Better responsive top padding
+          pb: { xs: 2, sm: 3 }, // Responsive bottom padding
+          pl: { xs: 0, lg: "260px" }, // Account for sidebar on large screens only
+          pr: { xs: 0 }, // No right padding needed
           transition: "padding-left 0.3s ease",
           minHeight: "100vh",
-          width: { xs: "100%", lg: "calc(100% - 260px)" }, // Always account for sidebar on desktop
+          width: { xs: "100%", lg: "calc(100% - 260px)" }, // Account for sidebar width
+          overflow: "hidden", // Prevent horizontal scroll
         }}
       >
         <Container
           maxWidth={false}
           sx={{
-            py: { xs: 2, sm: 3, md: 4 }, // Increased vertical padding
-            px: { xs: 2, sm: 3, md: 4 }, // Increased horizontal padding
-            minHeight: "calc(100vh - 64px)", // Adjusted for new padding
+            py: { xs: 1, sm: 2, md: 3 }, // Responsive vertical padding
+            px: { xs: 1, sm: 2, md: 3 }, // Responsive horizontal padding
+            minHeight: "calc(100vh - 64px)",
+            maxWidth: "100%", // Prevent overflow
           }}
         >
           <Suspense fallback={<LoadingFallback />}>{renderContent()}</Suspense>

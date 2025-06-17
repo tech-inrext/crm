@@ -19,10 +19,16 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
+  pendingRoleSelection: User | null; // New state for role selection
+  login: (
+    email: string,
+    password: string
+  ) => Promise<{ needsRoleSelection: boolean; userData?: User }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
   switchRole: (role: string) => Promise<void>; // New method to switch roles
+  completeRoleSelection: (role: string) => Promise<void>; // Complete role selection process
+  cancelRoleSelection: () => void; // Cancel role selection
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -40,6 +46,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingRoleSelection, setPendingRoleSelection] = useState<User | null>(
+    null
+  );
   const checkAuth = async () => {
     try {
       // Use the working profile endpoint
@@ -75,7 +84,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(false);
     }
   };
-
   const login = async (email: string, password: string) => {
     try {
       const response = await axios.post(
@@ -91,13 +99,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       );
 
       if (response.data.success) {
-        console.log("✅ Login successful:", response.data.employee); // Set user from login response
-        setUser(response.data.employee);
+        console.log("✅ Login successful:", response.data.employee);
+        const userData = response.data.employee;
 
-        // Also verify auth check works after login
-        setTimeout(() => {
-          checkAuth();
-        }, 100);
+        // Check if user has multiple roles and needs role selection
+        if (userData.roles && userData.roles.length > 1) {
+          console.log(
+            "🔄 Multiple roles detected, showing role selection:",
+            userData.roles
+          );
+          setPendingRoleSelection(userData);
+          return { needsRoleSelection: true, userData };
+        } else {
+          // Single role or no roles array, proceed with default behavior
+          console.log("✅ Single role detected, proceeding with login");
+          setUser(userData);
+
+          // Also verify auth check works after login
+          setTimeout(() => {
+            checkAuth();
+          }, 100);
+
+          return { needsRoleSelection: false };
+        }
       } else {
         throw new Error(response.data.message || "Login failed");
       }
@@ -175,6 +199,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
+  // Complete the role selection process after login
+  const completeRoleSelection = async (role: string) => {
+    if (!pendingRoleSelection) {
+      throw new Error("No pending role selection");
+    }
+
+    try {
+      console.log("🔄 AuthContext: Completing role selection with role:", role);
+
+      // Set the selected role as current role
+      const response = await axios.post(
+        "/api/v0/employee/switchRole",
+        {
+          role,
+        },
+        {
+          withCredentials: true,
+          timeout: 10000,
+        }
+      );
+
+      if (response.data.success) {
+        const userWithRole = { ...pendingRoleSelection, currentRole: role };
+        console.log("✅ AuthContext: Role selection completed:", userWithRole);
+        setUser(userWithRole);
+        setPendingRoleSelection(null);
+
+        // Verify auth check works after role selection
+        setTimeout(() => {
+          checkAuth();
+        }, 100);
+      } else {
+        throw new Error(response.data.message || "Role selection failed");
+      }
+    } catch (error) {
+      console.error(
+        "❌ AuthContext: Failed to complete role selection:",
+        error
+      );
+      throw error;
+    }
+  };
+
+  // Cancel role selection process
+  const cancelRoleSelection = () => {
+    console.log("❌ AuthContext: Role selection cancelled");
+    setPendingRoleSelection(null);
+    // Also logout the user since they cancelled role selection
+    logout();
+  };
+
   useEffect(() => {
     checkAuth();
   }, []);
@@ -215,14 +290,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       clearTimeout(inactivityTimer);
     };
   }, [user]);
-
   const value: AuthContextType = {
     user,
     loading,
+    pendingRoleSelection,
     login,
     logout,
     checkAuth,
     switchRole, // Provide switchRole in context
+    completeRoleSelection, // Provide completeRoleSelection in context
+    cancelRoleSelection, // Provide cancelRoleSelection in context
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -304,10 +304,11 @@ const Leads: React.FC = () => {
   return (
     <Box
       sx={{
-        p: { xs: 2, sm: 3, md: 4 }, // Increased padding
-        pt: { xs: 3, sm: 4, md: 5 }, // Extra top padding for better visibility
+        p: { xs: 0.5, sm: 1, md: 2 }, // Much smaller padding on mobile
+        pt: { xs: 1, sm: 2, md: 3 }, // Reduced top padding
         minHeight: "100vh",
         bgcolor: "background.default",
+        overflow: "hidden", // Prevent horizontal scroll
       }}
     >
       {" "}
@@ -315,11 +316,12 @@ const Leads: React.FC = () => {
       <Paper
         elevation={2}
         sx={{
-          p: { xs: 3, sm: 4, md: 5 }, // Increased padding
-          borderRadius: { xs: 2, md: 3 },
-          mb: { xs: 3, md: 4 }, // Increased bottom margin
-          mt: { xs: 1, md: 2 }, // Added top margin
+          p: { xs: 1, sm: 2, md: 3 }, // Much smaller padding on mobile
+          borderRadius: { xs: 1, sm: 2, md: 3 }, // Smaller border radius on mobile
+          mb: { xs: 1, sm: 2, md: 3 }, // Reduced margins
+          mt: { xs: 0.5, sm: 1, md: 2 }, // Reduced top margin
           background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+          overflow: "hidden", // Prevent content overflow
         }}
       >
         {" "}
@@ -328,8 +330,8 @@ const Leads: React.FC = () => {
           sx={{
             display: "grid",
             gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" },
-            gap: { xs: 2, sm: 3 },
-            mb: { xs: 3, md: 4 },
+            gap: { xs: 0.5, sm: 1, md: 2 }, // Much smaller gaps on mobile
+            mb: { xs: 1, sm: 2, md: 3 }, // Reduced bottom margin
           }}
         >
           <StatsCard

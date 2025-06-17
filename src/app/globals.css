@@ -4,9 +4,17 @@
   --background: #ffffff;
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
-  --mobile-padding: 16px;
-  --tablet-padding: 24px;
-  --desktop-padding: 32px;
+  --mobile-padding: 8px;
+  --tablet-padding: 16px;
+  --desktop-padding: 24px;
+  /* New responsive variables */
+  --mobile-font-sm: 12px;
+  --mobile-font-base: 14px;
+  --mobile-font-lg: 16px;
+  --mobile-spacing-xs: 4px;
+  --mobile-spacing-sm: 8px;
+  --mobile-spacing-md: 12px;
+  --mobile-spacing-lg: 16px;
 }
 
 * {
@@ -21,25 +29,52 @@ body {
   margin: 0;
   padding: 0;
   min-height: 100vh;
+  /* Ensure minimum touch target size */
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
   scroll-behavior: smooth;
+  /* Prevent zoom on double tap for iOS */
+  touch-action: manipulation;
 }
 
-/* Mobile-first responsive container */
+/* Enhanced mobile-first responsive container */
 .container {
   width: 100%;
   padding: 0 var(--mobile-padding);
   margin: 0 auto;
 }
 
+/* Small screens - phones in portrait */
+@media (max-width: 480px) {
+  :root {
+    --mobile-padding: 4px;
+    --mobile-font-sm: 11px;
+    --mobile-font-base: 13px;
+    --mobile-font-lg: 15px;
+  }
+  
+  .container {
+    padding: 0 var(--mobile-padding);
+  }
+}
+
+/* Medium screens - phones in landscape, small tablets */
+@media (min-width: 481px) and (max-width: 767px) {
+  :root {
+    --mobile-padding: 8px;
+  }
+}
+
+/* Tablets */
 @media (min-width: 768px) {
   .container {
     padding: 0 var(--tablet-padding);
   }
 }
 
+/* Desktop */
 @media (min-width: 1024px) {
   .container {
     padding: 0 var(--desktop-padding);
@@ -151,5 +186,151 @@ html {
   
   .text-responsive-lg {
     font-size: 1.5rem;
+  }
+}
+
+/* Mobile-optimized responsive styles */
+.mobile-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--mobile-spacing-sm);
+}
+
+@media (min-width: 768px) {
+  .mobile-stack {
+    flex-direction: row;
+    align-items: center;
+    gap: var(--tablet-padding);
+  }
+}
+
+/* Touch-friendly button sizes */
+.touch-button {
+  min-height: 44px;
+  min-width: 44px;
+  padding: var(--mobile-spacing-sm) var(--mobile-spacing-md);
+}
+
+/* Responsive grid system */
+.responsive-grid {
+  display: grid;
+  gap: var(--mobile-spacing-sm);
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 480px) {
+  .responsive-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--mobile-spacing-md);
+  }
+}
+
+@media (min-width: 768px) {
+  .responsive-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--tablet-padding);
+  }
+}
+
+@media (min-width: 1024px) {
+  .responsive-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--desktop-padding);
+  }
+}
+
+/* Mobile-friendly forms */
+.mobile-form input,
+.mobile-form select,
+.mobile-form textarea {
+  font-size: 16px !important; /* Prevents zoom on iOS */
+  padding: 12px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+/* Responsive tables */
+.responsive-table {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.responsive-table table {
+  min-width: 600px;
+}
+
+@media (max-width: 767px) {
+  .responsive-table table {
+    font-size: var(--mobile-font-sm);
+  }
+  
+  .responsive-table th,
+  .responsive-table td {
+    padding: var(--mobile-spacing-xs) var(--mobile-spacing-sm);
+  }
+}
+
+/* Mobile navigation styles */
+.mobile-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-top: 1px solid #eee;
+  display: flex;
+  justify-content: space-around;
+  padding: var(--mobile-spacing-sm);
+  z-index: 1000;
+}
+
+@media (min-width: 1024px) {
+  .mobile-nav {
+    display: none;
+  }
+}
+
+/* Improved focus states for accessibility */
+button:focus,
+input:focus,
+select:focus,
+textarea:focus,
+a:focus {
+  outline: 2px solid #0066cc;
+  outline-offset: 2px;
+}
+
+/* Prevent horizontal scroll on mobile */
+.overflow-hidden-mobile {
+  overflow-x: hidden;
+}
+
+/* Mobile-friendly spacing utilities */
+.p-mobile {
+  padding: var(--mobile-padding);
+}
+
+.m-mobile {
+  margin: var(--mobile-padding);
+}
+
+.gap-mobile {
+  gap: var(--mobile-spacing-md);
+}
+
+/* Dark mode support for mobile */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #121212;
+    --foreground: #ffffff;
+  }
+  
+  .mobile-form input,
+  .mobile-form select,
+  .mobile-form textarea {
+    background-color: #2d2d2d;
+    color: #ffffff;
+    border-color: #444;
   }
 }

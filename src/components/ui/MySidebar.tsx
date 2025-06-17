@@ -32,12 +32,13 @@ interface MySidebarProps {
 
 const MySidebar: React.FC<MySidebarProps> = ({ open, onClose, links = [] }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md")); // More aggressive mobile breakpoint
+  const isTablet = useMediaQuery(theme.breakpoints.between("md", "lg"));
 
   const sidebarContent = (
     <Box
       sx={{
-        width: { xs: 280, sm: 300, lg: 260 },
+        width: { xs: 260, sm: 280, md: 300, lg: 260 }, // Better responsive width
         height: "100%",
         background: "linear-gradient(180deg, #181C1F 0%, #1a1f23 100%)",
         color: "#fff",
@@ -45,10 +46,11 @@ const MySidebar: React.FC<MySidebarProps> = ({ open, onClose, links = [] }) => {
         overflow: "hidden",
       }}
     >
+      {" "}
       <List
         sx={{
-          py: { xs: 1, sm: 2 },
-          px: 1,
+          py: { xs: 0.5, sm: 1, md: 2 }, // Reduced padding on mobile
+          px: { xs: 0.5, sm: 1 }, // Reduced horizontal padding
           height: "100%",
           overflowY: "auto",
           overflowX: "hidden",
@@ -92,16 +94,16 @@ const MySidebar: React.FC<MySidebarProps> = ({ open, onClose, links = [] }) => {
                 key={link.href}
                 onClick={() => {
                   if (typeof link.onClick === "function") link.onClick();
-                  if (isMobile) onClose(); // Auto-close on mobile
+                  if (isMobile || isTablet) onClose(); // Auto-close on mobile and tablet
                 }}
                 sx={{
                   color: "#fff",
                   borderRadius: { xs: 1, sm: 2 },
-                  mx: { xs: 0.5, sm: 1 },
-                  mb: 0.5,
-                  py: { xs: 1, sm: 1.5 },
-                  px: { xs: 1, sm: 2 },
-                  minHeight: { xs: 40, sm: 48 },
+                  mx: { xs: 0.25, sm: 0.5, md: 1 }, // Reduced margin on mobile
+                  mb: { xs: 0.25, sm: 0.5 }, // Reduced bottom margin
+                  py: { xs: 0.75, sm: 1, md: 1.5 }, // Better responsive padding
+                  px: { xs: 0.75, sm: 1, md: 2 }, // Responsive horizontal padding
+                  minHeight: { xs: 36, sm: 40, md: 48 }, // Smaller on mobile but still touch-friendly
                   transition: "all 0.2s ease",
                   "&.Mui-selected, &.Mui-selected:hover": {
                     bgcolor: "#2c5282",
@@ -116,13 +118,14 @@ const MySidebar: React.FC<MySidebarProps> = ({ open, onClose, links = [] }) => {
                   },
                 }}
               >
+                {" "}
                 {link.icon && (
                   <ListItemIcon
                     sx={{
                       color: "#b0b8c1",
-                      minWidth: { xs: 36, sm: 40 },
+                      minWidth: { xs: 32, sm: 36, md: 40 }, // Responsive icon spacing
                       "& svg": {
-                        fontSize: { xs: 18, sm: 20 },
+                        fontSize: { xs: 16, sm: 18, md: 20 }, // Smaller icons on mobile
                       },
                     }}
                   >
@@ -132,9 +135,10 @@ const MySidebar: React.FC<MySidebarProps> = ({ open, onClose, links = [] }) => {
                 <ListItemText
                   primary={link.label}
                   primaryTypographyProps={{
-                    fontSize: { xs: 14, sm: 15 },
+                    fontSize: { xs: 13, sm: 14, md: 15 }, // Smaller text on mobile
                     fontWeight: 500,
                     letterSpacing: 0.25,
+                    noWrap: true, // Prevent text wrapping
                   }}
                 />
               </ListItemButton>
@@ -145,8 +149,7 @@ const MySidebar: React.FC<MySidebarProps> = ({ open, onClose, links = [] }) => {
       </List>
     </Box>
   );
-
-  if (isMobile) {
+  if (isMobile || isTablet) {
     return (
       <Drawer
         anchor="left"
@@ -159,6 +162,7 @@ const MySidebar: React.FC<MySidebarProps> = ({ open, onClose, links = [] }) => {
           "& .MuiDrawer-paper": {
             borderRight: "none",
             boxShadow: "4px 0 20px rgba(0,0,0,0.3)",
+            width: { xs: 260, sm: 280 }, // Responsive drawer width
           },
         }}
       >

@@ -20,10 +20,7 @@ import {
   DialogActions,
   Link,
 } from "@mui/material";
-import {
-  Visibility,
-  VisibilityOff,
-} from "@mui/icons-material";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
@@ -45,10 +42,10 @@ const LandingPage: React.FC = () => {
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
-  
   const theme = useTheme();
   const router = useRouter();
-  const { login: authLogin } = useAuth();  const handleInputChange =
+  const { login: authLogin } = useAuth();
+  const handleInputChange =
     (field: keyof LoginForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
       if (error) setError(null);
@@ -107,7 +104,6 @@ const LandingPage: React.FC = () => {
     setResetError(null);
     setResetSuccess(false);
   };
-
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.email || !form.password) {
@@ -119,8 +115,15 @@ const LandingPage: React.FC = () => {
     setError(null);
 
     try {
-      await authLogin(form.email, form.password);
-      router.push("/dashboard");
+      const result = await authLogin(form.email, form.password);
+
+      if (result.needsRoleSelection) {
+        // Role selection dialog will be shown via pendingRoleSelection state
+        console.log("Role selection needed");
+      } else {
+        // Single role, proceed to dashboard
+        router.push("/dashboard");
+      }
     } catch (error: unknown) {
       console.error("Login failed:", error);
 
@@ -147,23 +150,35 @@ const LandingPage: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background: theme.palette.mode === "dark"
-          ? "linear-gradient(135deg, #0f1419 0%, #1a202c 100%)"
-          : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        background:
+          theme.palette.mode === "dark"
+            ? "linear-gradient(135deg, #0f1419 0%, #1a202c 100%)"
+            : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
         display: "flex",
         flexDirection: "column",
         px: { xs: 2, sm: 3 },
         py: { xs: 2, sm: 4 },
       }}
-    >      {/* Header */}
-      <Box sx={{ mb: { xs: 3, sm: 4 }, textAlign: "center", display: "flex", alignItems: "center", justifyContent: "center", gap: 2 }}>
-        <Image 
-          src="/inrext.png" 
-          alt="Inrext Logo" 
-          width={40} 
-          height={40} 
+    >
+      {" "}
+      {/* Header */}
+      <Box
+        sx={{
+          mb: { xs: 3, sm: 4 },
+          textAlign: "center",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 2,
+        }}
+      >
+        <Image
+          src="/inrext.png"
+          alt="Inrext Logo"
+          width={40}
+          height={40}
           style={{
-            objectFit: 'contain'
+            objectFit: "contain",
           }}
         />
         <Typography
@@ -176,7 +191,8 @@ const LandingPage: React.FC = () => {
         >
           Inrext CRM
         </Typography>
-      </Box>{/* Main Content */}
+      </Box>
+      {/* Main Content */}
       <Container
         maxWidth="lg"
         sx={{
@@ -186,20 +202,28 @@ const LandingPage: React.FC = () => {
           justifyContent: "center",
           px: { xs: 0, sm: 2 },
         }}
-      >        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: { xs: 'column', md: 'row' }, 
-          gap: { xs: 3, md: 6 }, 
-          alignItems: 'center',
-          justifyContent: 'center',
-          minHeight: { md: '70vh' }
-        }}>          {/* Features Section - Mobile First */}
-          <Box sx={{ 
-            flex: { md: 1 }, 
-            mb: { xs: 4, md: 0 },
-            maxWidth: { xs: '100%', md: '500px' },
-            width: '100%'
-          }}>
+      >
+        {" "}
+        <Box
+          sx={{
+            display: "flex",
+            flexDirection: { xs: "column", md: "row" },
+            gap: { xs: 3, md: 6 },
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: { md: "70vh" },
+          }}
+        >
+          {" "}
+          {/* Features Section - Mobile First */}
+          <Box
+            sx={{
+              flex: { md: 1 },
+              mb: { xs: 4, md: 0 },
+              maxWidth: { xs: "100%", md: "500px" },
+              width: "100%",
+            }}
+          >
             <Box>
               <Typography
                 variant="h3"
@@ -220,16 +244,22 @@ const LandingPage: React.FC = () => {
                   mb: 4,
                   textAlign: { xs: "center", md: "left" },
                   fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
-                  lineHeight: 1.6
+                  lineHeight: 1.6,
                 }}
               >
-                Transform your business with our comprehensive CRM platform designed for modern teams.
+                Transform your business with our comprehensive CRM platform
+                designed for modern teams.
               </Typography>
             </Box>
           </Box>
-
           {/* Login Section */}
-          <Box sx={{ flex: 1, width: '100%', maxWidth: { xs: '100%', md: '400px' } }}>
+          <Box
+            sx={{
+              flex: 1,
+              width: "100%",
+              maxWidth: { xs: "100%", md: "400px" },
+            }}
+          >
             <Card
               sx={{
                 borderRadius: { xs: 3, sm: 4 },
@@ -240,7 +270,9 @@ const LandingPage: React.FC = () => {
             >
               <CardContent sx={{ p: { xs: 3, sm: 4 } }}>
                 {/* Login Header */}
-                <Box sx={{ textAlign: "center", mb: { xs: 3, sm: 4 } }}>                  <Box
+                <Box sx={{ textAlign: "center", mb: { xs: 3, sm: 4 } }}>
+                  {" "}
+                  <Box
                     sx={{
                       width: { xs: 60, sm: 80 },
                       height: { xs: 60, sm: 80 },
@@ -252,18 +284,17 @@ const LandingPage: React.FC = () => {
                       alignItems: "center",
                       justifyContent: "center",
                       margin: "0 auto 16px",
-                      
                     }}
                   >
-                    <Image 
-                      src="/inrext.png" 
-                      alt="Inrext Logo" 
-                      width={40} 
-                      height={40} 
+                    <Image
+                      src="/inrext.png"
+                      alt="Inrext Logo"
+                      width={40}
+                      height={40}
                       style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'contain'
+                        width: "100%",
+                        height: "100%",
+                        objectFit: "contain",
                       }}
                     />
                   </Box>
@@ -271,7 +302,8 @@ const LandingPage: React.FC = () => {
                     variant="h4"
                     sx={{
                       fontWeight: 700,
-                      color: theme.palette.mode === "dark" ? "#ffffff" : "#1a202c",
+                      color:
+                        theme.palette.mode === "dark" ? "#ffffff" : "#1a202c",
                       mb: 1,
                       fontSize: { xs: "1.5rem", sm: "2.125rem" },
                     }}
@@ -281,21 +313,27 @@ const LandingPage: React.FC = () => {
                   <Typography
                     variant="body1"
                     sx={{
-                      color: theme.palette.mode === "dark" ? "#a0aec0" : "#4a5568",
+                      color:
+                        theme.palette.mode === "dark" ? "#a0aec0" : "#4a5568",
                       fontSize: { xs: "0.875rem", sm: "1rem" },
                     }}
                   >
                     Sign in to access your dashboard
                   </Typography>
                 </Box>
-
                 {/* Error Alert */}
                 {error && (
-                  <Alert severity="error" sx={{ mb: 3, borderRadius: 2, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+                  <Alert
+                    severity="error"
+                    sx={{
+                      mb: 3,
+                      borderRadius: 2,
+                      fontSize: { xs: "0.875rem", sm: "1rem" },
+                    }}
+                  >
                     {error}
                   </Alert>
                 )}
-
                 {/* Login Form */}
                 <Box component="form" onSubmit={handleLogin}>
                   <TextField
@@ -304,7 +342,8 @@ const LandingPage: React.FC = () => {
                     type="email"
                     value={form.email}
                     onChange={handleInputChange("email")}
-                    required                    sx={{ mb: { xs: 2, sm: 3 } }}
+                    required
+                    sx={{ mb: { xs: 2, sm: 3 } }}
                     variant="outlined"
                     autoComplete="email"
                   />
@@ -314,7 +353,8 @@ const LandingPage: React.FC = () => {
                     type={showPassword ? "text" : "password"}
                     value={form.password}
                     onChange={handleInputChange("password")}
-                    required                    sx={{ mb: { xs: 3, sm: 4 } }}
+                    required
+                    sx={{ mb: { xs: 3, sm: 4 } }}
                     variant="outlined"
                     autoComplete="current-password"
                     InputProps={{
@@ -345,9 +385,11 @@ const LandingPage: React.FC = () => {
                       fontWeight: 600,
                       textTransform: "none",
                       fontSize: { xs: "1rem", sm: "1.1rem" },
-                      background: "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
+                      background:
+                        "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
                       "&:hover": {
-                        background: "linear-gradient(45deg, #5a67d8 30%, #6b46c1 90%)",
+                        background:
+                          "linear-gradient(45deg, #5a67d8 30%, #6b46c1 90%)",
                       },
                     }}
                   >
@@ -376,12 +418,12 @@ const LandingPage: React.FC = () => {
                       Forgot Password?
                     </Link>
                   </Box>
-                </Box>              </CardContent>
+                </Box>{" "}
+              </CardContent>
             </Card>
           </Box>
         </Box>
       </Container>
-
       {/* Footer */}
       <Box sx={{ mt: { xs: 4, sm: 6 }, textAlign: "center" }}>
         <Typography
@@ -394,7 +436,6 @@ const LandingPage: React.FC = () => {
           © 2024 Inrext CRM. All rights reserved.
         </Typography>
       </Box>
-
       {/* Reset Password Dialog */}
       <Dialog
         open={resetDialogOpen}
@@ -413,30 +454,46 @@ const LandingPage: React.FC = () => {
         </DialogTitle>
         <DialogContent>
           {resetSuccess ? (
-            <Alert severity="success" sx={{ mb: 2, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
-              Password reset successfully! You can now login with your new password.
+            <Alert
+              severity="success"
+              sx={{ mb: 2, fontSize: { xs: "0.875rem", sm: "1rem" } }}
+            >
+              Password reset successfully! You can now login with your new
+              password.
             </Alert>
           ) : (
             <>
               {resetError && (
-                <Alert severity="error" sx={{ mb: 2, fontSize: { xs: "0.875rem", sm: "1rem" } }}>
+                <Alert
+                  severity="error"
+                  sx={{ mb: 2, fontSize: { xs: "0.875rem", sm: "1rem" } }}
+                >
                   {resetError}
                 </Alert>
               )}
-              <Typography sx={{ mb: 2, color: "text.secondary", fontSize: { xs: "0.875rem", sm: "1rem" } }}>
-                Enter your email address and a new password to reset your account.
+              <Typography
+                sx={{
+                  mb: 2,
+                  color: "text.secondary",
+                  fontSize: { xs: "0.875rem", sm: "1rem" },
+                }}
+              >
+                Enter your email address and a new password to reset your
+                account.
               </Typography>
               <TextField
                 fullWidth
                 label="Email Address"
-                type="email"                value={resetEmail}
+                type="email"
+                value={resetEmail}
                 onChange={(e) => setResetEmail(e.target.value)}
                 sx={{ mb: 2 }}
               />
               <TextField
                 fullWidth
                 label="New Password"
-                type="password"                value={newPassword}
+                type="password"
+                value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 sx={{ mb: 2 }}
               />
