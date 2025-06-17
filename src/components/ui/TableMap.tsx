@@ -51,7 +51,7 @@ function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
   );
 }
 
-export default TableMap as <T>(props: TableMapProps<T>) => JSX.Element;
+export default TableMap as <T>(props: TableMapProps<T>) => React.ReactElement;
 export type TableHeaderType<T> =
   | {
       label: string;
