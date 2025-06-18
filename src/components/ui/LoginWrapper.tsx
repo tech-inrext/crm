@@ -56,23 +56,7 @@ const LoginWrapper: React.FC<LoginWrapperProps> = ({ children }) => {
 
   return (
     <>
-      {children}{" "}
-      <RoleSelectionDialog
-        open={showRoleSelection}
-        userRoles={(() => {
-          if (!user?.roles) return [];
-          return user.roles.map((role) => role.name);
-        })()}
-        currentRole={(() => {
-          if (user?.currentRole) {
-            return user.currentRole.name;
-          }
-          return undefined;
-        })()}
-        onRoleSelect={handleRoleSelect}
-        onClose={handleCloseRoleSelection}
-        userName={user?.name}
-      />
+      {children}
     </>
   );
 };

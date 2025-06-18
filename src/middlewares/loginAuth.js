@@ -1,5 +1,6 @@
 import jwt from "jsonwebtoken";
 import Employee from "../models/Employee";
+import Role from "../models/Role";
 import dbConnect from "../lib/mongodb";
 
 export async function loginAuth (req, res, next){
@@ -14,7 +15,7 @@ export async function loginAuth (req, res, next){
     const decodeObj = jwt.verify(token, process.env.JWT_SECRET);
     const { _id, roleId } = decodeObj;
 
-    const employee = await Employee.findById(_id);
+    const employee = await Employee.findById(_id).populate("roles");
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }

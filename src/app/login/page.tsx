@@ -116,14 +116,6 @@ const LandingPage: React.FC = () => {
 
     try {
       const result = await authLogin(form.email, form.password);
-
-      if (result.needsRoleSelection) {
-        // Role selection dialog will be shown via pendingRoleSelection state
-        console.log("Role selection needed");
-      } else {
-        // Single role, proceed to dashboard
-        router.push("/dashboard");
-      }
     } catch (error: unknown) {
       console.error("Login failed:", error);
 
@@ -189,7 +181,7 @@ const LandingPage: React.FC = () => {
             fontSize: { xs: "1.75rem", sm: "2.125rem" },
           }}
         >
-          Inrext CRM
+          Inrext
         </Typography>
       </Box>
       {/* Main Content */}
@@ -235,7 +227,7 @@ const LandingPage: React.FC = () => {
                   fontSize: { xs: "1.75rem", sm: "2rem", md: "2.5rem" },
                 }}
               >
-                Welcome to Inrext CRM
+                Welcome to Inrext
               </Typography>
               <Typography
                 variant="h6"
@@ -247,8 +239,7 @@ const LandingPage: React.FC = () => {
                   lineHeight: 1.6,
                 }}
               >
-                Transform your business with our comprehensive CRM platform
-                designed for modern teams.
+                Property management made easy!
               </Typography>
             </Box>
           </Box>
@@ -298,28 +289,6 @@ const LandingPage: React.FC = () => {
                       }}
                     />
                   </Box>
-                  <Typography
-                    variant="h4"
-                    sx={{
-                      fontWeight: 700,
-                      color:
-                        theme.palette.mode === "dark" ? "#ffffff" : "#1a202c",
-                      mb: 1,
-                      fontSize: { xs: "1.5rem", sm: "2.125rem" },
-                    }}
-                  >
-                    Welcome Back
-                  </Typography>
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      color:
-                        theme.palette.mode === "dark" ? "#a0aec0" : "#4a5568",
-                      fontSize: { xs: "0.875rem", sm: "1rem" },
-                    }}
-                  >
-                    Sign in to access your dashboard
-                  </Typography>
                 </Box>
                 {/* Error Alert */}
                 {error && (
@@ -433,7 +402,7 @@ const LandingPage: React.FC = () => {
             fontSize: { xs: "0.75rem", sm: "0.875rem" },
           }}
         >
-          © 2024 Inrext CRM. All rights reserved.
+          © 2024 Inrext. All rights reserved.
         </Typography>
       </Box>
       {/* Reset Password Dialog */}
