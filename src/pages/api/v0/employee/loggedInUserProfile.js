@@ -27,6 +27,7 @@ async function getProfile(req, res) {
         departmentId: user.departmentId,
         managerId: user.managerId,
         joiningDate: user.joiningDate,
+        currentRole:req.role
       },
     });
   } catch (error) {
