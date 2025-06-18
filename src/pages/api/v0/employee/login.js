@@ -17,7 +17,7 @@ export default async function handler(req, res) {
   const { email, password } = req.body;
 
   try {
-    const employee = await Employee.findOne({ email });
+    const employee = await Employee.findOne({ email }).populate('roles');
     console.log(employee);
     if (!employee) {
       return res
@@ -52,7 +52,7 @@ export default async function handler(req, res) {
     }
 
     // ✅ Generate JWT Token
-    const token = jwt.sign({ _id: employee._id }, "rahul@123", {
+    const token = jwt.sign({ _id: employee._id }, process.env.JWT_SECRET, {
       expiresIn: "7d",
     });
 

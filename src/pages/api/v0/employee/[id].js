@@ -8,7 +8,7 @@ const getEmployeeById = async (req, res) => {
   const { id } = req.query;
 
   try {
-    const employee = await Employee.findById(id).populate("role");
+    const employee = await Employee.findById(id).populate("roles");
 
     if (!employee) {
       return res.status(404).json({
@@ -77,7 +77,7 @@ const updateEmployeeDetails = async (req, res) => {
       id,
       { $set: updateFields },
       { new: true }
-    ).populate("role");
+    ).populate("roles");
 
     if (!updatedEmployee) {
       return res.status(404).json({

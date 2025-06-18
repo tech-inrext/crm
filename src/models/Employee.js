@@ -82,11 +82,13 @@ const employeeSchema = new mongoose.Schema(
       maxlength: [50, "Designation must be at most 50 characters long"],
       required: [true, "Designation is required"],
     },
-    role: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Role",
-      required: true,
-    },
+    roles: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Role",
+        required: true,
+      },
+    ],
     password: {
       type: String,
       required: true,
@@ -97,12 +99,13 @@ const employeeSchema = new mongoose.Schema(
       default: false,
     },
     passwordLastResetAt: {
-    type: Date,
-    default: Date.now,
-  },
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );
 
-const Employee = mongoose.models.Employee || mongoose.model("Employee", employeeSchema);
+const Employee =
+  mongoose.models.Employee || mongoose.model("Employee", employeeSchema);
 export default Employee;

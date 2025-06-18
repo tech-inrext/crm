@@ -4,6 +4,8 @@ import Role from "../../../../models/Role"; // role model
 import bcrypt from "bcrypt";
 import cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
+import { loginAuth } from "../../../../middlewares/loginAuth";
+
 
 
 // ✅ Create new employee (WRITE Access Required)
@@ -21,7 +23,7 @@ const createEmployee = async (req, res) => {
       designation,
       managerId,
       departmentId,
-      role,
+      roles,
     } = req.body;
 
     const dummyPassword = "Inrext@123";
@@ -36,7 +38,7 @@ const createEmployee = async (req, res) => {
       !designation ||
       !managerId ||
       !departmentId ||
-      !role
+      !roles
     ) {
       return res
         .status(400)
@@ -65,7 +67,7 @@ const createEmployee = async (req, res) => {
       designation,
       managerId,
       departmentId,
-      role,
+      roles,
     });
 
     await newEmployee.save();

@@ -17,16 +17,23 @@ export async function userAuth (req, res, next){
       throw new Error("Token is not valid");
     }
 
-    const decodeObj = jwt.verify(token, "rahul@123");
-    const { _id } = decodeObj;
-    console.log("hello",decodeObj)
+    const decodeObj = jwt.verify(token, process.env.JWT_SECRET);
+    const { _id, roleId  } = decodeObj;
+    // console.log("hello",decodeObj)
+
+     if (!_id || !roleId) {
+      return res.status(401).json({ message: "Unauthorized: Role not selected" });
+    }
 
     const employee = await Employee.findById(_id);
     if (!employee) {
-      throw new Error("User not found");
+      throw new Error("Employee not found");
     }
 
-    req.employee = employee;
+     const role = await Role.findById(roleId);
+    if (!role) {
+      return res.status(403).json({ message: "Invalid role" });
+    }
 
     // 🔍 Determine moduleName from URL
     const url = req.url.toLowerCase();
@@ -39,7 +46,6 @@ export async function userAuth (req, res, next){
     if (req.method === "DELETE") action = "delete";
 
     // 🛡️ Check permission
-    const roleId = employee.role;
     const hasAccess = await checkPermission(roleId, action, moduleName);
 
     if (!hasAccess) {
@@ -52,6 +58,8 @@ export async function userAuth (req, res, next){
     // ✅ Store these if needed in handlers
     req.moduleName = moduleName;
     req.action = action;
+    req.employee = employee;
+    req.role = role;
 
     next();
   } catch (err) {
