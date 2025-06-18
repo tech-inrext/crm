@@ -1,5 +1,5 @@
 import dbConnect from "../../../../lib/mongodb";
-import { userAuth } from "../../../../middlewares/auth";
+import { loginAuth } from "../../../../middlewares/loginAuth";
 import cookie from "cookie";
 
 async function getProfile(req, res) {
@@ -20,14 +20,14 @@ async function getProfile(req, res) {
         name: user.name,
         email: user.email,
         phone: user.phone,
-        role: user.role?.name,
+        roles: user.roles || [],
         gender: user.gender,
         address: user.address,
         designation: user.designation,
         departmentId: user.departmentId,
         managerId: user.managerId,
-        joiningDate: user.joiningDate,
-        currentRole:req.role
+        joiningDate: user.joiningDate,    
+        currentRole: req.roleId
       },
     });
   } catch (error) {
@@ -39,5 +39,5 @@ export default async function handler(req, res) {
   const parsedCookies = cookie.parse(req.headers.cookie || "");
   req.cookies = parsedCookies;
 
-  await userAuth(req, res, () => getProfile(req, res));
+  await loginAuth(req, res, () => getProfile(req, res));
 }

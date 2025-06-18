@@ -4,7 +4,6 @@ import Role from "../../../../models/Role"; // role model
 import bcrypt from "bcrypt";
 import cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
-import { loginAuth } from "../../../../middlewares/loginAuth";
 
 
 
