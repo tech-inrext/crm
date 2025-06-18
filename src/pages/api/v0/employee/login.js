@@ -1,6 +1,7 @@
 // /pages/api/employees/login.js
 import dbConnect from "../../../../lib/mongodb";
 import Employee from "../../../../models/Employee";
+import Role from "../../../../models/Role";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import cookie from "cookie";
