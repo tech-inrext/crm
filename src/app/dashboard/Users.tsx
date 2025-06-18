@@ -61,9 +61,9 @@ export interface Employee {
   name: string;
   email: string;
   phone: string;
-  role: string;
-  roles?: string[]; // Multiple roles support
-  currentRole?: string; // Active role for the session
+  role: { _id: string; name: string } | string; // Backend returns role object or string
+  roles?: { _id: string; name: string }[]; // Backend returns array of role objects
+  currentRole?: { _id: string; name: string } | string; // Current active role object or string
   address?: string;
   designation?: string;
   managerId?: string;
@@ -75,26 +75,60 @@ export interface Employee {
   // add more fields if necessary
 }
 
+// Form interface for handling string-based roles in forms
+interface EmployeeForm {
+  name: string;
+  email: string;
+  phone: string;
+  role: string;
+  roles: string[]; // Form uses string array for role names
+  currentRole: string;
+  address?: string;
+  designation?: string;
+  managerId?: string;
+  departmentId?: string;
+  gender?: string;
+  age?: number;
+  altPhone?: string;
+  joiningDate?: string;
+}
+
 const header: TableHeader<Employee>[] = [
   { label: "Name", dataKey: "name" },
   { label: "Email", dataKey: "email" },
   { label: "Phone", dataKey: "phone" },
-  { label: "Primary Role", dataKey: "role" },
+  {
+    label: "Primary Role",
+    component: (row: Employee) => {
+      const roleName =
+        typeof row.role === "string" ? row.role : row.role?.name || "No Role";
+      return <span>{roleName}</span>;
+    },
+  },
   {
     label: "All Roles",
-    component: (row: Employee) => (
-      <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-        {(row.roles || [row.role]).map((role, index) => (
-          <Chip
-            key={`${role}-${index}`}
-            label={role}
-            size="small"
-            variant={role === row.role ? "filled" : "outlined"}
-            color={role === row.role ? "primary" : "default"}
-          />
-        ))}
-      </Box>
-    ),
+    component: (row: Employee) => {
+      const getRoleName = (role: any) =>
+        typeof role === "string" ? role : role?.name || "Unknown";
+      const primaryRoleName = getRoleName(row.role);
+      const allRoles = row.roles
+        ? row.roles.map(getRoleName)
+        : [primaryRoleName];
+
+      return (
+        <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+          {allRoles.map((roleName, index) => (
+            <Chip
+              key={`${roleName}-${index}`}
+              label={roleName}
+              size="small"
+              variant={roleName === primaryRoleName ? "filled" : "outlined"}
+              color={roleName === primaryRoleName ? "primary" : "default"}
+            />
+          ))}
+        </Box>
+      );
+    },
   },
   {
     label: "Actions",
@@ -125,7 +159,7 @@ const header: TableHeader<Employee>[] = [
   },
 ];
 
-const defaultForm: Omit<Employee, "_id" | "dateJoined"> = {
+const defaultForm: EmployeeForm = {
   name: "",
   email: "",
   phone: "",
@@ -232,7 +266,7 @@ const Users: React.FC = () => {
   const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState(defaultForm);
+  const [form, setForm] = useState<EmployeeForm>(defaultForm);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -271,31 +305,39 @@ const Users: React.FC = () => {
       })
       .finally(() => setLoading(false));
   }, []);
-
   // Filter employees
   useEffect(() => {
     const q = search.toLowerCase();
     setFiltered(
-      employees.filter(
-        (e) =>
-          e.name.toLowerCase().includes(q) || e.role.toLowerCase().includes(q)
-      )
+      employees.filter((e) => {
+        const roleName =
+          typeof e.role === "string" ? e.role : e.role?.name || "";
+        return (
+          e.name.toLowerCase().includes(q) || roleName.toLowerCase().includes(q)
+        );
+      })
     );
     setPage(0);
-  }, [search, employees]);
-  // Modal open/close
+  }, [search, employees]); // Modal open/close
   const handleOpen = useCallback((emp?: Employee) => {
     setError(null);
     setFieldErrors({});
     if (emp) {
+      const getRoleName = (role: any) =>
+        typeof role === "string" ? role : role?.name || "";
+      const primaryRoleName = getRoleName(emp.role);
+      const allRoleNames = emp.roles
+        ? emp.roles.map(getRoleName)
+        : [primaryRoleName];
+
       setEditId(emp._id || emp.id || null); // Use _id, fallback to id
       setForm({
         name: emp.name,
         email: emp.email,
         phone: emp.phone,
-        role: emp.role,
-        roles: emp.roles || [emp.role],
-        currentRole: emp.currentRole || emp.role,
+        role: primaryRoleName,
+        roles: allRoleNames,
+        currentRole: getRoleName(emp.currentRole) || primaryRoleName,
         address: emp.address || "",
         designation: emp.designation || "",
         managerId: emp.managerId || "",
@@ -305,7 +347,7 @@ const Users: React.FC = () => {
         altPhone: emp.altPhone || "",
         joiningDate: emp.joiningDate || "",
       });
-      setSelectedRoles(emp.roles || [emp.role]);
+      setSelectedRoles(allRoleNames);
     } else {
       setEditId(null);
       setForm(defaultForm);
@@ -332,10 +374,10 @@ const Users: React.FC = () => {
         setFieldErrors({ role: "Please select at least one role" });
         setSaving(false);
         return;
-      }
-
-      cleanedForm.roles = selectedRoles;
+      } // Send role names as strings to the backend
+      cleanedForm.roles = selectedRoles; // selectedRoles is string[] which matches backend expectation
       cleanedForm.currentRole = selectedRoles[0];
+      cleanedForm.role = selectedRoles[0]; // Primary role
 
       // Remove empty optional fields to avoid validation issues
       if (!cleanedForm.managerId?.trim()) {
@@ -353,13 +395,20 @@ const Users: React.FC = () => {
       if (!cleanedForm.age) {
         delete cleanedForm.age;
       }
-
       if (editId) {
         // Edit - use PATCH instead of PUT to match API
         await axios.patch(`${API_BASE}/${editId}`, cleanedForm);
+        // Update the employee list with the new data
+        // Convert form data back to Employee format for state
+        const updatedEmployee: Partial<Employee> = {
+          ...cleanedForm,
+          role: cleanedForm.role, // Keep as string for now, backend will return proper format
+          roles: cleanedForm.roles as any, // Backend will return proper role objects
+          currentRole: cleanedForm.currentRole as any,
+        };
         setEmployees((prev) =>
           prev.map((e) =>
-            (e._id || e.id) === editId ? { ...e, ...cleanedForm } : e
+            (e._id || e.id) === editId ? { ...e, ...updatedEmployee } : e
           )
         );
       } else {

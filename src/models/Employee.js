@@ -66,22 +66,14 @@ const employeeSchema = new mongoose.Schema(
     departmentId: {
       type: String,
       trim: true,
-      validate: {
-        validator: function (value) {
-          return !value || value.length >= 2;
-        },
-        message: "Department ID must be at least 2 characters long if provided",
-      },
+      minlength: [2, "Department ID must be at least 2 characters long"],
+      required: [true, "Department ID is required"],
     },
     managerId: {
       type: String,
       trim: true,
-      validate: {
-        validator: function (value) {
-          return !value || value.length >= 2;
-        },
-        message: "Manager ID must be at least 2 characters long if provided",
-      },
+      minlength: [2, "Manager ID must be at least 2 characters long"],
+      required: [true, "Manager ID is required"],
     },
     designation: {
       type: String,
@@ -90,23 +82,13 @@ const employeeSchema = new mongoose.Schema(
       maxlength: [50, "Designation must be at most 50 characters long"],
       required: [true, "Designation is required"],
     },
-    role: {
-      type: String,
-      required: true,
-      trim: true,
-    },
-    // New field for multiple roles
     roles: [
       {
-        type: String,
-        trim: true,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Role",
+        required: true,
       },
     ],
-    // Current active role for the session
-    currentRole: {
-      type: String,
-      trim: true,
-    },
     password: {
       type: String,
       required: true,

@@ -1,7 +1,7 @@
-import dbConnect from "../../../../lib/mongodb";
-import Role from "../../../../models/Role";
-import { verifyToken } from "../../../../middlewares/auth";
-import { checkPermission } from "../../../../middlewares/permissions";
+import dbConnect from "@/lib/mongodb";
+import Role from "@/models/Role";
+import cookie from "cookie";
+import { userAuth } from "../../../../middlewares/auth";
 
 // ✅ Create a new role (requires WRITE access on "role")
 const createRole = async (req, res) => {
@@ -55,42 +55,29 @@ const getAllRoles = async (req, res) => {
   }
 };
 
+// ✅ Middleware wrapper to check permissions
+function withAuth(handler) {
+  return async (req, res) => {
+    const parsedCookies = cookie.parse(req.headers.cookie || "");
+    req.cookies = parsedCookies;
+
+    await userAuth(req, res, () => handler(req, res));
+  };
+}
+
 // ✅ Main handler with permission checks
 const handler = async (req, res) => {
   await dbConnect();
 
-  // Apply authentication middleware
-  await new Promise((resolve, reject) => {
-    verifyToken(req, res, (err) => {
-      if (err) reject(err);
-      else resolve();
-    });
-  });
 
   // ✅ Handle GET (read permission required)
   if (req.method === "GET") {
-    return new Promise((resolve, reject) => {
-      checkPermission("role", "read")(req, res, (err) => {
-        if (err) reject(err);
-        else {
-          getAllRoles(req, res);
-          resolve();
-        }
-      });
-    });
+    return getAllRoles(req, res);
   }
 
   // ✅ Handle POST (write permission required)
   if (req.method === "POST") {
-    return new Promise((resolve, reject) => {
-      checkPermission("role", "write")(req, res, (err) => {
-        if (err) reject(err);
-        else {
-          createRole(req, res);
-          resolve();
-        }
-      });
-    });
+    return createRole(req, res);
   }
 
   // ✅ Method not supported
@@ -100,5 +87,4 @@ const handler = async (req, res) => {
   });
 };
 
-// Export handler with authentication and permission middleware
-export default handler;
+export default withAuth(handler);

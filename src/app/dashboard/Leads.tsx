@@ -204,7 +204,7 @@ const Leads: React.FC = () => {
         if (editId) {
           const leadToUpdate = apiLeads.find((l) => l.leadId === editId);
           if (leadToUpdate && leadToUpdate._id) {
-            const apiData = transformFormToAPI(values, editId);
+            const apiData = transformFormToAPI(values);
             const response = await axios.patch(
               `${API_BASE}/${leadToUpdate._id}`,
               apiData
@@ -220,8 +220,7 @@ const Leads: React.FC = () => {
             setLeads(newDisplayLeads);
           }
         } else {
-          const newLeadId = `LEAD-${Date.now()}`;
-          const apiData = transformFormToAPI(values, newLeadId);
+          const apiData = transformFormToAPI(values);
           const response = await axios.post(API_BASE, apiData);
           const createdApiLead = response.data.data || response.data;
           const createdDisplayLead = transformAPILead(createdApiLead);

@@ -19,20 +19,21 @@ const ProfileMenu: React.FC = () => {
   const open = Boolean(anchorEl);
   const { user, logout, switchRole } = useAuth();
   const { refreshPermissions } = usePermissions();
-  const router = useRouter();
-  // Debug logging
+  const router = useRouter(); // Debug logging
   React.useEffect(() => {
     console.log("=== ProfileMenu Debug ===");
     console.log("Current user:", user);
     console.log("User roles:", user?.roles);
-    console.log("User role (single):", user?.role);
     console.log("User currentRole:", user?.currentRole);
-    console.log("Has multiple roles:", user?.roles && user.roles.length > 1);
-    console.log("Roles length:", user?.roles?.length);
-    console.log(
-      "Switch role condition check:",
-      user?.roles && user.roles.length > 1
-    );
+
+    const getAvailableRoleNames = () => {
+      if (!user?.roles) return 0;
+      return user.roles.length;
+    };
+
+    console.log("Has multiple roles:", getAvailableRoleNames() > 1);
+    console.log("Roles length:", getAvailableRoleNames());
+    console.log("Switch role condition check:", getAvailableRoleNames() > 1);
   }, [user]);
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
@@ -106,12 +107,27 @@ const ProfileMenu: React.FC = () => {
           <Person sx={{ mr: 2, fontSize: 20 }} />
           Profile
         </MenuItem>{" "}
-        {user?.roles && user.roles.length > 1 && (
-          <MenuItem onClick={handleRoleSwitchClick} sx={{ py: 1 }}>
-            <SwapHoriz sx={{ mr: 2, fontSize: 20 }} />
-            Switch Role ({user?.currentRole || user?.role})
-          </MenuItem>
-        )}
+        {(() => {
+          const getAvailableRoleNames = () => {
+            if (!user?.roles) return 0;
+            return user.roles.length;
+          };
+          const getCurrentRoleName = () => {
+            if (user?.currentRole) {
+              return user.currentRole.name;
+            }
+            return "Unknown";
+          };
+
+          return (
+            getAvailableRoleNames() > 1 && (
+              <MenuItem onClick={handleRoleSwitchClick} sx={{ py: 1 }}>
+                <SwapHoriz sx={{ mr: 2, fontSize: 20 }} />
+                Switch Role ({getCurrentRoleName()})
+              </MenuItem>
+            )
+          );
+        })()}
         <MenuItem onClick={handleClose} sx={{ py: 1 }}>
           <Settings sx={{ mr: 2, fontSize: 20 }} />
           Settings
@@ -125,14 +141,28 @@ const ProfileMenu: React.FC = () => {
       {/* Role Selection Dialog */}
       <RoleSelectionDialog
         open={roleDialogOpen}
-        userRoles={user?.roles || []}
-        currentRole={user?.currentRole}
-        onRoleSelect={async (role) => {
+        userRoles={(() => {
+          if (!user?.roles) return [];
+          return user.roles.map((role) => role.name);
+        })()}
+        currentRole={(() => {
+          if (user?.currentRole) {
+            return user.currentRole.name;
+          }
+          return undefined;
+        })()}
+        onRoleSelect={async (roleName) => {
           try {
-            console.log("🔄 Attempting to switch role to:", role);
-            console.log("🔄 Current user before switch:", user);
+            console.log("🔄 Attempting to switch role to:", roleName);
+            console.log("🔄 Current user before switch:", user); // Find the role ID from the role name
+            const getRoleId = (name: string) => {
+              if (!user?.roles) return name;
+              const role = user.roles.find((r) => r.name === name);
+              return role ? role._id : name;
+            };
 
-            await switchRole(role);
+            const roleId = getRoleId(roleName);
+            await switchRole(roleId);
             console.log("✅ Role switch successful");
 
             // Refresh permissions immediately after successful role switch

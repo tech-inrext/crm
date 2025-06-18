@@ -44,9 +44,10 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({
   const [permissions, setPermissions] = useState<UserPermissions | null>(null);
   const [loading, setLoading] = useState(true);
   const fetchUserPermissions = useCallback(async () => {
-    const activeRole = user?.currentRole || user?.role;
+    // Get current role from user object
+    const currentRole = user?.currentRole;
 
-    if (!activeRole) {
+    if (!currentRole) {
       console.log("🔍 PermissionsContext: No active role found");
       setPermissions(null);
       setLoading(false);
@@ -57,20 +58,43 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({
       setLoading(true);
 
       console.log(
-        `🔍 PermissionsContext: Fetching permissions for role "${activeRole}"`
+        `🔍 PermissionsContext: Using permissions from role "${currentRole.name}"`
       );
 
-      // Use the new permissions API endpoint
-      const response = await axios.get("/api/v0/employee/permissions", {
-        withCredentials: true,
-      });
+      // Check if the role object has permissions
+      if (
+        currentRole.read !== undefined &&
+        currentRole.write !== undefined &&
+        currentRole.delete !== undefined
+      ) {
+        const rolePermissions = {
+          read: currentRole.read || [],
+          write: currentRole.write || [],
+          delete: currentRole.delete || [],
+        };
 
-      if (response.data.success && response.data.data) {
-        setPermissions(response.data.data);
-        console.log("✅ User permissions loaded:", response.data.data);
+        setPermissions(rolePermissions);
+        console.log("✅ User permissions loaded from role:", rolePermissions);
       } else {
-        console.error("❌ Failed to fetch permissions");
-        setPermissions(null);
+        console.log(
+          "❌ Current role doesn't have permission details, fetching from API"
+        );
+
+        // Fallback: Use the permissions API endpoint if role doesn't have permissions
+        const response = await axios.get("/api/v0/employee/permissions", {
+          withCredentials: true,
+        });
+
+        if (response.data.success && response.data.data) {
+          setPermissions(response.data.data);
+          console.log(
+            "✅ User permissions loaded from API:",
+            response.data.data
+          );
+        } else {
+          console.error("❌ Failed to fetch permissions");
+          setPermissions(null);
+        }
       }
     } catch (error: unknown) {
       const errorMessage =
@@ -80,7 +104,7 @@ export const PermissionsProvider: React.FC<{ children: React.ReactNode }> = ({
     } finally {
       setLoading(false);
     }
-  }, [user?.currentRole, user?.role]);
+  }, [user?.currentRole]);
 
   const hasReadAccess = (module: string): boolean => {
     if (!permissions) return false;
