@@ -31,8 +31,8 @@ interface Employee {
   _id: string;
   name: string;
   email: string;
-  role: string;
-  roles?: string[];
+  role: { _id: string; name: string } | string; // Backend returns role object or string
+  roles?: { _id: string; name: string }[]; // Backend returns array of role objects
   designation: string;
 }
 
@@ -73,10 +73,16 @@ const UserRoleManagement: React.FC = () => {
       console.error("Failed to load roles:", error);
     }
   };
-
   const handleEditRoles = (employee: Employee) => {
+    const getRoleName = (role: any) =>
+      typeof role === "string" ? role : role?.name || "";
+    const primaryRoleName = getRoleName(employee.role);
+    const allRoleNames = employee.roles
+      ? employee.roles.map(getRoleName)
+      : [primaryRoleName];
+
     setSelectedEmployee(employee);
-    setSelectedRoles(employee.roles || [employee.role]);
+    setSelectedRoles(allRoleNames);
     setDialogOpen(true);
   };
 
@@ -90,15 +96,17 @@ const UserRoleManagement: React.FC = () => {
     setLoading(true);
     try {
       console.log("Sending PATCH request with data:", {
-        roles: selectedRoles,
+        roles: selectedRoles, // Send role names as strings
         currentRole: selectedRoles[0],
+        role: selectedRoles[0], // Primary role
       });
 
       const response = await axios.patch(
         `/api/v0/employee/${selectedEmployee._id}`,
         {
-          roles: selectedRoles,
+          roles: selectedRoles, // Backend expects role names as strings
           currentRole: selectedRoles[0], // Set first role as current
+          role: selectedRoles[0], // Set first role as primary
         }
       );
 
@@ -143,38 +151,56 @@ const UserRoleManagement: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {employees.map((employee) => (
-              <TableRow key={employee._id}>
-                <TableCell>{employee.name}</TableCell>
-                <TableCell>{employee.email}</TableCell>
-                <TableCell>{employee.designation}</TableCell>
-                <TableCell>
-                  <Chip label={employee.role} color="primary" size="small" />
-                </TableCell>
-                <TableCell>
-                  <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                    {(employee.roles || [employee.role]).map((role) => (
-                      <Chip
-                        key={role}
-                        label={role}
-                        size="small"
-                        variant={role === employee.role ? "filled" : "outlined"}
-                        color={role === employee.role ? "primary" : "default"}
-                      />
-                    ))}
-                  </Box>
-                </TableCell>
-                <TableCell>
-                  <Button
-                    startIcon={<Edit />}
-                    onClick={() => handleEditRoles(employee)}
-                    size="small"
-                  >
-                    Edit Roles
-                  </Button>
-                </TableCell>
-              </TableRow>
-            ))}
+            {" "}
+            {employees.map((employee) => {
+              const getRoleName = (role: any) =>
+                typeof role === "string" ? role : role?.name || "No Role";
+              const primaryRoleName = getRoleName(employee.role);
+              const allRoleNames = employee.roles
+                ? employee.roles.map(getRoleName)
+                : [primaryRoleName];
+
+              return (
+                <TableRow key={employee._id}>
+                  <TableCell>{employee.name}</TableCell>
+                  <TableCell>{employee.email}</TableCell>
+                  <TableCell>{employee.designation}</TableCell>
+                  <TableCell>
+                    <Chip
+                      label={primaryRoleName}
+                      color="primary"
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                      {allRoleNames.map((roleName) => (
+                        <Chip
+                          key={roleName}
+                          label={roleName}
+                          size="small"
+                          variant={
+                            roleName === primaryRoleName ? "filled" : "outlined"
+                          }
+                          color={
+                            roleName === primaryRoleName ? "primary" : "default"
+                          }
+                        />
+                      ))}
+                    </Box>
+                  </TableCell>
+                  <TableCell>
+                    <Button
+                      startIcon={<Edit />}
+                      onClick={() => handleEditRoles(employee)}
+                      size="small"
+                    >
+                      Edit Roles
+                    </Button>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </TableContainer>

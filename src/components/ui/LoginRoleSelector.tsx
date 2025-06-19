@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -35,55 +35,23 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
   userName,
   userEmail,
   availableRoles,
-  defaultRole,
+  currentRole,
+  showCancel = false,
   onRoleSelect,
   onClose,
 }) => {
-  const [selectedRole, setSelectedRole] = useState<string>(() => {
-    // Ensure the default role is in available roles, otherwise pick the first available
-    const validDefault =
-      defaultRole && availableRoles.includes(defaultRole)
-        ? defaultRole
-        : availableRoles[0] || "";
-    return validDefault;
-  });
+  const initialRole = useMemo(() => {
+    return currentRole || availableRoles[0]._id;
+  }, [currentRole, availableRoles]);
+
+  const [selectedRole, setSelectedRole] = useState<string>(initialRole);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  const handleRoleSelect = async () => {
-    if (!selectedRole) {
-      setError("Please select a role to continue");
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      await onRoleSelect(selectedRole);
-    } catch (error) {
-      console.error("Role selection failed:", error);
-      setError("Failed to set role. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const getRoleColor = (role: string) => {
-    const roleColors: Record<string, string> = {
-      Admin: "#f44336",
-      Manager: "#ff9800",
-      Sales: "#4caf50",
-      HR: "#2196f3",
-      Employee: "#9c27b0",
-    };
-    return roleColors[role] || "#757575";
-  };
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={showCancel ? onClose : () => {}}
       maxWidth="sm"
       fullWidth
       PaperProps={{
@@ -96,9 +64,6 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
       <DialogTitle sx={{ textAlign: "center", pb: 1 }}>
         <Security color="primary" sx={{ fontSize: 48, mb: 2 }} />
         <Typography variant="h5" component="div" fontWeight={700}>
-          Welcome Back!
-        </Typography>
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
           Select your role to continue
         </Typography>
       </DialogTitle>
@@ -142,7 +107,7 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
             disabled={loading}
           >
             {availableRoles.map((role) => (
-              <MenuItem key={role} value={role}>
+              <MenuItem key={role._id} value={role._id}>
                 <Box
                   sx={{
                     display: "flex",
@@ -151,55 +116,12 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
                     width: "100%",
                   }}
                 >
-                  <Chip
-                    label={role}
-                    size="small"
-                    sx={{
-                      backgroundColor: getRoleColor(role),
-                      color: "white",
-                      fontWeight: 600,
-                      minWidth: 80,
-                    }}
-                  />
-                  <Typography>{role}</Typography>
-                  {role === defaultRole && (
-                    <Chip
-                      label="Default"
-                      size="small"
-                      variant="outlined"
-                      color="primary"
-                      sx={{ ml: "auto" }}
-                    />
-                  )}
+                  <Typography>{role.name}</Typography>
                 </Box>
               </MenuItem>
             ))}
           </Select>
         </FormControl>
-
-        {/* Available Roles Display */}
-        <Box sx={{ mb: 2 }}>
-          <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
-            Your available roles:
-          </Typography>
-          <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-            {availableRoles.map((role) => (
-              <Chip
-                key={role}
-                label={role}
-                size="small"
-                variant={role === selectedRole ? "filled" : "outlined"}
-                sx={{
-                  backgroundColor:
-                    role === selectedRole ? getRoleColor(role) : "transparent",
-                  color: role === selectedRole ? "white" : getRoleColor(role),
-                  borderColor: getRoleColor(role),
-                  fontWeight: 600,
-                }}
-              />
-            ))}
-          </Box>
-        </Box>
 
         {/* Error Display */}
         {error && (
@@ -209,32 +131,30 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
         )}
 
         {/* Info Text */}
-        <Typography
-          variant="body2"
-          color="text.secondary"
-          sx={{ textAlign: "center" }}
-        >
-          You can switch roles later from your profile menu
+        <Typography variant="body2" color="text.secondary">
+          Note: You can change your role anytime from the profile menu
         </Typography>
       </DialogContent>
 
       <DialogActions sx={{ p: 3, pt: 1 }}>
+        {showCancel && (
+          <Button
+            onClick={onClose}
+            variant="outlined"
+            disabled={loading}
+            sx={{ minWidth: 100 }}
+          >
+            Cancel
+          </Button>
+        )}
         <Button
-          onClick={onClose}
-          variant="outlined"
-          disabled={loading}
-          sx={{ minWidth: 100 }}
-        >
-          Cancel
-        </Button>
-        <Button
-          onClick={handleRoleSelect}
+          onClick={() => onRoleSelect(selectedRole)}
           variant="contained"
           disabled={loading || !selectedRole}
           sx={{
             minWidth: 120,
             fontWeight: 600,
-            background: selectedRole ? getRoleColor(selectedRole) : undefined,
+            background: "#2196f3",
           }}
         >
           {loading ? (

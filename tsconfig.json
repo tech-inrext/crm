@@ -22,13 +22,18 @@
         "name": "next"
       }
     ],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["./src/*"]
+    },
     "strictNullChecks": false,
     "strictFunctionTypes": false,
     "strictPropertyInitialization": false,
     "noImplicitAny": false,
     "noImplicitReturns": false,
     "noImplicitThis": false,
-    "noUnusedLocals": false,    "noUnusedParameters": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
     "exactOptionalPropertyTypes": false,
     "noUncheckedIndexedAccess": false
   },

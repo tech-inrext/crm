@@ -19,26 +19,45 @@ import { useAuth } from "../../contexts/AuthContext";
 
 const ProfileRoleSwitcher: React.FC = () => {
   const { user, switchRole } = useAuth();
-  const [selectedRole, setSelectedRole] = useState(
-    user?.currentRole || user?.role || ""
-  );
+  // Helper functions to extract role names and IDs
+  const getCurrentRoleName = () => {
+    if (user?.currentRole) {
+      return user.currentRole.name;
+    }
+    return "";
+  };
+
+  const getAvailableRoleNames = () => {
+    if (!user?.roles) return [];
+    return user.roles.map((role) => role.name);
+  };
+
+  const getRoleId = (roleName: string) => {
+    if (!user?.roles) return roleName;
+    const role = user.roles.find((r) => r.name === roleName);
+    return role ? role._id : roleName;
+  };
+
+  const [selectedRole, setSelectedRole] = useState(getCurrentRoleName());
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<{
     type: "success" | "error";
     text: string;
   } | null>(null);
 
-  const userRoles = user?.roles || (user?.role ? [user.role] : []);
+  const userRoles = getAvailableRoleNames();
   const hasMultipleRoles = userRoles.length > 1;
 
   const handleRoleChange = async () => {
-    if (!selectedRole || selectedRole === user?.currentRole) return;
+    if (!selectedRole || selectedRole === getCurrentRoleName()) return;
 
     setLoading(true);
     setMessage(null);
 
     try {
-      await switchRole(selectedRole);
+      // Use role ID for switch role API
+      const roleId = getRoleId(selectedRole);
+      await switchRole(roleId);
       setMessage({
         type: "success",
         text: `Successfully switched to ${selectedRole} role`,
@@ -66,7 +85,10 @@ const ProfileRoleSwitcher: React.FC = () => {
           <Person color="action" />
           <Box>
             <Typography variant="h6">Current Role</Typography>
-            <Chip label={user?.role || "No role assigned"} color="primary" />
+            <Chip
+              label={getCurrentRoleName() || "No role assigned"}
+              color="primary"
+            />
           </Box>
         </Box>
       </Paper>
@@ -95,6 +117,7 @@ const ProfileRoleSwitcher: React.FC = () => {
       )}
 
       <Box sx={{ display: "flex", gap: 2, alignItems: "flex-end" }}>
+        {" "}
         <FormControl fullWidth>
           <InputLabel>Select Role</InputLabel>
           <Select
@@ -103,8 +126,8 @@ const ProfileRoleSwitcher: React.FC = () => {
             onChange={(e) => setSelectedRole(e.target.value)}
             disabled={loading}
           >
-            {userRoles.map((role) => (
-              <MenuItem key={role} value={role}>
+            {userRoles.map((roleName) => (
+              <MenuItem key={roleName} value={roleName}>
                 <Box
                   sx={{
                     display: "flex",
@@ -113,8 +136,8 @@ const ProfileRoleSwitcher: React.FC = () => {
                     width: "100%",
                   }}
                 >
-                  <Typography>{role}</Typography>
-                  {role === user?.currentRole && (
+                  <Typography>{roleName}</Typography>
+                  {roleName === getCurrentRoleName() && (
                     <Chip label="Current" size="small" color="primary" />
                   )}
                 </Box>
@@ -122,11 +145,10 @@ const ProfileRoleSwitcher: React.FC = () => {
             ))}
           </Select>
         </FormControl>
-
         <Button
           variant="contained"
           onClick={handleRoleChange}
-          disabled={loading || selectedRole === user?.currentRole}
+          disabled={loading || selectedRole === getCurrentRoleName()}
           sx={{ minWidth: 120, height: 56 }}
         >
           {loading ? <CircularProgress size={24} /> : "Switch Role"}
@@ -135,8 +157,7 @@ const ProfileRoleSwitcher: React.FC = () => {
 
       <Box sx={{ mt: 2 }}>
         <Typography variant="caption" color="text.secondary">
-          Current active role:{" "}
-          <strong>{user?.currentRole || user?.role}</strong>
+          Current active role: <strong>{getCurrentRoleName()}</strong>
         </Typography>
       </Box>
     </Paper>

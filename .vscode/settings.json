@@ -10,8 +10,9 @@
     "typescript",
     "typescriptreact"
   ],
+  "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "never"
+    "source.fixAll.eslint": "never",
   },
   "typescript.disableAutomaticTypeAcquisition": true,
   "js/ts.implicitProjectConfig.checkJs": false,

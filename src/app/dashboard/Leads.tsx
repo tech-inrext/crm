@@ -68,11 +68,11 @@ const filterLeads = (leads: Lead[], searchQuery: string): Lead[] => {
   const q = searchQuery.toLowerCase();
   return leads.filter(
     (l) =>
-      l.name.toLowerCase().includes(q) ||
-      l.contact.toLowerCase().includes(q) ||
-      l.email.toLowerCase().includes(q) ||
-      l.phone.toLowerCase().includes(q) ||
-      l.status.toLowerCase().includes(q)
+      l?.fullName?.toLowerCase().includes(q) ||
+      l?.contact?.toLowerCase().includes(q) ||
+      l?.email?.toLowerCase().includes(q) ||
+      l?.phone?.toLowerCase().includes(q) ||
+      l?.status?.toLowerCase().includes(q)
   );
 };
 
@@ -94,7 +94,9 @@ const Leads: React.FC = () => {
   const [formData, setFormData] = useState<LeadFormData>(
     getDefaultLeadFormData()
   );
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const [viewMode, setViewMode] = useState<"table" | "cards">(
+    isMobile ? "cards" : "table"
+  );
   // Memoized calculations
   const stats = useMemo(() => calculateLeadStats(leads), [leads]);
 
@@ -108,11 +110,11 @@ const Leads: React.FC = () => {
   // Memoized header configuration
   const header = useMemo(
     () => [
-      { label: "Name", dataKey: "name" },
+      { label: "Name", dataKey: "fullName" },
       { label: "Email", dataKey: "email" },
       { label: "Phone", dataKey: "phone" },
       { label: "Status", dataKey: "status" },
-      { label: "Budget", dataKey: "value" },
+      { label: "Budget", dataKey: "budgetRange" },
       {
         label: "Actions",
         component: (
@@ -124,7 +126,7 @@ const Leads: React.FC = () => {
         ) => (
           <Stack direction="row" spacing={1} justifyContent="center">
             {" "}
-            <PermissionGuard module="lead" action="write" hideWhenNoAccess>
+            <PermissionGuard module="lead" action="write" fallback={<></>}>
               <Tooltip title="Edit Lead">
                 <IconButton
                   aria-label="edit"
@@ -136,7 +138,7 @@ const Leads: React.FC = () => {
                 </IconButton>
               </Tooltip>
             </PermissionGuard>
-            <PermissionGuard module="lead" action="delete" hideWhenNoAccess>
+            <PermissionGuard module="lead" action="delete" fallback={<></>}>
               <Tooltip title="Delete Lead">
                 <IconButton
                   aria-label="delete"
@@ -204,7 +206,7 @@ const Leads: React.FC = () => {
         if (editId) {
           const leadToUpdate = apiLeads.find((l) => l.leadId === editId);
           if (leadToUpdate && leadToUpdate._id) {
-            const apiData = transformFormToAPI(values, editId);
+            const apiData = transformFormToAPI(values);
             const response = await axios.patch(
               `${API_BASE}/${leadToUpdate._id}`,
               apiData
@@ -220,8 +222,7 @@ const Leads: React.FC = () => {
             setLeads(newDisplayLeads);
           }
         } else {
-          const newLeadId = `LEAD-${Date.now()}`;
-          const apiData = transformFormToAPI(values, newLeadId);
+          const apiData = transformFormToAPI(values);
           const response = await axios.post(API_BASE, apiData);
           const createdApiLead = response.data.data || response.data;
           const createdDisplayLead = transformAPILead(createdApiLead);
@@ -244,6 +245,7 @@ const Leads: React.FC = () => {
     },
     [editId, apiLeads, leads, handleClose]
   );
+
   const handleDelete = useCallback(
     async (lead: Lead) => {
       if (!window.confirm(`Delete lead ${lead.name}?`) || !lead._id) {
@@ -263,10 +265,12 @@ const Leads: React.FC = () => {
     },
     [apiLeads, leads]
   );
+
   const handleChangePage = useCallback(
     (_: unknown, newPage: number) => setPage(newPage),
     []
   );
+
   const handleChangeRowsPerPage = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setRowsPerPage(parseInt(e.target.value, 10));
@@ -274,6 +278,7 @@ const Leads: React.FC = () => {
     },
     []
   );
+
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
@@ -281,26 +286,11 @@ const Leads: React.FC = () => {
     },
     []
   );
-  // Effects
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+
   useEffect(() => {
     loadLeads();
   }, [loadLeads]);
-  if (!mounted)
-    return (
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "center",
-          alignItems: "center",
-          minHeight: "50vh",
-        }}
-      >
-        <CircularProgress />
-      </Box>
-    );
+
   return (
     <Box
       sx={{
@@ -311,7 +301,6 @@ const Leads: React.FC = () => {
         overflow: "hidden", // Prevent horizontal scroll
       }}
     >
-      {" "}
       {/* Mobile-First Header Section */}
       <Paper
         elevation={2}
@@ -324,7 +313,18 @@ const Leads: React.FC = () => {
           overflow: "hidden", // Prevent content overflow
         }}
       >
-        {" "}
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 700,
+            color: "text.primary",
+            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
+            mb: { xs: 2, md: 3 },
+            textAlign: { xs: "center", sm: "left" },
+          }}
+        >
+          Leads
+        </Typography>
         {/* Stats Cards - Mobile First Grid */}
         <Box
           sx={{
@@ -350,22 +350,10 @@ const Leads: React.FC = () => {
             label="Conversion Rate"
             color="warning.main"
           />
-        </Box>{" "}
+        </Box>
         {/* Mobile-First Action Bar */}
         <Box sx={{ mb: { xs: 2, md: 3 } }}>
           {/* Title */}
-          <Typography
-            variant="h4"
-            sx={{
-              fontWeight: 700,
-              color: "text.primary",
-              fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
-              mb: { xs: 2, md: 3 },
-              textAlign: { xs: "center", sm: "left" },
-            }}
-          >
-            Leads Management
-          </Typography>
 
           {/* Controls - Stacked on mobile */}
           <Box
@@ -376,22 +364,6 @@ const Leads: React.FC = () => {
               alignItems: { xs: "stretch", md: "center" },
             }}
           >
-            {/* Search Bar - Full width on mobile */}
-            <Box sx={{ flex: { xs: "none", md: 1 }, order: { xs: 1, md: 2 } }}>
-              <MySearchBar
-                placeholder="Search leads..."
-                value={search}
-                onChange={handleSearchChange}
-                sx={{
-                  width: "100%",
-                  "& .MuiOutlinedInput-root": {
-                    fontSize: { xs: "14px", sm: "16px" },
-                  },
-                }}
-              />
-            </Box>
-
-            {/* Action Buttons */}
             <Box
               sx={{
                 display: "flex",
@@ -401,27 +373,29 @@ const Leads: React.FC = () => {
               }}
             >
               {/* View Toggle - Compact on mobile */}
-              <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }}>
-                {[
-                  { mode: "table", icon: ViewList, title: "Table View" },
-                  { mode: "cards", icon: ViewModule, title: "Card View" },
-                ].map(({ mode, icon: Icon, title }) => (
-                  <Tooltip key={mode} title={title}>
-                    <IconButton
-                      onClick={() => setViewMode(mode as "table" | "cards")}
-                      size={isMobile ? "small" : "medium"}
-                      sx={{
-                        backgroundColor:
-                          viewMode === mode ? "primary.main" : "action.hover",
-                        color: viewMode === mode ? "white" : "text.primary",
-                        "&:hover": { backgroundColor: "primary.dark" },
-                      }}
-                    >
-                      <Icon fontSize={isMobile ? "small" : "medium"} />
-                    </IconButton>
-                  </Tooltip>
-                ))}
-              </Stack>
+              {!isMobile && (
+                <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }}>
+                  {[
+                    { mode: "table", icon: ViewList, title: "Table View" },
+                    { mode: "cards", icon: ViewModule, title: "Card View" },
+                  ].map(({ mode, icon: Icon, title }) => (
+                    <Tooltip key={mode} title={title}>
+                      <IconButton
+                        onClick={() => setViewMode(mode as "table" | "cards")}
+                        size={isMobile ? "small" : "medium"}
+                        sx={{
+                          backgroundColor:
+                            viewMode === mode ? "primary.main" : "action.hover",
+                          color: viewMode === mode ? "white" : "text.primary",
+                          "&:hover": { backgroundColor: "primary.dark" },
+                        }}
+                      >
+                        <Icon fontSize={isMobile ? "small" : "medium"} />
+                      </IconButton>
+                    </Tooltip>
+                  ))}
+                </Stack>
+              )}
               {/* Add Button */}
               <Box sx={{ minWidth: 280 }}>
                 <MySearchBar
@@ -431,35 +405,37 @@ const Leads: React.FC = () => {
                 />
               </Box>{" "}
               {/* Add Button */}
-              <PermissionGuard module="lead" action="write" hideWhenNoAccess>
-                <Button
-                  variant="contained"
-                  startIcon={<PersonAdd />}
-                  onClick={() => handleOpen()}
-                  disabled={saving}
-                  size={isMobile ? "medium" : "large"}
-                  sx={{
-                    minWidth: { xs: "auto", sm: 160 },
-                    height: { xs: 44, sm: 48 },
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: { xs: "0.875rem", sm: "1rem" },
-                    boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
-                    "&:hover": {
-                      boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
-                      transform: "translateY(-1px)",
-                    },
-                  }}
-                >
-                  {saving ? (
-                    <CircularProgress size={20} color="inherit" />
-                  ) : isMobile ? (
-                    <Add />
-                  ) : (
-                    "Add Lead"
-                  )}
-                </Button>
-              </PermissionGuard>
+              {!isMobile && (
+                <PermissionGuard module="lead" action="write" fallback={<></>}>
+                  <Button
+                    variant="contained"
+                    startIcon={<PersonAdd />}
+                    onClick={() => handleOpen()}
+                    disabled={saving}
+                    size={isMobile ? "medium" : "large"}
+                    sx={{
+                      minWidth: { xs: "auto", sm: 160 },
+                      height: { xs: 44, sm: 48 },
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      fontSize: { xs: "0.875rem", sm: "1rem" },
+                      boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+                      "&:hover": {
+                        boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
+                        transform: "translateY(-1px)",
+                      },
+                    }}
+                  >
+                    {saving ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : isMobile ? (
+                      <Add />
+                    ) : (
+                      "Add Lead"
+                    )}
+                  </Button>
+                </PermissionGuard>
+              )}
             </Box>
           </Box>
         </Box>
@@ -545,7 +521,7 @@ const Leads: React.FC = () => {
       )}
       {/* Floating Action Button for Mobile */}
       {isMobile && (
-        <PermissionGuard module="lead" action="write" hideWhenNoAccess>
+        <PermissionGuard module="lead" action="write" fallback={<></>}>
           <Fab
             color="primary"
             aria-label="add lead"
