@@ -4,7 +4,7 @@ import Employee from "../../../../models/Employee";
 import Role from "../../../../models/Role";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import cookie from "cookie";
+import * as cookie from "cookie";
 
 export default async function handler(req, res) {
   await dbConnect();
@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   const { email, password } = req.body;
 
   try {
-    const employee = await Employee.findOne({ email }).populate('roles');
+    const employee = await Employee.findOne({ email }).populate("roles");
     console.log(employee);
     if (!employee) {
       return res
