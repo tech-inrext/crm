@@ -166,7 +166,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
         enableReinitialize={true}
         onSubmit={async (values, { setSubmitting }) => {
           setSubmitting(true);
-          await (values);
+          await onSave (values);
           setSubmitting(false);
         }}
       >
