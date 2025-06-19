@@ -29,6 +29,7 @@ import {
   PersonAdd,
   ViewModule,
   ViewList,
+  WidthFull,
 } from "@mui/icons-material";
 
 // Custom Components
@@ -367,7 +368,7 @@ const Leads: React.FC = () => {
             <Box
               sx={{
                 display: "flex",
-                gap: { xs: 1, sm: 2 },
+                gap: { xs: 1, sm: 14 },
                 justifyContent: { xs: "space-between", md: "flex-end" },
                 order: { xs: 2, md: 1 },
               }}
@@ -397,8 +398,17 @@ const Leads: React.FC = () => {
                 </Stack>
               )}
               {/* Add Button */}
-              <Box sx={{ minWidth: 280 }}>
+              <Box
+                sx={{
+                  width: { xs: "100%", md: "auto" },
+                }}
+              >
                 <MySearchBar
+                  sx={{
+                    width: "100%",
+                    md: "auto",
+                    minWidth: 280,
+                  }}
                   value={search}
                   onChange={handleSearchChange}
                   placeholder="Search leads by name, email, phone..."
@@ -414,8 +424,8 @@ const Leads: React.FC = () => {
                     disabled={saving}
                     size={isMobile ? "medium" : "large"}
                     sx={{
-                      minWidth: { xs: "auto", sm: 160 },
-                      height: { xs: 44, sm: 48 },
+                      minWidth: { xs: "auto", sm: 150 },
+                      height: { xs: 44, sm: 40 },
                       borderRadius: 2,
                       fontWeight: 600,
                       fontSize: { xs: "0.875rem", sm: "1rem" },

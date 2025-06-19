@@ -538,60 +538,7 @@ const Roles = () => {
         }}
       >
         {" "}
-        {/* Stats Cards */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" },
-            gap: 3,
-            mb: 4,
-          }}
-        >
-          <Card
-            elevation={3}
-            sx={{ textAlign: "center", p: 2, borderRadius: 3 }}
-          >
-            <Typography variant="h4" fontWeight={700} color="primary.main">
-              {stats.total}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Total Roles
-            </Typography>
-          </Card>
-          <Card
-            elevation={3}
-            sx={{ textAlign: "center", p: 2, borderRadius: 3 }}
-          >
-            <Typography variant="h4" fontWeight={700} color="success.main">
-              {stats.active}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Active Roles
-            </Typography>
-          </Card>
-          <Card
-            elevation={3}
-            sx={{ textAlign: "center", p: 2, borderRadius: 3 }}
-          >
-            <Typography variant="h4" fontWeight={700} color="warning.main">
-              {stats.admin}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Admin Roles
-            </Typography>
-          </Card>
-          <Card
-            elevation={3}
-            sx={{ textAlign: "center", p: 2, borderRadius: 3 }}
-          >
-            <Typography variant="h4" fontWeight={700} color="info.main">
-              {stats.avgPermissions}
-            </Typography>
-            <Typography variant="body2" color="text.secondary">
-              Avg Permissions
-            </Typography>
-          </Card>
-        </Box>
+
         {/* Action Bar */}
         <Box
           sx={{

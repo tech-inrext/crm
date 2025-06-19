@@ -156,7 +156,7 @@ export const getDefaultLeadFormData = (): LeadFormData => {
     propertyType: '',
     location: '',
     budgetRange: '',
-    status: 'new',
+    status: 'New',
     source: '',
     assignedTo: '',
     nextFollowUp: '',
