@@ -315,7 +315,7 @@ const Roles = () => {
 
           {/* Action Button - Use existing RoleCard edit functionality */}
           <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-            <PermissionGuard module="role" action="write" hideWhenNoAccess>
+            <PermissionGuard module="role" action="write" fallback={<></>}>
               <Tooltip title="Edit Role">
                 <IconButton
                   onClick={(e) => {
@@ -649,7 +649,7 @@ const Roles = () => {
           </Box>
 
           {/* Add Role Button */}
-          <PermissionGuard module="role" action="write" hideWhenNoAccess>
+          <PermissionGuard module="role" action="write" fal>
             <Button
               variant="contained"
               startIcon={<PersonAdd />}
@@ -880,7 +880,7 @@ const Roles = () => {
       )}
       {/* Floating Action Button for Mobile */}
       {isMobile && (
-        <PermissionGuard module="role" action="write" hideWhenNoAccess>
+        <PermissionGuard module="role" action="write" fal>
           <Fab
             color="primary"
             aria-label="add role"

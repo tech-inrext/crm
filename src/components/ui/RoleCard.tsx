@@ -91,7 +91,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
           </MyButton>{" "}
         </>
       ) : (
-        <PermissionGuard module="role" action="write" hideWhenNoAccess>
+        <PermissionGuard module="role" action="write" fallback={<></>}>
           <MyButton
             size="small"
             variant="outlined"

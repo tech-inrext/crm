@@ -134,7 +134,7 @@ const header: TableHeader<Employee>[] = [
     label: "Actions",
     component: (row: Employee, handlers: TableActionHandlers<Employee>) => (
       <>
-        <PermissionGuard module="employee" action="write" hideWhenNoAccess>
+        <PermissionGuard module="employee" action="write" fallback={<></>}>
           <IconButton
             aria-label="edit"
             onClick={() => handlers.onEdit(row)}
@@ -144,7 +144,7 @@ const header: TableHeader<Employee>[] = [
           </IconButton>
         </PermissionGuard>
 
-        <PermissionGuard module="employee" action="delete" hideWhenNoAccess>
+        <PermissionGuard module="employee" action="delete" fallback={<></>}>
           <IconButton
             aria-label="delete"
             onClick={() => handlers.onDelete(row)}
@@ -557,7 +557,7 @@ const Users: React.FC = () => {
               />
             </Box>{" "}
           </Box>
-          <PermissionGuard module="employee" action="write" hideWhenNoAccess>
+          <PermissionGuard module="employee" action="write" fallback={<></>}>
             <Button
               variant="contained"
               startIcon={<Add />}
