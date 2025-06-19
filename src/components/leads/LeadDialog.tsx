@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -10,9 +10,11 @@ import {
   MenuItem,
   Box,
   Typography,
+  Autocomplete,
 } from "@mui/material";
 import { Formik, Form, Field, FieldProps, FieldArray } from "formik";
 import * as Yup from "yup";
+import axios from "axios";
 
 // Updated Lead interface matching the API model
 export interface LeadFormData {
@@ -41,7 +43,7 @@ interface LeadDialogProps {
 // Validation schema for lead form
 const leadValidationSchema = Yup.object({
   fullName: Yup.string()
-    .required("Full name is required")
+
     .min(2, "Name must be at least 2 characters")
     .max(100, "Name must be less than 100 characters")
     .trim(),
@@ -52,21 +54,20 @@ const leadValidationSchema = Yup.object({
     .required("Phone number is required")
     .matches(/^\d{10,15}$/, "Phone number must be 10-15 digits only")
     .trim(),
-  propertyType: Yup.string()
-    .required("Property type is required")
-    .oneOf(["Rent", "Buy", "Sell"], "Invalid property type"),
+  propertyType: Yup.string().oneOf(
+    ["Rent", "Buy", "Sell"],
+    "Invalid property type"
+  ),
   location: Yup.string()
     .max(200, "Location must be less than 200 characters")
     .trim(),
   budgetRange: Yup.string()
     .max(50, "Budget range must be less than 50 characters")
     .trim(),
-  status: Yup.string()
-    .required("Status is required")
-    .oneOf(
-      ["New", "Contacted", "Site Visit", "Closed", "Dropped"],
-      "Invalid status"
-    ),
+  status: Yup.string().oneOf(
+    ["New", "Contacted", "Site Visit", "Closed", "Dropped"],
+    "Invalid status"
+  ),
   source: Yup.string()
     .max(100, "Source must be less than 100 characters")
     .trim(),
@@ -81,10 +82,9 @@ const leadValidationSchema = Yup.object({
     .of(
       Yup.object().shape({
         note: Yup.string()
-          .required("Note is required")
           .max(500, "Note must be less than 500 characters")
           .trim(),
-        date: Yup.date().required("Date is required"),
+        date: Yup.date(),
       })
     )
     .default([]),
@@ -115,6 +115,16 @@ const sourceOptions = [
   { value: "Other", label: "Other" },
 ];
 
+const budgetRangeOptions = [
+  { value: "<1 Lakh", label: "<1 Lakh" },
+  { value: "1 Lakh to 10 Lakh", label: "1 Lakh to 10 Lakh" },
+  { value: "10 Lakh to 20 Lakh", label: "10 Lakh to 20 Lakh" },
+  { value: "20 Lakh to 30 Lakh", label: "20 Lakh to 30 Lakh" },
+  { value: "30 Lakh to 50 Lakh", label: "30 Lakh to 50 Lakh" },
+  { value: "50 Lakh to 1 Crore", label: "50 Lakh to 1 Crore" },
+  { value: ">1 Crore", label: ">1 Crore" },
+];
+
 const LeadDialog: React.FC<LeadDialogProps> = ({
   open,
   editId,
@@ -123,6 +133,16 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
   onClose,
   onSave,
 }) => {
+  const [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    if (open) {
+      axios
+        .get("/api/v0/employee")
+        .then((res) => setUsers(res.data.data || []));
+    }
+  }, [open]);
+
   return (
     <Dialog
       open={open}
@@ -138,7 +158,10 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
       }}
     >
       <Formik
-        initialValues={initialData}
+        initialValues={{
+          ...initialData,
+          status: initialData.status?.trim() || "New",
+        }}
         validationSchema={leadValidationSchema}
         enableReinitialize={true}
         onSubmit={async (values, { setSubmitting }) => {
@@ -159,14 +182,14 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
               sx={{
                 display: "flex",
                 flexDirection: "column",
-                gap: 2,
+                gap: 1,
                 mt: 1,
                 maxHeight: "70vh",
                 overflowY: "auto",
                 px: 3,
               }}
             >
-              <Typography variant="h6" sx={{ mt: 1, mb: 1, fontWeight: 600 }}>
+              <Typography variant="h6" sx={{ mt: 1, fontWeight: 600 }}>
                 Basic Information
               </Typography>
 
@@ -177,7 +200,6 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                     label="Full Name"
                     value={values.fullName}
                     onChange={(e) => setFieldValue("fullName", e.target.value)}
-                    required
                     autoFocus
                     error={meta.touched && !!meta.error}
                     helperText={meta.touched && meta.error}
@@ -262,7 +284,6 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                       onChange={(e) =>
                         setFieldValue("propertyType", e.target.value)
                       }
-                      required
                       error={meta.touched && !!meta.error}
                       helperText={meta.touched && meta.error}
                       inputProps={{ "aria-label": "Property type" }}
@@ -276,23 +297,29 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                       ))}
                     </TextField>
                   )}
-                </Field>
-
+                </Field>{" "}
                 <Field name="budgetRange">
                   {({ field, meta }: FieldProps) => (
                     <TextField
                       {...field}
                       label="Budget Range"
+                      select
                       value={values.budgetRange}
                       onChange={(e) =>
                         setFieldValue("budgetRange", e.target.value)
                       }
                       error={meta.touched && !!meta.error}
                       helperText={meta.touched && meta.error}
-                      placeholder="e.g., 50-80 Lakhs"
                       inputProps={{ "aria-label": "Budget range" }}
                       sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-                    />
+                    >
+                      <MenuItem value="">Select budget range...</MenuItem>
+                      {budgetRangeOptions.map((option) => (
+                        <MenuItem key={option.value} value={option.value}>
+                          {option.label}
+                        </MenuItem>
+                      ))}
+                    </TextField>
                   )}
                 </Field>
               </Box>
@@ -332,9 +359,6 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                       select
                       value={values.status}
                       onChange={(e) => setFieldValue("status", e.target.value)}
-                      required
-                      error={meta.touched && !!meta.error}
-                      helperText={meta.touched && meta.error}
                       inputProps={{ "aria-label": "Lead status" }}
                       sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
                     >
@@ -346,8 +370,53 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                       ))}
                     </TextField>
                   )}
+                </Field>{" "}
+                <Field name="assignedTo">
+                  {({ field, meta }: FieldProps) => (
+                    <Autocomplete
+                      options={users}
+                      getOptionLabel={(option) => option.name || ""}
+                      value={
+                        users.find((user) => user._id === values.assignedTo) ||
+                        null
+                      }
+                      onChange={(_, newValue) => {
+                        setFieldValue(
+                          "assignedTo",
+                          newValue ? newValue._id : ""
+                        );
+                      }}
+                      sx={{ flex: 1 }} // Move flex styling to Autocomplete wrapper
+                      renderInput={(params) => (
+                        <TextField
+                          {...params}
+                          label="Assigned To"
+                          error={meta.touched && !!meta.error}
+                          helperText={meta.touched && meta.error}
+                          placeholder="Search and select employee"
+                          sx={{ bgcolor: "#fff", borderRadius: 1 }} // Remove flex from inner TextField
+                        />
+                      )}
+                      renderOption={(props, option) => (
+                        <Box component="li" {...props}>
+                          {option.name}
+                        </Box>
+                      )}
+                      noOptionsText="No employees found"
+                      clearOnBlur
+                      selectOnFocus
+                    />
+                  )}
                 </Field>
+              </Box>
 
+              <Box
+                sx={{
+                  display: "flex",
+                  gap: 2,
+                  flexDirection: { xs: "column", sm: "row" },
+                }}
+              >
                 <Field name="source">
                   {({ field, meta }: FieldProps) => (
                     <TextField
@@ -368,32 +437,6 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                         </MenuItem>
                       ))}
                     </TextField>
-                  )}
-                </Field>
-              </Box>
-
-              <Box
-                sx={{
-                  display: "flex",
-                  gap: 2,
-                  flexDirection: { xs: "column", sm: "row" },
-                }}
-              >
-                <Field name="assignedTo">
-                  {({ field, meta }: FieldProps) => (
-                    <TextField
-                      {...field}
-                      label="Assigned To"
-                      value={values.assignedTo || ""}
-                      onChange={(e) =>
-                        setFieldValue("assignedTo", e.target.value)
-                      }
-                      error={meta.touched && !!meta.error}
-                      helperText={meta.touched && meta.error}
-                      placeholder="Employee ID or Name"
-                      inputProps={{ "aria-label": "Assigned to" }}
-                      sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-                    />
                   )}
                 </Field>
 
@@ -420,7 +463,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
               </Box>
 
               <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
-                Follow-up Notes
+                Notes
               </Typography>
 
               <FieldArray name="followUpNotes">
@@ -456,59 +499,18 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                                 }
                                 error={meta.touched && !!meta.error}
                                 helperText={meta.touched && meta.error}
-                                placeholder="Enter follow-up note..."
+                                placeholder="Enter note..."
                                 inputProps={{
-                                  "aria-label": `Follow-up note ${index + 1}`,
+                                  "aria-label": `note ${index + 1}`,
                                 }}
                                 sx={{ width: "100%" }}
                               />
                             )}
                           </Field>
                         </Box>
-                        <Box sx={{ minWidth: 140 }}>
-                          <Field name={`followUpNotes.${index}.date`}>
-                            {({ field, meta }: FieldProps) => (
-                              <TextField
-                                {...field}
-                                label="Date"
-                                type="date"
-                                value={
-                                  values.followUpNotes[index]?.date
-                                    ? new Date(values.followUpNotes[index].date)
-                                        .toISOString()
-                                        .split("T")[0]
-                                    : ""
-                                }
-                                onChange={(e) =>
-                                  setFieldValue(
-                                    `followUpNotes.${index}.date`,
-                                    e.target.value
-                                  )
-                                }
-                                error={meta.touched && !!meta.error}
-                                helperText={meta.touched && meta.error}
-                                InputLabelProps={{
-                                  shrink: true,
-                                }}
-                                inputProps={{
-                                  "aria-label": `Follow-up date ${index + 1}`,
-                                }}
-                                sx={{ width: "100%" }}
-                              />
-                            )}
-                          </Field>
-                        </Box>
-                        <Box sx={{ display: "flex", alignItems: "center" }}>
-                          <Button
-                            variant="outlined"
-                            color="error"
-                            size="small"
-                            onClick={() => remove(index)}
-                            sx={{ minWidth: 80 }}
-                          >
-                            Remove
-                          </Button>
-                        </Box>
+                        <Box
+                          sx={{ display: "flex", alignItems: "center" }}
+                        ></Box>
                       </Box>
                     ))}
 
@@ -522,7 +524,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                       }
                       sx={{ mt: 1 }}
                     >
-                      Add Follow-up Note
+                      Add a note
                     </Button>
                   </Box>
                 )}
@@ -539,7 +541,6 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
               <Button
                 type="submit"
                 variant="contained"
-                disabled={saving || !isValid}
                 sx={{ fontWeight: 600, bgcolor: "#1976d2", color: "#fff" }}
               >
                 {saving ? <CircularProgress size={20} /> : "Save"}
