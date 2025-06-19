@@ -1,6 +1,7 @@
 // React & Core
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
+import { useRouter } from "next/navigation";
 
 // MUI Components
 import {
@@ -30,6 +31,7 @@ import {
   ViewModule,
   ViewList,
   WidthFull,
+  CloudUpload,
 } from "@mui/icons-material";
 
 // Custom Components
@@ -80,6 +82,7 @@ const filterLeads = (leads: Lead[], searchQuery: string): Lead[] => {
 const Leads: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const router = useRouter();
 
   // State management
   const [mounted, setMounted] = useState(false);
@@ -414,37 +417,71 @@ const Leads: React.FC = () => {
                   placeholder="Search leads by name, email, phone..."
                 />
               </Box>{" "}
-              {/* Add Button */}
+              {/* Add Buttons */}
               {!isMobile && (
-                <PermissionGuard module="lead" action="write" fallback={<></>}>
-                  <Button
-                    variant="contained"
-                    startIcon={<PersonAdd />}
-                    onClick={() => handleOpen()}
-                    disabled={saving}
-                    size={isMobile ? "medium" : "large"}
-                    sx={{
-                      minWidth: { xs: "auto", sm: 150 },
-                      height: { xs: 44, sm: 40 },
-                      borderRadius: 2,
-                      fontWeight: 600,
-                      fontSize: { xs: "0.875rem", sm: "1rem" },
-                      boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
-                      "&:hover": {
-                        boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
-                        transform: "translateY(-1px)",
-                      },
-                    }}
+                <Box sx={{ display: "flex", gap: 2 }}>
+                  <PermissionGuard
+                    module="lead"
+                    action="write"
+                    fallback={<></>}
                   >
-                    {saving ? (
-                      <CircularProgress size={20} color="inherit" />
-                    ) : isMobile ? (
-                      <Add />
-                    ) : (
-                      "Add Lead"
-                    )}
-                  </Button>
-                </PermissionGuard>
+                    <Button
+                      variant="contained"
+                      startIcon={<PersonAdd />}
+                      onClick={() => handleOpen()}
+                      disabled={saving}
+                      size={isMobile ? "medium" : "large"}
+                      sx={{
+                        minWidth: { xs: "auto", sm: 150 },
+                        height: { xs: 44, sm: 40 },
+                        borderRadius: 2,
+                        fontWeight: 600,
+                        fontSize: { xs: "0.875rem", sm: "1rem" },
+                        boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+                        "&:hover": {
+                          boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
+                          transform: "translateY(-1px)",
+                        },
+                      }}
+                    >
+                      {saving ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : isMobile ? (
+                        <Add />
+                      ) : (
+                        "Add Lead"
+                      )}
+                    </Button>
+                  </PermissionGuard>
+                  <PermissionGuard
+                    module="lead"
+                    action="write"
+                    fallback={<></>}
+                  >
+                    <Button
+                      variant="outlined"
+                      startIcon={<CloudUpload />}
+                      onClick={() => router.push("/dashboard/bulk-leads")}
+                      size={isMobile ? "medium" : "large"}
+                      sx={{
+                        minWidth: { xs: "auto", sm: 150 },
+                        height: { xs: 44, sm: 40 },
+                        borderRadius: 2,
+                        fontWeight: 600,
+                        fontSize: { xs: "0.875rem", sm: "1rem" },
+                        borderColor: "primary.main",
+                        color: "primary.main",
+                        "&:hover": {
+                          backgroundColor: "primary.main",
+                          color: "white",
+                          transform: "translateY(-1px)",
+                        },
+                      }}
+                    >
+                      Bulk Upload
+                    </Button>
+                  </PermissionGuard>
+                </Box>
               )}
             </Box>
           </Box>
