@@ -15,17 +15,10 @@ import RoleSelectionDialog from "./RoleSelectionDialog";
 
 const ProfileMenu: React.FC = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
-  const [roleDialogOpen, setRoleDialogOpen] = React.useState(false);
   const open = Boolean(anchorEl);
-  const { user, logout, switchRole } = useAuth();
+  const { user, logout, switchRole, setChangeRole} = useAuth();
   const { refreshPermissions } = usePermissions();
-  const router = useRouter(); // Debug logging
-  React.useEffect(() => {
-    const getAvailableRoleNames = () => {
-      if (!user?.roles) return 0;
-      return user.roles.length;
-    };
-  }, [user]);
+  const router = useRouter()
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -33,6 +26,11 @@ const ProfileMenu: React.FC = () => {
 
   const handleClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleRoleSwitchClick = () => {
+    setChangeRole(true);
+    handleClose();
   };
 
   const handleLogout = async () => {
@@ -45,9 +43,8 @@ const ProfileMenu: React.FC = () => {
     }
   };
 
-  const handleRoleSwitchClick = () => {
-    setRoleDialogOpen(true);
-    handleClose();
+  const getCurrentRoleName = () => {
+    return  user?.roles.find((role) => role._id === user?.currentRole)?.name
   };
 
   return (
@@ -88,37 +85,18 @@ const ProfileMenu: React.FC = () => {
             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
               {user.name}
             </Typography>
-            <Typography  color="text.secondary">
-              {user.email}
-            </Typography>
+            <Typography color="text.secondary">{user.email}</Typography>
           </MenuItem>,
           <Divider key="divider-1" />,
-        ]}{" "}
+        ]}
         <MenuItem onClick={handleClose} sx={{ py: 1 }}>
           <Person sx={{ mr: 2, fontSize: 20 }} />
           Profile
         </MenuItem>
-        {(() => {
-          const getAvailableRoleNames = () => {
-            if (!user?.roles) return 0;
-            return user.roles.length;
-          };
-          const getCurrentRoleName = () => {
-            if (user?.currentRole) {
-              return user.currentRole.name;
-            }
-            return "Unknown";
-          };
-
-          return (
-            getAvailableRoleNames() > 1 && (
-              <MenuItem onClick={handleRoleSwitchClick} sx={{ py: 1 }}>
-                <SwapHoriz sx={{ mr: 2, fontSize: 20 }} />
-                Switch Role ({getCurrentRoleName()})
-              </MenuItem>
-            )
-          );
-        })()}
+        <MenuItem onClick={handleRoleSwitchClick} sx={{ py: 1 }}>
+          <SwapHoriz sx={{ mr: 2, fontSize: 20 }} />
+          Switch Role ({getCurrentRoleName()})
+        </MenuItem>
         <MenuItem onClick={handleClose} sx={{ py: 1 }}>
           <Settings sx={{ mr: 2, fontSize: 20 }} />
           Settings

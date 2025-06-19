@@ -2,7 +2,11 @@
 
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
-import { getProfileDetails } from "../service/auth.service";
+import {
+  getProfileDetails,
+  selectRole,
+  createLogin,
+} from "../service/auth.service";
 import LoginRoleSelector from "../components/ui/LoginRoleSelector";
 import { useRouter } from "next/navigation";
 
@@ -68,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [loading, setLoading] = useState(true);
   const [pendingRoleSelection, setPendingRoleSelection] =
     useState<boolean>(false); // Helper functions to safely extract role information
+  const [changeRole, setChangeRole] = useState<boolean>(false);
   const router = useRouter();
 
   const getCurrentRoleName = () => {
@@ -109,44 +114,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Complete the role selection process after login
   const completeRoleSelection = async (roleId: string) => {
-    if (!pendingRoleSelection) {
-      throw new Error("No pending role selection");
-    }
-
     try {
-      console.log(
-        "🔄 AuthContext: Completing role selection with role:",
-        roleId
-      );
+      const response = await selectRole(roleId);
 
-      // Since backend login doesn't support direct role selection,
-      // we need to call switch-role after login
-      const response = await axios.post(
-        "/api/v0/employee/switch-role",
-        {
-          roleId: roleId, // Backend expects 'roleId' field
-        },
-        {
-          withCredentials: true,
-          timeout: 10000,
-        }
-      );
-      if (response.data.success) {
-        console.log("✅ Role selection completed successfully");
-        setPendingRoleSelection(null);
-
-        // Update user with the selected role including permissions
-        if (response.data.role && pendingRoleSelection) {
-          setUser({
-            ...pendingRoleSelection,
-            currentRole: response.data.role, // This includes permissions
-          });
-        } else {
-          // Fallback: refresh user data to get updated role information
-          await checkAuth();
-        }
+      if (response.success) {
+        setChangeRole(false);
+        setPendingRoleSelection(false);
+        setUser({
+          ...user,
+          currentRole: response.role._id,
+        });
       } else {
-        throw new Error(response.data.message || "Role selection failed");
+        throw new Error(response.message || "Role selection failed");
       }
     } catch (error) {
       console.error(
@@ -159,29 +138,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const login = async (email: string, password: string) => {
     try {
-      const response = await axios.post(
-        "/api/v0/employee/login",
-        {
-          email,
-          password,
-        },
-        {
-          withCredentials: true,
-          timeout: 10000,
+      const response = await createLogin(email, password);
+
+      if (response.success) {
+        setUser(response.employee);
+        if (!response?.employee?.currentRole) {
+          setPendingRoleSelection(true);
         }
-      );
+        router.push("/dashboard");
+      } else {
+        throw new Error(response.message || "Login failed");
+      }
     } catch (error: unknown) {
-      const axiosError = error as {
-        response?: { data?: { message?: string } };
-        message?: string;
-      };
-      console.error(
-        "❌ Login error:",
-        axiosError.response?.data?.message ||
-          axiosError.message ||
-          "Unknown error"
-      );
-      throw new Error(axiosError.response?.data?.message || "Login failed");
+      console.error("❌ Login error:", error);
     }
   };
 
@@ -263,11 +232,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await completeRoleSelection(selectedRoleId);
       setPendingRoleSelection(false);
-      console.log("selectedRoleId", selectedRoleId);
       router.push("/dashboard");
     } catch (error) {
       console.error("Role selection failed:", error);
     }
+  };
+
+  const handleClose = () => {
+    setPendingRoleSelection(false);
+    setChangeRole(false);
   };
 
   useEffect(() => {
@@ -287,18 +260,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     cancelRoleSelection,
     getCurrentRoleName,
     getAvailableRoleNames,
+    setChangeRole,
   };
 
   return (
     <AuthContext.Provider value={value}>
       {children}
-      {pendingRoleSelection && user && (
+      {(pendingRoleSelection || changeRole) && user && (
         <LoginRoleSelector
           open
+          showCancel={changeRole}
           userName={user?.name}
           userEmail={user?.email}
           availableRoles={user?.roles || []}
+          currentRole={user?.currentRole}
           onRoleSelect={handleRoleSelect}
+          onClose={handleClose}
         />
       )}
     </AuthContext.Provider>

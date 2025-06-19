@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -35,17 +35,23 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
   userName,
   userEmail,
   availableRoles,
+  currentRole,
+  showCancel = false,
   onRoleSelect,
   onClose,
 }) => {
-  const [selectedRole, setSelectedRole] = useState<string>("");
+  const initialRole = useMemo(() => {
+    return currentRole || availableRoles[0]._id;
+  }, [currentRole, availableRoles]);
+
+  const [selectedRole, setSelectedRole] = useState<string>(initialRole);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={showCancel ? onClose : () => {}}
       maxWidth="sm"
       fullWidth
       PaperProps={{
@@ -125,23 +131,22 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
         )}
 
         {/* Info Text */}
-        <Typography
-          variant="body2"
-          color="text.secondary"
-        >
-         Note: You can change your role anytime from the profile menu
+        <Typography variant="body2" color="text.secondary">
+          Note: You can change your role anytime from the profile menu
         </Typography>
       </DialogContent>
 
       <DialogActions sx={{ p: 3, pt: 1 }}>
-        <Button
-          onClick={onClose}
-          variant="outlined"
-          disabled={loading}
-          sx={{ minWidth: 100 }}
-        >
-          Cancel
-        </Button>
+        {showCancel && (
+          <Button
+            onClick={onClose}
+            variant="outlined"
+            disabled={loading}
+            sx={{ minWidth: 100 }}
+          >
+            Cancel
+          </Button>
+        )}
         <Button
           onClick={() => onRoleSelect(selectedRole)}
           variant="contained"
@@ -149,7 +154,7 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
           sx={{
             minWidth: 120,
             fontWeight: 600,
-            background: "#2196f3"
+            background: "#2196f3",
           }}
         >
           {loading ? (
