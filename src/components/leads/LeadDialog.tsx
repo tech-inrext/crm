@@ -28,7 +28,7 @@ export interface LeadFormData {
   source: string;
   assignedTo?: string;
   nextFollowUp?: string;
-  followUpNotes: Array<{ note: string; date: string }>;
+  followUpNotes: Array<{ note: string }>;
 }
 
 interface LeadDialogProps {

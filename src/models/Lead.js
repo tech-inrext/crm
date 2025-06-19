@@ -9,11 +9,12 @@ const range = [
   "30 Lakh to 50 Lakh",
   "50 Lakh to 1 Crore",
   ">1 Crore",
+  "",
 ];
 
-const type = ["Rent", "Buy", "Sell"];
+const type = ["Rent", "Buy", "Sell", ""];
 
-const status = ["New", "Contacted", "Site Visit", "Closed", "Dropped"];
+const status = ["New", "Contacted", "Site Visit", "Closed", "Dropped", ""];
 
 const leadSchema = new mongoose.Schema(
   {
@@ -30,10 +31,6 @@ const leadSchema = new mongoose.Schema(
       type: String,
       trim: true,
       lowercase: true,
-      validate: {
-        validator: validator.isEmail,
-        message: "Invalid email format",
-      },
     },
     phone: {
       type: String,
@@ -73,15 +70,10 @@ const leadSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
     },
-    followUpNotes: [
-      {
-        note: { type: String, trim: true },
-        date: {
-          type: Date,
-          default: Date.now,
-        },
-      },
-    ],
+    followUpNotes: {
+      type: [String],
+    },
+
     nextFollowUp: Date,
   },
   { timestamps: true }
