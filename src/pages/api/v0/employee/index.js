@@ -2,7 +2,7 @@ import dbConnect from "../../../../lib/mongodb";
 import Employee from "../../../../models/Employee";
 import Role from "../../../../models/Role"; // role model
 import bcrypt from "bcrypt";
-import cookie from "cookie";
+import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 
 // ✅ Create new employee (WRITE Access Required)

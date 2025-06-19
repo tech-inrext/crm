@@ -1,6 +1,6 @@
 import dbConnect from "@/lib/mongodb";
 import Role from "@/models/Role";
-import cookie from "cookie";
+import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 
 // ✅ Create a new role (requires WRITE access on "role")
@@ -68,7 +68,6 @@ function withAuth(handler) {
 // ✅ Main handler with permission checks
 const handler = async (req, res) => {
   await dbConnect();
-
 
   // ✅ Handle GET (read permission required)
   if (req.method === "GET") {

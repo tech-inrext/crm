@@ -1,6 +1,6 @@
 import dbConnect from "../../../../lib/mongodb";
 import Lead from "../../../../models/Lead";
-import cookie from "cookie";
+import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 
 // ✅ GET handler – Fetch a single Lead by ID
