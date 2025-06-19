@@ -6,42 +6,29 @@ import { userAuth } from "../../../../middlewares/auth";
 // ✅ Create Lead (WRITE Access Required)
 const createLead = async (req, res) => {
   try {
-    const {
-      leadId,
-      fullName,
-      email,
-      phone,
-      propertyType,
-      location,
-      budgetRange,
-      status,
-      source,
-      assignedTo,
-      followUpNotes,
-      nextFollowUp,
-    } = req.body;
+    const { phone, ...rest } = req.body;
 
-    // Basic validation
-    if (!leadId || !fullName || !phone || !propertyType) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing required fields" });
+    if (!phone) {
+      return res.status(400).json({
+        success: false,
+        message: "Phone number is required",
+      });
     }
 
-    const newLead = new Lead({
-      leadId,
-      fullName,
-      email,
-      phone,
-      propertyType,
-      location,
-      budgetRange,
-      status,
-      source,
-      assignedTo,
-      followUpNotes,
-      nextFollowUp,
-    });
+    const existingLead = await Lead.findOne({ phone });
+
+    if (existingLead) {
+      return res.status(409).json({
+        success: false,
+        message: "Phone number already exists for another lead",
+      });
+    }
+
+    const leadId = `LD-${Date.now().toString().slice(-6)}-${Math.floor(
+      100 + Math.random() * 900
+    )}`;
+
+    const newLead = new Lead({ leadId, phone, ...rest });
 
     await newLead.save();
 
@@ -55,11 +42,29 @@ const createLead = async (req, res) => {
   }
 };
 
-// ✅ Get All Leads (READ Access Required)
 const getAllLeads = async (req, res) => {
   try {
-    const allLeads = await Lead.find({});
-    return res.status(200).json({ success: true, data: allLeads });
+    const { page = 1, limit = 10 } = req.query;
+
+    const currentPage = parseInt(page);
+    const itemsPerPage = parseInt(limit);
+    const skip = (currentPage - 1) * itemsPerPage;
+
+    const [leads, totalLeads] = await Promise.all([
+      Lead.find({}).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }),
+      Lead.countDocuments(),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: leads,
+      pagination: {
+        totalItems: totalLeads,
+        currentPage,
+        itemsPerPage,
+        totalPages: Math.ceil(totalLeads / itemsPerPage),
+      },
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,

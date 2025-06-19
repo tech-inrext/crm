@@ -1,17 +1,29 @@
 import mongoose from "mongoose";
 import validator from "validator";
 
+const range = [
+  "<1 Lakh",
+  "1 Lakh to 10 Lakh",
+  "10 Lakh to 20 Lakh",
+  "20 Lakh to 30 Lakh",
+  "30 Lakh to 50 Lakh",
+  "50 Lakh to 1 Crore",
+  ">1 Crore",
+];
+
+const type = ["Rent", "Buy", "Sell"];
+
+const status = ["New", "Contacted", "Site Visit", "Closed", "Dropped"];
+
 const leadSchema = new mongoose.Schema(
   {
     leadId: {
       type: String,
-      required: true,
       unique: true,
       trim: true,
     },
     fullName: {
       type: String,
-      required: true,
       trim: true,
     },
     email: {
@@ -27,6 +39,7 @@ const leadSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
+      unique: true,
       validate: {
         validator: function (v) {
           return /^\d{10,15}$/.test(v);
@@ -36,8 +49,7 @@ const leadSchema = new mongoose.Schema(
     },
     propertyType: {
       type: String,
-      enum: ["Rent", "Buy", "Sell"],
-      required: true,
+      enum: type,
     },
     location: {
       type: String,
@@ -45,11 +57,12 @@ const leadSchema = new mongoose.Schema(
     },
     budgetRange: {
       type: String,
+      enum: range,
       trim: true,
     },
     status: {
       type: String,
-      enum: ["New", "Contacted", "Site Visit", "Closed", "Dropped"],
+      enum: status,
       default: "New",
     },
     source: {

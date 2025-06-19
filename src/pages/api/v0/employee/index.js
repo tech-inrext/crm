@@ -5,8 +5,6 @@ import bcrypt from "bcrypt";
 import cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 
-
-
 // ✅ Create new employee (WRITE Access Required)
 const createEmployee = async (req, res) => {
   try {
