@@ -166,7 +166,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
         enableReinitialize={true}
         onSubmit={async (values, { setSubmitting }) => {
           setSubmitting(true);
-          await onSave(values);
+          await (values);
           setSubmitting(false);
         }}
       >
@@ -231,6 +231,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                     />
                   )}
                 </Field>{" "}
+                
                 <Field name="phone">
                   {({ field, meta }: FieldProps) => (
                     <TextField
@@ -238,7 +239,6 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                       label="Phone"
                       value={values.phone}
                       onChange={(e) => {
-                        // Remove all non-digit characters and limit to 15 digits
                         const cleanPhone = e.target.value
                           .replace(/\D/g, "")
                           .slice(0, 15);
