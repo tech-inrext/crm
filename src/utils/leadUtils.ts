@@ -112,16 +112,16 @@ export const transformAPILeadToForm = (apiLead: Lead): LeadFormData => {
 // Transform form data to API format
 export const transformFormToAPI = (formData: LeadFormData): Partial<Lead> => {
   return {
-    name: formData.fullName,
+    fullName: formData.fullName,
     email: formData.email,
     phone: formData.phone,
-    company: formData.propertyType,
-    contact: formData.location,
-    value: parseFloat(formData.budgetRange.replace(/[$,]/g, '')) || 0,
+    propertyType: formData.propertyType,
+    location: formData.location,
+    budgetRange: formData.budgetRange,
     status: formData.status,
     source: formData.source,
-    assignedTo: formData.assignedTo,
-    notes: formData.followUpNotes.map(note => `${note.date}: ${note.note}`).join('\n'),
+    assignedTo: formData.assignedTo || null,
+    followUpNotes: formData.followUpNotes.map(note => `${note.date}: ${note.note}`).join('\n'),
   };
 };
 

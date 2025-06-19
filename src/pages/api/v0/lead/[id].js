@@ -28,12 +28,12 @@ const updateLeadDetails = async (req, res) => {
   const { phone, ...updateFields } = req.body;
 
   try {
-    if (phone) {
-      return res.status(409).json({
-        success: false,
-        message: "Phone number is not allowed to change",
-      });
-    }
+    // if (phone) {
+    //   return res.status(409).json({
+    //     success: false,
+    //     message: "Phone number is not allowed to change",
+    //   });
+    // }
 
     const updatedLead = await Lead.findByIdAndUpdate(
       id,
