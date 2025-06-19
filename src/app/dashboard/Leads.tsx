@@ -30,7 +30,6 @@ import {
   ViewModule,
   ViewList,
   WidthFull,
-  CloudUpload,
 } from "@mui/icons-material";
 
 // Custom Components
@@ -38,7 +37,6 @@ import MySearchBar from "../../components/ui/MySearchBar";
 import LeadsTableHeader from "../../components/leads/LeadsTableHeader";
 import LeadsTableRow from "../../components/leads/LeadsTableRow";
 import LeadDialog, { LeadFormData } from "../../components/leads/LeadDialog";
-import BulkUploadDialog from "../../components/leads/BulkUploadDialog";
 import PermissionGuard from "../../components/PermissionGuard";
 
 // Shared Types
@@ -96,10 +94,10 @@ const Leads: React.FC = () => {
   const [editId, setEditId] = useState<string | null>(null);
   const [formData, setFormData] = useState<LeadFormData>(
     getDefaultLeadFormData()
-  );  const [viewMode, setViewMode] = useState<"table" | "cards">(
+  );
+  const [viewMode, setViewMode] = useState<"table" | "cards">(
     isMobile ? "cards" : "table"
   );
-  const [bulkUploadOpen, setBulkUploadOpen] = useState(false);
   // Memoized calculations
   const stats = useMemo(() => calculateLeadStats(leads), [leads]);
 
