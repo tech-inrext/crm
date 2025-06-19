@@ -10,9 +10,7 @@ const getLeadById = async (req, res) => {
   try {
     const lead = await Lead.findById(id); // Fetch lead
     if (!lead) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Lead not found" });
+      return res.status(404).json({ success: false, error: "Lead not found" });
     }
 
     return res.status(200).json({ success: true, data: lead });
@@ -27,31 +25,16 @@ const getLeadById = async (req, res) => {
 // ✅ PATCH handler – Update lead details with restricted field control
 const updateLeadDetails = async (req, res) => {
   const { id } = req.query;
-  const { fullName, status, followUpNotes } = req.body;
+  const { phone, ...updateFields } = req.body;
 
   try {
-    // ❌ Disallowed fields – cannot be updated
-    const notAllowedFields = ["phone", "email"];
-    const attemptedFields = Object.keys(req.body);
-    const invalidFields = attemptedFields.filter(field =>
-      notAllowedFields.includes(field)
-    );
-
-    if (invalidFields.length > 0) {
-      return res.status(400).json({
+    if (phone) {
+      return res.status(409).json({
         success: false,
-        message: `You are not allowed to update these field(s): ${invalidFields.join(", ")}`,
+        message: "Phone number is not allowed to change",
       });
     }
 
-    // ✅ Only allowed fields are picked for update
-    const updateFields = {
-      ...(fullName && { fullName }),
-      ...(status && { status }),
-      ...(followUpNotes && { followUpNotes })
-    };
-
-    // Update the lead and return the updated document
     const updatedLead = await Lead.findByIdAndUpdate(
       id,
       { $set: updateFields },
@@ -59,9 +42,7 @@ const updateLeadDetails = async (req, res) => {
     );
 
     if (!updatedLead) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Lead not found" });
+      return res.status(404).json({ success: false, error: "Lead not found" });
     }
 
     return res.status(200).json({ success: true, data: updatedLead });

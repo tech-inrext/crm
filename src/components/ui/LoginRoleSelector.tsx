@@ -41,7 +41,7 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
   onClose,
 }) => {
   const initialRole = useMemo(() => {
-    return currentRole || availableRoles[0]._id;
+    return currentRole || availableRoles?.[0]?._id;
   }, [currentRole, availableRoles]);
 
   const [selectedRole, setSelectedRole] = useState<string>(initialRole);
