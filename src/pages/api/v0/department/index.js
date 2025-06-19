@@ -1,6 +1,6 @@
 import dbConnect from "../../../../lib/mongodb";
 import Department from "../../../../models/Department";
-import cookie from "cookie";
+import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 
 const createDepartment = async (req, res) => {
@@ -13,7 +13,12 @@ const createDepartment = async (req, res) => {
         .json({ success: false, message: "Department name is required" });
     }
 
-    const newDept = new Department({ name, description, managerId, departmentId });
+    const newDept = new Department({
+      name,
+      description,
+      managerId,
+      departmentId,
+    });
     await newDept.save();
 
     return res.status(201).json({ success: true, data: newDept });
@@ -22,7 +27,7 @@ const createDepartment = async (req, res) => {
   }
 };
 
-const getAllDepartment = async (req,res) => {
+const getAllDepartment = async (req, res) => {
   try {
     const departments = await Department.find({ isActive: true }).populate(
       "managerId",

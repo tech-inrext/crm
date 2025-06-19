@@ -1,12 +1,14 @@
 import dbConnect from "../../../../lib/mongodb";
 import { loginAuth } from "../../../../middlewares/loginAuth";
-import cookie from "cookie";
+import * as cookie from "cookie";
 
 async function getProfile(req, res) {
   await dbConnect();
 
   if (req.method !== "GET") {
-    return res.status(405).json({ success: false, message: "Method not allowed" });
+    return res
+      .status(405)
+      .json({ success: false, message: "Method not allowed" });
   }
 
   try {
@@ -26,12 +28,16 @@ async function getProfile(req, res) {
         designation: user.designation,
         departmentId: user.departmentId,
         managerId: user.managerId,
-        joiningDate: user.joiningDate,    
-        currentRole: req.roleId
+        joiningDate: user.joiningDate,
+        currentRole: req.roleId,
       },
     });
   } catch (error) {
-    res.status(500).json({ success: false, message: "Failed to fetch profile", error: error.message });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch profile",
+      error: error.message,
+    });
   }
 }
 

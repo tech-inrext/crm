@@ -1,6 +1,6 @@
 import dbConnect from "../../../../lib/mongodb";
 import Department from "../../../../models/Department";
-import cookie from "cookie";
+import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 
 const updateDepartmentDetails = async (req, res) => {

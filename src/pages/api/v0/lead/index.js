@@ -1,6 +1,6 @@
 import dbConnect from "../../../../lib/mongodb";
 import Lead from "../../../../models/Lead";
-import cookie from "cookie";
+import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 
 // ✅ Create Lead (WRITE Access Required)

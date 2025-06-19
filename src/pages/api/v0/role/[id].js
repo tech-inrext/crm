@@ -1,6 +1,6 @@
 import dbConnect from "../../../../lib/mongodb";
 import Role from "../../../../models/Role";
-import cookie from "cookie";
+import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 
 // ✅ GET role by ID (only if has READ permission)
