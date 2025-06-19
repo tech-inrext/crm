@@ -5,6 +5,7 @@ import {
   TableRow,
   TableCell,
   TableBody,
+  Box,
 } from "@mui/material";
 
 export interface TableActionHandlers<T> {
@@ -26,19 +27,62 @@ interface TableMapProps<T> extends TableActionHandlers<T> {
 function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
   const rows = useMemo(() => data, [data]);
   return (
-    <Table size="small">
+    <Table stickyHeader size="medium" sx={{ minWidth: 750 }}>
       <TableHead>
-        <TableRow>
+        <TableRow
+          sx={{
+            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            "& .MuiTableCell-head": {
+              borderBottom: "none",
+            },
+          }}
+        >
           {header.map((head) => (
-            <TableCell key={head.label}>{head.label}</TableCell>
+            <TableCell
+              key={head.label}
+              sx={{
+                fontWeight: 800,
+                color: "white",
+                fontSize: { xs: 13, sm: 15, md: 16 },
+                textAlign: head.label === "Actions" ? "center" : "left",
+                px: { xs: 1.5, sm: 2.5 },
+                py: { xs: 2, sm: 2.5 },
+                letterSpacing: "0.5px",
+                textTransform: "uppercase",
+                background: "transparent",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                {head.label}
+              </Box>
+            </TableCell>
           ))}
         </TableRow>
       </TableHead>
       <TableBody>
         {rows.map((row: T) => (
-          <TableRow key={(row as { _id: string })._id} hover>
+          <TableRow
+            key={(row as { _id: string })._id}
+            hover
+            sx={{
+              "&:hover": {
+                backgroundColor: "rgba(0, 0, 0, 0.04)",
+              },
+              "&:nth-of-type(odd)": {
+                backgroundColor: "rgba(0, 0, 0, 0.01)",
+              },
+            }}
+          >
             {header.map((head) => (
-              <TableCell key={head.label}>
+              <TableCell
+                key={head.label}
+                sx={{
+                  px: { xs: 1.5, sm: 2.5 },
+                  py: { xs: 1.5, sm: 2 },
+                  fontSize: { xs: 13, sm: 14, md: 15 },
+                  textAlign: head.label === "Actions" ? "center" : "left",
+                }}
+              >
                 {head.component
                   ? head.component(row, { onEdit, onDelete })
                   : String(row[head.dataKey as keyof T] ?? "")}

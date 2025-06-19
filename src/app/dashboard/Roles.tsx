@@ -194,12 +194,6 @@ const Roles = () => {
     };
   }, [roles]);
 
-  // Get role color based on permissions count
-  const getRoleColor = (permissionsCount: number) => {
-    if (permissionsCount >= 6) return "#4CAF50"; // Green for high permissions
-    if (permissionsCount >= 3) return "#FF9800"; // Orange for medium permissions
-    return "#2196F3"; // Blue for low permissions
-  };
 
   // Enhanced Loading skeleton component
   const LoadingSkeleton = () => (
@@ -246,7 +240,7 @@ const Roles = () => {
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Avatar
               sx={{
-                bgcolor: getRoleColor(role.permissions.length),
+                bgcolor: 'skyblue',
                 width: 48,
                 height: 48,
                 fontSize: "1.2rem",

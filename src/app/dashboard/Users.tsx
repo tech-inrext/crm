@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   Box,
   Typography,
@@ -21,8 +21,21 @@ import {
   Select,
   OutlinedInput,
   SelectChangeEvent,
+  Table,
+  TableBody,
+  TablePagination,
+  Tooltip,
+  Stack,
+  Fab,
 } from "@mui/material";
-import { Edit, Delete, Add } from "@mui/icons-material";
+import {
+  Edit,
+  Delete,
+  Add,
+  PersonAdd,
+  ViewModule,
+  ViewList,
+} from "@mui/icons-material";
 import { useTheme } from "@mui/material/styles";
 import axios from "axios";
 import MySearchBar from "../../components/ui/MySearchBar";
@@ -32,7 +45,35 @@ import TableMap, {
 } from "../../components/ui/TableMap";
 import Pagination from "../../components/ui/Pagination";
 import PermissionGuard from "../../components/PermissionGuard";
-// Use React 18's useSyncExternalStore or provide a simple fallback for React 17
+
+// Constants & Styles (matching Leads.tsx structure)
+const API_BASE = "/api/v0/employee";
+const ROWS_PER_PAGE_OPTIONS = [5, 10, 25, 50];
+
+// Common styles for consistency with Leads.tsx
+const GRADIENTS = {
+  button: "linear-gradient(45deg, #1976d2 30%, #42a5f5 90%)",
+  buttonHover: "linear-gradient(45deg, #1565c0 30%, #1976d2 90%)",
+  card: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+};
+
+const COMMON_STYLES = {
+  roundedPaper: {
+    borderRadius: { xs: 2, sm: 3, md: 4 },
+    overflow: "hidden",
+  },
+  iconButton: (mainColor: string, hoverColor: string) => ({
+    backgroundColor: "rgba(255, 255, 255, 0.9)",
+    border: `1px solid ${mainColor}`,
+    color: mainColor,
+    "&:hover": {
+      backgroundColor: hoverColor,
+      color: "white",
+      transform: "scale(1.05)",
+    },
+    transition: "all 0.2s ease-in-out",
+  }),
+};
 const useSyncExternalStore =
   React.useSyncExternalStore ||
   ((
@@ -56,7 +97,7 @@ const useSyncExternalStore =
 // Table header definition: supports both data and action columns
 
 export interface Employee {
-  _id?: string; // MongoDB _id, optional for type safety
+  _id?: string;
   id?: string; // fallback for legacy or API data
   name: string;
   email: string;
@@ -98,15 +139,7 @@ const header: TableHeader<Employee>[] = [
   { label: "Email", dataKey: "email" },
   { label: "Phone", dataKey: "phone" },
   {
-    label: "Primary Role",
-    component: (row: Employee) => {
-      const roleName =
-        typeof row.role === "string" ? row.role : row.role?.name || "No Role";
-      return <span>{roleName}</span>;
-    },
-  },
-  {
-    label: "All Roles",
+    label: "Roles",
     component: (row: Employee) => {
       const getRoleName = (role: any) =>
         typeof role === "string" ? role : role?.name || "Unknown";
@@ -133,28 +166,32 @@ const header: TableHeader<Employee>[] = [
   {
     label: "Actions",
     component: (row: Employee, handlers: TableActionHandlers<Employee>) => (
-      <>
+      <Stack direction="row" spacing={1} justifyContent="center">
         <PermissionGuard module="employee" action="write" fallback={<></>}>
-          <IconButton
-            aria-label="edit"
-            onClick={() => handlers.onEdit(row)}
-            size="small"
-          >
-            <Edit fontSize="inherit" />
-          </IconButton>
+          <Tooltip title="Edit Employee">
+            <IconButton
+              aria-label="edit"
+              onClick={() => handlers.onEdit(row)}
+              size="small"
+              sx={COMMON_STYLES.iconButton("primary.main", "primary.dark")}
+            >
+              <Edit fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </PermissionGuard>
-
         <PermissionGuard module="employee" action="delete" fallback={<></>}>
-          <IconButton
-            aria-label="delete"
-            onClick={() => handlers.onDelete(row)}
-            size="small"
-            color="error"
-          >
-            <Delete fontSize="inherit" />
-          </IconButton>
+          <Tooltip title="Delete Employee">
+            <IconButton
+              aria-label="delete"
+              onClick={() => handlers.onDelete(row)}
+              size="small"
+              sx={COMMON_STYLES.iconButton("error.main", "error.dark")}
+            >
+              <Delete fontSize="small" />
+            </IconButton>
+          </Tooltip>
         </PermissionGuard>
-      </>
+      </Stack>
     ),
   },
 ];
@@ -255,8 +292,6 @@ function useLiveRoles(): string[] {
   );
   return result as string[];
 }
-
-const API_BASE = "/api/v0/employee";
 
 const Users: React.FC = () => {
   const [mounted, setMounted] = useState(false);
@@ -489,11 +524,10 @@ const Users: React.FC = () => {
       setFieldErrors((prev) => ({ ...prev, role: undefined }));
     }
   };
-
-  // Pagination handlers for custom Pagination
-  const handlePageChange = (newPage: number) => setPage(newPage);
-  const handleRowsPerPageChange = (size: number) => {
-    setRowsPerPage(size);
+  // Pagination handlers for MUI TablePagination
+  const handlePageChange = (_: unknown, newPage: number) => setPage(newPage);
+  const handleRowsPerPageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setRowsPerPage(parseInt(e.target.value, 10));
     setPage(0);
   };
 
@@ -507,103 +541,186 @@ const Users: React.FC = () => {
   return (
     <Box
       sx={{
-        mt: { xs: 0.5, sm: 1, md: 2 }, // Much smaller margins
-        mx: { xs: 0.5, sm: 1, md: 2 }, // Reduced horizontal margins
-        pt: { xs: 0.5, sm: 1, md: 2 }, // Smaller top padding
+        p: { xs: 0.5, sm: 1, md: 2 }, // Much smaller padding on mobile
+        pt: { xs: 1, sm: 2, md: 3 }, // Reduced top padding
+        minHeight: "100vh",
+        bgcolor: "background.default",
         overflow: "hidden", // Prevent horizontal scroll
       }}
     >
+      {/* Mobile-First Header Section */}
       <Paper
+        elevation={2}
         sx={{
-          width: "100%",
-          maxWidth: { xs: "100%", md: 1200 }, // Full width on mobile
-          minWidth: 0, // Allow shrinking on mobile
-          mx: "auto",
+          p: { xs: 1, sm: 2, md: 3 }, // Much smaller padding on mobile
           borderRadius: { xs: 1, sm: 2, md: 3 }, // Smaller border radius on mobile
-          boxShadow: { xs: 1, sm: 2, md: 3 }, // Reduced shadow on mobile
-          bgcolor: theme.palette.mode === "dark" ? "#23272A" : "#f5f7fa",
-          p: { xs: 0.5, sm: 1, md: 2 }, // Much smaller padding
-          overflowX: "auto",
+          mb: { xs: 1, sm: 2, md: 3 }, // Reduced margins
+          mt: { xs: 0.5, sm: 1, md: 2 }, // Reduced top margin
+          background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+          overflow: "hidden", // Prevent content overflow
         }}
       >
-        <Box
+        <Typography
+          variant="h4"
           sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "row" },
-            alignItems: { xs: "stretch", sm: "center" },
-            gap: 2,
-            mb: 2,
+            fontWeight: 700,
+            color: "text.primary",
+            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
+            mb: { xs: 2, md: 3 },
+            textAlign: { xs: "center", sm: "left" },
           }}
         >
-          <Typography
-            variant="h6"
+          Employees
+        </Typography>
+
+        {/* Mobile-First Action Bar */}
+        <Box sx={{ mb: { xs: 2, md: 3 } }}>
+          {/* Controls - Stacked on mobile */}
+          <Box
             sx={{
-              fontWeight: 700,
-              flex: 1,
-              color: theme.palette.mode === "dark" ? "#fff" : "#000",
-              fontSize: { xs: 20, sm: 24 }, // match Leads
+              display: "flex",
+              flexDirection: { xs: "column", md: "row" },
+              gap: { xs: 2, md: 3 },
+              alignItems: { xs: "stretch", md: "center" },
             }}
           >
-            Employees
-          </Typography>
-          <Box sx={{ flex: 2, minWidth: { xs: "100%", sm: 220 } }}>
-            <Box sx={{ width: "100%" }}>
-              <MySearchBar
-                value={search}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setSearch(e.target.value)
-                }
-                placeholder="Search by name or role"
-              />
-            </Box>{" "}
-          </Box>
-          <PermissionGuard module="employee" action="write" fallback={<></>}>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={() => handleOpen(undefined)}
+            <Box
               sx={{
-                minWidth: 120,
-                width: { xs: "100%", sm: "auto" },
-                fontWeight: 600,
-                bgcolor: "#1976d2",
-                color: "#fff",
-                boxShadow: 2,
+                display: "flex",
+                gap: { xs: 1, sm: 2 },
+                justifyContent: { xs: "space-between", md: "flex-end" },
+                order: { xs: 2, md: 1 },
               }}
             >
-              Add Employee
-            </Button>
-          </PermissionGuard>
-        </Box>
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <>
-            {" "}
-            <TableContainer sx={{ minWidth: isMobile ? 600 : undefined }}>
-              {" "}
-              <TableMap<Employee>
-                data={pagedEmployees}
-                header={header}
-                onEdit={handleOpen}
-                onDelete={handleDelete}
-              />
-            </TableContainer>
-            <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-              <Pagination
-                page={page}
-                pageSize={rowsPerPage}
-                total={filtered.length}
-                onPageChange={handlePageChange}
-                pageSizeOptions={[5, 10, 25]}
-                onPageSizeChange={handleRowsPerPageChange}
-              />
+              {/* Search Bar */}
+              <Box
+                sx={{
+                  width: { xs: "100%", md: "auto" },
+                }}
+              >
+                <MySearchBar
+                  sx={{
+                    width: "100%",
+                    md: "auto",
+                    minWidth: 280,
+                  }}
+                  value={search}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setSearch(e.target.value)
+                  }
+                  placeholder="Search employees by name, email, role..."
+                />
+              </Box>
+              {/* Add Button */}
+              {!isMobile && (
+                <PermissionGuard
+                  module="employee"
+                  action="write"
+                  fallback={<></>}
+                >
+                  <Button
+                    variant="contained"
+                    startIcon={<PersonAdd />}
+                    onClick={() => handleOpen(undefined)}
+                    disabled={saving}
+                    size={isMobile ? "medium" : "large"}
+                    sx={{
+                      minWidth: { xs: "auto", sm: 150 },
+                      height: { xs: 44, sm: 40 },
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      fontSize: { xs: "0.875rem", sm: "1rem" },
+                      boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+                      "&:hover": {
+                        boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
+                        transform: "translateY(-1px)",
+                      },
+                    }}
+                  >
+                    {saving ? (
+                      <CircularProgress size={20} color="inherit" />
+                    ) : isMobile ? (
+                      <Add />
+                    ) : (
+                      "Add Employee"
+                    )}
+                  </Button>
+                </PermissionGuard>
+              )}
             </Box>
-          </>
-        )}
-      </Paper>{" "}
+          </Box>
+        </Box>
+      </Paper>
+
+      {/* Content Area */}
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <Paper
+          elevation={8}
+          sx={{
+            ...COMMON_STYLES.roundedPaper,
+            overflow: "hidden",
+          }}
+        >
+          <TableContainer sx={{ maxHeight: "70vh" }}>
+            <TableMap<Employee>
+              data={pagedEmployees}
+              header={header}
+              onEdit={handleOpen}
+              onDelete={handleDelete}
+            />
+          </TableContainer>
+
+          <Box sx={{ p: 2, borderTop: "1px solid", borderColor: "divider" }}>
+            <TablePagination
+              component="div"
+              count={filtered.length}
+              page={page}
+              onPageChange={handlePageChange}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={handleRowsPerPageChange}
+              rowsPerPageOptions={ROWS_PER_PAGE_OPTIONS}
+              labelRowsPerPage="Rows per page:"
+              sx={{
+                ".MuiTablePagination-toolbar": { px: 0 },
+                ".MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows":
+                  {
+                    fontSize: { xs: 14, sm: 16 },
+                    fontWeight: 600,
+                  },
+              }}
+            />
+          </Box>
+        </Paper>
+      )}
+
+      {/* Floating Action Button for Mobile */}
+      {isMobile && (
+        <PermissionGuard module="employee" action="write" fallback={<></>}>
+          <Fab
+            color="primary"
+            aria-label="add employee"
+            onClick={() => handleOpen(undefined)}
+            disabled={saving}
+            sx={{
+              position: "fixed",
+              bottom: 24,
+              right: 24,
+              background: GRADIENTS.button,
+              "&:hover": {
+                background: GRADIENTS.buttonHover,
+              },
+            }}
+          >
+            {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
+          </Fab>
+        </PermissionGuard>
+      )}
+
+      {/* Employee Dialog */}
       <Dialog
         open={open}
         onClose={handleClose}
