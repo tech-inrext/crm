@@ -68,12 +68,13 @@ export const useAuth = () => {
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const router = useRouter();
+
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [pendingRoleSelection, setPendingRoleSelection] =
     useState<boolean>(false); // Helper functions to safely extract role information
   const [changeRole, setChangeRole] = useState<boolean>(false);
-  const router = useRouter();
 
   const getCurrentRoleName = () => {
     if (!user) return null;
@@ -243,6 +244,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setChangeRole(false);
   };
 
+  const getPermissions = (module: string) => {
+    const currentRole = user?.roles.find(
+      (role) => role._id === user?.currentRole
+    );
+    const hasReadAccess = currentRole?.read?.includes(module);
+    const hasWriteAccess = currentRole?.write?.includes(module);
+    const hasDeleteAccess = currentRole?.delete?.includes(module);
+    return { hasReadAccess, hasWriteAccess, hasDeleteAccess };
+  };
+
   useEffect(() => {
     // Let's have this failing api for now
     checkAuth();
@@ -261,6 +272,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     getCurrentRoleName,
     getAvailableRoleNames,
     setChangeRole,
+    getPermissions,
   };
 
   return (

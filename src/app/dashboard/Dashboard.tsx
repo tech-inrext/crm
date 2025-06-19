@@ -19,8 +19,8 @@ import {
 import Image from "next/image";
 import MySidebar from "../../components/ui/MySidebar";
 import MyNavbar from "../../components/ui/MyNavbar";
-import { usePermissions } from "../../contexts/PermissionsContext";
 import PermissionGuard from "../../components/PermissionGuard";
+import { useAuth } from "../../contexts/AuthContext";
 
 // Lazy load heavy components for better performance
 const Leads = lazy(() => import("./Leads"));
@@ -93,10 +93,11 @@ type SidebarLink =
 // Main dashboard layout component
 const Dashboard: React.FC = () => {
   const theme = useTheme();
+  const { getPermissions } = useAuth();
+
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [selected, setSelected] = useState("dashboard");
-  const { hasReadAccess, loading: permissionsLoading } = usePermissions();
   // Enhanced mobile-first responsive breakpoints
   const isMobile = useMediaQuery(theme.breakpoints.down("md")); // Changed from lg to md for better mobile support
   const isTablet = useMediaQuery(theme.breakpoints.between("md", "lg"));
@@ -132,7 +133,6 @@ const Dashboard: React.FC = () => {
         icon: <UsersIcon />,
         onClick: () => setSelected("users"),
       },
-      { kind: "divider" },
       {
         label: "Roles",
         href: "roles",
@@ -146,14 +146,11 @@ const Dashboard: React.FC = () => {
 
   // Filter sidebar links based on user permissions
   const sidebarLinks = useMemo(() => {
-    if (permissionsLoading) return [];
-
     return allSidebarLinks.filter((link) => {
-      if ("kind" in link) return true; // Always show headers and dividers
-      if (!link.module) return true; // Always show links without module requirement
-      return hasReadAccess(link.module); // Show only if user has read access
+      const { hasReadAccess } = getPermissions(link.module);
+      return !link.module || hasReadAccess;
     });
-  }, [allSidebarLinks, hasReadAccess, permissionsLoading]);
+  }, []);
 
   // Render content based on selected page
   const renderContent = () => {

@@ -6,7 +6,6 @@ import { PermissionsProvider } from "../contexts/PermissionsContext";
 import MuiRootProvider from "../components/ui/MuiRootProvider";
 import LoginWrapper from "../components/ui/LoginWrapper";
 
-
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -34,9 +33,7 @@ export default function RootLayout({
       >
         <MuiRootProvider>
           <AuthProvider>
-              <PermissionsProvider>
-                <LoginWrapper>{children}</LoginWrapper>
-              </PermissionsProvider>
+            <LoginWrapper>{children}</LoginWrapper>
           </AuthProvider>
         </MuiRootProvider>
       </body>

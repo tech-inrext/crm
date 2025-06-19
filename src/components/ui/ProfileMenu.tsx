@@ -9,16 +9,14 @@ import Typography from "@mui/material/Typography";
 import AccountCircle from "@mui/icons-material/AccountCircle";
 import { Logout, Person, Settings, SwapHoriz } from "@mui/icons-material";
 import { useAuth } from "../../contexts/AuthContext";
-import { usePermissions } from "../../contexts/PermissionsContext";
 import { useRouter } from "next/navigation";
 import RoleSelectionDialog from "./RoleSelectionDialog";
 
 const ProfileMenu: React.FC = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
   const open = Boolean(anchorEl);
-  const { user, logout, switchRole, setChangeRole} = useAuth();
-  const { refreshPermissions } = usePermissions();
-  const router = useRouter()
+  const { user, logout, switchRole, setChangeRole } = useAuth();
+  const router = useRouter();
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -44,7 +42,7 @@ const ProfileMenu: React.FC = () => {
   };
 
   const getCurrentRoleName = () => {
-    return  user?.roles.find((role) => role._id === user?.currentRole)?.name
+    return user?.roles.find((role) => role._id === user?.currentRole)?.name;
   };
 
   return (
