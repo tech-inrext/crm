@@ -1,6 +1,15 @@
 // React & Core
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import axios from "axios";
+import { UploadFile } from "@mui/icons-material";
+import { Snackbar, Alert } from "@mui/material";
+
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+} from "@mui/material";
 
 // MUI Components
 import {
@@ -95,6 +104,19 @@ const Leads: React.FC = () => {
   const [formData, setFormData] = useState<LeadFormData>(
     getDefaultLeadFormData()
   );
+
+  const [uploading, setUploading] = useState(false);
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
+    "success"
+  );
+  const [uploadResult, setUploadResult] = useState<{
+    uploaded: { name: string; phone: string }[];
+    skipped: { name: string; phone: string; reason: string }[];
+  } | null>(null);
+  const [dialogOpen, setDialogOpen] = useState(false);
+
   const [viewMode, setViewMode] = useState<"table" | "cards">(
     isMobile ? "cards" : "table"
   );
@@ -288,6 +310,68 @@ const Leads: React.FC = () => {
     []
   );
 
+  const handleFileUpload = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append("file", file);
+
+      setUploading(true);
+      try {
+        const res = await fetch("/api/v0/lead/bulk-upload", {
+          method: "POST",
+          body: formData,
+        });
+
+        const result = await res.json();
+
+        if (!res.ok) {
+          throw new Error(result.message || "Bulk upload failed.");
+        }
+
+        setUploadResult({
+          uploaded: result.uploaded || [],
+          skipped: result.skipped || [],
+        });
+
+        setSnackbarMessage(result.message);
+        setSnackbarSeverity("success");
+        setSnackbarOpen(true);
+        setDialogOpen(true);
+        await loadLeads();
+      } catch (err: any) {
+        setSnackbarMessage(`Upload failed: ${err.message}`);
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+        setUploadResult(null);
+      } finally {
+        setUploading(false);
+      }
+    },
+    [loadLeads]
+  );
+
+  const downloadSkippedCSV = () => {
+    if (!uploadResult?.skipped?.length) return;
+
+    const csvContent =
+      "Name,Phone,Reason\n" +
+      uploadResult.skipped
+        .map((l) => `"${l.name}","${l.phone}","${l.reason}"`)
+        .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", "skipped_leads.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   useEffect(() => {
     loadLeads();
   }, [loadLeads]);
@@ -413,37 +497,153 @@ const Leads: React.FC = () => {
                   onChange={handleSearchChange}
                   placeholder="Search leads by name, email, phone..."
                 />
+                <Snackbar
+                  open={snackbarOpen}
+                  autoHideDuration={4000}
+                  onClose={() => setSnackbarOpen(false)}
+                  anchorOrigin={{ vertical: "top", horizontal: "center" }}
+                >
+                  <Alert
+                    onClose={() => setSnackbarOpen(false)}
+                    severity={snackbarSeverity}
+                    sx={{ width: "100%" }}
+                  >
+                    {snackbarMessage}
+                  </Alert>
+                </Snackbar>
+                <Dialog
+                  open={dialogOpen}
+                  onClose={() => setDialogOpen(false)}
+                  fullWidth
+                  maxWidth="md"
+                >
+                  <DialogTitle>📊 Upload Summary</DialogTitle>
+                  <DialogContent dividers>
+                    {uploadResult?.uploaded?.length > 0 && (
+                      <>
+                        <Typography fontWeight={600} mb={1}>
+                          ✅ Uploaded Leads
+                        </Typography>
+                        <ul style={{ marginBottom: "1rem" }}>
+                          {uploadResult.uploaded.map((lead, i) => (
+                            <li key={i}>
+                              {lead.name} ({lead.phone})
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+
+                    {uploadResult?.skipped?.length > 0 && (
+                      <>
+                        <Typography fontWeight={600} mb={1}>
+                          ⚠️ Skipped Leads
+                        </Typography>
+                        <ul>
+                          {uploadResult.skipped.map((lead, i) => (
+                            <li key={i}>
+                              {lead.name || "Unnamed"} (
+                              {lead.phone || "No phone"}) — {lead.reason}
+                            </li>
+                          ))}
+                        </ul>
+                      </>
+                    )}
+                  </DialogContent>
+                  <DialogActions>
+                    {uploadResult?.skipped?.length > 0 && (
+                      <Button
+                        onClick={downloadSkippedCSV}
+                        color="warning"
+                        variant="outlined"
+                      >
+                        Download Skipped Leads
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => setDialogOpen(false)}
+                      autoFocus
+                      variant="contained"
+                    >
+                      Close
+                    </Button>
+                  </DialogActions>
+                </Dialog>
               </Box>{" "}
               {/* Add Button */}
               {!isMobile && (
                 <PermissionGuard module="lead" action="write" fallback={<></>}>
-                  <Button
-                    variant="contained"
-                    startIcon={<PersonAdd />}
-                    onClick={() => handleOpen()}
-                    disabled={saving}
-                    size={isMobile ? "medium" : "large"}
-                    sx={{
-                      minWidth: { xs: "auto", sm: 150 },
-                      height: { xs: 44, sm: 40 },
-                      borderRadius: 2,
-                      fontWeight: 600,
-                      fontSize: { xs: "0.875rem", sm: "1rem" },
-                      boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
-                      "&:hover": {
-                        boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
-                        transform: "translateY(-1px)",
-                      },
-                    }}
-                  >
-                    {saving ? (
-                      <CircularProgress size={20} color="inherit" />
-                    ) : isMobile ? (
-                      <Add />
-                    ) : (
-                      "Add Lead"
-                    )}
-                  </Button>
+                  <Box sx={{ display: "flex", gap: 2, flexWrap: "wrap" }}>
+                    {/* Add Lead Button */}
+                    <Button
+                      variant="contained"
+                      startIcon={<PersonAdd />}
+                      onClick={() => handleOpen()}
+                      disabled={saving}
+                      size={isMobile ? "medium" : "large"}
+                      sx={{
+                        minWidth: { xs: "auto", sm: 150 },
+                        height: { xs: 44, sm: 40 },
+                        borderRadius: 2,
+                        fontWeight: 600,
+                        fontSize: { xs: "0.875rem", sm: "1rem" },
+                        boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+                        "&:hover": {
+                          boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
+                          transform: "translateY(-1px)",
+                        },
+                      }}
+                    >
+                      {saving ? (
+                        <CircularProgress size={20} color="inherit" />
+                      ) : isMobile ? (
+                        <Add />
+                      ) : (
+                        "Add Lead"
+                      )}
+                    </Button>
+
+                    {/* Upload Excel Button */}
+                    <label
+                      htmlFor="bulk-upload-excel"
+                      style={{ display: "inline-block" }}
+                    >
+                      <input
+                        accept=".xlsx, .xls, .csv"
+                        style={{ display: "none" }}
+                        id="bulk-upload-excel"
+                        type="file"
+                        onChange={handleFileUpload}
+                      />
+                      <Button
+                        variant="contained"
+                        startIcon={
+                          uploading ? (
+                            <CircularProgress size={20} color="inherit" />
+                          ) : (
+                            <UploadFile />
+                          )
+                        }
+                        component="span"
+                        size="large"
+                        disabled={uploading}
+                        sx={{
+                          minWidth: 150,
+                          height: 44,
+                          borderRadius: 2,
+                          fontWeight: 600,
+                          fontSize: "1rem",
+                          boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+                          "&:hover": {
+                            boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
+                            transform: "translateY(-1px)",
+                          },
+                        }}
+                      >
+                        {uploading ? "Uploading..." : "Upload Excel"}
+                      </Button>
+                    </label>
+                  </Box>
                 </PermissionGuard>
               )}
             </Box>

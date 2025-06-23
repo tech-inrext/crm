@@ -30,13 +30,11 @@ const handler = async (req, res) => {
   // Use multer to handle file upload
   upload.single("file")(req, res, async (err) => {
     if (err) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "File upload failed",
-          error: err.message,
-        });
+      return res.status(400).json({
+        success: false,
+        message: "File upload failed",
+        error: err.message,
+      });
     }
 
     if (!req.file) {
@@ -49,22 +47,37 @@ const handler = async (req, res) => {
 
     try {
       const rows = parseExcel(filePath);
+
       const leadsToInsert = [];
+      const inserted = [];
+      const skipped = [];
 
       for (const row of rows) {
-        if (!row.phone) continue; // Skip if phone is missing
+        if (!row.phone) {
+          skipped.push({
+            name: row.fullName || "",
+            phone: "",
+            reason: "Missing phone",
+          });
+          continue;
+        }
 
-        // Check if phone already exists
         const existing = await Lead.findOne({ phone: row.phone });
-        if (existing) continue;
+        if (existing) {
+          skipped.push({
+            name: row.fullName || "",
+            phone: row.phone,
+            reason: "Duplicate phone",
+          });
+          continue;
+        }
 
-        // Generate a unique leadId
         const leadId = `LD-${Math.random()
           .toString(36)
           .substring(2, 8)
           .toUpperCase()}`;
 
-        leadsToInsert.push({
+        const newLead = {
           leadId,
           fullName: row.fullName || "",
           email: row.email || "",
@@ -77,16 +90,17 @@ const handler = async (req, res) => {
           assignedTo: row.assignedTo || null,
           followUpNotes: [],
           nextFollowUp: row.nextFollowUp ? new Date(row.nextFollowUp) : null,
-        });
+        };
+
+        leadsToInsert.push(newLead);
+        inserted.push({ name: newLead.fullName, phone: newLead.phone });
       }
 
       if (leadsToInsert.length === 0) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            message: "No valid or new leads to insert.",
-          });
+        return res.status(400).json({
+          success: false,
+          message: "No valid or new leads to insert.",
+        });
       }
 
       // Insert into database
@@ -97,16 +111,16 @@ const handler = async (req, res) => {
 
       return res.status(201).json({
         success: true,
-        message: `${leadsToInsert.length} leads uploaded successfully.`,
+        message: `${inserted.length} leads uploaded successfully.`,
+        uploaded: inserted,
+        skipped: skipped,
       });
     } catch (error) {
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: "Bulk upload failed",
-          error: error.message,
-        });
+      return res.status(500).json({
+        success: false,
+        message: "Bulk upload failed",
+        error: error.message,
+      });
     }
   });
 };
