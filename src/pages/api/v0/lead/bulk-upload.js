@@ -5,10 +5,8 @@ import xlsx from "xlsx";
 import fs from "fs";
 import path from "path";
 
-// 🔧 Configure Multer for file upload (store in /uploads folder)
 const upload = multer({ dest: "uploads/" });
 
-// 🛠 Helper function to read Excel and convert to JSON
 const parseExcel = (filePath) => {
   const workbook = xlsx.readFile(filePath);
   const sheetName = workbook.SheetNames[0];
@@ -16,104 +14,82 @@ const parseExcel = (filePath) => {
   return xlsx.utils.sheet_to_json(sheet);
 };
 
-// ✅ Bulk Upload Handler
 const handler = async (req, res) => {
   await dbConnect();
+  // await Lead.init();
 
-  // Handle only POST requests
   if (req.method !== "POST") {
     return res
       .status(405)
       .json({ success: false, message: "Method not allowed" });
   }
 
-  // Use multer to handle file upload
   upload.single("file")(req, res, async (err) => {
-    if (err) {
+    if (err || !req.file) {
       return res.status(400).json({
         success: false,
         message: "File upload failed",
-        error: err.message,
+        error: err?.message || "No file uploaded",
       });
-    }
-
-    if (!req.file) {
-      return res
-        .status(400)
-        .json({ success: false, message: "No file uploaded" });
     }
 
     const filePath = path.join(process.cwd(), req.file.path);
 
     try {
       const rows = parseExcel(filePath);
-
-      const leadsToInsert = [];
-      const inserted = [];
-      const skipped = [];
+      const uploaded = [];
+      const failed = [];
 
       for (const row of rows) {
-        if (!row.phone) {
-          skipped.push({
-            name: row.fullName || "",
-            phone: "",
-            reason: "Missing phone",
-          });
-          continue;
-        }
+        const phone = String(row.phone).trim();
 
-        const existing = await Lead.findOne({ phone: row.phone });
-        if (existing) {
-          skipped.push({
-            name: row.fullName || "",
-            phone: row.phone,
-            reason: "Duplicate phone",
-          });
-          continue;
-        }
+        // Optional: skip invalid phone numbers early
+        // if (!/^\d{10,15}$/.test(phone)) {
+        //   failed.push({ phone, reason: "Invalid phone number" });
+        //   continue;
+        // }
 
-        const leadId = `LD-${Math.random()
-          .toString(36)
-          .substring(2, 8)
-          .toUpperCase()}`;
-
-        const newLead = {
-          leadId,
+        const lead = new Lead({
+          leadId: `LD-${Math.random()
+            .toString(36)
+            .substring(2, 8)
+            .toUpperCase()}`,
           fullName: row.fullName || "",
           email: row.email || "",
-          phone: row.phone,
-          propertyType: row.propertyType,
-          location: row.location,
-          budgetRange: row.budgetRange,
+          phone: phone,
+          propertyType: row.propertyType || "",
+          location: row.location || "",
+          budgetRange: row.budgetRange || "",
           status: row.status || "New",
-          source: row.source,
+          source: row.source || "",
           assignedTo: row.assignedTo || null,
           followUpNotes: [],
           nextFollowUp: row.nextFollowUp ? new Date(row.nextFollowUp) : null,
-        };
-
-        leadsToInsert.push(newLead);
-        inserted.push({ name: newLead.fullName, phone: newLead.phone });
-      }
-
-      if (leadsToInsert.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: "No valid or new leads to insert.",
         });
+
+        try {
+          await lead.save();
+          uploaded.push({ phone, name: lead.fullName });
+        } catch (saveError) {
+          failed.push({
+            phone,
+            name: lead.fullName || "N/A",
+            reason:
+              saveError.code === 11000 ? "Duplicate phone" : saveError.message,
+          });
+        }
       }
 
-      // Insert into database
-      await Lead.insertMany(leadsToInsert);
+      fs.unlinkSync(filePath); // Cleanup
 
-      // Delete the uploaded file after processing
-      fs.unlinkSync(filePath);
-
-      return res.status(201).json({
+      return res.status(200).json({
         success: true,
-        message: `${inserted.length} leads uploaded successfully.`,
-        uploaded: inserted,
-        skipped: skipped,
+        message:
+          uploaded.length === 0
+            ? "No new leads were saved. All entries may be duplicates or invalid."
+            : `${uploaded.length} lead(s) saved successfully.`,
+        uploaded,
+        failed: failed,
       });
     } catch (error) {
       return res.status(500).json({
@@ -127,7 +103,7 @@ const handler = async (req, res) => {
 
 export const config = {
   api: {
-    bodyParser: false, // Required for multer to handle multipart/form-data
+    bodyParser: false,
   },
 };
 

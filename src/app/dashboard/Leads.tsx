@@ -113,7 +113,7 @@ const Leads: React.FC = () => {
   );
   const [uploadResult, setUploadResult] = useState<{
     uploaded: { name: string; phone: string }[];
-    skipped: { name: string; phone: string; reason: string }[];
+    failed: { name: string; phone: string; reason: string }[];
   } | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
@@ -333,7 +333,7 @@ const Leads: React.FC = () => {
 
         setUploadResult({
           uploaded: result.uploaded || [],
-          skipped: result.skipped || [],
+          failed: result.failed || [],
         });
 
         setSnackbarMessage(result.message);
@@ -353,12 +353,12 @@ const Leads: React.FC = () => {
     [loadLeads]
   );
 
-  const downloadSkippedCSV = () => {
-    if (!uploadResult?.skipped?.length) return;
+  const downloadFailedCSV = () => {
+    if (!uploadResult?.failed?.length) return;
 
     const csvContent =
       "Name,Phone,Reason\n" +
-      uploadResult.skipped
+      uploadResult.failed
         .map((l) => `"${l.name}","${l.phone}","${l.reason}"`)
         .join("\n");
 
@@ -366,7 +366,7 @@ const Leads: React.FC = () => {
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", "skipped_leads.csv");
+    link.setAttribute("download", "failed_leads.csv");
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -517,47 +517,44 @@ const Leads: React.FC = () => {
                   fullWidth
                   maxWidth="md"
                 >
-                  <DialogTitle>📊 Upload Summary</DialogTitle>
+                  <DialogTitle>📋 Lead Upload Summary</DialogTitle>
                   <DialogContent dividers>
+                    <Typography fontWeight={600} mb={2}>
+                      📦 Total Records:{" "}
+                      {(uploadResult?.uploaded?.length || 0) +
+                        (uploadResult?.failed?.length || 0)}
+                    </Typography>
+
                     {uploadResult?.uploaded?.length > 0 && (
                       <>
                         <Typography fontWeight={600} mb={1}>
-                          ✅ Uploaded Leads
+                          ✅ Uploaded Leads: {uploadResult.uploaded.length}
                         </Typography>
-                        <ul style={{ marginBottom: "1rem" }}>
-                          {uploadResult.uploaded.map((lead, i) => (
-                            <li key={i}>
-                              {lead.name} ({lead.phone})
-                            </li>
-                          ))}
-                        </ul>
                       </>
                     )}
 
-                    {uploadResult?.skipped?.length > 0 && (
+                    {uploadResult?.failed?.length > 0 && (
                       <>
                         <Typography fontWeight={600} mb={1}>
-                          ⚠️ Skipped Leads
+                          ⚠️ Failed Leads: {uploadResult.failed.length} {" - Please download the report to view details."}
                         </Typography>
-                        <ul>
-                          {uploadResult.skipped.map((lead, i) => (
-                            <li key={i}>
-                              {lead.name || "Unnamed"} (
-                              {lead.phone || "No phone"}) — {lead.reason}
-                            </li>
-                          ))}
-                        </ul>
                       </>
                     )}
+
+                    {uploadResult?.uploaded?.length === 0 &&
+                      uploadResult?.failed?.length === 0 && (
+                        <Typography>No records were processed.</Typography>
+                      )}
                   </DialogContent>
+
                   <DialogActions>
-                    {uploadResult?.skipped?.length > 0 && (
+                    {uploadResult?.failed?.length > 0 && (
                       <Button
-                        onClick={downloadSkippedCSV}
+                        onClick={downloadFailedCSV}
                         color="warning"
                         variant="outlined"
                       >
-                        Download Skipped Leads
+                        Download Failed Leads
                       </Button>
                     )}
                     <Button
