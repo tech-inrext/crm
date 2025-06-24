@@ -48,6 +48,9 @@ import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
 import { leadsTableHeader } from "@/components/leads/LeadsTableHeaderConfig";
+import { useTheme } from "@mui/material/styles";
+import useMediaQuery from "@mui/material/useMediaQuery";
+
 const Leads: React.FC = () => {
   const {
     leads,
@@ -83,6 +86,8 @@ const Leads: React.FC = () => {
     },
     [setSearch, setPage]
   );
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   return (
     <Box
       sx={{
@@ -109,8 +114,8 @@ const Leads: React.FC = () => {
           sx={{
             fontWeight: 700,
             color: "text.primary",
-            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
-            mb: { xs: 2, md: 3 },
+            fontSize: { xs: "1.3rem", sm: "2rem", md: "2.5rem" },
+            mb: { xs: 1.5, md: 3 },
             textAlign: { xs: "center", sm: "left" },
           }}
         >
@@ -119,8 +124,12 @@ const Leads: React.FC = () => {
         <Box
           sx={{
             display: "grid",
-            gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" },
-            gap: { xs: 0.5, sm: 1, md: 2 },
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              md: "repeat(4, 1fr)",
+            },
+            gap: { xs: 1, sm: 2, md: 3 },
             mb: { xs: 1, sm: 2, md: 3 },
           }}
         >
@@ -152,7 +161,7 @@ const Leads: React.FC = () => {
       </Paper>
       {loading ? (
         <LoadingSkeleton />
-      ) : viewMode === "cards" ? (
+      ) : isMobile || viewMode === "cards" ? (
         <Box
           sx={{
             display: "grid",
@@ -161,7 +170,8 @@ const Leads: React.FC = () => {
               sm: "repeat(2, 1fr)",
               lg: "repeat(3, 1fr)",
             },
-            gap: 3,
+            gap: { xs: 1.5, sm: 2, md: 3 },
+            mb: { xs: 2, sm: 3 },
           }}
         >
           {rows.map((lead) => (
@@ -174,26 +184,39 @@ const Leads: React.FC = () => {
           ))}
         </Box>
       ) : (
-        <TableContainer
-          component={Paper}
-          elevation={8}
-          sx={{ ...COMMON_STYLES.roundedPaper, overflow: "hidden" }}
+        <Box
+          sx={{
+            width: "100%",
+            overflowX: { xs: "auto", md: "visible" },
+            mb: { xs: 2, sm: 3 },
+          }}
         >
-          <Table>
-            <LeadsTableHeader header={leadsTableHeader} />
-            <TableBody>
-              {rows.map((row) => (
-                <LeadsTableRow
-                  key={row.id}
-                  row={row}
-                  header={leadsTableHeader}
-                  onEdit={() => setEditId(row.id)}
-                  onDelete={() => {}}
-                />
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+          <TableContainer
+            component={Paper}
+            elevation={8}
+            sx={{
+              ...COMMON_STYLES.roundedPaper,
+              minWidth: 600,
+              width: "100%",
+              overflow: "auto",
+            }}
+          >
+            <Table size={window.innerWidth < 600 ? "small" : "medium"}>
+              <LeadsTableHeader header={leadsTableHeader} />
+              <TableBody>
+                {rows.map((row) => (
+                  <LeadsTableRow
+                    key={row.id}
+                    row={row}
+                    header={leadsTableHeader}
+                    onEdit={() => setEditId(row.id)}
+                    onDelete={() => {}}
+                  />
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
+        </Box>
       )}
       <LeadDialog
         open={open}
@@ -214,6 +237,9 @@ const Leads: React.FC = () => {
             bottom: 24,
             right: 24,
             background: GRADIENTS.button,
+            display: { xs: "flex", md: "none" },
+            zIndex: 1201,
+            boxShadow: 3,
             "&:hover": { background: GRADIENTS.buttonHover },
           }}
         >

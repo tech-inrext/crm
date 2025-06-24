@@ -9,6 +9,8 @@ import {
   CircularProgress,
   Stack,
   Button,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
 import dynamic from "next/dynamic";
@@ -21,6 +23,7 @@ import {
 import PermissionGuard from "@/components/PermissionGuard";
 import UserDialog from "@/components/ui/UserDialog";
 import UsersActionBar from "@/components/ui/UsersActionBar";
+import UserCard from "@/components/ui/UserCard";
 const TableMap = dynamic(() => import("@/components/ui/TableMap"), {
   ssr: false,
 });
@@ -48,6 +51,8 @@ const Users: React.FC = () => {
     rows,
     loadEmployees,
   } = useUsers();
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
@@ -124,29 +129,60 @@ const Users: React.FC = () => {
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
         </Box>
+      ) : isMobile ? (
+        <Box
+          sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 1.5, mb: 2 }}
+        >
+          {rows.map((user) => (
+            <UserCard
+              key={user.id || user._id}
+              user={{
+                name: user.name,
+                email: user.email,
+                designation: user.designation,
+                avatarUrl: user.avatarUrl,
+              }}
+              onEdit={() => {
+                setEditId(user.id || user._id);
+                setOpen(true);
+              }}
+            />
+          ))}
+        </Box>
       ) : (
-        <Paper
-          elevation={8}
+        <Box
           sx={{
-            ...COMMON_STYLES.roundedPaper,
-            overflow: "hidden",
+            width: "100%",
+            overflowX: { xs: "auto", md: "visible" },
+            mb: { xs: 2, sm: 3 },
           }}
         >
-          <TableMap
-            data={rows}
-            header={usersTableHeader}
-            onEdit={() => {}}
-            onDelete={() => {}}
-          />
-          <Pagination
-            count={filtered.length}
-            page={page}
-            onPageChange={setPage}
-            rowsPerPage={rowsPerPage}
-            onRowsPerPageChange={setRowsPerPage}
-            rowsPerPageOptions={EMPLOYEE_ROWS_PER_PAGE_OPTIONS}
-          />
-        </Paper>
+          <Paper
+            elevation={8}
+            sx={{
+              ...COMMON_STYLES.roundedPaper,
+              minWidth: { xs: 600, sm: "100%" },
+              width: "100%",
+              overflow: "auto",
+            }}
+          >
+            <TableMap
+              data={rows}
+              header={usersTableHeader}
+              onEdit={() => {}}
+              onDelete={() => {}}
+              size={window.innerWidth < 600 ? "small" : "medium"}
+            />
+            <Pagination
+              count={filtered.length}
+              page={page}
+              onPageChange={setPage}
+              rowsPerPage={rowsPerPage}
+              onRowsPerPageChange={setRowsPerPage}
+              rowsPerPageOptions={EMPLOYEE_ROWS_PER_PAGE_OPTIONS}
+            />
+          </Paper>
+        </Box>
       )}
       <PermissionGuard module="employee" action="write" fallback={<></>}>
         {/* Floating + button for small screens */}
@@ -161,6 +197,8 @@ const Users: React.FC = () => {
             right: 24,
             background: GRADIENTS.button,
             display: { xs: "flex", md: "none" },
+            zIndex: 1201,
+            boxShadow: 3,
             "&:hover": {
               background: GRADIENTS.buttonHover,
             },
@@ -175,8 +213,6 @@ const Users: React.FC = () => {
           saving={saving}
           onClose={() => setOpen(false)}
           onSave={async (values) => {
-            // You can implement add user API logic here
-            // For now, just close dialog and reload employees
             setOpen(false);
             setForm(defaultUserForm);
             await loadEmployees();
