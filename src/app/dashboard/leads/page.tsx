@@ -1,0 +1,226 @@
+"use client";
+
+// React & Core
+import React, { useState, useMemo, useRef, useCallback } from "react";
+import {
+  Box,
+  Paper,
+  Typography,
+  Fab,
+  CircularProgress,
+  Stack,
+} from "@mui/material";
+import { Add } from "@mui/icons-material";
+import dynamic from "next/dynamic";
+import { useLeads } from "@/hooks/useLeads";
+import {
+  GRADIENTS,
+  ROWS_PER_PAGE_OPTIONS,
+  COMMON_STYLES,
+} from "@/constants/leads";
+import PermissionGuard from "@/components/PermissionGuard";
+const LeadDialog = dynamic(() => import("@/components/leads/LeadDialog"), {
+  ssr: false,
+});
+const LeadsTableHeader = dynamic(
+  () => import("@/components/leads/LeadsTableHeader"),
+  { ssr: false }
+);
+const LeadsTableRow = dynamic(
+  () => import("@/components/leads/LeadsTableRow"),
+  { ssr: false }
+);
+const LeadCard = dynamic(() => import("@/components/leads/LeadCard"), {
+  ssr: false,
+});
+const StatsCard = dynamic(() => import("@/components/leads/StatsCard"), {
+  ssr: false,
+});
+const LoadingSkeleton = dynamic(
+  () => import("@/components/leads/LoadingSkeleton"),
+  { ssr: false }
+);
+const LeadsActionBar = dynamic(
+  () => import("@/components/leads/LeadsActionBar"),
+  { ssr: false }
+);
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableContainer from "@mui/material/TableContainer";
+import { leadsTableHeader } from "@/components/leads/LeadsTableHeaderConfig";
+const Leads: React.FC = () => {
+  const {
+    leads,
+    loading,
+    saving,
+    search,
+    setSearch,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    open,
+    setOpen,
+    editId,
+    setEditId,
+    formData,
+    setFormData,
+    stats,
+    filtered,
+    rows,
+    loadLeads,
+  } = useLeads();
+  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+      searchTimeout.current = setTimeout(() => {
+        setSearch(value);
+        setPage(0);
+      }, 300);
+    },
+    [setSearch, setPage]
+  );
+  return (
+    <Box
+      sx={{
+        p: { xs: 0.5, sm: 1, md: 2 },
+        pt: { xs: 1, sm: 2, md: 3 },
+        minHeight: "100vh",
+        bgcolor: "background.default",
+        overflow: "hidden",
+      }}
+    >
+      <Paper
+        elevation={2}
+        sx={{
+          p: { xs: 1, sm: 2, md: 3 },
+          borderRadius: { xs: 1, sm: 2, md: 3 },
+          mb: { xs: 1, sm: 2, md: 3 },
+          mt: { xs: 0.5, sm: 1, md: 2 },
+          background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+          overflow: "hidden",
+        }}
+      >
+        <Typography
+          variant="h4"
+          sx={{
+            fontWeight: 700,
+            color: "text.primary",
+            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
+            mb: { xs: 2, md: 3 },
+            textAlign: { xs: "center", sm: "left" },
+          }}
+        >
+          Leads
+        </Typography>
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: { xs: "repeat(2, 1fr)", sm: "repeat(4, 1fr)" },
+            gap: { xs: 0.5, sm: 1, md: 2 },
+            mb: { xs: 1, sm: 2, md: 3 },
+          }}
+        >
+          <StatsCard
+            value={stats.total}
+            label="Total Leads"
+            color="primary.main"
+          />
+          <StatsCard value={stats.new} label="New Leads" color="info.main" />
+          <StatsCard
+            value={stats.closed}
+            label="Closed Deals"
+            color="success.main"
+          />
+          <StatsCard
+            value={`${stats.conversion}%`}
+            label="Conversion Rate"
+            color="warning.main"
+          />
+        </Box>
+        <LeadsActionBar
+          search={search}
+          onSearchChange={handleSearchChange}
+          viewMode={viewMode}
+          setViewMode={setViewMode}
+          onAdd={() => setOpen(true)}
+          saving={saving}
+        />
+      </Paper>
+      {loading ? (
+        <LoadingSkeleton />
+      ) : viewMode === "cards" ? (
+        <Box
+          sx={{
+            display: "grid",
+            gridTemplateColumns: {
+              xs: "1fr",
+              sm: "repeat(2, 1fr)",
+              lg: "repeat(3, 1fr)",
+            },
+            gap: 3,
+          }}
+        >
+          {rows.map((lead) => (
+            <LeadCard
+              key={lead.id}
+              lead={lead}
+              onEdit={() => setEditId(lead.id)}
+              onDelete={() => {}}
+            />
+          ))}
+        </Box>
+      ) : (
+        <TableContainer
+          component={Paper}
+          elevation={8}
+          sx={{ ...COMMON_STYLES.roundedPaper, overflow: "hidden" }}
+        >
+          <Table>
+            <LeadsTableHeader header={leadsTableHeader} />
+            <TableBody>
+              {rows.map((row) => (
+                <LeadsTableRow
+                  key={row.id}
+                  row={row}
+                  header={leadsTableHeader}
+                  onEdit={() => setEditId(row.id)}
+                  onDelete={() => {}}
+                />
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
+      )}
+      <LeadDialog
+        open={open}
+        editId={editId}
+        initialData={formData}
+        saving={saving}
+        onClose={() => setOpen(false)}
+        onSave={() => {}}
+      />
+      <PermissionGuard module="lead" action="write" fallback={<></>}>
+        <Fab
+          color="primary"
+          aria-label="add lead"
+          onClick={() => setOpen(true)}
+          disabled={saving}
+          sx={{
+            position: "fixed",
+            bottom: 24,
+            right: 24,
+            background: GRADIENTS.button,
+            "&:hover": { background: GRADIENTS.buttonHover },
+          }}
+        >
+          {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
+        </Fab>
+      </PermissionGuard>
+    </Box>
+  );
+};
+export default Leads;

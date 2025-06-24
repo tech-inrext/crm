@@ -6,8 +6,8 @@ import {
   getProfileDetails,
   selectRole,
   createLogin,
-} from "../service/auth.service";
-import LoginRoleSelector from "../components/ui/LoginRoleSelector";
+} from "@/service/auth.service";
+import LoginRoleSelector from "@/components/ui/LoginRoleSelector";
 import { useRouter } from "next/navigation";
 
 // Configure axios to include credentials
@@ -93,25 +93,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return typeof role === "string" ? role : role._id;
   };
 
-  const checkAuth = async () => {
+  const checkAuth = React.useCallback(async () => {
     try {
       // First get the basic profile to ensure authentication and get user ID
       const profileResponse = await getProfileDetails();
-      if (profileResponse.success && profileResponse.data) {
-        const profileData = profileResponse.data;
-        setUser(profileData);
-        if (!profileData.currentRole) {
-          setPendingRoleSelection(true);
-        } else if (window.location.pathname === "/login") {
-          router.push("/dashboard");
-        }
+      if (profileResponse && profileResponse.data) {
+        setUser(profileResponse.data);
+      } else {
+        setUser(null);
       }
-    } catch (error: unknown) {
+    } catch (error) {
       setUser(null);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   // Complete the role selection process after login
   const completeRoleSelection = async (roleId: string) => {
@@ -130,7 +126,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (error) {
       console.error(
-        "❌ AuthContext: Failed to complete role selection:",
+        "AuthContext: Failed to complete role selection:",
         error
       );
       throw error;
@@ -146,12 +142,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         if (!response?.employee?.currentRole) {
           setPendingRoleSelection(true);
         }
-        router.push("/dashboard");
+        // Redirect to dashboard after login
+        router.push("/");
       } else {
         throw new Error(response.message || "Login failed");
       }
     } catch (error: unknown) {
-      console.error("❌ Login error:", error);
+      console.error("Login error:", error);
     }
   };
 
@@ -165,14 +162,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           timeout: 5000,
         }
       );
-      console.log("✅ Logout successful");
+      console.log("Logout successful");
     } catch (error: unknown) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
         message?: string;
       };
       console.error(
-        "❌ Logout error:",
+        "Logout error:",
         axiosError.response?.data?.message ||
           axiosError.message ||
           "Unknown error"
@@ -216,14 +213,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(response.data.message || "Role switch failed");
       }
     } catch (error) {
-      console.error("❌ AuthContext: Failed to switch role:", error);
+      console.error("AuthContext: Failed to switch role:", error);
       throw error;
     }
   };
 
   // Cancel role selection process
   const cancelRoleSelection = () => {
-    console.log("❌ AuthContext: Role selection cancelled");
+    console.log("AuthContext: Role selection cancelled");
     setPendingRoleSelection(null);
     // Also logout the user since they cancelled role selection
     logout();
@@ -233,7 +230,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await completeRoleSelection(selectedRoleId);
       setPendingRoleSelection(false);
-      router.push("/dashboard");
+      // Redirect to dashboard after role selection
+      router.push("/");
     } catch (error) {
       console.error("Role selection failed:", error);
     }
@@ -257,7 +255,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   useEffect(() => {
     // Let's have this failing api for now
     checkAuth();
-  }, []);
+  }, [checkAuth]);
 
   const value: AuthContextType = {
     user,

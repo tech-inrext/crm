@@ -1,4 +1,4 @@
-import type { Lead } from '../types/lead';
+import type { Lead } from '@/types/lead';
 
 // Lead form interface matching the component expectations
 export interface LeadFormData {
@@ -68,18 +68,27 @@ export const sortLeads = (leads: Lead[], sortBy: string, sortOrder: 'asc' | 'des
   });
 };
 
-export const filterLeads = (leads: Lead[], searchTerm: string): Lead[] => {
-  if (!searchTerm) return leads;
-  
-  const term = searchTerm.toLowerCase();
-  return leads.filter(lead => 
-    lead.name.toLowerCase().includes(term) ||
-    lead.email.toLowerCase().includes(term) ||
-    lead.phone.includes(term) ||
-    (lead.contact && lead.contact.toLowerCase().includes(term)) ||
-    (lead.company && lead.company.toLowerCase().includes(term)) ||
-    lead.status.toLowerCase().includes(term)
+export const filterLeads = (leads: Lead[], searchQuery: string): Lead[] => {
+  const q = searchQuery.toLowerCase();
+  return leads.filter(
+    (l) =>
+      l?.fullName?.toLowerCase().includes(q) ||
+      l?.contact?.toLowerCase().includes(q) ||
+      l?.email?.toLowerCase().includes(q) ||
+      l?.phone?.toLowerCase().includes(q) ||
+      l?.status?.toLowerCase().includes(q)
   );
+};
+
+export const filterEmployees = (employees: any[], search: string) => {
+  const q = search.toLowerCase();
+  return employees.filter((e) => {
+    const roleName = typeof e.role === "string" ? e.role : e.role?.name || "";
+    return (
+      e.name.toLowerCase().includes(q) ||
+      roleName.toLowerCase().includes(q)
+    );
+  });
 };
 
 // Transform API lead to frontend format
@@ -161,5 +170,63 @@ export const getDefaultLeadFormData = (): LeadFormData => {
     assignedTo: '',
     nextFollowUp: '',
     followUpNotes: [],
+  };
+};
+
+export const transformAPIRole = (apiRole: any): any => {
+  const permissions: string[] = [];
+  const moduleMap: Record<string, string> = {
+    employee: "Users",
+    role: "Roles",
+    lead: "Leads",
+  };
+  apiRole.read?.forEach((module: string) => {
+    const frontendModule = moduleMap[module] || module;
+    permissions.push(`${frontendModule}:read`);
+  });
+  apiRole.write?.forEach((module: string) => {
+    const frontendModule = moduleMap[module] || module;
+    permissions.push(`${frontendModule}:write`);
+  });
+  apiRole.delete?.forEach((module: string) => {
+    const frontendModule = moduleMap[module] || module;
+    permissions.push(`${frontendModule}:delete`);
+  });
+  return {
+    _id: apiRole._id,
+    name: apiRole.name,
+    permissions,
+  };
+};
+
+export const transformToAPIRole = (role: any) => {
+  const read: string[] = [];
+  const write: string[] = [];
+  const deletePerms: string[] = [];
+  const moduleMap: Record<string, string> = {
+    Users: "employee",
+    Roles: "role",
+    Leads: "lead",
+  };
+  role.permissions.forEach((perm: string) => {
+    const [module, permission] = perm.split(":");
+    const apiModule = moduleMap[module] || module.toLowerCase();
+    switch (permission) {
+      case "read":
+        if (!read.includes(apiModule)) read.push(apiModule);
+        break;
+      case "write":
+        if (!write.includes(apiModule)) write.push(apiModule);
+        break;
+      case "delete":
+        if (!deletePerms.includes(apiModule)) deletePerms.push(apiModule);
+        break;
+    }
+  });
+  return {
+    name: role.name,
+    read,
+    write,
+    delete: deletePerms,
   };
 };

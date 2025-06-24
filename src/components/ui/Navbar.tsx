@@ -4,17 +4,17 @@ import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import Typography from "@mui/material/Typography";
 import { useTheme, useMediaQuery } from "@mui/material";
-import MyAvatar from "./MyAvatar";
+import AvatarComponent from "./Avatar";
 import ProfileMenu from "./ProfileMenu";
 
-interface MyNavbarProps {
+interface NavbarProps {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
 }
 
-const MyNavbar: React.FC<MyNavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
+const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md")); // More aggressive mobile breakpoint
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
@@ -27,26 +27,24 @@ const MyNavbar: React.FC<MyNavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         zIndex: 1300,
         display: "flex",
         alignItems: "center",
-        px: { xs: 0.5, sm: 1, md: 2 }, // Reduced padding on small screens
-        py: { xs: 0.25, sm: 0.5, md: 1 }, // Reduced vertical padding
+        px: { xs: 0.5, sm: 1, md: 2 },
+        py: { xs: 0.25, sm: 0.5, md: 1 },
         bgcolor: "#181C1F",
-        height: { xs: 48, sm: 56, md: 64 }, // Smaller height on mobile
+        height: { xs: 48, sm: 56, md: 64 },
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         borderBottom: "1px solid rgba(255,255,255,0.1)",
-        overflow: "hidden", // Prevent overflow
+        overflow: "hidden",
       }}
     >
-      {" "}
-      {/* Mobile menu button */}
       <IconButton
         color="inherit"
         edge="start"
         onClick={() => setSidebarOpen(!sidebarOpen)}
         sx={{
-          mr: { xs: 0.5, sm: 1, md: 2 }, // Reduced margin on small screens
+          mr: { xs: 0.5, sm: 1, md: 2 },
           display: { xs: "block", lg: "none" },
-          p: { xs: 0.5, sm: 1, md: 1.5 }, // Smaller padding on mobile
-          minWidth: { xs: 40, sm: 44 }, // Ensure minimum touch target
+          p: { xs: 0.5, sm: 1, md: 1.5 },
+          minWidth: { xs: 40, sm: 44 },
           minHeight: { xs: 40, sm: 44 },
           "&:hover": {
             bgcolor: "rgba(255,255,255,0.1)",
@@ -55,22 +53,21 @@ const MyNavbar: React.FC<MyNavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       >
         <MenuIcon sx={{ fontSize: { xs: 18, sm: 20, md: 24 } }} />
       </IconButton>
-      {/* Logo and brand */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: { xs: 0.5, sm: 1, md: 2 }, // Reduced gap on small screens
-          minWidth: 0, // Allow shrinking
-          flex: 1, // Take available space
+          gap: { xs: 0.5, sm: 1, md: 2 },
+          minWidth: 0,
+          flex: 1,
         }}
       >
-        <MyAvatar
+        <AvatarComponent
           src="/inrext.png"
           alt="Inrext"
           borderRadius="8px"
           sx={{
-            width: { xs: 28, sm: 32, md: 40 }, // Smaller on mobile
+            width: { xs: 28, sm: 32, md: 40 },
             height: { xs: 28, sm: 32, md: 40 },
           }}
         />
@@ -78,10 +75,10 @@ const MyNavbar: React.FC<MyNavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           variant="h6"
           sx={{
             fontWeight: 800,
-            color: "#6EC1E4",
-            letterSpacing: 0.5,
-            fontSize: { xs: 14, sm: 16, md: 18 }, // Smaller font on mobile
-            display: { xs: isSmallMobile ? "none" : "block", sm: "block" }, // Hide on very small screens
+            fontSize: { xs: 16, sm: 18, md: 22 },
+            color: "#fff",
+            letterSpacing: 1,
+            ml: 1,
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",
@@ -89,13 +86,10 @@ const MyNavbar: React.FC<MyNavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         >
           Inrext
         </Typography>
-      </Box>{" "}
-      {/* Spacer */}
-      <Box sx={{ flexGrow: 1 }} />
-      {/* Profile menu */}
+      </Box>
       <ProfileMenu />
     </Box>
   );
 };
 
-export default MyNavbar;
+export default Navbar;

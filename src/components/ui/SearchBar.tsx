@@ -1,14 +1,14 @@
 import React from "react";
 import { Box, TextField, SxProps, Theme } from "@mui/material";
 
-interface MySearchBarProps {
+interface SearchBarProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   sx?: SxProps<Theme>;
 }
 
-const MySearchBar: React.FC<MySearchBarProps> = ({
+const SearchBar: React.FC<SearchBarProps> = ({
   value,
   onChange,
   placeholder,
@@ -26,4 +26,4 @@ const MySearchBar: React.FC<MySearchBarProps> = ({
   </Box>
 );
 
-export default MySearchBar;
+export default SearchBar;

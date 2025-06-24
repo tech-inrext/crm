@@ -166,7 +166,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
         enableReinitialize={true}
         onSubmit={async (values, { setSubmitting }) => {
           setSubmitting(true);
-          await onSave (values);
+          await onSave(values);
           setSubmitting(false);
         }}
       >
@@ -231,7 +231,6 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                     />
                   )}
                 </Field>{" "}
-                
                 <Field name="phone">
                   {({ field, meta }: FieldProps) => (
                     <TextField

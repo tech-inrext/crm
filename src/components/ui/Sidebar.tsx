@@ -24,13 +24,13 @@ export type SidebarLink =
       onClick?: () => void;
     };
 
-interface MySidebarProps {
+interface SidebarProps {
   open: boolean;
   onClose: () => void;
   links?: SidebarLink[];
 }
 
-const MySidebar: React.FC<MySidebarProps> = ({ open, onClose, links = [] }) => {
+const Sidebar: React.FC<SidebarProps> = ({ open, onClose, links = [] }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md")); // More aggressive mobile breakpoint
   const isTablet = useMediaQuery(theme.breakpoints.between("md", "lg"));
@@ -187,4 +187,4 @@ const MySidebar: React.FC<MySidebarProps> = ({ open, onClose, links = [] }) => {
   );
 };
 
-export default MySidebar;
+export default Sidebar;

@@ -2,7 +2,7 @@ import React from "react";
 import Avatar from "@mui/material/Avatar";
 import { SxProps, Theme } from "@mui/material/styles";
 
-interface MyAvatarProps {
+interface AvatarProps {
   src?: string;
   alt?: string;
   children?: React.ReactNode;
@@ -10,7 +10,7 @@ interface MyAvatarProps {
   sx?: SxProps<Theme>;
 }
 
-const MyAvatar: React.FC<MyAvatarProps> = ({
+const AvatarComponent: React.FC<AvatarProps> = ({
   src,
   alt,
   children,
@@ -29,4 +29,4 @@ const MyAvatar: React.FC<MyAvatarProps> = ({
   </Avatar>
 );
 
-export default MyAvatar;
+export default AvatarComponent;

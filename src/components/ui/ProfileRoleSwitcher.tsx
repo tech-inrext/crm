@@ -15,7 +15,7 @@ import {
   Chip,
 } from "@mui/material";
 import { SwapHoriz, Person } from "@mui/icons-material";
-import { useAuth } from "../../contexts/AuthContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 const ProfileRoleSwitcher: React.FC = () => {
   const { user, switchRole } = useAuth();
