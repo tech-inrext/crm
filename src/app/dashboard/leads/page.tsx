@@ -50,6 +50,12 @@ import TableContainer from "@mui/material/TableContainer";
 import { leadsTableHeader } from "@/components/leads/LeadsTableHeaderConfig";
 import { useTheme } from "@mui/material/styles";
 import useMediaQuery from "@mui/material/useMediaQuery";
+import IconButton from "@mui/material/IconButton";
+import EditIcon from "@mui/icons-material/Edit";
+import {
+  getDefaultLeadFormData,
+  transformAPILeadToForm,
+} from "@/utils/leadUtils";
 
 const Leads: React.FC = () => {
   const {
@@ -72,6 +78,7 @@ const Leads: React.FC = () => {
     filtered,
     rows,
     loadLeads,
+    saveLead, // <-- Only call useLeads once, include saveLead here
   } = useLeads();
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
@@ -88,6 +95,33 @@ const Leads: React.FC = () => {
   );
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
+    col.label === "Actions"
+      ? {
+          ...col,
+          component: (row, { onEdit }) => (
+            <PermissionGuard module="lead" action="write" fallback={null}>
+              <IconButton onClick={() => onEdit(row)} size="small">
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </PermissionGuard>
+          ),
+        }
+      : col
+  );
+  // When editId changes, update formData to show existing details in dialog
+  React.useEffect(() => {
+    if (editId) {
+      const lead = leads.find(
+        (l) => l.id === editId || l._id === editId || l.leadId === editId
+      );
+      if (lead) {
+        setFormData(transformAPILeadToForm(lead));
+      }
+    } else {
+      setFormData(getDefaultLeadFormData());
+    }
+  }, [editId, leads, setFormData]);
   return (
     <Box
       sx={{
@@ -178,7 +212,10 @@ const Leads: React.FC = () => {
             <LeadCard
               key={lead.id}
               lead={lead}
-              onEdit={() => setEditId(lead.id)}
+              onEdit={() => {
+                setEditId(lead.id);
+                setOpen(true);
+              }}
               onDelete={() => {}}
             />
           ))}
@@ -202,14 +239,17 @@ const Leads: React.FC = () => {
             }}
           >
             <Table size={window.innerWidth < 600 ? "small" : "medium"}>
-              <LeadsTableHeader header={leadsTableHeader} />
+              <LeadsTableHeader header={leadsTableHeaderWithActions} />
               <TableBody>
                 {rows.map((row) => (
                   <LeadsTableRow
                     key={row.id}
                     row={row}
-                    header={leadsTableHeader}
-                    onEdit={() => setEditId(row.id)}
+                    header={leadsTableHeaderWithActions}
+                    onEdit={() => {
+                      setEditId(row.id);
+                      setOpen(true);
+                    }}
                     onDelete={() => {}}
                   />
                 ))}
@@ -223,8 +263,20 @@ const Leads: React.FC = () => {
         editId={editId}
         initialData={formData}
         saving={saving}
-        onClose={() => setOpen(false)}
-        onSave={() => {}}
+        onClose={() => {
+          setOpen(false);
+          setEditId(null);
+        }}
+        onSave={async (data) => {
+          try {
+            await saveLead(data, editId);
+            setOpen(false);
+            setEditId(null);
+          } catch (error) {
+            // Optionally show a notification or error dialog here
+            console.error("Failed to save lead:", error);
+          }
+        }}
       />
       <PermissionGuard module="lead" action="write" fallback={<></>}>
         <Fab

@@ -12,7 +12,7 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { Add } from "@mui/icons-material";
+import { Add, Edit } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 import { useUsers } from "@/hooks/useUsers";
 import {
@@ -60,14 +60,29 @@ const Users: React.FC = () => {
     },
     [setSearch, setPage]
   );
+  const [selectedUser, setSelectedUser] = useState<any>(null);
   const usersTableHeader = [
     { label: "Name", dataKey: "name" },
     { label: "Email", dataKey: "email" },
     { label: "Designation", dataKey: "designation" },
-    // You can add more fields as needed
     {
       label: "Actions",
-      component: (row, handlers) => null, // Add action buttons if needed
+      component: (row) => (
+        <PermissionGuard module="employee" action="write" fallback={null}>
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => {
+              setSelectedUser(row);
+              setEditId(row.id || row._id);
+              setOpen(true);
+            }}
+            sx={{ minWidth: 0, px: 1, py: 0.5, minHeight: 0, lineHeight: 1 }}
+          >
+            <Edit fontSize="small" />
+          </Button>
+        </PermissionGuard>
+      ),
     },
   ];
   // Helper: default form data for new user
@@ -76,15 +91,49 @@ const Users: React.FC = () => {
     email: "",
     phone: "",
     address: "",
-    gender: "Male",
-    age: undefined,
+    gender: "Male", // Always a valid option
+    age: "",
     altPhone: "",
     joiningDate: "",
     designation: "",
-    managerId: "",
-    departmentId: "",
+    managerId: "", // Always controlled, never undefined
+    departmentId: "", // Always controlled, never undefined
     roles: [],
   };
+
+  // Always provide a complete initialData to UserDialog
+  const getInitialUserForm = (form: any) => {
+    const safeForm = Object.fromEntries(
+      Object.entries(form || {}).filter(
+        ([_, v]) => v !== undefined && v !== null
+      )
+    );
+    return {
+      ...defaultUserForm,
+      ...safeForm,
+      gender: safeForm.gender || "Male",
+      managerId: safeForm.managerId || "",
+      departmentId: safeForm.departmentId || "",
+      name: safeForm.name || "",
+      email: safeForm.email || "",
+      phone: safeForm.phone || "",
+      address: safeForm.address || "",
+      designation: safeForm.designation || "",
+      roles: Array.isArray(safeForm.roles) ? safeForm.roles : [],
+      age: safeForm.age || "",
+      altPhone: safeForm.altPhone || "",
+      joiningDate: safeForm.joiningDate || "",
+    };
+  };
+
+  const paginatedRows = useMemo(() => {
+    const start = page * rowsPerPage;
+    const end = start + rowsPerPage;
+    return rows.slice(start, end);
+  }, [rows, page, rowsPerPage]);
+
+  console.log({ employees, filtered, rows, page, rowsPerPage });
+
   return (
     <Box
       sx={{
@@ -129,11 +178,15 @@ const Users: React.FC = () => {
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
         </Box>
+      ) : rows.length === 0 ? (
+        <Box sx={{ textAlign: "center", mt: 4 }}>
+          <Typography>No users found.</Typography>
+        </Box>
       ) : isMobile ? (
         <Box
           sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 1.5, mb: 2 }}
         >
-          {rows.map((user) => (
+          {paginatedRows.map((user) => (
             <UserCard
               key={user.id || user._id}
               user={{
@@ -164,22 +217,32 @@ const Users: React.FC = () => {
               minWidth: { xs: 600, sm: "100%" },
               width: "100%",
               overflow: "auto",
+              maxHeight: { xs: 360, sm: 480, md: 600 }, // Set max height for scroll
+              position: "relative",
             }}
           >
             <TableMap
-              data={rows}
+              data={paginatedRows}
               header={usersTableHeader}
               onEdit={() => {}}
               onDelete={() => {}}
-              size={window.innerWidth < 600 ? "small" : "medium"}
+              size={
+                typeof window !== "undefined" && window.innerWidth < 600
+                  ? "small"
+                  : "medium"
+              }
+              stickyHeader // Pass stickyHeader prop if supported
             />
             <Pagination
-              count={filtered.length}
-              page={page}
-              onPageChange={setPage}
-              rowsPerPage={rowsPerPage}
-              onRowsPerPageChange={setRowsPerPage}
-              rowsPerPageOptions={EMPLOYEE_ROWS_PER_PAGE_OPTIONS}
+              total={rows.length}
+              page={page + 1}
+              onPageChange={(p) => setPage(p - 1)}
+              pageSize={rowsPerPage}
+              onPageSizeChange={(size) => {
+                setRowsPerPage(size);
+                setPage(0);
+              }}
+              pageSizeOptions={EMPLOYEE_ROWS_PER_PAGE_OPTIONS}
             />
           </Paper>
         </Box>
@@ -209,12 +272,18 @@ const Users: React.FC = () => {
         <UserDialog
           open={open}
           editId={editId}
-          initialData={form || defaultUserForm}
+          initialData={getInitialUserForm(selectedUser)}
           saving={saving}
           onClose={() => setOpen(false)}
           onSave={async (values) => {
+            if (editId) {
+              await updateUser(editId, values);
+            }
             setOpen(false);
+            setSelectedUser(null);
             setForm(defaultUserForm);
+            setPage(0); // Reset to first page so new user is visible
+            setSearch(""); // Clear search filter
             await loadEmployees();
           }}
         />

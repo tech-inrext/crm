@@ -118,20 +118,48 @@ export const transformAPILeadToForm = (apiLead: Lead): LeadFormData => {
   };
 };
 
+// Helper to map budgetRange string to backend value (number)
+const budgetRangeToValue = (budgetRange: string): number | undefined => {
+  switch (budgetRange) {
+    case '<1 Lakh': return 50000;
+    case '1 Lakh to 10 Lakh': return 100000;
+    case '10 Lakh to 20 Lakh': return 1000000;
+    case '20 Lakh to 30 Lakh': return 2000000;
+    case '30 Lakh to 50 Lakh': return 3000000;
+    case '50 Lakh to 1 Crore': return 5000000;
+    case '>1 Crore': return 10000000;
+    default: return undefined;
+  }
+};
+
 // Transform form data to API format
-export const transformFormToAPI = (formData: LeadFormData): Partial<Lead> => {
-  return {
-    fullName: formData.fullName,
-    email: formData.email,
-    phone: formData.phone,
-    propertyType: formData.propertyType,
-    location: formData.location,
-    budgetRange: formData.budgetRange,
-    status: formData.status,
-    source: formData.source,
-    assignedTo: formData.assignedTo || null,
-    followUpNotes: formData.followUpNotes.map(note => `${note.date}: ${note.note}`).join('\n'),
-  };
+export const transformFormToAPI = (formData: LeadFormData, isEdit = false): Partial<Lead> => {
+  const payload: Partial<Lead> = {};
+
+  // Only include fields that are present and valid
+  if (formData.fullName && formData.fullName.trim() !== "") payload.fullName = formData.fullName.trim();
+  if (formData.email && formData.email.trim() !== "") payload.email = formData.email.trim();
+  // Only include phone if not editing (backend does not allow phone update)
+  if (!isEdit && formData.phone && formData.phone.trim() !== "") payload.phone = formData.phone.trim();
+  if (formData.propertyType && formData.propertyType.trim() !== "") payload.propertyType = formData.propertyType.trim();
+  if (formData.location && formData.location.trim() !== "") payload.location = formData.location.trim();
+  if (formData.budgetRange && formData.budgetRange.trim() !== "") payload.budgetRange = formData.budgetRange.trim();
+  if (formData.status && formData.status.trim() !== "") payload.status = formData.status.trim();
+  if (formData.source && formData.source.trim() !== "") payload.source = formData.source.trim();
+  // Only send assignedTo if it's a non-empty string
+  if (formData.assignedTo && typeof formData.assignedTo === 'string' && formData.assignedTo.trim() !== "") {
+    payload.assignedTo = formData.assignedTo.trim();
+  }
+  // Only send followUpNotes if there are valid notes
+  if (Array.isArray(formData.followUpNotes) && formData.followUpNotes.length > 0) {
+    const notes = formData.followUpNotes
+      .map(note => `${note.date || ''}: ${note.note}`.trim())
+      .filter(str => str !== ':' && str !== '');
+    if (notes.length > 0) payload.followUpNotes = notes;
+  }
+  // Uncomment if nextFollowUp is supported and required by backend
+  // if (formData.nextFollowUp && formData.nextFollowUp.trim() !== "") payload.nextFollowUp = formData.nextFollowUp.trim();
+  return payload;
 };
 
 // Calculate lead statistics

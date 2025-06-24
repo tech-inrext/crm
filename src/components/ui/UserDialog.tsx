@@ -134,7 +134,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                 {({ field, meta }: FieldProps) => (
                   <TextField
                     {...field}
-                    label="Full Name"
+                    label="Full Name *"
                     autoFocus
                     fullWidth
                     margin="normal"
@@ -155,12 +155,13 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   {({ field, meta }: FieldProps) => (
                     <TextField
                       {...field}
-                      label="Email"
+                      label="Email *"
                       fullWidth
                       margin="normal"
                       error={!!meta.touched && !!meta.error}
                       helperText={meta.touched && meta.error}
                       sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+                      InputProps={{ readOnly: !!editId }}
                     />
                   )}
                 </Field>
@@ -168,12 +169,13 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   {({ field, meta }: FieldProps) => (
                     <TextField
                       {...field}
-                      label="Phone"
+                      label="Phone *"
                       fullWidth
                       margin="normal"
                       error={!!meta.touched && !!meta.error}
                       helperText={meta.touched && meta.error}
                       sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+                      InputProps={{ readOnly: !!editId }}
                     />
                   )}
                 </Field>
@@ -202,7 +204,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   {({ field, meta }: FieldProps) => (
                     <TextField
                       {...field}
-                      label="Address"
+                      label="Address *"
                       fullWidth
                       margin="normal"
                       error={!!meta.touched && !!meta.error}
@@ -223,7 +225,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   {({ field, meta }: FieldProps) => (
                     <TextField
                       {...field}
-                      label="Gender"
+                      label="Gender *"
                       select
                       fullWidth
                       margin="normal"
@@ -280,7 +282,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   {({ field, meta }: FieldProps) => (
                     <TextField
                       {...field}
-                      label="Designation"
+                      label="Designation *"
                       fullWidth
                       margin="normal"
                       error={!!meta.touched && !!meta.error}
@@ -304,7 +306,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   {({ field, meta }: FieldProps) => (
                     <TextField
                       {...field}
-                      label="Manager"
+                      label="Manager *"
                       select
                       fullWidth
                       margin="normal"
@@ -324,7 +326,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   {({ field, meta }: FieldProps) => (
                     <TextField
                       {...field}
-                      label="Department"
+                      label="Department *"
                       select
                       fullWidth
                       margin="normal"
@@ -362,7 +364,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                     renderInput={(params) => (
                       <TextField
                         {...params}
-                        label="Roles"
+                        label="Roles *"
                         margin="normal"
                         error={!!meta.touched && !!meta.error}
                         helperText={meta.touched && meta.error}

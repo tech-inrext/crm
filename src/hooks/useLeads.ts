@@ -36,6 +36,31 @@ export function useLeads() {
     }
   }, []);
 
+  const saveLead = useCallback(
+    async (formData: LeadFormData, editId?: string | null) => {
+      setSaving(true);
+      try {
+        let payload = transformFormToAPI(formData);
+        if (editId) {
+          // Remove phone from payload when editing (backend does not allow phone update)
+          const { phone, ...rest } = payload;
+          payload = rest;
+          await axios.patch(`${API_BASE}/${editId}`, payload); // PATCH instead of PUT
+        } else {
+          // Create new lead (include phone)
+          await axios.post(API_BASE, payload);
+        }
+        await loadLeads();
+      } catch (error) {
+        // Optionally handle error
+        throw error;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [loadLeads]
+  );
+
   useEffect(() => {
     loadLeads();
   }, [loadLeads]);
@@ -61,5 +86,6 @@ export function useLeads() {
     filtered,
     rows,
     loadLeads,
+    saveLead,
   };
 }

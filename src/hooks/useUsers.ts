@@ -57,6 +57,33 @@ export function useUsers() {
     }
   }, []);
 
+  const updateUser = async (id, values) => {
+    setSaving(true);
+    const allowedFields = [
+      "name",
+      "altPhone",
+      "address",
+      "gender",
+      "age",
+      "designation",
+      "managerId",
+      "roles",
+    ];
+    const payload = {};
+    for (const key of allowedFields) {
+      if (values[key] !== undefined && values[key] !== "") {
+        payload[key] = values[key];
+      }
+    }
+    try {
+      await axios.patch(`/api/v0/employee/${id}`, payload);
+    } catch (e) {
+      console.error("Failed to update user", e);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return {
     employees,
     loading,
@@ -76,6 +103,7 @@ export function useUsers() {
     filtered,
     rows,
     loadEmployees,
+    updateUser,
   };
 }
 
