@@ -1,5 +1,5 @@
 // React & Core
-import React, { useEffect, useState, useMemo, useCallback } from "react";
+import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
 import axios from "axios";
 import { UploadFile } from "@mui/icons-material";
 import { Snackbar, Alert } from "@mui/material";
@@ -120,6 +120,9 @@ const Leads: React.FC = () => {
   const [viewMode, setViewMode] = useState<"table" | "cards">(
     isMobile ? "cards" : "table"
   );
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // Memoized calculations
   const stats = useMemo(() => calculateLeadStats(leads), [leads]);
 
@@ -348,6 +351,9 @@ const Leads: React.FC = () => {
         setUploadResult(null);
       } finally {
         setUploading(false);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = ""; // 👈 reset file input
+        }
       }
     },
     [loadLeads]
@@ -536,7 +542,8 @@ const Leads: React.FC = () => {
                     {uploadResult?.failed?.length > 0 && (
                       <>
                         <Typography fontWeight={600} mb={1}>
-                          ⚠️ Failed Leads: {uploadResult.failed.length} {" - Please download the report to view details."}
+                          ⚠️ Failed Leads: {uploadResult.failed.length}{" "}
+                          {" - Please download the report to view details."}
                         </Typography>
                       </>
                     )}
@@ -610,6 +617,7 @@ const Leads: React.FC = () => {
                         style={{ display: "none" }}
                         id="bulk-upload-excel"
                         type="file"
+                        ref={fileInputRef}
                         onChange={handleFileUpload}
                       />
                       <Button
