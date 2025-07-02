@@ -1,5 +1,11 @@
 // React & Core
-import React, { useEffect, useState, useMemo, useCallback, useRef } from "react";
+import React, {
+  useEffect,
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+} from "react";
 import axios from "axios";
 import { UploadFile } from "@mui/icons-material";
 import { Snackbar, Alert } from "@mui/material";
@@ -47,6 +53,7 @@ import LeadsTableHeader from "../../components/leads/LeadsTableHeader";
 import LeadsTableRow from "../../components/leads/LeadsTableRow";
 import LeadDialog, { LeadFormData } from "../../components/leads/LeadDialog";
 import PermissionGuard from "../../components/PermissionGuard";
+import CheckUploadStatusDialog from "../../components/leads/CheckUploadStatusDialog"; // import dialog component
 
 // Shared Types
 import type { Lead as APILead, LeadDisplay as Lead } from "../../types/lead";
@@ -120,6 +127,21 @@ const Leads: React.FC = () => {
   const [viewMode, setViewMode] = useState<"table" | "cards">(
     isMobile ? "cards" : "table"
   );
+
+  const [openUploadDialog, setOpenUploadDialog] = useState(false);
+  const [showUploadStatusDialog, setShowUploadStatusDialog] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [uploadStatus, setUploadStatus] = useState<{
+    total: number;
+    success: number;
+    failed: number;
+    failedRecords?: { name: string; phone: string; reason: string }[];
+  }>({
+    total: 0,
+    success: 0,
+    failed: 0,
+    failedRecords: [],
+  });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -378,6 +400,11 @@ const Leads: React.FC = () => {
     document.body.removeChild(link);
   };
 
+  const handleCheckUploadStatus = () => {
+    console.log("handleCheckUploadStatus");
+    setOpenUploadDialog(true);
+  };
+
   useEffect(() => {
     loadLeads();
   }, [loadLeads]);
@@ -517,7 +544,7 @@ const Leads: React.FC = () => {
                     {snackbarMessage}
                   </Alert>
                 </Snackbar>
-                <Dialog
+                {/* <Dialog
                   open={dialogOpen}
                   onClose={() => setDialogOpen(false)}
                   fullWidth
@@ -572,7 +599,11 @@ const Leads: React.FC = () => {
                       Close
                     </Button>
                   </DialogActions>
-                </Dialog>
+                </Dialog> */}
+                <CheckUploadStatusDialog
+                  open={openUploadDialog}
+                  onClose={() => setOpenUploadDialog(false)}
+                />
               </Box>{" "}
               {/* Add Button */}
               {!isMobile && (
@@ -648,6 +679,26 @@ const Leads: React.FC = () => {
                         {uploading ? "Uploading..." : "Upload Excel"}
                       </Button>
                     </label>
+                    <Button
+                      variant="contained"
+                      startIcon={<UploadFile />}
+                      onClick={handleCheckUploadStatus}
+                      size="large"
+                      sx={{
+                        minWidth: 150,
+                        height: 44,
+                        borderRadius: 2,
+                        fontWeight: 600,
+                        fontSize: "1rem",
+                        boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+                        "&:hover": {
+                          boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
+                          transform: "translateY(-1px)",
+                        },
+                      }}
+                    >
+                      Check Upload Status
+                    </Button>
                   </Box>
                 </PermissionGuard>
               )}

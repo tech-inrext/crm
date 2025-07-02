@@ -1,9 +1,12 @@
-import dbConnect from "../../../../lib/mongodb";
-import Lead from "../../../../models/Lead";
 import multer from "multer";
 import xlsx from "xlsx";
 import fs from "fs";
 import path from "path";
+import mongoose from "mongoose"; // ✅ Add this
+import { v4 as uuidv4 } from "uuid";
+import { leadQueue } from "../../../../queue/leadQueue";
+import { loginAuth } from "../../../../middlewares/loginAuth";
+import BulkUpload from "../../../../models/BulkUpload";
 
 const upload = multer({ dest: "uploads/" });
 
@@ -14,89 +17,94 @@ const parseExcel = (filePath) => {
   return xlsx.utils.sheet_to_json(sheet);
 };
 
-const handler = async (req, res) => {
-  await dbConnect();
-  // await Lead.init();
+const writePlaceholderExcelFile = (uploadId) => {
+  const workbook = xlsx.utils.book_new();
+  const ws = xlsx.utils.aoa_to_sheet([["Processing..."]]);
+  xlsx.utils.book_append_sheet(workbook, ws, "Status");
 
+  const fileName = `${uploadId}-${uuidv4()}.xlsx`;
+  const filePath = path.join(process.cwd(), "uploads", fileName);
+  xlsx.writeFile(workbook, filePath);
+
+  return {
+    filePath,
+    fileUrl: `/uploads/${fileName}`,
+  };
+};
+
+const handler = async (req, res) => {
   if (req.method !== "POST") {
     return res
       .status(405)
       .json({ success: false, message: "Method not allowed" });
   }
 
+  await new Promise((resolve, reject) => {
+    loginAuth(req, res, (result) => {
+      if (result instanceof Error) return reject(result);
+      resolve(result);
+    });
+  });
+
   upload.single("file")(req, res, async (err) => {
     if (err || !req.file) {
-      return res.status(400).json({
-        success: false,
-        message: "File upload failed",
-        error: err?.message || "No file uploaded",
-      });
+      return res
+        .status(400)
+        .json({ success: false, message: "File upload failed" });
     }
 
     const filePath = path.join(process.cwd(), req.file.path);
 
     try {
       const rows = parseExcel(filePath);
-      const uploaded = [];
-      const failed = [];
+      const uploaderId = req.employee?._id || "000000000000000000000001";
 
-      for (const row of rows) {
-        const phone = String(row.phone).trim();
+      // ✅ Generate _id and unique file name first
+      const uploadId = new mongoose.Types.ObjectId();
+      const uniqueFileName = `${uploadId}-${uuidv4()}.xlsx`;
 
-        // Optional: skip invalid phone numbers early
-        // if (!/^\d{10,15}$/.test(phone)) {
-        //   failed.push({ phone, reason: "Invalid phone number" });
-        //   continue;
-        // }
+      // ✅ Create placeholder Excel file using the actual _id
+      const { fileUrl } = writePlaceholderExcelFile(uploadId);
 
-        const lead = new Lead({
-          leadId: `LD-${Math.random()
-            .toString(36)
-            .substring(2, 8)
-            .toUpperCase()}`,
-          fullName: row.fullName || "",
-          email: row.email || "",
-          phone: phone,
-          propertyType: row.propertyType || "",
-          location: row.location || "",
-          budgetRange: row.budgetRange || "",
-          status: row.status || "New",
-          source: row.source || "",
-          assignedTo: row.assignedTo || null,
-          followUpNotes: [],
-          nextFollowUp: row.nextFollowUp ? new Date(row.nextFollowUp) : null,
-        });
+      // ✅ Create BulkUpload entry using the same _id and fileUrl
+      const bulkUploadRecord = await BulkUpload.create({
+        _id: uploadId,
+        uploadedBy: uploaderId,
+        totalRecords: rows.length,
+        uploaded: 0,
+        duplicates: 0,
+        invalidPhones: 0,
+        otherErrors: 0,
+        details: {
+          uploaded: [],
+          duplicates: [],
+          invalidPhones: [],
+          otherErrors: [],
+        },
+        fileUrl,
+        reportFileName: uniqueFileName,
+      });
 
-        try {
-          await lead.save();
-          uploaded.push({ phone, name: lead.fullName });
-        } catch (saveError) {
-          failed.push({
-            phone,
-            name: lead.fullName || "N/A",
-            reason:
-              saveError.code === 11000 ? "Duplicate phone" : saveError.message,
-          });
-        }
-      }
+      // ✅ Send job to queue
+      await leadQueue.add(
+        "bulkInsert",
+        {
+          leads: rows,
+          uploadedBy: uploaderId,
+          uploadId,
+        },
+        { attempts: 1 }
+      );
 
-      fs.unlinkSync(filePath); // Cleanup
+      fs.unlinkSync(filePath); // Clean up uploaded input
 
       return res.status(200).json({
         success: true,
-        message:
-          uploaded.length === 0
-            ? "No new leads were saved. All entries may be duplicates or invalid."
-            : `${uploaded.length} lead(s) saved successfully.`,
-        uploaded,
-        failed: failed,
+        message: `✅ File received. Leads are being processed in background.`,
       });
     } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Bulk upload failed",
-        error: error.message,
-      });
+      console.error(error);
+      return res.status(500).json({ success: false, message: error.message });
     }
   });
 };
