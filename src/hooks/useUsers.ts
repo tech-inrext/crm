@@ -84,6 +84,93 @@ export function useUsers() {
     }
   };
 
+  const addUser = async (values) => {
+    setSaving(true);
+    // Backend-required fields
+    const requiredFields = [
+      "name",
+      "email",
+      "phone",
+      "address",
+      "designation",
+      "managerId",
+      "departmentId",
+      "roles",
+    ];
+    const allowedFields = [
+      ...requiredFields,
+      "gender",
+      "age",
+      "altPhone",
+      "joiningDate",
+    ];
+    const payload = {};
+    for (const key of allowedFields) {
+      if (key === "roles") {
+        // Ensure roles is an array of string IDs
+        if (Array.isArray(values.roles) && values.roles.length > 0) {
+          payload.roles = values.roles
+            .map((role) =>
+              typeof role === "string"
+                ? role
+                : role?._id || role?.value || role?.name || ""
+            )
+            .filter((id) => typeof id === "string" && id.trim() !== "");
+        }
+      } else if (key === "managerId" || key === "departmentId") {
+        // Ensure these are non-empty strings
+        if (
+          values[key] &&
+          typeof values[key] === "string" &&
+          values[key].trim() !== ""
+        ) {
+          payload[key] = values[key].trim();
+        }
+      } else if (key === "phone") {
+        // Always send phone as string
+        if (values[key] !== undefined && values[key] !== "") {
+          payload[key] = String(values[key]);
+        }
+      } else {
+        if (values[key] !== undefined && values[key] !== "") {
+          payload[key] = values[key];
+        }
+      }
+    }
+    // Validate required fields
+    const missingFields = requiredFields.filter((field) => {
+      if (field === "roles") {
+        return !Array.isArray(payload.roles) || payload.roles.length === 0;
+      }
+      return (
+        !payload[field] ||
+        (typeof payload[field] === "string" && payload[field].trim() === "")
+      );
+    });
+    if (missingFields.length > 0) {
+      setSaving(false);
+      alert(`Please fill all required fields: ${missingFields.join(", ")}`);
+      return;
+    }
+    console.log("AddUser payload:", payload);
+    try {
+      const response = await axios.post(EMPLOYEE_API_BASE, payload);
+      console.log("AddUser response:", response.data);
+      setOpen(false);
+      setForm({});
+      setEditId(null);
+      loadEmployees();
+    } catch (e) {
+      console.error("Failed to add user", e);
+      const msg = e?.response?.data?.message || e?.message || "Unknown error";
+      alert(`Failed to add user: ${msg}`);
+      throw e;
+    } finally {
+      setSaving(false);
+    }
+    // If you do not see the payload log or network request, check your dialog's onSubmit wiring and authentication/session.
+  };
+
   return {
     employees,
     loading,
@@ -104,6 +191,7 @@ export function useUsers() {
     rows,
     loadEmployees,
     updateUser,
+    addUser, // <-- Make addUser available to consumers
   };
 }
 

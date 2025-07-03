@@ -50,6 +50,8 @@ const Users: React.FC = () => {
     filtered,
     rows,
     loadEmployees,
+    addUser,
+    updateUser
   } = useUsers();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -278,6 +280,8 @@ const Users: React.FC = () => {
           onSave={async (values) => {
             if (editId) {
               await updateUser(editId, values);
+            } else {
+              await addUser(values);
             }
             setOpen(false);
             setSelectedUser(null);
