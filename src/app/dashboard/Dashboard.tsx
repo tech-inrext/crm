@@ -145,12 +145,14 @@ const Dashboard: React.FC = () => {
   );
 
   // Filter sidebar links based on user permissions
-  const sidebarLinks = useMemo(() => {
-    return allSidebarLinks.filter((link) => {
-      const { hasReadAccess } = getPermissions(link.module);
-      return !link.module || hasReadAccess;
-    });
-  }, []);
+const { user } = useAuth();
+
+const sidebarLinks = useMemo(() => {
+  return allSidebarLinks.filter((link) => {
+    const { hasReadAccess } = getPermissions(link.module);
+    return !link.module || hasReadAccess;
+  });
+}, [user]);
 
   // Render content based on selected page
   const renderContent = () => {
