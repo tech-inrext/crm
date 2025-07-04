@@ -21,6 +21,7 @@ import AddRoleDialog from "@/components/ui/AddRoleDialog";
 import RolesActionBar from "@/components/ui/RolesActionBar";
 import Pagination from "@/components/ui/Pagination";
 import axios from "axios";
+import { transformToAPIRole } from "@/utils/leadUtils";
 
 // Use only 'User' for UI, maps to 'employee' in backend
 const modules = ["User", "Role", "Lead", "Department"];
@@ -87,7 +88,8 @@ const Roles: React.FC = () => {
     const role = paginatedRoles[idx];
     if (!role) return;
     setEditId(role._id);
-    setEditRole(role);
+    // Only transform for edit dialog
+    setEditRole(transformToAPIRole(role));
     setAddOpen(true);
   };
 
@@ -101,7 +103,7 @@ const Roles: React.FC = () => {
     });
     try {
       if (editId) {
-        await axios.put(`/api/v0/role/${editId}`, { name, ...perms });
+        await axios.patch(`/api/v0/role/${editId}`, { ...perms }); // no name field
       } else {
         await axios.post("/api/v0/role", { name, ...perms });
       }

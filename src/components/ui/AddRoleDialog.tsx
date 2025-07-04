@@ -45,20 +45,61 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
   useEffect(() => {
     if (role) {
       setRoleName(role.name || "");
+      let read = role.read;
+      let write = role.write;
+      let del = role.delete;
+      // Fallback: if role.read/write/delete are undefined, parse from permissions array
+      if (
+        (!read || !write || !del) &&
+        Array.isArray((role as any).permissions)
+      ) {
+        read = [];
+        write = [];
+        del = [];
+        (role as any).permissions.forEach((perm: string) => {
+          const [mod, action] = perm.split(":");
+          if (action === "read") read.push(mod);
+          if (action === "write") write.push(mod);
+          if (action === "delete") del.push(mod);
+        });
+      }
       const perms = Object.fromEntries(
         modules.map((m) => [m, { read: false, write: false, delete: false }])
       );
-      if (role.read)
-        role.read.forEach((mod) => {
-          if (perms[capitalize(mod)]) perms[capitalize(mod)].read = true;
+      // Normalization map for backend module names to frontend
+      const normalizeModule = (mod: string) => {
+        const map: Record<string, string> = {
+          users: "User",
+          user: "User",
+          leads: "Lead",
+          lead: "Lead",
+          roles: "Role",
+          role: "Role",
+          department: "Department",
+        };
+        return map[mod.toLowerCase()] || mod;
+      };
+      // Normalize all module names to lowercase for mapping
+      const moduleMap = Object.fromEntries(
+        modules.map((m) => [m.toLowerCase(), m])
+      );
+      if (read)
+        read.forEach((mod: string) => {
+          const norm = normalizeModule(mod);
+          const key = moduleMap[norm.toLowerCase()];
+          if (key) perms[key].read = true;
         });
-      if (role.write)
-        role.write.forEach((mod) => {
-          if (perms[capitalize(mod)]) perms[capitalize(mod)].write = true;
+      if (write)
+        write.forEach((mod: string) => {
+          const norm = normalizeModule(mod);
+          const key = moduleMap[norm.toLowerCase()];
+          if (key) perms[key].write = true;
         });
-      if (role.delete)
-        role.delete.forEach((mod) => {
-          if (perms[capitalize(mod)]) perms[capitalize(mod)].delete = true;
+      if (del)
+        del.forEach((mod: string) => {
+          const norm = normalizeModule(mod);
+          const key = moduleMap[norm.toLowerCase()];
+          if (key) perms[key].delete = true;
         });
       setModulePerms(perms);
     } else {
@@ -129,12 +170,9 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           </Typography>
           <Box
             sx={{
-              display: { xs: "block", sm: "grid" },
-              gridTemplateColumns: {
-                sm: `140px repeat(${permissions.length}, 1fr)`,
-              },
+              display: "flex",
+              flexDirection: "column",
               gap: 1,
-              alignItems: "center",
               bgcolor: "#f5f7fa",
               borderRadius: 2,
               p: { xs: 1, sm: 2 },
@@ -143,83 +181,78 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
               overflowX: "auto",
             }}
           >
-            <Box sx={{ display: { xs: "none", sm: "block" } }} />
-            {permissions.map((p) => (
-              <Typography
-                key={p}
-                align="center"
+            <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 1 }}>
+              <Box
                 sx={{
+                  minWidth: 90,
                   fontWeight: 700,
                   color: "#1976d2",
                   fontSize: { xs: 13, sm: 15 },
-                  display: { xs: "none", sm: "block" },
                 }}
               >
-                {p.charAt(0).toUpperCase() + p.slice(1)}
-              </Typography>
-            ))}
+                Module
+              </Box>
+              {permissions.map((p) => (
+                <Box
+                  key={p}
+                  sx={{
+                    flex: 1,
+                    textAlign: "center",
+                    fontWeight: 700,
+                    color: "#1976d2",
+                    fontSize: { xs: 13, sm: 15 },
+                  }}
+                >
+                  {p.charAt(0).toUpperCase() + p.slice(1)}
+                </Box>
+              ))}
+            </Box>
             {modules.map((mod) => (
               <Box
                 key={mod}
                 sx={{
-                  mb: { xs: 1.5, sm: 0 },
                   display: "flex",
-                  flexDirection: { xs: "column", sm: "row" },
-                  alignItems: { xs: "flex-start", sm: "center" },
+                  gap: 1,
+                  alignItems: "center",
+                  mb: 0.5,
+                  flexWrap: "wrap",
                 }}
               >
-                <Typography
+                <Box
                   sx={{
+                    minWidth: 90,
                     fontWeight: 600,
                     color: "#333",
                     fontSize: { xs: 14, sm: 15 },
-                    minWidth: 90,
-                    mb: { xs: 0.5, sm: 0 },
                   }}
                 >
                   {mod}
-                </Typography>
-                <Box
-                  sx={{
-                    display: "flex",
-                    flexDirection: "row",
-                    gap: 1,
-                    ml: { xs: 0, sm: 2 },
-                  }}
-                >
-                  {permissions.map((perm) => (
-                    <Box
-                      key={mod + perm}
-                      sx={{
-                        textAlign: "center",
-                        display: "flex",
-                        alignItems: "center",
-                      }}
-                    >
-                      <Checkbox
-                        checked={modulePerms[mod][perm]}
-                        onChange={(e) =>
-                          handlePermChange(mod, perm, e.target.checked)
-                        }
-                        sx={{
-                          color: "#1976d2",
-                          "&.Mui-checked": { color: "#1976d2" },
-                          p: 0.5,
-                        }}
-                        size={window.innerWidth < 600 ? "small" : "medium"}
-                      />
-                      <Typography
-                        sx={{
-                          display: { xs: "inline", sm: "none" },
-                          fontSize: 12,
-                          ml: 0.5,
-                        }}
-                      >
-                        {perm.charAt(0).toUpperCase() + perm.slice(1)}
-                      </Typography>
-                    </Box>
-                  ))}
                 </Box>
+                {permissions.map((perm) => (
+                  <Box
+                    key={mod + perm}
+                    sx={{
+                      flex: 1,
+                      textAlign: "center",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <Checkbox
+                      checked={modulePerms[mod][perm]}
+                      onChange={(e) =>
+                        handlePermChange(mod, perm, e.target.checked)
+                      }
+                      sx={{
+                        color: "#1976d2",
+                        "&.Mui-checked": { color: "#1976d2" },
+                        p: 0.5,
+                      }}
+                      size={window.innerWidth < 600 ? "small" : "medium"}
+                    />
+                  </Box>
+                ))}
               </Box>
             ))}
           </Box>

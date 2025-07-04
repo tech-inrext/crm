@@ -213,7 +213,7 @@ const Leads: React.FC = () => {
               key={lead.id}
               lead={lead}
               onEdit={() => {
-                setEditId(lead.id);
+                setEditId(lead._id); // Use MongoDB _id for editing
                 setOpen(true);
               }}
               onDelete={() => {}}
@@ -247,7 +247,7 @@ const Leads: React.FC = () => {
                     row={row}
                     header={leadsTableHeaderWithActions}
                     onEdit={() => {
-                      setEditId(row.id);
+                      setEditId(row._id); // Use MongoDB _id for editing
                       setOpen(true);
                     }}
                     onDelete={() => {}}

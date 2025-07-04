@@ -104,17 +104,19 @@ export const transformAPILead = (apiLead: Lead): Lead => {
 // Transform API lead to form data
 export const transformAPILeadToForm = (apiLead: Lead): LeadFormData => {
   return {
-    fullName: apiLead.name || '',
+    fullName: apiLead.fullName || '',
     email: apiLead.email || '',
     phone: apiLead.phone || '',
-    propertyType: apiLead.company || '', // Map company to propertyType
-    location: apiLead.contact || '', // Map contact to location
-    budgetRange: apiLead.value ? `$${apiLead.value}` : '',
-    status: apiLead.status || 'new',
+    propertyType: apiLead.propertyType || '',
+    location: apiLead.location || '',
+    budgetRange: apiLead.budgetRange || '',
+    status: apiLead.status || 'New',
     source: apiLead.source || '',
-    assignedTo: apiLead.assignedTo || '',
-    nextFollowUp: '',
-    followUpNotes: [],
+    assignedTo: apiLead.assignedTo ? String(apiLead.assignedTo) : '',
+    nextFollowUp: apiLead.nextFollowUp ? new Date(apiLead.nextFollowUp).toISOString().split('T')[0] : '',
+    followUpNotes: Array.isArray(apiLead.followUpNotes)
+      ? apiLead.followUpNotes.map(note => ({ note }))
+      : [],
   };
 };
 
@@ -146,41 +148,30 @@ export const transformFormToAPI = (formData: LeadFormData, isEdit = false): Part
   if (formData.budgetRange && formData.budgetRange.trim() !== "") payload.budgetRange = formData.budgetRange.trim();
   if (formData.status && formData.status.trim() !== "") payload.status = formData.status.trim();
   if (formData.source && formData.source.trim() !== "") payload.source = formData.source.trim();
-  // Only send assignedTo if it's a non-empty string
-  if (formData.assignedTo && typeof formData.assignedTo === 'string' && formData.assignedTo.trim() !== "") {
-    payload.assignedTo = formData.assignedTo.trim();
-  }
-  // Only send followUpNotes if there are valid notes
+  if (formData.assignedTo && formData.assignedTo !== "") payload.assignedTo = formData.assignedTo;
+  if (formData.nextFollowUp && formData.nextFollowUp !== "") payload.nextFollowUp = new Date(formData.nextFollowUp);
+  // followUpNotes: backend expects array of strings, so map to string array
   if (Array.isArray(formData.followUpNotes) && formData.followUpNotes.length > 0) {
-    const notes = formData.followUpNotes
-      .map(note => `${note.date || ''}: ${note.note}`.trim())
-      .filter(str => str !== ':' && str !== '');
-    if (notes.length > 0) payload.followUpNotes = notes;
+    payload.followUpNotes = formData.followUpNotes.map(noteObj => noteObj.note);
   }
-  // Uncomment if nextFollowUp is supported and required by backend
-  // if (formData.nextFollowUp && formData.nextFollowUp.trim() !== "") payload.nextFollowUp = formData.nextFollowUp.trim();
   return payload;
 };
 
 // Calculate lead statistics
 export const calculateLeadStats = (leads: Lead[]) => {
   const total = leads.length;
-  const newLeads = leads.filter(l => l.status === 'new').length;
-  const qualified = leads.filter(l => l.status === 'qualified').length;
-  const converted = leads.filter(l => l.status === 'converted').length;
-  const closed = leads.filter(l => l.status === 'converted' || l.status === 'lost').length;
-  const totalValue = leads.reduce((sum, lead) => sum + (lead.value || 0), 0);
+  const newLeads = leads.filter(l => l.status === 'New').length;
+  const closed = leads.filter(l => l.status === 'Closed' || l.status === 'Dropped').length;
+  // Conversion: closed/total (if you want only closed deals)
+  const conversion = total > 0 ? Math.round((closed / total) * 100) : 0;
 
   return {
     total,
     new: newLeads,
     newLeads,
-    qualified,
-    converted,
     closed,
-    totalValue,
-    conversion: total > 0 ? Math.round((converted / total) * 100) : 0,
-    conversionRate: total > 0 ? Math.round((converted / total) * 100) : 0,
+    conversion,
+    conversionRate: conversion,
   };
 };
 

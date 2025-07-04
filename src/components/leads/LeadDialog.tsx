@@ -409,11 +409,14 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                           sx={{ bgcolor: "#fff", borderRadius: 1 }} // Remove flex from inner TextField
                         />
                       )}
-                      renderOption={(props, option) => (
-                        <Box component="li" {...props}>
-                          {option.name}
-                        </Box>
-                      )}
+                      renderOption={(props, option) => {
+                        const { key, ...rest } = props;
+                        return (
+                          <Box component="li" key={key} {...rest}>
+                            {option.name}
+                          </Box>
+                        );
+                      }}
                       noOptionsText="No employees found"
                       clearOnBlur
                       selectOnFocus
