@@ -67,6 +67,7 @@ export function useUsers() {
       "age",
       "designation",
       "managerId",
+      "departmentId",
       "roles",
     ];
     const payload = {};

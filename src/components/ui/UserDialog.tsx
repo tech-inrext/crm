@@ -84,7 +84,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
         .get("/api/v0/employee")
         .then((res) => setManagers(res.data.data || []));
       axios
-        .get("/api/v0/department")
+        .get("/api/v0/department", { withCredentials: true })
         .then((res) => setDepartments(res.data.data || []));
     }
   }, [open]);
@@ -264,19 +264,40 @@ const UserDialog: React.FC<UserDialogProps> = ({
                 }}
               >
                 <Field name="joiningDate">
-                  {({ field, meta }: FieldProps) => (
-                    <TextField
-                      {...field}
-                      label="Joining Date"
-                      type="date"
-                      fullWidth
-                      margin="normal"
-                      InputLabelProps={{ shrink: true }}
-                      error={!!meta.touched && !!meta.error}
-                      helperText={meta.touched && meta.error}
-                      sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-                    />
-                  )}
+                  {({ field, meta }: FieldProps) => {
+                    let displayValue = "";
+                    if (editId) {
+                      if (field.value) {
+                        const dateObj = new Date(field.value);
+                        if (!isNaN(dateObj.getTime())) {
+                          displayValue = dateObj.toISOString().slice(0, 10);
+                        }
+                      }
+                    }
+                    return editId ? (
+                      <TextField
+                        label="Joining Date"
+                        value={displayValue}
+                        fullWidth
+                        margin="normal"
+                        InputLabelProps={{ shrink: true }}
+                        InputProps={{ readOnly: true }}
+                        sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+                      />
+                    ) : (
+                      <TextField
+                        {...field}
+                        label="Joining Date"
+                        type="date"
+                        fullWidth
+                        margin="normal"
+                        InputLabelProps={{ shrink: true }}
+                        error={!!meta.touched && !!meta.error}
+                        helperText={meta.touched && meta.error}
+                        sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+                      />
+                    );
+                  }}
                 </Field>
                 <Field name="designation">
                   {({ field, meta }: FieldProps) => (

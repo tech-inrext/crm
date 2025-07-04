@@ -51,7 +51,7 @@ const Users: React.FC = () => {
     rows,
     loadEmployees,
     addUser,
-    updateUser
+    updateUser,
   } = useUsers();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -110,6 +110,15 @@ const Users: React.FC = () => {
         ([_, v]) => v !== undefined && v !== null
       )
     );
+    // Format joiningDate as YYYY-MM-DD if present
+    let joiningDate = safeForm.joiningDate || "";
+    if (joiningDate) {
+      // Handles both Date objects and ISO strings
+      const dateObj = new Date(joiningDate);
+      if (!isNaN(dateObj.getTime())) {
+        joiningDate = dateObj.toISOString().slice(0, 10);
+      }
+    }
     return {
       ...defaultUserForm,
       ...safeForm,
@@ -124,17 +133,9 @@ const Users: React.FC = () => {
       roles: Array.isArray(safeForm.roles) ? safeForm.roles : [],
       age: safeForm.age || "",
       altPhone: safeForm.altPhone || "",
-      joiningDate: safeForm.joiningDate || "",
+      joiningDate,
     };
   };
-
-  const paginatedRows = useMemo(() => {
-    const start = page * rowsPerPage;
-    const end = start + rowsPerPage;
-    return rows.slice(start, end);
-  }, [rows, page, rowsPerPage]);
-
-  console.log({ employees, filtered, rows, page, rowsPerPage });
 
   return (
     <Box
@@ -188,7 +189,7 @@ const Users: React.FC = () => {
         <Box
           sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 1.5, mb: 2 }}
         >
-          {paginatedRows.map((user) => (
+          {rows.map((user) => (
             <UserCard
               key={user.id || user._id}
               user={{
@@ -224,7 +225,7 @@ const Users: React.FC = () => {
             }}
           >
             <TableMap
-              data={paginatedRows}
+              data={rows}
               header={usersTableHeader}
               onEdit={() => {}}
               onDelete={() => {}}
@@ -236,7 +237,7 @@ const Users: React.FC = () => {
               stickyHeader // Pass stickyHeader prop if supported
             />
             <Pagination
-              total={rows.length}
+              total={filtered.length}
               page={page + 1}
               onPageChange={(p) => setPage(p - 1)}
               pageSize={rowsPerPage}
