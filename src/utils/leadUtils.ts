@@ -243,6 +243,7 @@ export const transformToAPIRole = (role: any) => {
     }
   });
   return {
+    _id: role._id, // <-- add this line
     name: role.name,
     read,
     write,

@@ -9,6 +9,7 @@ import {
   Stack,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
+import PermissionGuard from "@/components/PermissionGuard";
 
 interface UserCardProps {
   user: {
@@ -89,14 +90,16 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
         </Stack>
       </CardContent>
       {onEdit && (
-        <IconButton
-          size="small"
-          onClick={onEdit}
-          aria-label="edit user"
-          sx={{ ml: 1, color: "primary.main" }}
-        >
-          <EditIcon fontSize="small" />
-        </IconButton>
+        <PermissionGuard module="employee" action="write" fallback={<></>}>
+          <IconButton
+            size="small"
+            onClick={onEdit}
+            aria-label="edit user"
+            sx={{ ml: 1, color: "primary.main" }}
+          >
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </PermissionGuard>
       )}
     </Card>
   );
