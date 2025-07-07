@@ -56,6 +56,7 @@ import {
   getDefaultLeadFormData,
   transformAPILeadToForm,
 } from "@/utils/leadUtils";
+import Pagination from "@/components/ui/Pagination";
 
 const Leads: React.FC = () => {
   const {
@@ -64,10 +65,6 @@ const Leads: React.FC = () => {
     saving,
     search,
     setSearch,
-    page,
-    setPage,
-    rowsPerPage,
-    setRowsPerPage,
     open,
     setOpen,
     editId,
@@ -75,26 +72,43 @@ const Leads: React.FC = () => {
     formData,
     setFormData,
     stats,
-    filtered,
-    rows,
     loadLeads,
-    saveLead, // <-- Only call useLeads once, include saveLead here
+    saveLead,
   } = useLeads();
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
+  // Filtered leads (search)
+  const filteredLeads = useMemo(() => {
+    if (!search) return leads;
+    return leads.filter(
+      (lead) =>
+        lead.name?.toLowerCase().includes(search.toLowerCase()) ||
+        lead.email?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [leads, search]);
+
+  // Paginated leads
+  const paginatedLeads = useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    return filteredLeads.slice(start, start + rowsPerPage);
+  }, [filteredLeads, page, rowsPerPage]);
+
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
       if (searchTimeout.current) clearTimeout(searchTimeout.current);
       searchTimeout.current = setTimeout(() => {
         setSearch(value);
-        setPage(0);
+        setPage(1);
       }, 300);
     },
-    [setSearch, setPage]
+    [setSearch]
   );
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
       ? {
@@ -208,17 +222,28 @@ const Leads: React.FC = () => {
             mb: { xs: 2, sm: 3 },
           }}
         >
-          {rows.map((lead) => (
+          {paginatedLeads.map((lead) => (
             <LeadCard
               key={lead.id}
               lead={lead}
               onEdit={() => {
-                setEditId(lead._id); // Use MongoDB _id for editing
+                setEditId(lead._id);
                 setOpen(true);
               }}
               onDelete={() => {}}
             />
           ))}
+          <Pagination
+            total={filteredLeads.length}
+            page={page}
+            onPageChange={setPage}
+            pageSize={rowsPerPage}
+            onPageSizeChange={(size) => {
+              setRowsPerPage(size);
+              setPage(1);
+            }}
+            pageSizeOptions={[3, 6, 12, 24]}
+          />
         </Box>
       ) : (
         <Box
@@ -238,16 +263,22 @@ const Leads: React.FC = () => {
               overflow: "auto",
             }}
           >
-            <Table size={window.innerWidth < 600 ? "small" : "medium"}>
+            <Table
+              size={
+                typeof window !== "undefined" && window.innerWidth < 600
+                  ? "small"
+                  : "medium"
+              }
+            >
               <LeadsTableHeader header={leadsTableHeaderWithActions} />
               <TableBody>
-                {rows.map((row) => (
+                {paginatedLeads.map((row) => (
                   <LeadsTableRow
                     key={row.id}
                     row={row}
                     header={leadsTableHeaderWithActions}
                     onEdit={() => {
-                      setEditId(row._id); // Use MongoDB _id for editing
+                      setEditId(row._id);
                       setOpen(true);
                     }}
                     onDelete={() => {}}
@@ -255,6 +286,17 @@ const Leads: React.FC = () => {
                 ))}
               </TableBody>
             </Table>
+            <Pagination
+              total={filteredLeads.length}
+              page={page}
+              onPageChange={setPage}
+              pageSize={rowsPerPage}
+              onPageSizeChange={(size) => {
+                setRowsPerPage(size);
+                setPage(1);
+              }}
+              pageSizeOptions={[3, 6, 12, 24]}
+            />
           </TableContainer>
         </Box>
       )}

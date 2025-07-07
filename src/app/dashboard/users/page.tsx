@@ -37,32 +37,46 @@ const Users: React.FC = () => {
     saving,
     search,
     setSearch,
-    page,
-    setPage,
-    rowsPerPage,
-    setRowsPerPage,
     open,
     setOpen,
     editId,
     setEditId,
     form,
     setForm,
-    filtered,
-    rows,
     loadEmployees,
     addUser,
     updateUser,
   } = useUsers();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  // Pagination state (copied from roles)
+  const [page, setPage] = useState(1);
+  const [rowsPerPage, setRowsPerPage] = useState(6);
+  const [selectedUser, setSelectedUser] = useState<any>(null);
+
+  // Filtered users (search)
+  const filteredUsers = useMemo(() => {
+    if (!search) return employees;
+    return employees.filter(
+      (user) =>
+        user.name?.toLowerCase().includes(search.toLowerCase()) ||
+        user.email?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [employees, search]);
+
+  // Paginated users
+  const paginatedUsers = useMemo(() => {
+    const start = (page - 1) * rowsPerPage;
+    return filteredUsers.slice(start, start + rowsPerPage);
+  }, [filteredUsers, page, rowsPerPage]);
+
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
-      setPage(0);
+      setPage(1);
     },
-    [setSearch, setPage]
+    [setSearch]
   );
-  const [selectedUser, setSelectedUser] = useState<any>(null);
   const usersTableHeader = [
     { label: "Name", dataKey: "name" },
     { label: "Email", dataKey: "email" },
@@ -181,7 +195,7 @@ const Users: React.FC = () => {
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
         </Box>
-      ) : rows.length === 0 ? (
+      ) : filteredUsers.length === 0 ? (
         <Box sx={{ textAlign: "center", mt: 4 }}>
           <Typography>No users found.</Typography>
         </Box>
@@ -189,7 +203,7 @@ const Users: React.FC = () => {
         <Box
           sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 1.5, mb: 2 }}
         >
-          {rows.map((user) => (
+          {paginatedUsers.map((user) => (
             <UserCard
               key={user.id || user._id}
               user={{
@@ -220,12 +234,12 @@ const Users: React.FC = () => {
               minWidth: { xs: 600, sm: "100%" },
               width: "100%",
               overflow: "auto",
-              maxHeight: { xs: 360, sm: 480, md: 600 }, // Set max height for scroll
+              maxHeight: { xs: 360, sm: 480, md: 600 },
               position: "relative",
             }}
           >
             <TableMap
-              data={rows}
+              data={paginatedUsers}
               header={usersTableHeader}
               onEdit={() => {}}
               onDelete={() => {}}
@@ -234,24 +248,23 @@ const Users: React.FC = () => {
                   ? "small"
                   : "medium"
               }
-              stickyHeader // Pass stickyHeader prop if supported
+              stickyHeader
             />
             <Pagination
-              total={filtered.length}
-              page={page + 1}
-              onPageChange={(p) => setPage(p - 1)}
+              total={filteredUsers.length}
+              page={page}
+              onPageChange={setPage}
               pageSize={rowsPerPage}
               onPageSizeChange={(size) => {
                 setRowsPerPage(size);
-                setPage(0);
+                setPage(1);
               }}
-              pageSizeOptions={EMPLOYEE_ROWS_PER_PAGE_OPTIONS}
+              pageSizeOptions={[3, 6, 12, 24]}
             />
           </Paper>
         </Box>
       )}
       <PermissionGuard module="employee" action="write" fallback={<></>}>
-        {/* Floating + button for small screens */}
         <Fab
           color="primary"
           aria-label="add user"
@@ -287,8 +300,8 @@ const Users: React.FC = () => {
             setOpen(false);
             setSelectedUser(null);
             setForm(defaultUserForm);
-            setPage(0); // Reset to first page so new user is visible
-            setSearch(""); // Clear search filter
+            setPage(1);
+            setSearch("");
             await loadEmployees();
           }}
         />
