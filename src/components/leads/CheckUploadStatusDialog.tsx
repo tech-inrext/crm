@@ -37,22 +37,23 @@ export default function CheckUploadStatusDialog({ open, onClose }) {
       });
   };
 
-  const handleDownload = async (id) => {
-    try {
-      const res = await axios.get(`/api/v0/lead/download-report/${id}`);
-      const url = res.data.downloadUrl;
+  const handleDownload = async (id: string) => {
+  try {
+    const res = await axios.get(`/api/v0/lead/download-report/${id}`);
+    const { fileUrl, fileName } = res.data;
 
-      const link = document.createElement("a");
-      link.href = url;
-      link.download = `report_${id}.xlsx`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-    } catch (err) {
-      console.error("Download failed:", err);
-      alert("Failed to download report.");
-    }
-  };
+    const link = document.createElement("a");
+    link.href = fileUrl;
+    link.download = fileName;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  } catch (err) {
+    console.error("Download failed:", err);
+    alert("Failed to download report.");
+  }
+};
+
 
   useEffect(() => {
     if (open) fetchUploadStatus();

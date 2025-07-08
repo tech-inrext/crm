@@ -1,17 +1,11 @@
-// /api/v0/lead/download-report/[id].ts
-
+import { uploadToS3 } from "@/lib/s3";
 import dbConnect from "@/lib/mongodb";
 import BulkUpload from "@/models/BulkUpload";
-import { writeFileSync, unlink } from "fs";
-import { join } from "path";
 import { NextApiRequest, NextApiResponse } from "next";
 import xlsx from "xlsx";
 import { v4 as uuidv4 } from "uuid";
 
-export default async function handler(
-  req: NextApiRequest,
-  res: NextApiResponse
-) {
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await dbConnect();
   const { id } = req.query;
 
@@ -46,30 +40,23 @@ export default async function handler(
     const ws = xlsx.utils.json_to_sheet(data);
     xlsx.utils.book_append_sheet(wb, ws, "Report");
 
-    // ✅ Save file in public/
-    const uniqueFileName = `report_${id}_${uuidv4()}.xlsx`;
-    const filePath = join(process.cwd(), "public", uniqueFileName);
+    const buffer = xlsx.write(wb, { type: "buffer", bookType: "xlsx" });
+    const key = `reports/report_${id}_${uuidv4()}.xlsx`;
 
-    writeFileSync(
-      filePath,
-      xlsx.write(wb, { type: "buffer", bookType: "xlsx" })
+    const publicUrl = await uploadToS3(
+      buffer,
+      key,
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     );
 
-    // ✅ Save file name in MongoDB (optional, for listing UI)
-    upload.reportFileName = uniqueFileName;
+    upload.reportFileName = key;
     await upload.save();
 
-    // ✅ Auto-delete file after 2 mins
-    setTimeout(() => {
-      unlink(filePath, (err) => {
-        if (err) console.error("❌ Error deleting file:", uniqueFileName, err);
-        else console.log("🧹 File cleaned up:", uniqueFileName);
-      });
-    }, 2 * 60 * 1000); // 2 mins
-
-    // ✅ Return download URL
-    return res.status(200).json({ downloadUrl: `/${uniqueFileName}` });
-
+    // ✅ Return the existing file URL and file name
+    return res.status(200).json({
+      fileUrl: publicUrl,
+      fileName: upload.reportFileName || `report_${id}.xlsx`,
+    });
   } catch (err) {
     console.error("❌ Server error:", err);
     return res.status(500).json({ message: "Server error" });

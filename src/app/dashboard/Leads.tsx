@@ -335,51 +335,75 @@ const Leads: React.FC = () => {
     []
   );
 
-  const handleFileUpload = useCallback(
-    async (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0];
-      if (!file) return;
+const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-      const formData = new FormData();
-      formData.append("file", file);
+  setUploading(true);
+  try {
+    // Step 1: Get pre-signed S3 URL
+    const presignRes = await fetch("/api/v0/s3/upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+    });
 
-      setUploading(true);
-      try {
-        const res = await fetch("/api/v0/lead/bulk-upload", {
-          method: "POST",
-          body: formData,
-        });
+    const { uploadUrl, fileUrl, fileName } = await presignRes.json();
+    if (!uploadUrl || !fileUrl || !fileName) {
+      throw new Error("S3 URL generation failed");
+    }
 
-        const result = await res.json();
+    // Step 2: Upload to S3
+    const uploadToS3 = await fetch(uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": file.type,
+      },
+      body: file,
+    });
 
-        if (!res.ok) {
-          throw new Error(result.message || "Bulk upload failed.");
-        }
+    if (!uploadToS3.ok) {
+      throw new Error("S3 upload failed");
+    }
 
-        setUploadResult({
-          uploaded: result.uploaded || [],
-          failed: result.failed || [],
-        });
+    console.log("Sending to backend:", { fileUrl, fileName });
+    // Step 3: Send fileUrl + fileName to backend
+    const backendRes = await fetch("/api/v0/lead/bulk-upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileUrl, fileName }),
+    });
 
-        setSnackbarMessage(result.message);
-        setSnackbarSeverity("success");
-        setSnackbarOpen(true);
-        setDialogOpen(true);
-        await loadLeads();
-      } catch (err: any) {
-        setSnackbarMessage(`Upload failed: ${err.message}`);
-        setSnackbarSeverity("error");
-        setSnackbarOpen(true);
-        setUploadResult(null);
-      } finally {
-        setUploading(false);
-        if (fileInputRef.current) {
-          fileInputRef.current.value = ""; // 👈 reset file input
-        }
-      }
-    },
-    [loadLeads]
-  );
+    const result = await backendRes.json();
+
+    if (!backendRes.ok) {
+      throw new Error(result.message || "Bulk upload failed.");
+    }
+
+    setUploadResult({
+      uploaded: result.uploaded || [],
+      failed: result.failed || [],
+    });
+
+    setSnackbarMessage(result.message);
+    setSnackbarSeverity("success");
+    setSnackbarOpen(true);
+    setDialogOpen(true);
+    await loadLeads();
+  } catch (err: any) {
+    setSnackbarMessage(`Upload failed: ${err.message}`);
+    setSnackbarSeverity("error");
+    setSnackbarOpen(true);
+    setUploadResult(null);
+  } finally {
+    setUploading(false);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }
+}, [loadLeads]);
+
+
 
   const downloadFailedCSV = () => {
     if (!uploadResult?.failed?.length) return;
