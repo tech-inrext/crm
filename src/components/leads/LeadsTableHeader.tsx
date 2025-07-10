@@ -31,7 +31,9 @@ const LeadsTableHeader: React.FC<LeadsTableHeaderProps> = ({ header }) => (
             py: { xs: 2, sm: 2.5 },
             letterSpacing: "0.5px",
             textTransform: "uppercase",
-            background: "transparent",
+            // background: "transparent",
+            background: "linear-gradient(to right, #667eea, #764ba2)", // ✅ match your screenshot
+            borderBottom: "none",
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>

@@ -37,8 +37,11 @@ const LandingPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
+
   const [resetEmail, setResetEmail] = useState("");
   const [newPassword, setNewPassword] = useState("");
+  const [oldPassword, setOldPassword] = useState("");
+
   const [resetLoading, setResetLoading] = useState(false);
   const [resetSuccess, setResetSuccess] = useState(false);
   const [resetError, setResetError] = useState<string | null>(null);
@@ -55,8 +58,8 @@ const LandingPage: React.FC = () => {
     setShowPassword((prev) => !prev);
   };
 
-  const handleResetPassword = async () => {
-    if (!resetEmail || !newPassword) {
+  const handleResetPassword = async (e) => {
+    if (!resetEmail || !newPassword || !oldPassword) {
       setResetError("Please fill in all fields");
       return;
     }
@@ -68,6 +71,7 @@ const LandingPage: React.FC = () => {
       const response = await axios.post("/api/v0/employee/resetPassword", {
         email: resetEmail,
         newPassword: newPassword,
+        oldPassword: oldPassword,
       });
 
       if (response.data.success) {
@@ -75,6 +79,7 @@ const LandingPage: React.FC = () => {
         setResetError(null);
         setResetEmail("");
         setNewPassword("");
+        setOldPassword("");
         setTimeout(() => {
           setResetDialogOpen(false);
           setResetSuccess(false);
@@ -88,7 +93,9 @@ const LandingPage: React.FC = () => {
       };
 
       if (axiosError.response?.status === 404) {
-        setResetError("No account found with this email address");
+        setResetError("Invalid Email or Old Password");
+      } else if (axiosError.response?.status === 401) {
+        setResetError("Invalid Email or Old Password");
       } else {
         setResetError("Password reset failed. Please try again.");
       }
@@ -101,6 +108,7 @@ const LandingPage: React.FC = () => {
     setResetDialogOpen(false);
     setResetEmail("");
     setNewPassword("");
+    setOldPassword("");
     setResetError(null);
     setResetSuccess(false);
   };
@@ -126,10 +134,10 @@ const LandingPage: React.FC = () => {
         axiosError.response?.status === 404 ||
         axiosError.response?.status === 401
       ) {
-        setError("Invalid email or password");
+        setError("Invalid Credentials.");
       } else if (axiosError.response?.status === 403) {
-        const message = axiosError.response.data?.message || "Access denied";
-        setError(message);
+        // const message = axiosError.response.data?.message || "Access denied";
+        setError("Please reset your password before logging in.");
       } else {
         setError("Login failed. Please try again.");
       }
@@ -374,7 +382,11 @@ const LandingPage: React.FC = () => {
                     <Link
                       component="button"
                       type="button"
-                      onClick={() => setResetDialogOpen(true)}
+                      onClick={() => {
+                        setResetDialogOpen(true);
+                        setError(null); // Clear login error
+                        setForm({ email: "", password: "" }); // Clear login inputs
+                      }}
                       sx={{
                         color: theme.palette.primary.main,
                         textDecoration: "none",
@@ -460,6 +472,14 @@ const LandingPage: React.FC = () => {
               />
               <TextField
                 fullWidth
+                label="Old Password"
+                type="password"
+                value={oldPassword}
+                onChange={(e) => setOldPassword(e.target.value)}
+                sx={{ mb: 2 }}
+              />
+              <TextField
+                fullWidth
                 label="New Password"
                 type="password"
                 value={newPassword}
@@ -477,7 +497,9 @@ const LandingPage: React.FC = () => {
             <Button
               onClick={handleResetPassword}
               variant="contained"
-              disabled={resetLoading || !resetEmail || !newPassword}
+              disabled={
+                resetLoading || !resetEmail || !newPassword || !oldPassword
+              }
             >
               {resetLoading ? (
                 <CircularProgress size={20} color="inherit" />

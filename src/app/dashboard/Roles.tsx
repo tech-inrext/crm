@@ -437,13 +437,13 @@ const Roles = () => {
     const updatedRole = { ...role, name: trimmed, permissions };
     const apiRole = transformToAPIRole(updatedRole);
 
-    console.log("Attempting to update role:", { roleId: role._id, apiRole }); // Debug log    setSaving(true);
+    // console.log("Attempting to update role:", { roleId: role._id, apiRole }); // Debug log    setSaving(true);
     try {
       const response = await axios.patch(`${API_BASE}/${role._id}`, apiRole, {
         withCredentials: true,
       });
 
-      console.log("Role update response:", response.data); // Debug log
+      // console.log("Role update response:", response.data); // Debug log
 
       // Update the role in the local state with the response data
       const updatedRoleFromAPI = transformAPIRole(
