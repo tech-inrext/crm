@@ -1,4 +1,3 @@
-// React & Core
 import React, {
   useEffect,
   useState,
@@ -366,7 +365,6 @@ const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElemen
       throw new Error("S3 upload failed");
     }
 
-    console.log("Sending to backend:", { fileUrl, fileName });
     // Step 3: Send fileUrl + fileName to backend
     const backendRes = await fetch("/api/v0/lead/bulk-upload", {
       method: "POST",
@@ -425,7 +423,6 @@ const handleFileUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElemen
   };
 
   const handleCheckUploadStatus = () => {
-    console.log("handleCheckUploadStatus");
     setOpenUploadDialog(true);
   };
 

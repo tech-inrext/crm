@@ -7,7 +7,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next dev",
-    "lint": "next lint"
+    "lint": "next lint",
+    "run-worker":"node src/workers/leadWorker.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.842.0",

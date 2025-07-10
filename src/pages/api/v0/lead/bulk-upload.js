@@ -28,7 +28,6 @@ const handler = async (req, res) => {
 
   try {
     const { fileUrl, fileName } = req.body;
-    console.log("Received in API:", { fileUrl, fileName });
     if (!fileUrl || !fileName) {
       return res
         .status(400)
