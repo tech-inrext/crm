@@ -148,7 +148,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(response.message || "Login failed");
       }
     } catch (error: unknown) {
-      console.error("Login error:", error);
+      console.error("❌ Login error:", error);
+       throw error;
     }
   };
 

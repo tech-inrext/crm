@@ -39,7 +39,7 @@ const leadSchema = new mongoose.Schema(
       unique: true,
       validate: {
         validator: function (v) {
-          return /^\d{10,15}$/.test(v);
+          return /^[6-9]\d{9}$/.test(v);
         },
         message: "Invalid phone number",
       },
