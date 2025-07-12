@@ -237,7 +237,6 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                       helperText={meta.touched && meta.error}
                       inputProps={{
                         "aria-label": "Lead email",
-                        readOnly: Boolean(editId),
                       }}
                       sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
                     />

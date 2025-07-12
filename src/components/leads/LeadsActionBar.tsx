@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Button,
@@ -10,9 +10,17 @@ import {
   useMediaQuery,
   useTheme,
 } from "@mui/material";
-import { Add, PersonAdd, ViewList, ViewModule } from "@mui/icons-material";
+import { Add, PersonAdd, ViewList, ViewModule, History } from "@mui/icons-material";
 import SearchBar from "@/components/ui/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
+import dynamic from "next/dynamic";
+
+const BulkUpload = dynamic(() => import("@/components/leads/bulkUpload"), {
+  ssr: false,
+});
+const CheckUploadStatusDialog = dynamic(() => import("@/components/leads/CheckUploadStatusDialog"), {
+  ssr: false,
+});
 
 interface LeadsActionBarProps {
   search: string;
@@ -21,6 +29,7 @@ interface LeadsActionBarProps {
   setViewMode: (mode: "table" | "cards") => void;
   onAdd: () => void;
   saving: boolean;
+  loadLeads: () => void;
 }
 
 const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
@@ -30,30 +39,64 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   setViewMode,
   onAdd,
   saving,
+  loadLeads,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
+  const [uploadStatusOpen, setUploadStatusOpen] = useState(false);
 
   return (
     <Box
       sx={{
         display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        gap: { xs: 2, md: 3 },
+        flexDirection: { xs: "column", sm: "column", md: "row" },
+        gap: { xs: 1.5, sm: 2, md: 3 },
         alignItems: { xs: "stretch", md: "center" },
+        width: "100%",
+        overflow: "hidden",
       }}
     >
+      {/* Controls Row */}
       <Box
         sx={{
           display: "flex",
-          gap: { xs: 1, sm: 14 },
-          justifyContent: { xs: "space-between", md: "flex-end" },
-          order: { xs: 2, md: 1 },
+          flexDirection: { xs: "column", sm: "row" },
+          gap: { xs: 1, sm: 2 },
+          alignItems: { xs: "stretch", sm: "center" },
+          justifyContent: { xs: "center", sm: "flex-end", md: "flex-end" },
+          width: "100%",
         }}
       >
-        {/* View Toggle - Compact on mobile */}
-        {!isMobile && (
-          <Stack direction="row" spacing={{ xs: 0.5, sm: 1 }}>
+        {/* Search Bar */}
+        <Box
+          sx={{
+            width: { xs: "100%", sm: "auto" },
+            order: { xs: 1, sm: 1 }
+          }}
+        >
+          <SearchBar
+            sx={{
+              width: { xs: "100%", sm: 280 },
+              minWidth: { xs: "100%", sm: 280 },
+              maxWidth: { xs: "100%", sm: 320 }
+            }}
+            value={search}
+            onChange={onSearchChange}
+            placeholder="Search leads by name, email, phone..."
+          />
+        </Box>
+
+        {/* View Toggle */}
+        {!isTablet && (
+          <Stack
+            direction="row"
+            spacing={{ xs: 0.5, sm: 1 }}
+            sx={{
+              justifyContent: { xs: "center", sm: "flex-start" },
+              order: { xs: 2, sm: 2 }
+            }}
+          >
             {[
               { mode: "table", icon: ViewList, title: "Table View" },
               { mode: "cards", icon: ViewModule, title: "Card View" },
@@ -61,44 +104,77 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               <Tooltip key={mode} title={title}>
                 <IconButton
                   onClick={() => setViewMode(mode as "table" | "cards")}
-                  size={isMobile ? "small" : "medium"}
+                  size="small"
                   sx={{
                     backgroundColor:
                       viewMode === mode ? "primary.main" : "action.hover",
                     color: viewMode === mode ? "white" : "text.primary",
                     "&:hover": { backgroundColor: "primary.dark" },
+                    minWidth: 40,
+                    height: 40,
                   }}
                 >
-                  <Icon fontSize={isMobile ? "small" : "medium"} />
+                  <Icon fontSize="small" />
                 </IconButton>
               </Tooltip>
             ))}
           </Stack>
         )}
-        {/* Search Bar */}
-        <Box sx={{ width: { xs: "100%", md: "auto" } }}>
-          <SearchBar
-            sx={{ width: "100%", md: "auto", minWidth: 280 }}
-            value={search}
-            onChange={onSearchChange}
-            placeholder="Search leads by name, email, phone..."
-          />
-        </Box>
-        {/* Add Button */}
-        {!isMobile && (
+
+        {/* Action Buttons */}
+        <Stack
+          direction={{ xs: "column", sm: "row" }}
+          spacing={{ xs: 1, sm: 1.5 }}
+          sx={{
+            width: { xs: "100%", sm: "auto" },
+            alignItems: "stretch",
+            order: { xs: 3, sm: 3 }
+          }}
+        >
+          <PermissionGuard module="lead" action="write" fallback={<></>}>
+            <BulkUpload loadLeads={loadLeads} />
+          </PermissionGuard>
+
+          <PermissionGuard module="lead" action="read" fallback={<></>}>
+            <Button
+              variant="outlined"
+              startIcon={!isTablet ? <History /> : null}
+              onClick={() => setUploadStatusOpen(true)}
+              size="small"
+              sx={{
+                minWidth: { xs: "100%", sm: "auto" },
+                height: 40,
+                borderRadius: 2,
+                fontWeight: 600,
+                fontSize: "0.8rem",
+                borderColor: "primary.main",
+                color: "primary.main",
+                px: { xs: 2, sm: 3 },
+                "&:hover": {
+                  backgroundColor: "primary.50",
+                  borderColor: "primary.dark",
+                  transform: "translateY(-1px)",
+                },
+              }}
+            >
+              {isTablet ? "Upload Status" : "Check Upload Status"}
+            </Button>
+          </PermissionGuard>
+
           <PermissionGuard module="lead" action="write" fallback={<></>}>
             <Button
               variant="contained"
-              startIcon={<PersonAdd />}
+              startIcon={!isTablet ? <PersonAdd /> : <Add />}
               onClick={onAdd}
               disabled={saving}
-              size={isMobile ? "medium" : "large"}
+              size="small"
               sx={{
-                minWidth: { xs: "auto", sm: 150 },
-                height: { xs: 44, sm: 40 },
+                minWidth: { xs: "100%", sm: "auto" },
+                height: 40,
                 borderRadius: 2,
                 fontWeight: 600,
-                fontSize: { xs: "0.875rem", sm: "1rem" },
+                fontSize: "0.875rem",
+                px: { xs: 2, sm: 3 },
                 boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
                 "&:hover": {
                   boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
@@ -110,11 +186,16 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 <CircularProgress size={20} color="inherit" />
               ) : (
                 "Add Lead"
-              )}
-            </Button>
+              )}            </Button>
           </PermissionGuard>
-        )}
+        </Stack>
       </Box>
+
+      {/* Upload Status Dialog */}
+      <CheckUploadStatusDialog
+        open={uploadStatusOpen}
+        onClose={() => setUploadStatusOpen(false)}
+      />
     </Box>
   );
 };

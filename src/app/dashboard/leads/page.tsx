@@ -44,6 +44,9 @@ const LeadsActionBar = dynamic(
   () => import("@/components/leads/LeadsActionBar"),
   { ssr: false }
 );
+const BulkUpload = dynamic(() => import("@/components/leads/bulkUpload"), {
+  ssr: false,
+});
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableContainer from "@mui/material/TableContainer";
@@ -112,15 +115,15 @@ const Leads: React.FC = () => {
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
       ? {
-          ...col,
-          component: (row, { onEdit }) => (
-            <PermissionGuard module="lead" action="write" fallback={null}>
-              <IconButton onClick={() => onEdit(row)} size="small">
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </PermissionGuard>
-          ),
-        }
+        ...col,
+        component: (row, { onEdit }) => (
+          <PermissionGuard module="lead" action="write" fallback={null}>
+            <IconButton onClick={() => onEdit(row)} size="small">
+              <EditIcon fontSize="small" />
+            </IconButton>
+          </PermissionGuard>
+        ),
+      }
       : col
   );
   // When editId changes, update formData to show existing details in dialog
@@ -205,6 +208,7 @@ const Leads: React.FC = () => {
           setViewMode={setViewMode}
           onAdd={() => setOpen(true)}
           saving={saving}
+          loadLeads={loadLeads}
         />
       </Paper>
       {loading ? (
@@ -230,7 +234,7 @@ const Leads: React.FC = () => {
                 setEditId(lead._id);
                 setOpen(true);
               }}
-              onDelete={() => {}}
+              onDelete={() => { }}
             />
           ))}
           <Pagination
@@ -281,7 +285,7 @@ const Leads: React.FC = () => {
                       setEditId(row._id);
                       setOpen(true);
                     }}
-                    onDelete={() => {}}
+                    onDelete={() => { }}
                   />
                 ))}
               </TableBody>

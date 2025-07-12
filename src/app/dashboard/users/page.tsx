@@ -107,7 +107,7 @@ const Users: React.FC = () => {
     email: "",
     phone: "",
     address: "",
-    gender: "Male", // Always a valid option
+    gender: "Male", 
     age: "",
     altPhone: "",
     joiningDate: "",
