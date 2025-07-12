@@ -249,7 +249,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
                         "&.Mui-checked": { color: "#1976d2" },
                         p: 0.5,
                       }}
-                      size={window.innerWidth < 600 ? "small" : "medium"}
+                      size={typeof window !== "undefined" && window.innerWidth < 600 ? "small" : "medium"}
                     />
                   </Box>
                 ))}
