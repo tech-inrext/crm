@@ -126,7 +126,6 @@ const Leads: React.FC = () => {
       }
       : col
   );
-  // When editId changes, update formData to show existing details in dialog
   React.useEffect(() => {
     if (editId) {
       const lead = leads.find(
