@@ -24,8 +24,8 @@ import { useAuth } from "../../contexts/AuthContext";
 
 // Lazy load heavy components for better performance
 const Leads = lazy(() => import("./leads/page"));
-const Users = lazy(() => import("./Users/page"));
-const Roles = lazy(() => import("./Roles/page"));
+const Users = lazy(() => import("./users/page"));
+const Roles = lazy(() => import("./roles/page"));
 
 // Loading component for Suspense
 const LoadingFallback = memo(() => (
@@ -82,12 +82,12 @@ export type SidebarLink =
   | { kind: "header"; title: string }
   | { kind: "divider" }
   | {
-      label: string;
-      href: string;
-      module?: string;
-      icon?: React.ReactNode;
-      onClick?: () => void;
-    };
+    label: string;
+    href: string;
+    module?: string;
+    icon?: React.ReactNode;
+    onClick?: () => void;
+  };
 
 export const DASHBOARD_SIDEBAR_LINKS: SidebarLink[] = [
   {
