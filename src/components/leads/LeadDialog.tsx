@@ -40,32 +40,43 @@ interface LeadDialogProps {
   onSave: (values: LeadFormData) => void;
 }
 
-// Validation schema for lead form
+// Validation schema for lead form (backend: only phone is required)
 const leadValidationSchema = Yup.object({
+  phone: Yup.string()
+    .required("Phone number is required")
+    .matches(/^[0-9]{10,15}$/, "Phone number must be 10-15 digits only")
+    .trim(),
+  // All other fields are optional
   fullName: Yup.string()
-
-    .min(2, "Name must be at least 2 characters")
     .max(100, "Name must be less than 100 characters")
     .trim(),
   email: Yup.string()
     .email("Invalid email format")
     .max(100, "Email must be less than 100 characters"),
-  phone: Yup.string()
-    .required("Phone number is required")
-    .matches(/^\d{10,15}$/, "Phone number must be 10-15 digits only")
-    .trim(),
   propertyType: Yup.string().oneOf(
-    ["Rent", "Buy", "Sell"],
+    ["Rent", "Buy", "Sell", ""],
     "Invalid property type"
   ),
   location: Yup.string()
     .max(200, "Location must be less than 200 characters")
     .trim(),
   budgetRange: Yup.string()
-    .max(50, "Budget range must be less than 50 characters")
+    .oneOf(
+      [
+        "<1 Lakh",
+        "1 Lakh to 10 Lakh",
+        "10 Lakh to 20 Lakh",
+        "20 Lakh to 30 Lakh",
+        "30 Lakh to 50 Lakh",
+        "50 Lakh to 1 Crore",
+        ">1 Crore",
+        "",
+      ],
+      "Invalid budget range"
+    )
     .trim(),
   status: Yup.string().oneOf(
-    ["New", "Contacted", "Site Visit", "Closed", "Dropped"],
+    ["New", "Contacted", "Site Visit", "Closed", "Dropped", ""],
     "Invalid status"
   ),
   source: Yup.string()
@@ -75,9 +86,7 @@ const leadValidationSchema = Yup.object({
     50,
     "Assigned to must be less than 50 characters"
   ),
-  nextFollowUp: Yup.date()
-    .min(new Date(), "Follow-up date cannot be in the past")
-    .nullable(),
+  nextFollowUp: Yup.date().nullable(),
   followUpNotes: Yup.array()
     .of(
       Yup.object().shape({
@@ -166,7 +175,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
         enableReinitialize={true}
         onSubmit={async (values, { setSubmitting }) => {
           setSubmitting(true);
-          await onSave (values);
+          await onSave(values);
           setSubmitting(false);
         }}
       >
@@ -226,12 +235,13 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                       onChange={(e) => setFieldValue("email", e.target.value)}
                       error={meta.touched && !!meta.error}
                       helperText={meta.touched && meta.error}
-                      inputProps={{ "aria-label": "Lead email" }}
+                      inputProps={{
+                        "aria-label": "Lead email",
+                      }}
                       sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
                     />
                   )}
                 </Field>{" "}
-                
                 <Field name="phone">
                   {({ field, meta }: FieldProps) => (
                     <TextField
@@ -256,6 +266,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                         "aria-label": "Lead phone",
                         pattern: "[0-9]*",
                         inputMode: "numeric",
+                        readOnly: Boolean(editId),
                       }}
                       sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
                     />
@@ -397,11 +408,14 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                           sx={{ bgcolor: "#fff", borderRadius: 1 }} // Remove flex from inner TextField
                         />
                       )}
-                      renderOption={(props, option) => (
-                        <Box component="li" {...props}>
-                          {option.name}
-                        </Box>
-                      )}
+                      renderOption={(props, option) => {
+                        const { key, ...rest } = props;
+                        return (
+                          <Box component="li" key={key} {...rest}>
+                            {option.name}
+                          </Box>
+                        );
+                      }}
                       noOptionsText="No employees found"
                       clearOnBlur
                       selectOnFocus

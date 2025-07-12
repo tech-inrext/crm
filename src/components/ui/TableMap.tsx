@@ -27,7 +27,15 @@ interface TableMapProps<T> extends TableActionHandlers<T> {
 function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
   const rows = useMemo(() => data, [data]);
   return (
-    <Table stickyHeader size="medium" sx={{ minWidth: 750 }}>
+    <Table
+      stickyHeader
+      size="medium"
+      sx={{
+        minWidth: 750,
+        tableLayout: "fixed",
+        borderCollapse: "separate",
+      }}
+    >
       <TableHead>
         <TableRow
           sx={{
@@ -50,6 +58,9 @@ function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
                 letterSpacing: "0.5px",
                 textTransform: "uppercase",
                 background: "transparent",
+                position: "sticky",
+                top: 0,
+                zIndex: 2,
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -81,6 +92,10 @@ function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
                   py: { xs: 1.5, sm: 2 },
                   fontSize: { xs: 13, sm: 14, md: 15 },
                   textAlign: head.label === "Actions" ? "center" : "left",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "nowrap",
+                  maxWidth: 180,
                 }}
               >
                 {head.component

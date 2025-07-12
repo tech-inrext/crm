@@ -1,165 +1,193 @@
-import React from "react";
-import Paper from "@mui/material/Paper";
-import Box from "@mui/material/Box";
-import Typography from "@mui/material/Typography";
-import MyButton from "./MyButton";
-import EditIcon from "@mui/icons-material/Edit";
-import TextField from "@mui/material/TextField";
-import PermissionGuard from "../PermissionGuard";
+import React, { useState } from "react";
+import {
+  Avatar,
+  Card,
+  CardContent,
+  Chip,
+  Divider,
+  IconButton,
+  Stack,
+  Tooltip,
+  Box,
+  Typography,
+} from "@mui/material";
+import { Settings, Security } from "@mui/icons-material";
+import PermissionGuard from "@/components/PermissionGuard";
+import Skeleton from "@mui/material/Skeleton";
 
 interface RoleCardProps {
-  role: { name: string; permissions: string[] };
+  role: any;
   idx: number;
-  isExpanded: boolean;
-  isEditing: boolean;
-  editRoleName: string;
-  onEditChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onEditSave: () => void;
-  onEditCancel: () => void;
-  onEditClick: (e: React.MouseEvent) => void;
-  onExpand: () => void;
-  modules: string[];
-  permissions: string[];
+  openEdit: (idx: number) => void;
 }
 
-const RoleCard: React.FC<RoleCardProps> = ({
-  role,
-  idx,
-  isExpanded,
-  isEditing,
-  editRoleName,
-  onEditChange,
-  onEditSave,
-  onEditCancel,
-  onEditClick,
-  onExpand,
-  modules,
-  permissions,
-}) => (
-  <Paper
-    elevation={3}
-    sx={{
-      width: "fit-content",
-      minWidth: 0,
-      maxWidth: 1,
-      p: 2,
-      borderRadius: 3,
-      bgcolor: idx % 2 === 0 ? "#f5f7fa" : "#fff",
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "flex-start",
-      position: "relative",
-      cursor: isEditing ? "default" : "pointer",
-      transition: "box-shadow 0.2s",
-      boxShadow: isExpanded ? 6 : 2,
-    }}
-    onClick={() => {
-      if (!isEditing) onExpand();
-    }}
-  >
-    <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
-      {isEditing ? (
-        <TextField
-          size="small"
-          value={editRoleName}
-          onChange={onEditChange}
-          sx={{ width: 100, mr: 1, fontSize: 13 }}
-          inputProps={{ style: { fontSize: 13 } }}
-        />
-      ) : (
-        <Typography sx={{ fontWeight: 700, fontSize: 17, color: "#1a237e" }}>
-          {role.name}
-        </Typography>
-      )}
-      {isEditing ? (
-        <>
-          <MyButton
-            size="small"
-            variant="contained"
-            sx={{ ml: 1 }}
-            onClick={onEditSave}
+const RoleCard: React.FC<RoleCardProps> = ({ role, idx, openEdit }) => {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <Card
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        boxShadow: "0 2px 8px rgba(25, 118, 210, 0.08)",
+        "&:hover": {
+          boxShadow: "0 8px 24px rgba(25, 118, 210, 0.18)",
+          transform: "translateY(-4px) scale(1.02)",
+          borderColor: "primary.light",
+        },
+        border: "1.5px solid",
+        borderColor: "divider",
+        background: "linear-gradient(135deg, #fafdff 0%, #f1f5fa 100%)",
+        minWidth: { xs: "100%", sm: 270 },
+        minHeight: { xs: 70, sm: 120 },
+        maxWidth: { xs: "100%", sm: 340 },
+        m: { xs: 0, sm: 1 },
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        width: { xs: "100%", sm: "auto" },
+        p: { xs: 0.5, sm: 0 },
+        cursor: "pointer",
+      }}
+      onClick={() => setExpanded((prev) => !prev)}
+    >
+      <CardContent
+        sx={{
+          p: { xs: 1, sm: 3 },
+          display: "flex",
+          flexDirection: "column",
+          height: "100%",
+        }}
+      >
+        <Stack spacing={1.2} sx={{ flex: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: { xs: 1, sm: 2 },
+            }}
           >
-            Save
-          </MyButton>
-          <MyButton
-            size="small"
-            sx={{ ml: 1 }}
-            color="inherit"
-            onClick={onEditCancel}
-          >
-            Cancel
-          </MyButton>{" "}
-        </>
-      ) : (
-        <PermissionGuard module="role" action="write" fallback={<></>}>
-          <MyButton
-            size="small"
-            variant="outlined"
-            sx={{ ml: 2, minWidth: 36, p: 0 }}
-            onClick={onEditClick}
-          >
-            <EditIcon sx={{ fontSize: 22, color: "#1976d2" }} />
-          </MyButton>
-        </PermissionGuard>
-      )}
-    </Box>
-    {isExpanded && (
-      <Box sx={{ mt: 2, width: "100%" }}>
-        {modules.map((mod) => (
-          <Box key={mod} sx={{ mb: 1 }}>
-            <Typography
-              sx={{ fontWeight: 600, fontSize: 14, color: "#1976d2", mb: 0.5 }}
+            <Avatar
+              sx={{
+                bgcolor: "primary.main",
+                width: { xs: 38, sm: 56 },
+                height: { xs: 38, sm: 56 },
+                fontSize: { xs: "1rem", sm: "1.5rem" },
+                fontWeight: 700,
+                boxShadow: "0 2px 8px rgba(25, 118, 210, 0.15)",
+              }}
             >
-              {mod}
-            </Typography>
-            <Box sx={{ display: "flex", gap: 1, flexWrap: "wrap" }}>
-              {permissions.filter((p) =>
-                role.permissions.includes(`${mod}:${p}`)
-              ).length === 0 ? (
-                <span style={{ color: "#888", fontSize: 12 }}>-</span>
-              ) : (
-                permissions
-                  .filter((p) => role.permissions.includes(`${mod}:${p}`))
-                  .map((p) => {
-                    const color =
-                      p === "write"
-                        ? "#1976d2"
-                        : p === "delete"
-                        ? "#d32f2f"
-                        : "#388e3c";
-                    const bg =
-                      p === "write"
-                        ? "#e3f2fd"
-                        : p === "delete"
-                        ? "#ffebee"
-                        : "#e8f5e9";
-                    return (
-                      <Box
-                        key={mod + p}
-                        sx={{
-                          display: "inline-block",
-                          px: 1,
-                          py: 0.5,
-                          bgcolor: bg,
-                          color: color,
-                          borderRadius: 1,
-                          fontSize: 12,
-                          fontWeight: 500,
-                          letterSpacing: 0.5,
-                          border: "1px solid #e0e0e0",
-                        }}
-                      >
-                        {p.charAt(0).toUpperCase() + p.slice(1)}
-                      </Box>
-                    );
-                  })
-              )}
+              <Security fontSize="small" />
+            </Avatar>
+            <Box sx={{ flex: 1 }}>
+              <Typography
+                variant="subtitle1"
+                fontWeight={700}
+                color="text.primary"
+                noWrap
+                sx={{
+                  letterSpacing: 0.5,
+                  fontSize: { xs: "1rem", sm: "1.25rem" },
+                }}
+              >
+                {role.name}
+              </Typography>
             </Box>
+            <PermissionGuard module="role" action="write" fallback={<></>}>
+              <Tooltip title="Edit Role">
+                <IconButton
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    openEdit(idx);
+                  }}
+                  size="small"
+                  sx={{
+                    backgroundColor: "#e3f2fd",
+                    color: "primary.main",
+                    border: "1px solid #90caf9",
+                    "&:hover": {
+                      backgroundColor: "primary.light",
+                      color: "white",
+                    },
+                    boxShadow: "0 2px 8px rgba(25, 118, 210, 0.10)",
+                  }}
+                >
+                  <Settings fontSize="small" />
+                </IconButton>
+              </Tooltip>
+            </PermissionGuard>
           </Box>
-        ))}
-      </Box>
-    )}
-  </Paper>
+          {expanded && (
+            <>
+              <Divider sx={{ my: 1 }} />
+              <Box>
+                <Typography
+                  variant="subtitle2"
+                  fontWeight={600}
+                  color="text.secondary"
+                  sx={{ mb: 1 }}
+                >
+                  Permissions
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.7 }}>
+                  {role.permissions.length === 0 ? (
+                    <Chip
+                      label="No permissions"
+                      size="small"
+                      sx={{
+                        backgroundColor: "#f5f5f5",
+                        color: "text.secondary",
+                        fontWeight: 500,
+                        fontSize: "0.8rem",
+                      }}
+                    />
+                  ) : (
+                    role.permissions.map((perm: string, permIdx: number) => {
+                      const [module, action] = perm.split(":");
+                      const actionColor =
+                        action === "read"
+                          ? "#2196F3"
+                          : action === "write"
+                          ? "#FF9800"
+                          : "#F44336";
+                      return (
+                        <Chip
+                          key={permIdx}
+                          label={`${module} ${action}`}
+                          size="small"
+                          sx={{
+                            backgroundColor: actionColor,
+                            color: "white",
+                            fontWeight: 600,
+                            fontSize: "0.75rem",
+                            mb: 0.5,
+                          }}
+                        />
+                      );
+                    })
+                  )}
+                </Box>
+              </Box>
+            </>
+          )}
+        </Stack>
+      </CardContent>
+    </Card>
+  );
+};
+
+export const LoadingSkeleton = () => (
+  <Box sx={{ mt: 2 }}>
+    {Array.from({ length: 6 }).map((_, index) => (
+      <Card key={index} sx={{ mb: 2, p: 2 }}>
+        <Stack spacing={1}>
+          <Skeleton variant="text" width="60%" height={24} />
+          <Skeleton variant="text" width="40%" height={20} />
+          <Skeleton variant="rectangular" width="100%" height={60} />
+        </Stack>
+      </Card>
+    ))}
+  </Box>
 );
 
 export default RoleCard;

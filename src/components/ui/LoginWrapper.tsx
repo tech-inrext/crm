@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useAuth } from "../../contexts/AuthContext";
-import RoleSelectionDialog from "./RoleSelectionDialog";
+import { useAuth } from "@/contexts/AuthContext";
+import RoleSelectionDialog from "@/components/ui/RoleSelectionDialog";
 
 interface LoginWrapperProps {
   children: React.ReactNode;
@@ -54,11 +54,7 @@ const LoginWrapper: React.FC<LoginWrapperProps> = ({ children }) => {
     }
   };
 
-  return (
-    <>
-      {children}
-    </>
-  );
+  return <>{children}</>;
 };
 
 export default LoginWrapper;

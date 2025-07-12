@@ -34,11 +34,22 @@ const getEmployeeById = async (req, res) => {
 const updateEmployeeDetails = async (req, res) => {
   const { id } = req.query;
 
-  const { name, altPhone, address, gender, age, designation, managerId, role } =
-    req.body;
+  // FIX: Destructure roles from req.body
+  const {
+    name,
+    altPhone,
+    address,
+    gender,
+    age,
+    designation,
+    managerId,
+    departmentId,
+    role,
+    roles,
+  } = req.body;
 
   // Fields that are NOT allowed to be updated
-  const notAllowedFields = ["phone", "email", "joiningDate", "departmentId"];
+  const notAllowedFields = ["phone", "email", "joiningDate"];
 
   const requestFields = Object.keys(req.body);
   const invalidFields = requestFields.filter((field) =>
@@ -63,7 +74,8 @@ const updateEmployeeDetails = async (req, res) => {
     ...(age && { age }),
     ...(designation && { designation }),
     ...(managerId && { managerId }),
-    ...(role && { role }),
+    ...(departmentId && { departmentId }),
+    ...(Array.isArray(roles) && roles.length > 0 && { roles }),
   };
 
   try {

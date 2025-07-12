@@ -1,4 +1,4 @@
-import type { Lead } from '../types/lead';
+import type { Lead } from '@/types/lead';
 
 // Lead form interface matching the component expectations
 export interface LeadFormData {
@@ -68,18 +68,27 @@ export const sortLeads = (leads: Lead[], sortBy: string, sortOrder: 'asc' | 'des
   });
 };
 
-export const filterLeads = (leads: Lead[], searchTerm: string): Lead[] => {
-  if (!searchTerm) return leads;
-  
-  const term = searchTerm.toLowerCase();
-  return leads.filter(lead => 
-    lead.name.toLowerCase().includes(term) ||
-    lead.email.toLowerCase().includes(term) ||
-    lead.phone.includes(term) ||
-    (lead.contact && lead.contact.toLowerCase().includes(term)) ||
-    (lead.company && lead.company.toLowerCase().includes(term)) ||
-    lead.status.toLowerCase().includes(term)
+export const filterLeads = (leads: Lead[], searchQuery: string): Lead[] => {
+  const q = searchQuery.toLowerCase();
+  return leads.filter(
+    (l) =>
+      l?.fullName?.toLowerCase().includes(q) ||
+      l?.contact?.toLowerCase().includes(q) ||
+      l?.email?.toLowerCase().includes(q) ||
+      l?.phone?.toLowerCase().includes(q) ||
+      l?.status?.toLowerCase().includes(q)
   );
+};
+
+export const filterEmployees = (employees: any[], search: string) => {
+  const q = search.toLowerCase();
+  return employees.filter((e) => {
+    const roleName = typeof e.role === "string" ? e.role : e.role?.name || "";
+    return (
+      e.name.toLowerCase().includes(q) ||
+      roleName.toLowerCase().includes(q)
+    );
+  });
 };
 
 // Transform API lead to frontend format
@@ -95,55 +104,74 @@ export const transformAPILead = (apiLead: Lead): Lead => {
 // Transform API lead to form data
 export const transformAPILeadToForm = (apiLead: Lead): LeadFormData => {
   return {
-    fullName: apiLead.name || '',
+    fullName: apiLead.fullName || '',
     email: apiLead.email || '',
     phone: apiLead.phone || '',
-    propertyType: apiLead.company || '', // Map company to propertyType
-    location: apiLead.contact || '', // Map contact to location
-    budgetRange: apiLead.value ? `$${apiLead.value}` : '',
-    status: apiLead.status || 'new',
+    propertyType: apiLead.propertyType || '',
+    location: apiLead.location || '',
+    budgetRange: apiLead.budgetRange || '',
+    status: apiLead.status || 'New',
     source: apiLead.source || '',
-    assignedTo: apiLead.assignedTo || '',
-    nextFollowUp: '',
-    followUpNotes: [],
+    assignedTo: apiLead.assignedTo ? String(apiLead.assignedTo) : '',
+    nextFollowUp: apiLead.nextFollowUp ? new Date(apiLead.nextFollowUp).toISOString().split('T')[0] : '',
+    followUpNotes: Array.isArray(apiLead.followUpNotes)
+      ? apiLead.followUpNotes.map(note => ({ note }))
+      : [],
   };
 };
 
+// Helper to map budgetRange string to backend value (number)
+const budgetRangeToValue = (budgetRange: string): number | undefined => {
+  switch (budgetRange) {
+    case '<1 Lakh': return 50000;
+    case '1 Lakh to 10 Lakh': return 100000;
+    case '10 Lakh to 20 Lakh': return 1000000;
+    case '20 Lakh to 30 Lakh': return 2000000;
+    case '30 Lakh to 50 Lakh': return 3000000;
+    case '50 Lakh to 1 Crore': return 5000000;
+    case '>1 Crore': return 10000000;
+    default: return undefined;
+  }
+};
+
 // Transform form data to API format
-export const transformFormToAPI = (formData: LeadFormData): Partial<Lead> => {
-  return {
-    fullName: formData.fullName,
-    email: formData.email,
-    phone: formData.phone,
-    propertyType: formData.propertyType,
-    location: formData.location,
-    budgetRange: formData.budgetRange,
-    status: formData.status,
-    source: formData.source,
-    assignedTo: formData.assignedTo || null,
-    followUpNotes: formData.followUpNotes.map(note => `${note.date}: ${note.note}`).join('\n'),
-  };
+export const transformFormToAPI = (formData: LeadFormData, isEdit = false): Partial<Lead> => {
+  const payload: Partial<Lead> = {};
+
+  // Only include fields that are present and valid
+  if (formData.fullName && formData.fullName.trim() !== "") payload.fullName = formData.fullName.trim();
+  if (formData.email && formData.email.trim() !== "") payload.email = formData.email.trim();
+  // Only include phone if not editing (backend does not allow phone update)
+  if (!isEdit && formData.phone && formData.phone.trim() !== "") payload.phone = formData.phone.trim();
+  if (formData.propertyType && formData.propertyType.trim() !== "") payload.propertyType = formData.propertyType.trim();
+  if (formData.location && formData.location.trim() !== "") payload.location = formData.location.trim();
+  if (formData.budgetRange && formData.budgetRange.trim() !== "") payload.budgetRange = formData.budgetRange.trim();
+  if (formData.status && formData.status.trim() !== "") payload.status = formData.status.trim();
+  if (formData.source && formData.source.trim() !== "") payload.source = formData.source.trim();
+  if (formData.assignedTo && formData.assignedTo !== "") payload.assignedTo = formData.assignedTo;
+  if (formData.nextFollowUp && formData.nextFollowUp !== "") payload.nextFollowUp = new Date(formData.nextFollowUp);
+  // followUpNotes: backend expects array of strings, so map to string array
+  if (Array.isArray(formData.followUpNotes) && formData.followUpNotes.length > 0) {
+    payload.followUpNotes = formData.followUpNotes.map(noteObj => noteObj.note);
+  }
+  return payload;
 };
 
 // Calculate lead statistics
 export const calculateLeadStats = (leads: Lead[]) => {
   const total = leads.length;
-  const newLeads = leads.filter(l => l.status === 'new').length;
-  const qualified = leads.filter(l => l.status === 'qualified').length;
-  const converted = leads.filter(l => l.status === 'converted').length;
-  const closed = leads.filter(l => l.status === 'converted' || l.status === 'lost').length;
-  const totalValue = leads.reduce((sum, lead) => sum + (lead.value || 0), 0);
+  const newLeads = leads.filter(l => l.status === 'New').length;
+  const closed = leads.filter(l => l.status === 'Closed' || l.status === 'Dropped').length;
+  // Conversion: closed/total (if you want only closed deals)
+  const conversion = total > 0 ? Math.round((closed / total) * 100) : 0;
 
   return {
     total,
     new: newLeads,
     newLeads,
-    qualified,
-    converted,
     closed,
-    totalValue,
-    conversion: total > 0 ? Math.round((converted / total) * 100) : 0,
-    conversionRate: total > 0 ? Math.round((converted / total) * 100) : 0,
+    conversion,
+    conversionRate: conversion,
   };
 };
 
@@ -161,5 +189,64 @@ export const getDefaultLeadFormData = (): LeadFormData => {
     assignedTo: '',
     nextFollowUp: '',
     followUpNotes: [],
+  };
+};
+
+export const transformAPIRole = (apiRole: any): any => {
+  const permissions: string[] = [];
+  const moduleMap: Record<string, string> = {
+    employee: "Users",
+    role: "Roles",
+    lead: "Leads",
+  };
+  apiRole.read?.forEach((module: string) => {
+    const frontendModule = moduleMap[module] || module;
+    permissions.push(`${frontendModule}:read`);
+  });
+  apiRole.write?.forEach((module: string) => {
+    const frontendModule = moduleMap[module] || module;
+    permissions.push(`${frontendModule}:write`);
+  });
+  apiRole.delete?.forEach((module: string) => {
+    const frontendModule = moduleMap[module] || module;
+    permissions.push(`${frontendModule}:delete`);
+  });
+  return {
+    _id: apiRole._id,
+    name: apiRole.name,
+    permissions,
+  };
+};
+
+export const transformToAPIRole = (role: any) => {
+  const read: string[] = [];
+  const write: string[] = [];
+  const deletePerms: string[] = [];
+  const moduleMap: Record<string, string> = {
+    Users: "employee",
+    Roles: "role",
+    Leads: "lead",
+  };
+  role.permissions.forEach((perm: string) => {
+    const [module, permission] = perm.split(":");
+    const apiModule = moduleMap[module] || module.toLowerCase();
+    switch (permission) {
+      case "read":
+        if (!read.includes(apiModule)) read.push(apiModule);
+        break;
+      case "write":
+        if (!write.includes(apiModule)) write.push(apiModule);
+        break;
+      case "delete":
+        if (!deletePerms.includes(apiModule)) deletePerms.push(apiModule);
+        break;
+    }
+  });
+  return {
+    _id: role._id, // <-- add this line
+    name: role.name,
+    read,
+    write,
+    delete: deletePerms,
   };
 };
