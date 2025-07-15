@@ -21,6 +21,7 @@ import Sidebar from "../../components/ui/Sidebar";
 import Navbar from "../../components/ui/Navbar";
 import PermissionGuard from "../../components/PermissionGuard";
 import { useAuth } from "../../contexts/AuthContext";
+import { useRouter } from "next/router";
 
 // Lazy load heavy components for better performance
 const Leads = lazy(() => import("./leads/page"));
@@ -112,12 +113,12 @@ export const DASHBOARD_SIDEBAR_LINKS: SidebarLink[] = [
 
 // Main dashboard layout component
 const Dashboard: React.FC = () => {
+  const router = useRouter();
   const theme = useTheme();
   const { getPermissions } = useAuth();
 
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
-  const [selected, setSelected] = useState("dashboard");
   // Enhanced mobile-first responsive breakpoints
   const isMobile = useMediaQuery(theme.breakpoints.down("md")); // Changed from lg to md for better mobile support
   const isTablet = useMediaQuery(theme.breakpoints.between("md", "lg"));
@@ -130,6 +131,11 @@ const Dashboard: React.FC = () => {
     setMounted(true);
   }, []);
 
+  const handleRoute = (route) => {
+    console.log("route", route);
+    router.push(`/dashboard/${route}`);
+  };
+
   // Memoized sidebar links for better performance
   const allSidebarLinks = useMemo<SidebarLink[]>(
     () => [
@@ -137,28 +143,28 @@ const Dashboard: React.FC = () => {
         label: "Dashboard",
         href: "dashboard",
         icon: <DashboardIcon />,
-        onClick: () => setSelected("dashboard"),
+        onClick: () => handleRoute("dashboard"),
       },
       {
         label: "Leads",
         href: "leads",
         module: "lead",
         icon: <LeadsIcon />,
-        onClick: () => setSelected("leads"),
+        onClick: () => handleRoute("leads"),
       },
       {
         label: "Users",
         href: "users",
         module: "employee",
         icon: <UsersIcon />,
-        onClick: () => setSelected("users"),
+        onClick: () => handleRoute("users"),
       },
       {
         label: "Roles",
         href: "roles",
         module: "role",
         icon: <RolesIcon />,
-        onClick: () => setSelected("roles"),
+        onClick: () => handleRoute("roles"),
       },
     ],
     []
@@ -253,7 +259,7 @@ const Dashboard: React.FC = () => {
         open={sidebarIsOpen}
         onClose={() => setSidebarOpen(false)}
         links={sidebarLinks}
-      />{" "}
+      />
       {/* Main content area */}
       <Box
         component="main"

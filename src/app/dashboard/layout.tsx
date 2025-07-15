@@ -61,11 +61,12 @@ export default function DashboardLayout({
       </Box>
       {/* Sidebar as Drawer for mobile */}
       {isMobile && user && !pendingRoleSelection && (
-        <Sidebar
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          links={sidebarLinks}
-        />
+        <></>
+        // <Sidebar
+        //   open={sidebarOpen}
+        //   onClose={() => setSidebarOpen(false)}
+        //   links={sidebarLinks}
+        // />
       )}
     </Box>
   );

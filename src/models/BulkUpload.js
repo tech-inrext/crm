@@ -1,10 +1,15 @@
 import mongoose from "mongoose";
 
+const status = ["In Queue", "Processing", "Completed"];
 const BulkUploadSchema = new mongoose.Schema({
   uploadedBy: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
     required: true,
+  },
+  status: {
+    type: String,
+    enum: status,
   },
   totalRecords: Number,
   uploaded: Number,

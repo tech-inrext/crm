@@ -228,6 +228,7 @@ export default function CheckUploadStatusDialog({ open, onClose }: CheckUploadSt
                   <TableCell align="center" sx={{ fontWeight: 600 }}>Duplicates</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 600 }}>Invalid Phones</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 600 }}>Uploader</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600 }}>Status</TableCell>
                   <TableCell align="center" sx={{ fontWeight: 600 }}>Download</TableCell>
                 </TableRow>
               </TableHead>
@@ -262,6 +263,11 @@ export default function CheckUploadStatusDialog({ open, onClose }: CheckUploadSt
                     <TableCell align="center">
                       <Typography variant="body2">
                         {upload.uploadedBy?.name || "Unknown"}
+                      </Typography>
+                    </TableCell>
+                    <TableCell align="center">
+                      <Typography variant="body2">
+                        {upload.status || "Unknown"}
                       </Typography>
                     </TableCell>
                     <TableCell align="center">
