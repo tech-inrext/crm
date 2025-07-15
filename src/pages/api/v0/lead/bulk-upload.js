@@ -1,16 +1,7 @@
-import xlsx from "xlsx";
 import mongoose from "mongoose";
-import { v4 as uuidv4 } from "uuid";
 import { leadQueue } from "../../../../queue/leadQueue";
 import { loginAuth } from "../../../../middlewares/loginAuth";
 import BulkUpload from "../../../../models/BulkUpload";
-
-const parseExcelBuffer = (buffer) => {
-  const workbook = xlsx.read(buffer, { type: "buffer" });
-  const sheetName = workbook.SheetNames[0];
-  const sheet = workbook.Sheets[sheetName];
-  return xlsx.utils.sheet_to_json(sheet);
-};
 
 const handler = async (req, res) => {
   if (req.method !== "POST") {
@@ -19,6 +10,7 @@ const handler = async (req, res) => {
       .json({ success: false, message: "Method not allowed" });
   }
 
+  // move to middleware
   await new Promise((resolve, reject) => {
     loginAuth(req, res, (result) => {
       if (result instanceof Error) return reject(result);
@@ -30,25 +22,20 @@ const handler = async (req, res) => {
     const { fileUrl, fileName } = req.body;
     if (!fileUrl || !fileName) {
       return res
-        .status(400)
+        .status(400) // bad request
         .json({ success: false, message: "Missing fileUrl or fileName" });
     }
 
-    // Fetch file from S3
-    const response = await fetch(fileUrl);
-    const buffer = await response.arrayBuffer();
-    const rows = parseExcelBuffer(Buffer.from(buffer));
-
-    const uploaderId = req.employee?._id || "000000000000000000000001";
+    const uploaderId = req.employee?._id;
     const uploadId = new mongoose.Types.ObjectId();
 
     await BulkUpload.create({
       _id: uploadId,
       uploadedBy: uploaderId,
-      totalRecords: rows.length,
+      totalRecords: 0,
       uploaded: 0,
       duplicates: 0,
-      invalidPhones: 0,
+      invalidPhones: 0, // Move to model default values
       otherErrors: 0,
       details: {
         uploaded: [],
@@ -56,16 +43,16 @@ const handler = async (req, res) => {
         invalidPhones: [],
         otherErrors: [],
       },
+      status: "In Queue",
       fileUrl,
       reportFileName: fileName,
     });
 
     await leadQueue.add(
-      "bulkInsert",
+      "bulkUploadLeads",
       {
-        leads: rows,
-        uploadedBy: uploaderId,
         uploadId,
+        fileUrl,
       },
       { attempts: 1 }
     );
