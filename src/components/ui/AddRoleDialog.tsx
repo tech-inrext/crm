@@ -71,11 +71,13 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
         const map: Record<string, string> = {
           users: "User",
           user: "User",
+          employee: "User", // Add this mapping for backend 'employee' -> frontend 'User'
           leads: "Lead",
           lead: "Lead",
           roles: "Role",
           role: "Role",
           department: "Department",
+          departments: "Department",
         };
         return map[mod.toLowerCase()] || mod;
       };
@@ -129,7 +131,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog open={open} onClose={onClose} fullWidth={false} maxWidth={false}>
       <DialogTitle
         sx={{
           fontSize: { xs: "1.1rem", sm: "1.25rem" },
@@ -140,10 +142,10 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
       </DialogTitle>
       <DialogContent
         sx={{
-          p: { xs: 1.5, sm: 3 },
-          minWidth: { xs: "auto", sm: 350 },
-          width: { xs: "100vw", sm: "auto" },
-          maxWidth: { xs: "100vw", sm: 500 },
+          p: { xs: 1.5, sm: 2.5 },
+          minWidth: { xs: "280px", sm: 320 },
+          width: { xs: "90vw", sm: "380px" },
+          maxWidth: { xs: "90vw", sm: 380 },
           boxSizing: "border-box",
         }}
       >
@@ -249,7 +251,11 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
                         "&.Mui-checked": { color: "#1976d2" },
                         p: 0.5,
                       }}
-                      size={typeof window !== "undefined" && window.innerWidth < 600 ? "small" : "medium"}
+                      size={
+                        typeof window !== "undefined" && window.innerWidth < 600
+                          ? "small"
+                          : "medium"
+                      }
                     />
                   </Box>
                 ))}

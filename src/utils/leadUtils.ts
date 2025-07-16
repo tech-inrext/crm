@@ -195,9 +195,10 @@ export const getDefaultLeadFormData = (): LeadFormData => {
 export const transformAPIRole = (apiRole: any): any => {
   const permissions: string[] = [];
   const moduleMap: Record<string, string> = {
-    employee: "Users",
-    role: "Roles",
-    lead: "Leads",
+    employee: "User",    // Changed from "Users" to "User" to match frontend
+    role: "Role",        // Changed from "Roles" to "Role" to match frontend
+    lead: "Lead",        // Changed from "Leads" to "Lead" to match frontend
+    department: "Department",
   };
   apiRole.read?.forEach((module: string) => {
     const frontendModule = moduleMap[module] || module;
@@ -215,35 +216,56 @@ export const transformAPIRole = (apiRole: any): any => {
     _id: apiRole._id,
     name: apiRole.name,
     permissions,
+    // Also keep the original arrays for easier access
+    read: apiRole.read,
+    write: apiRole.write,
+    delete: apiRole.delete,
   };
 };
 
 export const transformToAPIRole = (role: any) => {
+  // If the role already has read/write/delete arrays, return it as-is
+  if (role.read || role.write || role.delete) {
+    return {
+      _id: role._id,
+      name: role.name,
+      read: role.read || [],
+      write: role.write || [],
+      delete: role.delete || [],
+    };
+  }
+
+  // Otherwise, transform from permissions array format
   const read: string[] = [];
   const write: string[] = [];
   const deletePerms: string[] = [];
   const moduleMap: Record<string, string> = {
-    Users: "employee",
-    Roles: "role",
-    Leads: "lead",
+    User: "employee",      // Frontend "User" -> backend "employee"
+    Role: "role",          // Frontend "Role" -> backend "role"  
+    Lead: "lead",          // Frontend "Lead" -> backend "lead"
+    Department: "department",
   };
-  role.permissions.forEach((perm: string) => {
-    const [module, permission] = perm.split(":");
-    const apiModule = moduleMap[module] || module.toLowerCase();
-    switch (permission) {
-      case "read":
-        if (!read.includes(apiModule)) read.push(apiModule);
-        break;
-      case "write":
-        if (!write.includes(apiModule)) write.push(apiModule);
-        break;
-      case "delete":
-        if (!deletePerms.includes(apiModule)) deletePerms.push(apiModule);
-        break;
-    }
-  });
+  
+  if (role.permissions && Array.isArray(role.permissions)) {
+    role.permissions.forEach((perm: string) => {
+      const [module, permission] = perm.split(":");
+      const apiModule = moduleMap[module] || module.toLowerCase();
+      switch (permission) {
+        case "read":
+          if (!read.includes(apiModule)) read.push(apiModule);
+          break;
+        case "write":
+          if (!write.includes(apiModule)) write.push(apiModule);
+          break;
+        case "delete":
+          if (!deletePerms.includes(apiModule)) deletePerms.push(apiModule);
+          break;
+      }
+    });
+  }
+  
   return {
-    _id: role._id, // <-- add this line
+    _id: role._id,
     name: role.name,
     read,
     write,

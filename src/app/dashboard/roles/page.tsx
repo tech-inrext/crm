@@ -6,8 +6,6 @@ import {
   useTheme,
   useMediaQuery,
   Fab,
-  Tooltip,
-  Stack,
   Paper,
   Typography,
   CircularProgress,
@@ -18,6 +16,7 @@ import { useRoles } from "@/hooks/useRoles";
 import { ROLE_PERMISSIONS, GRADIENTS } from "@/constants/leads";
 import PermissionGuard from "@/components/PermissionGuard";
 import AddRoleDialog from "@/components/ui/AddRoleDialog";
+import RolePermissionsDialog from "@/components/ui/RolePermissionsDialog";
 import RolesActionBar from "@/components/ui/RolesActionBar";
 import Pagination from "@/components/ui/Pagination";
 import axios from "axios";
@@ -33,35 +32,20 @@ const Roles: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { roles, loading, loadRoles } = useRoles();
   const [addOpen, setAddOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [search, setSearch] = useState("");
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(6);
-  const [roleName, setRoleName] = useState("");
   const [modulePerms, setModulePerms] = useState(initialModulePerms);
   const [editId, setEditId] = useState(null);
   const [editRole, setEditRole] = useState(null);
+  const [permissionsDialogOpen, setPermissionsDialogOpen] = useState(false);
+  const [selectedRoleForPermissions, setSelectedRoleForPermissions] =
+    useState(null);
 
   const stats = useMemo(() => {
-    const totalPermissions = roles.reduce(
-      (acc, role) => acc + role.permissions.length,
-      0
-    );
-    const activeRoles = roles.filter(
-      (role) => role.permissions.length > 0
-    ).length;
-    const adminRoles = roles.filter((role) =>
-      role.permissions.some(
-        (p: string) => p.includes("write") || p.includes("delete")
-      )
-    ).length;
     return {
       total: roles.length,
-      active: activeRoles,
-      admin: adminRoles,
-      avgPermissions:
-        roles.length > 0 ? Math.round(totalPermissions / roles.length) : 0,
     };
   }, [roles]);
 
@@ -77,13 +61,6 @@ const Roles: React.FC = () => {
     return filteredRoles.slice(start, start + rowsPerPage);
   }, [filteredRoles, page, rowsPerPage]);
 
-  const handlePermChange = (mod, perm, checked) => {
-    setModulePerms((prev) => ({
-      ...prev,
-      [mod]: { ...prev[mod], [perm]: checked },
-    }));
-  };
-
   const handleOpenEdit = (idx) => {
     const role = paginatedRoles[idx];
     if (!role) return;
@@ -91,6 +68,11 @@ const Roles: React.FC = () => {
     // Only transform for edit dialog
     setEditRole(transformToAPIRole(role));
     setAddOpen(true);
+  };
+
+  const handleViewPermissions = (role) => {
+    setSelectedRoleForPermissions(role);
+    setPermissionsDialogOpen(true);
   };
 
   const handleAddOrEditRole = async ({ name, modulePerms, editId }) => {
@@ -147,9 +129,6 @@ const Roles: React.FC = () => {
         >
           Roles
         </Typography>
-        <Box sx={{ mb: 2, color: "text.secondary", fontWeight: 500 }}>
-          Total Roles: {stats.total}
-        </Box>
         <RolesActionBar
           search={search}
           onSearchChange={(e) => setSearch(e.target.value)}
@@ -191,6 +170,7 @@ const Roles: React.FC = () => {
                   role={role}
                   idx={idx}
                   openEdit={handleOpenEdit}
+                  onViewPermissions={handleViewPermissions}
                   small={isMobile}
                 />
               </Box>
@@ -235,6 +215,14 @@ const Roles: React.FC = () => {
           setAddOpen(false);
           setEditId(null);
           setEditRole(null);
+        }}
+      />
+      <RolePermissionsDialog
+        open={permissionsDialogOpen}
+        role={selectedRoleForPermissions}
+        onClose={() => {
+          setPermissionsDialogOpen(false);
+          setSelectedRoleForPermissions(null);
         }}
       />
     </Box>

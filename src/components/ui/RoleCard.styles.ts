@@ -61,6 +61,13 @@ export const roleCardStyles = {
     mt: 1,
   } as SxProps<Theme>,
 
+  permissionsSummary: {
+    background: "rgba(25, 118, 210, 0.04)",
+    borderRadius: 2,
+    p: 1.5,
+    mt: 1,
+  } as SxProps<Theme>,
+
   permissionsTitle: {
     fontWeight: 700,
     color: "primary.main",
@@ -95,3 +102,106 @@ export const permissionColors = {
   write: "#ed6c02",
   delete: "#d32f2f",
 } as const;
+
+export const rolePermissionsDialogStyles = {
+  dialog: {
+    borderRadius: 3,
+    background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)",
+    minWidth: "500px",
+    maxWidth: "600px",
+  } as SxProps<Theme>,
+
+  dialogTitle: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 2,
+    pb: 1,
+    background: "linear-gradient(135deg, #1976d2, #42a5f5)",
+    color: "white",
+    m: 0,
+  } as SxProps<Theme>,
+
+  titleBox: {
+    display: "flex",
+    alignItems: "center",
+    gap: 2,
+  } as SxProps<Theme>,
+
+  titleText: {
+    fontWeight: 700,
+  } as SxProps<Theme>,
+
+  closeButton: {
+    color: "white",
+    "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
+  } as SxProps<Theme>,
+
+  dialogContent: {
+    p: 3,
+  } as SxProps<Theme>,
+
+  noPermissionsBox: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    py: 4,
+    textAlign: "center",
+  } as SxProps<Theme>,
+
+  noPermissionsIcon: {
+    fontSize: 48,
+    color: "text.secondary",
+    mb: 2,
+  } as SxProps<Theme>,
+
+  moduleGrid: {
+    spacing: 3,
+  },
+
+  modulePaper: {
+    p: 2,
+    borderRadius: 2,
+    border: "1px solid rgba(25, 118, 210, 0.12)",
+    background: "rgba(25, 118, 210, 0.02)",
+    height: "100%",
+  } as SxProps<Theme>,
+
+  moduleTitle: {
+    fontWeight: 700,
+    color: "primary.main",
+    mb: 1.5,
+    textTransform: "capitalize",
+    display: "flex",
+    alignItems: "center",
+    gap: 1,
+  } as SxProps<Theme>,
+
+  moduleActions: {
+    display: "flex",
+    flexDirection: "column",
+    gap: 1,
+  } as SxProps<Theme>,
+
+  actionChip: {
+    color: "white",
+    fontSize: "0.75rem",
+    fontWeight: 600,
+    justifyContent: "flex-start",
+    "& .MuiChip-label": {
+      px: 1.5,
+    },
+  } as SxProps<Theme>,
+
+  dialogActions: {
+    p: 3,
+    pt: 0,
+  } as SxProps<Theme>,
+
+  closeActionButton: {
+    background: "linear-gradient(135deg, #1976d2, #42a5f5)",
+    "&:hover": {
+      background: "linear-gradient(135deg, #1565c0, #1976d2)",
+    },
+  } as SxProps<Theme>,
+};

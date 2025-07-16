@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import {
   Avatar,
   Card,
@@ -20,16 +20,22 @@ interface RoleCardProps {
   role: any;
   idx: number;
   openEdit: (idx: number) => void;
+  onViewPermissions: (role: any) => void;
+  small?: boolean;
 }
 
-const RoleCard: React.FC<RoleCardProps> = ({ role, idx, openEdit }) => {
-  const [expanded, setExpanded] = useState(false);
-
+const RoleCard: React.FC<RoleCardProps> = ({
+  role,
+  idx,
+  openEdit,
+  onViewPermissions,
+  small,
+}) => {
   return (
     <Card
       elevation={0}
       sx={roleCardStyles.card}
-      onClick={() => setExpanded(!expanded)}
+      onClick={() => onViewPermissions(role)}
     >
       <CardContent sx={{ p: { xs: 1.5, sm: 2 }, height: "100%" }}>
         <Stack spacing={1} sx={{ height: "100%" }}>
@@ -58,46 +64,6 @@ const RoleCard: React.FC<RoleCardProps> = ({ role, idx, openEdit }) => {
               </IconButton>
             </PermissionGuard>
           </Box>
-
-          {expanded && (
-            <Box sx={roleCardStyles.expandedContent}>
-              <Typography
-                variant="caption"
-                sx={roleCardStyles.permissionsTitle}
-              >
-                Permissions
-              </Typography>
-              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-                {role.permissions.length === 0 ? (
-                  <Chip
-                    label="No permissions"
-                    size="small"
-                    variant="outlined"
-                  />
-                ) : (
-                  role.permissions.map((perm: string, i: number) => {
-                    const [module, action] = perm.split(":");
-                    return (
-                      <Chip
-                        key={i}
-                        label={`${module} ${action}`}
-                        size="small"
-                        sx={{
-                          backgroundColor:
-                            permissionColors[
-                              action as keyof typeof permissionColors
-                            ] || permissionColors.read,
-                          color: "white",
-                          fontSize: "0.7rem",
-                          fontWeight: 600,
-                        }}
-                      />
-                    );
-                  })
-                )}
-              </Box>
-            </Box>
-          )}
         </Stack>
       </CardContent>
     </Card>
