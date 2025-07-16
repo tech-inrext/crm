@@ -25,13 +25,15 @@ interface User {
     write?: string[];
     delete?: string[];
   }[]; // Backend returns array of role objects
-  currentRole?: {
-    _id: string;
-    name: string;
-    read?: string[];
-    write?: string[];
-    delete?: string[];
-  }; // Current active role from session with permissions
+  currentRole?:
+    | string
+    | {
+        _id: string;
+        name: string;
+        read?: string[];
+        write?: string[];
+        delete?: string[];
+      }; // Can be either role ID (string) or full role object
   designation?: string;
   departmentId?: string;
   managerId?: string;
@@ -50,9 +52,15 @@ interface AuthContextType {
   switchRole: (roleId: string) => Promise<void>; // Use roleId instead of role name
   completeRoleSelection: (roleId: string) => Promise<void>;
   cancelRoleSelection: () => void;
+  setChangeRole: (value: boolean) => void;
   // Helper functions to work with role objects
   getCurrentRoleName: () => string | null;
   getAvailableRoleNames: () => string[];
+  getPermissions: (module: string) => {
+    hasReadAccess: boolean;
+    hasWriteAccess: boolean;
+    hasDeleteAccess: boolean;
+  };
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -78,7 +86,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const getCurrentRoleName = () => {
     if (!user) return null;
+
     if (user.currentRole) {
+      // If currentRole is a string (ID), find the role name from user.roles
+      if (typeof user.currentRole === "string") {
+        const role = user.roles?.find((r) => r._id === user.currentRole);
+        return role?.name || null;
+      }
+      // If currentRole is an object, return its name
       return user.currentRole.name;
     }
     return null;
@@ -125,10 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(response.message || "Role selection failed");
       }
     } catch (error) {
-      console.error(
-        "AuthContext: Failed to complete role selection:",
-        error
-      );
+      console.error("AuthContext: Failed to complete role selection:", error);
       throw error;
     }
   };
@@ -149,7 +161,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     } catch (error: unknown) {
       console.error("❌ Login error:", error);
-       throw error;
+      throw error;
     }
   };
 
@@ -244,12 +256,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const getPermissions = (module: string) => {
-    const currentRole = user?.roles.find(
-      (role) => role._id === user?.currentRole
-    );
-    const hasReadAccess = currentRole?.read?.includes(module);
-    const hasWriteAccess = currentRole?.write?.includes(module);
-    const hasDeleteAccess = currentRole?.delete?.includes(module);
+    if (!user) {
+      return {
+        hasReadAccess: false,
+        hasWriteAccess: false,
+        hasDeleteAccess: false,
+      };
+    }
+
+    // If currentRole is just an ID (string), find the full role object from user.roles
+    let currentRole = user.currentRole;
+    if (typeof currentRole === "string" && user.roles) {
+      currentRole = user.roles.find((role) => role._id === currentRole);
+    }
+
+    if (!currentRole || typeof currentRole === "string") {
+      return {
+        hasReadAccess: false,
+        hasWriteAccess: false,
+        hasDeleteAccess: false,
+      };
+    }
+
+    const hasReadAccess = currentRole.read?.includes(module) || false;
+    const hasWriteAccess = currentRole.write?.includes(module) || false;
+    const hasDeleteAccess = currentRole.delete?.includes(module) || false;
+
     return { hasReadAccess, hasWriteAccess, hasDeleteAccess };
   };
 
