@@ -107,8 +107,24 @@ export const rolePermissionsDialogStyles = {
   dialog: {
     borderRadius: 3,
     background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)",
-    minWidth: "500px",
-    maxWidth: "600px",
+    minWidth: { xs: "unset", sm: "400px", md: "500px" },
+    maxWidth: { xs: "100%", sm: "90vw", md: "600px" },
+    width: { xs: "100%", sm: "auto" },
+  } as SxProps<Theme>,
+
+  dialogMobile: {
+    minWidth: "unset",
+    maxWidth: "95vw",
+    width: "95vw",
+    maxHeight: "90vh",
+    margin: 1,
+    borderRadius: 2,
+  } as SxProps<Theme>,
+
+  dialogTablet: {
+    minWidth: "320px",
+    maxWidth: "90vw",
+    margin: 1,
   } as SxProps<Theme>,
 
   dialogTitle: {
@@ -122,6 +138,11 @@ export const rolePermissionsDialogStyles = {
     m: 0,
   } as SxProps<Theme>,
 
+  dialogTitleMobile: {
+    px: 2,
+    py: 1.5,
+  } as SxProps<Theme>,
+
   titleBox: {
     display: "flex",
     alignItems: "center",
@@ -132,13 +153,40 @@ export const rolePermissionsDialogStyles = {
     fontWeight: 700,
   } as SxProps<Theme>,
 
+  titleTextMobile: {
+    fontSize: "1rem",
+    lineHeight: 1.2,
+  } as SxProps<Theme>,
+
+  titleTextDesktop: {
+    fontSize: "1.25rem",
+  } as SxProps<Theme>,
+
+  securityIcon: {
+    fontSize: { xs: 20, sm: 24 },
+  } as SxProps<Theme>,
+
   closeButton: {
     color: "white",
     "&:hover": { backgroundColor: "rgba(255, 255, 255, 0.1)" },
   } as SxProps<Theme>,
 
   dialogContent: {
-    p: 3,
+    p: { xs: 2, sm: 2, md: 3 },
+    maxHeight: { xs: "calc(100vh - 120px)", sm: "70vh" },
+    overflow: "auto",
+  } as SxProps<Theme>,
+
+  dialogContentMobile: {
+    px: 2,
+    py: 2,
+    maxHeight: "60vh",
+    overflow: "auto",
+  } as SxProps<Theme>,
+
+  dialogContentTablet: {
+    px: 2,
+    py: 2,
   } as SxProps<Theme>,
 
   noPermissionsBox: {
@@ -149,19 +197,34 @@ export const rolePermissionsDialogStyles = {
     textAlign: "center",
   } as SxProps<Theme>,
 
+  noPermissionsBoxMobile: {
+    py: 3,
+    px: 1,
+  } as SxProps<Theme>,
+
   noPermissionsIcon: {
-    fontSize: 48,
+    fontSize: { xs: 36, sm: 48 },
     color: "text.secondary",
     mb: 2,
   } as SxProps<Theme>,
 
-  moduleGrid: {
-    spacing: 3,
+  noPermissionsTitle: {
+    fontSize: { xs: "1.1rem", sm: "1.25rem" },
+  } as SxProps<Theme>,
+
+  noPermissionsText: {
+    fontSize: "0.875rem",
+    textAlign: "center",
+    maxWidth: { xs: "280px", sm: "none" },
+  } as SxProps<Theme>,
+
+  gridContainer: {
+    spacing: { xs: 2, sm: 3 },
   },
 
   modulePaper: {
-    p: 2,
-    borderRadius: 2,
+    p: { xs: 1.5, sm: 2 },
+    borderRadius: { xs: 1.5, sm: 2 },
     border: "1px solid rgba(25, 118, 210, 0.12)",
     background: "rgba(25, 118, 210, 0.02)",
     height: "100%",
@@ -170,32 +233,51 @@ export const rolePermissionsDialogStyles = {
   moduleTitle: {
     fontWeight: 700,
     color: "primary.main",
-    mb: 1.5,
+    mb: { xs: 1, sm: 1.5 },
     textTransform: "capitalize",
     display: "flex",
     alignItems: "center",
     gap: 1,
+    fontSize: { xs: "0.95rem", sm: "1rem" },
+  } as SxProps<Theme>,
+
+  moduleDivider: {
+    mb: { xs: 1, sm: 1.5 },
   } as SxProps<Theme>,
 
   moduleActions: {
     display: "flex",
-    flexDirection: "column",
-    gap: 1,
+    flexDirection: { xs: "row", sm: "column" },
+    flexWrap: { xs: "wrap", sm: "nowrap" },
+    gap: { xs: 0.5, sm: 1 },
   } as SxProps<Theme>,
 
   actionChip: {
     color: "white",
-    fontSize: "0.75rem",
+    fontSize: { xs: "0.7rem", sm: "0.75rem" },
     fontWeight: 600,
     justifyContent: "flex-start",
+    height: { xs: "24px", sm: "auto" },
     "& .MuiChip-label": {
-      px: 1.5,
+      px: { xs: 1, sm: 1.5 },
+      py: { xs: 0, sm: "auto" },
     },
   } as SxProps<Theme>,
 
   dialogActions: {
-    p: 3,
-    pt: 0,
+    p: { xs: 2, sm: 2, md: 3 },
+    pt: { xs: 1, sm: 1, md: 0 },
+    justifyContent: { xs: "stretch", sm: "flex-end" },
+  } as SxProps<Theme>,
+
+  dialogActionsMobile: {
+    px: 2,
+    py: 1.5,
+  } as SxProps<Theme>,
+
+  dialogActionsTablet: {
+    px: 2,
+    py: 2,
   } as SxProps<Theme>,
 
   closeActionButton: {
@@ -203,5 +285,10 @@ export const rolePermissionsDialogStyles = {
     "&:hover": {
       background: "linear-gradient(135deg, #1565c0, #1976d2)",
     },
+  } as SxProps<Theme>,
+
+  closeActionButtonMobile: {
+    minHeight: "44px",
+    fontSize: "1rem",
   } as SxProps<Theme>,
 };
