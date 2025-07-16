@@ -163,29 +163,39 @@ const Roles: React.FC = () => {
         </Box>
       ) : (
         <>
-          <Stack
-            direction={isMobile ? "column" : "row"}
-            spacing={1}
-            flexWrap={isMobile ? undefined : "wrap"}
+          <Box
             sx={{
-              mx: { xs: 0, sm: -1 },
-              mt: { xs: 0, sm: 0 },
-              mb: { xs: 1, sm: 2 },
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "1fr",
+                sm: "repeat(auto-fill, minmax(240px, 1fr))",
+                md: "repeat(auto-fill, minmax(260px, 1fr))",
+                lg: "repeat(auto-fill, minmax(280px, 1fr))",
+                xl: "repeat(auto-fill, minmax(300px, 1fr))",
+              },
+              gap: { xs: 2, sm: 2.5, md: 3 },
+              mb: { xs: 2, sm: 3 },
               width: "100%",
-              overflowX: "hidden",
-              alignItems: isMobile ? "stretch" : "flex-start",
+              alignItems: "stretch",
             }}
           >
             {paginatedRoles.map((role, idx) => (
-              <RoleCard
+              <Box
                 key={role._id || idx}
-                role={role}
-                idx={idx}
-                openEdit={handleOpenEdit}
-                small={isMobile}
-              />
+                sx={{
+                  display: "flex",
+                  minHeight: "100%",
+                }}
+              >
+                <RoleCard
+                  role={role}
+                  idx={idx}
+                  openEdit={handleOpenEdit}
+                  small={isMobile}
+                />
+              </Box>
             ))}
-          </Stack>
+          </Box>
           <Pagination
             page={page}
             pageSize={rowsPerPage}

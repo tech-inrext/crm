@@ -11,7 +11,7 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 // Extend SidebarLink type to allow onClick for label links
 
 const handleClick = () => {};
@@ -32,8 +32,9 @@ interface SidebarProps {
   links?: SidebarLink[];
 }
 
-const SidebarContent = ({ links }) => {
+const SidebarContent = ({ links, onClose }) => {
   const router = useRouter();
+  const pathname = usePathname();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md")); // More aggressive mobile breakpoint
   const isTablet = useMediaQuery(theme.breakpoints.between("md", "lg"));
@@ -69,9 +70,11 @@ const SidebarContent = ({ links }) => {
         }}
       >
         {links.map((link, idx) => {
+          const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
           return (
             <ListItemButton
               key={link.href}
+              selected={isActive}
               onClick={(e) => handleClick(e, link)}
               sx={{
                 color: "#fff",
@@ -148,20 +151,20 @@ const Sidebar: React.FC<SidebarProps> = ({ open, onClose, links = [] }) => {
             },
           }}
         >
-          <SidebarContent links={links} />
+          <SidebarContent links={links} onClose={onClose} />
         </Drawer>
       ) : (
         <Box
           sx={{
             position: "fixed",
-            top: 0,
+            top: 50,
             left: 0,
             height: "100vh",
             zIndex: 1200,
             // Always visible on desktop (no transform)
           }}
         >
-          <SidebarContent links={links} />
+          <SidebarContent links={links} onClose={onClose} />
         </Box>
       )}
     </>
