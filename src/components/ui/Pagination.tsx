@@ -6,7 +6,7 @@ import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 
 interface PaginationProps {
-  page: number;
+  page: number; // 1-based page number
   pageSize: number;
   total: number;
   onPageChange: (page: number) => void;
@@ -19,10 +19,10 @@ const Pagination: React.FC<PaginationProps> = ({
   pageSize,
   total,
   onPageChange,
-  pageSizeOptions = [5, 10, 20, 50],
+  pageSizeOptions,
   onPageSizeChange,
 }) => {
-  const totalPages = Math.ceil(total / pageSize) || 1;
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;
   const canNext = page < totalPages;
 
@@ -34,8 +34,10 @@ const Pagination: React.FC<PaginationProps> = ({
         gap: 2,
         mt: 2,
         justifyContent: "center",
+        flexWrap: "wrap",
       }}
     >
+      {/* Previous Button */}
       <IconButton
         size="small"
         onClick={() => canPrev && onPageChange(page - 1)}
@@ -48,9 +50,13 @@ const Pagination: React.FC<PaginationProps> = ({
       >
         <ArrowBackIosNewIcon fontSize="small" />
       </IconButton>
+
+      {/* Page Display */}
       <Typography sx={{ color: "#bfc9d9", fontWeight: 500, fontSize: 15 }}>
         Page {page} of {totalPages}
       </Typography>
+
+      {/* Next Button */}
       <IconButton
         size="small"
         onClick={() => canNext && onPageChange(page + 1)}
@@ -63,6 +69,8 @@ const Pagination: React.FC<PaginationProps> = ({
       >
         <ArrowForwardIosIcon fontSize="small" />
       </IconButton>
+
+      {/* Page Size Selector */}
       {onPageSizeChange && (
         <Box sx={{ ml: 2, display: "flex", alignItems: "center", gap: 1 }}>
           <Typography sx={{ color: "#bfc9d9", fontSize: 14 }}>Rows:</Typography>

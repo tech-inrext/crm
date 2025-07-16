@@ -44,15 +44,26 @@ const createLead = async (req, res) => {
 
 const getAllLeads = async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
+    const { page = 1, limit = 5, search = "" } = req.query;
 
     const currentPage = parseInt(page);
     const itemsPerPage = parseInt(limit);
     const skip = (currentPage - 1) * itemsPerPage;
 
+    // Optional search filter
+    const query = search
+      ? {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
     const [leads, totalLeads] = await Promise.all([
-      Lead.find({}).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }),
-      Lead.countDocuments(),
+      Lead.find(query).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }),
+      Lead.countDocuments(query),
     ]);
 
     return res.status(200).json({

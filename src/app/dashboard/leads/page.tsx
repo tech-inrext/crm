@@ -1,7 +1,7 @@
 "use client";
 
 // React & Core
-import React, { useState, useMemo, useRef, useCallback } from "react";
+import React, { useState, useRef, useCallback, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -9,16 +9,27 @@ import {
   Fab,
   CircularProgress,
   Stack,
+  Table,
+  TableBody,
+  TableContainer,
+  IconButton,
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
-import { Add } from "@mui/icons-material";
+import { Add, Edit as EditIcon } from "@mui/icons-material";
+import { useDebounce } from "@/hooks/useDebounce";
 import dynamic from "next/dynamic";
 import { useLeads } from "@/hooks/useLeads";
-import {
-  GRADIENTS,
-  ROWS_PER_PAGE_OPTIONS,
-  COMMON_STYLES,
-} from "@/constants/leads";
+import { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
 import PermissionGuard from "@/components/PermissionGuard";
+import {
+  getDefaultLeadFormData,
+  transformAPILeadToForm,
+} from "@/utils/leadUtils";
+import Pagination from "@/components/ui/Pagination";
+import { leadsTableHeader } from "@/components/leads/LeadsTableHeaderConfig";
+
+// Lazy Load Components
 const LeadDialog = dynamic(() => import("@/components/leads/LeadDialog"), {
   ssr: false,
 });
@@ -44,22 +55,6 @@ const LeadsActionBar = dynamic(
   () => import("@/components/leads/LeadsActionBar"),
   { ssr: false }
 );
-const BulkUpload = dynamic(() => import("@/components/leads/bulkUpload"), {
-  ssr: false,
-});
-import Table from "@mui/material/Table";
-import TableBody from "@mui/material/TableBody";
-import TableContainer from "@mui/material/TableContainer";
-import { leadsTableHeader } from "@/components/leads/LeadsTableHeaderConfig";
-import { useTheme } from "@mui/material/styles";
-import useMediaQuery from "@mui/material/useMediaQuery";
-import IconButton from "@mui/material/IconButton";
-import EditIcon from "@mui/icons-material/Edit";
-import {
-  getDefaultLeadFormData,
-  transformAPILeadToForm,
-} from "@/utils/leadUtils";
-import Pagination from "@/components/ui/Pagination";
 
 const Leads: React.FC = () => {
   const {
@@ -75,58 +70,49 @@ const Leads: React.FC = () => {
     formData,
     setFormData,
     stats,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    total,
     loadLeads,
     saveLead,
   } = useLeads();
+
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(6);
-  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-  // Filtered leads (search)
-  const filteredLeads = useMemo(() => {
-    if (!search) return leads;
-    return leads.filter(
-      (lead) =>
-        lead.name?.toLowerCase().includes(search.toLowerCase()) ||
-        lead.email?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [leads, search]);
+  const [searchInput, setSearchInput] = useState(search);
+  const debouncedSearch = useDebounce(searchInput, 500); // Debounce for 400ms
 
-  // Paginated leads
-  const paginatedLeads = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filteredLeads.slice(start, start + rowsPerPage);
-  }, [filteredLeads, page, rowsPerPage]);
+  // Sync debounced search with actual query state
+  useEffect(() => {
+    setSearch(debouncedSearch);
+    setPage(0);
+  }, [debouncedSearch, setSearch, setPage]);
 
-  const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const value = e.target.value;
-      if (searchTimeout.current) clearTimeout(searchTimeout.current);
-      searchTimeout.current = setTimeout(() => {
-        setSearch(value);
-        setPage(1);
-      }, 300);
-    },
-    [setSearch]
-  );
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchInput(e.target.value);
+  };
+
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
       ? {
-        ...col,
-        component: (row, { onEdit }) => (
-          <PermissionGuard module="lead" action="write" fallback={null}>
-            <IconButton onClick={() => onEdit(row)} size="small">
-              <EditIcon fontSize="small" />
-            </IconButton>
-          </PermissionGuard>
-        ),
-      }
+          ...col,
+          component: (row, { onEdit }) => (
+            <PermissionGuard module="lead" action="write" fallback={null}>
+              <IconButton onClick={() => onEdit(row)} size="small">
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </PermissionGuard>
+          ),
+        }
       : col
   );
-  React.useEffect(() => {
+
+  useEffect(() => {
     if (editId) {
       const lead = leads.find(
         (l) => l.id === editId || l._id === editId || l.leadId === editId
@@ -138,6 +124,7 @@ const Leads: React.FC = () => {
       setFormData(getDefaultLeadFormData());
     }
   }, [editId, leads, setFormData]);
+
   return (
     <Box
       sx={{
@@ -148,6 +135,7 @@ const Leads: React.FC = () => {
         overflow: "hidden",
       }}
     >
+      {/* Heading + Stats */}
       <Paper
         elevation={2}
         sx={{
@@ -171,6 +159,7 @@ const Leads: React.FC = () => {
         >
           Leads
         </Typography>
+
         <Box
           sx={{
             display: "grid",
@@ -200,8 +189,9 @@ const Leads: React.FC = () => {
             color="warning.main"
           />
         </Box>
+
         <LeadsActionBar
-          search={search}
+          search={searchInput}
           onSearchChange={handleSearchChange}
           viewMode={viewMode}
           setViewMode={setViewMode}
@@ -210,6 +200,8 @@ const Leads: React.FC = () => {
           loadLeads={loadLeads}
         />
       </Paper>
+
+      {/* Body View */}
       {loading ? (
         <LoadingSkeleton />
       ) : isMobile || viewMode === "cards" ? (
@@ -225,7 +217,7 @@ const Leads: React.FC = () => {
             mb: { xs: 2, sm: 3 },
           }}
         >
-          {paginatedLeads.map((lead) => (
+          {leads.map((lead) => (
             <LeadCard
               key={lead.id}
               lead={lead}
@@ -233,29 +225,23 @@ const Leads: React.FC = () => {
                 setEditId(lead._id);
                 setOpen(true);
               }}
-              onDelete={() => { }}
+              onDelete={() => {}}
             />
           ))}
-          <Pagination
-            total={filteredLeads.length}
-            page={page}
-            onPageChange={setPage}
+          {/* <Pagination
+            total={total}
+            page={page + 1}
+            onPageChange={(p) => setPage(p - 1)}
             pageSize={rowsPerPage}
             onPageSizeChange={(size) => {
               setRowsPerPage(size);
-              setPage(1);
+              setPage(0);
             }}
-            pageSizeOptions={[3, 6, 12, 24]}
-          />
+            pageSizeOptions={[5, 10, 15, 25]}
+          /> */}
         </Box>
       ) : (
-        <Box
-          sx={{
-            width: "100%",
-            overflowX: { xs: "auto", md: "visible" },
-            mb: { xs: 2, sm: 3 },
-          }}
-        >
+        <Box sx={{ width: "100%", overflowX: "auto", mb: { xs: 2, sm: 3 } }}>
           <TableContainer
             component={Paper}
             elevation={8}
@@ -263,7 +249,6 @@ const Leads: React.FC = () => {
               ...COMMON_STYLES.roundedPaper,
               minWidth: 600,
               width: "100%",
-              overflow: "auto",
             }}
           >
             <Table
@@ -275,7 +260,7 @@ const Leads: React.FC = () => {
             >
               <LeadsTableHeader header={leadsTableHeaderWithActions} />
               <TableBody>
-                {paginatedLeads.map((row) => (
+                {leads.map((row) => (
                   <LeadsTableRow
                     key={row.id}
                     row={row}
@@ -284,25 +269,28 @@ const Leads: React.FC = () => {
                       setEditId(row._id);
                       setOpen(true);
                     }}
-                    onDelete={() => { }}
+                    onDelete={() => {}}
                   />
                 ))}
               </TableBody>
             </Table>
+
             <Pagination
-              total={filteredLeads.length}
-              page={page}
-              onPageChange={setPage}
+              total={total}
+              page={page + 1}
+              onPageChange={(p) => setPage(p - 1)}
               pageSize={rowsPerPage}
               onPageSizeChange={(size) => {
                 setRowsPerPage(size);
-                setPage(1);
+                setPage(0);
               }}
-              pageSizeOptions={[3, 6, 12, 24]}
+              pageSizeOptions={[5, 10, 15, 25, 50]}
             />
           </TableContainer>
         </Box>
       )}
+
+      {/* Dialog */}
       <LeadDialog
         open={open}
         editId={editId}
@@ -318,11 +306,12 @@ const Leads: React.FC = () => {
             setOpen(false);
             setEditId(null);
           } catch (error) {
-            // Optionally show a notification or error dialog here
             console.error("Failed to save lead:", error);
           }
         }}
       />
+
+      {/* Mobile Add Button */}
       <PermissionGuard module="lead" action="write" fallback={<></>}>
         <Fab
           color="primary"
@@ -346,4 +335,5 @@ const Leads: React.FC = () => {
     </Box>
   );
 };
+
 export default Leads;
