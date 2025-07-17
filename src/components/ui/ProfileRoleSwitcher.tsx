@@ -63,10 +63,10 @@ const ProfileRoleSwitcher: React.FC = () => {
         text: `Successfully switched to ${selectedRole} role`,
       });
 
-      // Refresh page to apply new role permissions
-      setTimeout(() => {
-        window.location.reload();
-      }, 1500);
+      // // Refresh page to apply new role permissions
+      // setTimeout(() => {
+      //   window.location.reload();
+      // }, 1500);
     } catch (error) {
       console.error("Role switch error:", error);
       setMessage({

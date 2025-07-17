@@ -155,7 +155,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           setPendingRoleSelection(true);
         }
         // Redirect to dashboard after login
-        router.push("/");
+        router.push("/dashboard/select-role");
       } else {
         throw new Error(response.message || "Login failed");
       }
