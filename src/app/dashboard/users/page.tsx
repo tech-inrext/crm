@@ -10,6 +10,7 @@ import {
   useTheme,
   useMediaQuery,
   Button,
+  TableContainer,
 } from "@mui/material";
 import { Add, Edit } from "@mui/icons-material";
 import dynamic from "next/dynamic";
@@ -18,7 +19,17 @@ import PermissionGuard from "@/components/PermissionGuard";
 import UserDialog from "@/components/ui/UserDialog";
 import UsersActionBar from "@/components/ui/UsersActionBar";
 import UserCard from "@/components/ui/UserCard";
-import { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
+import {
+  GRADIENTS,
+  COMMON_STYLES,
+  DEFAULT_USER_FORM,
+  USERS_TABLE_HEADER,
+  USERS_ROWS_PER_PAGE_OPTIONS,
+  SEARCH_DEBOUNCE_DELAY,
+  FAB_POSITION,
+  USERS_PERMISSION_MODULE,
+} from "@/constants/users";
+import { MODULE_STYLES } from "@/styles/moduleStyles";
 import { useDebounce } from "@/hooks/useDebounce";
 
 const TableMap = dynamic(() => import("@/components/ui/TableMap"), {
@@ -30,7 +41,7 @@ const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
 
 const Users: React.FC = () => {
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 600);
+  const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
   const {
     employees,
     loading,
@@ -50,7 +61,6 @@ const Users: React.FC = () => {
     loadEmployees,
   } = useUsers(debouncedSearch);
 
-  const filteredUsers = employees;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -68,46 +78,39 @@ const Users: React.FC = () => {
     setPage(1);
   };
 
-  const usersTableHeader = [
-    { label: "Name", dataKey: "name" },
-    { label: "Email", dataKey: "email" },
-    { label: "Phone", dataKey: "phone" },
-    { label: "Designation", dataKey: "designation" },
-    {
-      label: "Actions",
-      component: (row) => (
-        <PermissionGuard module="employee" action="write" fallback={null}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => {
-              setSelectedUser(row);
-              setEditId(row.id || row._id);
-              setOpen(true);
-            }}
-            sx={{ minWidth: 0, px: 1, py: 0.5, minHeight: 0, lineHeight: 1 }}
-          >
-            <Edit fontSize="small" />
-          </Button>
-        </PermissionGuard>
-      ),
-    },
-  ];
-
-  const defaultUserForm = {
-    name: "",
-    email: "",
-    phone: "",
-    address: "",
-    gender: "Male",
-    age: "",
-    altPhone: "",
-    joiningDate: "",
-    designation: "",
-    managerId: "",
-    departmentId: "",
-    roles: [],
-  };
+  const usersTableHeader = USERS_TABLE_HEADER.map((header) =>
+    header.label === "Actions"
+      ? {
+          ...header,
+          component: (row) => (
+            <PermissionGuard
+              module={USERS_PERMISSION_MODULE}
+              action="write"
+              fallback={null}
+            >
+              <Button
+                variant="outlined"
+                size="small"
+                onClick={() => {
+                  setSelectedUser(row);
+                  setEditId(row.id || row._id);
+                  setOpen(true);
+                }}
+                sx={{
+                  minWidth: 0,
+                  px: 1,
+                  py: 0.5,
+                  minHeight: 0,
+                  lineHeight: 1,
+                }}
+              >
+                <Edit fontSize="small" />
+              </Button>
+            </PermissionGuard>
+          ),
+        }
+      : header
+  );
 
   const getInitialUserForm = (form: any) => {
     const safeForm = Object.fromEntries(
@@ -115,6 +118,7 @@ const Users: React.FC = () => {
         ([_, v]) => v !== undefined && v !== null
       )
     );
+
     let joiningDate = safeForm.joiningDate || "";
     if (joiningDate) {
       const dateObj = new Date(joiningDate);
@@ -122,20 +126,14 @@ const Users: React.FC = () => {
         joiningDate = dateObj.toISOString().slice(0, 10);
       }
     }
+
     return {
-      ...defaultUserForm,
+      ...DEFAULT_USER_FORM,
       ...safeForm,
       gender: safeForm.gender || "Male",
       managerId: safeForm.managerId || "",
       departmentId: safeForm.departmentId || "",
-      name: safeForm.name || "",
-      email: safeForm.email || "",
-      phone: safeForm.phone || "",
-      address: safeForm.address || "",
-      designation: safeForm.designation || "",
       roles: Array.isArray(safeForm.roles) ? safeForm.roles : [],
-      age: safeForm.age || "",
-      altPhone: safeForm.altPhone || "",
       joiningDate,
     };
   };
@@ -185,7 +183,7 @@ const Users: React.FC = () => {
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
         </Box>
-      ) : filteredUsers.length === 0 ? (
+      ) : employees.length === 0 ? (
         <Box sx={{ textAlign: "center", mt: 4 }}>
           <Typography>No users found.</Typography>
         </Box>
@@ -193,7 +191,7 @@ const Users: React.FC = () => {
         <Box
           sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 1.5, mb: 2 }}
         >
-          {filteredUsers.map((user) => (
+          {employees.map((user) => (
             <UserCard
               key={user.id || user._id}
               user={{
@@ -210,26 +208,17 @@ const Users: React.FC = () => {
           ))}
         </Box>
       ) : (
-        <Box
-          sx={{
-            width: "100%",
-            overflowX: { xs: "auto", md: "visible" },
-            mb: { xs: 2, sm: 3 },
-          }}
-        >
-          <Paper
+        <Box sx={MODULE_STYLES.leads.tableWrapper}>
+          <TableContainer
+            component={Paper}
             elevation={8}
             sx={{
               ...COMMON_STYLES.roundedPaper,
-              minWidth: { xs: 600, sm: "100%" },
-              width: "100%",
-              overflow: "auto",
-              maxHeight: { xs: 360, sm: 480, md: 600 },
-              position: "relative",
+              ...MODULE_STYLES.leads.tableContainer,
             }}
           >
             <TableMap
-              data={filteredUsers}
+              data={employees}
               header={usersTableHeader}
               onEdit={() => {}}
               onDelete={() => {}}
@@ -240,19 +229,27 @@ const Users: React.FC = () => {
               }
               stickyHeader
             />
+          </TableContainer>
+
+          {/* Pagination outside the scrollable table */}
+          <Box sx={MODULE_STYLES.leads.paginationWrapper}>
             <Pagination
               page={page}
               pageSize={rowsPerPage}
               total={totalItems}
               onPageChange={setPage}
               onPageSizeChange={handlePageSizeChange}
-              pageSizeOptions={[5, 10, 15, 25]}
+              pageSizeOptions={USERS_ROWS_PER_PAGE_OPTIONS}
             />
-          </Paper>
+          </Box>
         </Box>
       )}
 
-      <PermissionGuard module="employee" action="write" fallback={<></>}>
+      <PermissionGuard
+        module={USERS_PERMISSION_MODULE}
+        action="write"
+        fallback={<></>}
+      >
         <Fab
           color="primary"
           aria-label="add user"
@@ -260,11 +257,11 @@ const Users: React.FC = () => {
           disabled={saving}
           sx={{
             position: "fixed",
-            bottom: 24,
-            right: 24,
+            bottom: FAB_POSITION.bottom,
+            right: FAB_POSITION.right,
             background: GRADIENTS.button,
             display: { xs: "flex", md: "none" },
-            zIndex: 1201,
+            zIndex: FAB_POSITION.zIndex,
             boxShadow: 3,
             "&:hover": { background: GRADIENTS.buttonHover },
           }}
@@ -279,13 +276,15 @@ const Users: React.FC = () => {
           onClose={() => setOpen(false)}
           onSave={async (values) => {
             if (editId) {
-              await updateUser(editId, values);
+              // Remove fields that cannot be updated for existing users
+              const { email, phone, joiningDate, ...updateData } = values;
+              await updateUser(editId, updateData);
             } else {
               await addUser(values);
             }
             setOpen(false);
             setSelectedUser(null);
-            setForm(defaultUserForm);
+            setForm(DEFAULT_USER_FORM);
             setPage(1);
             setSearch("");
             await loadEmployees();
