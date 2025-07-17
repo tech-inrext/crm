@@ -38,18 +38,40 @@ const createRole = async (req, res) => {
   }
 };
 
-// ✅ Get all roles (requires READ access on "role")
 const getAllRoles = async (req, res) => {
   try {
-    const roles = await Role.find({});
+    const { page = 1, limit = 5, search = "" } = req.query;
+
+    const currentPage = parseInt(page);
+    const itemsPerPage = parseInt(limit);
+    const skip = (currentPage - 1) * itemsPerPage;
+
+    // Optional search filter
+    const query = search
+      ? {
+          $or: [{ name: { $regex: search, $options: "i" } }],
+        }
+      : {};
+
+    const [roles, totalRoles] = await Promise.all([
+      Role.find(query).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }),
+      Role.countDocuments(query),
+    ]);
+
     return res.status(200).json({
       success: true,
       data: roles,
+      pagination: {
+        totalItems: totalRoles,
+        currentPage,
+        itemsPerPage,
+        totalPages: Math.ceil(totalRoles / itemsPerPage),
+      },
     });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch roles",
+      message: "Failed to fetch Roles",
       error: error.message,
     });
   }

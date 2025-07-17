@@ -13,6 +13,7 @@ import {
 import { Add } from "@mui/icons-material";
 import RoleCard from "@/components/ui/RoleCard";
 import { useRoles } from "@/hooks/useRoles";
+import { useDebounce } from "@/hooks/useDebounce"; // 👈 Add this
 import { ROLE_PERMISSIONS, GRADIENTS } from "@/constants/leads";
 import PermissionGuard from "@/components/PermissionGuard";
 import AddRoleDialog from "@/components/ui/AddRoleDialog";
@@ -22,20 +23,28 @@ import Pagination from "@/components/ui/Pagination";
 import axios from "axios";
 import { transformToAPIRole } from "@/utils/leadUtils";
 
-// Use only 'User' for UI, maps to 'employee' in backend
 const modules = ["User", "Role", "Lead", "Department"];
 const initialModulePerms = Object.fromEntries(
   modules.map((m) => [m, { read: false, write: false, delete: false }])
 );
+
 const Roles: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  const { roles, loading, loadRoles } = useRoles();
-  const [addOpen, setAddOpen] = useState(false);
+
   const [search, setSearch] = useState("");
-  const [saving, setSaving] = useState(false);
+  const debouncedSearch = useDebounce(search, 400); // 👈 Debounced input
+
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(6);
+  const { roles, loading, total, loadRoles } = useRoles(
+    page,
+    rowsPerPage,
+    debouncedSearch // 👈 Use debounced value
+  );
+
+  const [addOpen, setAddOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [modulePerms, setModulePerms] = useState(initialModulePerms);
   const [editId, setEditId] = useState(null);
   const [editRole, setEditRole] = useState(null);
@@ -43,29 +52,10 @@ const Roles: React.FC = () => {
   const [selectedRoleForPermissions, setSelectedRoleForPermissions] =
     useState(null);
 
-  const stats = useMemo(() => {
-    return {
-      total: roles.length,
-    };
-  }, [roles]);
-
-  const filteredRoles = useMemo(() => {
-    if (!search) return roles;
-    return roles.filter((role) =>
-      role.name.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [roles, search]);
-
-  const paginatedRoles = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filteredRoles.slice(start, start + rowsPerPage);
-  }, [filteredRoles, page, rowsPerPage]);
-
   const handleOpenEdit = (idx) => {
-    const role = paginatedRoles[idx];
+    const role = roles[idx];
     if (!role) return;
     setEditId(role._id);
-    // Only transform for edit dialog
     setEditRole(transformToAPIRole(role));
     setAddOpen(true);
   };
@@ -85,7 +75,7 @@ const Roles: React.FC = () => {
     });
     try {
       if (editId) {
-        await axios.patch(`/api/v0/role/${editId}`, { ...perms }); // no name field
+        await axios.patch(`/api/v0/role/${editId}`, { ...perms });
       } else {
         await axios.post("/api/v0/role", { name, ...perms });
       }
@@ -131,11 +121,15 @@ const Roles: React.FC = () => {
         </Typography>
         <RolesActionBar
           search={search}
-          onSearchChange={(e) => setSearch(e.target.value)}
+          onSearchChange={(e) => {
+            setSearch(e.target.value);
+            setPage(1); // Reset page on search
+          }}
           onAdd={() => setAddOpen(true)}
           saving={saving}
         />
       </Paper>
+
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
@@ -158,28 +152,37 @@ const Roles: React.FC = () => {
               alignItems: "stretch",
             }}
           >
-            {paginatedRoles.map((role, idx) => (
-              <Box
-                key={role._id || idx}
-                sx={{
-                  display: "flex",
-                  minHeight: "100%",
-                }}
+            {roles.length > 0 ? (
+              roles.map((role, idx) => (
+                <Box
+                  key={role._id || idx}
+                  sx={{ display: "flex", minHeight: "100%" }}
+                >
+                  <RoleCard
+                    role={role}
+                    idx={idx}
+                    openEdit={handleOpenEdit}
+                    onViewPermissions={handleViewPermissions}
+                    small={isMobile}
+                  />
+                </Box>
+              ))
+            ) : (
+              <Typography
+                textAlign="center"
+                width="100%"
+                mt={2}
+                color="text.primary"
               >
-                <RoleCard
-                  role={role}
-                  idx={idx}
-                  openEdit={handleOpenEdit}
-                  onViewPermissions={handleViewPermissions}
-                  small={isMobile}
-                />
-              </Box>
-            ))}
+                No roles found.
+              </Typography>
+            )}
           </Box>
+
           <Pagination
             page={page}
             pageSize={rowsPerPage}
-            total={filteredRoles.length}
+            total={total}
             onPageChange={setPage}
             pageSizeOptions={[3, 6, 12, 24]}
             onPageSizeChange={(size) => {
@@ -189,6 +192,7 @@ const Roles: React.FC = () => {
           />
         </>
       )}
+
       <PermissionGuard module="role" action="write" fallback={<></>}>
         <Fab
           color="primary"
@@ -205,6 +209,7 @@ const Roles: React.FC = () => {
           <Add />
         </Fab>
       </PermissionGuard>
+
       <AddRoleDialog
         open={addOpen}
         role={editRole}
@@ -217,6 +222,7 @@ const Roles: React.FC = () => {
           setEditRole(null);
         }}
       />
+
       <RolePermissionsDialog
         open={permissionsDialogOpen}
         role={selectedRoleForPermissions}
@@ -228,4 +234,5 @@ const Roles: React.FC = () => {
     </Box>
   );
 };
+
 export default Roles;
