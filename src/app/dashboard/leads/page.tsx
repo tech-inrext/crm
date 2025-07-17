@@ -21,6 +21,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import dynamic from "next/dynamic";
 import { useLeads } from "@/hooks/useLeads";
 import { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
+import { MODULE_STYLES } from "@/styles/moduleStyles";
 import PermissionGuard from "@/components/PermissionGuard";
 import {
   getDefaultLeadFormData,
@@ -126,52 +127,14 @@ const Leads: React.FC = () => {
   }, [editId, leads, setFormData]);
 
   return (
-    <Box
-      sx={{
-        p: { xs: 0.5, sm: 1, md: 2 },
-        pt: { xs: 1, sm: 2, md: 3 },
-        minHeight: "100vh",
-        bgcolor: "background.default",
-        overflow: "hidden",
-      }}
-    >
+    <Box sx={MODULE_STYLES.layout.mainContainer}>
       {/* Heading + Stats */}
-      <Paper
-        elevation={2}
-        sx={{
-          p: { xs: 1, sm: 2, md: 3 },
-          borderRadius: { xs: 1, sm: 2, md: 3 },
-          mb: { xs: 1, sm: 2, md: 3 },
-          mt: { xs: 0.5, sm: 1, md: 2 },
-          background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-          overflow: "hidden",
-        }}
-      >
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            color: "text.primary",
-            fontSize: { xs: "1.3rem", sm: "2rem", md: "2.5rem" },
-            mb: { xs: 1.5, md: 3 },
-            textAlign: { xs: "center", sm: "left" },
-          }}
-        >
+      <Paper elevation={2} sx={MODULE_STYLES.layout.headerPaper}>
+        <Typography variant="h4" sx={MODULE_STYLES.layout.moduleTitle}>
           Leads
         </Typography>
 
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "repeat(2, 1fr)",
-              md: "repeat(4, 1fr)",
-            },
-            gap: { xs: 1, sm: 2, md: 3 },
-            mb: { xs: 1, sm: 2, md: 3 },
-          }}
-        >
+        <Box sx={MODULE_STYLES.leads.statsGrid}>
           <StatsCard
             value={stats.total}
             label="Total Leads"
@@ -205,18 +168,7 @@ const Leads: React.FC = () => {
       {loading ? (
         <LoadingSkeleton />
       ) : isMobile || viewMode === "cards" ? (
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "repeat(2, 1fr)",
-              lg: "repeat(3, 1fr)",
-            },
-            gap: { xs: 1.5, sm: 2, md: 3 },
-            mb: { xs: 2, sm: 3 },
-          }}
-        >
+        <Box sx={MODULE_STYLES.leads.cardsGrid}>
           {leads.map((lead) => (
             <LeadCard
               key={lead.id}
@@ -228,7 +180,7 @@ const Leads: React.FC = () => {
               onDelete={() => {}}
             />
           ))}
-          {/* <Pagination
+          <Pagination
             total={total}
             page={page + 1}
             onPageChange={(p) => setPage(p - 1)}
@@ -238,25 +190,22 @@ const Leads: React.FC = () => {
               setPage(0);
             }}
             pageSizeOptions={[5, 10, 15, 25]}
-          /> */}
+          />
         </Box>
       ) : (
-        <Box sx={{ width: "100%", overflowX: "auto", mb: { xs: 2, sm: 3 } }}>
+        <Box sx={MODULE_STYLES.leads.tableWrapper}>
           <TableContainer
             component={Paper}
             elevation={8}
             sx={{
               ...COMMON_STYLES.roundedPaper,
-              minWidth: 600,
-              width: "100%",
+              ...MODULE_STYLES.leads.tableContainer,
             }}
           >
             <Table
-              size={
-                typeof window !== "undefined" && window.innerWidth < 600
-                  ? "small"
-                  : "medium"
-              }
+              stickyHeader
+              size={MODULE_STYLES.common.getResponsiveTableSize()}
+              sx={MODULE_STYLES.leads.table}
             >
               <LeadsTableHeader header={leadsTableHeaderWithActions} />
               <TableBody>
@@ -274,7 +223,10 @@ const Leads: React.FC = () => {
                 ))}
               </TableBody>
             </Table>
+          </TableContainer>
 
+          {/* Pagination outside the scrollable table */}
+          <Box sx={MODULE_STYLES.leads.paginationWrapper}>
             <Pagination
               total={total}
               page={page + 1}
@@ -286,7 +238,7 @@ const Leads: React.FC = () => {
               }}
               pageSizeOptions={[5, 10, 15, 25, 50]}
             />
-          </TableContainer>
+          </Box>
         </Box>
       )}
 
@@ -319,13 +271,8 @@ const Leads: React.FC = () => {
           onClick={() => setOpen(true)}
           disabled={saving}
           sx={{
-            position: "fixed",
-            bottom: 24,
-            right: 24,
+            ...MODULE_STYLES.layout.mobileFab,
             background: GRADIENTS.button,
-            display: { xs: "flex", md: "none" },
-            zIndex: 1201,
-            boxShadow: 3,
             "&:hover": { background: GRADIENTS.buttonHover },
           }}
         >

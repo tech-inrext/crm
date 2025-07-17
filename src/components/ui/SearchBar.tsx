@@ -17,7 +17,7 @@ const SearchBar: React.FC<SearchBarProps> = ({
   <Box sx={{ minWidth: 200, bgcolor: "white", borderRadius: 1, ...sx }}>
     <TextField
       size="small"
-      label={placeholder || "Search"}
+      placeholder={placeholder || "Search"}
       value={value}
       onChange={onChange}
       inputProps={{ "aria-label": placeholder || "Search" }}
