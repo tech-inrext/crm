@@ -139,15 +139,7 @@ const Users: React.FC = () => {
   };
 
   return (
-    <Box
-      sx={{
-        p: { xs: 0.5, sm: 1, md: 2 },
-        pt: { xs: 1, sm: 2, md: 3 },
-        minHeight: "100vh",
-        bgcolor: "background.default",
-        overflow: "hidden",
-      }}
-    >
+    <Box sx={MODULE_STYLES.users.usersContainer}>
       <Paper
         elevation={2}
         sx={{

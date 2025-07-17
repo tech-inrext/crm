@@ -29,7 +29,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         alignItems: "center",
         px: { xs: 0.5, sm: 1, md: 2 },
         py: { xs: 0.25, sm: 0.5, md: 1 },
-        bgcolor: "#181C1F",
+        bgcolor: "#fff",
         height: { xs: 48, sm: 56, md: 64 },
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         borderBottom: "1px solid rgba(255,255,255,0.1)",
@@ -67,6 +67,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           alt="Inrext"
           borderRadius="8px"
           sx={{
+            color: "#000",
             width: { xs: 28, sm: 32, md: 40 },
             height: { xs: 28, sm: 32, md: 40 },
           }}
@@ -74,9 +75,10 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         <Typography
           variant="h6"
           sx={{
+            fontFamily: "calibri, sans-serif",
             fontWeight: 800,
             fontSize: { xs: 16, sm: 18, md: 22 },
-            color: "#fff",
+            color: "#000",
             letterSpacing: 1,
             ml: 1,
             whiteSpace: "nowrap",

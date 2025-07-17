@@ -151,9 +151,9 @@ const BulkUpload = ({ loadLeads }) => {
               "Uploading..."
             )
           ) : isTablet ? (
-            "Upload"
+            "Bulk Upload"
           ) : (
-            "Upload Lead"
+            "Bulk Upload"
           )}
         </Button>
       </label>

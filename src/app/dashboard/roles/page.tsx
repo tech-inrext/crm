@@ -15,6 +15,7 @@ import RoleCard from "@/components/ui/RoleCard";
 import { useRoles } from "@/hooks/useRoles";
 import { useDebounce } from "@/hooks/useDebounce"; // 👈 Add this
 import { ROLE_PERMISSIONS, GRADIENTS } from "@/constants/leads";
+import { MODULE_STYLES } from "@/styles/moduleStyles";
 import PermissionGuard from "@/components/PermissionGuard";
 import AddRoleDialog from "@/components/ui/AddRoleDialog";
 import RolePermissionsDialog from "@/components/ui/RolePermissionsDialog";
@@ -89,13 +90,7 @@ const Roles: React.FC = () => {
   };
 
   return (
-    <Box
-      sx={{
-        p: { xs: 1, sm: 2, md: 3 },
-        minHeight: "100vh",
-        bgcolor: "background.default",
-      }}
-    >
+    <Box sx={MODULE_STYLES.roles.rolesContainer}>
       <Paper
         elevation={2}
         sx={{
