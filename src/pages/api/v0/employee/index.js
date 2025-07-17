@@ -71,7 +71,7 @@ const createEmployee = async (req, res) => {
 
     return res.status(201).json({ success: true, data: newEmployee });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({
       success: false,
       message: "Error creating employee",
@@ -81,14 +81,60 @@ const createEmployee = async (req, res) => {
 };
 
 // ✅ Get all employees (READ Access Required)
+// const getAllEmployees = async (req, res) => {
+//   try {
+//     const employees = await Employee.find({});
+//     return res.status(200).json({ success: true, data: employees });
+//   } catch (error) {
+//     return res.status(500).json({
+//       success: false,
+//       message: "Failed to fetch employees",
+//       error: error.message,
+//     });
+//   }
+// };
+
 const getAllEmployees = async (req, res) => {
   try {
-    const employees = await Employee.find({});
-    return res.status(200).json({ success: true, data: employees });
+    const { page = 1, limit = 5, search = "" } = req.query;
+
+    const currentPage = parseInt(page);
+    const itemsPerPage = parseInt(limit);
+    const skip = (currentPage - 1) * itemsPerPage;
+
+    // Optional search filter
+    const query = search
+      ? {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    const [employees, totalEmployees] = await Promise.all([
+      Employee.find(query)
+        .skip(skip)
+        .limit(itemsPerPage)
+        .sort({ createdAt: -1 }),
+      Employee.countDocuments(query),
+    ]);
+
+    return res.status(200).json({
+      success: true,
+      data: employees,
+      pagination: {
+        totalItems: totalEmployees,
+        currentPage,
+        itemsPerPage,
+        totalPages: Math.ceil(totalEmployees / itemsPerPage),
+      },
+    });
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch employees",
+      message: "Failed to fetch Employee",
       error: error.message,
     });
   }
