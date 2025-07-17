@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { EMPLOYEE_API_BASE } from "@/constants/leads";
+import { USERS_API_BASE } from "@/constants/users";
 
 export interface Employee {
   _id?: string;
@@ -27,7 +27,7 @@ export function useUsers(debouncedSearch: string) {
     async (page = 1, limit = 5, search = "") => {
       setLoading(true);
       try {
-        const response = await axios.get(EMPLOYEE_API_BASE, {
+        const response = await axios.get(USERS_API_BASE, {
           params: {
             page,
             limit,
@@ -56,7 +56,7 @@ export function useUsers(debouncedSearch: string) {
   const addUser = useCallback(async (userData: any) => {
     setSaving(true);
     try {
-      await axios.post(EMPLOYEE_API_BASE, userData);
+      await axios.post(USERS_API_BASE, userData);
       await loadEmployees(page, rowsPerPage, debouncedSearch);
     } catch (error) {
       console.error("Failed to add user:", error);
@@ -69,7 +69,7 @@ export function useUsers(debouncedSearch: string) {
   const updateUser = useCallback(async (id: string, userData: any) => {
     setSaving(true);
     try {
-      await axios.patch(`${EMPLOYEE_API_BASE}/${id}`, userData);
+      await axios.patch(`${USERS_API_BASE}/${id}`, userData);
       await loadEmployees(page, rowsPerPage, debouncedSearch);
     } catch (error) {
       console.error("Failed to update user:", error);

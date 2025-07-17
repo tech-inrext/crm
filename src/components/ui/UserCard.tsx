@@ -10,6 +10,7 @@ import {
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 import PermissionGuard from "@/components/PermissionGuard";
+import { USERS_PERMISSION_MODULE } from "@/constants/users";
 
 interface UserCardProps {
   user: {
@@ -90,7 +91,11 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
         </Stack>
       </CardContent>
       {onEdit && (
-        <PermissionGuard module="employee" action="write" fallback={<></>}>
+        <PermissionGuard
+          module={USERS_PERMISSION_MODULE}
+          action="write"
+          fallback={<></>}
+        >
           <IconButton
             size="small"
             onClick={onEdit}

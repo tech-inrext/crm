@@ -9,6 +9,7 @@ import {
 import { Add } from "@mui/icons-material";
 import SearchBar from "@/components/ui/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
+import { USERS_PERMISSION_MODULE, SEARCH_PLACEHOLDER } from "@/constants/users";
 
 interface UsersActionBarProps {
   search: string;
@@ -41,11 +42,15 @@ const UsersActionBar: React.FC<UsersActionBarProps> = ({
           sx={{ width: "100%", minWidth: 280 }}
           value={search}
           onChange={onSearchChange}
-          placeholder="Search users by name, email, phone..."
+          placeholder={SEARCH_PLACEHOLDER}
         />
       </Box>
       {!isMobile && (
-        <PermissionGuard module="employee" action="write" fallback={<></>}>
+        <PermissionGuard
+          module={USERS_PERMISSION_MODULE}
+          action="write"
+          fallback={<></>}
+        >
           <Button
             variant="contained"
             startIcon={<Add />}
