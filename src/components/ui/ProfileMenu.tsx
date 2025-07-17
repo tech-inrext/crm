@@ -48,7 +48,7 @@ const ProfileMenu: React.FC = () => {
   return (
     <>
       <IconButton
-        color="inherit"
+        color=""
         onClick={handleMenu}
         sx={{ ml: 1 }}
         aria-label="profile menu"

@@ -54,9 +54,9 @@ const SidebarContent = ({ links, onClose }) => {
       sx={{
         width: { xs: 260, sm: 280, md: 300, lg: 260 }, // Better responsive width
         height: "100%",
-        background: "linear-gradient(180deg, #181C1F 0%, #1a1f23 100%)",
+        background: "#fff",
         color: "#fff",
-        borderRight: "1px solid #23272A",
+        boxShadow: "2px 0 8px rgba(0, 0, 0, 0.1)",
         overflow: "hidden",
       }}
     >
@@ -70,14 +70,15 @@ const SidebarContent = ({ links, onClose }) => {
         }}
       >
         {links.map((link, idx) => {
-          const isActive = pathname === link.href || pathname.startsWith(link.href + '/');
+          const isActive =
+            pathname === link.href || pathname.startsWith(link.href + "/");
           return (
             <ListItemButton
               key={link.href}
               selected={isActive}
               onClick={(e) => handleClick(e, link)}
               sx={{
-                color: "#fff",
+                color: "#000",
                 borderRadius: { xs: 1, sm: 2 },
                 mx: { xs: 0.25, sm: 0.5, md: 1 }, // Reduced margin on mobile
                 mb: { xs: 0.25, sm: 0.5 }, // Reduced bottom margin
@@ -86,14 +87,15 @@ const SidebarContent = ({ links, onClose }) => {
                 minHeight: { xs: 36, sm: 40, md: 48 }, // Smaller on mobile but still touch-friendly
                 transition: "all 0.2s ease",
                 "&.Mui-selected, &.Mui-selected:hover": {
-                  bgcolor: "#2c5282",
+                  bgcolor: "#0076FF",
                   color: "#fff",
                   "& .MuiListItemIcon-root": {
                     color: "#90cdf4",
                   },
                 },
                 "&:hover": {
-                  bgcolor: "rgba(255,255,255,0.08)",
+                  bgcolor: "#0076FF",
+                  color: "#fff",
                   transform: "translateX(2px)",
                 },
               }}
