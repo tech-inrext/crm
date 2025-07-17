@@ -57,6 +57,16 @@ export const MODULE_LAYOUT_STYLES = {
 
 // Leads module specific styles
 export const LEADS_STYLES = {
+  // Leads main container with additional top margin
+  leadsContainer: {
+    p: { xs: 0.5, sm: 1, md: 2 },
+    pt: { xs: 1, sm: 2, md: 3 },
+    mt: { xs: 2, sm: 3, md: 4 }, // Additional top margin for leads module
+    minHeight: "100vh",
+    bgcolor: "background.default",
+    overflow: "hidden",
+  } as SxProps<Theme>,
+
   // Stats grid container
   statsGrid: {
     display: "grid",
@@ -124,6 +134,16 @@ export const LEADS_STYLES = {
 
 // Users module specific styles
 export const USERS_STYLES = {
+  // Users main container with additional top margin
+  usersContainer: {
+    p: { xs: 0.5, sm: 1, md: 2 },
+    pt: { xs: 1, sm: 2, md: 3 },
+    mt: { xs: 2, sm: 3, md: 4 }, // Additional top margin for users module
+    minHeight: "100vh",
+    bgcolor: "background.default",
+    overflow: "hidden",
+  } as SxProps<Theme>,
+
   // Users title with adjusted font size
   usersTitle: {
     fontWeight: 700,
@@ -161,9 +181,10 @@ export const USERS_STYLES = {
 
 // Roles module specific styles
 export const ROLES_STYLES = {
-  // Roles main container (slightly different padding)
-  rolesMainContainer: {
+  // Roles main container with additional top margin
+  rolesContainer: {
     p: { xs: 1, sm: 2, md: 3 },
+    mt: { xs: 2, sm: 3, md: 4 }, // Additional top margin for roles module
     minHeight: "100vh",
     bgcolor: "background.default",
   } as SxProps<Theme>,

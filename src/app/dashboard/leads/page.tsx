@@ -127,7 +127,7 @@ const Leads: React.FC = () => {
   }, [editId, leads, setFormData]);
 
   return (
-    <Box sx={MODULE_STYLES.layout.mainContainer}>
+    <Box sx={MODULE_STYLES.leads.leadsContainer}>
       {/* Heading + Stats */}
       <Paper elevation={2} sx={MODULE_STYLES.layout.headerPaper}>
         <Typography variant="h4" sx={MODULE_STYLES.layout.moduleTitle}>
