@@ -6,14 +6,34 @@ import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
 import Typography from "@mui/material/Typography";
+import Dialog from "@mui/material/Dialog";
+import DialogTitle from "@mui/material/DialogTitle";
+import DialogContent from "@mui/material/DialogContent";
+import DialogActions from "@mui/material/DialogActions";
+import TextField from "@mui/material/TextField";
+import Button from "@mui/material/Button";
+import Box from "@mui/material/Box";
 import AccountCircle from "@mui/icons-material/AccountCircle";
-import { Logout, Person, Settings, SwapHoriz } from "@mui/icons-material";
+import {
+  Logout,
+  Person,
+  Settings,
+  SwapHoriz,
+  LockReset,
+} from "@mui/icons-material";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 import RoleSelectionDialog from "@/components/ui/RoleSelectionDialog";
 
 const ProfileMenu: React.FC = () => {
   const [anchorEl, setAnchorEl] = React.useState<null | HTMLElement>(null);
+  const [resetPasswordOpen, setResetPasswordOpen] = React.useState(false);
+  const [passwordForm, setPasswordForm] = React.useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
+  const [isResetting, setIsResetting] = React.useState(false);
   const open = Boolean(anchorEl);
   const { user, logout, switchRole, setChangeRole } = useAuth();
   const router = useRouter();
@@ -39,6 +59,72 @@ const ProfileMenu: React.FC = () => {
     } catch (error) {
       console.error("Logout failed:", error);
     }
+  };
+
+  const handleResetPassword = async () => {
+    setResetPasswordOpen(true);
+    handleClose();
+  };
+
+  const handleResetPasswordSubmit = async () => {
+    if (
+      !passwordForm.oldPassword ||
+      !passwordForm.newPassword ||
+      !passwordForm.confirmPassword
+    ) {
+      alert("Please fill in all fields.");
+      return;
+    }
+
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      alert("New passwords do not match. Please try again.");
+      return;
+    }
+
+    if (passwordForm.newPassword.length < 6) {
+      alert("New password must be at least 6 characters long.");
+      return;
+    }
+
+    setIsResetting(true);
+
+    try {
+      const response = await fetch("/api/v0/employee/resetPassword", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          email: user?.email,
+          oldPassword: passwordForm.oldPassword,
+          newPassword: passwordForm.newPassword,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        alert("Password reset successfully!");
+        setResetPasswordOpen(false);
+        setPasswordForm({
+          oldPassword: "",
+          newPassword: "",
+          confirmPassword: "",
+        });
+      } else {
+        alert(`Error: ${data.message || "Failed to reset password"}`);
+      }
+    } catch (error) {
+      console.error("Reset password failed:", error);
+      alert("Failed to reset password. Please try again.");
+    } finally {
+      setIsResetting(false);
+    }
+  };
+
+  const handleCloseResetPassword = () => {
+    setResetPasswordOpen(false);
+    setPasswordForm({ oldPassword: "", newPassword: "", confirmPassword: "" });
   };
 
   const getCurrentRoleName = () => {
@@ -77,13 +163,23 @@ const ProfileMenu: React.FC = () => {
         {user && [
           <MenuItem
             key="user-info"
-            disabled
-            sx={{ py: 1, flexDirection: "column", alignItems: "flex-start" }}
+            sx={{
+              py: 1.5,
+              flexDirection: "column",
+              alignItems: "flex-start",
+              cursor: "default",
+              "&:hover": { backgroundColor: "transparent" },
+            }}
           >
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            <Typography
+              variant="subtitle1"
+              sx={{ fontWeight: 600, color: "#000" }}
+            >
               {user.name}
             </Typography>
-            <Typography color="text.secondary">{user.email}</Typography>
+            <Typography variant="body2" sx={{ color: "#666" }}>
+              {user.email}
+            </Typography>
           </MenuItem>,
           <Divider key="divider-1" />,
         ]}
@@ -95,6 +191,10 @@ const ProfileMenu: React.FC = () => {
           <SwapHoriz sx={{ mr: 2, fontSize: 20 }} />
           Switch Role ({getCurrentRoleName()})
         </MenuItem>
+        <MenuItem onClick={handleResetPassword} sx={{ py: 1 }}>
+          <LockReset sx={{ mr: 2, fontSize: 20 }} />
+          Reset Password
+        </MenuItem>
         <MenuItem onClick={handleClose} sx={{ py: 1 }}>
           <Settings sx={{ mr: 2, fontSize: 20 }} />
           Settings
@@ -105,6 +205,72 @@ const ProfileMenu: React.FC = () => {
           Logout
         </MenuItem>
       </Menu>
+
+      {/* Reset Password Modal */}
+      <Dialog
+        open={resetPasswordOpen}
+        onClose={handleCloseResetPassword}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Reset Password</DialogTitle>
+        <DialogContent>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}>
+            <TextField
+              label="Current Password"
+              type="password"
+              value={passwordForm.oldPassword}
+              onChange={(e) =>
+                setPasswordForm({
+                  ...passwordForm,
+                  oldPassword: e.target.value,
+                })
+              }
+              fullWidth
+              variant="outlined"
+            />
+            <TextField
+              label="New Password"
+              type="password"
+              value={passwordForm.newPassword}
+              onChange={(e) =>
+                setPasswordForm({
+                  ...passwordForm,
+                  newPassword: e.target.value,
+                })
+              }
+              fullWidth
+              variant="outlined"
+              helperText="Password must be at least 6 characters long"
+            />
+            <TextField
+              label="Confirm New Password"
+              type="password"
+              value={passwordForm.confirmPassword}
+              onChange={(e) =>
+                setPasswordForm({
+                  ...passwordForm,
+                  confirmPassword: e.target.value,
+                })
+              }
+              fullWidth
+              variant="outlined"
+            />
+          </Box>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={handleCloseResetPassword} disabled={isResetting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleResetPasswordSubmit}
+            variant="contained"
+            disabled={isResetting}
+          >
+            {isResetting ? "Resetting..." : "Reset Password"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 };
