@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Box from "@mui/material/Box";
 import IconButton from "@mui/material/IconButton";
 import Typography from "@mui/material/Typography";
@@ -19,12 +19,39 @@ const Pagination: React.FC<PaginationProps> = ({
   pageSize,
   total,
   onPageChange,
-  pageSizeOptions,
+  pageSizeOptions = [5, 10, 15, 25],
   onPageSizeChange,
 }) => {
   const totalPages = Math.max(1, Math.ceil(total / pageSize));
   const canPrev = page > 1;
   const canNext = page < totalPages;
+
+  const [inputPage, setInputPage] = useState(page.toString());
+
+  // Sync inputPage when parent updates page
+  useEffect(() => {
+    setInputPage(page.toString());
+  }, [page]);
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const val = e.target.value;
+    if (/^\d*$/.test(val)) setInputPage(val); // Allow only digits
+  };
+
+  const triggerPageChange = () => {
+    const parsed = parseInt(inputPage);
+    if (!isNaN(parsed) && parsed >= 1 && parsed <= totalPages) {
+      onPageChange(parsed);
+    } else {
+      setInputPage(page.toString()); // Reset if invalid
+    }
+  };
+
+  const handlePageSubmit = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter") {
+      triggerPageChange();
+    }
+  };
 
   return (
     <Box
@@ -51,10 +78,30 @@ const Pagination: React.FC<PaginationProps> = ({
         <ArrowBackIosNewIcon fontSize="small" />
       </IconButton>
 
-      {/* Page Display */}
-      <Typography sx={{ color: "#bfc9d9", fontWeight: 500, fontSize: 15 }}>
-        Page {page} of {totalPages}
-      </Typography>
+      {/* Page Input */}
+      <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+        <Typography sx={{ color: "#bfc9d9", fontSize: 14 }}>Page</Typography>
+        <input
+          type="text"
+          value={inputPage}
+          onChange={handleInputChange}
+          onKeyDown={handlePageSubmit}
+          onBlur={triggerPageChange} // ✅ trigger onBlur
+          style={{
+            width: "60px",
+            padding: "2px 5px",
+            borderRadius: 6,
+            border: "1px solid #232b36",
+            background: "#181d23",
+            color: "#bfc9d9",
+            fontWeight: 500,
+            textAlign: "center",
+          }}
+        />
+        <Typography sx={{ color: "#bfc9d9", fontSize: 14 }}>
+          of {totalPages}
+        </Typography>
+      </Box>
 
       {/* Next Button */}
       <IconButton

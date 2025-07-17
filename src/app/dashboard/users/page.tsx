@@ -1,85 +1,77 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Box,
   Paper,
   Typography,
   Fab,
   CircularProgress,
-  Stack,
-  Button,
   useTheme,
   useMediaQuery,
+  Button,
 } from "@mui/material";
 import { Add, Edit } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 import { useUsers } from "@/hooks/useUsers";
-import {
-  EMPLOYEE_ROWS_PER_PAGE_OPTIONS,
-  GRADIENTS,
-  COMMON_STYLES,
-} from "@/constants/leads";
 import PermissionGuard from "@/components/PermissionGuard";
 import UserDialog from "@/components/ui/UserDialog";
 import UsersActionBar from "@/components/ui/UsersActionBar";
 import UserCard from "@/components/ui/UserCard";
+import { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
+import { useDebounce } from "@/hooks/useDebounce";
+
 const TableMap = dynamic(() => import("@/components/ui/TableMap"), {
   ssr: false,
 });
 const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
   ssr: false,
 });
+
 const Users: React.FC = () => {
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 600);
   const {
     employees,
     loading,
+    page,
+    setPage,
+    rowsPerPage,
+    setRowsPerPage,
+    totalItems,
     saving,
-    search,
-    setSearch,
-    open,
     setOpen,
+    open,
     editId,
     setEditId,
-    form,
-    setForm,
-    loadEmployees,
     addUser,
     updateUser,
-  } = useUsers();
+    setForm,
+    loadEmployees,
+  } = useUsers(debouncedSearch);
+
+  const filteredUsers = employees;
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-  // Pagination state (copied from roles)
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(6);
   const [selectedUser, setSelectedUser] = useState<any>(null);
-
-  // Filtered users (search)
-  const filteredUsers = useMemo(() => {
-    if (!search) return employees;
-    return employees.filter(
-      (user) =>
-        user.name?.toLowerCase().includes(search.toLowerCase()) ||
-        user.email?.toLowerCase().includes(search.toLowerCase())
-    );
-  }, [employees, search]);
-
-  // Paginated users
-  const paginatedUsers = useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    return filteredUsers.slice(start, start + rowsPerPage);
-  }, [filteredUsers, page, rowsPerPage]);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
       setPage(1);
     },
-    [setSearch]
+    [setSearch, setPage]
   );
+
+  const handlePageSizeChange = (newSize: number) => {
+    setRowsPerPage(newSize);
+    setPage(1);
+  };
+
   const usersTableHeader = [
     { label: "Name", dataKey: "name" },
     { label: "Email", dataKey: "email" },
+    { label: "Phone", dataKey: "phone" },
     { label: "Designation", dataKey: "designation" },
     {
       label: "Actions",
@@ -101,33 +93,30 @@ const Users: React.FC = () => {
       ),
     },
   ];
-  // Helper: default form data for new user
+
   const defaultUserForm = {
     name: "",
     email: "",
     phone: "",
     address: "",
-    gender: "Male", 
+    gender: "Male",
     age: "",
     altPhone: "",
     joiningDate: "",
     designation: "",
-    managerId: "", // Always controlled, never undefined
-    departmentId: "", // Always controlled, never undefined
+    managerId: "",
+    departmentId: "",
     roles: [],
   };
 
-  // Always provide a complete initialData to UserDialog
   const getInitialUserForm = (form: any) => {
     const safeForm = Object.fromEntries(
       Object.entries(form || {}).filter(
         ([_, v]) => v !== undefined && v !== null
       )
     );
-    // Format joiningDate as YYYY-MM-DD if present
     let joiningDate = safeForm.joiningDate || "";
     if (joiningDate) {
-      // Handles both Date objects and ISO strings
       const dateObj = new Date(joiningDate);
       if (!isNaN(dateObj.getTime())) {
         joiningDate = dateObj.toISOString().slice(0, 10);
@@ -191,6 +180,7 @@ const Users: React.FC = () => {
           saving={saving}
         />
       </Paper>
+
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
           <CircularProgress />
@@ -203,7 +193,7 @@ const Users: React.FC = () => {
         <Box
           sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 1.5, mb: 2 }}
         >
-          {paginatedUsers.map((user) => (
+          {filteredUsers.map((user) => (
             <UserCard
               key={user.id || user._id}
               user={{
@@ -239,7 +229,7 @@ const Users: React.FC = () => {
             }}
           >
             <TableMap
-              data={paginatedUsers}
+              data={filteredUsers}
               header={usersTableHeader}
               onEdit={() => {}}
               onDelete={() => {}}
@@ -251,19 +241,17 @@ const Users: React.FC = () => {
               stickyHeader
             />
             <Pagination
-              total={filteredUsers.length}
               page={page}
-              onPageChange={setPage}
               pageSize={rowsPerPage}
-              onPageSizeChange={(size) => {
-                setRowsPerPage(size);
-                setPage(1);
-              }}
-              pageSizeOptions={[3, 6, 12, 24]}
+              total={totalItems}
+              onPageChange={setPage}
+              onPageSizeChange={handlePageSizeChange}
+              pageSizeOptions={[5, 10, 15, 25]}
             />
           </Paper>
         </Box>
       )}
+
       <PermissionGuard module="employee" action="write" fallback={<></>}>
         <Fab
           color="primary"
@@ -278,9 +266,7 @@ const Users: React.FC = () => {
             display: { xs: "flex", md: "none" },
             zIndex: 1201,
             boxShadow: 3,
-            "&:hover": {
-              background: GRADIENTS.buttonHover,
-            },
+            "&:hover": { background: GRADIENTS.buttonHover },
           }}
         >
           {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
@@ -309,4 +295,5 @@ const Users: React.FC = () => {
     </Box>
   );
 };
+
 export default Users;
