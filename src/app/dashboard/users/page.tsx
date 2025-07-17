@@ -10,6 +10,7 @@ import {
   useTheme,
   useMediaQuery,
   Button,
+  TableContainer,
 } from "@mui/material";
 import { Add, Edit } from "@mui/icons-material";
 import dynamic from "next/dynamic";
@@ -19,6 +20,7 @@ import UserDialog from "@/components/ui/UserDialog";
 import UsersActionBar from "@/components/ui/UsersActionBar";
 import UserCard from "@/components/ui/UserCard";
 import { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
+import { MODULE_STYLES } from "@/styles/moduleStyles";
 import { useDebounce } from "@/hooks/useDebounce";
 
 const TableMap = dynamic(() => import("@/components/ui/TableMap"), {
@@ -210,22 +212,13 @@ const Users: React.FC = () => {
           ))}
         </Box>
       ) : (
-        <Box
-          sx={{
-            width: "100%",
-            overflowX: { xs: "auto", md: "visible" },
-            mb: { xs: 2, sm: 3 },
-          }}
-        >
-          <Paper
+        <Box sx={MODULE_STYLES.leads.tableWrapper}>
+          <TableContainer
+            component={Paper}
             elevation={8}
             sx={{
               ...COMMON_STYLES.roundedPaper,
-              minWidth: { xs: 600, sm: "100%" },
-              width: "100%",
-              overflow: "auto",
-              maxHeight: { xs: 360, sm: 480, md: 600 },
-              position: "relative",
+              ...MODULE_STYLES.leads.tableContainer,
             }}
           >
             <TableMap
@@ -240,6 +233,10 @@ const Users: React.FC = () => {
               }
               stickyHeader
             />
+          </TableContainer>
+
+          {/* Pagination outside the scrollable table */}
+          <Box sx={MODULE_STYLES.leads.paginationWrapper}>
             <Pagination
               page={page}
               pageSize={rowsPerPage}
@@ -248,7 +245,7 @@ const Users: React.FC = () => {
               onPageSizeChange={handlePageSizeChange}
               pageSizeOptions={[5, 10, 15, 25]}
             />
-          </Paper>
+          </Box>
         </Box>
       )}
 

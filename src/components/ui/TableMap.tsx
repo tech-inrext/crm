@@ -34,6 +34,22 @@ function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
         minWidth: 750,
         tableLayout: "fixed",
         borderCollapse: "separate",
+        "& .MuiTableHead-root": {
+          position: "sticky",
+          top: 0,
+          zIndex: 100,
+          "& .MuiTableRow-root": {
+            background:
+              "linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important",
+          },
+        },
+        "& .MuiTableBody-root": {
+          "& .MuiTableRow-root:hover": {
+            backgroundColor: "#f8fafc",
+            boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+            transform: "translateY(-1px)",
+          },
+        },
       }}
     >
       <TableHead>
@@ -61,6 +77,7 @@ function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
                 position: "sticky",
                 top: 0,
                 zIndex: 2,
+                borderBottom: "none",
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
@@ -76,11 +93,15 @@ function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
             key={(row as { _id: string })._id}
             hover
             sx={{
+              backgroundColor: "#ffffff",
+              transition: "all 0.2s ease-in-out",
               "&:hover": {
-                backgroundColor: "rgba(0, 0, 0, 0.04)",
+                backgroundColor: "#f8fafc",
+                boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
+                transform: "translateY(-1px)",
               },
-              "&:nth-of-type(odd)": {
-                backgroundColor: "rgba(0, 0, 0, 0.01)",
+              "& .MuiTableCell-root": {
+                borderBottom: "1px solid #e0e7ff",
               },
             }}
           >
@@ -89,9 +110,12 @@ function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
                 key={head.label}
                 sx={{
                   px: { xs: 1.5, sm: 2.5 },
-                  py: { xs: 1.5, sm: 2 },
-                  fontSize: { xs: 13, sm: 14, md: 15 },
+                  py: { xs: 2, sm: 2.5 },
+                  fontSize: { xs: 13, sm: 15 },
                   textAlign: head.label === "Actions" ? "center" : "left",
+                  fontWeight: head.dataKey === "name" ? 600 : 400,
+                  color:
+                    head.dataKey === "name" ? "text.primary" : "text.secondary",
                   overflow: "hidden",
                   textOverflow: "ellipsis",
                   whiteSpace: "nowrap",
