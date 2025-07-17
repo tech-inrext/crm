@@ -64,6 +64,7 @@ const SidebarContent = ({ links, onClose }) => {
         sx={{
           py: { xs: 0.5, sm: 1, md: 2 }, // Reduced padding on mobile
           px: { xs: 0.5, sm: 1 }, // Reduced horizontal padding
+          mt: { xs: 1, sm: 1.5, md: 2 }, // Reduced top margin for sidebar items
           height: "100%",
           overflowY: "auto",
           overflowX: "hidden",
