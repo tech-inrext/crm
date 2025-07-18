@@ -168,29 +168,34 @@ const Leads: React.FC = () => {
       {loading ? (
         <LoadingSkeleton />
       ) : isMobile || viewMode === "cards" ? (
-        <Box sx={MODULE_STYLES.leads.cardsGrid}>
-          {leads.map((lead) => (
-            <LeadCard
-              key={lead.id}
-              lead={lead}
-              onEdit={() => {
-                setEditId(lead._id);
-                setOpen(true);
+        <Box>
+          <Box sx={MODULE_STYLES.leads.cardsGrid}>
+            {leads.map((lead) => (
+              <LeadCard
+                key={lead.id}
+                lead={lead}
+                onEdit={() => {
+                  setEditId(lead._id);
+                  setOpen(true);
+                }}
+                onDelete={() => {}}
+              />
+            ))}
+          </Box>
+          {/* Pagination outside the cards grid */}
+          <Box sx={MODULE_STYLES.leads.paginationWrapper}>
+            <Pagination
+              total={total}
+              page={page + 1}
+              onPageChange={(p) => setPage(p - 1)}
+              pageSize={rowsPerPage}
+              onPageSizeChange={(size) => {
+                setRowsPerPage(size);
+                setPage(0);
               }}
-              onDelete={() => {}}
+              pageSizeOptions={[5, 10, 15, 25]}
             />
-          ))}
-          <Pagination
-            total={total}
-            page={page + 1}
-            onPageChange={(p) => setPage(p - 1)}
-            pageSize={rowsPerPage}
-            onPageSizeChange={(size) => {
-              setRowsPerPage(size);
-              setPage(0);
-            }}
-            pageSizeOptions={[5, 10, 15, 25]}
-          />
+          </Box>
         </Box>
       ) : (
         <Box sx={MODULE_STYLES.leads.tableWrapper}>
