@@ -180,24 +180,42 @@ const Users: React.FC = () => {
           <Typography>No users found.</Typography>
         </Box>
       ) : isMobile ? (
-        <Box
-          sx={{ display: "grid", gridTemplateColumns: "1fr", gap: 1.5, mb: 2 }}
-        >
-          {employees.map((user) => (
-            <UserCard
-              key={user.id || user._id}
-              user={{
-                name: user.name,
-                email: user.email,
-                designation: user.designation,
-                avatarUrl: user.avatarUrl,
-              }}
-              onEdit={() => {
-                setEditId(user.id || user._id);
-                setOpen(true);
-              }}
+        <Box>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: "1fr",
+              gap: 1.5,
+              mb: 2,
+            }}
+          >
+            {employees.map((user) => (
+              <UserCard
+                key={user.id || user._id}
+                user={{
+                  name: user.name,
+                  email: user.email,
+                  designation: user.designation,
+                  avatarUrl: user.avatarUrl,
+                }}
+                onEdit={() => {
+                  setEditId(user.id || user._id);
+                  setOpen(true);
+                }}
+              />
+            ))}
+          </Box>
+          {/* Pagination outside the cards grid */}
+          <Box sx={MODULE_STYLES.leads.paginationWrapper}>
+            <Pagination
+              page={page}
+              pageSize={rowsPerPage}
+              total={totalItems}
+              onPageChange={setPage}
+              onPageSizeChange={handlePageSizeChange}
+              pageSizeOptions={USERS_ROWS_PER_PAGE_OPTIONS}
             />
-          ))}
+          </Box>
         </Box>
       ) : (
         <Box sx={MODULE_STYLES.leads.tableWrapper}>

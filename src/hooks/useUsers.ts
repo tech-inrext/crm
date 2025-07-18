@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { USERS_API_BASE } from "@/constants/users";
+import { USERS_API_BASE, DEFAULT_PAGE_SIZE } from "@/constants/users";
 
 export interface Employee {
   _id?: string;
@@ -16,7 +16,7 @@ export function useUsers(debouncedSearch: string) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1); // 1-based indexing
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
   const [totalItems, setTotalItems] = useState(0);
   const [search, setSearch] = useState(""); // raw user input
   const [open, setOpen] = useState(false);
@@ -24,7 +24,7 @@ export function useUsers(debouncedSearch: string) {
   const [form, setForm] = useState({});
 
   const loadEmployees = useCallback(
-    async (page = 1, limit = 5, search = "") => {
+    async (page = 1, limit = DEFAULT_PAGE_SIZE, search = "") => {
       setLoading(true);
       try {
         const response = await axios.get(USERS_API_BASE, {
