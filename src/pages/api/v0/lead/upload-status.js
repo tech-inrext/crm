@@ -22,9 +22,22 @@ export default async function handler(req, res) {
 
   try {
     const loggedInUserId = req.employee?._id;
-    const uploads = await BulkUpload.find({ uploadedBy: loggedInUserId })
-      .sort({ createdAt: -1 }) // latest first
-      .populate("uploadedBy", "name email"); // optional: add other fields
+
+    // Pagination query params
+    const { page = 1, limit = 5 } = req.query;
+    const currentPage = parseInt(page);
+    const itemsPerPage = parseInt(limit);
+    const skip = (currentPage - 1) * itemsPerPage;
+
+    // Get paginated uploads
+    const [uploads, total] = await Promise.all([
+      BulkUpload.find({ uploadedBy: loggedInUserId })
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(itemsPerPage)
+        .populate("uploadedBy", "name email"),
+      BulkUpload.countDocuments({ uploadedBy: loggedInUserId }),
+    ]);
 
     // console.log(uploads);
 
@@ -32,6 +45,12 @@ export default async function handler(req, res) {
       success: true,
       count: uploads.length,
       data: uploads,
+      pagination: {
+        totalItems: total,
+        currentPage,
+        itemsPerPage,
+        totalPages: Math.ceil(total / itemsPerPage),
+      },
     });
   } catch (error) {
     console.error("Error fetching bulk uploads:", error);

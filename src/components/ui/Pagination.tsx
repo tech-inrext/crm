@@ -58,10 +58,11 @@ const Pagination: React.FC<PaginationProps> = ({
       sx={{
         display: "flex",
         alignItems: "center",
-        gap: 2,
-        mt: 2,
+        gap: 1,
+        mt: 1,
         justifyContent: "center",
         flexWrap: "wrap",
+        padding: { xs: "8px", sm: "4px" }, // Add padding adjustment for small screens
       }}
     >
       {/* Previous Button */}
@@ -73,6 +74,8 @@ const Pagination: React.FC<PaginationProps> = ({
           bgcolor: "#232b36",
           color: "#fff",
           "&:hover": { bgcolor: "#283046" },
+          fontSize: { xs: "14px", sm: "16px" }, // Adjust icon size for small screens
+          padding: { xs: "4px", sm: "8px" }, // Adjust padding for smaller icons on mobile
         }}
       >
         <ArrowBackIosNewIcon fontSize="small" />
@@ -80,15 +83,17 @@ const Pagination: React.FC<PaginationProps> = ({
 
       {/* Page Input */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-        <Typography sx={{ color: "#bfc9d9", fontSize: 14 }}>Page</Typography>
+        <Typography sx={{ color: "#bfc9d9", fontSize: { xs: 12, sm: 14 } }}>
+          Page
+        </Typography>
         <input
           type="text"
           value={inputPage}
           onChange={handleInputChange}
           onKeyDown={handlePageSubmit}
-          onBlur={triggerPageChange} // ✅ trigger onBlur
+          onBlur={triggerPageChange} // Trigger onBlur
           style={{
-            width: "60px",
+            width: "50px", // Smaller input box on mobile
             padding: "2px 5px",
             borderRadius: 6,
             border: "1px solid #232b36",
@@ -96,9 +101,10 @@ const Pagination: React.FC<PaginationProps> = ({
             color: "#bfc9d9",
             fontWeight: 500,
             textAlign: "center",
+            fontSize: "14px", // Smaller text for mobile
           }}
         />
-        <Typography sx={{ color: "#bfc9d9", fontSize: 14 }}>
+        <Typography sx={{ color: "#bfc9d9", fontSize: { xs: 12, sm: 14 } }}>
           of {totalPages}
         </Typography>
       </Box>
@@ -112,6 +118,8 @@ const Pagination: React.FC<PaginationProps> = ({
           bgcolor: "#232b36",
           color: "#fff",
           "&:hover": { bgcolor: "#283046" },
+          fontSize: { xs: "14px", sm: "16px" }, // Adjust icon size for small screens
+          padding: { xs: "4px", sm: "8px" }, // Adjust padding for smaller icons on mobile
         }}
       >
         <ArrowForwardIosIcon fontSize="small" />
@@ -120,7 +128,9 @@ const Pagination: React.FC<PaginationProps> = ({
       {/* Page Size Selector */}
       {onPageSizeChange && (
         <Box sx={{ ml: 2, display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography sx={{ color: "#bfc9d9", fontSize: 14 }}>Rows:</Typography>
+          <Typography sx={{ color: "#bfc9d9", fontSize: { xs: 12, sm: 14 } }}>
+            Rows:
+          </Typography>
           <select
             value={pageSize}
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
@@ -131,6 +141,7 @@ const Pagination: React.FC<PaginationProps> = ({
               background: "#181d23",
               color: "#bfc9d9",
               fontWeight: 500,
+              fontSize: "14px", // Smaller font size for mobile
             }}
           >
             {pageSizeOptions.map((opt) => (
