@@ -64,7 +64,7 @@ const SidebarContent = ({ links, onClose }) => {
         sx={{
           py: { xs: 0.5, sm: 1, md: 2 }, // Reduced padding on mobile
           px: { xs: 0.5, sm: 1 }, // Reduced horizontal padding
-          mt: { xs: "48px", sm: "56px", md: "0px" }, // Match navbar height only for mobile/tablet, no margin for desktop
+          mt: { xs: "48px", sm: "56px", md: "16px" }, // Match navbar height only for mobile/tablet, added margin for desktop
           height: "100%",
           overflowY: "auto",
           overflowX: "hidden",

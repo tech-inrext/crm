@@ -87,11 +87,11 @@ export default function DashboardLayout({
       : [];
   }, [user]);
 
-  useEffect(() => {
-    if (!user) {
-      router.push("/login");
-    }
-  }, [user]);
+  // useEffect(() => {
+  //   if (!user) {
+  //     router.push("/login");
+  //   }
+  // }, [user]);
 
   return (
     <>
