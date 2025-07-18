@@ -110,15 +110,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const checkAuth = React.useCallback(async () => {
     try {
-      // First get the basic profile to ensure authentication and get user ID
       const profileResponse = await getProfileDetails();
       if (profileResponse && profileResponse.data) {
         setUser(profileResponse.data);
       } else {
         setUser(null);
+        router.push("/login");
       }
     } catch (error) {
       setUser(null);
+      router.push("/login");
     } finally {
       setLoading(false);
     }

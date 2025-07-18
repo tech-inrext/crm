@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Card,
@@ -47,12 +47,18 @@ const LandingPage: React.FC = () => {
   const [resetError, setResetError] = useState<string | null>(null);
   const theme = useTheme();
   const router = useRouter();
-  const { login: authLogin } = useAuth();
+  const { login: authLogin, user } = useAuth();
+
   const handleInputChange =
     (field: keyof LoginForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
       if (error) setError(null);
     };
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
 
   const handleTogglePassword = () => {
     setShowPassword((prev) => !prev);
