@@ -134,7 +134,7 @@ const Leads: React.FC = () => {
           Leads
         </Typography>
 
-        <Box sx={MODULE_STYLES.leads.statsGrid}>
+        {/* <Box sx={MODULE_STYLES.leads.statsGrid}>
           <StatsCard
             value={stats.total}
             label="Total Leads"
@@ -151,7 +151,7 @@ const Leads: React.FC = () => {
             label="Conversion Rate"
             color="warning.main"
           />
-        </Box>
+        </Box> */}
 
         <LeadsActionBar
           search={searchInput}
