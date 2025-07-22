@@ -64,10 +64,20 @@ const LandingPage: React.FC = () => {
     setShowPassword((prev) => !prev);
   };
 
+  function validateEmail(resetEmail) {
+    const isValidEmail =
+      /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(resetEmail);
+    return isValidEmail;
+  }
+
   const handleResetPassword = async (e) => {
     if (!resetEmail || !newPassword || !oldPassword) {
       setResetError("Please fill in all fields");
       return;
+    }
+
+    if (!validateEmail(resetEmail)) {
+      return setResetError("Kindly Enter Valid Email !!!");
     }
 
     setResetLoading(true);
