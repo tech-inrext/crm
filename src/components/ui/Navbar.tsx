@@ -44,10 +44,17 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           mr: { xs: 0.5, sm: 1, md: 2 },
           display: { xs: "block", lg: "none" },
           p: { xs: 0.5, sm: 1, md: 1.5 },
-          minWidth: { xs: 40, sm: 44 },
+          minWidth: { xs: 72, sm: 80 }, // Further increased width for xs/sm
           minHeight: { xs: 40, sm: 44 },
+          outline: "none",
+          boxShadow: "none",
+          background: "none",
           "&:hover": {
             bgcolor: "rgba(255,255,255,0.1)",
+          },
+          "&:focus": {
+            outline: "none",
+            boxShadow: "none",
           },
         }}
       >
