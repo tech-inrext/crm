@@ -3,7 +3,7 @@ import validator from "validator";
 
 const employeeSchema = new mongoose.Schema(
   {
-    name: {
+    fullName: {
       type: String,
       required: [true, "Name is required"],
       trim: true,
