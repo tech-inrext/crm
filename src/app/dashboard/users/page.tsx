@@ -78,6 +78,13 @@ const Users: React.FC = () => {
     setPage(1);
   };
 
+  const handleCloseDialog = () => {
+  setOpen(false);
+  setSelectedUser(null);
+  setEditId(null);
+  setForm(DEFAULT_USER_FORM); 
+};
+
   const usersTableHeader = USERS_TABLE_HEADER.map((header) =>
     header.label === "Actions"
       ? {
@@ -130,7 +137,7 @@ const Users: React.FC = () => {
     return {
       ...DEFAULT_USER_FORM,
       ...safeForm,
-      gender: safeForm.gender || "Male",
+      gender: safeForm.gender || "",
       managerId: safeForm.managerId || "",
       departmentId: safeForm.departmentId || "",
       roles: Array.isArray(safeForm.roles) ? safeForm.roles : [],
@@ -199,6 +206,7 @@ const Users: React.FC = () => {
                   avatarUrl: user.avatarUrl,
                 }}
                 onEdit={() => {
+                  setSelectedUser(user);
                   setEditId(user.id || user._id);
                   setOpen(true);
                 }}
@@ -283,7 +291,7 @@ const Users: React.FC = () => {
           editId={editId}
           initialData={getInitialUserForm(selectedUser)}
           saving={saving}
-          onClose={() => setOpen(false)}
+          onClose={handleCloseDialog}
           onSave={async (values) => {
             if (editId) {
               // Remove fields that cannot be updated for existing users
@@ -292,9 +300,7 @@ const Users: React.FC = () => {
             } else {
               await addUser(values);
             }
-            setOpen(false);
-            setSelectedUser(null);
-            setForm(DEFAULT_USER_FORM);
+            handleCloseDialog();
             setPage(1);
             setSearch("");
             await loadEmployees();

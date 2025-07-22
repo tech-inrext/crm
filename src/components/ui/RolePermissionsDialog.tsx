@@ -64,9 +64,7 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
         sx: {
           ...rolePermissionsDialogStyles.dialog,
           ...(isMobile && rolePermissionsDialogStyles.dialogMobile),
-          ...(isTablet &&
-            !isMobile &&
-            rolePermissionsDialogStyles.dialogTablet),
+          ...(isTablet && !isMobile && rolePermissionsDialogStyles.dialogTablet),
         },
       }}
     >
@@ -139,7 +137,7 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
               <Grid item xs={12} sm={6} md={4} key={module}>
                 <Paper
                   elevation={0}
-                  sx={rolePermissionsDialogStyles.modulePaper}
+                  sx={{ ...rolePermissionsDialogStyles.modulePaper, mt: 2 }}
                 >
                   <Typography
                     variant="subtitle1"

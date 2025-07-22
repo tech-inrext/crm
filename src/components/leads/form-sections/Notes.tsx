@@ -1,5 +1,6 @@
 import React from "react";
 import { Box, TextField, Typography, Button } from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
 import { Field, FieldProps, FieldArray } from "formik";
 
 interface NotesProps {
@@ -62,7 +63,7 @@ const Notes: React.FC<NotesProps> = ({ values, setFieldValue }) => (
                     onClick={() => remove(index)}
                     sx={{ minWidth: "auto", px: 1 }}
                   >
-                    Remove
+                    <DeleteIcon fontSize="small" />
                   </Button>
                 )}
               </Box>

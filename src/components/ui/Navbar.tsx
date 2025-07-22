@@ -30,7 +30,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         px: { xs: 0.5, sm: 1, md: 2 },
         py: { xs: 0.25, sm: 0.5, md: 1 },
         bgcolor: "#fff",
-        height: { xs: 48, sm: 56, md: 64 },
+        height: { xs: 64, sm: 72, md: 64 },
         boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
         borderBottom: "1px solid rgba(255,255,255,0.1)",
         overflow: "hidden",
@@ -75,9 +75,9 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         <Typography
           variant="h6"
           sx={{
-            fontFamily: "calibri, sans-serif",
+            fontFamily: '"Montserrat", calibri, sans-serif',
             fontWeight: 800,
-            fontSize: { xs: 16, sm: 18, md: 22 },
+            fontSize: { xs: 22, sm: 26, md: 32 },
             color: "#000",
             letterSpacing: 1,
             ml: 1,

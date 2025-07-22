@@ -10,6 +10,8 @@ export const leadValidationSchema = Yup.object({
     .trim(),
   email: Yup.string()
     .email("Invalid email format")
+    .matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid email format")
+    .trim()
     .max(100, "Email must be less than 100 characters"),
   propertyType: Yup.string().oneOf(
     ["Rent", "Buy", "Sell", ""],
