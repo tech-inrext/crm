@@ -162,6 +162,7 @@ const BulkUpload = ({ loadLeads }) => {
         open={snackbarOpen}
         autoHideDuration={6000}
         onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
         <Alert
           onClose={() => setSnackbarOpen(false)}

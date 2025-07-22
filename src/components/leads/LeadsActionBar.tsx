@@ -89,9 +89,16 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               width: { xs: "100%", sm: 280 },
               minWidth: { xs: "100%", sm: 280 },
               maxWidth: { xs: "100%", sm: 320 },
+              "& .MuiInputBase-input": {
+                textAlign: "center",
+              },
               "& .MuiInputBase-input::placeholder": {
                 fontSize: "0.75rem !important",
                 opacity: 1,
+                textAlign: "center",
+              },
+              "& .MuiInputBase-input:focus::placeholder": {
+                opacity: 0.4,
               },
               "& .MuiInputLabel-root": {
                 fontSize: "0.75rem",
@@ -131,6 +138,12 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                     "&:hover": { backgroundColor: "primary.dark" },
                     minWidth: 40,
                     height: 40,
+                    outline: "none",
+                    boxShadow: "none",
+                    "&:focus": {
+                      outline: "none",
+                      boxShadow: "none",
+                    },
                   }}
                 >
                   <Icon fontSize="small" />
@@ -168,9 +181,14 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 fontSize: "0.8rem",
                 px: { xs: 2, sm: 3 },
                 boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+                outline: "none",
                 "&:hover": {
                   boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
                   transform: "translateY(-1px)",
+                },
+                "&:focus": {
+                  outline: "none",
+                  boxShadow: "none",
                 },
               }}
             >
@@ -193,9 +211,14 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 fontSize: "0.8rem",
                 px: { xs: 2, sm: 3 },
                 boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+                outline: "none",
                 "&:hover": {
                   boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
                   transform: "translateY(-1px)",
+                },
+                "&:focus": {
+                  outline: "none",
+                  boxShadow: "none",
                 },
               }}
             >
