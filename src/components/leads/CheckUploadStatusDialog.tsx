@@ -40,7 +40,7 @@ interface CheckUploadStatusDialogProps {
 
 // Table headers stored in a variable
 const tableHeaders = [
-  { label: "Timestamp", align: "left" },
+  { label: "Uploaded At", align: "left" },
   { label: "Total", align: "center" },
   { label: "Uploaded", align: "center" },
   { label: "Duplicates", align: "center" },
