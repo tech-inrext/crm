@@ -1,16 +1,24 @@
 "use client";
 
-import React, { useEffect } from "react";
-import ProtectedRoute from "../components/ProtectedRoute";
-import Dashboard from "./dashboard/page";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function Home() {
   const router = useRouter();
+  const { user, loading, pendingRoleSelection, roleSelected } = useAuth();
 
   useEffect(() => {
-    router.push("/dashboard/leads"); // Replace '/app' with your target route
-  }, [router]);
+    if (loading) return;
 
-  return null; // Or a loading spinner
+    if (!user) {
+      router.replace("/login");
+    } else if (pendingRoleSelection || !roleSelected) {
+      router.replace("/dashboard/select-role");
+    } else {
+      router.replace("/dashboard/leads");
+    }
+  }, [user, loading, pendingRoleSelection, roleSelected, router]);
+
+  return null;
 }

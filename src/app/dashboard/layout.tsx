@@ -1,69 +1,50 @@
 "use client";
 
-import React, {
-  Suspense,
-  lazy,
-  useState,
-  memo,
-  useMemo,
-  useEffect,
-} from "react";
+import React, { useState, useMemo } from "react";
 import Sidebar from "@/components/ui/Sidebar";
 import Navbar from "@/components/ui/Navbar";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
-import { useRouter } from "next/navigation";
-const AppIcon = memo(
-  ({ src, alt, size = 24 }: { src: string; alt: string; size?: number }) => (
-    <Image
-      src={src}
-      alt={alt}
-      width={size}
-      height={size}
-      style={{
-        display: "block",
-      }}
-      priority={false}
-      unoptimized
-    />
-  )
+
+const AppIcon = ({
+  src,
+  alt,
+  size = 24,
+}: {
+  src: string;
+  alt: string;
+  size?: number;
+}) => (
+  <Image
+    src={src}
+    alt={alt}
+    width={size}
+    height={size}
+    style={{ display: "block" }}
+    priority={false}
+    unoptimized
+  />
 );
-AppIcon.displayName = "AppIcon";
 
-export type SidebarLink =
-  | { kind: "header"; title: string }
-  | { kind: "divider" }
-  | {
-      label: string;
-      href: string;
-      module?: string;
-      icon?: React.ReactNode;
-      onClick?: () => void;
-    };
-
-const LeadsIcon = memo(() => <AppIcon src="/leads.png" alt="Leads" />);
-const UsersIcon = memo(() => <AppIcon src="/users.png" alt="Users" />);
-const RolesIcon = memo(() => <AppIcon src="/roles.png" alt="Roles" />);
-
-export const DASHBOARD_SIDEBAR_LINKS: SidebarLink[] = [
+export const DASHBOARD_SIDEBAR_LINKS = [
   {
     label: "Leads",
     href: "/dashboard/leads",
     module: "lead",
-    icon: <LeadsIcon />,
+    icon: <AppIcon src="/leads.png" alt="Leads" />,
   },
   {
     label: "Users",
     href: "/dashboard/users",
     module: "employee",
-    icon: <UsersIcon />,
+    icon: <AppIcon src="/users.png" alt="Users" />,
   },
   {
     label: "Roles",
     href: "/dashboard/roles",
     module: "role",
-    icon: <RolesIcon />,
+    icon: <AppIcon src="/roles.png" alt="Roles" />,
   },
 ];
 
@@ -73,10 +54,11 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const theme = useTheme();
-  const router = useRouter();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const [sidebarOpen, setSidebarOpen] = useState(false);
+
   const { getPermissions, user, pendingRoleSelection } = useAuth();
+
   const sidebarLinks = useMemo(() => {
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
@@ -85,33 +67,17 @@ export default function DashboardLayout({
           return hasReadAccess;
         })
       : [];
-  }, [user]);
-
-  // useEffect(() => {
-  //   if (!user) {
-  //     router.push("/login");
-  //   }
-  // }, [user]);
+  }, [user, pendingRoleSelection, getPermissions]);
 
   return (
     <>
       {user && (
         <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f5f7fa" }}>
-          {/* Sidebar - always fixed on desktop */}
-          {!isMobile && user && !pendingRoleSelection && (
+          {!isMobile && !pendingRoleSelection && (
             <Sidebar open={true} onClose={() => {}} links={sidebarLinks} />
           )}
-          <Box
-            sx={{
-              flex: 1,
-              display: "flex",
-              flexDirection: "column",
-              minHeight: "100vh",
-            }}
-          >
-            {/* Fixed Navbar - always on top */}
+          <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
-            {/* Main content area, with left padding for sidebar on desktop */}
             <Box
               component="main"
               sx={{
@@ -122,15 +88,13 @@ export default function DashboardLayout({
                 pr: { xs: 0 },
                 transition: "padding-left 0.3s ease",
                 minHeight: "100vh",
-                width: { xs: "100%", lg: "100%" },
-                overflow: "hidden",
+                width: "100%",
               }}
             >
               {children}
             </Box>
           </Box>
-          {/* Sidebar as Drawer for mobile */}
-          {isMobile && user && !pendingRoleSelection && (
+          {isMobile && !pendingRoleSelection && (
             <Sidebar
               open={sidebarOpen}
               onClose={() => setSidebarOpen(false)}

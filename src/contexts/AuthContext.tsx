@@ -61,6 +61,8 @@ interface AuthContextType {
     hasWriteAccess: boolean;
     hasDeleteAccess: boolean;
   };
+  roleSelected: boolean;
+  setRoleSelected: (value: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -83,6 +85,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [pendingRoleSelection, setPendingRoleSelection] =
     useState<boolean>(false); // Helper functions to safely extract role information
   const [changeRole, setChangeRole] = useState<boolean>(false);
+
+  const [roleSelected, setRoleSelected] = useState<boolean>(false);
 
   const getCurrentRoleName = () => {
     if (!user) return null;
@@ -244,8 +248,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await completeRoleSelection(selectedRoleId);
       setPendingRoleSelection(false);
+      setRoleSelected(true);
       // Redirect to dashboard after role selection
-      router.push("/");
+      router.push("/dashboard/leads");
     } catch (error) {
       console.error("Role selection failed:", error);
     }
@@ -305,6 +310,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     getAvailableRoleNames,
     setChangeRole,
     getPermissions,
+    roleSelected,
+    setRoleSelected,
   };
 
   return (
