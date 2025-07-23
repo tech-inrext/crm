@@ -64,7 +64,9 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
         sx: {
           ...rolePermissionsDialogStyles.dialog,
           ...(isMobile && rolePermissionsDialogStyles.dialogMobile),
-          ...(isTablet && !isMobile && rolePermissionsDialogStyles.dialogTablet),
+          ...(isTablet &&
+            !isMobile &&
+            rolePermissionsDialogStyles.dialogTablet),
         },
       }}
     >
@@ -146,7 +148,13 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
                     {module === "employee" ? "User" : module}
                   </Typography>
                   <Divider sx={rolePermissionsDialogStyles.moduleDivider} />
-                  <Box sx={rolePermissionsDialogStyles.moduleActions}>
+                  <Box
+                    sx={{
+                      ...rolePermissionsDialogStyles.moduleActions,
+                      flexDirection: "column",
+                      alignItems: "flex-start",
+                    }}
+                  >
                     {groupedPermissions[module].map(
                       (action: string, i: number) => (
                         <Chip

@@ -148,7 +148,10 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
             error={meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
             InputLabelProps={{ shrink: true }}
-            inputProps={{ "aria-label": "Next follow-up date" }}
+            inputProps={{
+              "aria-label": "Next follow-up date",
+              className: "ios-fix-input",
+            }}
             sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
           />
         )}
