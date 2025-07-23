@@ -1,3 +1,13 @@
+/* iOS input font-size fix for form fields to prevent zoom and maintain consistency */
+@media screen and (max-width: 600px) and (pointer: coarse) {
+  .ios-fix-input,
+  .ios-fix-label {
+    font-size: 16px !important;
+    line-height: 1.2;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+}
 @import "tailwindcss";
 
 :root {

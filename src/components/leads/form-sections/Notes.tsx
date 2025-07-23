@@ -10,7 +10,11 @@ interface NotesProps {
 
 const Notes: React.FC<NotesProps> = ({ values, setFieldValue }) => (
   <>
-    <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+    <Typography
+      variant="h6"
+      sx={{ mt: 2, mb: 1, fontWeight: 600 }}
+      className="ios-fix-label"
+    >
       Notes
     </Typography>
 
@@ -48,7 +52,10 @@ const Notes: React.FC<NotesProps> = ({ values, setFieldValue }) => (
                       error={meta.touched && !!meta.error}
                       helperText={meta.touched && meta.error}
                       placeholder="Enter note..."
-                      inputProps={{ "aria-label": `note ${index + 1}` }}
+                      inputProps={{
+                        "aria-label": `note ${index + 1}`,
+                        className: "ios-fix-input",
+                      }}
                       sx={{ width: "100%" }}
                     />
                   )}

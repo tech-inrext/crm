@@ -186,7 +186,21 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                 InputLabelProps={{ shrink: true }}
                 error={!!meta.touched && !!meta.error}
                 helperText={meta.touched && meta.error}
-                sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+                sx={{
+                  bgcolor: "#fff",
+                  borderRadius: 1,
+                  flex: 1,
+                  height: 48,
+                  '& input[type="date"]': {
+                    height: "48px",
+                    fontSize: "16px",
+                    WebkitAppearance: "none",
+                    MozAppearance: "textfield",
+                    appearance: "none",
+                    lineHeight: "normal",
+                    padding: "12px 14px",
+                  },
+                }}
               />
             );
           }}
