@@ -23,6 +23,8 @@ import {
 } from "@mui/icons-material";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
+
+import Profile from "@/components/ui/Profile";
 import RoleSelectionDialog from "@/components/ui/RoleSelectionDialog";
 
 const ProfileMenu: React.FC = () => {
@@ -33,10 +35,13 @@ const ProfileMenu: React.FC = () => {
     newPassword: "",
     confirmPassword: "",
   });
+  const [profileOpen, setProfileOpen] = React.useState(false);
   const [isResetting, setIsResetting] = React.useState(false);
   const open = Boolean(anchorEl);
   const { user, logout, switchRole, setChangeRole } = useAuth();
   const router = useRouter();
+
+  if (!user) return null;
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -49,6 +54,15 @@ const ProfileMenu: React.FC = () => {
   const handleRoleSwitchClick = () => {
     setChangeRole(true);
     handleClose();
+  };
+
+  const handleProfileOpen = () => {
+    handleClose();
+    setTimeout(() => setProfileOpen(true), 150);
+  };
+
+  const handleProfileClose = () => {
+    setProfileOpen(false);
   };
 
   const handleLogout = async () => {
@@ -183,7 +197,7 @@ const ProfileMenu: React.FC = () => {
           </MenuItem>,
           <Divider key="divider-1" />,
         ]}
-        <MenuItem onClick={handleClose} sx={{ py: 1 }}>
+        <MenuItem onClick={handleProfileOpen} sx={{ py: 1 }}>
           <Person sx={{ mr: 2, fontSize: 20 }} />
           Profile
         </MenuItem>
@@ -271,6 +285,8 @@ const ProfileMenu: React.FC = () => {
           </Button>
         </DialogActions>
       </Dialog>
+      {/* Profile Dialog */}
+      <Profile open={profileOpen} onClose={handleProfileClose} user={user} />
     </>
   );
 };
