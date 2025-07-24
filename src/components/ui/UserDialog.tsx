@@ -62,8 +62,8 @@ const UserDialog: React.FC<UserDialogProps> = ({
       const fetchData = async () => {
         try {
           const [rolesRes, managersRes, departmentsRes] = await Promise.all([
-            axios.get(ROLES_API_BASE),
-            axios.get(USERS_API_BASE),
+            axios.get(ROLES_API_BASE + "/getAllRoleList"),
+            axios.get(USERS_API_BASE + "/getAllEmployeeList"),
             axios.get(DEPARTMENTS_API_BASE, { withCredentials: true }),
           ]);
 
