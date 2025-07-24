@@ -81,22 +81,27 @@ const ProfileMenu: React.FC = () => {
   };
 
   const handleResetPasswordSubmit = async () => {
-    if (
-      !passwordForm.oldPassword ||
-      !passwordForm.newPassword ||
-      !passwordForm.confirmPassword
-    ) {
+    // Validate required fields
+    const { oldPassword, newPassword, confirmPassword } = passwordForm;
+
+    if (!oldPassword || !newPassword || !confirmPassword) {
       alert("Please fill in all fields.");
       return;
     }
 
-    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+    // Validate new password criteria
+    if (newPassword.length < 6) {
+      alert("New password must be at least 6 characters long.");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
       alert("New passwords do not match. Please try again.");
       return;
     }
 
-    if (passwordForm.newPassword.length < 6) {
-      alert("New password must be at least 6 characters long.");
+    if (!user?.email) {
+      alert("User email not found. Please log in again.");
       return;
     }
 
@@ -109,9 +114,9 @@ const ProfileMenu: React.FC = () => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          email: user?.email,
-          oldPassword: passwordForm.oldPassword,
-          newPassword: passwordForm.newPassword,
+          email: user.email,
+          oldPassword,
+          newPassword,
         }),
       });
 
@@ -119,18 +124,22 @@ const ProfileMenu: React.FC = () => {
 
       if (response.ok && data.success) {
         alert("Password reset successfully!");
-        setResetPasswordOpen(false);
+
+        // Reset form and close dialog
         setPasswordForm({
           oldPassword: "",
           newPassword: "",
           confirmPassword: "",
         });
+        setResetPasswordOpen(false);
+      } else if (response.status === 401 || response.status === 404) {
+        alert("Invalid current password.");
       } else {
-        alert(`Error: ${data.message || "Failed to reset password"}`);
+        alert(`Error: ${data.message || "Failed to reset password."}`);
       }
     } catch (error) {
-      console.error("Reset password failed:", error);
-      alert("Failed to reset password. Please try again.");
+      console.error("Password reset failed:", error);
+      alert("An unexpected error occurred. Please try again.");
     } finally {
       setIsResetting(false);
     }
