@@ -57,6 +57,7 @@ const Notes: React.FC<NotesProps> = ({ values, setFieldValue }) => (
                         className: "ios-fix-input",
                       }}
                       sx={{ width: "100%" }}
+                      InputLabelProps={{ shrink: true }}
                     />
                   )}
                 </Field>

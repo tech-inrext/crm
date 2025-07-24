@@ -24,6 +24,8 @@ interface RoleCardProps {
   small?: boolean;
 }
 
+import { Visibility } from "@mui/icons-material";
+
 const RoleCard: React.FC<RoleCardProps> = ({
   role,
   idx,
@@ -32,11 +34,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
   small,
 }) => {
   return (
-    <Card
-      elevation={0}
-      sx={roleCardStyles.card}
-      onClick={() => onViewPermissions(role)}
-    >
+    <Card elevation={0} sx={roleCardStyles.card}>
       <CardContent sx={{ p: { xs: 1.5, sm: 2 }, height: "100%" }}>
         <Stack spacing={1} sx={{ height: "100%" }}>
           <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -50,6 +48,19 @@ const RoleCard: React.FC<RoleCardProps> = ({
             >
               {role.name}
             </Typography>
+            <Tooltip title="View Permissions">
+              <IconButton
+                className="view-permissions-button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onViewPermissions(role);
+                }}
+                size="small"
+                sx={roleCardStyles.editButton}
+              >
+                <Visibility fontSize="small" />
+              </IconButton>
+            </Tooltip>
             <PermissionGuard module="role" action="write" fallback={null}>
               <IconButton
                 className="edit-button"

@@ -6,6 +6,8 @@ import {
   MenuItem,
   Autocomplete,
 } from "@mui/material";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { Field, FieldProps } from "formik";
 
 const statusOptions = [
@@ -125,7 +127,16 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
             error={meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
             inputProps={{ "aria-label": "Lead source" }}
-            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1, height: 56 }}
+            SelectProps={{
+              MenuProps: {
+                PaperProps: {
+                  style: {
+                    maxHeight: 300,
+                  },
+                },
+              },
+            }}
           >
             <MenuItem value="">Select source...</MenuItem>
             {sourceOptions.map((option) => (
@@ -139,21 +150,26 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
 
       <Field name="nextFollowUp">
         {({ field, meta }: FieldProps) => (
-          <TextField
-            {...field}
-            label="Next Follow-up"
-            type="date"
-            value={values.nextFollowUp || ""}
-            onChange={(e) => setFieldValue("nextFollowUp", e.target.value)}
-            error={meta.touched && !!meta.error}
-            helperText={meta.touched && meta.error}
-            InputLabelProps={{ shrink: true }}
-            inputProps={{
-              "aria-label": "Next follow-up date",
-              className: "ios-fix-input",
-            }}
-            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-          />
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <DatePicker
+              label="Next Follow-up"
+              value={values.nextFollowUp ? new Date(values.nextFollowUp) : null}
+              onChange={(date) => {
+                setFieldValue(
+                  "nextFollowUp",
+                  date ? date.toISOString().split("T")[0] : ""
+                );
+              }}
+              slotProps={{
+                textField: {
+                  error: meta.touched && !!meta.error,
+                  helperText: meta.touched && meta.error,
+                  placeholder: "dd/mm/yyyy",
+                  sx: { bgcolor: "#fff", borderRadius: 1, flex: 1, height: 56 },
+                },
+              }}
+            />
+          </LocalizationProvider>
         )}
       </Field>
     </Box>
