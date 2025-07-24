@@ -13,8 +13,8 @@ export default function Home() {
 
     if (!user) {
       router.replace("/login");
-    } else if (pendingRoleSelection || !roleSelected) {
-      router.replace("/dashboard/select-role");
+      // } else if (pendingRoleSelection || !roleSelected) {
+      //   router.replace("/dashboard/select-role");
     } else {
       router.replace("/dashboard/leads");
     }
