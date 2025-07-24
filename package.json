@@ -8,19 +8,22 @@
     "build": "next build",
     "start": "next dev",
     "lint": "next lint",
-    "run-worker":"node src/workers/worker.js"
+    "run-worker": "node src/workers/worker.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.842.0",
     "@aws-sdk/s3-request-presigner": "^3.842.0",
+    "@date-io/date-fns": "^3.2.1",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
     "@mui/icons-material": "^7.1.1",
     "@mui/material": "^7.1.1",
+    "@mui/x-date-pickers": "^8.9.0",
     "axios": "^1.9.0",
     "bcrypt": "^6.0.0",
     "bullmq": "^5.56.0",
     "cookie": "^1.0.2",
+    "date-fns": "^4.1.0",
     "formik": "^2.4.6",
     "ioredis": "^5.6.1",
     "jsonwebtoken": "^9.0.2",
