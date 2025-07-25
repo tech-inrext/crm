@@ -53,14 +53,21 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
         <Typography variant="h6" fontWeight={600} gutterBottom>
           {user.name}
         </Typography>
-        <Typography variant="body2" color="text.secondary">
-          {user.email}
-        </Typography>
-        {user.phone && (
+        <Box display="flex" alignItems="center" gap={1}>
           <Typography variant="body2" color="text.secondary">
-            {user.phone}
+            {user.email}
           </Typography>
-        )}
+          {user.phone && (
+            <>
+              <Typography variant="body2" color="text.secondary">
+                &nbsp;|&nbsp;
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                {user.phone}
+              </Typography>
+            </>
+          )}
+        </Box>
         <Divider sx={{ width: "100%", my: 2 }} />
         <Box width="100%" sx={{ mb: 2 }}>
           <Box display="flex" justifyContent="space-between" mb={1}>
