@@ -131,7 +131,23 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth={false} maxWidth={false}>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      fullScreen={typeof window !== "undefined" && window.innerWidth < 600}
+      fullWidth
+      maxWidth="sm"
+      PaperProps={{
+        sx: {
+          m: 2,
+          height: { xs: "80vh", sm: "auto" },
+          maxHeight: { xs: "60vh", sm: "90vh" },
+          display: "flex",
+          flexDirection: "column",
+          borderRadius: 2,
+        },
+      }}
+    >
       <DialogTitle
         sx={{
           fontSize: { xs: "1.1rem", sm: "1.25rem" },
@@ -142,11 +158,9 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
       </DialogTitle>
       <DialogContent
         sx={{
-          p: { xs: 1.5, sm: 2.5 },
-          minWidth: { xs: "280px", sm: 320 },
-          width: { xs: "90vw", sm: "380px" },
-          maxWidth: { xs: "90vw", sm: 380 },
-          boxSizing: "border-box",
+          p: { xs: 2.5, sm: 2 },
+          overflowY: "auto",
+          flex: 1,
         }}
       >
         <TextField
@@ -264,7 +278,13 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           </Box>
         </Box>
       </DialogContent>
-      <DialogActions sx={{ p: { xs: 1, sm: 2 } }}>
+      <DialogActions
+        sx={{
+          p: { xs: 1, sm: 2 },
+          borderTop: "1px solid #e0e0e0",
+          justifyContent: "flex-end",
+        }}
+      >
         <ButtonComponent onClick={onClose} color="inherit">
           Cancel
         </ButtonComponent>
