@@ -58,26 +58,24 @@ const UserDialog: React.FC<UserDialogProps> = ({
   const [departments, setDepartments] = useState<any[]>([]);
 
   useEffect(() => {
-    if (open) {
-      const fetchData = async () => {
-        try {
-          const [rolesRes, managersRes, departmentsRes] = await Promise.all([
-            axios.get(ROLES_API_BASE + "/getAllRoleList"),
-            axios.get(USERS_API_BASE + "/getAllEmployeeList"),
-            axios.get(DEPARTMENTS_API_BASE, { withCredentials: true }),
-          ]);
+    const fetchData = async () => {
+      try {
+        const [rolesRes, managersRes, departmentsRes] = await Promise.all([
+          axios.get(ROLES_API_BASE + "/getAllRoleList"),
+          axios.get(USERS_API_BASE + "/getAllEmployeeList"),
+          axios.get(DEPARTMENTS_API_BASE, { withCredentials: true }),
+        ]);
 
-          setRoles(rolesRes.data.data || []);
-          setManagers(managersRes.data.data || []);
-          setDepartments(departmentsRes.data.data || []);
-        } catch (error) {
-          console.error("Error fetching dialog data:", error);
-        }
-      };
+        setRoles(rolesRes.data.data || []);
+        setManagers(managersRes.data.data || []);
+        setDepartments(departmentsRes.data.data || []);
+      } catch (error) {
+        console.error("Error fetching dialog data:", error);
+      }
+    };
 
-      fetchData();
-    }
-  }, [open]);
+    fetchData();
+  }, []);
 
   return (
     <Dialog
