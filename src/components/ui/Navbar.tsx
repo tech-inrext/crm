@@ -41,10 +41,11 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         edge="start"
         onClick={() => setSidebarOpen(!sidebarOpen)}
         sx={{
-          mr: { xs: 0.5, sm: 1, md: 2 },
+          mr: { xs: 0.2, sm: 0.5, md: 2 }, // slight gap for xs
+          ml: { xs: 0.5, sm: 0, md: 0 }, // add left margin for xs
           display: { xs: "block", lg: "none" },
           p: { xs: 0.5, sm: 1, md: 1.5 },
-          minWidth: { xs: 72, sm: 80 }, // Further increased width for xs/sm
+          minWidth: { xs: 44, sm: 64, md: 80 },
           minHeight: { xs: 40, sm: 44 },
           outline: "none",
           boxShadow: "none",
@@ -64,7 +65,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         sx={{
           display: "flex",
           alignItems: "center",
-          gap: { xs: 0.5, sm: 1, md: 2 },
+          gap: { xs: 0.3, sm: 1, md: 2 }, // reduce gap for xs
           minWidth: 0,
           flex: 1,
         }}
@@ -87,7 +88,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
             fontSize: { xs: 22, sm: 26, md: 32 },
             color: "#000",
             letterSpacing: 1,
-            ml: 1,
+            ml: { xs: 0.5, sm: 1, md: 1 }, // slightly increase margin left for xs
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis",

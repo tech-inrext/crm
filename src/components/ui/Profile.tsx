@@ -88,16 +88,6 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
               </Typography>
             </Box>
           )}
-          {user.department && (
-            <Box display="flex" justifyContent="space-between" mb={1}>
-              <Typography variant="subtitle2" color="text.secondary">
-                Department
-              </Typography>
-              <Typography variant="body2" color="text.primary">
-                {user.department}
-              </Typography>
-            </Box>
-          )}
           {user.id && (
             <Box display="flex" justifyContent="space-between" mb={1}>
               <Typography variant="subtitle2" color="text.secondary">
@@ -108,59 +98,66 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
               </Typography>
             </Box>
           )}
-          {/* Add more fields as needed below */}
-          {Object.entries(user).map(([key, value]) => {
-            if (
-              [
-                "name",
-                "email",
-                "phone",
-                "roles",
-                "currentRole",
-                "department",
-                "id",
-              ].includes(key)
-            )
-              return null;
-            // Special case for manager field
-            if (key === "manager") {
-              let managerName = "N/A";
-              if (typeof value === "object" && value !== null && value.name) {
-                managerName = value.name;
-              }
-              return (
-                <Box
-                  key={key}
-                  display="flex"
-                  justifyContent="space-between"
-                  mb={1}
-                >
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Manager
-                  </Typography>
-                  <Typography variant="body2" color="text.primary">
-                    {managerName}
-                  </Typography>
-                </Box>
-              );
-            }
-            if (typeof value === "object" && value !== null) return null;
-            return (
-              <Box
-                key={key}
-                display="flex"
-                justifyContent="space-between"
-                mb={1}
-              >
-                <Typography variant="subtitle2" color="text.secondary">
-                  {key.charAt(0).toUpperCase() + key.slice(1)}
-                </Typography>
-                <Typography variant="body2" color="text.primary">
-                  {String(value)}
-                </Typography>
-              </Box>
-            );
-          })}
+          {user.gender && (
+            <Box display="flex" justifyContent="space-between" mb={1}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Gender
+              </Typography>
+              <Typography variant="body2" color="text.primary">
+                {user.gender}
+              </Typography>
+            </Box>
+          )}
+          {user.address && (
+            <Box display="flex" justifyContent="space-between" mb={1}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Address
+              </Typography>
+              <Typography variant="body2" color="text.primary">
+                {user.address}
+              </Typography>
+            </Box>
+          )}
+          {user.designation && (
+            <Box display="flex" justifyContent="space-between" mb={1}>
+              <Typography variant="subtitle2" color="text.secondary">
+                Designation
+              </Typography>
+              <Typography variant="body2" color="text.primary">
+                {user.designation}
+              </Typography>
+            </Box>
+          )}
+          {(user.departmentId || user.department) && (
+            <Box display="flex" justifyContent="space-between" mb={1}>
+              <Typography variant="subtitle2" color="text.secondary">
+                DepartmentId
+              </Typography>
+              <Typography variant="body2" color="text.primary">
+                {user.departmentId || user.department}
+              </Typography>
+            </Box>
+          )}
+          {user.managerId && (
+            <Box display="flex" justifyContent="space-between" mb={1}>
+              <Typography variant="subtitle2" color="text.secondary">
+                ManagerId
+              </Typography>
+              <Typography variant="body2" color="text.primary">
+                {user.managerId}
+              </Typography>
+            </Box>
+          )}
+          {user.joiningDate && (
+            <Box display="flex" justifyContent="space-between" mb={1}>
+              <Typography variant="subtitle2" color="text.secondary">
+                JoiningDate
+              </Typography>
+              <Typography variant="body2" color="text.primary">
+                {user.joiningDate}
+              </Typography>
+            </Box>
+          )}
         </Box>
       </Box>
     );
