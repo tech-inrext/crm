@@ -27,17 +27,9 @@ const updateRoleDetails = async (req, res) => {
   const { name, ...rest } = req.body;
 
   try {
-    // Prevent role name update
-    if (name) {
-      return res.status(400).json({
-        success: false,
-        message: "Updating role name is not allowed.",
-      });
-    }
-
     const updatedRole = await Role.findByIdAndUpdate(
       id,
-      { $set: rest },
+      { $set: { name, ...rest } },
       { new: true, runValidators: true }
     );
 

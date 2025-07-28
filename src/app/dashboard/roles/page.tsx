@@ -76,7 +76,7 @@ const Roles: React.FC = () => {
     });
     try {
       if (editId) {
-        await axios.patch(`/api/v0/role/${editId}`, { ...perms });
+        await axios.patch(`/api/v0/role/${editId}`, { name, ...perms });
       } else {
         await axios.post("/api/v0/role", { name, ...perms });
       }
