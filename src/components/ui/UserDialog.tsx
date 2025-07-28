@@ -61,14 +61,30 @@ const UserDialog: React.FC<UserDialogProps> = ({
     const fetchData = async () => {
       try {
         const [rolesRes, managersRes, departmentsRes] = await Promise.all([
-          axios.get(ROLES_API_BASE + "/getAllRoleList"),
-          axios.get(USERS_API_BASE + "/getAllEmployeeList"),
-          axios.get(DEPARTMENTS_API_BASE, { withCredentials: true }),
+          fetch(`${ROLES_API_BASE}/getAllRoleList`, {
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          }),
+          fetch(`${USERS_API_BASE}/getAllEmployeeList`, {
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          }),
+          fetch(DEPARTMENTS_API_BASE, {
+            method: "GET",
+            credentials: "include",
+            headers: { "Content-Type": "application/json" },
+          }),
         ]);
 
-        setRoles(rolesRes.data.data || []);
-        setManagers(managersRes.data.data || []);
-        setDepartments(departmentsRes.data.data || []);
+        const rolesData = await rolesRes.json();
+        const managersData = await managersRes.json();
+        const departmentsData = await departmentsRes.json();
+
+        setRoles(rolesData.data || []);
+        setManagers(managersData.data || []);
+        setDepartments(departmentsData.data || []);
       } catch (error) {
         console.error("Error fetching dialog data:", error);
       }

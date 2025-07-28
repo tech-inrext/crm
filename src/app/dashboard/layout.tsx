@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import Sidebar from "@/components/ui/Sidebar";
 import Navbar from "@/components/ui/Navbar";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
+import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 
@@ -56,9 +57,12 @@ export default function DashboardLayout({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("lg"));
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
 
   const { getPermissions, user, pendingRoleSelection } = useAuth();
 
+  // Compute accessible sidebar links
   const sidebarLinks = useMemo(() => {
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
@@ -69,12 +73,39 @@ export default function DashboardLayout({
       : [];
   }, [user, pendingRoleSelection, getPermissions]);
 
+  // Redirect to first accessible module after login or role switch
+  useEffect(() => {
+    if (user && !pendingRoleSelection && sidebarLinks.length > 0) {
+      // If current path is not in allowed sidebar links, redirect to first allowed module
+      const allowedHrefs = sidebarLinks.map((link) => link.href);
+      const isAllowed = allowedHrefs.some((href) => pathname.startsWith(href));
+      if (!isAllowed) {
+        router.replace(sidebarLinks[0].href);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user, pendingRoleSelection, sidebarLinks, pathname]);
+
+  // Determine selected sidebar link
+  const selectedLink = useMemo(() => {
+    if (!sidebarLinks.length) return null;
+    return (
+      sidebarLinks.find((link) => pathname.startsWith(link.href)) ||
+      sidebarLinks[0]
+    );
+  }, [sidebarLinks, pathname]);
+
   return (
     <>
       {user && (
         <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f5f7fa" }}>
           {!isMobile && !pendingRoleSelection && (
-            <Sidebar open={true} onClose={() => {}} links={sidebarLinks} />
+            <Sidebar
+              open={true}
+              onClose={() => {}}
+              links={sidebarLinks}
+              selected={selectedLink?.href}
+            />
           )}
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
@@ -99,6 +130,7 @@ export default function DashboardLayout({
               open={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
               links={sidebarLinks}
+              selected={selectedLink?.href}
             />
           )}
         </Box>
