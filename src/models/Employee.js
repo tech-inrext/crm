@@ -102,6 +102,8 @@ const employeeSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    resetOTP: String,
+    resetOTPExpires: Date,
   },
   { timestamps: true }
 );

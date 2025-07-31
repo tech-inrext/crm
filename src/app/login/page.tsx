@@ -14,12 +14,9 @@ import {
   useTheme,
   IconButton,
   InputAdornment,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Link,
 } from "@mui/material";
+import ForgotPasswordDialog from "../../components/ui/ForgotPasswordDialog";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
@@ -433,99 +430,11 @@ const LandingPage: React.FC = () => {
           © 2024 Inrext. All rights reserved.
         </Typography>
       </Box>
-      {/* Reset Password Dialog */}
-      <Dialog
+      {/* Forgot Password Dialog (OTP Flow) */}
+      <ForgotPasswordDialog
         open={resetDialogOpen}
         onClose={handleResetDialogClose}
-        maxWidth="sm"
-        fullWidth
-        sx={{
-          "& .MuiDialog-paper": {
-            mx: { xs: 2, sm: 3 },
-            borderRadius: { xs: 2, sm: 3 },
-          },
-        }}
-      >
-        <DialogTitle sx={{ fontSize: { xs: "1.25rem", sm: "1.5rem" } }}>
-          Reset Password
-        </DialogTitle>
-        <DialogContent>
-          {resetSuccess ? (
-            <Alert
-              severity="success"
-              sx={{ mb: 2, fontSize: { xs: "0.875rem", sm: "1rem" } }}
-            >
-              Password reset successfully! You can now login with your new
-              password.
-            </Alert>
-          ) : (
-            <>
-              {resetError && (
-                <Alert
-                  severity="error"
-                  sx={{ mb: 2, fontSize: { xs: "0.875rem", sm: "1rem" } }}
-                >
-                  {resetError}
-                </Alert>
-              )}
-              <Typography
-                sx={{
-                  mb: 2,
-                  color: "text.secondary",
-                  fontSize: { xs: "0.875rem", sm: "1rem" },
-                }}
-              >
-                Enter your email address and a new password to reset your
-                account.
-              </Typography>
-              <TextField
-                fullWidth
-                label="Email Address"
-                type="email"
-                value={resetEmail}
-                onChange={(e) => setResetEmail(e.target.value)}
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="Old Password"
-                type="password"
-                value={oldPassword}
-                onChange={(e) => setOldPassword(e.target.value)}
-                sx={{ mb: 2 }}
-              />
-              <TextField
-                fullWidth
-                label="New Password"
-                type="password"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                sx={{ mb: 2 }}
-              />
-            </>
-          )}
-        </DialogContent>
-        <DialogActions sx={{ p: { xs: 2, sm: 3 } }}>
-          <Button onClick={handleResetDialogClose} disabled={resetLoading}>
-            Cancel
-          </Button>
-          {!resetSuccess && (
-            <Button
-              onClick={handleResetPassword}
-              variant="contained"
-              disabled={
-                resetLoading || !resetEmail || !newPassword || !oldPassword
-              }
-            >
-              {resetLoading ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                "Reset Password"
-              )}
-            </Button>
-          )}
-        </DialogActions>
-      </Dialog>
+      />
     </Box>
   );
 };
