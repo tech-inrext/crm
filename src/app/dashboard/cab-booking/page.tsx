@@ -1,9 +1,24 @@
 "use client";
-import React, { useState, useEffect, useRef, ChangeEvent, FormEvent } from "react";
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  ChangeEvent,
+  FormEvent,
+} from "react";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton,
+  Tooltip,
+} from "@mui/material";
+import { Visibility } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { FaCar, FaTruck, FaCheck, FaTimes } from "react-icons/fa";
-import { cabBookingApi, projectApi } from "@/services/api";
+
 import dbConnect from "@/lib/mongodb";
+import PermissionGuard from "@/components/PermissionGuard";
 
 // Project type
 type Project = { _id: string; name: string };
@@ -67,7 +82,8 @@ const DEFAULT_PROJECTS: Project[] = [
 const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
   const router = useRouter();
 
-  const [activeView, setActiveView] = useState<CabBookingProps["defaultView"]>(defaultView);
+  const [activeView, setActiveView] =
+    useState<CabBookingProps["defaultView"]>(defaultView);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -125,7 +141,38 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
     fetchInitialData();
   }, []);
 
-  // Fetch vendor bookings for team head/cab management
+  // Cab Booking API logic (moved from service)
+  const BASE_URL = "/api/v0/cab-booking";
+  const cabBookingApi = {
+    async createBooking(data: any) {
+      const res = await fetch(BASE_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) throw await res.json();
+      return res.json();
+    },
+    async getAllBookings(params: Record<string, string> = {}) {
+      const query = new URLSearchParams(params).toString();
+      const res = await fetch(`${BASE_URL}${query ? `?${query}` : ""}`);
+      if (!res.ok) throw await res.json();
+      return res.json();
+    },
+    async updateStatus(id: string, data: { status: string }) {
+      throw new Error("updateStatus not implemented in backend");
+    },
+    async updateTracking(
+      id: string,
+      data: { currentLocation: string; estimatedArrival: string }
+    ) {
+      throw new Error("updateTracking not implemented in backend");
+    },
+    async cancelBooking(id: string) {
+      throw new Error("cancelBooking not implemented in backend");
+    },
+  };
+  // ...existing code...
   const fetchVendorBookings = async () => {
     setIsLoadingVendor(true);
     setError("");
@@ -163,27 +210,38 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
   }, [activeView, router]);
 
   // Fetch bookings with optional filters
-  const fetchBookings = async (statusFilter = filter) => {
+  // Always fetch all bookings (no filters)
+  const fetchBookings = async () => {
     try {
       setIsLoading(true);
       setError("");
-      // Use cabBookingApi.getAllBookings
-      const params: Record<string, string> = {};
-      if (statusFilter !== "all") {
-        params.status = statusFilter;
+      const res = await cabBookingApi.getAllBookings();
+      console.log("Bookings API response:", res);
+      // Use the correct property from the API response
+      if (Array.isArray(res.data)) {
+        setBookings(res.data);
+      } else if (Array.isArray(res.data?.data)) {
+        setBookings(res.data.data);
+      } else if (Array.isArray(res.data?.bookings)) {
+        setBookings(res.data.bookings);
+      } else if (Array.isArray(res.bookings)) {
+        setBookings(res.bookings);
+      } else if (Array.isArray(res.data?.rows)) {
+        setBookings(res.data.rows);
+      } else {
+        setBookings([]);
       }
-      const res = await cabBookingApi.getAllBookings(params);
-      setBookings(res.data.data.bookings || []);
-    } catch {
+    } catch (err) {
       setError("Failed to load bookings");
+      console.error("Error fetching bookings:", err);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleFilterChange = async (status: string) => {
-    setFilter(status);
-    await fetchBookings(status);
+  // Remove filter logic for now, always fetch all bookings
+  const handleFilterChange = async () => {
+    await fetchBookings();
   };
 
   // Booking Form Component
@@ -199,7 +257,9 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
       notes: "",
     });
 
-    const handleLocalChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const handleLocalChange = (
+      e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+    ) => {
       const { name, value } = e.target;
       setLocalFormData((prev) => ({ ...prev, [name]: value }));
       formRef.current = { ...formRef.current, [name]: value };
@@ -210,12 +270,14 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
       setIsLoading(true);
       setError("");
       setSuccess("");
-       
+
       try {
         // Ensure numberOfClients is a number and requestedDateTime is ISO string
         await cabBookingApi.createBooking({
           ...localFormData,
-          requestedDateTime: new Date(localFormData.requestedDateTime).toISOString(),
+          requestedDateTime: new Date(
+            localFormData.requestedDateTime
+          ).toISOString(),
           numberOfClients: Number(localFormData.numberOfClients),
         });
         setSuccess("Booking created successfully!");
@@ -244,7 +306,9 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="form-group">
-              <label className="block text-sm font-medium mb-1">Project *</label>
+              <label className="block text-sm font-medium mb-1">
+                Project *
+              </label>
               <select
                 name="project"
                 value={localFormData.project}
@@ -252,46 +316,120 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
                 required
                 className="w-full p-2 border border-gray-300 rounded-md"
               >
-                <option value="" className="text-black">Select Project</option>
+                <option value="" className="text-black">
+                  Select Project
+                </option>
                 {projects.map((project) => (
-                  <option key={project._id} value={project._id} className="text-black">
+                  <option
+                    key={project._id}
+                    value={project._id}
+                    className="text-black"
+                  >
                     {project.name}
                   </option>
                 ))}
               </select>
             </div>
             <div className="form-group">
-              <label className="block text-sm font-medium  mb-1">Client Name *</label>
-              <input type="text" name="clientName" value={localFormData.clientName} onChange={handleLocalChange} required className="w-full p-2 border border-gray-300 rounded-md" onFocus={e => e.target.select()} />
+              <label className="block text-sm font-medium  mb-1">
+                Client Name *
+              </label>
+              <input
+                type="text"
+                name="clientName"
+                value={localFormData.clientName}
+                onChange={handleLocalChange}
+                required
+                className="w-full p-2 border border-gray-300 rounded-md"
+                onFocus={(e) => e.target.select()}
+              />
             </div>
             <div className="form-group">
-              <label className="block text-sm font-medium  mb-1">Number of Clients *</label>
-              <input type="number" name="numberOfClients" min="1" max="20" value={localFormData.numberOfClients}
-                onChange={handleLocalChange} required className="w-full p-2 border border-gray-300 rounded-md" />
+              <label className="block text-sm font-medium  mb-1">
+                Number of Clients *
+              </label>
+              <input
+                type="number"
+                name="numberOfClients"
+                min="1"
+                max="20"
+                value={localFormData.numberOfClients}
+                onChange={handleLocalChange}
+                required
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
             </div>
             <div className="form-group">
-              <label className="block text-sm font-medium  mb-1">Pickup Point *</label>
-              <input type="text" name="pickupPoint" value={localFormData.pickupPoint} onChange={handleLocalChange} required className="w-full p-2 border border-gray-300 rounded-md" onFocus={e => e.target.select()} />
+              <label className="block text-sm font-medium  mb-1">
+                Pickup Point *
+              </label>
+              <input
+                type="text"
+                name="pickupPoint"
+                value={localFormData.pickupPoint}
+                onChange={handleLocalChange}
+                required
+                className="w-full p-2 border border-gray-300 rounded-md"
+                onFocus={(e) => e.target.select()}
+              />
             </div>
             <div className="form-group">
-              <label className="block text-sm font-medium  mb-1">Drop Point *</label>
-              <input type="text" name="dropPoint" value={localFormData.dropPoint} onChange={handleLocalChange} required className="w-full p-2 border border-gray-300 rounded-md" onFocus={e => e.target.select()} />
+              <label className="block text-sm font-medium  mb-1">
+                Drop Point *
+              </label>
+              <input
+                type="text"
+                name="dropPoint"
+                value={localFormData.dropPoint}
+                onChange={handleLocalChange}
+                required
+                className="w-full p-2 border border-gray-300 rounded-md"
+                onFocus={(e) => e.target.select()}
+              />
             </div>
             <div className="form-group">
-              <label className="block text-sm font-medium  mb-1">Employee Name</label>
-              <input type="text" name="employeeName" value={localFormData.employeeName} onChange={handleLocalChange} className="w-full p-2 border border-gray-300 rounded-md" />
+              <label className="block text-sm font-medium  mb-1">
+                Employee Name
+              </label>
+              <input
+                type="text"
+                name="employeeName"
+                value={localFormData.employeeName}
+                onChange={handleLocalChange}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
             </div>
             <div className="form-group">
-              <label className="block text-sm font-medium  mb-1">Requested Date & Time *</label>
-              <input type="datetime-local" name="requestedDateTime" value={localFormData.requestedDateTime} onChange={handleLocalChange} min={getCurrentDateTime()} required className="w-full p-2 border border-gray-300 rounded-md" />
+              <label className="block text-sm font-medium  mb-1">
+                Requested Date & Time *
+              </label>
+              <input
+                type="datetime-local"
+                name="requestedDateTime"
+                value={localFormData.requestedDateTime}
+                onChange={handleLocalChange}
+                min={getCurrentDateTime()}
+                required
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
             </div>
             <div className="form-group">
               <label className="block text-sm font-medium  mb-1">Notes</label>
-              <textarea name="notes" value={localFormData.notes} onChange={handleLocalChange} rows={2} className="w-full p-2 border border-gray-300 rounded-md" />
+              <textarea
+                name="notes"
+                value={localFormData.notes}
+                onChange={handleLocalChange}
+                rows={2}
+                className="w-full p-2 border border-gray-300 rounded-md"
+              />
             </div>
           </div>
           <div className="mt-6">
-            <button type="submit" disabled={isLoading} className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50">
+            <button
+              type="submit"
+              disabled={isLoading}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            >
               {isLoading ? "Submitting..." : "Create Booking"}
             </button>
           </div>
@@ -353,28 +491,259 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
 
   // ...existing code...
   return (
-    <div className="container mx-auto px-4 py-6">
-      {error && <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">{error}</div>}
-      {success && <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">{success}</div>}
-      <div className="flex flex-wrap gap-2 mb-6">
-        <button onClick={() => setActiveView("form")} className={`px-4 py-2 rounded-md ${activeView === "form" ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300 text-gray-950"}`}>New Booking</button>
-        <button onClick={() => setActiveView("tracking")} className={`px-4 py-2 rounded-md ${activeView === "tracking" ? "bg-blue-600 text-white" : "bg-gray-200 hover:bg-gray-300 text-gray-950"}`}>View Bookings</button>
-        {/* Remove user?.role check for Vendor Bookings button, show only if needed */}
-        {/* <button onClick={() => setActiveView("vendortracking")} ...>Vendor Bookings</button> */}
+    <PermissionGuard module="cab-booking">
+      <div className="container mx-auto px-4 py-6">
+        {error && (
+          <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
+            {error}
+          </div>
+        )}
+        {success && (
+          <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md">
+            {success}
+          </div>
+        )}
+        <div className="flex flex-wrap gap-2 mb-6">
+          <button
+            onClick={() => setActiveView("form")}
+            className={`px-4 py-2 rounded-md ${
+              activeView === "form"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 hover:bg-gray-300 text-gray-950"
+            }`}
+          >
+            New Booking
+          </button>
+          <button
+            onClick={() => setActiveView("tracking")}
+            className={`px-4 py-2 rounded-md ${
+              activeView === "tracking"
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 hover:bg-gray-300 text-gray-950"
+            }`}
+          >
+            View Bookings
+          </button>
+          {/* Remove user?.role check for Vendor Bookings button, show only if needed */}
+          {/* <button onClick={() => setActiveView("vendortracking")} ...>Vendor Bookings</button> */}
+        </div>
+        {activeView === "form" ? (
+          <div className={`p-6 rounded-lg shadow bg-white`}>
+            <BookingForm />
+          </div>
+        ) : activeView === "tracking" ? (
+          <div className={`p-6 rounded-lg shadow bg-white`}>
+            <h2 className="text-xl font-bold mb-4">Bookings</h2>
+            {isLoading ? (
+              <div>Loading...</div>
+            ) : bookings.length === 0 ? (
+              <div>No bookings found.</div>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {bookings.map((b) => {
+                    const avatar = b.clientName
+                      ? b.clientName.substring(0, 2).toUpperCase()
+                      : "CB";
+                    return (
+                      <div key={b._id} className="">
+                        <div
+                          style={{
+                            borderRadius: 16,
+                            background:
+                              "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+                            border: "1px solid #e5e7eb",
+                            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+                            padding: 24,
+                            minHeight: 220,
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                          }}
+                        >
+                          <div
+                            style={{
+                              display: "flex",
+                              alignItems: "center",
+                              justifyContent: "space-between",
+                              marginBottom: 12,
+                            }}
+                          >
+                            <div
+                              style={{
+                                display: "flex",
+                                alignItems: "center",
+                                gap: 12,
+                              }}
+                            >
+                              <div
+                                style={{
+                                  background: "#667eea",
+                                  color: "white",
+                                  width: 48,
+                                  height: 48,
+                                  borderRadius: "50%",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  justifyContent: "center",
+                                  fontWeight: 700,
+                                  fontSize: 20,
+                                }}
+                              >
+                                {avatar}
+                              </div>
+                              <div>
+                                <div style={{ fontWeight: 700, fontSize: 18 }}>
+                                  {b.clientName}
+                                </div>
+                                <div style={{ fontSize: 13, color: "#888" }}>
+                                  Project:{" "}
+                                  {typeof b.project === "object"
+                                    ? b.project.name
+                                    : b.project}
+                                </div>
+                              </div>
+                            </div>
+                            <span
+                              style={{ minWidth: 80, display: "inline-block" }}
+                            >
+                              <span
+                                style={{
+                                  background:
+                                    b.status === "pending"
+                                      ? "#2196F3"
+                                      : b.status === "approved"
+                                      ? "#4CAF50"
+                                      : b.status === "completed"
+                                      ? "#9C27B0"
+                                      : b.status === "cancelled"
+                                      ? "#F44336"
+                                      : "#757575",
+                                  color: "white",
+                                  borderRadius: 12,
+                                  padding: "2px 12px",
+                                  fontWeight: 600,
+                                  fontSize: 13,
+                                  textTransform: "capitalize",
+                                }}
+                              >
+                                {b.status}
+                              </span>
+                            </span>
+                            <Tooltip title="View Details">
+                              <IconButton
+                                size="small"
+                                onClick={() => setViewingBooking(b)}
+                              >
+                                <Visibility fontSize="small" />
+                              </IconButton>
+                            </Tooltip>
+                          </div>
+                          <div style={{ marginBottom: 8 }}>
+                            <div style={{ fontSize: 15 }}>
+                              <b>Pickup:</b> {b.pickupPoint}
+                            </div>
+                            <div style={{ fontSize: 15 }}>
+                              <b>Drop:</b> {b.dropPoint}
+                            </div>
+                            <div style={{ fontSize: 15 }}>
+                              <b>Date/Time:</b>{" "}
+                              {new Date(b.requestedDateTime).toLocaleString()}
+                            </div>
+                            {b.notes && (
+                              <div style={{ fontSize: 15 }}>
+                                <b>Notes:</b> {b.notes}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                {/* Booking Details Dialog */}
+                <Dialog
+                  open={!!viewingBooking}
+                  onClose={() => setViewingBooking(null)}
+                  maxWidth="sm"
+                  fullWidth
+                >
+                  <DialogTitle>Booking Details</DialogTitle>
+                  <DialogContent dividers>
+                    {viewingBooking && (
+                      <div style={{ lineHeight: 2 }}>
+                        <div>
+                          <b>Client Name:</b> {viewingBooking.clientName}
+                        </div>
+                        <div>
+                          <b>Project:</b>{" "}
+                          {typeof viewingBooking.project === "object"
+                            ? viewingBooking.project.name
+                            : viewingBooking.project}
+                        </div>
+                        <div>
+                          <b>Pickup Point:</b> {viewingBooking.pickupPoint}
+                        </div>
+                        <div>
+                          <b>Drop Point:</b> {viewingBooking.dropPoint}
+                        </div>
+                        <div>
+                          <b>Employee Name:</b>{" "}
+                          {viewingBooking.employeeName || "-"}
+                        </div>
+                        <div>
+                          <b>Team Leader:</b> {viewingBooking.teamLeader || "-"}
+                        </div>
+                        <div>
+                          <b>Requested Date/Time:</b>{" "}
+                          {new Date(
+                            viewingBooking.requestedDateTime
+                          ).toLocaleString()}
+                        </div>
+                        <div>
+                          <b>Status:</b> {viewingBooking.status}
+                        </div>
+                        <div>
+                          <b>Driver:</b> {viewingBooking.driver || "-"}
+                        </div>
+                        <div>
+                          <b>Vehicle:</b> {viewingBooking.vehicle || "-"}
+                        </div>
+                        <div>
+                          <b>Current Location:</b>{" "}
+                          {viewingBooking.currentLocation || "-"}
+                        </div>
+                        <div>
+                          <b>Estimated Arrival:</b>{" "}
+                          {viewingBooking.estimatedArrival || "-"}
+                        </div>
+                        <div>
+                          <b>Notes:</b> {viewingBooking.notes || "-"}
+                        </div>
+                        <div>
+                          <b>Created At:</b>{" "}
+                          {new Date(viewingBooking.createdAt).toLocaleString()}
+                        </div>
+                        <div>
+                          <b>Updated At:</b>{" "}
+                          {new Date(viewingBooking.updatedAt).toLocaleString()}
+                        </div>
+                        <div>
+                          <b>ID:</b> {viewingBooking._id}
+                        </div>
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+              </>
+            )}
+          </div>
+        ) : (
+          // <VendorBookingsView />
+          <></>
+        )}
       </div>
-      {activeView === "form" ? (
-        <div className={`p-6 rounded-lg shadow bg-white`}>
-          <BookingForm />
-        </div>
-      ) : activeView === "tracking" ? (
-        <div className={`p-6 rounded-lg shadow bg-white`}>
-          {/* <BookingTracking /> */}
-        </div>
-      ) : (
-        // <VendorBookingsView />
-        <></>
-      )}
-    </div>
+    </PermissionGuard>
   );
 };
 

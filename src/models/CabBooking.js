@@ -36,7 +36,6 @@ const cabBookingSchema = new mongoose.Schema(
     teamLeader: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
-      required: true,
     },
     requestedDateTime: {
       type: Date,
@@ -106,7 +105,4 @@ cabBookingSchema.virtual("teamLeaderDetails", {
   justOne: true,
 });
 
-export default mongoose.model("CabBooking", cabBookingSchema);
-
- 
-
+export default mongoose.models.CabBooking || mongoose.model("CabBooking", cabBookingSchema);

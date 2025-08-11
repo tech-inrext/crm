@@ -115,6 +115,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
   }, [role, modules]);
 
   function capitalize(str: string) {
+    if (str === "CabBooking") return "Cab Booking";
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
 
@@ -242,7 +243,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
                     fontSize: { xs: 14, sm: 15 },
                   }}
                 >
-                  {mod}
+                  {capitalize(mod)}
                 </Box>
                 {permissions.map((perm) => (
                   <Box

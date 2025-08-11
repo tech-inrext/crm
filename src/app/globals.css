@@ -12,8 +12,6 @@
 
 :root {
   --background: #ffffff;
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
   --mobile-padding: 8px;
   --tablet-padding: 16px;
   --desktop-padding: 24px;

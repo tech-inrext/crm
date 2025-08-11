@@ -46,15 +46,6 @@ const projectSchema = new mongoose.Schema({
     type: Boolean,
     default: true
   },
-  createdBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  updatedBy: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User'
-  }
 }, {
   timestamps: true,
   toJSON: { virtuals: true },
@@ -64,9 +55,5 @@ const projectSchema = new mongoose.Schema({
 // Indexes for better query performance
 projectSchema.index({ name: 1, location: 1, isActive: 1 });
 
-export default mongoose.model("Project", ProjectSchema);
- 
-
- 
-
+export default mongoose.models.Project || mongoose.model("Project", projectSchema);
 

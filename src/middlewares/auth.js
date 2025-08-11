@@ -2,16 +2,14 @@ import jwt from "jsonwebtoken";
 import Role from "../models/Role"
 import Employee from "../models/Employee";
 import dbConnect from "../lib/mongodb";
-// import { checkPermission } from "../utils/checkPermission";
+import { checkPermission } from "../utils/checkPermission";
 
-const MODULES = ["lead", "employee", "role","department"];
+const MODULES = ["lead", "employee", "role", "department", "cab-booking"];
 
 export async function userAuth (req, res, next){
   try {
     await dbConnect();
     const { token } = req.cookies;
-    // console.log("hello",token)
-    // console.log("hellooo",req.cookies)
 
     if (!token) {
       throw new Error("Token is not valid");
