@@ -42,7 +42,7 @@
     ".next/types/**/*.ts",
     "**/*.ts",
     "**/*.tsx"
-, "src/components/leads/CheckUploadStatusDialog.tsx"  ],
+, "src/components/leads/CheckUploadStatusDialog.tsx", "src/pages/api/v0/cab-bookings.js", "src/pages/api/v0/projects.js", "src/pages/api/v0/projects/index.js"  ],
   "exclude": [
     "node_modules"
   ]

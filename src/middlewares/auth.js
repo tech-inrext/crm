@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 import Role from "../models/Role"
 import Employee from "../models/Employee";
 import dbConnect from "../lib/mongodb";
-import { checkPermission } from "../utils/checkPermission";
+// import { checkPermission } from "../utils/checkPermission";
 
 const MODULES = ["lead", "employee", "role","department"];
 

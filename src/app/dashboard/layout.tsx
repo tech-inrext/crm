@@ -47,6 +47,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     module: "role",
     icon: <AppIcon src="/roles.png" alt="Roles" />,
   },
+  {
+    label: "Cab Booking",
+    href: "/dashboard/cab-booking",
+    module: "cab-booking",
+    icon: <AppIcon src="/cab.png" alt="Cab Booking" />,
+  },
 ];
 
 export default function DashboardLayout({
@@ -66,6 +72,8 @@ export default function DashboardLayout({
   const sidebarLinks = useMemo(() => {
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
+          // TEMP: Always show Cab Booking for debugging
+          if (link.module === "cab-booking") return true;
           if (!link.module) return true;
           const { hasReadAccess } = getPermissions(link.module);
           return hasReadAccess;
