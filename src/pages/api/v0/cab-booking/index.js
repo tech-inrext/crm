@@ -95,12 +95,34 @@ const createBooking = async (req, res) => {
 
     await doc.save();
 
-    // populate common refs for immediate UI use
-    // await doc.populate([
-    //   { path: "teamLeaderDetails", select: "name email phone" },
-    //   { path: "driverDetails", select: "name email phone" },
-    //   { path: "projectDetails", select: "name code" },
-    // ]);
+    // Send email notification to manager
+    try {
+      const Employee = require("../../../../models/Employee").default || require("../../../../models/Employee");
+      const manager = await Employee.findById(employee.managerId);
+      if (manager && manager.email) {
+        const { mailer } = require("../../../../lib/mailer.js");
+        await mailer({
+          to: manager.email,
+          subject: "Cab Booking Approval Request",
+          html: `
+            <p>Dear ${manager.name || "Manager"},</p>
+            <p>You have a new cab booking request from <b>${employee.name}</b> that requires your approval.</p>
+            <ul>
+              <li><b>Project:</b> ${doc.project}</li>
+              <li><b>Client Name:</b> ${doc.clientName}</li>
+              <li><b>Pickup Point:</b> ${doc.pickupPoint}</li>
+              <li><b>Drop Point:</b> ${doc.dropPoint}</li>
+              <li><b>Date/Time:</b> ${doc.requestedDateTime}</li>
+            </ul>
+            <p>Please <a href="${process.env.APP_URL || "http://localhost:3000"}/dashboard/cab-booking">log in</a> to review and approve or reject this request.</p>
+            <p>Thank you.</p>
+          `,
+        });
+      }
+    } catch (err) {
+      // Log but do not block booking creation
+      console.error("Failed to send manager notification email:", err);
+    }
 
     return res.status(201).json({ success: true, data: doc });
   } catch (error) {

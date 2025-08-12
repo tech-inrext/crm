@@ -66,6 +66,13 @@ const BookingCard: React.FC<BookingCardProps> = ({
             display: "flex",
             flexDirection: "column",
             gap: 2,
+            width: "100%",
+            maxWidth: 370,
+            minWidth: 260,
+            minHeight: 260,
+            boxSizing: "border-box",
+            overflow: "visible",
+            wordBreak: "break-word",
           }}
         >
           <Box
@@ -92,87 +99,112 @@ const BookingCard: React.FC<BookingCardProps> = ({
               </Avatar>
               <Box>
                 <Typography fontWeight={700} fontSize={18} color="text.primary">
-                  {booking.clientName}
+                  {booking.clientName?.length > 28
+                    ? `${booking.clientName.slice(0, 25)}...`
+                    : booking.clientName}
                 </Typography>
                 <Typography
                   fontSize={13}
                   color="text.secondary"
-                  sx={{ wordBreak: "break-word" }}
+                  sx={{
+                    wordBreak: "break-word",
+                    maxWidth: 200,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                  }}
                 >
-                  Project: {getProjectName(booking.project)}
+                  Project: {getProjectName(booking.project) || booking.project}
                 </Typography>
               </Box>
             </Box>
             <Box sx={{ minWidth: 120, display: "flex", alignItems: "center" }}>
-              {isManager ? (
-                <Select
-                  value={status}
-                  onChange={handleStatusChange}
-                  size="small"
-                  disabled={updating || isLoading}
-                  sx={{
-                    background: getStatusColor(status),
-                    color: "white",
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: 13,
-                    textTransform: "capitalize",
-                    minWidth: 110,
-                    boxShadow: 1,
-                    mr: 1,
-                  }}
-                  MenuProps={{
-                    PaperProps: {
-                      style: { background: "#fff" },
-                    },
-                  }}
-                >
-                  {statusOptions
-                    .filter((opt) => opt.value && opt.value !== "all")
-                    .map((opt) => (
-                      <MenuItem
-                        key={opt.value}
-                        value={opt.value}
-                        style={{ textTransform: "capitalize" }}
-                      >
-                        {opt.label}
-                      </MenuItem>
-                    ))}
-                </Select>
-              ) : (
-                <Box
-                  sx={{
-                    background: getStatusColor(status),
-                    color: "white",
-                    borderRadius: 2,
-                    fontWeight: 600,
-                    fontSize: 13,
-                    textTransform: "capitalize",
-                    minWidth: 110,
-                    boxShadow: 1,
-                    mr: 1,
-                    px: 2,
-                    py: 1,
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  {statusOptions.find((opt) => opt.value === status)?.label ||
-                    status}
-                </Box>
-              )}
-              {updating && (
-                <CircularProgress
-                  size={18}
-                  sx={{ ml: 1, color: "primary.main" }}
-                />
-              )}
-              <Tooltip title="View Details">
-                <IconButton size="small" onClick={() => onViewDetails(booking)}>
-                  <Visibility fontSize="small" />
-                </IconButton>
-              </Tooltip>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1,
+                  flexWrap: "wrap",
+                  overflow: "visible",
+                  justifyContent: "flex-end",
+                  minWidth: 120,
+                  maxWidth: 180,
+                }}
+              >
+                {isManager ? (
+                  <Select
+                    value={status}
+                    onChange={handleStatusChange}
+                    size="small"
+                    disabled={updating || isLoading}
+                    sx={{
+                      background: getStatusColor(status),
+                      color: "white",
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      fontSize: 13,
+                      textTransform: "capitalize",
+                      minWidth: 110,
+                      boxShadow: 1,
+                      mr: 1,
+                    }}
+                    MenuProps={{
+                      PaperProps: {
+                        style: { background: "#fff" },
+                      },
+                    }}
+                  >
+                    {statusOptions
+                      .filter((opt) => opt.value && opt.value !== "all")
+                      .map((opt) => (
+                        <MenuItem
+                          key={opt.value}
+                          value={opt.value}
+                          style={{ textTransform: "capitalize" }}
+                        >
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                  </Select>
+                ) : (
+                  <Box
+                    sx={{
+                      background: getStatusColor(status),
+                      color: "white",
+                      borderRadius: 2,
+                      fontWeight: 600,
+                      fontSize: 13,
+                      textTransform: "capitalize",
+                      minWidth: 110,
+                      boxShadow: 1,
+                      mr: 1,
+                      px: 2,
+                      py: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    {statusOptions.find((opt) => opt.value === status)?.label ||
+                      status}
+                  </Box>
+                )}
+                {updating && (
+                  <CircularProgress
+                    size={18}
+                    sx={{ ml: 1, color: "primary.main" }}
+                  />
+                )}
+                <Tooltip title="View Details">
+                  <IconButton
+                    size="small"
+                    onClick={() => onViewDetails(booking)}
+                    sx={{ ml: 1, mr: 0.5, background: "#f5f5f5", boxShadow: 1 }}
+                  >
+                    <Visibility fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Box>
             </Box>
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 1 }}>
@@ -181,7 +213,13 @@ const BookingCard: React.FC<BookingCardProps> = ({
               <Typography
                 fontSize={15}
                 color="text.primary"
-                sx={{ wordBreak: "break-word" }}
+                sx={{
+                  wordBreak: "break-word",
+                  maxWidth: 220,
+                  overflow: "visible",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "normal",
+                }}
               >
                 <b>Pickup:</b> {booking.pickupPoint}
               </Typography>
@@ -191,7 +229,13 @@ const BookingCard: React.FC<BookingCardProps> = ({
               <Typography
                 fontSize={15}
                 color="text.primary"
-                sx={{ wordBreak: "break-word" }}
+                sx={{
+                  wordBreak: "break-word",
+                  maxWidth: 220,
+                  overflow: "visible",
+                  textOverflow: "ellipsis",
+                  whiteSpace: "normal",
+                }}
               >
                 <b>Drop:</b> {booking.dropPoint}
               </Typography>
@@ -208,7 +252,13 @@ const BookingCard: React.FC<BookingCardProps> = ({
                 <Typography
                   fontSize={15}
                   color="text.primary"
-                  sx={{ wordBreak: "break-word" }}
+                  sx={{
+                    wordBreak: "break-word",
+                    maxWidth: 220,
+                    overflow: "visible",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "normal",
+                  }}
                 >
                   <b>Notes:</b> {booking.notes}
                 </Typography>
