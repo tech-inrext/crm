@@ -1,6 +1,18 @@
-import React, { useState, ChangeEvent, FormEvent } from "react";
+import React, {
+  useState,
+  useEffect,
+  ChangeEvent,
+  FormEvent,
+  useRef,
+} from "react";
+import axios from "axios";
 import { Project, BookingFormData } from "@/types/cab-booking";
 import { getCurrentDateTime } from "@/constants/cab-booking";
+
+interface Employee {
+  _id: string;
+  name: string;
+}
 
 interface BookingFormProps {
   projects: Project[];
@@ -13,6 +25,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
   isLoading,
   onSubmit,
 }) => {
+  const [employees, setEmployees] = useState<Employee[]>([]);
+  const [employeeSearch, setEmployeeSearch] = useState("");
+  const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
   const [formData, setFormData] = useState<BookingFormData>({
     project: "",
     clientName: "",
@@ -23,6 +39,22 @@ const BookingForm: React.FC<BookingFormProps> = ({
     requestedDateTime: getCurrentDateTime(),
     notes: "",
   });
+
+  useEffect(() => {
+    if (!showEmployeeDropdown) return;
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    searchTimeout.current = setTimeout(() => {
+      axios
+        .get("/api/v0/employee", {
+          params: employeeSearch ? { search: employeeSearch } : {},
+        })
+        .then((res) => setEmployees(res.data.data || []))
+        .catch(() => setEmployees([]));
+    }, 300);
+    return () => {
+      if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    };
+  }, [employeeSearch, showEmployeeDropdown]);
 
   const handleChange = (
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -140,17 +172,48 @@ const BookingForm: React.FC<BookingFormProps> = ({
             />
           </div>
 
-          <div className="form-group">
+          <div className="form-group relative">
             <label className="block text-sm font-medium mb-1">
               Employee Name
             </label>
             <input
               type="text"
               name="employeeName"
+              autoComplete="off"
               value={formData.employeeName}
-              onChange={handleChange}
+              onChange={(e) => {
+                setFormData((prev) => ({
+                  ...prev,
+                  employeeName: e.target.value,
+                }));
+                setEmployeeSearch(e.target.value);
+                setShowEmployeeDropdown(true);
+              }}
+              onFocus={() => setShowEmployeeDropdown(true)}
+              onBlur={() =>
+                setTimeout(() => setShowEmployeeDropdown(false), 200)
+              }
               className="w-full p-2 border border-gray-300 rounded-md"
             />
+            {showEmployeeDropdown && employees.length > 0 && (
+              <ul className="absolute z-10 bg-white border border-gray-300 rounded-md w-full max-h-40 overflow-y-auto mt-1">
+                {employees.map((emp) => (
+                  <li
+                    key={emp._id}
+                    className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-black"
+                    onMouseDown={() => {
+                      setFormData((prev) => ({
+                        ...prev,
+                        employeeName: emp.name,
+                      }));
+                      setShowEmployeeDropdown(false);
+                    }}
+                  >
+                    {emp.name}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
 
           <div className="form-group">

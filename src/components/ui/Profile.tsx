@@ -32,7 +32,12 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
         flexDirection="column"
         alignItems="center"
         justifyContent="center"
-        minHeight={200}
+        minHeight={220}
+        sx={{
+          background: "linear-gradient(135deg, #e0e7ff 0%, #f0fdfa 100%)",
+          borderRadius: 3,
+          boxShadow: 2,
+        }}
       >
         <Typography variant="body1" color="text.secondary">
           Loading user info...
@@ -44,25 +49,49 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
       (r) => r._id === user.currentRole
     )?.name;
     content = (
-      <Box display="flex" flexDirection="column" alignItems="center" gap={2}>
+      <Box
+        display="flex"
+        flexDirection="column"
+        alignItems="center"
+        gap={2}
+        sx={{
+          background: "linear-gradient(135deg, #e0e7ff 0%, #f0fdfa 100%)",
+          borderRadius: 3,
+          boxShadow: 3,
+          p: 3,
+        }}
+      >
         <Avatar
-          sx={{ width: 80, height: 80, bgcolor: "primary.main", fontSize: 36 }}
+          sx={{
+            width: 90,
+            height: 90,
+            bgcolor: "primary.main",
+            fontSize: 40,
+            boxShadow: 2,
+            border: "3px solid #fff",
+            mb: 1,
+          }}
         >
           {user.name?.[0]?.toUpperCase()}
         </Avatar>
-        <Typography variant="h6" fontWeight={600} gutterBottom>
+        <Typography
+          variant="h5"
+          fontWeight={700}
+          gutterBottom
+          color="primary.main"
+        >
           {user.name}
         </Typography>
         <Box display="flex" alignItems="center" gap={1}>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body1" color="text.secondary">
             {user.email}
           </Typography>
           {user.phone && (
             <>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body1" color="text.disabled">
                 &nbsp;|&nbsp;
               </Typography>
-              <Typography variant="body2" color="text.secondary">
+              <Typography variant="body1" color="text.secondary">
                 {user.phone}
               </Typography>
             </>
@@ -70,11 +99,19 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
         </Box>
         <Divider sx={{ width: "100%", my: 2 }} />
         <Box width="100%" sx={{ mb: 2 }}>
+          <Typography
+            variant="subtitle1"
+            color="primary"
+            fontWeight={600}
+            mb={1}
+          >
+            Account Details
+          </Typography>
           <Box display="flex" justifyContent="space-between" mb={1}>
             <Typography variant="subtitle2" color="text.secondary">
               Current Role
             </Typography>
-            <Typography variant="body1" fontWeight={500}>
+            <Typography variant="body1" fontWeight={500} color="primary.main">
               {currentRole}
             </Typography>
           </Box>
@@ -98,6 +135,17 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
               </Typography>
             </Box>
           )}
+        </Box>
+        <Divider sx={{ width: "100%", my: 1 }} />
+        <Box width="100%" sx={{ mb: 2 }}>
+          <Typography
+            variant="subtitle1"
+            color="primary"
+            fontWeight={600}
+            mb={1}
+          >
+            Personal Info
+          </Typography>
           {user.gender && (
             <Box display="flex" justifyContent="space-between" mb={1}>
               <Typography variant="subtitle2" color="text.secondary">
@@ -131,7 +179,7 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
           {(user.departmentId || user.department) && (
             <Box display="flex" justifyContent="space-between" mb={1}>
               <Typography variant="subtitle2" color="text.secondary">
-                DepartmentId
+                Department
               </Typography>
               <Typography variant="body2" color="text.primary">
                 {user.departmentId || user.department}
@@ -141,7 +189,7 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
           {user.managerId && (
             <Box display="flex" justifyContent="space-between" mb={1}>
               <Typography variant="subtitle2" color="text.secondary">
-                ManagerId
+                Manager ID
               </Typography>
               <Typography variant="body2" color="text.primary">
                 {user.managerId}
@@ -151,7 +199,7 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
           {user.joiningDate && (
             <Box display="flex" justifyContent="space-between" mb={1}>
               <Typography variant="subtitle2" color="text.secondary">
-                JoiningDate
+                Joining Date
               </Typography>
               <Typography variant="body2" color="text.primary">
                 {user.joiningDate}
@@ -163,11 +211,42 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
     );
   }
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xs" fullWidth>
-      <DialogTitle>Profile</DialogTitle>
-      <DialogContent>{content}</DialogContent>
-      <DialogActions>
-        <Button onClick={onClose} variant="contained" fullWidth>
+    <Dialog
+      open={open}
+      onClose={onClose}
+      maxWidth="xs"
+      fullWidth
+      PaperProps={{
+        sx: {
+          background: "linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%)",
+          borderRadius: 4,
+          boxShadow: 6,
+        },
+      }}
+    >
+      <DialogTitle
+        sx={{
+          textAlign: "center",
+          fontWeight: 700,
+          fontSize: 24,
+          color: "primary.main",
+          letterSpacing: 1,
+          background: "linear-gradient(90deg, #6366f1 0%, #06b6d4 100%)",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          mb: 1,
+        }}
+      >
+        Profile
+      </DialogTitle>
+      <DialogContent sx={{ p: 0 }}>{content}</DialogContent>
+      <DialogActions sx={{ px: 3, pb: 2 }}>
+        <Button
+          onClick={onClose}
+          variant="contained"
+          fullWidth
+          sx={{ fontWeight: 600, borderRadius: 2 }}
+        >
           Close
         </Button>
       </DialogActions>
