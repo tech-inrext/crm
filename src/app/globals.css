@@ -116,7 +116,7 @@ html {
   width: 100%;
   min-height: calc(100vh - 56px);
   padding: var(--mobile-padding);
-  margin-top: 56px; /* Account for fixed navbar */
+  margin-top: 0; /* Removed top margin */
   transition: all 0.3s ease;
 }
 
@@ -124,7 +124,7 @@ html {
 @media (min-width: 768px) {
   .main-content {
     padding: var(--tablet-padding);
-    margin-top: 64px; /* Larger navbar on tablet */
+  margin-top: 0; /* Removed top margin for tablet */
   }
 }
 
@@ -133,7 +133,7 @@ html {
   .main-content {
     margin-left: 260px;
     padding: var(--desktop-padding);
-    margin-top: 0; /* No top margin when sidebar is present */
+  margin-top: 0; /* No top margin when sidebar is present */
   }
 }
 

@@ -13,6 +13,7 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
+import CardComponent from "@/components/ui/Card";
 import { Visibility } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import { FaCar, FaTruck, FaCheck, FaTimes } from "react-icons/fa";
@@ -492,7 +493,7 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
   // ...existing code...
   return (
     <PermissionGuard module="cab-booking">
-      <div className="container mx-auto px-4 py-6">
+      <div className="container mx-auto px-4 py-6" style={{ marginTop: 24 }}>
         {error && (
           <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md">
             {error}
@@ -546,118 +547,134 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
                       ? b.clientName.substring(0, 2).toUpperCase()
                       : "CB";
                     return (
-                      <div key={b._id} className="">
-                        <div
-                          style={{
-                            borderRadius: 16,
-                            background:
-                              "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-                            border: "1px solid #e5e7eb",
-                            boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-                            padding: 24,
-                            minHeight: 220,
-                            display: "flex",
-                            flexDirection: "column",
-                            justifyContent: "space-between",
-                          }}
-                        >
-                          <div
-                            style={{
-                              display: "flex",
-                              alignItems: "center",
-                              justifyContent: "space-between",
-                              marginBottom: 12,
-                            }}
-                          >
+                      <CardComponent
+                        key={b._id}
+                        content={
+                          <>
                             <div
                               style={{
                                 display: "flex",
                                 alignItems: "center",
-                                gap: 12,
+                                justifyContent: "space-between",
+                                marginBottom: 12,
                               }}
                             >
                               <div
                                 style={{
-                                  background: "#667eea",
-                                  color: "white",
-                                  width: 48,
-                                  height: 48,
-                                  borderRadius: "50%",
                                   display: "flex",
                                   alignItems: "center",
-                                  justifyContent: "center",
-                                  fontWeight: 700,
-                                  fontSize: 20,
+                                  gap: 12,
                                 }}
                               >
-                                {avatar}
-                              </div>
-                              <div>
-                                <div style={{ fontWeight: 700, fontSize: 18 }}>
-                                  {b.clientName}
+                                <div
+                                  style={{
+                                    background: "#667eea",
+                                    color: "white",
+                                    width: 48,
+                                    height: 48,
+                                    borderRadius: "50%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                    fontWeight: 700,
+                                    fontSize: 20,
+                                  }}
+                                >
+                                  {avatar}
                                 </div>
-                                <div style={{ fontSize: 13, color: "#888" }}>
-                                  Project:{" "}
-                                  {typeof b.project === "object"
-                                    ? b.project.name
-                                    : b.project}
+                                <div>
+                                  <div
+                                    style={{ fontWeight: 700, fontSize: 18 }}
+                                  >
+                                    {b.clientName}
+                                  </div>
+                                  <div
+                                    style={{
+                                      fontSize: 13,
+                                      color: "#888",
+                                      wordBreak: "break-word",
+                                    }}
+                                  >
+                                    Project:{" "}
+                                    {typeof b.project === "object"
+                                      ? b.project.name
+                                      : b.project}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                            <span
-                              style={{ minWidth: 80, display: "inline-block" }}
-                            >
                               <span
                                 style={{
-                                  background:
-                                    b.status === "pending"
-                                      ? "#2196F3"
-                                      : b.status === "approved"
-                                      ? "#4CAF50"
-                                      : b.status === "completed"
-                                      ? "#9C27B0"
-                                      : b.status === "cancelled"
-                                      ? "#F44336"
-                                      : "#757575",
-                                  color: "white",
-                                  borderRadius: 12,
-                                  padding: "2px 12px",
-                                  fontWeight: 600,
-                                  fontSize: 13,
-                                  textTransform: "capitalize",
+                                  minWidth: 80,
+                                  display: "inline-block",
                                 }}
                               >
-                                {b.status}
+                                <span
+                                  style={{
+                                    background:
+                                      b.status === "pending"
+                                        ? "#2196F3"
+                                        : b.status === "approved"
+                                        ? "#4CAF50"
+                                        : b.status === "completed"
+                                        ? "#9C27B0"
+                                        : b.status === "cancelled"
+                                        ? "#F44336"
+                                        : "#757575",
+                                    color: "white",
+                                    borderRadius: 12,
+                                    padding: "2px 12px",
+                                    fontWeight: 600,
+                                    fontSize: 13,
+                                    textTransform: "capitalize",
+                                  }}
+                                >
+                                  {b.status}
+                                </span>
                               </span>
-                            </span>
-                            <Tooltip title="View Details">
-                              <IconButton
-                                size="small"
-                                onClick={() => setViewingBooking(b)}
+                              <Tooltip title="View Details">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setViewingBooking(b)}
+                                >
+                                  <Visibility fontSize="small" />
+                                </IconButton>
+                              </Tooltip>
+                            </div>
+                            <div style={{ marginBottom: 8 }}>
+                              <div
+                                style={{
+                                  fontSize: 15,
+                                  wordBreak: "break-word",
+                                }}
                               >
-                                <Visibility fontSize="small" />
-                              </IconButton>
-                            </Tooltip>
-                          </div>
-                          <div style={{ marginBottom: 8 }}>
-                            <div style={{ fontSize: 15 }}>
-                              <b>Pickup:</b> {b.pickupPoint}
-                            </div>
-                            <div style={{ fontSize: 15 }}>
-                              <b>Drop:</b> {b.dropPoint}
-                            </div>
-                            <div style={{ fontSize: 15 }}>
-                              <b>Date/Time:</b>{" "}
-                              {new Date(b.requestedDateTime).toLocaleString()}
-                            </div>
-                            {b.notes && (
-                              <div style={{ fontSize: 15 }}>
-                                <b>Notes:</b> {b.notes}
+                                <b>Pickup:</b> {b.pickupPoint}
                               </div>
-                            )}
-                          </div>
-                        </div>
-                      </div>
+                              <div
+                                style={{
+                                  fontSize: 15,
+                                  wordBreak: "break-word",
+                                }}
+                              >
+                                <b>Drop:</b> {b.dropPoint}
+                              </div>
+                              <div style={{ fontSize: 15 }}>
+                                <b>Date/Time:</b>{" "}
+                                {new Date(b.requestedDateTime).toLocaleString()}
+                              </div>
+                              {b.notes && (
+                                <div
+                                  style={{
+                                    fontSize: 15,
+                                    wordBreak: "break-word",
+                                  }}
+                                >
+                                  <b>Notes:</b> {b.notes}
+                                </div>
+                              )}
+                            </div>
+                          </>
+                        }
+                      />
                     );
                   })}
                 </div>

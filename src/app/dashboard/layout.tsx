@@ -121,7 +121,7 @@ export default function DashboardLayout({
               component="main"
               sx={{
                 flexGrow: 1,
-                pt: { xs: 8, sm: 10, md: 14, lg: 18, xl: 20 }, // Increased top padding for all breakpoints
+                pt: { xs: "64px", sm: "72px", md: "64px", lg: "64px" }, // Always match Navbar height for all breakpoints
                 pb: { xs: 2, sm: 3 },
                 pl: { xs: 0, lg: "260px" },
                 pr: { xs: 0 },

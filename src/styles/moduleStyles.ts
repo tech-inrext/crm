@@ -5,7 +5,7 @@ export const MODULE_LAYOUT_STYLES = {
   // Main container styles
   mainContainer: {
     p: { xs: 0.5, sm: 1, md: 2 },
-    pt: { xs: 1, sm: 2, md: 3 },
+    pt: 0, // Removed top padding from main container
     minHeight: "100vh",
     bgcolor: "background.default",
     overflow: "hidden",
@@ -15,8 +15,8 @@ export const MODULE_LAYOUT_STYLES = {
   headerPaper: {
     p: { xs: 1, sm: 2, md: 3 },
     borderRadius: { xs: 1, sm: 2, md: 3 },
-    mb: { xs: 1, sm: 2, md: 3 },
-    mt: { xs: 0.5, sm: 1, md: 2 },
+  mb: 0, // No bottom margin below header
+    mt: 0, // Removed top margin from headerPaper
     background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
     overflow: "hidden",
     elevation: 2,
@@ -61,7 +61,7 @@ export const LEADS_STYLES = {
   leadsContainer: {
     p: { xs: 0.5, sm: 1, md: 2 },
     pt: { xs: 1, sm: 2, md: 3 },
-    mt: { xs: 2, sm: 3, md: 4 }, // Additional top margin for leads module
+    mt: 0, // Removed top margin for leads module
     minHeight: "100vh",
     bgcolor: "background.default",
     overflow: "hidden",
@@ -138,7 +138,7 @@ export const USERS_STYLES = {
   usersContainer: {
     p: { xs: 0.5, sm: 1, md: 2 },
     pt: { xs: 1, sm: 2, md: 3 },
-    mt: { xs: 2, sm: 3, md: 4 }, // Additional top margin for users module
+    mt: 0, // Removed top margin for users module
     minHeight: "100vh",
     bgcolor: "background.default",
     overflow: "hidden",
@@ -184,7 +184,7 @@ export const ROLES_STYLES = {
   // Roles main container with additional top margin
   rolesContainer: {
     p: { xs: 1, sm: 2, md: 3 },
-    mt: { xs: 2, sm: 3, md: 4 }, // Additional top margin for roles module
+    mt: 0, // Removed top margin for roles module
     minHeight: "100vh",
     bgcolor: "background.default",
   } as SxProps<Theme>,
