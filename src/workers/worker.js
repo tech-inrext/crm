@@ -5,6 +5,7 @@ import { Worker } from "bullmq";
 import IORedis from "ioredis";
 import bulkUploadLeads from "./bulkupload.js";
 import sendOTPJob from "./sendOTPJob.js";
+import sendWhatsAppJob from "./sendWhatsAppJob.js";
 
 // 🛠️ Load .env
 const __filename = fileURLToPath(import.meta.url);
@@ -41,4 +42,5 @@ class InrextWorker extends Worker {
 const worker = new InrextWorker();
 worker.addJobListener("bulkUploadLeads", bulkUploadLeads);
 worker.addJobListener("sendOTPJob", sendOTPJob);
+worker.addJobListener("sendWhatsAppJob", sendWhatsAppJob);
 export default worker;
