@@ -1,5 +1,11 @@
-import React from "react";
-import { IconButton, Tooltip } from "@mui/material";
+import React, { useState } from "react";
+import {
+  IconButton,
+  Tooltip,
+  Select,
+  MenuItem,
+  CircularProgress,
+} from "@mui/material";
 import { Visibility } from "@mui/icons-material";
 import CardComponent from "@/components/ui/Card";
 import { Booking } from "@/types/cab-booking";
@@ -7,7 +13,10 @@ import {
   getStatusColor,
   formatDateTime,
   getProjectName,
+  statusOptions,
 } from "@/constants/cab-booking";
+
+import { useCabBooking } from "@/hooks/useCabBooking";
 
 interface BookingCardProps {
   booking: Booking;
@@ -18,9 +27,25 @@ const BookingCard: React.FC<BookingCardProps> = ({
   booking,
   onViewDetails,
 }) => {
+  const { updateBookingStatus, isLoading } = useCabBooking();
+  const [status, setStatus] = useState(booking.status);
+  const [updating, setUpdating] = useState(false);
   const avatar = booking.clientName
     ? booking.clientName.substring(0, 2).toUpperCase()
     : "CB";
+
+  const handleStatusChange = async (
+    e: React.ChangeEvent<{ value: unknown }>
+  ) => {
+    const newStatus = e.target.value as string;
+    setStatus(newStatus);
+    setUpdating(true);
+    try {
+      await updateBookingStatus(booking._id, newStatus);
+    } finally {
+      setUpdating(false);
+    }
+  };
 
   return (
     <CardComponent
@@ -72,25 +97,45 @@ const BookingCard: React.FC<BookingCardProps> = ({
                 </div>
               </div>
             </div>
-            <span
-              style={{
-                minWidth: 80,
-                display: "inline-block",
-              }}
-            >
-              <span
+            <span style={{ minWidth: 120, display: "inline-block" }}>
+              <Select
+                value={status}
+                onChange={handleStatusChange}
+                size="small"
+                disabled={updating || isLoading}
                 style={{
-                  background: getStatusColor(booking.status),
+                  background: getStatusColor(status),
                   color: "white",
                   borderRadius: 12,
-                  padding: "2px 12px",
                   fontWeight: 600,
                   fontSize: 13,
                   textTransform: "capitalize",
+                  minWidth: 110,
+                }}
+                MenuProps={{
+                  PaperProps: {
+                    style: { background: "#fff" },
+                  },
                 }}
               >
-                {booking.status}
-              </span>
+                {statusOptions
+                  .filter((opt) => opt.value && opt.value !== "all")
+                  .map((opt) => (
+                    <MenuItem
+                      key={opt.value}
+                      value={opt.value}
+                      style={{ textTransform: "capitalize" }}
+                    >
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+              </Select>
+              {updating && (
+                <CircularProgress
+                  size={18}
+                  style={{ marginLeft: 8, color: "#fff" }}
+                />
+              )}
             </span>
             <Tooltip title="View Details">
               <IconButton size="small" onClick={() => onViewDetails(booking)}>
