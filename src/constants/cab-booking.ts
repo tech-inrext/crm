@@ -1,3 +1,11 @@
+export const statusOptions = [
+  { value: '', label: 'All' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'approved', label: 'Approved' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
+  { value: 'rejected', label: 'Rejected' },
+];
 export const DEFAULT_PROJECTS = [
   { _id: "1", name: "Urbainia Trinity NX" },
   { _id: "2", name: "Migsun Rohini Central" },

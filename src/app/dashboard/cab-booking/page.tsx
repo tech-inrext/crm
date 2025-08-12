@@ -10,11 +10,13 @@ import {
   ViewSwitcher,
   Notification,
 } from "@/components/cab-booking";
+import { statusOptions } from "@/constants/cab-booking";
 
 const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
   const router = useRouter();
   const [activeView, setActiveView] =
     useState<CabBookingProps["defaultView"]>(defaultView);
+  const [statusFilter, setStatusFilter] = useState<string>("");
 
   const {
     bookings,
@@ -39,6 +41,10 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
     clearMessages();
   };
 
+  const handleStatusButtonClick = (status: string) => {
+    setStatusFilter(status);
+  };
+
   return (
     <PermissionGuard module="cab-booking">
       <div className="container mx-auto px-4 py-6" style={{ marginTop: 24 }}>
@@ -52,6 +58,24 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
 
         <ViewSwitcher activeView={activeView} onViewChange={handleViewChange} />
 
+        {activeView === "tracking" && (
+          <div className="flex flex-wrap gap-2 mb-4">
+            {statusOptions.map((opt) => (
+              <button
+                key={opt.value}
+                onClick={() => handleStatusButtonClick(opt.value)}
+                className={`px-3 py-1 rounded border transition-colors duration-150 ${
+                  statusFilter === opt.value
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-gray-700 border-gray-300 hover:bg-blue-100"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        )}
+
         {activeView === "form" ? (
           <div className="p-6 rounded-lg shadow bg-white">
             <BookingForm
@@ -63,7 +87,11 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
         ) : activeView === "tracking" ? (
           <div className="p-6 rounded-lg shadow bg-white">
             <h2 className="text-xl font-bold mb-4">Bookings</h2>
-            <BookingsList bookings={bookings} isLoading={isLoading} />
+            <BookingsList
+              bookings={bookings}
+              isLoading={isLoading}
+              statusFilter={statusFilter}
+            />
           </div>
         ) : null}
       </div>

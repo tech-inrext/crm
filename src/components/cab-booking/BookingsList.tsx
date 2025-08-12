@@ -8,17 +8,28 @@ import Pagination from "../ui/Pagination";
 interface BookingsListProps {
   bookings: Booking[];
   isLoading: boolean;
+  statusFilter?: string;
 }
 
-const BookingsList: React.FC<BookingsListProps> = ({ bookings, isLoading }) => {
-  const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
-  // Pagination state (local, like leads cards)
-  const [page, setPage] = useState(1); // 1-based
-  const [pageSize, setPageSize] = useState(6); // Default page size
+import { statusOptions } from "@/constants/cab-booking";
 
-  const totalItems = bookings.length;
+const BookingsList: React.FC<BookingsListProps> = ({
+  bookings,
+  isLoading,
+  statusFilter = "",
+}) => {
+  const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6);
+
+  // Filter bookings by status
+  const filteredBookings = statusFilter
+    ? bookings.filter((b) => b.status === statusFilter)
+    : bookings;
+
+  const totalItems = filteredBookings.length;
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
-  const paginatedBookings = bookings.slice(
+  const paginatedBookings = filteredBookings.slice(
     (page - 1) * pageSize,
     page * pageSize
   );
@@ -40,11 +51,16 @@ const BookingsList: React.FC<BookingsListProps> = ({ bookings, isLoading }) => {
     setPageSize(size);
   };
 
+  const handleStatusButtonClick = (status: string) => {
+    setStatusFilter(status);
+    setPage(1);
+  };
+
   if (isLoading) {
     return <div>Loading...</div>;
   }
 
-  if (bookings.length === 0) {
+  if (filteredBookings.length === 0) {
     return <div>No bookings found.</div>;
   }
 
