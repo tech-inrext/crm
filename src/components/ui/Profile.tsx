@@ -186,23 +186,27 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
               </Typography>
             </Box>
           )}
-          {user.managerId && (
+          {user.managerName || user.managerId ? (
             <Box display="flex" justifyContent="space-between" mb={1}>
               <Typography variant="subtitle2" color="text.secondary">
-                Manager ID
+                Manager
               </Typography>
               <Typography variant="body2" color="text.primary">
-                {user.managerId}
+                {user.managerName || user.managerId}
               </Typography>
             </Box>
-          )}
+          ) : null}
           {user.joiningDate && (
             <Box display="flex" justifyContent="space-between" mb={1}>
               <Typography variant="subtitle2" color="text.secondary">
                 Joining Date
               </Typography>
               <Typography variant="body2" color="text.primary">
-                {user.joiningDate}
+                {new Date(user.joiningDate).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
               </Typography>
             </Box>
           )}

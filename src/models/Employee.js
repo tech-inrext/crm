@@ -108,6 +108,13 @@ const employeeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+
+// Virtual property to check if employee is a manager (has subordinates)
+employeeSchema.virtual("isManager").get(function () {
+  // You can enhance this logic as needed
+  return !!this.designation && this.designation.toLowerCase().includes("manager");
+});
+
 const Employee =
   mongoose.models.Employee || mongoose.model("Employee", employeeSchema);
 export default Employee;

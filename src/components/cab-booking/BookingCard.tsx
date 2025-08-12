@@ -51,6 +51,9 @@ const BookingCard: React.FC<BookingCardProps> = ({
     }
   };
 
+  // Use canApprove property from backend for robust logic
+  const isManager = booking.canApprove;
+
   return (
     <CardComponent
       content={
@@ -101,40 +104,64 @@ const BookingCard: React.FC<BookingCardProps> = ({
               </Box>
             </Box>
             <Box sx={{ minWidth: 120, display: "flex", alignItems: "center" }}>
-              <Select
-                value={status}
-                onChange={handleStatusChange}
-                size="small"
-                disabled={updating || isLoading}
-                sx={{
-                  background: getStatusColor(status),
-                  color: "white",
-                  borderRadius: 2,
-                  fontWeight: 600,
-                  fontSize: 13,
-                  textTransform: "capitalize",
-                  minWidth: 110,
-                  boxShadow: 1,
-                  mr: 1,
-                }}
-                MenuProps={{
-                  PaperProps: {
-                    style: { background: "#fff" },
-                  },
-                }}
-              >
-                {statusOptions
-                  .filter((opt) => opt.value && opt.value !== "all")
-                  .map((opt) => (
-                    <MenuItem
-                      key={opt.value}
-                      value={opt.value}
-                      style={{ textTransform: "capitalize" }}
-                    >
-                      {opt.label}
-                    </MenuItem>
-                  ))}
-              </Select>
+              {isManager ? (
+                <Select
+                  value={status}
+                  onChange={handleStatusChange}
+                  size="small"
+                  disabled={updating || isLoading}
+                  sx={{
+                    background: getStatusColor(status),
+                    color: "white",
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    fontSize: 13,
+                    textTransform: "capitalize",
+                    minWidth: 110,
+                    boxShadow: 1,
+                    mr: 1,
+                  }}
+                  MenuProps={{
+                    PaperProps: {
+                      style: { background: "#fff" },
+                    },
+                  }}
+                >
+                  {statusOptions
+                    .filter((opt) => opt.value && opt.value !== "all")
+                    .map((opt) => (
+                      <MenuItem
+                        key={opt.value}
+                        value={opt.value}
+                        style={{ textTransform: "capitalize" }}
+                      >
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                </Select>
+              ) : (
+                <Box
+                  sx={{
+                    background: getStatusColor(status),
+                    color: "white",
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    fontSize: 13,
+                    textTransform: "capitalize",
+                    minWidth: 110,
+                    boxShadow: 1,
+                    mr: 1,
+                    px: 2,
+                    py: 1,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {statusOptions.find((opt) => opt.value === status)?.label ||
+                    status}
+                </Box>
+              )}
               {updating && (
                 <CircularProgress
                   size={18}

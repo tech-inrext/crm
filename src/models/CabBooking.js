@@ -42,6 +42,11 @@ const cabBookingSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    managerId: {
+      type: String,
+      trim: true,
+      required: [true, "Manager ID is required for approval"],
+    },
     requestedDateTime: {
       type: Date,
       required: [true, "Requested date/time is required"],

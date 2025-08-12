@@ -44,6 +44,8 @@ export type Booking = {
   totalKm?: number;
   driver?: string;
   vehicle?: string;
+  managerId?: string;
+  canApprove?: boolean;
 };
 
 export interface CabBookingProps {

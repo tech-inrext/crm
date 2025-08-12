@@ -22,7 +22,7 @@ exports.createBooking = catchAsync(async (req, res, next) => {
   // 1) Filter out unwanted fields
   const filteredBody = filterObj(
     req.body,
-    "project",  // Now expecting project name as string
+    "project",
     "clientName",
     "numberOfClients",
     "pickupPoint",
@@ -35,7 +35,17 @@ exports.createBooking = catchAsync(async (req, res, next) => {
   // 2) Add team leader (current user)
   filteredBody.teamLeader = req.user.id;
 
-  // 3) Create booking (no project validation needed)
+  // 3) Get managerId from Employee model
+  const Employee = require("../models/Employee").default || require("../models/Employee");
+  const employee = await Employee.findById(req.user.id);
+  if (!employee) {
+    return res.status(400).json({ status: "fail", message: "Employee not found" });
+  }
+  filteredBody.managerId = employee.managerId;
+  filteredBody.cabBookedBy = req.user.id;
+  filteredBody.status = "pending";
+
+  // 4) Create booking
   const newBooking = await CabBooking.create(filteredBody);
 
   // 4) Populate response (remove project population)

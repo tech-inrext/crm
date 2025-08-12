@@ -14,7 +14,14 @@ async function getProfile(req, res) {
   try {
     const user = req.employee;
 
-    // You may customize what fields to return
+    // Fetch manager name if managerId exists
+    let managerName = null;
+    if (user.managerId) {
+      const Employee = require("../../../../models/Employee").default || require("../../../../models/Employee");
+      const manager = await Employee.findById(user.managerId).select("name");
+      if (manager) managerName = manager.name;
+    }
+
     res.status(200).json({
       success: true,
       data: {
@@ -28,6 +35,7 @@ async function getProfile(req, res) {
         designation: user.designation,
         departmentId: user.departmentId,
         managerId: user.managerId,
+        managerName,
         joiningDate: user.joiningDate,
         currentRole: req.roleId,
       },

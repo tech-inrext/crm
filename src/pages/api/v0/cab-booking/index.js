@@ -27,6 +27,7 @@ const createBooking = async (req, res) => {
       notes,               // optional
     } = req.body;
 
+
     const loggedInUserId = req.employee?._id;
     // Required fields check (per schema)
     if (
@@ -54,7 +55,6 @@ const createBooking = async (req, res) => {
 
     // Validate ObjectIds where applicable
     const idsToValidate = [
-      // ["teamLeader", teamLeader],
       ["driver", driver],
       ["vehicle", vehicle],
     ].filter(([, v]) => !!v);
@@ -67,6 +67,13 @@ const createBooking = async (req, res) => {
       }
     }
 
+    // Get managerId from Employee model
+    const Employee = require("../../../../models/Employee").default || require("../../../../models/Employee");
+    const employee = await Employee.findById(loggedInUserId);
+    if (!employee) {
+      return res.status(400).json({ success: false, message: "Employee not found" });
+    }
+
     const doc = new CabBooking({
       project,
       clientName,
@@ -77,12 +84,13 @@ const createBooking = async (req, res) => {
       employeeName,
       teamLeader,
       requestedDateTime: new Date(requestedDateTime),
-      status, // defaults to "pending" if not provided
+      status: "pending",
       driver,
       vehicle,
       currentLocation,
       estimatedArrival,
       notes,
+      managerId: employee.managerId,
     });
 
     await doc.save();
@@ -106,6 +114,7 @@ const createBooking = async (req, res) => {
 
 // ✅ Get All Bookings (pagination + search + filters)
 const getAllBookings = async (req, res) => {
+  const isManager = req.isManager || (res.locals && res.locals.isManager);
   try {
     const {
       page = 1,
@@ -132,17 +141,48 @@ const getAllBookings = async (req, res) => {
 
     const loggedInUserId = req.employee?._id;
 
+    // Robust: managers see all bookings where managerId matches their user ID (as string), users see their own bookings
+  let filter;
+  if (isManager) {
+      // Find all employees whose managerId matches the logged-in manager's _id
+      const Employee = require("../../../../models/Employee").default || require("../../../../models/Employee");
+      const directReports = await Employee.find({ managerId: String(loggedInUserId) }).select('_id name managerId');
+      const reportIds = directReports.map(e => String(e._id));
+      // Include manager's own bookings as well
+      filter = { cabBookedBy: { $in: [String(loggedInUserId), ...reportIds] } };
+  // ...existing code...
+    } else {
+      filter = { cabBookedBy: String(loggedInUserId) };
+  // ...existing code...
+    }
     const [rows, total] = await Promise.all([
-      CabBooking.find({ cabBookedBy: loggedInUserId })
+      CabBooking.find(filter)
         .skip(skip)
         .limit(itemsPerPage)
         .sort(sort),
-      CabBooking.countDocuments({ cabBookedBy: loggedInUserId }),
+      CabBooking.countDocuments(filter),
     ]);
+
+    // Add canApprove property for each booking if the logged-in user is the manager for that booking
+    let bookingsWithApproval = rows;
+    if (isManager) {
+      // Get all direct report IDs
+      const Employee = require("../../../../models/Employee").default || require("../../../../models/Employee");
+      const directReports = await Employee.find({ managerId: String(loggedInUserId) }).select('_id');
+      const reportIds = directReports.map(e => String(e._id));
+      bookingsWithApproval = rows.map(b => ({
+        ...b.toObject(),
+        canApprove:
+          String(b.managerId) === String(loggedInUserId) ||
+          reportIds.includes(String(b.cabBookedBy)),
+      }));
+    } else {
+      bookingsWithApproval = rows.map(b => ({ ...b.toObject(), canApprove: false }));
+    }
 
     return res.status(200).json({
       success: true,
-      data: rows,
+      data: bookingsWithApproval,
       pagination: {
         totalItems: total,
         currentPage,
