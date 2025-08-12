@@ -10,6 +10,7 @@ import mongoose from "mongoose";
 const createBooking = async (req, res) => {
   try {
     const {
+      cabBookedBy,
       project,              // (String or Project _id as string)
       clientName,
       numberOfClients,
@@ -26,6 +27,7 @@ const createBooking = async (req, res) => {
       notes,               // optional
     } = req.body;
 
+    const loggedInUserId = req.employee?._id;
     // Required fields check (per schema)
     if (
       !project ||
@@ -68,6 +70,7 @@ const createBooking = async (req, res) => {
     const doc = new CabBooking({
       project,
       clientName,
+      cabBookedBy: loggedInUserId,
       numberOfClients: Number(numberOfClients),
       pickupPoint,
       dropPoint,
@@ -127,12 +130,14 @@ const getAllBookings = async (req, res) => {
       [sortBy]: sortOrder === "asc" ? 1 : -1,
     };
 
+    const loggedInUserId = req.employee?._id;
+
     const [rows, total] = await Promise.all([
-      CabBooking.find({})
+      CabBooking.find({ cabBookedBy: loggedInUserId })
         .skip(skip)
         .limit(itemsPerPage)
         .sort(sort),
-      CabBooking.countDocuments({}),
+      CabBooking.countDocuments({ cabBookedBy: loggedInUserId }),
     ]);
 
     return res.status(200).json({

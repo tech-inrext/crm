@@ -3,6 +3,11 @@ import mongoose from "mongoose";
 
 const cabBookingSchema = new mongoose.Schema(
   {
+    cabBookedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      required: true,
+    },
     project: {
       type: String,
       required: [true, "Project name is required"],
