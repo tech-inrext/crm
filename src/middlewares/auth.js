@@ -4,14 +4,13 @@ import Employee from "../models/Employee";
 import dbConnect from "../lib/mongodb";
 import { checkPermission } from "../utils/checkPermission";
 
-const MODULES = ["lead", "employee", "role","department"];
+const MODULES = ["lead", "employee", "role", "department", "cab-booking"];
 
 export async function userAuth (req, res, next){
+  res.locals = res.locals || {};
   try {
     await dbConnect();
     const { token } = req.cookies;
-    // console.log("hello",token)
-    // console.log("hellooo",req.cookies)
 
     if (!token) {
       throw new Error("Token is not valid");
@@ -29,6 +28,14 @@ export async function userAuth (req, res, next){
     if (!employee) {
       throw new Error("Employee not found");
     }
+  // Set isManager if this user manages at least one employee
+  const managedEmployees = await Employee.find({ managerId: String(_id) }).select('_id name managerId');
+  const isManager = managedEmployees.length > 0;
+  const employeeObj = employee.toObject ? employee.toObject() : { ...employee };
+  employeeObj.isManager = isManager;
+  req.employee = employeeObj;
+  req.isManager = isManager;
+  res.locals.isManager = isManager;
 
      const role = await Role.findById(roleId);
     if (!role) {

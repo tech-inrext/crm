@@ -47,6 +47,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     module: "role",
     icon: <AppIcon src="/roles.png" alt="Roles" />,
   },
+  {
+    label: "Cab Booking",
+    href: "/dashboard/cab-booking",
+    module: "cab-booking",
+    icon: <AppIcon src="/cab.png" alt="Cab Booking" />,
+  },
 ];
 
 export default function DashboardLayout({
@@ -113,7 +119,7 @@ export default function DashboardLayout({
               component="main"
               sx={{
                 flexGrow: 1,
-                pt: { xs: 7, sm: 8, md: 6, lg: 3 },
+                pt: { xs: "64px", sm: "72px", md: "64px", lg: "64px" }, // Always match Navbar height for all breakpoints
                 pb: { xs: 2, sm: 3 },
                 pl: { xs: 0, lg: "260px" },
                 pr: { xs: 0 },

@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
-import { PermissionsProvider } from "../contexts/PermissionsContext";
 import MuiRootProvider from "../components/ui/MuiRootProvider";
+import { PermissionsProvider } from "../contexts/PermissionsContext";
 import LoginWrapper from "../components/ui/LoginWrapper";
 
 const geistSans = Geist({
