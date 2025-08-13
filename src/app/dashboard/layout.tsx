@@ -72,8 +72,6 @@ export default function DashboardLayout({
   const sidebarLinks = useMemo(() => {
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
-          // TEMP: Always show Cab Booking for debugging
-          if (link.module === "cab-booking") return true;
           if (!link.module) return true;
           const { hasReadAccess } = getPermissions(link.module);
           return hasReadAccess;
