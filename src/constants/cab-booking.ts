@@ -45,5 +45,10 @@ export const formatDateTime = (dateString: string): string => {
 };
 
 export const getProjectName = (project: string | { name: string }): string => {
-  return typeof project === "object" ? project.name : project;
+  if (typeof project === "object" && project.name) return project.name;
+  if (typeof project === "string") {
+    const found = DEFAULT_PROJECTS.find(p => p._id === project);
+    return found ? found.name : project;
+  }
+  return "Unknown Project";
 };

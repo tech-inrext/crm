@@ -13,13 +13,18 @@ async function patchBooking(req, res) {
   if (!id) return res.status(400).json({ success: false, message: "Missing booking id" });
 
   try {
+    const booking = await CabBooking.findById(id);
+    if (!booking) return res.status(404).json({ success: false, message: "Booking not found" });
+    // Prevent edit if status is approved or rejected
+    if (["approved", "rejected"].includes(booking.status)) {
+      return res.status(403).json({ success: false, message: "Cannot edit booking after it is approved or rejected." });
+    }
     const update = {};
     if (typeof req.body.status === "string") {
       update.status = req.body.status;
     }
     // Add more fields as needed
     const updated = await CabBooking.findByIdAndUpdate(id, update, { new: true });
-    if (!updated) return res.status(404).json({ success: false, message: "Booking not found" });
     return res.status(200).json({ success: true, data: updated });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });

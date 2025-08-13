@@ -177,6 +177,28 @@ exports.updateBookingStatus = catchAsync(async (req, res, next) => {
     .populate("teamLeader", "username email")
     .populate("driver", "username phoneNumber")
     .populate("vehicle", "registrationNumber model type");
+  
+    // Send email to cab booker if status changed to approved or rejected
+    if (filteredBody.status && ["approved", "rejected"].includes(filteredBody.status)) {
+      try {
+        // Get cab booker details
+        const Employee = require("../models/Employee").default || require("../models/Employee");
+        const cabBooker = await Employee.findById(updatedBooking.cabBookedBy);
+        if (cabBooker && cabBooker.email) {
+          const { mailer } = require("../lib/mailer");
+          const subject = `Cab Booking ${filteredBody.status.charAt(0).toUpperCase() + filteredBody.status.slice(1)}`;
+          const html = `<p>Dear ${cabBooker.name},</p>
+            <p>Your cab booking request for <b>${updatedBooking.project}</b> on <b>${new Date(updatedBooking.requestedDateTime).toLocaleString()}</b> has been <b>${filteredBody.status}</b> by the manager.</p>
+            <p>Pickup: ${updatedBooking.pickupPoint}<br>Drop: ${updatedBooking.dropPoint}</p>
+            <p>Status: <b>${filteredBody.status}</b></p>
+            <p>Notes: ${updatedBooking.notes || "-"}</p>
+            <p>Regards,<br>Cab Management Team</p>`;
+          await mailer({ to: cabBooker.email, subject, html });
+        }
+      } catch (err) {
+        console.error("Error sending cab booking status email:", err);
+      }
+    }
 
   res.status(200).json({
     status: "success",

@@ -114,7 +114,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
                     whiteSpace: "nowrap",
                   }}
                 >
-                  Project: {getProjectName(booking.project) || booking.project}
+                  {/* Project name removed from top section */}
                 </Typography>
               </Box>
             </Box>
@@ -132,40 +132,47 @@ const BookingCard: React.FC<BookingCardProps> = ({
                 }}
               >
                 {isManager ? (
-                  <Select
-                    value={status}
-                    onChange={handleStatusChange}
-                    size="small"
-                    disabled={updating || isLoading}
-                    sx={{
-                      background: getStatusColor(status),
-                      color: "white",
-                      borderRadius: 2,
-                      fontWeight: 600,
-                      fontSize: 13,
-                      textTransform: "capitalize",
-                      minWidth: 110,
-                      boxShadow: 1,
-                      mr: 1,
-                    }}
-                    MenuProps={{
-                      PaperProps: {
-                        style: { background: "#fff" },
-                      },
-                    }}
-                  >
-                    {statusOptions
-                      .filter((opt) => opt.value && opt.value !== "all")
-                      .map((opt) => (
-                        <MenuItem
-                          key={opt.value}
-                          value={opt.value}
-                          style={{ textTransform: "capitalize" }}
-                        >
-                          {opt.label}
-                        </MenuItem>
-                      ))}
-                  </Select>
+                  (() => {
+                    const statusLocked =
+                      status === "approved" || status === "rejected";
+                    return (
+                      <Select
+                        value={status}
+                        onChange={handleStatusChange}
+                        size="small"
+                        disabled={updating || isLoading || statusLocked}
+                        sx={{
+                          background: getStatusColor(status),
+                          color: "white",
+                          borderRadius: 2,
+                          fontWeight: 600,
+                          fontSize: 13,
+                          textTransform: "capitalize",
+                          minWidth: 110,
+                          boxShadow: 1,
+                          mr: 1,
+                        }}
+                        MenuProps={{
+                          PaperProps: {
+                            style: { background: "#fff" },
+                          },
+                        }}
+                      >
+                        {statusOptions
+                          .filter((opt) => opt.value && opt.value !== "all")
+                          .map((opt) => (
+                            <MenuItem
+                              key={opt.value}
+                              value={opt.value}
+                              style={{ textTransform: "capitalize" }}
+                              disabled={statusLocked && opt.value !== status}
+                            >
+                              {opt.label}
+                            </MenuItem>
+                          ))}
+                      </Select>
+                    );
+                  })()
                 ) : (
                   <Box
                     sx={{
@@ -208,6 +215,12 @@ const BookingCard: React.FC<BookingCardProps> = ({
             </Box>
           </Box>
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 1 }}>
+            {/* Project name at top of details section */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography fontSize={15} color="primary.main" fontWeight={700}>
+                <b>Project:</b> {getProjectName(booking.project)}
+              </Typography>
+            </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <LocationOn sx={{ color: "primary.main", fontSize: 18 }} />
               <Typography
@@ -246,24 +259,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
                 <b>Date/Time:</b> {formatDateTime(booking.requestedDateTime)}
               </Typography>
             </Box>
-            {booking.notes && (
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Notes sx={{ color: "warning.main", fontSize: 18 }} />
-                <Typography
-                  fontSize={15}
-                  color="text.primary"
-                  sx={{
-                    wordBreak: "break-word",
-                    maxWidth: 220,
-                    overflow: "visible",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "normal",
-                  }}
-                >
-                  <b>Notes:</b> {booking.notes}
-                </Typography>
-              </Box>
-            )}
           </Box>
         </Box>
       }
