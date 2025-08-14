@@ -68,7 +68,7 @@ const createBooking = async (req, res) => {
     }
 
     // Get managerId from Employee model
-    const Employee = require("../../../../models/Employee").default || require("../../../../models/Employee");
+    const Employee = (await import('@/models/Employee')).default;
     const employee = await Employee.findById(loggedInUserId);
     if (!employee) {
       return res.status(400).json({ success: false, message: "Employee not found" });
@@ -97,10 +97,9 @@ const createBooking = async (req, res) => {
 
     // Send email notification to manager
     try {
-      const Employee = require("../../../../models/Employee").default || require("../../../../models/Employee");
       const manager = await Employee.findById(employee.managerId);
       if (manager && manager.email) {
-        const { mailer } = require("../../../../lib/mailer.js");
+        const mailer = (await import('@/lib/mailer')).mailer;
         await mailer({
           to: manager.email,
           subject: "Cab Booking Approval Request",
@@ -120,8 +119,7 @@ const createBooking = async (req, res) => {
         });
       }
     } catch (err) {
-      // Log but do not block booking creation
-      console.error("Failed to send manager notification email:", err);
+      // Optionally log error, but do not block
     }
 
     return res.status(201).json({ success: true, data: doc });
@@ -167,15 +165,13 @@ const getAllBookings = async (req, res) => {
   let filter;
   if (isManager) {
       // Find all employees whose managerId matches the logged-in manager's _id
-      const Employee = require("../../../../models/Employee").default || require("../../../../models/Employee");
+      const Employee = (await import('@/models/Employee')).default;
       const directReports = await Employee.find({ managerId: String(loggedInUserId) }).select('_id name managerId');
       const reportIds = directReports.map(e => String(e._id));
       // Include manager's own bookings as well
       filter = { cabBookedBy: { $in: [String(loggedInUserId), ...reportIds] } };
-  // ...existing code...
     } else {
       filter = { cabBookedBy: String(loggedInUserId) };
-  // ...existing code...
     }
     const [rows, total] = await Promise.all([
       CabBooking.find(filter)
@@ -189,7 +185,7 @@ const getAllBookings = async (req, res) => {
     let bookingsWithApproval = rows;
     if (isManager) {
       // Get all direct report IDs
-      const Employee = require("../../../../models/Employee").default || require("../../../../models/Employee");
+      const Employee = (await import('@/models/Employee')).default;
       const directReports = await Employee.find({ managerId: String(loggedInUserId) }).select('_id');
       const reportIds = directReports.map(e => String(e._id));
       bookingsWithApproval = rows.map(b => ({
