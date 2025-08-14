@@ -113,7 +113,7 @@ const createBooking = async (req, res) => {
               <li><b>Drop Point:</b> ${doc.dropPoint}</li>
               <li><b>Date/Time:</b> ${doc.requestedDateTime}</li>
             </ul>
-            <p>Please <a href="${process.env.APP_URL || "http://localhost:3000"}/dashboard/cab-booking">log in</a> to review and approve or reject this request.</p>
+            <p>Please <a href="${process.env.APP_URL || "https://dashboard.inrext.com"}/dashboard/cab-booking">log in</a> to review and approve or reject this request.</p>
             <p>Thank you.</p>
           `,
         });

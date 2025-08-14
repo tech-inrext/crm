@@ -17,7 +17,7 @@ async function getProfile(req, res) {
     // Fetch manager name if managerId exists
     let managerName = null;
     if (user.managerId) {
-      const Employee = require("../../../../models/Employee").default || require("../../../../models/Employee");
+      const Employee = (await import('@/models/Employee')).default;
       const manager = await Employee.findById(user.managerId).select("name");
       if (manager) managerName = manager.name;
     }
