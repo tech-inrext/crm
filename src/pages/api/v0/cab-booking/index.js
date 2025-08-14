@@ -232,7 +232,34 @@ function withAuth(handler) {
 
 // ✅ Main Handler
 const handler = async (req, res) => {
-  await dbConnect();
+  // Defensive ENV checks
+  const missingVars = [];
+  if (!process.env.MONGODB_URI) missingVars.push('MONGODB_URI');
+  if (!process.env.SMTP_EMAIL) missingVars.push('SMTP_EMAIL');
+  if (!process.env.SMTP_PASS) missingVars.push('SMTP_PASS');
+  if (!process.env.EMAIL_FROM) missingVars.push('EMAIL_FROM');
+  if (missingVars.length) {
+    console.error('Missing required environment variables:', missingVars.join(', '));
+    return res.status(500).json({
+      success: false,
+      message: `Missing required environment variables: ${missingVars.join(', ')}`,
+      error: 'Environment misconfiguration. Please set these variables in Vercel.'
+    });
+  }
+
+  try {
+    await dbConnect();
+  } catch (err) {
+    console.error('Database connection error:', err);
+    return res.status(500).json({
+      success: false,
+      message: 'Database connection error',
+      error: err.message
+    });
+  }
+
+
+//defensive code ends here
 
   if (req.method === "GET") {
     return getAllBookings(req, res);
