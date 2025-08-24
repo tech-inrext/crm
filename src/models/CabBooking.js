@@ -8,6 +8,17 @@ const cabBookingSchema = new mongoose.Schema(
       ref: "Employee",
       required: true,
     },
+    bookingId: {
+      type: String,
+      unique: true,
+      required: true,
+      default: () => {
+        // Generate a unique Booking ID (e.g., CAB-<timestamp>-<random>)
+        const ts = Date.now();
+        const rand = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        return `CAB-${ts}-${rand}`;
+      },
+    },
     project: {
       type: String,
       required: [true, "Project name is required"],
@@ -33,14 +44,6 @@ const cabBookingSchema = new mongoose.Schema(
       type: String,
       required: [true, "Drop point is required"],
       trim: true,
-    },
-    employeeName: {
-      type: String,
-      trim: true,
-    },
-    teamLeader: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
     },
     managerId: {
       type: String,

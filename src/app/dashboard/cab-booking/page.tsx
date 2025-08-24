@@ -9,6 +9,7 @@ import {
   BookingsList,
   ViewSwitcher,
   Notification,
+  VendorBookingForm,
 } from "@/components/cab-booking";
 import { statusOptions } from "@/constants/cab-booking";
 
@@ -79,10 +80,15 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
         {activeView === "form" ? (
           <div className="p-6 rounded-lg shadow bg-white">
             <BookingForm
-              projects={projects}
+              projects={projects || []}
               isLoading={isLoading}
               onSubmit={handleCreateBooking}
             />
+            {/* Add Vendor Booking Form below Cab Booking Form */}
+            <div className="mt-8">
+              <h2 className="text-xl font-bold mb-4">Vendor Booking Details</h2>
+              <VendorBookingForm disabled />
+            </div>
           </div>
         ) : activeView === "tracking" ? (
           <div className="p-6 rounded-lg shadow bg-white">

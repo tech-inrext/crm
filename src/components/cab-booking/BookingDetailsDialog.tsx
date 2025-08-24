@@ -143,21 +143,15 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>
-            <Person color="info" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>Employee:</b> {booking.employeeName || "-"}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
             <AssignmentInd color="secondary" fontSize="small" />
             <Typography fontSize={15}>
-              <b>Team Leader:</b> {booking.teamLeader || "-"}
+              <b>Manager:</b> {booking.managerName || booking.managerId || "-"}
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>
             <Event color="secondary" fontSize="small" />
             <Typography fontSize={15}>
-              <b>Requested:</b> {formatDateTime(booking.requestedDateTime)}
+              <b>Travel Time:</b> {formatDateTime(booking.requestedDateTime)}
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>
@@ -197,16 +191,16 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
         <Box display="flex" flexWrap="wrap" gap={2}>
           {booking.createdAt && (
             <Typography fontSize={13} color="text.secondary">
-              <b>Created:</b> {formatDateTime(booking.createdAt)}
+              <b>Requested At:</b> {formatDateTime(booking.createdAt)}
             </Typography>
           )}
           {booking.updatedAt && (
             <Typography fontSize={13} color="text.secondary">
-              <b>Updated:</b> {formatDateTime(booking.updatedAt)}
+              <b>Updated At:</b> {formatDateTime(booking.updatedAt)}
             </Typography>
           )}
           <Typography fontSize={13} color="text.secondary">
-            <b>ID:</b> {booking._id}
+            <b>Booking ID:</b> {booking.bookingId}
           </Typography>
         </Box>
       </DialogContent>

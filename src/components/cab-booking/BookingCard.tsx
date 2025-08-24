@@ -5,12 +5,13 @@ import {
   Select,
   MenuItem,
   CircularProgress,
+  Chip,
 } from "@mui/material";
 import { Visibility } from "@mui/icons-material";
 import CardComponent from "@/components/ui/Card";
 import Avatar from "@/components/ui/Avatar";
 import { Box, Typography } from "@mui/material";
-import { LocationOn, ArrowForward, Notes, Event } from "@mui/icons-material";
+import { LocationOn, ArrowForward, Event } from "@mui/icons-material";
 import MODULE_STYLES from "@/styles/moduleStyles";
 import { Booking } from "@/types/cab-booking";
 import {
@@ -21,6 +22,7 @@ import {
 } from "@/constants/cab-booking";
 
 import { useCabBooking } from "@/hooks/useCabBooking";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface BookingCardProps {
   booking: Booking;
@@ -32,6 +34,8 @@ const BookingCard: React.FC<BookingCardProps> = ({
   onViewDetails,
 }) => {
   const { updateBookingStatus, isLoading } = useCabBooking();
+  const { getCurrentRoleName } = useAuth();
+  const userRole = getCurrentRoleName();
   const [status, setStatus] = useState(booking.status);
   const [updating, setUpdating] = useState(false);
   const avatar = booking.clientName
@@ -51,7 +55,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
     }
   };
 
-  // Use canApprove property from backend for robust logic
   const isManager = booking.canApprove;
 
   return (
@@ -60,196 +63,173 @@ const BookingCard: React.FC<BookingCardProps> = ({
         <Box
           sx={{
             background: MODULE_STYLES.visual.gradients.card,
-            borderRadius: 3,
-            boxShadow: 3,
-            p: 2,
+            borderRadius: 4,
+            boxShadow: 4,
+            p: 2.5,
             display: "flex",
             flexDirection: "column",
             gap: 2,
             width: "100%",
-            maxWidth: 370,
+            maxWidth: 380,
             minWidth: 260,
             minHeight: 260,
-            boxSizing: "border-box",
-            overflow: "visible",
-            wordBreak: "break-word",
+            transition: "transform 0.2s ease, box-shadow 0.2s ease",
+            "&:hover": {
+              transform: "translateY(-4px)",
+              boxShadow: 6,
+            },
           }}
         >
+          {/* Header: Avatar + Name + Status + Action */}
           <Box
             sx={{
               display: "flex",
               alignItems: "center",
               justifyContent: "space-between",
+              flexWrap: "wrap", // ✅ wrap if space is tight
+              gap: 1,
               mb: 1,
             }}
           >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+            {/* Left side: Avatar + Name */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                minWidth: 0,
+                flexGrow: 1,
+              }}
+            >
               <Avatar
                 sx={{
-                  width: 48,
-                  height: 48,
+                  width: 52,
+                  height: 52,
                   fontWeight: 700,
                   fontSize: 20,
                   bgcolor: "primary.main",
                   color: "white",
-                  boxShadow: 2,
+                  boxShadow: 3,
+                  flexShrink: 0,
                 }}
               >
                 {avatar}
               </Avatar>
-              <Box>
-                <Typography fontWeight={700} fontSize={18} color="text.primary">
-                  {booking.clientName?.length > 28
-                    ? `${booking.clientName.slice(0, 25)}...`
-                    : booking.clientName}
+              <Box sx={{ minWidth: 0 }}>
+                <Typography
+                  fontWeight={700}
+                  fontSize={17}
+                  color="text.primary"
+                  noWrap
+                  sx={{ maxWidth: 150 }}
+                >
+                  {booking.clientName}
                 </Typography>
                 <Typography
-                  fontSize={13}
+                  variant="body2"
                   color="text.secondary"
-                  sx={{
-                    wordBreak: "break-word",
-                    maxWidth: 200,
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    whiteSpace: "nowrap",
-                  }}
+                  noWrap
+                  sx={{ maxWidth: 150 }}
                 >
-                  {/* Project name removed from top section */}
+                  {getProjectName(booking.project)}
                 </Typography>
               </Box>
             </Box>
-            <Box sx={{ minWidth: 120, display: "flex", alignItems: "center" }}>
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  flexWrap: "wrap",
-                  overflow: "visible",
-                  justifyContent: "flex-end",
-                  minWidth: 120,
-                  maxWidth: 180,
-                }}
-              >
-                {isManager ? (
-                  (() => {
-                    const statusLocked =
-                      status === "approved" || status === "rejected";
-                    return (
-                      <Select
-                        value={status}
-                        onChange={handleStatusChange}
-                        size="small"
-                        disabled={updating || isLoading || statusLocked}
-                        sx={{
-                          background: getStatusColor(status),
-                          color: "white",
-                          borderRadius: 2,
-                          fontWeight: 600,
-                          fontSize: 13,
-                          textTransform: "capitalize",
-                          minWidth: 110,
-                          boxShadow: 1,
-                          mr: 1,
-                        }}
-                        MenuProps={{
-                          PaperProps: {
-                            style: { background: "#fff" },
-                          },
-                        }}
-                      >
-                        {statusOptions
-                          .filter((opt) => opt.value && opt.value !== "all")
-                          .map((opt) => (
-                            <MenuItem
-                              key={opt.value}
-                              value={opt.value}
-                              style={{ textTransform: "capitalize" }}
-                              disabled={statusLocked && opt.value !== status}
-                            >
-                              {opt.label}
-                            </MenuItem>
-                          ))}
-                      </Select>
-                    );
-                  })()
-                ) : (
-                  <Box
-                    sx={{
-                      background: getStatusColor(status),
-                      color: "white",
-                      borderRadius: 2,
-                      fontWeight: 600,
-                      fontSize: 13,
-                      textTransform: "capitalize",
-                      minWidth: 110,
-                      boxShadow: 1,
-                      mr: 1,
-                      px: 2,
-                      py: 1,
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
-                  >
-                    {statusOptions.find((opt) => opt.value === status)?.label ||
-                      status}
-                  </Box>
-                )}
-                {updating && (
-                  <CircularProgress
-                    size={18}
-                    sx={{ ml: 1, color: "primary.main" }}
-                  />
-                )}
-                <Tooltip title="View Details">
-                  <IconButton
-                    size="small"
-                    onClick={() => onViewDetails(booking)}
-                    sx={{ ml: 1, mr: 0.5, background: "#f5f5f5", boxShadow: 1 }}
-                  >
-                    <Visibility fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </Box>
+
+            {/* Right side: Status + Eye */}
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1,
+                flexShrink: 0,
+                minWidth: 0,
+              }}
+            >
+              {isManager ? (
+                <Select
+                  value={status}
+                  onChange={handleStatusChange}
+                  size="small"
+                  disabled={updating || isLoading || status !== "pending"}
+                  sx={{
+                    background: getStatusColor(status),
+                    color: "white",
+                    borderRadius: "16px",
+                    fontWeight: 600,
+                    fontSize: 15,
+                    textTransform: "capitalize",
+                    minWidth: 220,
+                    maxWidth: 220,
+                    px: 2,
+                    boxShadow: 2,
+                    display: "flex",
+                    alignItems: "center",
+                    "& .MuiSelect-icon": { color: "white" },
+                  }}
+                  MenuProps={{ PaperProps: { style: { background: "#fff" } } }}
+                >
+                  {statusOptions
+                    .filter((opt) => opt.value && opt.value !== "all")
+                    .map((opt) => (
+                      <MenuItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </MenuItem>
+                    ))}
+                </Select>
+              ) : (
+                <Chip
+                  label={
+                    statusOptions.find((opt) => opt.value === status)?.label ||
+                    status
+                  }
+                  sx={{
+                    background: getStatusColor(status),
+                    color: "white",
+                    fontWeight: 600,
+                    fontSize: 15,
+                    borderRadius: "16px",
+                    px: 2,
+                    minWidth: 220,
+                    maxWidth: 220,
+                    height: 40,
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                />
+              )}
+
+              {updating && (
+                <CircularProgress size={18} sx={{ color: "primary.main" }} />
+              )}
+
+              <Tooltip title="View Details">
+                <IconButton
+                  size="small"
+                  onClick={() => onViewDetails(booking)}
+                  sx={{
+                    background: "#fafafa",
+                    boxShadow: 2,
+                    "&:hover": { background: "#f0f0f0" },
+                  }}
+                >
+                  <Visibility fontSize="small" />
+                </IconButton>
+              </Tooltip>
             </Box>
           </Box>
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mb: 1 }}>
-            {/* Project name at top of details section */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Typography fontSize={15} color="primary.main" fontWeight={700}>
-                <b>Project:</b> {getProjectName(booking.project)}
-              </Typography>
-            </Box>
+
+          {/* Details Section */}
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.2 }}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <LocationOn sx={{ color: "primary.main", fontSize: 18 }} />
-              <Typography
-                fontSize={15}
-                color="text.primary"
-                sx={{
-                  wordBreak: "break-word",
-                  maxWidth: 220,
-                  overflow: "visible",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "normal",
-                }}
-              >
+              <Typography fontSize={15} color="text.primary">
                 <b>Pickup:</b> {booking.pickupPoint}
               </Typography>
             </Box>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
               <ArrowForward sx={{ color: "success.main", fontSize: 18 }} />
-              <Typography
-                fontSize={15}
-                color="text.primary"
-                sx={{
-                  wordBreak: "break-word",
-                  maxWidth: 220,
-                  overflow: "visible",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "normal",
-                }}
-              >
+              <Typography fontSize={15} color="text.primary">
                 <b>Drop:</b> {booking.dropPoint}
               </Typography>
             </Box>
