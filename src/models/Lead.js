@@ -44,6 +44,10 @@ const leadSchema = new mongoose.Schema(
         message: "Invalid phone number",
       },
     },
+    propertyName: {
+      type: String,
+      trim: true,
+    },
     propertyType: {
       type: String,
       enum: type,
