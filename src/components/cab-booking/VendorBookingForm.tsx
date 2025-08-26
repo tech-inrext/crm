@@ -14,13 +14,18 @@ import {
 
 interface VendorBookingFormProps {
   disabled?: boolean;
+  bookingId?: string | null;
 }
 
-const teamHeadOptions = ["Select Team Head", "Team Head 1", "Team Head 2"];
-
-const VendorBookingForm: React.FC<VendorBookingFormProps> = ({ disabled }) => {
-  const { getCurrentRoleName } = useAuth();
+const VendorBookingForm: React.FC<VendorBookingFormProps> = ({
+  disabled,
+  bookingId,
+}) => {
+  const { getCurrentRoleName, user } = useAuth();
   const isVendor = getCurrentRoleName() === "vendor";
+  const employeeName = user?.name || "";
+  const managerName = user?.managerName || "";
+  // Top-level state for all form fields
   const [cabOwner, setCabOwner] = useState("");
   const [driverName, setDriverName] = useState("");
   const [teamHead, setTeamHead] = useState("");
@@ -28,16 +33,21 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({ disabled }) => {
   const [endKm, setEndKm] = useState("");
   const [pickupPoint, setPickupPoint] = useState("");
   const [dropPoint, setDropPoint] = useState("");
-  const [employeeName, setEmployeeName] = useState("");
-
   const totalKm =
     startKm && endKm ? Math.max(Number(endKm) - Number(startKm), 0) : 0;
 
+  // ...existing code...
   return (
     <div className="p-6">
       <h1 className="text-2xl font-bold mb-6">Cab Vendor Details</h1>
+      {bookingId && (
+        <div className="mb-4 text-sm text-gray-600">
+          <b>Booking ID:</b> {bookingId}
+        </div>
+      )}
       <form className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Cab Owner */}
           <div className="form-group">
             <label className="block text-sm font-medium mb-1">
               Cab Owner Name *
@@ -47,14 +57,12 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({ disabled }) => {
               name="cabOwner"
               value={cabOwner}
               onChange={(e) => setCabOwner(e.target.value)}
-              disabled={!isVendor || disabled}
+              disabled={disabled}
               required
-              className={`w-full p-2 border border-gray-300 rounded-md ${
-                !isVendor ? "bg-gray-100 text-gray-700 cursor-not-allowed" : ""
-              }`}
-              readOnly={!isVendor}
+              className="w-full p-2 border border-gray-300 rounded-md"
             />
           </div>
+          {/* Driver Name */}
           <div className="form-group">
             <label className="block text-sm font-medium mb-1">
               Driver Name *
@@ -64,14 +72,42 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({ disabled }) => {
               name="driverName"
               value={driverName}
               onChange={(e) => setDriverName(e.target.value)}
-              disabled={!isVendor || disabled}
+              disabled={disabled}
               required
-              className={`w-full p-2 border border-gray-300 rounded-md ${
-                !isVendor ? "bg-gray-100 text-gray-700 cursor-not-allowed" : ""
-              }`}
-              readOnly={!isVendor}
+              className="w-full p-2 border border-gray-300 rounded-md"
             />
           </div>
+          {/* Requested By */}
+          <div className="form-group">
+            <label className="block text-sm font-medium mb-1">
+              Requested By *
+            </label>
+            <input
+              type="text"
+              name="employeeName"
+              value={employeeName}
+              disabled
+              required
+              className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-not-allowed"
+              readOnly
+            />
+          </div>
+          {/* Approved By */}
+          <div className="form-group">
+            <label className="block text-sm font-medium mb-1">
+              Approved By *
+            </label>
+            <input
+              type="text"
+              name="managerName"
+              value={managerName}
+              disabled
+              required
+              className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-not-allowed"
+              readOnly
+            />
+          </div>
+          {/* Pickup Point */}
           <div className="form-group">
             <label className="block text-sm font-medium mb-1">
               Pickup Point *
@@ -81,14 +117,12 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({ disabled }) => {
               name="pickupPoint"
               value={pickupPoint}
               onChange={(e) => setPickupPoint(e.target.value)}
-              disabled={!isVendor || disabled}
+              disabled={disabled}
               required
-              className={`w-full p-2 border border-gray-300 rounded-md ${
-                !isVendor ? "bg-gray-100 text-gray-700 cursor-not-allowed" : ""
-              }`}
-              readOnly={!isVendor}
+              className="w-full p-2 border border-gray-300 rounded-md"
             />
           </div>
+          {/* Drop Point */}
           <div className="form-group">
             <label className="block text-sm font-medium mb-1">
               Drop Point *
@@ -98,14 +132,12 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({ disabled }) => {
               name="dropPoint"
               value={dropPoint}
               onChange={(e) => setDropPoint(e.target.value)}
-              disabled={!isVendor || disabled}
+              disabled={disabled}
               required
-              className={`w-full p-2 border border-gray-300 rounded-md ${
-                !isVendor ? "bg-gray-100 text-gray-700 cursor-not-allowed" : ""
-              }`}
-              readOnly={!isVendor}
+              className="w-full p-2 border border-gray-300 rounded-md"
             />
           </div>
+          {/* Start Kilometers */}
           <div className="form-group">
             <label className="block text-sm font-medium mb-1">
               Start Kilometers *
@@ -115,14 +147,12 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({ disabled }) => {
               name="startKm"
               value={startKm}
               onChange={(e) => setStartKm(e.target.value)}
-              disabled={!isVendor || disabled}
+              disabled={disabled}
               required
-              className={`w-full p-2 border border-gray-300 rounded-md ${
-                !isVendor ? "bg-gray-100 text-gray-700 cursor-not-allowed" : ""
-              }`}
-              readOnly={!isVendor}
+              className="w-full p-2 border border-gray-300 rounded-md"
             />
           </div>
+          {/* End Kilometers */}
           <div className="form-group">
             <label className="block text-sm font-medium mb-1">
               End Kilometers *
@@ -132,14 +162,12 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({ disabled }) => {
               name="endKm"
               value={endKm}
               onChange={(e) => setEndKm(e.target.value)}
-              disabled={!isVendor || disabled}
+              disabled={disabled}
               required
-              className={`w-full p-2 border border-gray-300 rounded-md ${
-                !isVendor ? "bg-gray-100 text-gray-700 cursor-not-allowed" : ""
-              }`}
-              readOnly={!isVendor}
+              className="w-full p-2 border border-gray-300 rounded-md"
             />
           </div>
+          {/* Total Kilometers */}
           <div className="form-group">
             <label className="block text-sm font-medium mb-1">
               Total Kilometers
@@ -152,35 +180,18 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({ disabled }) => {
               className="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
             />
           </div>
-          <div className="form-group">
-            <label className="block text-sm font-medium mb-1">
-              Employee Name *
-            </label>
-            <input
-              type="text"
-              name="employeeName"
-              value={employeeName}
-              onChange={(e) => setEmployeeName(e.target.value)}
-              disabled={!isVendor || disabled}
-              required
-              className={`w-full p-2 border border-gray-300 rounded-md ${
-                !isVendor ? "bg-gray-100 text-gray-700 cursor-not-allowed" : ""
-              }`}
-              readOnly={!isVendor}
-            />
-          </div>
         </div>
         <div className="mt-6 flex gap-2 justify-end">
           <button
             type="button"
-            disabled={!isVendor || disabled}
+            disabled={disabled}
             className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
           >
             Cancel
           </button>
           <button
             type="submit"
-            disabled={!isVendor || disabled}
+            disabled={disabled}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
             Submit Form

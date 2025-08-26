@@ -24,7 +24,7 @@ import Pagination from "@/components/ui/Pagination";
 import axios from "axios";
 import { transformToAPIRole } from "@/utils/leadUtils";
 
-const modules = ["User", "Role", "Lead", "Department", "CabBooking"];
+const modules = ["User", "Role", "Lead", "Department", "CabBooking", "Vendor"];
 const initialModulePerms = Object.fromEntries(
   modules.map((m) => [m, { read: false, write: false, delete: false }])
 );

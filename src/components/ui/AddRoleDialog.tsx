@@ -82,6 +82,8 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             cabbooking: "cab-booking",
             cabBooking: "cab-booking",
             "cab-booking": "cab-booking",
+            vendors: "vendor",
+            vendor: "vendor",
           };
           return map[mod.toLowerCase()] || mod.toLowerCase();
         };

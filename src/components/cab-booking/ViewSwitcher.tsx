@@ -9,10 +9,7 @@ const ViewSwitcher: React.FC<ViewSwitcherProps> = ({
   activeView,
   onViewChange,
 }) => {
-  const views = [
-    { key: "form" as const, label: "New Booking" },
-    { key: "tracking" as const, label: "View Bookings" },
-  ];
+  const views = [{ key: "tracking" as const, label: "View Bookings" }];
 
   return (
     <div className="flex flex-wrap gap-2 mb-6">

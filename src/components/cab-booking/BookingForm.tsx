@@ -29,6 +29,20 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [employeeSearch, setEmployeeSearch] = useState("");
   const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  let managerName = "";
+  try {
+    if (typeof window !== "undefined" && window.user) {
+      if (
+        window.user.getCurrentRoleName &&
+        window.user.getCurrentRoleName() !== "vendor"
+      ) {
+        managerName = window.user.managerName || "";
+      }
+    }
+  } catch (e) {
+    managerName = "";
+  }
+
   const [formData, setFormData] = useState<BookingFormData>({
     project: "",
     clientName: "",
@@ -184,6 +198,20 @@ const BookingForm: React.FC<BookingFormProps> = ({
               required
               className="w-full p-2 border border-gray-300 rounded-md"
               onFocus={(e) => e.target.select()}
+            />
+          </div>
+          <div className="form-group">
+            <label className="block text-sm font-medium mb-1">
+              Approved By *
+            </label>
+            <input
+              type="text"
+              name="managerName"
+              value={managerName}
+              disabled
+              required
+              className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-not-allowed"
+              readOnly
             />
           </div>
 

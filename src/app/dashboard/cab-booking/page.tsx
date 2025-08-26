@@ -1,23 +1,48 @@
 "use client";
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import PermissionGuard from "@/components/PermissionGuard";
 import { useCabBooking } from "@/hooks/useCabBooking";
 import { CabBookingProps } from "@/types/cab-booking";
 import {
   BookingForm,
   BookingsList,
-  ViewSwitcher,
   Notification,
   VendorBookingForm,
 } from "@/components/cab-booking";
+import {
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  IconButton,
+} from "@mui/material";
 import { statusOptions } from "@/constants/cab-booking";
 
-const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
+const CabBooking: React.FC<CabBookingProps> = ({
+  defaultView = "tracking",
+}) => {
   const router = useRouter();
   const [activeView, setActiveView] =
     useState<CabBookingProps["defaultView"]>(defaultView);
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [showBookingDialog, setShowBookingDialog] = useState(false);
+  const [showVendorDialog, setShowVendorDialog] = useState(false);
+  const [vendorBookingId, setVendorBookingId] = useState<string | null>(null);
+  const searchParams =
+    typeof window !== "undefined"
+      ? new URLSearchParams(window.location.search)
+      : null;
+
+  useEffect(() => {
+    if (searchParams) {
+      const bookingId = searchParams.get("bookingId");
+      if (bookingId) {
+        setVendorBookingId(bookingId);
+        setShowVendorDialog(true);
+      }
+    }
+  }, []);
 
   const {
     bookings,
@@ -33,6 +58,7 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
     const success = await createBooking(formData);
     if (success) {
       setActiveView("tracking");
+      setShowBookingDialog(false);
     }
     return success;
   };
@@ -57,40 +83,90 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
           autoCloseDelay={3000}
         />
 
-        <ViewSwitcher activeView={activeView} onViewChange={handleViewChange} />
+        {/* ViewSwitcher removed, only one view now */}
 
         {activeView === "tracking" && (
-          <div className="flex flex-wrap gap-2 mb-4">
-            {statusOptions.map((opt) => (
-              <button
-                key={opt.value}
-                onClick={() => handleStatusButtonClick(opt.value)}
-                className={`px-3 py-1 rounded border transition-colors duration-150 ${
-                  statusFilter === opt.value
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-blue-100"
-                }`}
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <label htmlFor="statusDropdown" className="mr-2 font-medium">
+                Status:
+              </label>
+              <select
+                id="statusDropdown"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-1 rounded border border-gray-300 focus:outline-none focus:ring focus:border-blue-500"
               >
-                {opt.label}
-              </button>
-            ))}
+                {statusOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button
+              className="px-4 py-2 bg-blue-600 text-white rounded-md shadow hover:bg-blue-700"
+              onClick={() => setShowBookingDialog(true)}
+            >
+              Create Booking
+            </button>
           </div>
         )}
 
-        {activeView === "form" ? (
-          <div className="p-6 rounded-lg shadow bg-white">
+        {/* Booking Form Dialog using MUI Dialog */}
+        {/* MUI Dialog import moved to top of file */}
+        <Dialog
+          open={showBookingDialog}
+          onClose={() => setShowBookingDialog(false)}
+          fullScreen={typeof window !== "undefined" && window.innerWidth < 600}
+          fullWidth
+          maxWidth="sm"
+          PaperProps={{
+            sx: {
+              m: 2,
+              height: { xs: "80vh", sm: "auto" },
+              maxHeight: { xs: "60vh", sm: "90vh" },
+              display: "flex",
+              flexDirection: "column",
+              borderRadius: 2,
+            },
+          }}
+        >
+          <DialogContent
+            sx={{ p: { xs: 2.5, sm: 2 }, overflowY: "auto", flex: 1 }}
+          >
             <BookingForm
               projects={projects || []}
               isLoading={isLoading}
               onSubmit={handleCreateBooking}
             />
-            {/* Add Vendor Booking Form below Cab Booking Form */}
-            <div className="mt-8">
-              <h2 className="text-xl font-bold mb-4">Vendor Booking Details</h2>
-              <VendorBookingForm disabled />
-            </div>
-          </div>
-        ) : activeView === "tracking" ? (
+          </DialogContent>
+        </Dialog>
+        {/* Vendor Booking Dialog */}
+        <Dialog
+          open={showVendorDialog}
+          onClose={() => setShowVendorDialog(false)}
+          fullScreen={typeof window !== "undefined" && window.innerWidth < 600}
+          fullWidth
+          maxWidth="sm"
+          PaperProps={{
+            sx: {
+              m: 2,
+              height: { xs: "80vh", sm: "auto" },
+              maxHeight: { xs: "60vh", sm: "90vh" },
+              display: "flex",
+              flexDirection: "column",
+              borderRadius: 2,
+            },
+          }}
+        >
+          <DialogContent
+            sx={{ p: { xs: 2.5, sm: 2 }, overflowY: "auto", flex: 1 }}
+          >
+            <VendorBookingForm bookingId={vendorBookingId} />
+          </DialogContent>
+        </Dialog>
+        {activeView === "tracking" && (
           <div className="p-6 rounded-lg shadow bg-white">
             <h2 className="text-xl font-bold mb-4">Bookings</h2>
             <BookingsList
@@ -99,7 +175,7 @@ const CabBooking: React.FC<CabBookingProps> = ({ defaultView = "form" }) => {
               statusFilter={statusFilter}
             />
           </div>
-        ) : null}
+        )}
       </div>
     </PermissionGuard>
   );
