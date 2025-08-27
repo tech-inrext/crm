@@ -3,90 +3,77 @@ import mongoose from "mongoose";
 
 const cabVendorSchema = new mongoose.Schema(
   {
-    // Top fields
     cabOwnerName: {
       type: String,
       required: [true, "Cab Owner Name is required"],
       trim: true,
-      maxlength: 120,
+      minlength: [2, "Cab Owner Name must be at least 2 characters long"],
+      maxlength: [120, "Cab Owner Name must be at most 120 characters long"],
     },
+
     driverName: {
       type: String,
       required: [true, "Driver Name is required"],
       trim: true,
-      maxlength: 120,
+      minlength: [2, "Driver Name must be at least 2 characters long"],
+      maxlength: [120, "Driver Name must be at most 120 characters long"],
     },
 
-    // Project Name(s) - multi-select
-    // (UI has "Select All Projects" which is a UI helper, not stored)
-    projects: {
-      type: [
-        {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "Project",
-        },
-      ],
-      validate: {
-        validator: (arr) => Array.isArray(arr) && arr.length > 0,
-        message: "Please select at least one project",
-      },
-      required: true,
-    },
-
-    // Team Head (dropdown)
-    teamHead: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: [true, "Team Head is required"],
-    },
-
-    // Odometer + total
     startKilometers: {
       type: Number,
       required: [true, "Start Kilometers is required"],
       min: [0, "Start Kilometers cannot be negative"],
     },
+
     endKilometers: {
       type: Number,
       required: [true, "End Kilometers is required"],
       min: [0, "End Kilometers cannot be negative"],
       validate: {
-        validator: function (v) {
-          // only validate when both are set
+        validator: function (value) {
           if (typeof this.startKilometers !== "number") return true;
-          return v >= this.startKilometers;
+          return value >= this.startKilometers;
         },
         message:
           "End Kilometers must be greater than or equal to Start Kilometers",
       },
     },
+
     totalKilometers: {
       type: Number,
-      default: 0, // will be auto-computed in hooks below
+      default: 0,
       min: [0, "Total Kilometers cannot be negative"],
-      immutable: true, // keep derived
+      immutable: true,
     },
 
-    // Route points
     pickupPoint: {
       type: String,
       required: [true, "Pickup Point is required"],
       trim: true,
-      maxlength: 200,
+      minlength: [2, "Pickup Point must be at least 2 characters long"],
+      maxlength: [200, "Pickup Point must be at most 200 characters long"],
     },
+
     dropPoint: {
       type: String,
       required: [true, "Drop Point is required"],
       trim: true,
-      maxlength: 200,
+      minlength: [2, "Drop Point must be at least 2 characters long"],
+      maxlength: [200, "Drop Point must be at most 200 characters long"],
     },
 
-    // Employee Name (text field in the form)
-    employeeName: {
-      type: String,
-      required: [true, "Employee Name is required"],
-      trim: true,
-      maxlength: 120,
+    // 🔄 bookedBy (reference to Employee)
+    bookedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      required: [true, "Booked By (Employee) is required"],
+    },
+
+    // 🆕 approvedBy (reference to Employee)
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
     },
   },
   {
@@ -96,7 +83,7 @@ const cabVendorSchema = new mongoose.Schema(
   }
 );
 
-// Derive totalKilometers on save/update
+// Utility to compute total KM
 function computeTotal(doc) {
   if (
     typeof doc.startKilometers === "number" &&
@@ -112,12 +99,9 @@ cabVendorSchema.pre("validate", function (next) {
 });
 
 cabVendorSchema.pre("findOneAndUpdate", function (next) {
-  // Ensure total is recomputed on updates that change odometer values
   const update = this.getUpdate() || {};
   const $set = update.$set || update;
 
-  // Use existing values if not provided in the update
-  // (requires an extra read of current doc)
   if ($set && ("startKilometers" in $set || "endKilometers" in $set)) {
     this.model
       .findOne(this.getQuery())
@@ -141,25 +125,25 @@ cabVendorSchema.pre("findOneAndUpdate", function (next) {
   }
 });
 
-// Helpful indexes
-cabVendorSchema.index({ projects: 1, createdAt: -1 });
-cabVendorSchema.index({ teamHead: 1, createdAt: -1 });
+// Indexes
 cabVendorSchema.index({ driverName: 1 });
 
-// Optional virtuals for easy population
-cabVendorSchema.virtual("projectDetails", {
-  ref: "Project",
-  localField: "projects",
-  foreignField: "_id",
-  justOne: false,
-});
-
-cabVendorSchema.virtual("teamHeadDetails", {
-  ref: "User",
-  localField: "teamHead",
+// Virtuals
+cabVendorSchema.virtual("bookedByDetails", {
+  ref: "Employee",
+  localField: "bookedBy",
   foreignField: "_id",
   justOne: true,
 });
 
-export default mongoose.models.CabVendor ||
-  mongoose.model("CabVendor", cabVendorSchema);
+cabVendorSchema.virtual("approvedByDetails", {
+  ref: "Employee",
+  localField: "approvedBy",
+  foreignField: "_id",
+  justOne: true,
+});
+
+const CabVendor =
+  mongoose.models.CabVendor || mongoose.model("CabVendor", cabVendorSchema);
+
+export default CabVendor;

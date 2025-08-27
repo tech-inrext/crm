@@ -51,6 +51,7 @@ export default async function handler(req, res) {
   employee.password = hashedPassword;
   employee.resetOTP = undefined;
   employee.resetOTPExpires = undefined;
+  employee.isPasswordReset = true;
   employee.passwordLastResetAt = new Date(); // ✅ for 3-month expiry tracking
   await employee.save();
 

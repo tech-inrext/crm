@@ -1,179 +1,166 @@
 // /pages/api/v0/cab-vendor/index.js
 import dbConnect from "../../../../lib/mongodb";
 import CabVendor from "../../../../models/CabVendor";
+import Employee from "../../../../models/Employee"; // to verify refs
 import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
-import mongoose from "mongoose";
 
-// ---------- helpers ----------
-const isOID = (v) => mongoose.isValidObjectId(v);
-const toNum = (v) => (v === undefined ? undefined : Number(v));
-
-// ---------- CREATE ----------
-const createVendorEntry = async (req, res) => {
+// ✅ Create CabVendor (WRITE)
+const createCabVendor = async (req, res) => {
   try {
-    const loggedInUserId = req.employee?._id;
-
     const {
       cabOwnerName,
       driverName,
-      projects, // array of Project _ids (or strings you store)
-      teamHead, // User _id
       startKilometers,
       endKilometers,
       pickupPoint,
       dropPoint,
-      employeeName,
+      bookedBy, // Employee _id (required)
+      approvedBy, // Employee _id (optional)
     } = req.body;
 
-    // Required check
+    // 🔎 Required fields
     if (
       !cabOwnerName ||
       !driverName ||
-      !Array.isArray(projects) ||
-      projects.length === 0 ||
-      !teamHead ||
       startKilometers === undefined ||
       endKilometers === undefined ||
       !pickupPoint ||
       !dropPoint ||
-      !employeeName
+      !bookedBy
     ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
+    }
+
+    // 🧭 Number sanity
+    const startKm = Number(startKilometers);
+    const endKm = Number(endKilometers);
+    if (Number.isNaN(startKm) || Number.isNaN(endKm)) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Kilometer fields must be numbers" });
+    }
+    if (startKm < 0 || endKm < 0) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Kilometers cannot be negative" });
+    }
+    if (endKm < startKm) {
       return res.status(400).json({
         success: false,
         message:
-          "Missing required fields (cabOwnerName, driverName, projects[], teamHead, startKilometers, endKilometers, pickupPoint, dropPoint, employeeName).",
+          "End Kilometers must be greater than or equal to Start Kilometers",
       });
     }
 
-    // Validate ObjectIds where applicable
-    if (!isOID(teamHead)) {
+    // ✅ Validate references
+    const bookedExists = await Employee.exists({ _id: bookedBy });
+    if (!bookedExists) {
       return res
-        .status(400)
-        .json({ success: false, message: "Invalid teamHead id" });
+        .status(404)
+        .json({ success: false, message: "Booked By (Employee) not found" });
     }
-    for (const pid of projects) {
-      if (!isOID(pid)) {
+    if (approvedBy) {
+      const approvedExists = await Employee.exists({ _id: approvedBy });
+      if (!approvedExists) {
         return res
-          .status(400)
-          .json({ success: false, message: `Invalid project id: ${pid}` });
+          .status(404)
+          .json({
+            success: false,
+            message: "Approved By (Employee) not found",
+          });
       }
     }
 
-    // Numeric sanity
-    const startKm = Number(startKilometers);
-    const endKm = Number(endKilometers);
-    if (!Number.isFinite(startKm) || startKm < 0) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "startKilometers must be a non‑negative number",
-        });
-    }
-    if (!Number.isFinite(endKm) || endKm < startKm) {
-      return res
-        .status(400)
-        .json({
-          success: false,
-          message: "endKilometers must be >= startKilometers",
-        });
-    }
-
+    // ✅ Create (totalKilometers derived via schema hook)
     const doc = new CabVendor({
       cabOwnerName: String(cabOwnerName).trim(),
       driverName: String(driverName).trim(),
-      projects,
-      teamHead,
       startKilometers: startKm,
       endKilometers: endKm,
       pickupPoint: String(pickupPoint).trim(),
       dropPoint: String(dropPoint).trim(),
-      employeeName: String(employeeName).trim(),
-      // NOTE: totalKilometers will be auto-computed by schema hooks
-      // You could also set it explicitly:
-      // totalKilometers: Math.max(0, endKm - startKm),
-      createdBy: loggedInUserId, // (optional) add if you want to track creator; remove if not in schema
+      bookedBy,
+      approvedBy: approvedBy || null,
     });
 
     await doc.save();
 
-    return res.status(201).json({ success: true, data: doc });
+    const saved = await CabVendor.findById(doc._id)
+      .populate({ path: "bookedBy", select: "name email phone designation" })
+      .populate({ path: "approvedBy", select: "name email phone designation" });
+
+    return res.status(201).json({ success: true, data: saved });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Error creating cab vendor entry",
-      error: error.message,
-    });
+    console.error(error);
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: "Error creating CabVendor",
+        error: error.message,
+      });
   }
 };
 
-// ---------- GET ALL (pagination + filters + search) ----------
-const getAllVendors = async (req, res) => {
+// ✅ List CabVendors (GET) with pagination, search, filters
+const getAllCabVendors = async (req, res) => {
   try {
     const {
       page = 1,
       limit = 10,
-      search = "", // matches cabOwnerName/driverName/employeeName
-      project, // filter by a single project id
-      teamHead, // filter by teamHead id
-      from, // createdAt >= from (ISO)
-      to, // createdAt <= to (ISO)
-      minKm, // totalKilometers >= minKm
-      maxKm, // totalKilometers <= maxKm
-      sortBy = "createdAt", // createdAt | totalKilometers | startKilometers | endKilometers
+      search = "",
+      bookedBy, // optional filter by Employee _id
+      approvedBy, // optional filter by Employee _id
+      dateFrom, // optional ISO
+      dateTo, // optional ISO
+      sortBy = "createdAt", // createdAt | startKilometers | endKilometers | totalKilometers
       sortOrder = "desc", // asc | desc
-      populate = "true", // "true" to populate projects & teamHead
     } = req.query;
 
     const currentPage = parseInt(page, 10);
     const itemsPerPage = parseInt(limit, 10);
     const skip = (currentPage - 1) * itemsPerPage;
 
-    const filter = {};
+    const orSearch = search
+      ? [
+          { cabOwnerName: { $regex: search, $options: "i" } },
+          { driverName: { $regex: search, $options: "i" } },
+          { pickupPoint: { $regex: search, $options: "i" } },
+          { dropPoint: { $regex: search, $options: "i" } },
+        ]
+      : [];
 
-    // text search (case-insensitive)
-    if (search) {
-      filter.$or = [
-        { cabOwnerName: { $regex: search, $options: "i" } },
-        { driverName: { $regex: search, $options: "i" } },
-        { employeeName: { $regex: search, $options: "i" } },
-      ];
+    const query = {};
+    if (orSearch.length) query.$or = orSearch;
+    if (bookedBy) query.bookedBy = bookedBy;
+    if (approvedBy) query.approvedBy = approvedBy;
+
+    if (dateFrom || dateTo) {
+      query.createdAt = {};
+      if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
+      if (dateTo) {
+        const to = new Date(dateTo);
+        to.setHours(23, 59, 59, 999);
+        query.createdAt.$lte = to;
+      }
     }
 
-    if (project && isOID(project)) filter.projects = { $in: [project] };
-    if (teamHead && isOID(teamHead)) filter.teamHead = teamHead;
-
-    // date range
-    if (from || to) {
-      filter.createdAt = {};
-      if (from) filter.createdAt.$gte = new Date(from);
-      if (to) filter.createdAt.$lte = new Date(to);
-    }
-
-    // km range
-    const min = toNum(minKm);
-    const max = toNum(maxKm);
-    if (min !== undefined || max !== undefined) {
-      filter.totalKilometers = {};
-      if (min !== undefined) filter.totalKilometers.$gte = min;
-      if (max !== undefined) filter.totalKilometers.$lte = max;
-    }
-
-    const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
-
-    let q = CabVendor.find(filter).skip(skip).limit(itemsPerPage).sort(sort);
-
-    if (String(populate) === "true") {
-      q = q.populate([
-        { path: "projects", select: "name" },
-        { path: "teamHead", select: "name email" },
-      ]);
-    }
+    const sort = { [sortBy]: sortOrder.toLowerCase() === "asc" ? 1 : -1 };
 
     const [rows, total] = await Promise.all([
-      q,
-      CabVendor.countDocuments(filter),
+      CabVendor.find(query)
+        .skip(skip)
+        .limit(itemsPerPage)
+        .sort(sort)
+        .populate({ path: "bookedBy", select: "name email phone designation" })
+        .populate({
+          path: "approvedBy",
+          select: "name email phone designation",
+        }),
+      CabVendor.countDocuments(query),
     ]);
 
     return res.status(200).json({
@@ -187,15 +174,18 @@ const getAllVendors = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch cab vendor entries",
-      error: error.message,
-    });
+    console.error(error);
+    return res
+      .status(500)
+      .json({
+        success: false,
+        message: "Failed to fetch CabVendors",
+        error: error.message,
+      });
   }
 };
 
-// ---------- wrapper (same pattern as your leads/cab-booking) ----------
+// ✅ withAuth wrapper (same as Employee API)
 function withAuth(handler) {
   return async (req, res) => {
     const parsedCookies = cookie.parse(req.headers.cookie || "");
@@ -204,28 +194,12 @@ function withAuth(handler) {
   };
 }
 
-// ---------- main handler ----------
+// ✅ Main handler
 const handler = async (req, res) => {
-  // Minimal env checks (add more if you email/queue later)
-  if (!process.env.MONGODB_URI) {
-    return res.status(500).json({
-      success: false,
-      message: "Missing MONGODB_URI",
-    });
-  }
+  await dbConnect();
 
-  try {
-    await dbConnect();
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      message: "Database connection error",
-      error: err.message,
-    });
-  }
-
-  if (req.method === "GET") return getAllVendors(req, res);
-  if (req.method === "POST") return createVendorEntry(req, res);
+  if (req.method === "GET") return getAllCabVendors(req, res);
+  if (req.method === "POST") return createCabVendor(req, res);
 
   return res
     .status(405)
