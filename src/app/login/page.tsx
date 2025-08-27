@@ -150,7 +150,9 @@ const LandingPage: React.FC = () => {
         setError("Invalid Credentials.");
       } else if (axiosError.response?.status === 403) {
         // const message = axiosError.response.data?.message || "Access denied";
-        setError("Please reset your password before logging in.");
+        setError(
+          "Please create a new password to continue with your first login. Click on 'Forgot Password' to reset it now."
+        );
       } else {
         setError("Login failed. Please try again.");
       }
