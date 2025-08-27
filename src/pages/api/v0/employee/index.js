@@ -27,20 +27,20 @@ const createEmployee = async (req, res) => {
     const hashedPassword = await bcrypt.hash(dummyPassword, 10);
 
     // 🔍 Field validation
-    if (
-      !name ||
-      !email ||
-      !phone ||
-      !address ||
-      !designation ||
-      !managerId ||
-      !departmentId ||
-      !roles
-    ) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Missing required fields" });
-    }
+    // if (
+    //   !name ||
+    //   !email ||
+    //   !phone ||
+    //   !address ||
+    //   !designation ||
+    //   // !managerId ||
+    //   // !departmentId ||
+    //   !roles
+    // ) {
+    //   return res
+    //     .status(400)
+    //     .json({ success: false, message: "Missing required fields" });
+    // }
 
     // 🚫 Check duplicate email/phone
     const exists = await Employee.findOne({ $or: [{ email }, { phone }] });

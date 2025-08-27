@@ -37,7 +37,8 @@ export default async function handler(req, res) {
     if (!employee.isPasswordReset) {
       return res.status(403).json({
         success: false,
-        message: "Please reset your password before logging in.",
+        message:
+          "Please create a new password to continue with your first login. Click on 'Forgot Password' to reset it now.",
       });
     }
 

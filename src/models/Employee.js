@@ -67,13 +67,15 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       trim: true,
       minlength: [2, "Department ID must be at least 2 characters long"],
-      required: [true, "Department ID is required"],
+      // required: [true, "Department ID is required"],
+      default: null,
     },
     managerId: {
       type: String,
       trim: true,
       minlength: [2, "Manager ID must be at least 2 characters long"],
-      required: [true, "Manager ID is required"],
+      // required: [true, "Manager ID is required"],
+      default: null,
     },
     designation: {
       type: String,
@@ -104,15 +106,20 @@ const employeeSchema = new mongoose.Schema(
     },
     resetOTP: String,
     resetOTPExpires: Date,
+    isCabVendor: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
 
-
 // Virtual property to check if employee is a manager (has subordinates)
 employeeSchema.virtual("isManager").get(function () {
   // You can enhance this logic as needed
-  return !!this.designation && this.designation.toLowerCase().includes("manager");
+  return (
+    !!this.designation && this.designation.toLowerCase().includes("manager")
+  );
 });
 
 const Employee =

@@ -24,7 +24,7 @@ export const userValidationSchema = Yup.object({
     .min(VALIDATION_RULES.DESIGNATION.min)
     .max(VALIDATION_RULES.DESIGNATION.max)
     .required("Designation is required"),
-  managerId: Yup.string().required("Manager is required"),
-  departmentId: Yup.string().required("Department is required"),
+  // managerId: Yup.string().required("Manager is required"),
+  // departmentId: Yup.string().required("Department is required"),
   roles: Yup.array().of(Yup.string()).min(1, "At least one role required"),
 });
