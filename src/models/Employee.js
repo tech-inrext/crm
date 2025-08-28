@@ -82,13 +82,13 @@ const employeeSchema = new mongoose.Schema(
       trim: true,
       minlength: [2, "Designation must be at least 2 characters long"],
       maxlength: [50, "Designation must be at most 50 characters long"],
-      required: [true, "Designation is required"],
+      // required: [true, "Designation is required"],
     },
     roles: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Role",
-        required: true,
+        // required: true,
       },
     ],
     password: {

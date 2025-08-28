@@ -22,7 +22,7 @@ const createEmployee = async (req, res) => {
       departmentId,
       roles,
     } = req.body;
-
+    const isCabVendor = req.body.isCabVendor || false ;
     const dummyPassword = "Inrext@123";
     const hashedPassword = await bcrypt.hash(dummyPassword, 10);
 
@@ -65,6 +65,7 @@ const createEmployee = async (req, res) => {
       managerId,
       departmentId,
       roles,
+      isCabVendor,
     });
 
     await newEmployee.save();

@@ -15,7 +15,17 @@ const CardComponent: React.FC<CardComponentProps> = ({
   content,
   actions,
 }) => (
-  <Card>
+  <Card
+    sx={{
+      borderRadius: 3,
+      boxShadow: 2,
+      transition: "transform 0.2s ease, box-shadow 0.2s ease",
+      "&:hover": {
+        transform: "translateY(-2px)",
+        boxShadow: 3,
+      },
+    }}
+  >
     {title && (
       <CardContent>
         <Typography variant="h5">{title}</Typography>

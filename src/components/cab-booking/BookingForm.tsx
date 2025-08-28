@@ -29,6 +29,20 @@ const BookingForm: React.FC<BookingFormProps> = ({
   const [employeeSearch, setEmployeeSearch] = useState("");
   const [showEmployeeDropdown, setShowEmployeeDropdown] = useState(false);
   const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  let managerName = "";
+  try {
+    if (typeof window !== "undefined" && window.user) {
+      if (
+        window.user.getCurrentRoleName &&
+        window.user.getCurrentRoleName() !== "vendor"
+      ) {
+        managerName = window.user.managerName || "";
+      }
+    }
+  } catch (e) {
+    managerName = "";
+  }
+
   const [formData, setFormData] = useState<BookingFormData>({
     project: "",
     clientName: "",
@@ -144,6 +158,21 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
           <div className="form-group">
             <label className="block text-sm font-medium mb-1">
+              Requested Date & Time *
+            </label>
+            <input
+              type="datetime-local"
+              name="requestedDateTime"
+              value={formData.requestedDateTime}
+              onChange={handleChange}
+              min={getCurrentDateTime()}
+              required
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          <div className="form-group">
+            <label className="block text-sm font-medium mb-1">
               Pickup Point *
             </label>
             <input
@@ -171,63 +200,18 @@ const BookingForm: React.FC<BookingFormProps> = ({
               onFocus={(e) => e.target.select()}
             />
           </div>
-
-          <div className="form-group relative">
+          <div className="form-group">
             <label className="block text-sm font-medium mb-1">
-              Employee Name
+              Approved By *
             </label>
             <input
               type="text"
-              name="employeeName"
-              autoComplete="off"
-              value={formData.employeeName}
-              onChange={(e) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  employeeName: e.target.value,
-                }));
-                setEmployeeSearch(e.target.value);
-                setShowEmployeeDropdown(true);
-              }}
-              onFocus={() => setShowEmployeeDropdown(true)}
-              onBlur={() =>
-                setTimeout(() => setShowEmployeeDropdown(false), 200)
-              }
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
-            {showEmployeeDropdown && employees.length > 0 && (
-              <ul className="absolute z-10 bg-white border border-gray-300 rounded-md w-full max-h-40 overflow-y-auto mt-1">
-                {employees.map((emp) => (
-                  <li
-                    key={emp._id}
-                    className="px-3 py-2 hover:bg-blue-100 cursor-pointer text-black"
-                    onMouseDown={() => {
-                      setFormData((prev) => ({
-                        ...prev,
-                        employeeName: emp.name,
-                      }));
-                      setShowEmployeeDropdown(false);
-                    }}
-                  >
-                    {emp.name}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-
-          <div className="form-group">
-            <label className="block text-sm font-medium mb-1">
-              Requested Date & Time *
-            </label>
-            <input
-              type="datetime-local"
-              name="requestedDateTime"
-              value={formData.requestedDateTime}
-              onChange={handleChange}
-              min={getCurrentDateTime()}
+              name="managerName"
+              value={managerName}
+              disabled
               required
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-not-allowed"
+              readOnly
             />
           </div>
 

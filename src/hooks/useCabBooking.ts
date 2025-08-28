@@ -74,15 +74,33 @@ export const useCabBooking = () => {
     }
   };
 
-  const updateBookingStatus = async (bookingId: string, status: string) => {
+  const updateBookingStatus = async (bookingId: string, status: string, vendorId?: string) => {
     try {
       setIsLoading(true);
       setError("");
-      await cabBookingApi.updateStatus(bookingId, { status });
+      const payload: any = { status };
+      if (vendorId) payload.vendor = vendorId;
+      await cabBookingApi.updateStatus(bookingId, payload);
       setSuccess("Booking status updated!");
       await fetchBookings();
     } catch {
       setError("Failed to update booking status");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateBookingFields = async (bookingId: string, fields: Record<string, any>) => {
+    try {
+      setIsLoading(true);
+      setError("");
+  const res = await cabBookingApi.updateFields(bookingId, fields);
+  setSuccess("Booking updated!");
+  await fetchBookings();
+  return res && res.success;
+    } catch (err) {
+      setError("Failed to update booking fields");
+  return false;
     } finally {
       setIsLoading(false);
     }
@@ -139,6 +157,7 @@ export const useCabBooking = () => {
     fetchBookings,
     createBooking,
     updateBookingStatus,
+  updateBookingFields,
     updateTracking,
     cancelBooking,
     clearMessages,

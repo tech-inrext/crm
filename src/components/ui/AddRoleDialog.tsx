@@ -43,76 +43,91 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
     )
   );
   useEffect(() => {
-    if (role) {
-      setRoleName(role.name || "");
-      let read = role.read;
-      let write = role.write;
-      let del = role.delete;
-      // Fallback: if role.read/write/delete are undefined, parse from permissions array
-      if (
-        (!read || !write || !del) &&
-        Array.isArray((role as any).permissions)
-      ) {
-        read = [];
-        write = [];
-        del = [];
-        (role as any).permissions.forEach((perm: string) => {
-          const [mod, action] = perm.split(":");
-          if (action === "read") read.push(mod);
-          if (action === "write") write.push(mod);
-          if (action === "delete") del.push(mod);
-        });
-      }
-      const perms = Object.fromEntries(
-        modules.map((m) => [m, { read: false, write: false, delete: false }])
-      );
-      // Normalization map for backend module names to frontend
-      const normalizeModule = (mod: string) => {
-        const map: Record<string, string> = {
-          users: "User",
-          user: "User",
-          employee: "User", // Add this mapping for backend 'employee' -> frontend 'User'
-          leads: "Lead",
-          lead: "Lead",
-          roles: "Role",
-          role: "Role",
-          department: "Department",
-          departments: "Department",
-        };
-        return map[mod.toLowerCase()] || mod;
-      };
-      // Normalize all module names to lowercase for mapping
-      const moduleMap = Object.fromEntries(
-        modules.map((m) => [m.toLowerCase(), m])
-      );
-      if (read)
-        read.forEach((mod: string) => {
-          const norm = normalizeModule(mod);
-          const key = moduleMap[norm.toLowerCase()];
-          if (key) perms[key].read = true;
-        });
-      if (write)
-        write.forEach((mod: string) => {
-          const norm = normalizeModule(mod);
-          const key = moduleMap[norm.toLowerCase()];
-          if (key) perms[key].write = true;
-        });
-      if (del)
-        del.forEach((mod: string) => {
-          const norm = normalizeModule(mod);
-          const key = moduleMap[norm.toLowerCase()];
-          if (key) perms[key].delete = true;
-        });
-      setModulePerms(perms);
-    } else {
-      setRoleName("");
-      setModulePerms(
-        Object.fromEntries(
+    if (open) {
+      if (role) {
+        setRoleName(role.name || "");
+        let read = role.read;
+        let write = role.write;
+        let del = role.delete;
+        // Fallback: if role.read/write/delete are undefined, parse from permissions array
+        if (
+          (!read || !write || !del) &&
+          Array.isArray((role as any).permissions)
+        ) {
+          read = [];
+          write = [];
+          del = [];
+          (role as any).permissions.forEach((perm: string) => {
+            const [mod, action] = perm.split(":");
+            if (action === "read") read.push(mod);
+            if (action === "write") write.push(mod);
+            if (action === "delete") del.push(mod);
+          });
+        }
+        const perms = Object.fromEntries(
           modules.map((m) => [m, { read: false, write: false, delete: false }])
-        )
-      );
+        );
+        // Normalization map for frontend to backend module names
+        const normalizeModule = (mod: string) => {
+          const map: Record<string, string> = {
+            users: "users",
+            user: "employee", // backend expects 'employee'
+            employee: "employee",
+            leads: "lead",
+            lead: "lead",
+            roles: "role",
+            role: "role",
+            department: "department",
+            departments: "department",
+            cabbooking: "cab-booking",
+            cabBooking: "cab-booking",
+            "cab-booking": "cab-booking",
+            vendors: "vendor",
+            vendor: "vendor",
+            cabvendor: "cab-vendor",
+            cabVendor: "cab-vendor",
+            "cab-vendor": "cab-vendor",
+          };
+          // Always map 'CabVendor' (display) to 'cab-vendor' (backend)
+          if (mod === "CabVendor") return "cab-vendor";
+          return map[mod.toLowerCase()] || mod.toLowerCase();
+        };
+        // Normalize all module names to backend format for mapping
+        const moduleMap = Object.fromEntries(
+          modules.map((m) => [normalizeModule(m), m])
+        );
+        if (read)
+          read.forEach((mod: string) => {
+            const norm = normalizeModule(mod);
+            const key = moduleMap[norm];
+            if (key) perms[key].read = true;
+          });
+        if (write)
+          write.forEach((mod: string) => {
+            const norm = normalizeModule(mod);
+            const key = moduleMap[norm];
+            if (key) perms[key].write = true;
+          });
+        if (del)
+          del.forEach((mod: string) => {
+            const norm = normalizeModule(mod);
+            const key = moduleMap[norm];
+            if (key) perms[key].delete = true;
+          });
+        setModulePerms(perms);
+      } else {
+        setRoleName("");
+        setModulePerms(
+          Object.fromEntries(
+            modules.map((m) => [
+              m,
+              { read: false, write: false, delete: false },
+            ])
+          )
+        );
+      }
     }
-  }, [role, modules]);
+  }, [open, role, modules]);
 
   function capitalize(str: string) {
     if (str === "CabBooking") return "Cab Booking";

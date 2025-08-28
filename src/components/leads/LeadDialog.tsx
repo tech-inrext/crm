@@ -21,6 +21,7 @@ export interface LeadFormData {
   fullName: string;
   email: string;
   phone: string;
+  propertyName: string;
   propertyType: string;
   location: string;
   budgetRange: string;
@@ -75,6 +76,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
       <Formik
         initialValues={{
           ...initialData,
+          propertyName: initialData.propertyName ?? "",
           status: initialData.status?.trim() || "New",
         }}
         validationSchema={leadValidationSchema}

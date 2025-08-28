@@ -8,6 +8,17 @@ const cabBookingSchema = new mongoose.Schema(
       ref: "Employee",
       required: true,
     },
+    bookingId: {
+      type: String,
+      unique: true,
+      required: true,
+      default: () => {
+        // Generate a unique Booking ID (e.g., CAB-<timestamp>-<random>)
+        const ts = Date.now();
+        const rand = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        return `CAB-${ts}-${rand}`;
+      },
+    },
     project: {
       type: String,
       required: [true, "Project name is required"],
@@ -34,14 +45,6 @@ const cabBookingSchema = new mongoose.Schema(
       required: [true, "Drop point is required"],
       trim: true,
     },
-    employeeName: {
-      type: String,
-      trim: true,
-    },
-    teamLeader: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-    },
     managerId: {
       type: String,
       trim: true,
@@ -54,10 +57,15 @@ const cabBookingSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["pending", "approved", "rejected", "completed", "cancelled"],
+        values: ["pending", "approved", "rejected", "active", "completed", "cancelled"],
         message: "Invalid status",
       },
       default: "pending",
+    },
+    vendor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
     },
     driver: {
       type: mongoose.Schema.Types.ObjectId,
@@ -66,6 +74,22 @@ const cabBookingSchema = new mongoose.Schema(
     vehicle: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Vehicle",
+    },
+    cabOwner: {
+      type: String,
+      trim: true,
+    },
+    driverName: {
+      type: String,
+      trim: true,
+    },
+    aadharNumber: {
+      type: String,
+      trim: true,
+    },
+    dlNumber: {
+      type: String,
+      trim: true,
     },
     currentLocation: {
       type: String,

@@ -222,7 +222,12 @@ function withAuth(handler) {
   return async (req, res) => {
     const parsedCookies = cookie.parse(req.headers.cookie || "");
     req.cookies = parsedCookies;
-    await userAuth(req, res, () => handler(req, res)); // no explicit checks
+    // Ensure userAuth is awaited and we await the downstream handler as well.
+    return await userAuth(req, res, async () => {
+      // call the handler and return its result so the wrapper doesn't finish
+      // before the handler sends a response.
+      return await handler(req, res);
+    });
   };
 }
 

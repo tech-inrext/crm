@@ -39,6 +39,21 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
         flexDirection: { xs: "column", sm: "row" },
       }}
     >
+      <Field name="propertyName">
+        {({ field, meta }: FieldProps) => (
+          <TextField
+            {...field}
+            label="Property Name"
+            value={values.propertyName}
+            onChange={(e) => setFieldValue("propertyName", e.target.value)}
+            error={meta.touched && !!meta.error}
+            helperText={meta.touched && meta.error}
+            inputProps={{ "aria-label": "Property name" }}
+            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+          />
+        )}
+      </Field>
+
       <Field name="propertyType">
         {({ field, meta }: FieldProps) => (
           <TextField
@@ -61,7 +76,15 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
           </TextField>
         )}
       </Field>
-
+    </Box>
+    <Box
+      sx={{
+        display: "flex",
+        gap: 2,
+        flexDirection: { xs: "column", sm: "row" },
+        mt: 2,
+      }}
+    >
       <Field name="budgetRange">
         {({ field, meta }: FieldProps) => (
           <TextField
@@ -84,23 +107,23 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
           </TextField>
         )}
       </Field>
-    </Box>
 
-    <Field name="location">
-      {({ field, meta }: FieldProps) => (
-        <TextField
-          {...field}
-          label="Location"
-          value={values.location}
-          onChange={(e) => setFieldValue("location", e.target.value)}
-          error={meta.touched && !!meta.error}
-          helperText={meta.touched && meta.error}
-          placeholder="e.g., Bangalore, Whitefield"
-          inputProps={{ "aria-label": "Property location" }}
-          sx={{ bgcolor: "#fff", borderRadius: 1 }}
-        />
-      )}
-    </Field>
+      <Field name="location">
+        {({ field, meta }: FieldProps) => (
+          <TextField
+            {...field}
+            label="Location"
+            value={values.location}
+            onChange={(e) => setFieldValue("location", e.target.value)}
+            error={meta.touched && !!meta.error}
+            helperText={meta.touched && meta.error}
+            placeholder="e.g., Bangalore, Whitefield"
+            inputProps={{ "aria-label": "Property location" }}
+            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+          />
+        )}
+      </Field>
+    </Box>
   </>
 );
 
