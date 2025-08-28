@@ -57,10 +57,15 @@ const cabBookingSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["pending", "approved", "rejected", "completed", "cancelled"],
+        values: ["pending", "approved", "rejected", "active", "completed", "cancelled"],
         message: "Invalid status",
       },
       default: "pending",
+    },
+    vendor: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
     },
     driver: {
       type: mongoose.Schema.Types.ObjectId,
@@ -69,6 +74,22 @@ const cabBookingSchema = new mongoose.Schema(
     vehicle: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Vehicle",
+    },
+    cabOwner: {
+      type: String,
+      trim: true,
+    },
+    driverName: {
+      type: String,
+      trim: true,
+    },
+    aadharNumber: {
+      type: String,
+      trim: true,
+    },
+    dlNumber: {
+      type: String,
+      trim: true,
     },
     currentLocation: {
       type: String,

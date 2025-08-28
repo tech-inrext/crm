@@ -11,6 +11,7 @@ const MODULES = [
   "department",
   "cab-booking",
   "cab-vendor",
+  "vendor"
 ];
 
 export async function userAuth(req, res, next) {
@@ -81,7 +82,9 @@ export async function userAuth(req, res, next) {
     req.employee = employee;
     req.role = role;
 
-    next();
+  // Ensure we await the next handler so this middleware only returns after
+  // the downstream handler completes and sends a response.
+  await next();
   } catch (err) {
     res.status(400).json({ message: "Auth Error: " + err.message });
   }

@@ -16,9 +16,6 @@ import {
   Event,
   Notes,
   Person,
-  DirectionsCar,
-  LocalTaxi,
-  AccessTime,
   Info,
   AssignmentInd,
 } from "@mui/icons-material";
@@ -154,30 +151,36 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
               <b>Travel Time:</b> {formatDateTime(booking.requestedDateTime)}
             </Typography>
           </Box>
+          {/* Vendor / Driver extra details */}
           <Box display="flex" alignItems="center" gap={1}>
-            <DirectionsCar color="primary" fontSize="small" />
+            <Person color="action" fontSize="small" />
             <Typography fontSize={15}>
-              <b>Vehicle:</b> {booking.vehicle || "-"}
+              <b>Cab Owner:</b>{" "}
+              {(booking as any).cabOwner || (booking as any).ownerName || "-"}
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>
-            <LocalTaxi color="warning" fontSize="small" />
+            <AssignmentInd color="action" fontSize="small" />
             <Typography fontSize={15}>
-              <b>Driver:</b> {booking.driver || "-"}
+              <b>Driver Name:</b>{" "}
+              {(booking as any).driverName ||
+                (booking as any).driverDetails?.username ||
+                "-"}
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>
             <Info color="action" fontSize="small" />
             <Typography fontSize={15}>
-              <b>Current Location:</b> {booking.currentLocation || "-"}
+              <b>Aadhar (Driver):</b> {(booking as any).aadharNumber || "-"}
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>
-            <AccessTime color="success" fontSize="small" />
+            <Info color="action" fontSize="small" />
             <Typography fontSize={15}>
-              <b>Est. Arrival:</b> {booking.estimatedArrival || "-"}
+              <b>DL Number (Driver):</b> {(booking as any).dlNumber || "-"}
             </Typography>
           </Box>
+          {/* Vehicle, Driver, Current Location and Est. Arrival intentionally removed */}
         </Box>
         {booking.notes && (
           <Box display="flex" alignItems="center" gap={1} mt={2}>

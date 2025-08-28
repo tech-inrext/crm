@@ -7,6 +7,7 @@ export const cabBookingApi = {
     const res = await fetch(BASE_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+  credentials: "include",
       body: JSON.stringify(data),
     });
     if (!res.ok) throw await res.json();
@@ -20,10 +21,22 @@ export const cabBookingApi = {
     return res.json();
   },
 
-  async updateStatus(id: string, data: { status: string }) {
+  async updateStatus(id: string, data: { status: string; vendor?: string }) {
     const res = await fetch(`/api/v0/cab-booking/${id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
+  credentials: "include",
+      body: JSON.stringify(data),
+    });
+    if (!res.ok) throw await res.json();
+    return res.json();
+  },
+
+  async updateFields(id: string, data: Record<string, any>) {
+    const res = await fetch(`/api/v0/cab-booking/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+  credentials: "include",
       body: JSON.stringify(data),
     });
     if (!res.ok) throw await res.json();

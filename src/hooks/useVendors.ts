@@ -22,26 +22,39 @@ export function useVendors(debouncedSearch: string) {
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({});
+  const [error, setError] = useState<string | null>(null);
 
   const loadVendors = useCallback(
     async (page = 1, limit = DEFAULT_PAGE_SIZE, search = "") => {
       setLoading(true);
+      setError(null);
       try {
-        const response = await axios.get(VENDORS_API_BASE, {
-          params: {
-            page,
-            limit,
-            search: search.trim() || undefined,
-          },
-        });
-
-        const { data, pagination } = response.data;
-        setEmployees(data || []);
-        setTotalItems(pagination?.totalItems || 0);
-      } catch (error) {
+        const response = await axios.get("/api/v0/employee/getAllEmployeeList");
+        if (!response.data || !response.data.data) {
+          throw new Error("Invalid response from server");
+        }
+        let employees = response.data.data || [];
+        // Filter for vendors only
+        employees = employees.filter((emp: any) => emp.isCabVendor === true);
+        // Optional search filter
+        if (search.trim()) {
+          const s = search.trim().toLowerCase();
+          employees = employees.filter((emp: any) =>
+            emp.name?.toLowerCase().includes(s) ||
+            emp.email?.toLowerCase().includes(s) ||
+            emp.phone?.toLowerCase().includes(s)
+          );
+        }
+        // Pagination
+        const start = (page - 1) * limit;
+        const paged = employees.slice(start, start + limit);
+        setEmployees(paged);
+        setTotalItems(employees.length);
+      } catch (error: any) {
         console.error("Failed to load vendors:", error);
         setEmployees([]);
         setTotalItems(0);
+        setError(error?.message || "Failed to load vendors. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -96,5 +109,6 @@ export function useVendors(debouncedSearch: string) {
     form,
     search,
     setSearch,
+    error,
   };
 }

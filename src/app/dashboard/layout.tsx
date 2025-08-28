@@ -48,6 +48,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <AppIcon src="/inrext.png" alt="Vendors" />,
   },
   {
+    label: "Vendor Booking",
+    href: "/dashboard/vendor-booking",
+    module: "cab-vendor",
+    icon: <AppIcon src="/cab.png" alt="Vendor Booking" />,
+  },
+  {
     label: "Roles",
     href: "/dashboard/roles",
     module: "role",

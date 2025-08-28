@@ -84,7 +84,12 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             "cab-booking": "cab-booking",
             vendors: "vendor",
             vendor: "vendor",
+            cabvendor: "cab-vendor",
+            cabVendor: "cab-vendor",
+            "cab-vendor": "cab-vendor",
           };
+          // Always map 'CabVendor' (display) to 'cab-vendor' (backend)
+          if (mod === "CabVendor") return "cab-vendor";
           return map[mod.toLowerCase()] || mod.toLowerCase();
         };
         // Normalize all module names to backend format for mapping

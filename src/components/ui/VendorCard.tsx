@@ -1,14 +1,17 @@
 import React from "react";
 import {
-  Card,
-  CardContent,
-  Typography,
   Box,
-  Avatar,
   IconButton,
   Stack,
+  Tooltip,
+  Card,
+  CardContent,
 } from "@mui/material";
+import Avatar from "@mui/material/Avatar";
+import Typography from "@mui/material/Typography";
 import EditIcon from "@mui/icons-material/Edit";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import ShareIcon from "@mui/icons-material/Share";
 import PermissionGuard from "@/components/PermissionGuard";
 import { VENDORS_PERMISSION_MODULE } from "@/constants/vendors";
 
@@ -16,96 +19,126 @@ interface VendorCardProps {
   vendor: {
     name: string;
     email: string;
+    phone?: string;
+    address?: string;
     designation?: string;
     avatarUrl?: string;
   };
   onEdit?: () => void;
+  onView?: () => void;
 }
 
-const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit }) => {
+const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit, onView }) => {
   return (
     <Card
-      elevation={2}
+      elevation={3}
       sx={{
         borderRadius: 3,
-        p: 2,
+        p: 1.2,
+        width: 300,
+        height: 170,
+        boxShadow: "0 4px 12px rgba(25, 118, 210, 0.15)",
+        background: "linear-gradient(135deg, #e3f2fd 0%, #f1f5fa 100%)",
+        transition: "transform 0.2s ease",
+        "&:hover": { transform: "translateY(-2px)" },
         display: "flex",
-        alignItems: "center",
-        gap: 2,
-        minWidth: 0,
-        width: "100%",
-        boxShadow: "0 2px 8px rgba(25, 118, 210, 0.10)",
-        background: "linear-gradient(135deg, #fafdff 0%, #f1f5fa 100%)",
+        flexDirection: "column",
+        gap: 0.5,
+        justifyContent: "flex-start",
       }}
     >
-      <Avatar
-        src={vendor.avatarUrl}
-        alt={vendor.name}
+      {/* Header: Avatar + Name + Actions */}
+      <Box
         sx={{
-          width: 56,
-          height: 56,
-          fontWeight: 700,
-          fontSize: 24,
-          bgcolor: "primary.main",
-          color: "white",
-          boxShadow: 1,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          mb: 0.5,
         }}
       >
-        {vendor.name?.[0]?.toUpperCase()}
-      </Avatar>
-      <CardContent sx={{ flex: 1, p: 0, minWidth: 0 }}>
-        <Stack spacing={0.5}>
-          <Typography
-            variant="h6"
-            fontWeight={700}
-            color="text.primary"
+        <Box sx={{ display: "flex", alignItems: "center", gap: 0.7 }}>
+          <Avatar
+            src={vendor.avatarUrl}
+            alt={vendor.name}
             sx={{
-              lineHeight: 1.2,
-              fontSize: { xs: 16, sm: 18 },
+              width: 40,
+              height: 40,
+              fontWeight: 700,
+              fontSize: 16,
+              bgcolor: "primary.main",
+              color: "white",
+              boxShadow: 2,
             }}
-            noWrap
           >
-            {vendor.name}
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ fontSize: { xs: 13, sm: 14 }, wordBreak: "break-all" }}
-            noWrap
-          >
-            {vendor.email}
-          </Typography>
-          {vendor.designation && (
+            {vendor.name?.[0]?.toUpperCase()}
+          </Avatar>
+          <Box>
             <Typography
-              variant="caption"
-              color="primary"
-              sx={{
-                fontWeight: 600,
-                fontSize: { xs: 12, sm: 13 },
-              }}
+              fontWeight={700}
+              fontSize={14}
+              color="text.primary"
               noWrap
             >
-              {vendor.designation}
+              {vendor.name}
             </Typography>
+            <Typography
+              variant="body2"
+              color="text.secondary"
+              noWrap
+              sx={{ fontSize: 12 }}
+            >
+              {vendor.email}
+            </Typography>
+          </Box>
+        </Box>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {onView && (
+            <Tooltip title="View Details">
+              <IconButton
+                size="small"
+                onClick={onView}
+                sx={{ background: "#fafafa", boxShadow: 1 }}
+              >
+                <VisibilityIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
           )}
-        </Stack>
-      </CardContent>
-      {onEdit && (
-        <PermissionGuard
-          module={VENDORS_PERMISSION_MODULE}
-          action="write"
-          fallback={<></>}
-        >
-          <IconButton
-            size="small"
-            onClick={onEdit}
-            aria-label="edit vendor"
-            sx={{ ml: 1, color: "primary.main" }}
-          >
-            <EditIcon fontSize="small" />
-          </IconButton>
-        </PermissionGuard>
-      )}
+          {onEdit && (
+            <PermissionGuard
+              module={VENDORS_PERMISSION_MODULE}
+              action="write"
+              fallback={<></>}
+            >
+              <IconButton
+                size="small"
+                onClick={onEdit}
+                aria-label="edit vendor"
+                sx={{ color: "primary.main" }}
+              >
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </PermissionGuard>
+          )}
+        </Box>
+      </Box>
+      {/* Details Section */}
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.3 }}>
+        {vendor.phone && (
+          <Typography fontSize={12} color="text.primary">
+            <b>Phone:</b> {vendor.phone}
+          </Typography>
+        )}
+        {vendor.address && (
+          <Typography fontSize={12} color="text.primary">
+            <b>Address:</b> {vendor.address}
+          </Typography>
+        )}
+        {vendor.designation && (
+          <Typography fontSize={12} color="primary">
+            <b>Designation:</b> {vendor.designation}
+          </Typography>
+        )}
+      </Box>
     </Card>
   );
 };

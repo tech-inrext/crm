@@ -82,13 +82,15 @@ const Vendors: React.FC = () => {
           </Typography>
         ) : (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 2 }}>
-            {employees.map((vendor) => (
-              <VendorCard
-                key={vendor._id}
-                vendor={vendor}
-                onEdit={() => setEditId(vendor._id)}
-              />
-            ))}
+            {employees
+              .filter((vendor) => vendor.isCabVendor)
+              .map((vendor) => (
+                <VendorCard
+                  key={vendor._id}
+                  vendor={vendor}
+                  onEdit={() => setEditId(vendor._id)}
+                />
+              ))}
           </Box>
         )}
         <Pagination

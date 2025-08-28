@@ -58,13 +58,13 @@ const VendorDialog: React.FC<VendorDialogProps> = ({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [rolesRes, managersRes, departmentsRes] = await Promise.all([
+        const [rolesRes, employeesRes, departmentsRes] = await Promise.all([
           fetch(`${ROLES_API_BASE}/getAllRoleList`, {
             method: "GET",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
           }),
-          fetch(`${VENDORS_API_BASE}/getAllVendorList`, {
+          fetch("/api/v0/employee/getAllEmployeeList", {
             method: "GET",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
@@ -76,11 +76,15 @@ const VendorDialog: React.FC<VendorDialogProps> = ({
           }),
         ]);
         const rolesData = await rolesRes.json();
-        const managersData = await managersRes.json();
+        const employeesData = await employeesRes.json();
         const departmentsData = await departmentsRes.json();
 
         setRoles(rolesData.data || []);
-        setManagers(managersData.data || []);
+        // Filter cab vendors from employees
+        const cabVendors = (employeesData.data || []).filter(
+          (emp) => emp.isCabVendor
+        );
+        setManagers(cabVendors);
         setDepartments(departmentsData.data || []);
       } catch (error) {
         console.error("Error fetching dialog data:", error);

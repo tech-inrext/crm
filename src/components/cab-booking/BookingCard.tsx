@@ -17,7 +17,10 @@ import {
   LocationOn,
   ArrowForward,
   Event,
+  AssignmentInd,
 } from "@mui/icons-material";
+import AssignVendorDialog from "./AssignVendorDialog";
+import VendorBookingForm from "./VendorBookingForm";
 import CardComponent from "@/components/ui/Card";
 import Avatar from "@/components/ui/Avatar";
 import MODULE_STYLES from "@/styles/moduleStyles";
@@ -37,6 +40,7 @@ interface BookingCardProps {
 }
 
 const BookingCard: React.FC<BookingCardProps> = ({
+  // ...existing code...
   booking,
   onViewDetails,
 }) => {
@@ -45,11 +49,13 @@ const BookingCard: React.FC<BookingCardProps> = ({
   const [status, setStatus] = useState(booking.status);
   const [updating, setUpdating] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
+  const [assignOpen, setAssignOpen] = useState(false);
   const avatar = booking.clientName
     ? booking.clientName.substring(0, 2).toUpperCase()
     : "CB";
   const shareLink = `${window.location.origin}/dashboard/cab-booking?bookingId=${booking._id}`;
   const isManager = booking.canApprove;
+  // ...existing code...
 
   const handleStatusChange = async (
     e: React.ChangeEvent<{ value: unknown }>
@@ -59,6 +65,19 @@ const BookingCard: React.FC<BookingCardProps> = ({
     setUpdating(true);
     try {
       await updateBookingStatus(booking._id, newStatus);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  // Assign vendor handler
+  const handleAssignVendor = async (vendorId: string) => {
+    setUpdating(true);
+    try {
+      // Call backend to assign vendor and set status to 'active'
+      await updateBookingStatus(booking._id, "active", vendorId);
+      setStatus("active");
+      setAssignOpen(false);
     } finally {
       setUpdating(false);
     }
@@ -256,6 +275,24 @@ const BookingCard: React.FC<BookingCardProps> = ({
                 {updating && (
                   <CircularProgress size={14} sx={{ color: "primary.main" }} />
                 )}
+                {/* Assign Icon: Only show for approved bookings */}
+                {status === "approved" && (
+                  <Tooltip title="Assign to Vendor">
+                    <IconButton
+                      size="small"
+                      onClick={() => setAssignOpen(true)}
+                      sx={{
+                        background: "#fafafa",
+                        boxShadow: 1,
+                        "&:hover": { background: "#f0f0f0" },
+                      }}
+                    >
+                      <AssignmentInd fontSize="small" />
+                    </IconButton>
+                  </Tooltip>
+                )}
+                {/* Form Button: Show for vendor bookings with status active */}
+                {/* Form Button removed. Vendor form dialog is now managed in vendor booking dashboard. */}
                 {/* Share Icon */}
                 <Tooltip title="Share Booking">
                   <IconButton
@@ -311,6 +348,15 @@ const BookingCard: React.FC<BookingCardProps> = ({
         }
       />
       {shareOpen && renderShareDialog()}
+      {assignOpen && (
+        <AssignVendorDialog
+          open={assignOpen}
+          onClose={() => setAssignOpen(false)}
+          onAssign={handleAssignVendor}
+        />
+      )}
+      {/* Vendor form dialog removed. Vendor form dialog is now managed in vendor booking dashboard. */}
+      {/* Vendor form dialog removed. Vendor form dialog is now managed in vendor booking dashboard. */}
     </>
   );
 };

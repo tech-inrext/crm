@@ -24,7 +24,16 @@ import Pagination from "@/components/ui/Pagination";
 import axios from "axios";
 import { transformToAPIRole } from "@/utils/leadUtils";
 
-const modules = ["User", "Role", "Lead", "Department", "CabBooking", "Vendor"];
+const modules = [
+  "User",
+  "Role",
+  "Lead",
+  "Department",
+  "CabBooking",
+  "CabVendor",
+  "Vendor",
+  "CabVendor", // Display name, but will be mapped to 'cab-vendor' for backend
+];
 const initialModulePerms = Object.fromEntries(
   modules.map((m) => [m, { read: false, write: false, delete: false }])
 );
@@ -69,7 +78,12 @@ const Roles: React.FC = () => {
   const handleAddOrEditRole = async ({ name, modulePerms, editId }) => {
     const perms = { read: [], write: [], delete: [] };
     Object.entries(modulePerms).forEach(([mod, actions]) => {
-      const backendMod = mod === "User" ? "employee" : mod.toLowerCase();
+      let backendMod;
+      if (mod === "User") backendMod = "employee";
+      else if (mod === "CabVendor") backendMod = "cab-vendor";
+      else if (mod === "CabBooking") backendMod = "cab-booking";
+      else if (mod === "CabVendor") backendMod = "cab-vendor";
+      else backendMod = mod.toLowerCase();
       Object.entries(actions).forEach(([action, checked]) => {
         if (checked) perms[action].push(backendMod);
       });
