@@ -82,40 +82,34 @@ const VendorBookingPage = () => {
             ) : (
               <>
                 <div>
-                  {paginatedBookings.map((booking) => (
-                    <Box
-                      key={booking._id}
-                      sx={{
-                        mb: 2,
-                        position: "relative",
-                        maxWidth: 320,
-                        minWidth: 200,
-                        width: "100%",
-                      }}
-                    >
-                      <BookingCard
-                        booking={booking}
-                        onViewDetails={(b) => {
-                          setSelectedBooking(b);
-                          setDetailsOpen(true);
-                        }}
-                      />
-                      {/* Form button inside the vendor card */}
-                      {booking.vendor && booking.status === "active" && (
-                        <Box sx={{ position: "absolute", top: 16, right: 16 }}>
-                          <button
-                            className="px-3 py-1 bg-blue-100 text-blue-900 rounded shadow border border-blue-300"
-                            onClick={() => {
-                              setBookingId(booking._id);
-                              setShowDialog(true);
-                            }}
-                          >
-                            Form
-                          </button>
-                        </Box>
-                      )}
-                    </Box>
-                  ))}
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {paginatedBookings.map((booking) => (
+                      <div key={booking._id} className="relative">
+                        <BookingCard
+                          booking={booking}
+                          onViewDetails={(b) => {
+                            setSelectedBooking(b);
+                            setDetailsOpen(true);
+                          }}
+                        />
+                        {/* Form button inside the vendor card */}
+                        {booking.vendor && booking.status === "active" && (
+                          <div className="absolute top-4 right-4">
+                            <button
+                              className="px-3 py-1 bg-blue-100 text-blue-900 rounded shadow border border-blue-300"
+                              onClick={() => {
+                                setBookingId(booking._id);
+                                setShowDialog(true);
+                              }}
+                            >
+                              Form
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+
                   <Box
                     sx={{ mt: 2, display: "flex", justifyContent: "center" }}
                   >

@@ -23,6 +23,7 @@ import MODULE_STYLES from "@/styles/moduleStyles";
 import Avatar from "@/components/ui/Avatar";
 import { Booking } from "@/types/cab-booking";
 import { formatDateTime, getProjectName } from "@/constants/cab-booking";
+import { useEffect, useState } from "react";
 
 interface BookingDetailsDialogProps {
   booking: Booking | null;
@@ -35,6 +36,41 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
   open,
   onClose,
 }) => {
+  const [managerName, setManagerName] = useState<string | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const fetchManager = async () => {
+      try {
+        if (!booking) return;
+        // if managerName already provided on booking, use it
+        if ((booking as any).managerName) {
+          setManagerName((booking as any).managerName);
+          return;
+        }
+        const mgrId = booking.managerId || booking.manager || null;
+        if (!mgrId) return;
+        const res = await fetch("/api/v0/employee/getAllEmployeeList");
+        if (!res.ok) return;
+        const payload = await res.json();
+        const employees = payload.data || payload;
+        const found = (employees || []).find(
+          (e: any) => String(e._id) === String(mgrId)
+        );
+        if (mounted)
+          setManagerName(
+            found ? found.name || found.username || found.email : null
+          );
+      } catch (err) {
+        // ignore
+      }
+    };
+    fetchManager();
+    return () => {
+      mounted = false;
+    };
+  }, [booking]);
+
   if (!booking) return null;
 
   return (
@@ -142,7 +178,11 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
           <Box display="flex" alignItems="center" gap={1}>
             <AssignmentInd color="secondary" fontSize="small" />
             <Typography fontSize={15}>
-              <b>Manager:</b> {booking.managerName || booking.managerId || "-"}
+              <b>Manager:</b>{" "}
+              {managerName ||
+                (booking as any).managerName ||
+                booking.managerId ||
+                "-"}
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>
