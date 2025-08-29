@@ -48,7 +48,7 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       required: [true, "Address is required"],
       trim: true,
-      minlength: [5, "Address must be at least 5 characters"],
+      minlength: [2, "Address must be at least 2 characters"],
     },
     gender: {
       type: String,
