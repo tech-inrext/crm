@@ -1,6 +1,7 @@
 export const statusOptions = [
   { value: '', label: 'All' },
   { value: 'pending', label: 'Pending' },
+  { value: 'active', label: 'Active' },
   { value: 'approved', label: 'Approved' },
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
@@ -23,6 +24,8 @@ export const getStatusColor = (status: string): string => {
   switch (status) {
     case "pending":
       return "#2196F3";
+    case "active":
+      return "#FB8C00"; // amber / active
     case "approved":
       return "#4CAF50";
     case "completed":

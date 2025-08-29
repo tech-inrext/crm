@@ -69,12 +69,15 @@ export const useCabBooking = (opts = {}) => {
     // fire-and-forget: kick off network request and handle result in background
     cabBookingApi
       .createBooking(payload)
-      .then((res) => {
-        setSuccess("Booking created successfully!");
-        if (refetchAfterMutations) {
-          fetchBookings().catch((err) => console.error("Background fetchBookings failed:", err));
-        }
-      })
+        .then((res) => {
+          setSuccess("Booking created successfully!");
+          // Only perform background refetch if the hook was configured to both
+          // autoFetch and refetchAfterMutations. Vendor pages set autoFetch=false
+          // to avoid calling protected GET endpoints.
+          if (refetchAfterMutations && autoFetch) {
+            fetchBookings().catch((err) => console.error("Background fetchBookings failed:", err));
+          }
+        })
       .catch((err) => {
         setError(err?.response?.data?.message || "Failed to create booking");
       })
@@ -95,8 +98,8 @@ export const useCabBooking = (opts = {}) => {
       const payload = { status };
       if (vendorId) payload.vendor = vendorId;
       await cabBookingApi.updateStatus(bookingId, payload);
-      setSuccess("Booking status updated!");
-      if (refetchAfterMutations) await fetchBookings();
+  setSuccess("Booking status updated!");
+  if (refetchAfterMutations && autoFetch) await fetchBookings();
     } catch {
       setError("Failed to update booking status");
     } finally {
@@ -109,8 +112,8 @@ export const useCabBooking = (opts = {}) => {
       setIsLoading(true);
       setError("");
       const res = await cabBookingApi.updateFields(bookingId, fields);
-      setSuccess("Booking updated!");
-      if (refetchAfterMutations) await fetchBookings();
+  setSuccess("Booking updated!");
+  if (refetchAfterMutations && autoFetch) await fetchBookings();
       return Boolean(res && (res.success ?? true));
     } catch (err) {
       setError("Failed to update booking fields");
@@ -125,8 +128,8 @@ export const useCabBooking = (opts = {}) => {
       setIsLoading(true);
       setError("");
       await cabBookingApi.updateTracking(bookingId, trackingData);
-      setSuccess("Tracking info updated!");
-      if (refetchAfterMutations) await fetchBookings();
+  setSuccess("Tracking info updated!");
+  if (refetchAfterMutations && autoFetch) await fetchBookings();
     } catch {
       setError("Failed to update tracking info");
     } finally {
@@ -139,8 +142,8 @@ export const useCabBooking = (opts = {}) => {
       setIsLoading(true);
       setError("");
       await cabBookingApi.cancelBooking(bookingId);
-      setSuccess("Booking cancelled!");
-      if (refetchAfterMutations) await fetchBookings();
+  setSuccess("Booking cancelled!");
+  if (refetchAfterMutations && autoFetch) await fetchBookings();
     } catch {
       setError("Failed to cancel booking");
     } finally {
