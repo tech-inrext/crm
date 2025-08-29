@@ -13,7 +13,6 @@ export const DEFAULT_VENDOR_FORM = {
   email: "",
   phone: "",
   address: "",
-  gender: "Male",
   age: "",
   altPhone: "",
   joiningDate: "",

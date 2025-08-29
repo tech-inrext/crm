@@ -68,11 +68,17 @@ export function useVendors(
     async (vendorData: any) => {
       setSaving(true);
       try {
-        await axios.post(
-          USERS_API_BASE,
-          { ...vendorData, isCabVendor: true },
-          { withCredentials: true }
-        );
+        // Sanitize payload: avoid sending empty strings for optional fields
+        const payload: any = {
+          name: vendorData.name,
+          email: vendorData.email,
+          phone: vendorData.phone,
+          address: vendorData.address,
+          isCabVendor: true,
+        };
+        if (vendorData.roles && vendorData.roles.length) payload.roles = vendorData.roles;
+
+        await axios.post(USERS_API_BASE, payload, { withCredentials: true });
         await loadVendors(page, rowsPerPage, debouncedSearch);
       } catch (err) {
         console.error("Failed to add vendor:", err);
@@ -88,11 +94,16 @@ export function useVendors(
     async (vendorId: string, vendorData: any) => {
       setSaving(true);
       try {
-        await axios.patch(
-          `${USERS_API_BASE}/${vendorId}`,
-          { ...vendorData, isCabVendor: true }, // ensure it remains a vendor
-          { withCredentials: true }
+        // For updates, convert empty-string optional fields to undefined so Mongoose
+        // doesn't validate minlength against "". Keep only fields present in vendorData.
+        const payload: any = { ...vendorData, isCabVendor: true };
+        ["designation", "managerId", "departmentId", "altPhone", "joiningDate"].forEach(
+          (k) => {
+            if (payload[k] === "") delete payload[k];
+          }
         );
+
+        await axios.patch(`${USERS_API_BASE}/${vendorId}`, payload, { withCredentials: true });
         await loadVendors(page, rowsPerPage, debouncedSearch);
       } catch (err) {
         console.error("Failed to update vendor:", err);

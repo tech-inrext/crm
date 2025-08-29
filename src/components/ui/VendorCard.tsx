@@ -103,22 +103,7 @@ const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit, onView }) => {
               </IconButton>
             </Tooltip>
           )}
-          {onEdit && (
-            <PermissionGuard
-              module={VENDORS_PERMISSION_MODULE}
-              action="write"
-              fallback={<></>}
-            >
-              <IconButton
-                size="small"
-                onClick={onEdit}
-                aria-label="edit vendor"
-                sx={{ color: "primary.main" }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </PermissionGuard>
-          )}
+          {/* edit action intentionally removed per request */}
         </Box>
       </Box>
       {/* Details Section */}

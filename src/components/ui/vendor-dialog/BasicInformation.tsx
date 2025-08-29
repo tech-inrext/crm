@@ -1,12 +1,7 @@
 import React from "react";
 import { TextField, Box, MenuItem, Typography } from "@mui/material";
 import { Field, FieldProps } from "formik";
-import { GENDER_OPTIONS, FIELD_LABELS } from "@/constants/vendors";
-
-const genderOptions = GENDER_OPTIONS.map((gender) => ({
-  value: gender,
-  label: gender,
-}));
+import { FIELD_LABELS } from "@/constants/vendors";
 
 interface BasicInformationProps {
   editId: string | null;
@@ -51,7 +46,6 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-              InputProps={{ readOnly: !!editId }}
             />
           )}
         </Field>
@@ -65,7 +59,6 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-              InputProps={{ readOnly: !!editId }}
             />
           )}
         </Field>
@@ -89,26 +82,6 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
             />
-          )}
-        </Field>
-        <Field name="gender">
-          {({ field, meta }: FieldProps) => (
-            <TextField
-              {...field}
-              label={FIELD_LABELS?.GENDER || "Gender"}
-              select
-              fullWidth
-              margin="normal"
-              error={!!meta.touched && !!meta.error}
-              helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-            >
-              {genderOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </TextField>
           )}
         </Field>
       </Box>

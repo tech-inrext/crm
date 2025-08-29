@@ -1,5 +1,5 @@
 import * as Yup from "yup";
-import { GENDER_OPTIONS, VALIDATION_RULES } from "@/constants/vendors";
+import { VALIDATION_RULES } from "@/constants/vendors";
 
 export const vendorValidationSchema = Yup.object({
 	name: Yup.string()
@@ -11,9 +11,7 @@ export const vendorValidationSchema = Yup.object({
 	address: Yup.string()
 		.min(VALIDATION_RULES.ADDRESS.min)
 		.required("Address is required"),
-	gender: Yup.string()
-		.oneOf(GENDER_OPTIONS)
-		.required("Gender is required"),
+	// (gender intentionally omitted)
 	age: Yup.number()
 		.min(VALIDATION_RULES.AGE.min)
 		.max(VALIDATION_RULES.AGE.max)
@@ -27,6 +25,19 @@ export const vendorValidationSchema = Yup.object({
 	managerId: Yup.string().required("Manager is required"),
 	departmentId: Yup.string().required("Department is required"),
 	roles: Yup.array().of(Yup.string()).min(1, "At least one role required"),
+});
+
+// Validation schema for add (create) vendor flow: only need basic contact fields
+export const vendorAddValidationSchema = Yup.object({
+	name: Yup.string()
+		.min(VALIDATION_RULES.NAME.min)
+		.max(VALIDATION_RULES.NAME.max)
+		.required("Name is required"),
+	email: Yup.string().email().required("Email is required"),
+	phone: Yup.string().required("Phone is required"),
+	address: Yup.string()
+		.min(VALIDATION_RULES.ADDRESS.min)
+		.required("Address is required"),
 });
 // Copied from user-dialog/validation.ts, replaced 'user' with 'vendor'
 // ...existing code...
