@@ -22,7 +22,7 @@ const createEmployee = async (req, res) => {
       departmentId,
       roles,
     } = req.body;
-    const isCabVendor = req.body.isCabVendor || false ;
+    const isCabVendor = req.body.isCabVendor || false;
     const dummyPassword = "Inrext@123";
     const hashedPassword = await bcrypt.hash(dummyPassword, 10);
 
@@ -97,14 +97,15 @@ const createEmployee = async (req, res) => {
 
 const getAllEmployees = async (req, res) => {
   try {
-    const { page = 1, limit = 5, search = "" } = req.query;
+    const { page = 1, limit = 5, search = "", isCabVendor } = req.query;
 
+    // robust pagination parsing
     const currentPage = parseInt(page);
     const itemsPerPage = parseInt(limit);
     const skip = (currentPage - 1) * itemsPerPage;
 
-    // Optional search filter
-    const query = search
+    // optional text search
+    const searchFilter = search
       ? {
           $or: [
             { name: { $regex: search, $options: "i" } },
@@ -114,11 +115,28 @@ const getAllEmployees = async (req, res) => {
         }
       : {};
 
+    // optional isCabVendor filter
+    const normalizeBool = (v) => {
+      if (typeof v === "boolean") return v;
+      if (v == null) return undefined;
+      const s = String(v).trim().toLowerCase();
+      if (["true", "1", "yes", "y"].includes(s)) return true;
+      if (["false", "0", "no", "n"].includes(s)) return false;
+      return undefined; // ignore bad values
+    };
+
+    const vendorVal = normalizeBool(isCabVendor);
+    const vendorFilter =
+      typeof vendorVal === "boolean" ? { isCabVendor: vendorVal } : {};
+
+    const query = { ...searchFilter, ...vendorFilter };
+
     const [employees, totalEmployees] = await Promise.all([
       Employee.find(query)
         .skip(skip)
         .limit(itemsPerPage)
-        .sort({ createdAt: -1 }),
+        .sort({ createdAt: -1 })
+        .lean(),
       Employee.countDocuments(query),
     ]);
 
@@ -130,6 +148,10 @@ const getAllEmployees = async (req, res) => {
         currentPage,
         itemsPerPage,
         totalPages: Math.ceil(totalEmployees / itemsPerPage),
+      },
+      appliedFilter: {
+        search: search || null,
+        isCabVendor: typeof vendorVal === "boolean" ? vendorVal : null,
       },
     });
   } catch (error) {

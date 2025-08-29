@@ -8,6 +8,7 @@ export interface Employee {
   email: string;
   designation?: string;
   roles?: Array<{ _id: string; name: string }>;
+  isCabVendor?: boolean;
   [key: string]: any;
 }
 
@@ -15,16 +16,21 @@ export function useUsers(debouncedSearch: string) {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [page, setPage] = useState(1); // 1-based indexing
+  const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
   const [totalItems, setTotalItems] = useState(0);
-  const [search, setSearch] = useState(""); // raw user input
+  const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState({});
 
   const loadEmployees = useCallback(
-    async (page = 1, limit = DEFAULT_PAGE_SIZE, search = "") => {
+    async (
+      page = 1,
+      limit = DEFAULT_PAGE_SIZE,
+      search = "",
+      isCabVendor: boolean | undefined = false // ← only non-vendors by default
+    ) => {
       setLoading(true);
       try {
         const response = await axios.get(USERS_API_BASE, {
@@ -32,6 +38,7 @@ export function useUsers(debouncedSearch: string) {
             page,
             limit,
             search: search.trim() || undefined,
+            ...(typeof isCabVendor === "boolean" ? { isCabVendor } : {}), // ← sends ?isCabVendor=false
           },
         });
 
@@ -50,34 +57,41 @@ export function useUsers(debouncedSearch: string) {
   );
 
   useEffect(() => {
-    loadEmployees(page, rowsPerPage, debouncedSearch);
+    // pass isCabVendor=false explicitly
+    loadEmployees(page, rowsPerPage, debouncedSearch, false);
   }, [page, rowsPerPage, debouncedSearch, loadEmployees]);
 
-  const addUser = useCallback(async (userData: any) => {
-    setSaving(true);
-    try {
-      await axios.post(USERS_API_BASE, userData);
-      await loadEmployees(page, rowsPerPage, debouncedSearch);
-    } catch (error) {
-      console.error("Failed to add user:", error);
-      throw error;
-    } finally {
-      setSaving(false);
-    }
-  }, [page, rowsPerPage, debouncedSearch, loadEmployees]);
+  const addUser = useCallback(
+    async (userData: any) => {
+      setSaving(true);
+      try {
+        await axios.post(USERS_API_BASE, userData);
+        await loadEmployees(page, rowsPerPage, debouncedSearch, false);
+      } catch (error) {
+        console.error("Failed to add user:", error);
+        throw error;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [page, rowsPerPage, debouncedSearch, loadEmployees]
+  );
 
-  const updateUser = useCallback(async (id: string, userData: any) => {
-    setSaving(true);
-    try {
-      await axios.patch(`${USERS_API_BASE}/${id}`, userData);
-      await loadEmployees(page, rowsPerPage, debouncedSearch);
-    } catch (error) {
-      console.error("Failed to update user:", error);
-      throw error;
-    } finally {
-      setSaving(false);
-    }
-  }, [page, rowsPerPage, debouncedSearch, loadEmployees]);
+  const updateUser = useCallback(
+    async (id: string, userData: any) => {
+      setSaving(true);
+      try {
+        await axios.patch(`${USERS_API_BASE}/${id}`, userData);
+        await loadEmployees(page, rowsPerPage, debouncedSearch, false);
+      } catch (error) {
+        console.error("Failed to update user:", error);
+        throw error;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [page, rowsPerPage, debouncedSearch, loadEmployees]
+  );
 
   return {
     employees,

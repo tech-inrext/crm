@@ -114,6 +114,8 @@ const employeeSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+employeeSchema.index({ isCabVendor: 1, createdAt: -1 });
+
 // Virtual property to check if employee is a manager (has subordinates)
 employeeSchema.virtual("isManager").get(function () {
   // You can enhance this logic as needed

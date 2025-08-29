@@ -200,7 +200,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
               onFocus={(e) => e.target.select()}
             />
           </div>
-          <div className="form-group">
+          {/* <div className="form-group">
             <label className="block text-sm font-medium mb-1">
               Approved By *
             </label>
@@ -213,20 +213,18 @@ const BookingForm: React.FC<BookingFormProps> = ({
               className="w-full p-2 border border-gray-300 rounded-md bg-gray-100 text-gray-700 cursor-not-allowed"
               readOnly
             />
-          </div>
-
-          <div className="form-group">
-            <label className="block text-sm font-medium mb-1">Notes</label>
-            <textarea
-              name="notes"
-              value={formData.notes}
-              onChange={handleChange}
-              rows={2}
-              className="w-full p-2 border border-gray-300 rounded-md"
-            />
-          </div>
+          </div> */}
         </div>
-
+        <div className="form-group">
+          <label className="block text-sm font-medium mb-1">Notes</label>
+          <textarea
+            name="notes"
+            value={formData.notes}
+            onChange={handleChange}
+            rows={2}
+            className="w-full p-2 border border-gray-300 rounded-md"
+          />
+        </div>
         <div className="mt-6">
           <button
             type="submit"

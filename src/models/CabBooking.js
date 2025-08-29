@@ -15,7 +15,9 @@ const cabBookingSchema = new mongoose.Schema(
       default: () => {
         // Generate a unique Booking ID (e.g., CAB-<timestamp>-<random>)
         const ts = Date.now();
-        const rand = Math.floor(Math.random() * 10000).toString().padStart(4, '0');
+        const rand = Math.floor(Math.random() * 10000)
+          .toString()
+          .padStart(4, "0");
         return `CAB-${ts}-${rand}`;
       },
     },
@@ -46,9 +48,9 @@ const cabBookingSchema = new mongoose.Schema(
       trim: true,
     },
     managerId: {
-      type: String,
-      trim: true,
-      required: [true, "Manager ID is required for approval"],
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      required: [true, "Manager is required for approval"],
     },
     requestedDateTime: {
       type: Date,
@@ -57,7 +59,14 @@ const cabBookingSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: ["pending", "approved", "rejected", "active", "completed", "cancelled"],
+        values: [
+          "pending",
+          "approved",
+          "rejected",
+          "active",
+          "completed",
+          "cancelled",
+        ],
         message: "Invalid status",
       },
       default: "pending",
@@ -113,9 +122,10 @@ const cabBookingSchema = new mongoose.Schema(
 
 // Indexes for better query performance
 cabBookingSchema.index({ project: 1, status: 1 });
-cabBookingSchema.index({ teamLeader: 1 });
+// cabBookingSchema.index({ teamLeader: 1 });
 cabBookingSchema.index({ status: 1 });
 cabBookingSchema.index({ requestedDateTime: 1 });
+cabBookingSchema.index({ managerId: 1 });
 
 // Virtual populate
 cabBookingSchema.virtual("projectDetails", {
@@ -132,11 +142,12 @@ cabBookingSchema.virtual("driverDetails", {
   justOne: true,
 });
 
-cabBookingSchema.virtual("teamLeaderDetails", {
-  ref: "User",
-  localField: "teamLeader",
-  foreignField: "_id",
-  justOne: true,
-});
+// cabBookingSchema.virtual("teamLeaderDetails", {
+//   ref: "User",
+//   localField: "teamLeader",
+//   foreignField: "_id",
+//   justOne: true,
+// });
 
-export default mongoose.models.CabBooking || mongoose.model("CabBooking", cabBookingSchema);
+export default mongoose.models.CabBooking ||
+  mongoose.model("CabBooking", cabBookingSchema);

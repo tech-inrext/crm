@@ -1,40 +1,24 @@
 "use client";
 
-import React, { useState, useCallback, useEffect } from "react";
-import {
-  Box,
-  Paper,
-  Typography,
-  Fab,
-  CircularProgress,
-  useTheme,
-  useMediaQuery,
-  Button,
-  TableContainer,
-} from "@mui/material";
-import { Add, Edit } from "@mui/icons-material";
+import React, { useEffect, useState } from "react";
+import { Box, Typography, CircularProgress } from "@mui/material";
 import dynamic from "next/dynamic";
+
 import { useVendors } from "@/hooks/useVendors";
 import PermissionGuard from "@/components/PermissionGuard";
 import VendorDialog from "@/components/ui/VendorDialog";
 import VendorsActionBar from "@/components/ui/VendorsActionBar";
 import VendorCard from "@/components/ui/VendorCard";
+
 import {
-  GRADIENTS,
-  COMMON_STYLES,
   DEFAULT_VENDOR_FORM,
-  VENDORS_TABLE_HEADER,
   VENDORS_ROWS_PER_PAGE_OPTIONS,
   SEARCH_DEBOUNCE_DELAY,
-  FAB_POSITION,
   VENDORS_PERMISSION_MODULE,
 } from "@/constants/vendors";
-import { MODULE_STYLES } from "@/styles/moduleStyles";
 import { useDebounce } from "@/hooks/useDebounce";
 
-const TableMap = dynamic(() => import("@/components/ui/TableMap"), {
-  ssr: false,
-});
+// Your Pagination component expects: page, pageSize, total, onPageChange, onPageSizeChange, pageSizeOptions
 const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
   ssr: false,
 });
@@ -42,14 +26,18 @@ const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
 const Vendors: React.FC = () => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
+
+  // Pagination state (1-based)
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(
     VENDORS_ROWS_PER_PAGE_OPTIONS[0]
   );
+
+  // Hook fetches with ?page=&limit=&search=&isCabVendor=true
   const {
-    employees,
+    employees, // current page of vendors
     loading,
-    totalItems,
+    totalItems, // total vendors count from API
     saving,
     setOpen,
     open,
@@ -57,11 +45,23 @@ const Vendors: React.FC = () => {
     setEditId,
     addVendor,
     updateVendor,
-    setForm,
-    // ...other vendor logic
   } = useVendors(debouncedSearch, page, rowsPerPage);
 
-  // ...rest of the logic, UI, and handlers
+  // Reset to first page when search or page size changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, rowsPerPage]);
+
+  // Clamp page if totals shrink to avoid landing on an empty page
+  useEffect(() => {
+    const totalPages = Math.max(1, Math.ceil(totalItems / rowsPerPage));
+    if (page > totalPages) setPage(totalPages);
+  }, [totalItems, rowsPerPage, page]);
+
+  const handlePageSizeChange = (size: number) => {
+    setRowsPerPage(size);
+    setPage(1);
+  };
 
   return (
     <PermissionGuard module={VENDORS_PERMISSION_MODULE}>
@@ -72,6 +72,7 @@ const Vendors: React.FC = () => {
           onAdd={() => setOpen(true)}
           saving={saving}
         />
+
         {loading ? (
           <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
             <CircularProgress />
@@ -82,24 +83,25 @@ const Vendors: React.FC = () => {
           </Typography>
         ) : (
           <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 2 }}>
-            {employees
-              .filter((vendor) => vendor.isCabVendor)
-              .map((vendor) => (
-                <VendorCard
-                  key={vendor._id}
-                  vendor={vendor}
-                  onEdit={() => setEditId(vendor._id)}
-                />
-              ))}
+            {employees.map((vendor) => (
+              <VendorCard
+                key={vendor._id}
+                vendor={vendor}
+                onEdit={() => setEditId(vendor._id!)}
+              />
+            ))}
           </Box>
         )}
+
         <Pagination
           page={page}
-          count={Math.ceil(totalItems / rowsPerPage)}
-          onChange={(_, value) => setPage(value)}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={(e) => setRowsPerPage(Number(e.target.value))}
+          pageSize={rowsPerPage}
+          total={totalItems}
+          onPageChange={setPage}
+          onPageSizeChange={handlePageSizeChange}
+          pageSizeOptions={VENDORS_ROWS_PER_PAGE_OPTIONS}
         />
+
         <VendorDialog
           open={open}
           editId={editId}
