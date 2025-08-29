@@ -44,7 +44,12 @@ const BookingCard: React.FC<BookingCardProps> = ({
   booking,
   onViewDetails,
 }) => {
-  const { updateBookingStatus, isLoading } = useCabBooking();
+  // don't auto-fetch the full cab-booking list when this card mounts;
+  // parent pages should control fetching. This prevents a vendor page
+  // from accidentally performing a protected READ.
+  const { updateBookingStatus, isLoading } = useCabBooking({
+    autoFetch: false,
+  });
   const { getCurrentRoleName } = useAuth();
   const [status, setStatus] = useState(booking.status);
   const [updating, setUpdating] = useState(false);
