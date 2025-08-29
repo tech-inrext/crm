@@ -53,6 +53,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
     requestedDateTime: getCurrentDateTime(),
     notes: "",
   });
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!showEmployeeDropdown) return;
@@ -79,20 +80,24 @@ const BookingForm: React.FC<BookingFormProps> = ({
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    const success = await onSubmit(formData);
-
-    if (success) {
-      // Reset form on success
-      setFormData({
-        project: "",
-        clientName: "",
-        numberOfClients: 1,
-        pickupPoint: "",
-        dropPoint: "",
-        employeeName: "",
-        requestedDateTime: getCurrentDateTime(),
-        notes: "",
-      });
+    setSubmitting(true);
+    try {
+      const success = await onSubmit(formData);
+      if (success) {
+        // Reset form on success
+        setFormData({
+          project: "",
+          clientName: "",
+          numberOfClients: 1,
+          pickupPoint: "",
+          dropPoint: "",
+          employeeName: "",
+          requestedDateTime: getCurrentDateTime(),
+          notes: "",
+        });
+      }
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -228,10 +233,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
         <div className="mt-6">
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isLoading || submitting}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
           >
-            {isLoading ? "Submitting..." : "Create Booking"}
+            {submitting || isLoading ? "Submitting..." : "Create Booking"}
           </button>
         </div>
       </form>

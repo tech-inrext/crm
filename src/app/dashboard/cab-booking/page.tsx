@@ -54,11 +54,16 @@ const CabBooking: React.FC<CabBookingProps> = ({
     clearMessages,
   } = useCabBooking();
 
+  // counter used to force child list to refetch when new bookings are created
+  const [refreshKey, setRefreshKey] = useState(0);
+
   const handleCreateBooking = async (formData: any) => {
     const success = await createBooking(formData);
     if (success) {
       setActiveView("tracking");
       setShowBookingDialog(false);
+      // bump refreshKey so BookingsList re-fetches immediately
+      setRefreshKey((k) => k + 1);
     }
     return success;
   };
@@ -169,11 +174,7 @@ const CabBooking: React.FC<CabBookingProps> = ({
         {activeView === "tracking" && (
           <div className="p-6 rounded-lg shadow bg-white">
             <h2 className="text-xl font-bold mb-4">Bookings</h2>
-            <BookingsList
-              bookings={bookings}
-              isLoading={isLoading}
-              statusFilter={statusFilter}
-            />
+            <BookingsList statusFilter={statusFilter} refreshKey={refreshKey} />
           </div>
         )}
       </div>
