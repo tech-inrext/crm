@@ -72,6 +72,13 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
   }, [booking]);
 
   if (!booking) return null;
+  const resolvedManagerName =
+    booking.managerName ||
+    (typeof booking.managerId === "object"
+      ? (booking.managerId as any)?.name || (booking.managerId as any)?.username
+      : null) ||
+    (booking as any).managerName ||
+    (typeof booking.managerId === "string" ? booking.managerId : "-");
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -178,11 +185,7 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
           <Box display="flex" alignItems="center" gap={1}>
             <AssignmentInd color="secondary" fontSize="small" />
             <Typography fontSize={15}>
-              <b>Manager:</b>{" "}
-              {managerName ||
-                (booking as any).managerName ||
-                booking.managerId ||
-                "-"}
+              <b>Manager:</b> {resolvedManagerName || "-"}
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>

@@ -4,6 +4,13 @@ export type Project = {
   name: string; 
 };
 
+export type EmployeeLite = {
+  _id: string;
+  name?: string;
+  username?: string;
+  email?: string;
+};
+
 // Booking type
 export type Booking = {
   _id: string;
@@ -45,6 +52,12 @@ export type Booking = {
   driver?: string;
   vehicle?: string;
   managerId?: string;
+  canApprove?: boolean;
+  // ✅ managerId can be id or populated object
+  managerId?: string | EmployeeLite;
+  // ✅ convenience added by API
+  managerName?: string;
+
   canApprove?: boolean;
 };
 

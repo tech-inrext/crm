@@ -5,28 +5,28 @@ import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 import Project from "@/models/Project";
 import mongoose from "mongoose";
+import { sendCabBookingApprovalEmail } from "@/lib/cabBookingApproval";
 
 // ✅ Create Booking
 const createBooking = async (req, res) => {
   try {
     const {
       cabBookedBy,
-      project,              // (String or Project _id as string)
+      project, // (String or Project _id as string)
       clientName,
       numberOfClients,
       pickupPoint,
       dropPoint,
-      employeeName,        // optional
-      teamLeader,          // User _id (required)
-      requestedDateTime,   // ISO string/date
-      status,              // optional: pending/approved/rejected/completed/cancelled
-      driver,              // optional: User _id
-      vehicle,             // optional: Vehicle _id
-      currentLocation,     // optional
-      estimatedArrival,    // optional (string)
-      notes,               // optional
+      employeeName, // optional
+      teamLeader, // User _id (required)
+      requestedDateTime, // ISO string/date
+      status, // optional: pending/approved/rejected/completed/cancelled
+      driver, // optional: User _id
+      vehicle, // optional: Vehicle _id
+      currentLocation, // optional
+      estimatedArrival, // optional (string)
+      notes, // optional
     } = req.body;
-
 
     const loggedInUserId = req.employee?._id;
     // Required fields check (per schema)
@@ -68,11 +68,17 @@ const createBooking = async (req, res) => {
     }
 
     // Get managerId from Employee model
-    const Employee = (await import('@/models/Employee')).default;
+    const Employee = (await import("@/models/Employee")).default;
     const employee = await Employee.findById(loggedInUserId);
     if (!employee) {
-      return res.status(400).json({ success: false, message: "Employee not found" });
+      return res
+        .status(400)
+        .json({ success: false, message: "Employee not found" });
     }
+
+    const managerObjectId = mongoose.isValidObjectId(employee.managerId)
+      ? new mongoose.Types.ObjectId(employee.managerId)
+      : undefined;
 
     const doc = new CabBooking({
       project,
@@ -90,7 +96,7 @@ const createBooking = async (req, res) => {
       currentLocation,
       estimatedArrival,
       notes,
-      managerId: employee.managerId,
+      managerId: managerObjectId,
     });
 
     await doc.save();
@@ -98,28 +104,10 @@ const createBooking = async (req, res) => {
     // Send email notification to manager
     try {
       const manager = await Employee.findById(employee.managerId);
-      if (manager && manager.email) {
-        const mailer = (await import('@/lib/mailer')).mailer;
-        await mailer({
-          to: manager.email,
-          subject: "Cab Booking Approval Request",
-          html: `
-            <p>Dear ${manager.name || "Manager"},</p>
-            <p>You have a new cab booking request from <b>${employee.name}</b> that requires your approval.</p>
-            <ul>
-              <li><b>Project:</b> ${doc.project}</li>
-              <li><b>Client Name:</b> ${doc.clientName}</li>
-              <li><b>Pickup Point:</b> ${doc.pickupPoint}</li>
-              <li><b>Drop Point:</b> ${doc.dropPoint}</li>
-              <li><b>Date/Time:</b> ${doc.requestedDateTime}</li>
-            </ul>
-            <p>Please <a href="${process.env.APP_URL || "https://dashboard.inrext.com"}/dashboard/cab-booking">log in</a> to review and approve or reject this request.</p>
-            <p>Thank you.</p>
-          `,
-        });
-      }
+      await sendCabBookingApprovalEmail({ manager, employee, booking: doc });
     } catch (err) {
-      // Optionally log error, but do not block
+      // Optionally log; don't block the request
+      // console.error("Email send failed:", err);
     }
 
     return res.status(201).json({ success: true, data: doc });
@@ -132,80 +120,138 @@ const createBooking = async (req, res) => {
   }
 };
 
-// ✅ Get All Bookings (pagination + search + filters)
+// ✅ Get All Bookings (pagination + status filter)
 const getAllBookings = async (req, res) => {
   const isManager = req.isManager || (res.locals && res.locals.isManager);
+
+  // Allow exactly these statuses
+  const ALLOWED_STATUSES = [
+    "pending",
+    "approved",
+    "rejected",
+    "active",
+    "completed",
+    "cancelled",
+  ];
+
   try {
     const {
       page = 1,
       limit = 10,
-      search = "",
-      status,           // optional filter
-      // teamLeader,       // optional User _id
-      driver,           // optional User _id
-      from,             // optional ISO date (requestedDateTime >= from)
-      to,               // optional ISO date (requestedDateTime <= to)
-      sortBy = "createdAt",   // createdAt | requestedDateTime | status
-      sortOrder = "desc",     // asc | desc
+      status, // optional: "pending" or CSV "pending,approved"
+      sortBy = "createdAt", // createdAt | requestedDateTime | status
+      sortOrder = "desc", // asc | desc
     } = req.query;
 
-    const currentPage = parseInt(page, 10);
-    const itemsPerPage = parseInt(limit, 10);
+    const currentPage = Math.max(1, parseInt(page, 10));
+    const itemsPerPage = Math.max(1, parseInt(limit, 10));
     const skip = (currentPage - 1) * itemsPerPage;
-
-
-    // Remove all filters: always return all bookings
-    const sort = {
-      [sortBy]: sortOrder === "asc" ? 1 : -1,
-    };
+    const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
 
     const loggedInUserId = req.employee?._id;
 
-    // Robust: managers see all bookings where managerId matches their user ID (as string), users see their own bookings
-  let filter;
-  if (isManager) {
-      // Find all employees whose managerId matches the logged-in manager's _id
-      const Employee = (await import('@/models/Employee')).default;
-      const directReports = await Employee.find({ managerId: String(loggedInUserId) }).select('_id name managerId');
-      const reportIds = directReports.map(e => String(e._id));
-      // Include manager's own bookings as well
-      filter = { cabBookedBy: { $in: [String(loggedInUserId), ...reportIds] } };
+    // ----- visibility: managers see theirs + direct reports; others see only theirs
+    let visibilityFilter;
+    let reportIds = [];
+    if (isManager) {
+      const Employee = (await import("@/models/Employee")).default;
+      const directReports = await Employee.find({
+        managerId: String(loggedInUserId),
+      })
+        .select("_id")
+        .lean();
+      reportIds = directReports.map((e) => String(e._id));
+      visibilityFilter = {
+        cabBookedBy: { $in: [String(loggedInUserId), ...reportIds] },
+      };
     } else {
-      filter = { cabBookedBy: String(loggedInUserId) };
+      visibilityFilter = { cabBookedBy: String(loggedInUserId) };
     }
+
+    // ----- status filter (optional; ignore if "all" or empty)
+    let statusFilter = {};
+    if (typeof status !== "undefined" && String(status).trim() !== "") {
+      const list = (Array.isArray(status) ? status : String(status).split(","))
+        .map((s) => s.trim().toLowerCase())
+        .filter(Boolean);
+
+      // if client sends "all", ignore filter
+      const filteredList = list.filter((s) => s !== "all");
+      const invalid = filteredList.filter((s) => !ALLOWED_STATUSES.includes(s));
+      if (invalid.length) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid status value(s): ${invalid.join(
+            ", "
+          )}. Allowed: ${ALLOWED_STATUSES.join(", ")}`,
+        });
+      }
+      if (filteredList.length) {
+        statusFilter = { status: { $in: filteredList } };
+      }
+    }
+
+    const mainFilter = { ...visibilityFilter, ...statusFilter };
+
     const [rows, total] = await Promise.all([
-      CabBooking.find(filter)
+      CabBooking.find(mainFilter)
         .skip(skip)
         .limit(itemsPerPage)
-        .sort(sort),
-      CabBooking.countDocuments(filter),
+        .sort(sort)
+        .populate({
+          path: "managerId",
+          model: "Employee",
+          select: "name username email",
+        })
+        .populate({
+          path: "driver",
+          model: "User",
+          select: "username phoneNumber",
+        })
+        .populate({
+          path: "vehicle",
+          model: "Vehicle",
+          select: "model registrationNumber type capacity",
+        }),
+      CabBooking.countDocuments(mainFilter),
     ]);
 
-    // Add canApprove property for each booking if the logged-in user is the manager for that booking
-    let bookingsWithApproval = rows;
+    // add canApprove + managerName like your current code
+    let data;
     if (isManager) {
-      // Get all direct report IDs
-      const Employee = (await import('@/models/Employee')).default;
-      const directReports = await Employee.find({ managerId: String(loggedInUserId) }).select('_id');
-      const reportIds = directReports.map(e => String(e._id));
-      bookingsWithApproval = rows.map(b => ({
-        ...b.toObject(),
-        canApprove:
-          String(b.managerId) === String(loggedInUserId) ||
-          reportIds.includes(String(b.cabBookedBy)),
-      }));
+      data = rows.map((b) => {
+        const obj = b.toObject();
+        return {
+          ...obj,
+          canApprove:
+            String(b.managerId?._id || b.managerId) ===
+              String(loggedInUserId) ||
+            reportIds.includes(String(b.cabBookedBy)),
+          managerName: obj.managerId?.name || obj.managerId?.username || null,
+        };
+      });
     } else {
-      bookingsWithApproval = rows.map(b => ({ ...b.toObject(), canApprove: false }));
+      data = rows.map((b) => {
+        const obj = b.toObject();
+        return {
+          ...obj,
+          canApprove: false,
+          managerName: obj.managerId?.name || obj.managerId?.username || null,
+        };
+      });
     }
 
     return res.status(200).json({
       success: true,
-      data: bookingsWithApproval,
+      data,
       pagination: {
         totalItems: total,
         currentPage,
         itemsPerPage,
         totalPages: Math.ceil(total / itemsPerPage),
+      },
+      appliedFilter: {
+        status: typeof status === "undefined" ? null : String(status),
       },
     });
   } catch (error) {
@@ -236,33 +282,37 @@ function withAuth(handler) {
 const handler = async (req, res) => {
   // Defensive ENV checks
   const missingVars = [];
-  if (!process.env.MONGODB_URI) missingVars.push('MONGODB_URI');
-  if (!process.env.SMTP_EMAIL) missingVars.push('SMTP_EMAIL');
-  if (!process.env.SMTP_PASS) missingVars.push('SMTP_PASS');
-  if (!process.env.EMAIL_FROM) missingVars.push('EMAIL_FROM');
+  if (!process.env.MONGODB_URI) missingVars.push("MONGODB_URI");
+  if (!process.env.SMTP_EMAIL) missingVars.push("SMTP_EMAIL");
+  if (!process.env.SMTP_PASS) missingVars.push("SMTP_PASS");
+  if (!process.env.EMAIL_FROM) missingVars.push("EMAIL_FROM");
   if (missingVars.length) {
-    console.error('Missing required environment variables:', missingVars.join(', '));
+    console.error(
+      "Missing required environment variables:",
+      missingVars.join(", ")
+    );
     return res.status(500).json({
       success: false,
-      message: `Missing required environment variables: ${missingVars.join(', ')}`,
-      error: 'Environment misconfiguration. Please set these variables in Vercel.'
+      message: `Missing required environment variables: ${missingVars.join(
+        ", "
+      )}`,
+      error:
+        "Environment misconfiguration. Please set these variables in Vercel.",
     });
   }
 
   try {
     await dbConnect();
   } catch (err) {
-    console.error('Database connection error:', err);
+    console.error("Database connection error:", err);
     return res.status(500).json({
       success: false,
-      message: 'Database connection error',
-      error: err.message
+      message: "Database connection error",
+      error: err.message,
     });
   }
 
-
-//it ends here
-
+  //it ends here
 
   if (req.method === "GET") {
     return getAllBookings(req, res);
