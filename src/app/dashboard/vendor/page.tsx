@@ -111,7 +111,22 @@ const Vendors: React.FC = () => {
             setOpen(false);
             setEditId(null);
           }}
-          onSave={editId ? updateVendor : addVendor}
+          onSave={async (values) => {
+            // Ensure dialog closes after successful save (add or edit).
+            try {
+              if (editId) {
+                // updateVendor expects (vendorId, data)
+                await updateVendor(editId, values as any);
+                setEditId(null);
+              } else {
+                await addVendor(values as any);
+              }
+              setOpen(false);
+            } catch (err) {
+              // rethrow so VendorDialog/Formik can handle submission errors
+              throw err;
+            }
+          }}
         />
       </Box>
     </PermissionGuard>

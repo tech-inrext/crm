@@ -17,14 +17,16 @@ import {
   DEPARTMENTS_API_BASE,
   BUTTON_LABELS,
 } from "@/constants/vendors";
-import { vendorValidationSchema } from "./vendor-dialog/validation";
+import {
+  vendorValidationSchema,
+  vendorAddValidationSchema,
+} from "./vendor-dialog/validation";
 import BasicInformation from "./vendor-dialog/BasicInformation";
 export interface VendorFormData {
   name: string;
   email: string;
   phone: string;
   address: string;
-  gender: string;
   age?: number;
   altPhone?: string;
   joiningDate?: string;
@@ -105,7 +107,9 @@ const VendorDialog: React.FC<VendorDialogProps> = ({
     >
       <Formik
         initialValues={initialData}
-        validationSchema={vendorValidationSchema}
+        validationSchema={
+          editId ? vendorValidationSchema : vendorAddValidationSchema
+        }
         enableReinitialize={true}
         onSubmit={async (values, { setSubmitting }) => {
           setSubmitting(true);

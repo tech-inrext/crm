@@ -28,10 +28,14 @@ const Notification: React.FC<NotificationProps> = ({
   if (!error && !success) return null;
 
   return (
-    <>
+    <div
+      aria-live="polite"
+      className="fixed right-4 flex flex-col items-end space-y-2"
+      style={{ top: 80, zIndex: 1400 }}
+    >
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md flex justify-between items-center">
-          <span>{error}</span>
+        <div className="max-w-sm w-full p-3 bg-red-100 text-red-700 rounded-md shadow-lg flex justify-between items-center transform transition-all duration-200">
+          <span className="mr-2">{error}</span>
           {onClear && (
             <button
               onClick={onClear}
@@ -44,8 +48,8 @@ const Notification: React.FC<NotificationProps> = ({
         </div>
       )}
       {success && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-md flex justify-between items-center">
-          <span>{success}</span>
+        <div className="max-w-sm w-full p-3 bg-green-100 text-green-700 rounded-md shadow-lg flex justify-between items-center transform transition-all duration-200">
+          <span className="mr-2">{success}</span>
           {onClear && (
             <button
               onClick={onClear}
@@ -57,7 +61,7 @@ const Notification: React.FC<NotificationProps> = ({
           )}
         </div>
       )}
-    </>
+    </div>
   );
 };
 

@@ -10,6 +10,8 @@ interface BookingsListProps {
    *  Else pass one of: pending|approved|rejected|active|completed|cancelled
    */
   statusFilter?: string;
+  // optional key that forces the list to refetch when incremented
+  refreshKey?: number;
 }
 
 type ApiResponse = {
@@ -23,7 +25,10 @@ type ApiResponse = {
   };
 };
 
-const BookingsList: React.FC<BookingsListProps> = ({ statusFilter = "" }) => {
+const BookingsList: React.FC<BookingsListProps> = ({
+  statusFilter = "",
+  refreshKey,
+}) => {
   const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
 
   // server-side pagination controls
@@ -77,7 +82,7 @@ const BookingsList: React.FC<BookingsListProps> = ({ statusFilter = "" }) => {
     return () => {
       active = false;
     };
-  }, [url]);
+  }, [url, refreshKey]);
 
   const handleViewDetails = (booking: Booking) => setViewingBooking(booking);
   const handleCloseDialog = () => setViewingBooking(null);

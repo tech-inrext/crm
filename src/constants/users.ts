@@ -55,7 +55,7 @@ export const USERS_PERMISSION_MODULE = "employee";
 // Validation Schema Constants
 export const VALIDATION_RULES = {
   NAME: { min: 2, max: 50 },
-  ADDRESS: { min: 5 },
+  ADDRESS: { min: 2 },
   AGE: { min: 0, max: 120 },
   DESIGNATION: { min: 2, max: 50 },
 };

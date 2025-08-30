@@ -4,7 +4,6 @@ import {
   Tooltip,
   Select,
   MenuItem,
-  CircularProgress,
   Chip,
   Box,
   Typography,
@@ -44,7 +43,12 @@ const BookingCard: React.FC<BookingCardProps> = ({
   booking,
   onViewDetails,
 }) => {
-  const { updateBookingStatus, isLoading } = useCabBooking();
+  // don't auto-fetch the full cab-booking list when this card mounts;
+  // parent pages should control fetching. This prevents a vendor page
+  // from accidentally performing a protected READ.
+  const { updateBookingStatus, isLoading } = useCabBooking({
+    autoFetch: false,
+  });
   const { getCurrentRoleName } = useAuth();
   const [status, setStatus] = useState(booking.status);
   const [updating, setUpdating] = useState(false);
@@ -107,13 +111,59 @@ const BookingCard: React.FC<BookingCardProps> = ({
         }}
         MenuProps={{ PaperProps: { style: { background: "#fff" } } }}
       >
-        {statusOptions
-          .filter((opt) => opt.value && opt.value !== "all")
-          .map((opt) => (
-            <MenuItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </MenuItem>
-          ))}
+        {
+          // Build options to render. For managers we want to show 'Pending' first
+          // when the current status is pending, then Approved and Rejected.
+          (() => {
+            if (isManager) {
+              const opts: typeof statusOptions = [];
+              // Always include the current status option first so the Select
+              // can render a value that might not be in the normal manager
+              // option list (for example 'active'). Avoid duplicates below.
+              const currentOpt = statusOptions.find((o) => o.value === status);
+              if (currentOpt) opts.push(currentOpt);
+
+              // Include pending only when current is pending or to let manager
+              // see pending -> approve/reject flow.
+              if (status === "pending") {
+                const pendingOpt = statusOptions.find(
+                  (o) => o.value === "pending"
+                );
+                if (
+                  pendingOpt &&
+                  !opts.find((x) => x.value === pendingOpt.value)
+                )
+                  opts.push(pendingOpt);
+              }
+
+              // always allow approve/reject for managers
+              const approveOpt = statusOptions.find(
+                (o) => o.value === "approved"
+              );
+              const rejectOpt = statusOptions.find(
+                (o) => o.value === "rejected"
+              );
+              if (approveOpt && !opts.find((x) => x.value === approveOpt.value))
+                opts.push(approveOpt);
+              if (rejectOpt && !opts.find((x) => x.value === rejectOpt.value))
+                opts.push(rejectOpt);
+
+              return opts.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ));
+            }
+
+            return statusOptions
+              .filter((opt) => opt.value && opt.value !== "all")
+              .map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ));
+          })()
+        }
       </Select>
     ) : (
       <Chip
@@ -272,9 +322,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
                 }}
               >
                 {renderStatus()}
-                {updating && (
-                  <CircularProgress size={14} sx={{ color: "primary.main" }} />
-                )}
                 {/* Assign Icon: Only show for approved bookings */}
                 {status === "approved" && (
                   <Tooltip title="Assign to Vendor">

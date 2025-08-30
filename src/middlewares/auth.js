@@ -67,7 +67,22 @@ export async function userAuth(req, res, next) {
     if (req.method === "DELETE") action = "delete";
 
     // 🛡️ Check permission
-    const hasAccess = await checkPermission(roleId, action, moduleName);
+    let hasAccess = await checkPermission(roleId, action, moduleName);
+
+    // Special-case: allow vendor-type roles to perform WRITE on "cab-booking"
+    // without requiring READ permission. This enables vendors to update/assign
+    // vendor-related fields but still prevents them from listing/reading all
+    // bookings if they don't have explicit READ access.
+    if (
+      !hasAccess &&
+      action === "write" &&
+      moduleName === "cab-booking" &&
+      role &&
+      typeof role.name === "string" &&
+      role.name.toLowerCase().includes("vendor")
+    ) {
+      hasAccess = true;
+    }
 
     if (!hasAccess) {
       return res.status(403).json({

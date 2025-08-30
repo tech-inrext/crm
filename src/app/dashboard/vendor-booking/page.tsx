@@ -29,7 +29,9 @@ const VendorBookingPage = () => {
   const [pageSize, setPageSize] = useState(5);
 
   // keep using your existing updater from the shared hook
-  const { updateBookingFields } = useCabBooking();
+  // do not autoFetch (GET /api/v0/cab-booking) for vendor users — they
+  // should use vendor-specific endpoints. We still need the updater.
+  const { updateBookingFields } = useCabBooking({ autoFetch: false });
 
   /** Fetch bookings for the *logged-in* vendor from /api/v0/cab-vendor/getAllBookingForVendor */
   const fetchVendorBookings = useCallback(

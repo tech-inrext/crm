@@ -6,14 +6,15 @@ import {
   Tooltip,
   Card,
   CardContent,
+  Chip,
+  Divider,
 } from "@mui/material";
 import Avatar from "@mui/material/Avatar";
 import Typography from "@mui/material/Typography";
-import EditIcon from "@mui/icons-material/Edit";
 import VisibilityIcon from "@mui/icons-material/Visibility";
-import ShareIcon from "@mui/icons-material/Share";
-import PermissionGuard from "@/components/PermissionGuard";
-import { VENDORS_PERMISSION_MODULE } from "@/constants/vendors";
+import PhoneIcon from "@mui/icons-material/Phone";
+import LocationOnIcon from "@mui/icons-material/LocationOn";
+import WorkIcon from "@mui/icons-material/Work";
 
 interface VendorCardProps {
   vendor: {
@@ -26,119 +27,185 @@ interface VendorCardProps {
   };
   onEdit?: () => void;
   onView?: () => void;
+  onCall?: (phone: string) => void;
 }
 
-const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit, onView }) => {
+const VendorCard: React.FC<VendorCardProps> = ({
+  vendor,
+  onEdit,
+  onView,
+  onCall,
+}) => {
+  // sanitize phone for tel: href (keep + and digits)
+  const phoneHref = vendor.phone ? vendor.phone.replace(/[^+\d]/g, "") : "";
   return (
     <Card
       elevation={3}
       sx={{
-        borderRadius: 3,
-        p: 1.2,
-        width: 300,
-        height: 170,
-        boxShadow: "0 4px 12px rgba(25, 118, 210, 0.15)",
-        background: "linear-gradient(135deg, #e3f2fd 0%, #f1f5fa 100%)",
-        transition: "transform 0.2s ease",
-        "&:hover": { transform: "translateY(-2px)" },
+        my: 1,
+        mx: { xs: "auto", sm: 0 },
+        borderRadius: 4,
+        p: 3,
+        width: { xs: "95%", sm: 290 },
+        minHeight: 140,
+        boxShadow: "0 6px 18px rgba(16,24,40,0.06)",
+        background:
+          "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(243,247,255,0.7) 100%)",
+        transition: "transform 0.18s ease, box-shadow 0.18s ease",
+        "&:hover": {
+          transform: "translateY(-4px)",
+          boxShadow: "0 10px 30px rgba(16,24,40,0.12)",
+        },
         display: "flex",
         flexDirection: "column",
-        gap: 0.5,
-        justifyContent: "flex-start",
+        gap: 1,
+        justifyContent: "space-between",
       }}
     >
-      {/* Header: Avatar + Name + Actions */}
       <Box
         sx={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          mb: 0.5,
         }}
       >
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.7 }}>
+        <Stack direction="row" spacing={1} alignItems="center">
           <Avatar
             src={vendor.avatarUrl}
             alt={vendor.name}
             sx={{
-              width: 40,
-              height: 40,
+              width: 48,
+              height: 48,
               fontWeight: 700,
               fontSize: 16,
               bgcolor: "primary.main",
               color: "white",
-              boxShadow: 2,
+              boxShadow: 3,
             }}
           >
             {vendor.name?.[0]?.toUpperCase()}
           </Avatar>
-          <Box>
-            <Typography
-              fontWeight={700}
-              fontSize={14}
-              color="text.primary"
-              noWrap
-            >
-              {vendor.name}
-            </Typography>
+          <Box sx={{ minWidth: 0 }}>
+            <Tooltip title={vendor.name} placement="top">
+              <Typography
+                fontWeight={700}
+                fontSize={15}
+                color="text.primary"
+                noWrap
+              >
+                {vendor.name}
+              </Typography>
+            </Tooltip>
             <Typography
               variant="body2"
               color="text.secondary"
               noWrap
-              sx={{ fontSize: 12 }}
+              sx={{ fontSize: 13 }}
             >
               {vendor.email}
             </Typography>
+            {vendor.designation && (
+              <Chip label={vendor.designation} size="small" sx={{ mt: 0.6 }} />
+            )}
           </Box>
-        </Box>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+        </Stack>
+
+        <Stack direction="row" spacing={0.5} alignItems="center">
           {onView && (
             <Tooltip title="View Details">
               <IconButton
                 size="small"
                 onClick={onView}
-                sx={{ background: "#fafafa", boxShadow: 1 }}
+                sx={{ background: "#ffffff", boxShadow: 1 }}
               >
                 <VisibilityIcon fontSize="small" />
               </IconButton>
             </Tooltip>
           )}
-          {onEdit && (
-            <PermissionGuard
-              module={VENDORS_PERMISSION_MODULE}
-              action="write"
-              fallback={<></>}
-            >
-              <IconButton
-                size="small"
-                onClick={onEdit}
-                aria-label="edit vendor"
-                sx={{ color: "primary.main" }}
-              >
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </PermissionGuard>
+        </Stack>
+      </Box>
+
+      <Divider />
+
+      <CardContent sx={{ py: 0, px: 0 }}>
+        <Stack direction="column" spacing={0.5}>
+          {vendor.phone && (
+            <Tooltip title={vendor.phone} placement="top">
+              <Stack direction="row" spacing={1} alignItems="center">
+                <PhoneIcon fontSize="small" color="action" />
+                {onCall ? (
+                  <Box
+                    component="button"
+                    onClick={() => onCall(vendor.phone!)}
+                    sx={{
+                      border: 0,
+                      background: "transparent",
+                      padding: 0,
+                      cursor: "pointer",
+                      textAlign: "left",
+                    }}
+                  >
+                    <Typography
+                      fontSize={13}
+                      color="text.primary"
+                      noWrap
+                      sx={{ minWidth: 0 }}
+                    >
+                      {vendor.phone}
+                    </Typography>
+                  </Box>
+                ) : (
+                  <Box
+                    component="a"
+                    href={`tel:${phoneHref}`}
+                    sx={{ textDecoration: "none" }}
+                  >
+                    <Typography
+                      fontSize={13}
+                      color="text.primary"
+                      noWrap
+                      sx={{ minWidth: 0 }}
+                    >
+                      {vendor.phone}
+                    </Typography>
+                  </Box>
+                )}
+              </Stack>
+            </Tooltip>
           )}
-        </Box>
-      </Box>
-      {/* Details Section */}
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 0.3 }}>
-        {vendor.phone && (
-          <Typography fontSize={12} color="text.primary">
-            <b>Phone:</b> {vendor.phone}
-          </Typography>
-        )}
-        {vendor.address && (
-          <Typography fontSize={12} color="text.primary">
-            <b>Address:</b> {vendor.address}
-          </Typography>
-        )}
-        {vendor.designation && (
-          <Typography fontSize={12} color="primary">
-            <b>Designation:</b> {vendor.designation}
-          </Typography>
-        )}
-      </Box>
+
+          {vendor.address && (
+            <Tooltip title={vendor.address} placement="top">
+              <Stack direction="row" spacing={1} alignItems="flex-start">
+                <LocationOnIcon
+                  fontSize="small"
+                  color="action"
+                  sx={{ mt: 0.1 }}
+                />
+                <Typography
+                  fontSize={13}
+                  color="text.primary"
+                  noWrap
+                  sx={{ minWidth: 0 }}
+                >
+                  {vendor.address}
+                </Typography>
+              </Stack>
+            </Tooltip>
+          )}
+
+          {/* small spacer for visual balance */}
+          <Box sx={{ height: 2 }} />
+          {vendor.designation && (
+            <Stack direction="row" spacing={1} alignItems="center">
+              <WorkIcon fontSize="small" color="action" />
+              <Typography fontSize={13} color="text.secondary">
+                {vendor.designation}
+              </Typography>
+            </Stack>
+          )}
+        </Stack>
+      </CardContent>
     </Card>
   );
 };
