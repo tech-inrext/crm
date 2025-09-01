@@ -88,8 +88,13 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             cabVendor: "cab-vendor",
             "cab-vendor": "cab-vendor",
           };
-          // Always map 'CabVendor' (display) to 'cab-vendor' (backend)
-          if (mod === "CabVendor") return "cab-vendor";
+          // Always map UI-friendly labels for cab vendors to 'cab-vendor' (backend)
+          if (
+            mod === "CabVendor" ||
+            mod === "Vendor booking" ||
+            mod.toLowerCase() === "vendor booking"
+          )
+            return "cab-vendor";
           return map[mod.toLowerCase()] || mod.toLowerCase();
         };
         // Normalize all module names to backend format for mapping
@@ -131,8 +136,18 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
 
   function capitalize(str: string) {
     if (str === "CabBooking") return "Cab Booking";
+    // Show friendly UI label for CabVendor without changing backend mapping
+    if (
+      str === "CabVendor" ||
+      str === "cab-vendor" ||
+      str.toLowerCase() === "cabvendor"
+    )
+      return "Vendor booking";
     return str.charAt(0).toUpperCase() + str.slice(1);
   }
+
+  // grid template for module rows + permission columns so checkboxes align
+  const gridTemplateColumns = `minmax(90px, 170px) repeat(${permissions.length}, 1fr)`;
 
   const handlePermChange = (mod: string, perm: string, checked: boolean) => {
     setModulePerms((prev) => ({
@@ -213,10 +228,17 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
               overflowX: "auto",
             }}
           >
-            <Box sx={{ display: "flex", gap: 1, alignItems: "center", mb: 1 }}>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: gridTemplateColumns,
+                alignItems: "center",
+                gap: 1,
+                mb: 1,
+              }}
+            >
               <Box
                 sx={{
-                  minWidth: 90,
                   fontWeight: 700,
                   color: "#1976d2",
                   fontSize: { xs: 13, sm: 15 },
@@ -228,11 +250,13 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
                 <Box
                   key={p}
                   sx={{
-                    flex: 1,
                     textAlign: "center",
                     fontWeight: 700,
                     color: "#1976d2",
                     fontSize: { xs: 13, sm: 15 },
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
                   }}
                 >
                   {p.charAt(0).toUpperCase() + p.slice(1)}
@@ -243,16 +267,15 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
               <Box
                 key={mod}
                 sx={{
-                  display: "flex",
-                  gap: 1,
+                  display: "grid",
+                  gridTemplateColumns: gridTemplateColumns,
                   alignItems: "center",
+                  gap: 1,
                   mb: 0.5,
-                  flexWrap: "wrap",
                 }}
               >
                 <Box
                   sx={{
-                    minWidth: 90,
                     fontWeight: 600,
                     color: "#333",
                     fontSize: { xs: 14, sm: 15 },
@@ -264,7 +287,6 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
                   <Box
                     key={mod + perm}
                     sx={{
-                      flex: 1,
                       textAlign: "center",
                       display: "flex",
                       alignItems: "center",

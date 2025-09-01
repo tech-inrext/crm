@@ -293,17 +293,39 @@ const Users: React.FC = () => {
           saving={saving}
           onClose={handleCloseDialog}
           onSave={async (values) => {
-            if (editId) {
-              // Remove fields that cannot be updated for existing users
-              const { email, phone, joiningDate, ...updateData } = values;
-              await updateUser(editId, updateData);
-            } else {
-              await addUser(values);
+            try {
+              if (editId) {
+                // Remove fields that cannot be updated for existing users
+                const { email, phone, joiningDate, ...updateData } = values;
+                await updateUser(editId, updateData);
+              } else {
+                await addUser(values);
+              }
+
+              handleCloseDialog();
+              setPage(1);
+              setSearch("");
+              await loadEmployees();
+            } catch (err: any) {
+              // Minimal user feedback: alert with server message when possible
+              const status =
+                err?.status ||
+                err?.statusCode ||
+                (err?.response && err.response.status);
+              const message =
+                err?.message ||
+                (err?.response &&
+                  err.response.data &&
+                  err.response.data.message) ||
+                "Failed to save user";
+              if (status === 409) {
+                // Duplicate user (email/phone)
+                window.alert(message || "User with same email or phone exists");
+              } else {
+                window.alert(message);
+              }
+              // keep dialog open so user can correct input
             }
-            handleCloseDialog();
-            setPage(1);
-            setSearch("");
-            await loadEmployees();
           }}
         />
       </PermissionGuard>

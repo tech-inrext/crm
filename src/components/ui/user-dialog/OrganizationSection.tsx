@@ -5,6 +5,7 @@ import {
   MenuItem,
   Typography,
   Autocomplete,
+  Popper,
 } from "@mui/material";
 import { Field, FieldProps } from "formik";
 import { FIELD_LABELS } from "@/constants/users";
@@ -22,6 +23,10 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   roles,
   setFieldValue,
 }) => {
+  // custom Popper to force placement below the input
+  const AutocompletePopper = (props: any) => (
+    <Popper {...props} placement="bottom-start" />
+  );
   return (
     <>
       <Typography variant="h6" sx={{ mt: 2, fontWeight: 600 }}>
@@ -36,24 +41,70 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
         }}
       >
         <Field name="managerId">
-          {({ field, meta }: FieldProps) => (
-            <TextField
-              {...field}
-              label={FIELD_LABELS.MANAGER}
-              select
-              fullWidth
-              margin="normal"
-              error={!!meta.touched && !!meta.error}
-              helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-            >
-              {managers.map((mgr) => (
-                <MenuItem key={mgr._id} value={mgr._id}>
-                  {mgr.name}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
+          {({ field, form, meta }: FieldProps & { form?: any }) => {
+            const selected =
+              managers.find((m) => m._id === field.value) || null;
+
+            return (
+              <Autocomplete
+                options={managers}
+                getOptionLabel={(option: any) =>
+                  option?.name || option?.email || ""
+                }
+                disablePortal
+                PopperComponent={AutocompletePopper}
+                filterOptions={(options, state) =>
+                  options.filter((opt: any) =>
+                    `${(opt.name || "").toLowerCase()} ${(
+                      opt.email || ""
+                    ).toLowerCase()}`.includes(
+                      (state.inputValue || "").toLowerCase()
+                    )
+                  )
+                }
+                value={selected}
+                onChange={(_, value) => {
+                  // prefer form.setFieldValue when available, fallback to prop
+                  if (form && typeof form.setFieldValue === "function") {
+                    form.setFieldValue(field.name, value ? value._id : "");
+                  } else {
+                    setFieldValue(field.name, value ? value._id : "");
+                  }
+                }}
+                isOptionEqualToValue={(option, value) =>
+                  option._id === value?._id
+                }
+                renderOption={(props, option: any) => (
+                  <li {...props} key={option._id}>
+                    <Box>
+                      <Typography component="div">{option.name}</Typography>
+                      <Typography
+                        component="div"
+                        variant="body2"
+                        color="text.secondary"
+                      >
+                        {option.email}
+                      </Typography>
+                    </Box>
+                  </li>
+                )}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    name={field.name}
+                    label={FIELD_LABELS.MANAGER}
+                    margin="normal"
+                    fullWidth
+                    error={!!meta.touched && !!meta.error}
+                    helperText={meta.touched && meta.error}
+                    onBlur={field.onBlur}
+                    sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+                  />
+                )}
+                sx={{ flex: 1 }}
+              />
+            );
+          }}
         </Field>
         <Field name="departmentId">
           {({ field, meta }: FieldProps) => (

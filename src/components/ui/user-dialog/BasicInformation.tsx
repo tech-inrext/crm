@@ -13,6 +13,21 @@ interface BasicInformationProps {
 }
 
 const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
+  // Convert various date representations to a yyyy-mm-dd string suitable for
+  // an HTML date input. This preserves the local date instead of shifting
+  // across timezones (which toISOString() alone would do).
+  const toDateInputString = (value: any): string => {
+    if (!value) return "";
+    // already in yyyy-mm-dd form
+    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value))
+      return value;
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return "";
+    // adjust to local date by removing timezone offset
+    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
+    return local.toISOString().slice(0, 10);
+  };
+
   return (
     <>
       <Typography variant="h6" sx={{ mt: 1, fontWeight: 600 }}>
@@ -158,13 +173,9 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
       >
         <Field name="joiningDate">
           {({ field, meta }: FieldProps) => {
-            let displayValue = "";
-            if (editId && field.value) {
-              const dateObj = new Date(field.value);
-              if (!isNaN(dateObj.getTime())) {
-                displayValue = dateObj.toISOString().slice(0, 10);
-              }
-            }
+            const displayValue = editId
+              ? toDateInputString(field.value)
+              : undefined;
 
             return editId ? (
               <TextField
@@ -174,7 +185,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                 margin="normal"
                 InputLabelProps={{ shrink: true }}
                 InputProps={{ readOnly: true }}
-                sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+                sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1, height: 56 }}
               />
             ) : (
               <TextField
@@ -183,6 +194,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                 type="date"
                 fullWidth
                 margin="normal"
+                // Always shrink label for native date inputs to avoid overlap
                 InputLabelProps={{ shrink: true }}
                 error={!!meta.touched && !!meta.error}
                 helperText={meta.touched && meta.error}
@@ -190,16 +202,26 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                   bgcolor: "#fff",
                   borderRadius: 1,
                   flex: 1,
-                  height: 48,
+                  height: 56,
                   '& input[type="date"]': {
-                    height: "48px",
+                    height: "56px",
                     fontSize: "16px",
                     WebkitAppearance: "none",
                     MozAppearance: "textfield",
                     appearance: "none",
                     lineHeight: "normal",
-                    padding: "12px 14px",
+                    padding: "0 14px",
                   },
+                }}
+                onChange={(e) => {
+                  // ensure Formik receives yyyy-mm-dd string
+                  const v = e.target.value || "";
+                  // Manually call the field.onChange to keep formik synced
+                  if (field.name && (field as any).onChange) {
+                    (field as any).onChange({
+                      target: { name: field.name, value: v },
+                    });
+                  }
                 }}
               />
             );

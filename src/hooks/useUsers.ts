@@ -68,7 +68,17 @@ export function useUsers(debouncedSearch: string) {
         await axios.post(USERS_API_BASE, userData);
         await loadEmployees(page, rowsPerPage, debouncedSearch, false);
       } catch (error) {
+        // Normalize axios errors so caller can show friendly messages
         console.error("Failed to add user:", error);
+        // If axios error with response, include status and message
+        if (error && error.response) {
+          const { status, data } = error.response;
+          const message = (data && data.message) || error.message || "Request failed";
+          const err = new Error(message);
+          // @ts-ignore attach status for callers that want to inspect it
+          err.status = status;
+          throw err;
+        }
         throw error;
       } finally {
         setSaving(false);

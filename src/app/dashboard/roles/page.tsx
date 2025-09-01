@@ -32,10 +32,13 @@ const modules = [
   "CabBooking",
   "CabVendor",
   "Vendor",
-  "CabVendor", // Display name, but will be mapped to 'cab-vendor' for backend
 ];
+
+// Defensive: ensure modules passed to UI are unique to avoid React key collisions
+const uniqueModules = Array.from(new Set(modules));
+
 const initialModulePerms = Object.fromEntries(
-  modules.map((m) => [m, { read: false, write: false, delete: false }])
+  uniqueModules.map((m) => [m, { read: false, write: false, delete: false }])
 );
 
 const Roles: React.FC = () => {
@@ -222,7 +225,7 @@ const Roles: React.FC = () => {
       <AddRoleDialog
         open={addOpen}
         role={editRole}
-        modules={modules}
+        modules={uniqueModules}
         permissions={ROLE_PERMISSIONS}
         onSubmit={handleAddOrEditRole}
         onClose={() => {
