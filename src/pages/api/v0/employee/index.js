@@ -4,6 +4,8 @@ import Role from "../../../../models/Role"; // role model
 import bcrypt from "bcrypt";
 import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
+import { sendNewEmployeeWelcomeEmail } from "@/lib/emails/newEmployeeWelcome";
+import { sendManagerNewReportEmail } from "@/lib/emails/managerNewReport";
 
 // ✅ Create new employee (WRITE Access Required)
 const createEmployee = async (req, res) => {
@@ -69,6 +71,28 @@ const createEmployee = async (req, res) => {
     });
 
     await newEmployee.save();
+
+    // 1) Send welcome email to employee
+    try {
+      await sendNewEmployeeWelcomeEmail({ employee: newEmployee.toObject() });
+    } catch (e) {
+      console.error("[employee:create] welcome email failed:", e);
+    }
+
+    // 2) Send email to manager (if managerId is provided)
+    if (managerId) {
+      try {
+        const managerDoc = await Employee.findById(managerId).lean();
+        if (managerDoc?.email) {
+          await sendManagerNewReportEmail({
+            manager: managerDoc,
+            employee: newEmployee.toObject(),
+          });
+        }
+      } catch (e) {
+        console.error("[employee:create] manager email failed:", e);
+      }
+    }
 
     return res.status(201).json({ success: true, data: newEmployee });
   } catch (error) {
