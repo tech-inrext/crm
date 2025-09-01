@@ -79,11 +79,11 @@ const Users: React.FC = () => {
   };
 
   const handleCloseDialog = () => {
-  setOpen(false);
-  setSelectedUser(null);
-  setEditId(null);
-  setForm(DEFAULT_USER_FORM); 
-};
+    setOpen(false);
+    setSelectedUser(null);
+    setEditId(null);
+    setForm(DEFAULT_USER_FORM);
+  };
 
   const usersTableHeader = USERS_TABLE_HEADER.map((header) =>
     header.label === "Actions"

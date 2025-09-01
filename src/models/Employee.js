@@ -66,14 +66,14 @@ const employeeSchema = new mongoose.Schema(
     departmentId: {
       type: String,
       trim: true,
-      minlength: [2, "Department ID must be at least 2 characters long"],
+      // minlength: [2, "Department ID must be at least 2 characters long"],
       // required: [true, "Department ID is required"],
       default: null,
     },
     managerId: {
       type: String,
       trim: true,
-      minlength: [2, "Manager ID must be at least 2 characters long"],
+      // minlength: [2, "Manager ID must be at least 2 characters long"],
       // required: [true, "Manager ID is required"],
       default: null,
     },
