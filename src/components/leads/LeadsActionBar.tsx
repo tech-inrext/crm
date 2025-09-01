@@ -63,7 +63,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
         gap: { xs: 1.5, sm: 2, md: 3 },
         alignItems: { xs: "stretch", md: "center" },
         width: "100%",
-        overflow: "hidden",
+        overflow: "visible",
       }}
     >
       {/* Controls Row */}
@@ -80,15 +80,17 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
         {/* Search Bar */}
         <Box
           sx={{
-            width: { xs: "100%", sm: "auto" },
+            width: "100%",
+            flexGrow: 1,
             order: { xs: 1, sm: 1 },
+            minWidth: 0, // allow child to shrink below its intrinsic width
           }}
         >
           <SearchBar
             sx={{
-              width: { xs: "100%", sm: 280 },
-              minWidth: { xs: "100%", sm: 280 },
-              maxWidth: { xs: "100%", sm: 320 },
+              width: "100%",
+              minWidth: 0,
+              maxWidth: "100%",
               "& .MuiInputBase-input": {
                 textAlign: "center",
               },
@@ -161,6 +163,10 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
             width: { xs: "100%", sm: "auto" },
             alignItems: "stretch",
             order: { xs: 3, sm: 3 },
+            // Prevent button text from wrapping and being clipped
+            "& .MuiButton-root": {
+              whiteSpace: "nowrap",
+            },
           }}
         >
           <PermissionGuard module="lead" action="write" fallback={<></>}>

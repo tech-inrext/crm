@@ -15,7 +15,7 @@ export const MODULE_LAYOUT_STYLES = {
   headerPaper: {
     p: { xs: 1, sm: 2, md: 3 },
     borderRadius: { xs: 1, sm: 2, md: 3 },
-  mb: 0, // No bottom margin below header
+  mb: { xs: 1.5, sm: 2, md: 3 }, // add bottom margin so content below isn't touched
     mt: 0, // Removed top margin from headerPaper
     background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
     overflow: "hidden",
