@@ -50,7 +50,18 @@ export default function ForgotPasswordDialog({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
       });
-      const data = await res.json();
+
+      // Defensive parsing: server may return non-JSON (HTML/text) in some error
+      // situations (proxies, platform error pages). Try JSON first, otherwise
+      // fallback to text so we can show a readable message instead of crashing.
+      let data: any = null;
+      try {
+        data = await res.json();
+      } catch (parseErr) {
+        const text = await res.text();
+        data = { message: text || "Unknown error" };
+      }
+
       if (!res.ok) throw new Error(data.message || "Failed to send OTP");
       setStep("otp");
       setSuccess("OTP sent to your email.");
