@@ -55,6 +55,18 @@ async function patchBooking(req, res) {
     if (req.body.vehicle) update.vehicle = req.body.vehicle; // Vehicle ref
     if (req.body.managerId) update.managerId = req.body.managerId;
 
+    // Permission guard: only system-admins may move a booking from payment_due -> completed
+    if (
+      update.status === "completed" &&
+      booking.status === "payment_due" &&
+      !(req.isSystemAdmin || (res.locals && res.locals.isSystemAdmin))
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "Only system administrators can mark a payment-due booking as completed.",
+      });
+    }
+
     const updated = await CabBooking.findByIdAndUpdate(id, update, {
       new: true,
     });

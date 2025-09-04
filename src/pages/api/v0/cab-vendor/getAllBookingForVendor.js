@@ -15,6 +15,7 @@ const ALLOWED_STATUSES = [
   "active",
   "completed",
   "cancelled",
+  "payment_due",
 ];
 
 // GET /api/v0/cab-booking/vendor

@@ -87,8 +87,8 @@ const VendorBookingPage = () => {
         return;
       }
 
-      // persist fields and mark completed
-      const payload = { ...formData, status: "completed" };
+      // persist fields and mark payment due (vendor completed form)
+      const payload = { ...formData, status: "payment_due" };
       if (bookingId && updateBookingFields) {
         const ok = await updateBookingFields(bookingId, payload);
         if (!ok) {

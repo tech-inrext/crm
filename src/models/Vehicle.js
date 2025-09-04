@@ -48,6 +48,5 @@ vehicleSchema.index({ registrationNumber: 1 });
 vehicleSchema.index({ isAvailable: 1 });
 vehicleSchema.index({ status: 1 });
 
-const Vehicle = mongoose.model('Vehicle', vehicleSchema);
-
-module.exports = Vehicle;
+// Guarded model registration to avoid OverwriteModelError during hot reloads
+export default mongoose.models.Vehicle || mongoose.model('Vehicle', vehicleSchema);

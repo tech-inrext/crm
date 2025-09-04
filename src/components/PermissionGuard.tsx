@@ -20,6 +20,21 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
 }) => {
   const { getPermissions } = useAuth();
   const permissions = getPermissions(module);
+  const { user } = useAuth();
+
+  // Determine if the currently selected role is marked system-admin.
+  let isSystemAdmin = false;
+  if (user) {
+    let currentRole = user.currentRole;
+    if (typeof currentRole === "string" && user.roles) {
+      currentRole = user.roles.find((r) => r._id === currentRole);
+    }
+    if (currentRole && typeof currentRole !== "string") {
+      const v = (currentRole as any).isSystemAdmin;
+      isSystemAdmin =
+        typeof v === "string" ? v.toLowerCase() === "true" : Boolean(v);
+    }
+  }
 
   let hasAccess = false;
   switch (action) {
@@ -27,7 +42,12 @@ const PermissionGuard: React.FC<PermissionGuardProps> = ({
       hasAccess = permissions.hasReadAccess;
       break;
     case "write":
-      hasAccess = permissions.hasWriteAccess;
+      // Allow system-admins to perform write actions for cab-booking (assign vendor)
+      if (isSystemAdmin && module === "cab-booking") {
+        hasAccess = true;
+      } else {
+        hasAccess = permissions.hasWriteAccess;
+      }
       break;
     case "delete":
       hasAccess = permissions.hasDeleteAccess;

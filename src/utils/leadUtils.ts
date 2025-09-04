@@ -219,7 +219,9 @@ export const transformAPIRole = (apiRole: any): any => {
     // Also keep the original arrays for easier access
     read: apiRole.read,
     write: apiRole.write,
-    delete: apiRole.delete,
+  delete: apiRole.delete,
+  // preserve system admin flag if present
+  isSystemAdmin: Boolean(apiRole.isSystemAdmin),
   };
 };
 
@@ -231,7 +233,9 @@ export const transformToAPIRole = (role: any) => {
       name: role.name,
       read: role.read || [],
       write: role.write || [],
-      delete: role.delete || [],
+  delete: role.delete || [],
+  // preserve isSystemAdmin flag when present
+  isSystemAdmin: Boolean((role as any).isSystemAdmin),
     };
   }
 
@@ -269,6 +273,8 @@ export const transformToAPIRole = (role: any) => {
     name: role.name,
     read,
     write,
-    delete: deletePerms,
+  delete: deletePerms,
+  // if original role object had isSystemAdmin, carry it through
+  isSystemAdmin: Boolean((role as any).isSystemAdmin),
   };
 };

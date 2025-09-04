@@ -6,7 +6,7 @@ import { userAuth } from "../../../../middlewares/auth";
 // ✅ Create a new role (requires WRITE access on "role")
 const createRole = async (req, res) => {
   try {
-    const { name, read, write, delete: deleteItems } = req.body;
+  const { name, read, write, delete: deleteItems, isSystemAdmin } = req.body;
 
     if (!name) {
       return res.status(400).json({
@@ -19,7 +19,8 @@ const createRole = async (req, res) => {
       name,
       read,
       write,
-      delete: deleteItems,
+  delete: deleteItems,
+  isSystemAdmin: !!isSystemAdmin,
     });
 
     await newRole.save();

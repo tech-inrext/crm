@@ -22,7 +22,11 @@ import {
 import MODULE_STYLES from "@/styles/moduleStyles";
 import Avatar from "@/components/ui/Avatar";
 import { Booking } from "@/types/cab-booking";
-import { formatDateTime, getProjectName } from "@/constants/cab-booking";
+import {
+  formatDateTime,
+  getProjectName,
+  statusOptions,
+} from "@/constants/cab-booking";
 import { useEffect, useState } from "react";
 
 interface BookingDetailsDialogProps {
@@ -146,7 +150,10 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
           </Box>
           <Box flex={1} />
           <Chip
-            label={booking.status}
+            label={
+              statusOptions.find((o) => o.value === booking.status)?.label ||
+              booking.status
+            }
             color={
               booking.status === "approved"
                 ? "success"
@@ -154,6 +161,8 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
                 ? "info"
                 : booking.status === "completed"
                 ? "secondary"
+                : booking.status === "payment_due"
+                ? "warning"
                 : "error"
             }
             sx={{

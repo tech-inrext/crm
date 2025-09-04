@@ -71,8 +71,16 @@ const BookingsList: React.FC<BookingsListProps> = ({
         const json: ApiResponse = await res.json();
         if (!active) return;
         setRows(json.data || []);
-        setTotalItems(json.pagination?.totalItems ?? 0);
-        setTotalPages(json.pagination?.totalPages ?? 1);
+        const respTotal = json.pagination?.totalItems ?? 0;
+        const respTotalPages = json.pagination?.totalPages ?? 1;
+        const respPage = json.pagination?.currentPage ?? page;
+        setTotalItems(respTotal);
+        setTotalPages(respTotalPages);
+        // If server adjusted the page (e.g. requested page was beyond last page),
+        // update client page state so UI syncs to server.
+        if (respPage !== page) {
+          setPage(respPage);
+        }
       } catch (e: any) {
         if (active) setErr(e?.message || "Failed to load bookings");
       } finally {

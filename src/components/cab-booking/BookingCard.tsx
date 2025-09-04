@@ -20,6 +20,7 @@ import {
 } from "@mui/icons-material";
 import AssignVendorDialog from "./AssignVendorDialog";
 import VendorBookingForm from "./VendorBookingForm";
+import PermissionGuard from "@/components/PermissionGuard";
 import CardComponent from "@/components/ui/Card";
 import Avatar from "@/components/ui/Avatar";
 import MODULE_STYLES from "@/styles/moduleStyles";
@@ -49,7 +50,20 @@ const BookingCard: React.FC<BookingCardProps> = ({
   const { updateBookingStatus, isLoading } = useCabBooking({
     autoFetch: false,
   });
-  const { getCurrentRoleName } = useAuth();
+  const { user } = useAuth();
+  // Determine if current selected role is a system admin (normalized)
+  let isSystemAdmin = false;
+  if (user) {
+    let currentRole = user.currentRole;
+    if (typeof currentRole === "string" && user.roles) {
+      currentRole = user.roles.find((r) => r._id === currentRole);
+    }
+    if (currentRole && typeof currentRole !== "string") {
+      const v = (currentRole as any).isSystemAdmin;
+      isSystemAdmin =
+        typeof v === "string" ? v.toLowerCase() === "true" : Boolean(v);
+    }
+  }
   const [status, setStatus] = useState(booking.status);
   const [updating, setUpdating] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
@@ -323,20 +337,28 @@ const BookingCard: React.FC<BookingCardProps> = ({
               >
                 {renderStatus()}
                 {/* Assign Icon: Only show for approved bookings */}
-                {status === "approved" && (
-                  <Tooltip title="Assign to Vendor">
-                    <IconButton
-                      size="small"
-                      onClick={() => setAssignOpen(true)}
-                      sx={{
-                        background: "#fafafa",
-                        boxShadow: 1,
-                        "&:hover": { background: "#f0f0f0" },
-                      }}
-                    >
-                      <AssignmentInd fontSize="small" />
-                    </IconButton>
-                  </Tooltip>
+                {isSystemAdmin && (
+                  <PermissionGuard
+                    module="cab-booking"
+                    action="write"
+                    fallback={null}
+                  >
+                    {status === "approved" && (
+                      <Tooltip title="Assign to Vendor">
+                        <IconButton
+                          size="small"
+                          onClick={() => setAssignOpen(true)}
+                          sx={{
+                            background: "#fafafa",
+                            boxShadow: 1,
+                            "&:hover": { background: "#f0f0f0" },
+                          }}
+                        >
+                          <AssignmentInd fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                  </PermissionGuard>
                 )}
                 {/* Form Button: Show for vendor bookings with status active */}
                 {/* Form Button removed. Vendor form dialog is now managed in vendor booking dashboard. */}
