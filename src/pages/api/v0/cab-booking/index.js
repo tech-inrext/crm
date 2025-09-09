@@ -4,7 +4,10 @@ import CabBooking from "../../../../models/CabBooking";
 import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 import Project from "@/models/Project";
+// Ensure Vehicle model is registered with mongoose before any populate calls
+import "@/models/Vehicle";
 import mongoose from "mongoose";
+
 import { sendCabBookingApprovalEmail } from "@/lib/cabBookingApproval";
 
 // ✅ Create Booking
@@ -123,6 +126,8 @@ const createBooking = async (req, res) => {
 // ✅ Get All Bookings (pagination + status filter)
 const getAllBookings = async (req, res) => {
   const isManager = req.isManager || (res.locals && res.locals.isManager);
+  // If middleware attached isSystemAdmin, allow full visibility across all bookings
+  const isSystemAdmin = req.isSystemAdmin || (res.locals && res.locals.isSystemAdmin);
 
   // Allow exactly these statuses
   const ALLOWED_STATUSES = [
@@ -131,7 +136,8 @@ const getAllBookings = async (req, res) => {
     "rejected",
     "active",
     "completed",
-    "cancelled",
+  "cancelled",
+  "payment_due",
   ];
 
   try {
@@ -150,10 +156,13 @@ const getAllBookings = async (req, res) => {
 
     const loggedInUserId = req.employee?._id;
 
-    // ----- visibility: managers see theirs + direct reports; others see only theirs
+    // ----- visibility: system-admins see all; managers see theirs + direct reports; others see only theirs
     let visibilityFilter;
     let reportIds = [];
-    if (isManager) {
+    if (isSystemAdmin) {
+      // no visibility restrictions for system admins
+      visibilityFilter = {};
+    } else if (isManager) {
       const Employee = (await import("@/models/Employee")).default;
       const directReports = await Employee.find({
         managerId: String(loggedInUserId),
@@ -193,7 +202,7 @@ const getAllBookings = async (req, res) => {
 
     const mainFilter = { ...visibilityFilter, ...statusFilter };
 
-    const [rows, total] = await Promise.all([
+  const [rows, total] = await Promise.all([
       CabBooking.find(mainFilter)
         .skip(skip)
         .limit(itemsPerPage)
@@ -205,7 +214,7 @@ const getAllBookings = async (req, res) => {
         })
         .populate({
           path: "driver",
-          model: "User",
+          model: "Employee",
           select: "username phoneNumber",
         })
         .populate({
@@ -216,10 +225,33 @@ const getAllBookings = async (req, res) => {
       CabBooking.countDocuments(mainFilter),
     ]);
 
+    // Ensure totalPages is at least 1 to avoid client-side division/zero issues
+    const computedTotalPages = Math.max(1, Math.ceil(total / itemsPerPage));
+
+    // If client requested a page beyond the total pages, fetch the last page instead
+    let rowsToUse = rows;
+    if (currentPage > computedTotalPages) {
+      const lastSkip = (computedTotalPages - 1) * itemsPerPage;
+      rowsToUse = await CabBooking.find(mainFilter)
+        .skip(lastSkip)
+        .limit(itemsPerPage)
+        .sort(sort)
+        .populate({
+          path: "managerId",
+          model: "Employee",
+          select: "name username email",
+        })
+        .populate({ path: "driver", model: "Employee", select: "username phoneNumber" })
+        .populate({ path: "vehicle", model: "Vehicle", select: "model registrationNumber type capacity" });
+      // adjust currentPage so response reflects the actual page returned
+      // (client may wish to update its UI accordingly)
+      // Note: we will return computedTotalPages in pagination below
+    }
+
     // add canApprove + managerName like your current code
     let data;
     if (isManager) {
-      data = rows.map((b) => {
+      data = rowsToUse.map((b) => {
         const obj = b.toObject();
         return {
           ...obj,
@@ -231,7 +263,7 @@ const getAllBookings = async (req, res) => {
         };
       });
     } else {
-      data = rows.map((b) => {
+      data = rowsToUse.map((b) => {
         const obj = b.toObject();
         return {
           ...obj,
@@ -246,9 +278,9 @@ const getAllBookings = async (req, res) => {
       data,
       pagination: {
         totalItems: total,
-        currentPage,
+        currentPage: Math.min(currentPage, computedTotalPages),
         itemsPerPage,
-        totalPages: Math.ceil(total / itemsPerPage),
+        totalPages: computedTotalPages,
       },
       appliedFilter: {
         status: typeof status === "undefined" ? null : String(status),

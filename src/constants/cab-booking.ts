@@ -6,6 +6,7 @@ export const statusOptions = [
   { value: 'completed', label: 'Completed' },
   { value: 'cancelled', label: 'Cancelled' },
   { value: 'rejected', label: 'Rejected' },
+  { value: 'payment_due', label: 'Payment Due' },
 ];
 export const DEFAULT_PROJECTS = [
   { _id: "1", name: "Urbainia Trinity NX" },
@@ -30,6 +31,8 @@ export const getStatusColor = (status: string): string => {
       return "#4CAF50";
     case "completed":
       return "#9C27B0";
+    case "payment_due":
+      return "#FF9800"; // orange for payment due
     case "cancelled":
       return "#F44336";
     default:

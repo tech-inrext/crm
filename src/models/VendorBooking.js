@@ -45,8 +45,4 @@ const vendorBookingSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
-const VendorBooking = mongoose.model('VendorBooking', vendorBookingSchema);
-
-// support both CommonJS and ESM default import consumers
-module.exports = VendorBooking;
-export default VendorBooking;
+export default mongoose.models.VendorBooking || mongoose.model('VendorBooking', vendorBookingSchema);

@@ -44,10 +44,10 @@ const AssignVendorDialog: React.FC<AssignVendorDialogProps> = ({
   const [query, setQuery] = useState("");
   const [lastCount, setLastCount] = useState<number | null>(null);
   const [lastError, setLastError] = useState<string | null>(null);
-  // Fetch cab-vendor records from backend. Use debounced query to avoid
-  // spamming the API while typing. Results are mapped to the local Vendor
-  // shape; we prefer cabOwnerName/driverName and fall back to pickup/drop for
-  // secondary info when email/phone are missing.
+  // Fetch vendor list when dialog opens. Prefer employees flagged with
+  // isCabVendor === true (current flow). If none found, fall back to the
+  // legacy cab-vendor endpoint to support older data.
+  // Use debounced query and AbortController to avoid spamming the API.
   useEffect(() => {
     if (!open) return;
 
@@ -62,7 +62,39 @@ const AssignVendorDialog: React.FC<AssignVendorDialogProps> = ({
         params.set("limit", "50");
         if (query) params.set("search", query);
 
-        // explicit credentials to ensure cookies are sent to protected API
+        // 1) Prefer employees flagged as cab vendors
+        try {
+          const empRes = await fetch(
+            `/api/v0/employee/getAllEmployeeList?${params.toString()}`,
+            { signal: controller.signal, credentials: "include" }
+          );
+          const empJson = await empRes.json();
+          const empRows = Array.isArray(empJson.data) ? empJson.data : [];
+          const cabEmps = empRows.filter((e: any) => Boolean(e.isCabVendor));
+
+          if (!active) return;
+
+          if (cabEmps.length > 0) {
+            setLastCount(cabEmps.length);
+            setLastError(null);
+            const empMapped: Vendor[] = cabEmps.map((e: any) => ({
+              _id: e._id,
+              name: e.name || `Employee ${e._id}`,
+              email: e.email || "",
+              phone: e.phone || "",
+            }));
+            setVendors(empMapped);
+            return; // done
+          }
+        } catch (empErr) {
+          // allow falling back to legacy cab-vendor if employee fetch fails
+          console.warn(
+            "Employee fetch failed, falling back to cab-vendor",
+            empErr
+          );
+        }
+
+        // 2) Legacy: fetch cab-vendor records
         const res = await fetch(`/api/v0/cab-vendor?${params.toString()}`, {
           signal: controller.signal,
           credentials: "include",
@@ -82,37 +114,10 @@ const AssignVendorDialog: React.FC<AssignVendorDialogProps> = ({
             (r.bookedBy && r.bookedBy.phone) || r.phone || r.driverPhone || "",
         }));
 
-        // If no cab-vendor rows returned, fall back to employee list that may
-        // contain employees marked as cab vendors (older flow).
-        if (mapped.length === 0) {
-          try {
-            const empRes = await fetch(`/api/v0/employee/getAllEmployeeList`, {
-              signal: controller.signal,
-              credentials: "include",
-            });
-            const empJson = await empRes.json();
-            const empRows = Array.isArray(empJson.data) ? empJson.data : [];
-            const cabEmps = empRows.filter((e: any) => e.isCabVendor);
-            setLastCount(cabEmps.length);
-            setLastError(null);
-            const empMapped: Vendor[] = cabEmps.map((e: any) => ({
-              _id: e._id,
-              name: e.name || `Employee ${e._id}`,
-              email: e.email || "",
-              phone: e.phone || "",
-            }));
-            setVendors(empMapped);
-            return;
-          } catch (empErr) {
-            console.error("Fallback employee fetch failed", empErr);
-            setLastError(String(empErr?.message || empErr));
-          }
-        }
-
         setVendors(mapped);
       } catch (err: any) {
         if (err.name === "AbortError") return;
-        console.error("Failed to load cab vendors", err);
+        console.error("Failed to load vendors", err);
         setLastError(String(err?.message || err));
         setVendors([]);
       } finally {

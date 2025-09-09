@@ -3,7 +3,7 @@ import dbConnect from "../../../../lib/mongodb";
 import CabBooking from "../../../../models/CabBooking";
 import Employee from "../../../../models/Employee";
 import * as cookie from "cookie";
-import { userAuth } from "../../../../middlewares/auth";
+import { userAuth, isSystemAdminAllowed } from "../../../../middlewares/auth";
 import { sendCabBookingStatusEmail } from "@/lib/emails/cabBookingStatus";
 import { sendCabVendorAssignmentEmail } from "@/lib/emails/cabVendorAssignment"; // <<< added
 
@@ -54,6 +54,34 @@ async function patchBooking(req, res) {
     if (req.body.driver) update.driver = req.body.driver; // User ref
     if (req.body.vehicle) update.vehicle = req.body.vehicle; // Vehicle ref
     if (req.body.managerId) update.managerId = req.body.managerId;
+
+    // Permission guard: only system-admins (or system-admin roles granted the
+    // special 'write' permission for 'cab-booking') may move a booking from
+    // payment_due -> completed.
+    if (update.status === "completed" && booking.status === "payment_due") {
+      const rawFlag =
+        req.isSystemAdmin ||
+        (res.locals && res.locals.isSystemAdmin) ||
+        (req.role && (req.role.isSystemAdmin || req.role.isSystemAdmin === "true"));
+      const roleBased = req.role ? isSystemAdminAllowed(req.role, "write", "cab-booking") : false;
+
+      // Debug: log computed flags to help diagnose permission failures
+      console.log("[cab-booking PATCH] admin-check", {
+        rawFlag,
+        roleBased,
+  roleId: req.role ? (req.role._id || req.role.id) : null,
+  roleName: req.role ? req.role.name : null,
+  roleIsSystemAdminFlag: req.role ? req.role.isSystemAdmin : null,
+      });
+
+      if (!rawFlag && !roleBased) {
+        return res.status(403).json({
+          success: false,
+          message:
+            "Only system administrators with write permission to cab-booking can mark a payment-due booking as completed.",
+        });
+      }
+    }
 
     const updated = await CabBooking.findByIdAndUpdate(id, update, {
       new: true,

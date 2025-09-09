@@ -78,7 +78,12 @@ const Roles: React.FC = () => {
     setPermissionsDialogOpen(true);
   };
 
-  const handleAddOrEditRole = async ({ name, modulePerms, editId }) => {
+  const handleAddOrEditRole = async ({
+    name,
+    modulePerms,
+    editId,
+    isSystemAdmin,
+  }) => {
     const perms = { read: [], write: [], delete: [] };
     Object.entries(modulePerms).forEach(([mod, actions]) => {
       let backendMod;
@@ -93,9 +98,16 @@ const Roles: React.FC = () => {
     });
     try {
       if (editId) {
-        await axios.patch(`/api/v0/role/${editId}`, { ...perms });
+        await axios.patch(`/api/v0/role/${editId}`, {
+          ...perms,
+          isSystemAdmin: !!isSystemAdmin,
+        });
       } else {
-        await axios.post("/api/v0/role", { name, ...perms });
+        await axios.post("/api/v0/role", {
+          name,
+          ...perms,
+          isSystemAdmin: !!isSystemAdmin,
+        });
       }
       setAddOpen(false);
       setEditId(null);

@@ -18,6 +18,10 @@ const roleSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    isSystemAdmin: {
+      type: Boolean,
+      default: false,
+    },
     read: {
       type: [String],
       enum: modules,

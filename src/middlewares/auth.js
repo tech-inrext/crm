@@ -14,6 +14,37 @@ const MODULES = [
   "vendor"
 ];
 
+// Configure which actions on which modules should be allowed for roles
+// that have `isSystemAdmin: true`. This map is intentionally empty by
+// default to avoid privilege escalation. Populate with modules as keys
+// and arrays of actions: 'read' | 'write' | 'delete'. Example:
+// { role: ['delete'], employee: ['delete'], '*': ['read'] }
+const SYSTEM_ADMIN_SPECIAL_PERMISSIONS = {
+  // add entries when ready
+};
+
+export function isSystemAdminAllowed(role, action, moduleName) {
+  if (!role || !role.isSystemAdmin) return false;
+
+  // Exact module match
+  const modulePerms = SYSTEM_ADMIN_SPECIAL_PERMISSIONS[moduleName] || [];
+  if (modulePerms.includes(action)) return true;
+
+  // Wildcard module '*' allows actions across all modules
+  const wildcardPerms = SYSTEM_ADMIN_SPECIAL_PERMISSIONS['*'] || [];
+  if (wildcardPerms.includes(action)) return true;
+
+  return false;
+}
+
+// Simple helper to check system-admin flag on a role object.
+// Accepts boolean or string values ('true'/'false') and coerces to boolean.
+export function checkIsSystemAdmin(role) {
+  if (!role) return false;
+  const v = role.isSystemAdmin;
+  return typeof v === "string" ? v.toLowerCase() === "true" : Boolean(v);
+}
+
 export async function userAuth(req, res, next) {
   res.locals = res.locals || {};
   try {
@@ -56,6 +87,11 @@ export async function userAuth(req, res, next) {
       return res.status(403).json({ message: "Invalid role" });
     }
 
+  // Attach isSystemAdmin flag to request and locals for downstream handlers
+  const isSystemAdminFlag = checkIsSystemAdmin(role);
+  req.isSystemAdmin = isSystemAdminFlag;
+  res.locals.isSystemAdmin = isSystemAdminFlag;
+
     // 🔍 Determine moduleName from URL
     const url = req.url.toLowerCase();
     const moduleName = MODULES.find((mod) => url.includes(mod));
@@ -81,6 +117,11 @@ export async function userAuth(req, res, next) {
       typeof role.name === "string" &&
       role.name.toLowerCase().includes("vendor")
     ) {
+      hasAccess = true;
+    }
+
+    // Allow configured special permissions for system-admin roles
+    if (!hasAccess && isSystemAdminAllowed(role, action, moduleName)) {
       hasAccess = true;
     }
 

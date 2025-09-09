@@ -21,10 +21,18 @@ const getRoleById = async (req, res) => {
   }
 };
 
-// ✅ PATCH (update role permissions, not name)
+// ✅ PATCH (update role permissions and special flags)
 const updateRoleDetails = async (req, res) => {
   const { id } = req.query;
-  const { name, ...rest } = req.body;
+
+  // Extract known updatable fields to avoid accidental updates
+  const {
+    name,
+    read: readItems,
+    write: writeItems,
+    delete: deleteItems,
+    isSystemAdmin,
+  } = req.body;
 
   try {
     // Prevent role name update
@@ -35,9 +43,30 @@ const updateRoleDetails = async (req, res) => {
       });
     }
 
+    const setObj = {};
+    if (Array.isArray(readItems)) setObj.read = readItems;
+    if (Array.isArray(writeItems)) setObj.write = writeItems;
+    if (Array.isArray(deleteItems)) setObj.delete = deleteItems;
+
+    if (typeof isSystemAdmin !== "undefined") {
+      // Coerce string values to boolean too (e.g. 'true'/'false')
+      const flag =
+        typeof isSystemAdmin === "string"
+          ? isSystemAdmin.toLowerCase() === "true"
+          : Boolean(isSystemAdmin);
+      setObj.isSystemAdmin = flag;
+    }
+
+    if (Object.keys(setObj).length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "No valid fields provided for update.",
+      });
+    }
+
     const updatedRole = await Role.findByIdAndUpdate(
       id,
-      { $set: rest },
+      { $set: setObj },
       { new: true, runValidators: true }
     );
 
@@ -49,6 +78,7 @@ const updateRoleDetails = async (req, res) => {
 
     return res.status(200).json({ success: true, data: updatedRole });
   } catch (error) {
+    console.error("Error updating role:", error);
     return res.status(500).json({ success: false, message: error.message });
   }
 };

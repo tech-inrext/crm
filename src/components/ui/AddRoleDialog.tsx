@@ -24,6 +24,7 @@ interface AddRoleDialogProps {
     name: string;
     modulePerms: Record<string, Record<string, boolean>>;
     editId?: string;
+    isSystemAdmin?: boolean;
   }) => void;
   onClose: () => void;
 }
@@ -42,10 +43,18 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
       modules.map((m) => [m, { read: false, write: false, delete: false }])
     )
   );
+  const [isSystemAdmin, setIsSystemAdmin] = useState(false);
   useEffect(() => {
     if (open) {
       if (role) {
         setRoleName(role.name || "");
+        // Coerce boolean or string values correctly ('false' should be false)
+        const sysVal = (role as any).isSystemAdmin;
+        setIsSystemAdmin(
+          typeof sysVal === "string"
+            ? sysVal.toLowerCase() === "true"
+            : Boolean(sysVal)
+        );
         let read = role.read;
         let write = role.write;
         let del = role.delete;
@@ -122,6 +131,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
         setModulePerms(perms);
       } else {
         setRoleName("");
+        setIsSystemAdmin(false);
         setModulePerms(
           Object.fromEntries(
             modules.map((m) => [
@@ -158,7 +168,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
 
   const handleSubmit = () => {
     if (!roleName.trim()) return;
-    onSubmit({ name: roleName, modulePerms, editId: role?._id });
+    onSubmit({ name: roleName, modulePerms, editId: role?._id, isSystemAdmin });
   };
 
   return (
@@ -313,6 +323,21 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
                 ))}
               </Box>
             ))}
+          </Box>
+        </Box>
+        <Box sx={{ mt: 2 }}>
+          <Typography sx={{ fontWeight: 600, mb: 1, color: "#1a237e" }}>
+            Special Access
+          </Typography>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <Checkbox
+              checked={isSystemAdmin}
+              onChange={(e) => setIsSystemAdmin(e.target.checked)}
+              sx={{ color: "#1976d2", "&.Mui-checked": { color: "#1976d2" } }}
+            />
+            <Typography>
+              System Admin (grants selected special permissions)
+            </Typography>
           </Box>
         </Box>
       </DialogContent>
