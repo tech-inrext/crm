@@ -28,7 +28,15 @@ const createLead = async (req, res) => {
       100 + Math.random() * 900
     )}`;
 
-    const newLead = new Lead({ leadId, phone, ...rest });
+    const loggedInUserId = req.employee?._id;
+    console.log(loggedInUserId);
+
+    const newLead = new Lead({
+      uploadedBy: loggedInUserId,
+      leadId,
+      phone,
+      ...rest,
+    });
 
     await newLead.save();
 
@@ -50,8 +58,17 @@ const getAllLeads = async (req, res) => {
     const itemsPerPage = parseInt(limit);
     const skip = (currentPage - 1) * itemsPerPage;
 
+    // 🔐 Logged-in user's id (set by userAuth)
+    const loggedInUserId = req.employee?._id;
+    if (!loggedInUserId) {
+      return res.status(401).json({ success: false, message: "Unauthorized" });
+    }
+
+    // 🎯 Always scope to leads uploaded by this user
+    const baseQuery = { uploadedBy: loggedInUserId };
+
     // Optional search filter
-    const query = search
+    const searchQuery = search
       ? {
           $or: [
             { fullName: { $regex: search, $options: "i" } },
@@ -60,6 +77,10 @@ const getAllLeads = async (req, res) => {
           ],
         }
       : {};
+
+    const query = Object.keys(searchQuery).length
+      ? { $and: [baseQuery, searchQuery] }
+      : baseQuery;
 
     const [leads, totalLeads] = await Promise.all([
       Lead.find(query).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }),
