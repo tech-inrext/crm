@@ -1,3 +1,4 @@
+// workers/bulkUploadLeads.js
 import Lead from "../models/Lead.js";
 import BulkUpload from "../models/BulkUpload.js";
 import dbConnect from "../lib/mongodb.js";
@@ -10,12 +11,11 @@ const parseExcelBuffer = (buffer) => {
   return xlsx.utils.sheet_to_json(sheet);
 };
 
-const sleep = () =>
-  new Promise((resolve) => setTimeout(() => resolve("Resolved"), 10000));
+const sleep = () => new Promise((resolve) => setTimeout(resolve, 10_000));
 
 async function bulkUploadLeads(job) {
   console.log("App Started");
-  const { uploadId, fileUrl, uploadedBy: uploaderFromJob } = job.data;
+  const { uploadId, fileUrl, uploadedBy } = job.data; // ✅ get uploader id here
 
   // Fetch file from S3
   const response = await fetch(fileUrl);
@@ -33,22 +33,12 @@ async function bulkUploadLeads(job) {
   const invalidPhones = [];
   const otherErrors = [];
 
-  // Load the BulkUpload record (for status + optional fallback for uploader)
   const uploadRecord = await BulkUpload.findById(uploadId);
   if (!uploadRecord) {
     console.error("❌ BulkUpload record not found for ID:", uploadId);
     return false;
   }
 
-  // ✅ Determine uploader id: prefer job data; fallback to BulkUpload.uploadedBy
-  const uploaderId = uploaderFromJob || uploadRecord.uploadedBy;
-  if (!uploaderId) {
-    console.warn(
-      "⚠️ No uploader id provided (job.data.uploadedBy) and BulkUpload.uploadedBy is empty. Leads will not have uploadedBy set."
-    );
-  }
-
-  // Update status before processing
   uploadRecord.status = "Processing";
   uploadRecord.totalRecords = leads.length;
   await uploadRecord.save();
@@ -78,7 +68,7 @@ async function bulkUploadLeads(job) {
 
     const lead = new Lead({
       leadId: `LD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
-      uploadedBy: uploaderId || undefined, // ✅ set the uploader
+      uploadedBy, // ✅ set uploader from job
       fullName: row.fullName || row.name || "",
       email: row.email || "",
       phone,
@@ -108,13 +98,9 @@ async function bulkUploadLeads(job) {
   }
 
   try {
-    // Refresh record to avoid stale values
     const bulkUpload = await BulkUpload.findById(uploadId);
     if (!bulkUpload) {
-      console.error(
-        "❌ BulkUpload record not found for ID during summary:",
-        uploadId
-      );
+      console.error("❌ BulkUpload record not found during summary:", uploadId);
       return false;
     }
 
