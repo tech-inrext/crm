@@ -19,7 +19,8 @@ import {
   AssignmentInd,
 } from "@mui/icons-material";
 import AssignVendorDialog from "./AssignVendorDialog";
-import VendorBookingForm from "./VendorBookingForm";
+import BookingStatus from "./BookingStatus";
+import ShareBookingDialog from "./ShareBookingDialog";
 import PermissionGuard from "@/components/PermissionGuard";
 import CardComponent from "@/components/ui/Card";
 import Avatar from "@/components/ui/Avatar";
@@ -75,10 +76,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
   const isManager = booking.canApprove;
   // ...existing code...
 
-  const handleStatusChange = async (
-    e: React.ChangeEvent<{ value: unknown }>
-  ) => {
-    const newStatus = e.target.value as string;
+  const handleStatusChange = async (newStatus: string) => {
     setStatus(newStatus);
     setUpdating(true);
     try {
@@ -100,155 +98,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
       setUpdating(false);
     }
   };
-
-  const renderStatus = () =>
-    isManager ? (
-      <Select
-        value={status}
-        onChange={handleStatusChange}
-        size="small"
-        disabled={updating || isLoading || status !== "pending"}
-        sx={{
-          background: getStatusColor(status),
-          color: "white",
-          borderRadius: "12px",
-          fontWeight: 600,
-          fontSize: 12,
-          textTransform: "capitalize",
-          minWidth: 140,
-          maxWidth: 140,
-          px: 1,
-          boxShadow: 1,
-          display: "flex",
-          alignItems: "center",
-          "& .MuiSelect-icon": { color: "white" },
-        }}
-        MenuProps={{ PaperProps: { style: { background: "#fff" } } }}
-      >
-        {
-          // Build options to render. For managers we want to show 'Pending' first
-          // when the current status is pending, then Approved and Rejected.
-          (() => {
-            if (isManager) {
-              const opts: typeof statusOptions = [];
-              // Always include the current status option first so the Select
-              // can render a value that might not be in the normal manager
-              // option list (for example 'active'). Avoid duplicates below.
-              const currentOpt = statusOptions.find((o) => o.value === status);
-              if (currentOpt) opts.push(currentOpt);
-
-              // Include pending only when current is pending or to let manager
-              // see pending -> approve/reject flow.
-              if (status === "pending") {
-                const pendingOpt = statusOptions.find(
-                  (o) => o.value === "pending"
-                );
-                if (
-                  pendingOpt &&
-                  !opts.find((x) => x.value === pendingOpt.value)
-                )
-                  opts.push(pendingOpt);
-              }
-
-              // always allow approve/reject for managers
-              const approveOpt = statusOptions.find(
-                (o) => o.value === "approved"
-              );
-              const rejectOpt = statusOptions.find(
-                (o) => o.value === "rejected"
-              );
-              if (approveOpt && !opts.find((x) => x.value === approveOpt.value))
-                opts.push(approveOpt);
-              if (rejectOpt && !opts.find((x) => x.value === rejectOpt.value))
-                opts.push(rejectOpt);
-
-              return opts.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ));
-            }
-
-            return statusOptions
-              .filter((opt) => opt.value && opt.value !== "all")
-              .map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ));
-          })()
-        }
-      </Select>
-    ) : (
-      <Chip
-        label={
-          statusOptions.find((opt) => opt.value === status)?.label || status
-        }
-        sx={{
-          background: getStatusColor(status),
-          color: "white",
-          fontWeight: 600,
-          fontSize: 12,
-          borderRadius: "12px",
-          px: 1,
-          minWidth: 140,
-          maxWidth: 140,
-          height: 28,
-          display: "flex",
-          alignItems: "center",
-        }}
-      />
-    );
-
-  const renderShareDialog = () => (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        width: "100vw",
-        height: "100vh",
-        background: "rgba(0,0,0,0.2)",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        zIndex: 9999,
-      }}
-      onClick={() => setShareOpen(false)}
-    >
-      <Box
-        sx={{
-          background: "#fff",
-          borderRadius: 1.5,
-          boxShadow: 3,
-          p: 1.5,
-          minWidth: 200,
-          maxWidth: 260,
-        }}
-        onClick={(e) => e.stopPropagation()}
-      >
-        <Typography variant="h6" mb={1} fontSize={14}>
-          Share Booking Link
-        </Typography>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 0.7 }}>
-          <TextField
-            value={shareLink}
-            size="small"
-            fullWidth
-            InputProps={{ readOnly: true, style: { fontSize: 12 } }}
-          />
-          <Button
-            variant="contained"
-            size="small"
-            sx={{ fontSize: 12, minWidth: 40, px: 0.5 }}
-            onClick={() => navigator.clipboard.writeText(shareLink)}
-          >
-            Copy
-          </Button>
-        </Box>
-      </Box>
-    </div>
-  );
 
   return (
     <>
@@ -335,7 +184,15 @@ const BookingCard: React.FC<BookingCardProps> = ({
                   minWidth: 0,
                 }}
               >
-                {renderStatus()}
+                <BookingStatus
+                  booking={booking}
+                  status={status}
+                  updating={updating}
+                  isLoading={isLoading}
+                  isSystemAdmin={isSystemAdmin}
+                  isManager={isManager}
+                  onChangeStatus={handleStatusChange}
+                />
                 {/* Assign Icon: Only show for approved bookings */}
                 {isSystemAdmin && (
                   <PermissionGuard
@@ -416,7 +273,11 @@ const BookingCard: React.FC<BookingCardProps> = ({
           </Box>
         }
       />
-      {shareOpen && renderShareDialog()}
+      <ShareBookingDialog
+        open={shareOpen}
+        link={shareLink}
+        onClose={() => setShareOpen(false)}
+      />
       {assignOpen && (
         <AssignVendorDialog
           open={assignOpen}
