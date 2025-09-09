@@ -53,8 +53,14 @@ const handler = async (req, res) => {
       {
         uploadId,
         fileUrl,
+        uploadedBy: uploaderId,
       },
-      { attempts: 1 }
+      {
+        attempts: 3, // optional: a bit more resilient
+        backoff: { type: "exponential", delay: 5000 },
+        removeOnComplete: true,
+        removeOnFail: false,
+      }
     );
 
     return res.status(200).json({
