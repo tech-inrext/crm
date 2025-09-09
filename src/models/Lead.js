@@ -23,6 +23,10 @@ const leadSchema = new mongoose.Schema(
       unique: true,
       trim: true,
     },
+    uploadedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+    },
     fullName: {
       type: String,
       trim: true,

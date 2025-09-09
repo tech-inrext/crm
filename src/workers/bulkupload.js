@@ -9,21 +9,21 @@ const parseExcelBuffer = (buffer) => {
   const sheet = workbook.Sheets[sheetName];
   return xlsx.utils.sheet_to_json(sheet);
 };
-const sleep = () => {
-  return new Promise((resolve, rejects) =>
-    setTimeout(() => resolve("Resolved"), 10000)
-  );
-};
+
+const sleep = () =>
+  new Promise((resolve) => setTimeout(() => resolve("Resolved"), 10000));
+
 async function bulkUploadLeads(job) {
   console.log("App Started");
-  const { uploadId, fileUrl } = job.data;
+  const { uploadId, fileUrl, uploadedBy: uploaderFromJob } = job.data;
+
   // Fetch file from S3
   const response = await fetch(fileUrl);
   const buffer = await response.arrayBuffer();
   const leads = parseExcelBuffer(Buffer.from(buffer));
+
   await dbConnect();
   console.log("Connected to the database successfully.");
-  // await Lead.init();
 
   console.log(`\n👷 Started processing uploadId: ${uploadId}`);
   console.log(`📊 Total leads in job: ${leads.length}\n`);
@@ -32,15 +32,36 @@ async function bulkUploadLeads(job) {
   const duplicates = [];
   const invalidPhones = [];
   const otherErrors = [];
+
+  // Load the BulkUpload record (for status + optional fallback for uploader)
   const uploadRecord = await BulkUpload.findById(uploadId);
+  if (!uploadRecord) {
+    console.error("❌ BulkUpload record not found for ID:", uploadId);
+    return false;
+  }
+
+  // ✅ Determine uploader id: prefer job data; fallback to BulkUpload.uploadedBy
+  const uploaderId = uploaderFromJob || uploadRecord.uploadedBy;
+  if (!uploaderId) {
+    console.warn(
+      "⚠️ No uploader id provided (job.data.uploadedBy) and BulkUpload.uploadedBy is empty. Leads will not have uploadedBy set."
+    );
+  }
+
+  // Update status before processing
   uploadRecord.status = "Processing";
   uploadRecord.totalRecords = leads.length;
-  uploadRecord.save();
+  await uploadRecord.save();
+
   await sleep();
 
   for (const row of leads) {
     const phone = String(
-      row.phone || row.Phone || row["Mobile Number"] || row["Phone Number"]
+      row.phone ||
+        row.Phone ||
+        row["Mobile Number"] ||
+        row["Phone Number"] ||
+        ""
     ).trim();
 
     if (!phone) {
@@ -57,6 +78,7 @@ async function bulkUploadLeads(job) {
 
     const lead = new Lead({
       leadId: `LD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      uploadedBy: uploaderId || undefined, // ✅ set the uploader
       fullName: row.fullName || row.name || "",
       email: row.email || "",
       phone,
@@ -86,24 +108,24 @@ async function bulkUploadLeads(job) {
   }
 
   try {
+    // Refresh record to avoid stale values
     const bulkUpload = await BulkUpload.findById(uploadId);
     if (!bulkUpload) {
-      console.error("❌ BulkUpload record not found for ID:", uploadId);
-      return;
+      console.error(
+        "❌ BulkUpload record not found for ID during summary:",
+        uploadId
+      );
+      return false;
     }
 
     bulkUpload.uploaded = uploaded.length;
     bulkUpload.duplicates = duplicates.length;
     bulkUpload.invalidPhones = invalidPhones.length;
     bulkUpload.otherErrors = otherErrors.length;
-    bulkUpload.details = {
-      uploaded,
-      duplicates,
-      invalidPhones,
-      otherErrors,
-    };
+    bulkUpload.details = { uploaded, duplicates, invalidPhones, otherErrors };
     bulkUpload.status = "Completed";
     await bulkUpload.save();
+
     console.log("\n✅ BulkUpload summary updated successfully!");
     console.log("📥 Uploaded:", uploaded.length);
     console.log("♻️ Duplicates:", duplicates.length);

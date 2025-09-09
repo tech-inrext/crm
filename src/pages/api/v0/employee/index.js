@@ -66,7 +66,7 @@ const createEmployee = async (req, res) => {
       designation,
       managerId,
       departmentId,
-      roles,
+      roles: roles || "68b6904f3a3a9b850429e610",
       isCabVendor,
     });
 
