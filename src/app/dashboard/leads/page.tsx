@@ -16,7 +16,12 @@ import {
   useTheme,
   useMediaQuery,
 } from "@mui/material";
-import { Add, Edit as EditIcon } from "@mui/icons-material";
+import {
+  Add,
+  Edit as EditIcon,
+  Feedback as FeedbackIcon,
+} from "@mui/icons-material";
+import Badge from "@mui/material/Badge";
 import { useDebounce } from "@/hooks/useDebounce";
 import dynamic from "next/dynamic";
 import { useLeads } from "@/hooks/useLeads";
@@ -54,6 +59,10 @@ const LoadingSkeleton = dynamic(
 );
 const LeadsActionBar = dynamic(
   () => import("@/components/leads/LeadsActionBar"),
+  { ssr: false }
+);
+const FollowUpDialog = dynamic(
+  () => import("@/components/leads/FollowUpDialog"),
   { ssr: false }
 );
 
@@ -98,16 +107,49 @@ const Leads: React.FC = () => {
     setSearchInput(e.target.value);
   };
 
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [selectedLeadForFeedback, setSelectedLeadForFeedback] = useState<
+    string | null
+  >(null);
+
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
       ? {
           ...col,
           component: (row, { onEdit }) => (
-            <PermissionGuard module="lead" action="write" fallback={null}>
-              <IconButton onClick={() => onEdit(row)} size="small">
-                <EditIcon fontSize="small" />
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                gap: 0.5,
+                pl: 0.5,
+              }}
+            >
+              <PermissionGuard module="lead" action="write" fallback={null}>
+                <IconButton onClick={() => onEdit(row)} size="small">
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </PermissionGuard>
+
+              {/* Feedback button - available to any authenticated user */}
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setSelectedLeadForFeedback(row.leadId || row._id || row.id);
+                  setFeedbackOpen(true);
+                }}
+              >
+                <Badge
+                  badgeContent={
+                    (row.followUpNotes && row.followUpNotes.length) || 0
+                  }
+                  color="primary"
+                >
+                  <FeedbackIcon fontSize="small" />
+                </Badge>
               </IconButton>
-            </PermissionGuard>
+            </Box>
           ),
         }
       : col
@@ -267,6 +309,28 @@ const Leads: React.FC = () => {
           }
         }}
       />
+
+      {/* Follow-up Dialog */}
+      {typeof window !== "undefined" && (
+        <React.Suspense>
+          {feedbackOpen && selectedLeadForFeedback && (
+            // Lazy-imported component to avoid SSR issues
+            // eslint-disable-next-line @next/next/no-sync-scripts
+            <FollowUpDialog
+              open={feedbackOpen}
+              onClose={() => {
+                setFeedbackOpen(false);
+                setSelectedLeadForFeedback(null);
+              }}
+              leadIdentifier={selectedLeadForFeedback}
+              onSaved={async () => {
+                // refresh leads after saving follow-up
+                await loadLeads(page + 1, rowsPerPage, search);
+              }}
+            />
+          )}
+        </React.Suspense>
+      )}
 
       {/* Mobile Add Button */}
       <PermissionGuard module="lead" action="write" fallback={<></>}>
