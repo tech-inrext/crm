@@ -80,7 +80,7 @@ async function createFollowUp(req, res) {
     if (leadDoc) {
       try {
         await Lead.findByIdAndUpdate(leadDoc._id, { $push: { followUpNotes: entry } });
-        console.log("[followup] appended to lead", { leadId: leadDoc._id });
+        // follow-up appended to lead
         try {
           await LeadFollowUp.create({
             lead: leadDoc._id,
@@ -90,10 +90,10 @@ async function createFollowUp(req, res) {
             submittedByName,
           });
         } catch (err) {
-          console.error("[followup] failed to create LeadFollowUp doc:", err && err.message ? err.message : err);
+          // failed to create LeadFollowUp doc
         }
       } catch (err) {
-        console.error("[followup] failed to append to lead.followUpNotes:", err);
+        // failed to append to lead.followUpNotes
         return res.status(500).json({ success: false, message: "Failed to append follow-up to lead", error: err.message });
       }
     }
@@ -108,7 +108,7 @@ async function createFollowUp(req, res) {
 async function getFollowUps(req, res) {
   try {
     const { leadIdentifier } = req.query;
-    console.debug("[followup.GET] leadIdentifier ->", leadIdentifier);
+  // leadIdentifier -> (hidden)
     if (!leadIdentifier) return res.status(400).json({ success: false, message: "leadIdentifier query param required" });
 
     // Try to resolve lead
@@ -119,7 +119,7 @@ async function getFollowUps(req, res) {
       // ignore
     }
 
-    console.debug("[followup.GET] leadDoc ->", leadDoc ? { _id: leadDoc._id, leadId: leadDoc.leadId, followUpNotes: (leadDoc.followUpNotes || []).length } : null);
+  // resolved leadDoc info omitted from logs
 
     // Diagnostic: sample leads if not found
     if (!leadDoc) {
@@ -128,10 +128,10 @@ async function getFollowUps(req, res) {
         const samplePattern = numericPartMatch ? numericPartMatch[1] : (leadIdentifier || "").slice(0, 6);
         if (samplePattern) {
           const sampleLeads = await Lead.find({ leadId: { $regex: samplePattern, $options: "i" } }).limit(6).lean();
-          console.debug("[followup.GET] diagnostic sampleLeads.count ->", sampleLeads.length, "examples ->", sampleLeads.map((s) => s.leadId));
+          // diagnostic sampleLeads count omitted
         }
       } catch (e) {
-        console.error("[followup.GET] diagnostic query failed:", e && e.message ? e.message : e);
+        // diagnostic query failed
       }
     }
 
@@ -157,8 +157,7 @@ async function getFollowUps(req, res) {
     let itemsFromCollection = [];
     if (followUpQuery.length > 0) {
       try {
-        const docs = await LeadFollowUp.find({ $or: followUpQuery }).sort({ createdAt: -1 }).lean();
-        console.debug("[followup.GET] LeadFollowUp.docs.count ->", docs.length);
+  const docs = await LeadFollowUp.find({ $or: followUpQuery }).sort({ createdAt: -1 }).lean();
         itemsFromCollection = docs.map((d) => ({
           _id: String(d._id),
           createdAt: d.createdAt ? d.createdAt.toISOString() : null,
@@ -167,7 +166,7 @@ async function getFollowUps(req, res) {
           raw: `[${d.createdAt ? d.createdAt.toISOString() : ""}] ${d.submittedByName ? d.submittedByName + ': ' : ''}${d.note}`,
         }));
       } catch (err) {
-        console.error("[followup] failed to query LeadFollowUp collection:", err && err.message ? err.message : err);
+  // failed to query LeadFollowUp collection
       }
     }
 
@@ -178,7 +177,7 @@ async function getFollowUps(req, res) {
       return tb - ta;
     });
 
-    console.debug("[followup.GET] returning items.count ->", allItems.length);
+  // returning items count omitted
     return res.status(200).json({ success: true, data: allItems });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
