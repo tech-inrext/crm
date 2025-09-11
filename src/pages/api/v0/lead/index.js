@@ -52,7 +52,7 @@ const createLead = async (req, res) => {
 
 const getAllLeads = async (req, res) => {
   try {
-    const { page = 1, limit = 5, search = "" } = req.query;
+    const { page = 1, limit = 5, search = "", status } = req.query;
 
     const currentPage = parseInt(page);
     const itemsPerPage = parseInt(limit);
@@ -78,9 +78,14 @@ const getAllLeads = async (req, res) => {
         }
       : {};
 
-    const query = Object.keys(searchQuery).length
-      ? { $and: [baseQuery, searchQuery] }
-      : baseQuery;
+    // Optional status filter
+    const statusQuery = status ? { status } : {};
+
+    const queryParts = [baseQuery];
+    if (Object.keys(searchQuery).length) queryParts.push(searchQuery);
+    if (Object.keys(statusQuery).length) queryParts.push(statusQuery);
+
+    const query = queryParts.length > 1 ? { $and: queryParts } : baseQuery;
 
     const [leads, totalLeads] = await Promise.all([
       Lead.find(query).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }),
