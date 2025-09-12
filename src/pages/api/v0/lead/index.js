@@ -52,7 +52,7 @@ const createLead = async (req, res) => {
 
 const getAllLeads = async (req, res) => {
   try {
-    const { page = 1, limit = 5, search = "", status } = req.query;
+  const { page = 1, limit = 5, search = "", status } = req.query;
 
     const currentPage = parseInt(page);
     const itemsPerPage = parseInt(limit);
@@ -79,7 +79,19 @@ const getAllLeads = async (req, res) => {
       : {};
 
     // Optional status filter
-    const statusQuery = status ? { status } : {};
+    // Accepts: status=New or status=New,Closed or status[]=New&status[]=Closed
+    let statusQuery = {};
+    if (status) {
+      // status may be a string (possibly comma-separated) or array
+      const statuses = Array.isArray(status)
+        ? status
+        : String(status).split(",").map((s) => s.trim()).filter(Boolean);
+
+      if (statuses.length) {
+        // Build case-insensitive match for each status to be safe
+        statusQuery = { status: { $in: statuses.map((s) => new RegExp(`^${s}$`, "i")) } };
+      }
+    }
 
     const queryParts = [baseQuery];
     if (Object.keys(searchQuery).length) queryParts.push(searchQuery);

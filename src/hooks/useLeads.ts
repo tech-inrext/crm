@@ -17,6 +17,7 @@ export function useLeads() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
+  const [status, setStatus] = useState<string | null>(null);
   const [page, setPage] = useState(0); // 0-based for UI
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [open, setOpen] = useState(false);
@@ -26,7 +27,7 @@ export function useLeads() {
   const stats = useMemo(() => calculateLeadStats(leads), [leads]);
 
   const loadLeads = useCallback(
-    async (page = 1, limit = 5, search = "") => {
+    async (page = 1, limit = 5, search = "", statusParam: string | null = null) => {
       setLoading(true);
       try {
         const response = await axios.get(`${API_BASE}`, {
@@ -34,6 +35,7 @@ export function useLeads() {
             page,
             limit,
             search,
+            ...(statusParam ? { status: statusParam } : {}),
           },
         });
 
@@ -66,7 +68,7 @@ export function useLeads() {
         } else {
           await axios.post(API_BASE, payload);
         }
-        await loadLeads(page + 1, rowsPerPage, search);
+        await loadLeads(page + 1, rowsPerPage, search, status);
       } catch (error) {
         throw error;
       } finally {
@@ -77,8 +79,8 @@ export function useLeads() {
   );
 
   useEffect(() => {
-    loadLeads(page + 1, rowsPerPage, search); // API expects 1-based page
-  }, [loadLeads, page, rowsPerPage, search]);
+    loadLeads(page + 1, rowsPerPage, search, status); // API expects 1-based page
+  }, [loadLeads, page, rowsPerPage, search, status]);
 
   return {
     leads,
@@ -101,5 +103,7 @@ export function useLeads() {
     stats,
     loadLeads,
     saveLead,
+    status,
+    setStatus,
   };
 }
