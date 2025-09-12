@@ -130,7 +130,7 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
               color="text.secondary"
               sx={rolePermissionsDialogStyles.noPermissionsText}
             >
-              This role doesn't have any permissions assigned yet.
+              This role does not have any permissions assigned yet.
             </Typography>
           </Box>
         ) : (
