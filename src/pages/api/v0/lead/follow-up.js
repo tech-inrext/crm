@@ -3,7 +3,7 @@ import Lead from "../../../../models/Lead";
 import * as cookie from "cookie";
 import jwt from "jsonwebtoken";
 import Employee from "../../../../models/Employee";
-import LeadFollowUp from "../../../../models/LeadFollowUp";
+// Using embedded followUpNotes on Lead as single source of truth; no LeadFollowUp model required here
 
 // Helper: try to find a lead by various normalized forms of an identifier
 async function findLeadByIdentifier(identifier) {
@@ -80,20 +80,8 @@ async function createFollowUp(req, res) {
     if (leadDoc) {
       try {
         await Lead.findByIdAndUpdate(leadDoc._id, { $push: { followUpNotes: entry } });
-        // follow-up appended to lead
-        try {
-          await LeadFollowUp.create({
-            lead: leadDoc._id,
-            leadIdentifier: leadDoc.leadId || String(leadDoc._id),
-            note: note.trim(),
-            submittedBy: req.employee?._id,
-            submittedByName,
-          });
-        } catch (err) {
-          // failed to create LeadFollowUp doc
-        }
+        // follow-up appended to lead.followUpNotes (single source of truth)
       } catch (err) {
-        // failed to append to lead.followUpNotes
         return res.status(500).json({ success: false, message: "Failed to append follow-up to lead", error: err.message });
       }
     }
@@ -149,28 +137,8 @@ async function getFollowUps(req, res) {
       });
     }
 
-    // Fetch follow-ups from collection
-    const followUpQuery = [];
-    if (leadDoc) followUpQuery.push({ lead: leadDoc._id });
-    if (leadIdentifier) followUpQuery.push({ leadIdentifier: leadIdentifier });
-
-    let itemsFromCollection = [];
-    if (followUpQuery.length > 0) {
-      try {
-  const docs = await LeadFollowUp.find({ $or: followUpQuery }).sort({ createdAt: -1 }).lean();
-        itemsFromCollection = docs.map((d) => ({
-          _id: String(d._id),
-          createdAt: d.createdAt ? d.createdAt.toISOString() : null,
-          submittedByName: d.submittedByName || "",
-          note: d.note,
-          raw: `[${d.createdAt ? d.createdAt.toISOString() : ""}] ${d.submittedByName ? d.submittedByName + ': ' : ''}${d.note}`,
-        }));
-      } catch (err) {
-  // failed to query LeadFollowUp collection
-      }
-    }
-
-    const allItems = [...itemsFromCollection, ...itemsFromLead];
+    // Use only embedded `lead.followUpNotes` as source of truth
+    const allItems = itemsFromLead;
     allItems.sort((a, b) => {
       const ta = a.createdAt ? new Date(a.createdAt).getTime() : 0;
       const tb = b.createdAt ? new Date(b.createdAt).getTime() : 0;
