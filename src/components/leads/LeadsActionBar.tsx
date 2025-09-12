@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import {
   Box,
   Button,
+  Select,
+  MenuItem,
   CircularProgress,
   Fab,
   IconButton,
@@ -39,6 +41,8 @@ interface LeadsActionBarProps {
   onAdd: () => void;
   saving: boolean;
   loadLeads: () => void;
+  status?: string | null;
+  onStatusChange?: (status: string | null) => void;
 }
 
 const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
@@ -49,6 +53,8 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   onAdd,
   saving,
   loadLeads,
+  status = null,
+  onStatusChange,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -113,6 +119,28 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
             onChange={onSearchChange}
             placeholder="Search leads by name, email, phone..."
           />
+        </Box>
+
+        {/* Status Filter */}
+        <Box sx={{ minWidth: 140, alignSelf: { xs: "stretch", sm: "center" } }}>
+          <Select
+            value={status ?? ""}
+            size="small"
+            displayEmpty
+            onChange={(e) => {
+              const val = (e.target.value as string) || null;
+              onStatusChange?.(val);
+            }}
+            renderValue={(selected) => (selected ? selected : "All Statuses")}
+            sx={{ height: 40, minWidth: 140 }}
+          >
+            <MenuItem value="">All Statuses</MenuItem>
+            <MenuItem value="New">New</MenuItem>
+            <MenuItem value="Contacted">Contacted</MenuItem>
+            <MenuItem value="Site Visit">Site Visit</MenuItem>
+            <MenuItem value="Closed">Closed</MenuItem>
+            <MenuItem value="Dropped">Dropped</MenuItem>
+          </Select>
         </Box>
 
         {/* View Toggle */}

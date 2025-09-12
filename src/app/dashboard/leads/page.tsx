@@ -78,6 +78,8 @@ const Leads: React.FC = () => {
     total,
     loadLeads,
     saveLead,
+    status,
+    setStatus,
   } = useLeads();
 
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
@@ -161,6 +163,11 @@ const Leads: React.FC = () => {
           onAdd={() => setOpen(true)}
           saving={saving}
           loadLeads={loadLeads}
+          status={status}
+          onStatusChange={(s) => {
+            setStatus(s);
+            setPage(0);
+          }}
         />
       </Paper>
 
