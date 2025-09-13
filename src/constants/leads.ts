@@ -14,3 +14,13 @@ import { COMMON_STYLES as LEADS_COMMON_STYLES, GRADIENTS as LEADS_GRADIENTS } fr
 
 export const GRADIENTS = LEADS_GRADIENTS;
 export const COMMON_STYLES = LEADS_COMMON_STYLES;
+
+// Lead status values used across the leads feature
+export const LEAD_STATUSES = [
+	"",
+	"New",
+	"Contacted",
+	"Site Visit",
+	"Closed",
+	"Dropped",
+];
