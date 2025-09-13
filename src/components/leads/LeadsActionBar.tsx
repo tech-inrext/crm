@@ -4,6 +4,7 @@ import {
   Button,
   Select,
   MenuItem,
+  Menu,
   CircularProgress,
   Fab,
   IconButton,
@@ -19,9 +20,11 @@ import {
   ViewModule,
   History,
 } from "@mui/icons-material";
+import FilterAltIcon from "@mui/icons-material/FilterAlt";
 import SearchBar from "@/components/ui/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import dynamic from "next/dynamic";
+import { LEAD_STATUSES } from "@/constants/leads";
 
 const BulkUpload = dynamic(() => import("@/components/leads/bulkUpload"), {
   ssr: false,
@@ -60,6 +63,13 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const [uploadStatusOpen, setUploadStatusOpen] = useState(false);
+  const [mobileAnchor, setMobileAnchor] = useState<null | HTMLElement>(null);
+
+  const openMobileMenu = (e: React.MouseEvent<HTMLElement>) =>
+    setMobileAnchor(e.currentTarget);
+  const closeMobileMenu = () => setMobileAnchor(null);
+
+  const mobileMenuOpen = Boolean(mobileAnchor);
 
   return (
     <Box
@@ -121,27 +131,52 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
           />
         </Box>
 
-        {/* Status Filter */}
-        <Box sx={{ minWidth: 140, alignSelf: { xs: "stretch", sm: "center" } }}>
-          <Select
-            value={status ?? ""}
-            size="small"
-            displayEmpty
-            onChange={(e) => {
-              const val = (e.target.value as string) || null;
-              onStatusChange?.(val);
+        {/* Mobile-only status filter button (visible on small screens) */}
+        {isMobile && (
+          <Box
+            sx={{
+              display: { xs: "flex", sm: "none" },
+              alignItems: "center",
+              ml: 1,
             }}
-            renderValue={(selected) => (selected ? selected : "All Statuses")}
-            sx={{ height: 40, minWidth: 140 }}
           >
-            <MenuItem value="">All Statuses</MenuItem>
-            <MenuItem value="New">New</MenuItem>
-            <MenuItem value="Contacted">Contacted</MenuItem>
-            <MenuItem value="Site Visit">Site Visit</MenuItem>
-            <MenuItem value="Closed">Closed</MenuItem>
-            <MenuItem value="Dropped">Dropped</MenuItem>
-          </Select>
-        </Box>
+            <Tooltip title="Filter status">
+              <IconButton
+                size="small"
+                onClick={openMobileMenu}
+                sx={{ background: "#fff", boxShadow: 1 }}
+                aria-controls={
+                  mobileMenuOpen ? "mobile-status-menu" : undefined
+                }
+                aria-haspopup="true"
+                aria-expanded={mobileMenuOpen ? "true" : undefined}
+              >
+                <FilterAltIcon fontSize="small" />
+              </IconButton>
+            </Tooltip>
+
+            <Menu
+              id="mobile-status-menu"
+              anchorEl={mobileAnchor}
+              open={mobileMenuOpen}
+              onClose={closeMobileMenu}
+              MenuListProps={{ sx: { minWidth: 160 } }}
+            >
+              {LEAD_STATUSES.map((s) => (
+                <MenuItem
+                  key={s}
+                  onClick={() => {
+                    const val = s || null;
+                    onStatusChange?.(val);
+                    closeMobileMenu();
+                  }}
+                >
+                  {s || "All Statuses"}
+                </MenuItem>
+              ))}
+            </Menu>
+          </Box>
+        )}
 
         {/* View Toggle */}
         {!isTablet && (

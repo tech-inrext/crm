@@ -261,7 +261,14 @@ const Leads: React.FC = () => {
               size={MODULE_STYLES.common.getResponsiveTableSize()}
               sx={MODULE_STYLES.leads.table}
             >
-              <LeadsTableHeader header={leadsTableHeaderWithActions} />
+              <LeadsTableHeader
+                header={leadsTableHeaderWithActions}
+                status={status}
+                onStatusChange={(s) => {
+                  setStatus(s);
+                  setPage(0);
+                }}
+              />
               <TableBody>
                 {leads.map((row) => (
                   <LeadsTableRow
