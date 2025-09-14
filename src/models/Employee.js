@@ -110,6 +110,40 @@ const employeeSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    // Document URLs
+    aadharUrl: {
+      type: String,
+      default: "",
+    },
+    panUrl: {
+      type: String,
+      default: "",
+    },
+    bankProofUrl: {
+      type: String,
+      default: "",
+    },
+    signatureUrl: {
+      type: String,
+      default: "",
+    },
+    // Nominee subdocument (optional)
+    nominee: {
+      type: new mongoose.Schema(
+        {
+          name: { type: String, trim: true },
+          phone: { type: String, trim: true },
+          occupation: { type: String, trim: true },
+          relation: { type: String, trim: true },
+          gender: { type: String, enum: ["Male", "Female", "Other"] },
+        },
+        { _id: false }
+      ),
+      default: null,
+    },
+    // Freelancer fields
+    slabPercentage: { type: String, trim: true, default: "" },
+    branch: { type: String, trim: true, default: "" },
   },
   { timestamps: true }
 );

@@ -1,5 +1,7 @@
 "use client";
 
+"use client";
+
 import React, { useEffect, useState } from "react";
 import {
   Dialog,
@@ -34,6 +36,19 @@ export interface UserFormData {
   managerId: string;
   departmentId: string;
   roles: string[];
+  aadharFile?: File | null;
+  panFile?: File | null;
+  bankProofFile?: File | null;
+  aadharUrl?: string;
+  panUrl?: string;
+  bankProofUrl?: string;
+  nominee?: {
+    name?: string;
+    phone?: string;
+    occupation?: string;
+    relation?: string;
+    gender?: string;
+  };
 }
 
 interface UserDialogProps {
@@ -105,6 +120,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
       <Formik
         initialValues={initialData}
         validationSchema={userValidationSchema}
+        validateOnMount={true}
         enableReinitialize={true}
         onSubmit={async (values, { setSubmitting }) => {
           setSubmitting(true);
@@ -112,60 +128,63 @@ const UserDialog: React.FC<UserDialogProps> = ({
           setSubmitting(false);
         }}
       >
-        {({ setFieldValue, isValid }) => (
-          <Form>
-            <DialogTitle
-              id="user-dialog-title"
-              sx={{ fontWeight: 700, color: "#1976d2", fontSize: 20 }}
-            >
-              {editId ? BUTTON_LABELS.EDIT_USER : BUTTON_LABELS.ADD_USER}
-            </DialogTitle>
-
-            <DialogContent
-              sx={{
-                display: "flex",
-                flexDirection: "column",
-                gap: 1,
-                mt: 1,
-                maxHeight: "70vh",
-                overflowY: "auto",
-                px: 3,
-              }}
-            >
-              <BasicInformation editId={editId} />
-              <OrganizationSection
-                managers={managers}
-                departments={departments}
-                roles={roles}
-                setFieldValue={setFieldValue}
-              />
-            </DialogContent>
-
-            <DialogActions sx={{ p: 2 }}>
-              <Button
-                onClick={onClose}
-                disabled={saving}
-                sx={{ fontWeight: 600 }}
+        {({ setFieldValue, isValid, dirty, errors, touched, values }) => {
+          return (
+            <Form>
+              <DialogTitle
+                id="user-dialog-title"
+                sx={{ fontWeight: 700, color: "#1976d2", fontSize: 20 }}
               >
-                {BUTTON_LABELS.CANCEL}
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                sx={{ fontWeight: 600, bgcolor: "#1976d2", color: "#fff" }}
-                disabled={saving || !isValid}
+                {editId ? BUTTON_LABELS.EDIT_USER : BUTTON_LABELS.ADD_USER}
+              </DialogTitle>
+
+              <DialogContent
+                sx={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 1,
+                  mt: 1,
+                  maxHeight: "70vh",
+                  overflowY: "auto",
+                  px: 3,
+                }}
               >
-                {saving ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : editId ? (
-                  BUTTON_LABELS.SAVE
-                ) : (
-                  BUTTON_LABELS.ADD
-                )}
-              </Button>
-            </DialogActions>
-          </Form>
-        )}
+                <BasicInformation editId={editId} />
+                <OrganizationSection
+                  managers={managers}
+                  departments={departments}
+                  roles={roles}
+                  setFieldValue={setFieldValue}
+                />
+                {/* debug removed */}
+              </DialogContent>
+
+              <DialogActions sx={{ p: 2 }}>
+                <Button
+                  onClick={onClose}
+                  disabled={saving}
+                  sx={{ fontWeight: 600 }}
+                >
+                  {BUTTON_LABELS.CANCEL}
+                </Button>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  sx={{ fontWeight: 600, bgcolor: "#1976d2", color: "#fff" }}
+                  disabled={saving || !isValid || (editId ? !dirty : false)}
+                >
+                  {saving ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : editId ? (
+                    BUTTON_LABELS.SAVE
+                  ) : (
+                    BUTTON_LABELS.ADD
+                  )}
+                </Button>
+              </DialogActions>
+            </Form>
+          );
+        }}
       </Formik>
     </Dialog>
   );

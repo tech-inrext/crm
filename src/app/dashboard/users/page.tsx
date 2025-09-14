@@ -137,11 +137,22 @@ const Users: React.FC = () => {
     return {
       ...DEFAULT_USER_FORM,
       ...safeForm,
-      gender: safeForm.gender || "",
+      gender: safeForm.gender ?? DEFAULT_USER_FORM.gender,
       managerId: safeForm.managerId || "",
       departmentId: safeForm.departmentId || "",
-      roles: Array.isArray(safeForm.roles) ? safeForm.roles : [],
+      roles: Array.isArray(safeForm.roles)
+        ? safeForm.roles.map((r: any) =>
+            typeof r === "string" ? r : r._id || r.id || ""
+          )
+        : [],
       joiningDate,
+      aadharUrl: safeForm.aadharUrl || "",
+      panUrl: safeForm.panUrl || "",
+      bankProofUrl: safeForm.bankProofUrl || "",
+      nominee: safeForm.nominee ?? DEFAULT_USER_FORM.nominee,
+      // ensure freelancer fields are present in initial values
+      slabPercentage: safeForm.slabPercentage || "",
+      branch: safeForm.branch || "",
     };
   };
 
