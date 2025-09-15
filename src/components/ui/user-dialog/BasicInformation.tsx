@@ -2,6 +2,8 @@ import React from "react";
 import { TextField, Box, MenuItem, Typography } from "@mui/material";
 import { Field, FieldProps } from "formik";
 import { GENDER_OPTIONS, FIELD_LABELS } from "@/constants/users";
+import NomineeSection from "./NomineeSection";
+import RequiredDocuments from "./RequiredDocuments";
 
 const genderOptions = GENDER_OPTIONS.map((gender) => ({
   value: gender,
@@ -86,6 +88,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
         </Field>
       </Box>
 
+      {/* Basic fields continued: Alt phone / Address */}
       <Box
         sx={{
           display: "flex",
@@ -214,9 +217,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                   },
                 }}
                 onChange={(e) => {
-                  // ensure Formik receives yyyy-mm-dd string
                   const v = e.target.value || "";
-                  // Manually call the field.onChange to keep formik synced
                   if (field.name && (field as any).onChange) {
                     (field as any).onChange({
                       target: { name: field.name, value: v },
@@ -241,6 +242,9 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
           )}
         </Field>
       </Box>
+
+      <RequiredDocuments />
+      <NomineeSection />
     </>
   );
 };

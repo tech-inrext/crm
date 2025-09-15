@@ -65,7 +65,35 @@ export function useUsers(debouncedSearch: string) {
     async (userData: any) => {
       setSaving(true);
       try {
-        await axios.post(USERS_API_BASE, userData);
+        // If files are present, upload them to S3 first using presigned URL
+        const uploadFile = async (file: File | null) => {
+          if (!file) return null;
+          const presignRes = await axios.post(
+            "/api/v0/s3/upload-url",
+            { fileName: file.name, fileType: file.type },
+            { headers: { "Content-Type": "application/json" } }
+          );
+          const { uploadUrl, fileUrl } = presignRes.data;
+          // PUT to uploadUrl
+          await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+          return fileUrl;
+        };
+
+        const payload = { ...userData };
+  console.debug("[addUser] payload before uploads:", payload);
+        if (userData.aadharFile) payload.aadharUrl = await uploadFile(userData.aadharFile);
+        if (userData.panFile) payload.panUrl = await uploadFile(userData.panFile);
+        if (userData.bankProofFile) payload.bankProofUrl = await uploadFile(userData.bankProofFile);
+  if (userData.signatureFile) payload.signatureUrl = await uploadFile(userData.signatureFile);
+
+        // Remove file objects before sending
+        delete payload.aadharFile;
+        delete payload.panFile;
+        delete payload.bankProofFile;
+  delete payload.signatureFile;
+
+        await axios.post(USERS_API_BASE, payload);
+  console.debug("[addUser] POST completed");
         await loadEmployees(page, rowsPerPage, debouncedSearch, false);
       } catch (error) {
         // Normalize axios errors so caller can show friendly messages
@@ -91,7 +119,30 @@ export function useUsers(debouncedSearch: string) {
     async (id: string, userData: any) => {
       setSaving(true);
       try {
-        await axios.patch(`${USERS_API_BASE}/${id}`, userData);
+        // handle file uploads same as addUser
+        const uploadFile = async (file: File | null) => {
+          if (!file) return null;
+          const presignRes = await axios.post(
+            "/api/v0/s3/upload-url",
+            { fileName: file.name, fileType: file.type },
+            { headers: { "Content-Type": "application/json" } }
+          );
+          const { uploadUrl, fileUrl } = presignRes.data;
+          await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+          return fileUrl;
+        };
+
+        const payload = { ...userData };
+        if (userData.aadharFile) payload.aadharUrl = await uploadFile(userData.aadharFile);
+        if (userData.panFile) payload.panUrl = await uploadFile(userData.panFile);
+        if (userData.bankProofFile) payload.bankProofUrl = await uploadFile(userData.bankProofFile);
+  if (userData.signatureFile) payload.signatureUrl = await uploadFile(userData.signatureFile);
+        delete payload.aadharFile;
+        delete payload.panFile;
+        delete payload.bankProofFile;
+  delete payload.signatureFile;
+
+        await axios.patch(`${USERS_API_BASE}/${id}`, payload);
         await loadEmployees(page, rowsPerPage, debouncedSearch, false);
       } catch (error) {
         console.error("Failed to update user:", error);

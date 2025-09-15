@@ -3,38 +3,23 @@ import Employee from "../../../../models/Employee";
 import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 
-// ✅ GET: Fetch employee by ID
+// GET: fetch employee by id
 const getEmployeeById = async (req, res) => {
   const { id } = req.query;
-
   try {
     const employee = await Employee.findById(id).populate("roles");
-
-    if (!employee) {
-      return res.status(404).json({
-        success: false,
-        error: "Employee not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: employee,
-    });
-  } catch (error) {
-    console.error("Error fetching employee:", error);
-    return res.status(500).json({
-      success: false,
-      error: "Server Error: " + error.message,
-    });
+    if (!employee) return res.status(404).json({ success: false, error: "Employee not found" });
+    return res.status(200).json({ success: true, data: employee });
+  } catch (err) {
+    console.error(err);
+    return res.status(500).json({ success: false, error: err.message });
   }
 };
 
-// ✅ PATCH: Update allowed fields only
+// PATCH: update allowed fields
 const updateEmployeeDetails = async (req, res) => {
   const { id } = req.query;
-
-  // FIX: Destructure roles from req.body
+  console.debug("[employee:patch] incoming body:", req.body);
   const {
     name,
     altPhone,
@@ -44,67 +29,72 @@ const updateEmployeeDetails = async (req, res) => {
     designation,
     managerId,
     departmentId,
-    role,
     roles,
+    aadharUrl,
+    panUrl,
+    bankProofUrl,
+    signatureUrl,
+    nominee,
+    slabPercentage,
+    branch,
   } = req.body;
+  console.debug("[employee:patch] slabPercentage, branch:", slabPercentage, branch);
 
-  // Fields that are NOT allowed to be updated
   const notAllowedFields = ["phone", "email", "joiningDate"];
-
-  const requestFields = Object.keys(req.body);
-  const invalidFields = requestFields.filter((field) =>
-    notAllowedFields.includes(field)
-  );
-
+  const requestFields = Object.keys(req.body || {});
+  const invalidFields = requestFields.filter((f) => notAllowedFields.includes(f));
   if (invalidFields.length > 0) {
-    return res.status(400).json({
-      success: false,
-      message: `You are not allowed to update these field(s): ${invalidFields.join(
-        ", "
-      )}`,
-    });
+    return res.status(400).json({ success: false, message: `You are not allowed to update these field(s): ${invalidFields.join(", ")}` });
   }
 
-  // Build the update object dynamically
-  const updateFields = {
-    ...(name && { name }),
-    ...(altPhone && { altPhone }),
-    ...(address && { address }),
-    ...(gender && { gender }),
-    ...(age && { age }),
-    ...(designation && { designation }),
-    ...(managerId && { managerId }),
-    ...(departmentId && { departmentId }),
-    ...(Array.isArray(roles) && roles.length > 0 && { roles }),
+  // Build updateFields by checking property presence so empty strings/nulls
+  // in the request can be used to clear existing values.
+  const updateFields = {};
+
+  const setIfPresent = (key, val) => {
+    if (Object.prototype.hasOwnProperty.call(req.body, key)) {
+      updateFields[key] = val;
+    }
   };
 
+  setIfPresent('name', name);
+  setIfPresent('altPhone', altPhone);
+  setIfPresent('address', address);
+  setIfPresent('gender', gender);
+  // allow clearing age by sending null
+  if (Object.prototype.hasOwnProperty.call(req.body, 'age')) {
+    updateFields.age = age;
+  }
+  setIfPresent('designation', designation);
+  setIfPresent('managerId', managerId);
+  setIfPresent('departmentId', departmentId);
+  if (Object.prototype.hasOwnProperty.call(req.body, 'roles')) {
+    updateFields.roles = Array.isArray(roles) ? roles : [];
+  }
+  setIfPresent('aadharUrl', aadharUrl);
+  setIfPresent('panUrl', panUrl);
+  setIfPresent('bankProofUrl', bankProofUrl);
+  setIfPresent('signatureUrl', signatureUrl);
+  // nominee can be an object; allow clearing by sending null/empty object
+  if (Object.prototype.hasOwnProperty.call(req.body, 'nominee')) {
+    updateFields.nominee = nominee;
+  }
+  if (Object.prototype.hasOwnProperty.call(req.body, 'slabPercentage')) {
+    updateFields.slabPercentage = slabPercentage;
+  }
+  if (Object.prototype.hasOwnProperty.call(req.body, 'branch')) {
+    updateFields.branch = branch;
+  }
+
   try {
-    const updatedEmployee = await Employee.findByIdAndUpdate(
-      id,
-      { $set: updateFields },
-      { new: true }
-    ).populate("roles");
-
-    if (!updatedEmployee) {
-      return res.status(404).json({
-        success: false,
-        error: "Employee not found",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      data: updatedEmployee,
-    });
-  } catch (error) {
-    return res.status(400).json({
-      success: false,
-      error: error.message,
-    });
+    const updated = await Employee.findByIdAndUpdate(id, updateFields, { new: true }).populate('roles');
+    if (!updated) return res.status(404).json({ success: false, error: 'Employee not found' });
+    return res.status(200).json({ success: true, data: updated });
+  } catch (err) {
+    return res.status(400).json({ success: false, error: err.message });
   }
 };
 
-// ✅ Auth Wrapper
 function withAuth(handler) {
   return async (req, res) => {
     const parsedCookies = cookie.parse(req.headers.cookie || "");
@@ -113,24 +103,12 @@ function withAuth(handler) {
   };
 }
 
-// ✅ Main Handler with Permission Check
 const handler = async (req, res) => {
   await dbConnect();
-
-  if (req.method === "GET") {
-    return getEmployeeById(req, res);
-  }
-
-  if (req.method === "PATCH") {
-    return updateEmployeeDetails(req, res);
-  }
-
-  // Unsupported method
-  return res.status(405).json({
-    success: false,
-    message: "Method not allowed",
-  });
+  if (req.method === "GET") return getEmployeeById(req, res);
+  if (req.method === "PATCH") return updateEmployeeDetails(req, res);
+  return res.status(405).json({ success: false, message: "Method not allowed" });
 };
 
-// ✅ Export with Auth Middleware
 export default withAuth(handler);
+ 

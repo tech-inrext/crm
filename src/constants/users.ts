@@ -21,6 +21,20 @@ export const DEFAULT_USER_FORM = {
   managerId: "",
   departmentId: "",
   roles: [],
+  // Documents (uploaded files handled separately)
+  aadharFile: null,
+  panFile: null,
+  bankProofFile: null,
+  signatureFile: null,
+  aadharUrl: "",
+  panUrl: "",
+  bankProofUrl: "",
+  signatureUrl: "",
+  // Nominee details (optional)
+  nominee: null,
+  // Freelancer fields
+  slabPercentage: "",
+  branch: "",
 };
 
 // Gender Options
@@ -65,17 +79,30 @@ export const FIELD_LABELS = {
   BASIC_INFO: "Basic Information",
   ORGANIZATION: "Organization",
   FULL_NAME: "Full Name *",
+  AADHAR: "Aadhar Card",
+  PAN: "PAN Card",
+  BANK_PROOF: "Bank Proof",
+  SIGNATURE: "Signature",
   EMAIL: "Email *",
   PHONE: "Phone *",
   ALT_PHONE: "Alternate Phone",
   ADDRESS: "Address *",
   GENDER: "Gender *",
+  NOMINEE_DETAILS: "Nominee Details",
+  NOMINEE_FULL_NAME: "Full Name",
+  NOMINEE_PHONE: "Phone Number",
+  NOMINEE_OCCUPATION: "Occupation",
+  NOMINEE_RELATION: "Relation with Nominee",
+  NOMINEE_GENDER: "Gender",
   AGE: "Age",
   JOINING_DATE: "Joining Date",
   DESIGNATION: "Designation *",
   MANAGER: "Manager",
   DEPARTMENT: "Department",
   ROLES: "Roles *",
+  FOR_FREELANCER: "For Freelancer",
+  SLAB_PERCENTAGE: "Slab Percentage",
+  BRANCH: "Branch",
 };
 
 // Button Labels

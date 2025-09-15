@@ -23,6 +23,13 @@ const createEmployee = async (req, res) => {
       managerId,
       departmentId,
       roles,
+      aadharUrl,
+      panUrl,
+      bankProofUrl,
+      signatureUrl,
+      nominee,
+      slabPercentage,
+      branch,
     } = req.body;
     const isCabVendor = req.body.isCabVendor || false;
     const dummyPassword = "Inrext@123";
@@ -52,25 +59,38 @@ const createEmployee = async (req, res) => {
         .json({ success: false, message: "Employee already exists" });
     }
 
-    // ✅ Create new employee
-    const newEmployee = new Employee({
+    // ✅ Create new employee (only set optional fields if present)
+    const employeeData = {
       name,
       email,
       phone,
       password: hashedPassword,
-      altPhone,
-      address,
-      gender,
-      age,
-      joiningDate: joiningDate ? new Date(joiningDate) : undefined,
-      designation,
-      managerId,
-      departmentId,
-      roles: roles || "68b6904f3a3a9b850429e610",
       isCabVendor,
-    });
+    };
+
+    if (Object.prototype.hasOwnProperty.call(req.body, 'altPhone')) employeeData.altPhone = altPhone;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'address')) employeeData.address = address;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'gender')) employeeData.gender = gender;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'age')) employeeData.age = age;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'joiningDate')) employeeData.joiningDate = joiningDate ? new Date(joiningDate) : undefined;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'designation')) employeeData.designation = designation;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'managerId')) employeeData.managerId = managerId;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'departmentId')) employeeData.departmentId = departmentId;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'roles')) employeeData.roles = Array.isArray(roles) ? roles : roles ? [roles] : undefined;
+    // documents
+    if (Object.prototype.hasOwnProperty.call(req.body, 'aadharUrl')) employeeData.aadharUrl = aadharUrl;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'panUrl')) employeeData.panUrl = panUrl;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'bankProofUrl')) employeeData.bankProofUrl = bankProofUrl;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'signatureUrl')) employeeData.signatureUrl = signatureUrl;
+    // nominee and freelancer fields
+    if (Object.prototype.hasOwnProperty.call(req.body, 'nominee')) employeeData.nominee = nominee;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'slabPercentage')) employeeData.slabPercentage = slabPercentage;
+    if (Object.prototype.hasOwnProperty.call(req.body, 'branch')) employeeData.branch = branch;
+
+    const newEmployee = new Employee(employeeData);
 
     await newEmployee.save();
+  console.debug("[employee:create] saved employee:", newEmployee.toObject());
 
     // 1) Send welcome email to employee
     try {
