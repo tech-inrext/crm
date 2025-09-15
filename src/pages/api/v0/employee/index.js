@@ -142,7 +142,7 @@ const createEmployee = async (req, res) => {
 
 const getAllEmployees = async (req, res) => {
   try {
-    const { page = 1, limit = 5, search = "", isCabVendor } = req.query;
+    const { page = 1, limit = 5, search = "", isCabVendor, mouStatus, managerId } = req.query;
 
     // robust pagination parsing
     const currentPage = parseInt(page);
@@ -174,7 +174,25 @@ const getAllEmployees = async (req, res) => {
     const vendorFilter =
       typeof vendorVal === "boolean" ? { isCabVendor: vendorVal } : {};
 
-    const query = { ...searchFilter, ...vendorFilter };
+    // optional mouStatus filter (case-insensitive exact match)
+    const mouFilter = mouStatus
+      ? { mouStatus: { $regex: `^${String(mouStatus).trim()}$`, $options: "i" } }
+      : {};
+
+    // Manager filter: only apply if managerId provided AND requester is NOT a system admin
+    // The `userAuth` middleware sets `req.isSystemAdmin` when the request is authenticated.
+    let managerFilter = {};
+    try {
+      const requesterIsSystemAdmin = req.isSystemAdmin || (res.locals && res.locals.isSystemAdmin);
+      if (!requesterIsSystemAdmin && managerId) {
+        managerFilter = { managerId: String(managerId).trim() };
+      }
+    } catch (e) {
+      // if any issue reading auth flags, default to applying manager filter when provided
+      if (managerId) managerFilter = { managerId: String(managerId).trim() };
+    }
+
+    const query = { ...searchFilter, ...vendorFilter, ...mouFilter, ...managerFilter };
 
     const [employees, totalEmployees] = await Promise.all([
       Employee.find(query)
@@ -197,6 +215,8 @@ const getAllEmployees = async (req, res) => {
       appliedFilter: {
         search: search || null,
         isCabVendor: typeof vendorVal === "boolean" ? vendorVal : null,
+        mouStatus: mouStatus || null,
+        managerId: managerId || null,
       },
     });
   } catch (error) {
