@@ -54,6 +54,10 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       enum: ["Male", "Female", "Other"],
     },
+    mouStatus: {
+      type: String,
+      enum: ["Pending", "Approved", "Rejected"],
+    },
     age: {
       type: Number,
       min: [0, "Age cannot be negative"],

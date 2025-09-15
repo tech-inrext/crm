@@ -66,6 +66,7 @@ const createEmployee = async (req, res) => {
       phone,
       password: hashedPassword,
       isCabVendor,
+      mouStatus: "Pending",
     };
 
     if (Object.prototype.hasOwnProperty.call(req.body, 'altPhone')) employeeData.altPhone = altPhone;
