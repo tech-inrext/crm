@@ -7,6 +7,7 @@ import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
+import HandshakeIcon from "@mui/icons-material/Handshake";
 
 const AppIcon = ({
   src,
@@ -64,6 +65,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     href: "/dashboard/cab-booking",
     module: "cab-booking",
     icon: <AppIcon src="/cab.png" alt="Cab Booking" />,
+  },
+  {
+    label: "MOU",
+    href: "/dashboard/mou",
+    module: "mou",
+    icon: <HandshakeIcon sx={{ color: "#4CAF50" }} />,
   },
 ];
 

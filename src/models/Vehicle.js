@@ -44,7 +44,6 @@ const vehicleSchema = new mongoose.Schema({
 });
 
 // Indexes
-vehicleSchema.index({ registrationNumber: 1 });
 vehicleSchema.index({ isAvailable: 1 });
 vehicleSchema.index({ status: 1 });
 

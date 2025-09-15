@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 const modules = [
   "employee",
   "lead",
+  "mou",
   "role",
   "department",
   "cab-booking",
