@@ -55,7 +55,7 @@ export async function sendCabVendorAssignmentEmail({
     <p>Thank you.</p>
   `;
 
-  await mailer({
+  await mailer.sendEmail({
     to: vendor.email,
     subject: `New Cab Assignment • ${safe(booking?.bookingId)}`,
     html,

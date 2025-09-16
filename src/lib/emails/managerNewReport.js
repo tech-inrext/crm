@@ -1,5 +1,4 @@
-// /lib/emails/managerNewReport.js
-import { mailer } from "@/lib/mailer";
+import mailer from "../mailer";
 
 const safe = (v) => (v == null ? "" : String(v));
 
@@ -23,7 +22,7 @@ export async function sendManagerNewReportEmail({ manager, employee, appUrl }) {
     <p>Thanks,<br/>Team Inrext</p>
   `;
 
-  await mailer({
+  await mailer.sendEmail({
     to: manager.email,
     subject: "New Team Member Assigned To You",
     html,

@@ -1,5 +1,6 @@
 // /lib/emails/cabBookingStatus.js
-import { mailer } from "@/lib/mailer";
+
+import mailer from "../mailer";
 
 export async function sendCabBookingStatusEmail({
   employee,
@@ -47,7 +48,7 @@ export async function sendCabBookingStatusEmail({
     <p>Thank you.</p>
   `;
 
-  await mailer({
+  await mailer.sendEmail({
     to: employee.email,
     subject: `Cab Booking ${status === "approved" ? "Approved" : "Rejected"}`,
     html,
