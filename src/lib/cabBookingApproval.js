@@ -42,7 +42,7 @@ export async function sendCabBookingApprovalEmail({
     <p>Thank you.</p>
   `;
 
-  await mailer({
+  await mailer.sendEmail({
     to: manager.email,
     subject: "Cab Booking Approval Request",
     html,

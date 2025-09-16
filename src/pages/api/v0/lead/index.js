@@ -1,154 +1,19 @@
-import dbConnect from "../../../../lib/mongodb";
-import Lead from "../../../../models/Lead";
-import * as cookie from "cookie";
-import { userAuth } from "../../../../middlewares/auth";
+import { Controller, HttpStatus } from "@framework";
+import LeadService from "../../../../be/services/LeadService";
 
-// ✅ Create Lead (WRITE Access Required)
-const createLead = async (req, res) => {
-  try {
-    const { phone, ...rest } = req.body;
-
-    if (!phone) {
-      return res.status(400).json({
-        success: false,
-        message: "Phone number is required",
-      });
-    }
-
-    const existingLead = await Lead.findOne({ phone });
-
-    if (existingLead) {
-      return res.status(409).json({
-        success: false,
-        message: "Phone number already exists for another lead",
-      });
-    }
-
-    const leadId = `LD-${Date.now().toString().slice(-6)}-${Math.floor(
-      100 + Math.random() * 900
-    )}`;
-
-    const loggedInUserId = req.employee?._id;
-    console.log(loggedInUserId);
-
-    const newLead = new Lead({
-      uploadedBy: loggedInUserId,
-      leadId,
-      phone,
-      ...rest,
-    });
-
-    await newLead.save();
-
-    return res.status(201).json({ success: true, data: newLead });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Error creating lead",
-      error: error.message,
-    });
+class LeadIndexController extends Controller {
+  constructor() {
+    super();
+    this.service = new LeadService();
   }
-};
 
-const getAllLeads = async (req, res) => {
-  try {
-  const { page = 1, limit = 5, search = "", status } = req.query;
-
-    const currentPage = parseInt(page);
-    const itemsPerPage = parseInt(limit);
-    const skip = (currentPage - 1) * itemsPerPage;
-
-    // 🔐 Logged-in user's id (set by userAuth)
-    const loggedInUserId = req.employee?._id;
-    if (!loggedInUserId) {
-      return res.status(401).json({ success: false, message: "Unauthorized" });
-    }
-
-    // 🎯 Always scope to leads uploaded by this user
-    const baseQuery = { uploadedBy: loggedInUserId };
-
-    // Optional search filter
-    const searchQuery = search
-      ? {
-          $or: [
-            { fullName: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } },
-            { phone: { $regex: search, $options: "i" } },
-          ],
-        }
-      : {};
-
-    // Optional status filter
-    // Accepts: status=New or status=New,Closed or status[]=New&status[]=Closed
-    let statusQuery = {};
-    if (status) {
-      // status may be a string (possibly comma-separated) or array
-      const statuses = Array.isArray(status)
-        ? status
-        : String(status).split(",").map((s) => s.trim()).filter(Boolean);
-
-      if (statuses.length) {
-        // Build case-insensitive match for each status to be safe
-        statusQuery = { status: { $in: statuses.map((s) => new RegExp(`^${s}$`, "i")) } };
-      }
-    }
-
-    const queryParts = [baseQuery];
-    if (Object.keys(searchQuery).length) queryParts.push(searchQuery);
-    if (Object.keys(statusQuery).length) queryParts.push(statusQuery);
-
-    const query = queryParts.length > 1 ? { $and: queryParts } : baseQuery;
-
-    const [leads, totalLeads] = await Promise.all([
-      Lead.find(query).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }),
-      Lead.countDocuments(query),
-    ]);
-
-    return res.status(200).json({
-      success: true,
-      data: leads,
-      pagination: {
-        totalItems: totalLeads,
-        currentPage,
-        itemsPerPage,
-        totalPages: Math.ceil(totalLeads / itemsPerPage),
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch leads",
-      error: error.message,
-    });
+  async get(req, res) {
+    return this.service.getAllLeads(req, res);
   }
-};
 
-// ✅ Middleware Wrapper for Authentication
-function withAuth(handler) {
-  return async (req, res) => {
-    const parsedCookies = cookie.parse(req.headers.cookie || "");
-    req.cookies = parsedCookies;
-    await userAuth(req, res, () => handler(req, res));
-  };
+  async post(req, res) {
+    return this.service.createLead(req, res);
+  }
 }
 
-// ✅ Main Handler With Role-Based Permission Checks
-const handler = async (req, res) => {
-  await dbConnect();
-
-  // 🔒 READ Operation
-  if (req.method === "GET") {
-    return getAllLeads(req, res);
-  }
-
-  // ✏️ WRITE Operation
-  if (req.method === "POST") {
-    return createLead(req, res);
-  }
-
-  return res
-    .status(405)
-    .json({ success: false, message: "Method not allowed" });
-};
-
-export default withAuth(handler);
+export default new LeadIndexController().handler;
