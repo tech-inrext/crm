@@ -1,5 +1,5 @@
 // /lib/emails/cabBookingApproval.js
-import { mailer } from "@/lib/mailer";
+import mailer from "./mailer.js";
 
 export async function sendCabBookingApprovalEmail({
   manager,
@@ -42,9 +42,5 @@ export async function sendCabBookingApprovalEmail({
     <p>Thank you.</p>
   `;
 
-  await mailer.sendEmail({
-    to: manager.email,
-    subject: "Cab Booking Approval Request",
-    html,
-  });
+  await mailer.sendEmail(manager.email, "Cab Booking Approval Request", html);
 }

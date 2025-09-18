@@ -1,5 +1,5 @@
 // /lib/emails/cabVendorAssignment.js
-import { mailer } from "@/lib/mailer";
+import mailer from "../mailer.js";
 
 export async function sendCabVendorAssignmentEmail({
   vendor, // Employee doc (must have email)
@@ -55,9 +55,9 @@ export async function sendCabVendorAssignmentEmail({
     <p>Thank you.</p>
   `;
 
-  await mailer.sendEmail({
-    to: vendor.email,
-    subject: `New Cab Assignment • ${safe(booking?.bookingId)}`,
-    html,
-  });
+  await mailer.sendEmail(
+    vendor.email,
+    `New Cab Assignment • ${safe(booking?.bookingId)}`,
+    html
+  );
 }

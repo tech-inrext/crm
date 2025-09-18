@@ -10,7 +10,7 @@ class LeadService extends Service {
     try {
       const { phone, ...rest } = req.body;
 
-      validator(req.body, "createLead");
+      // validator(req.body, "createLead");
 
       if (!phone) {
         return res.status(400).json({
