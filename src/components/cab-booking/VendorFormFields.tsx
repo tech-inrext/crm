@@ -19,6 +19,12 @@ interface Props {
   setStartKm: React.Dispatch<React.SetStateAction<string>>;
   endKm: string;
   setEndKm: React.Dispatch<React.SetStateAction<string>>;
+  odometerStart?: string;
+  setOdometerStart?: React.Dispatch<React.SetStateAction<string>>;
+  odometerEnd?: string;
+  setOdometerEnd?: React.Dispatch<React.SetStateAction<string>>;
+  fare?: string;
+  setFare?: React.Dispatch<React.SetStateAction<string>>;
   totalKm?: number | string;
   aadharError?: string;
   dlError?: string;
@@ -50,6 +56,12 @@ const VendorFormFields: React.FC<Props> = ({
   dlError,
   clearAadharError,
   clearDlError,
+  odometerStart,
+  setOdometerStart,
+  odometerEnd,
+  setOdometerEnd,
+  fare,
+  setFare,
 }) => {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -167,6 +179,54 @@ const VendorFormFields: React.FC<Props> = ({
         />
       </div>
 
+      {/* Odometer Start (driver) - image upload */}
+      <div className="form-group">
+        <label className="block text-sm font-medium mb-1">
+          Odometer Start (Driver) Image
+        </label>
+        <div className="relative">
+          <label
+            className={`${inputClass} flex items-center justify-between bg-gray-100 cursor-pointer`}
+          >
+            <span className="text-sm font-medium">Choose File</span>
+            <span className="text-sm text-gray-600 ml-2">
+              {odometerStart
+                ? typeof odometerStart === "string"
+                  ? "Selected"
+                  : (odometerStart as File).name
+                : "No file chosen"}
+            </span>
+            <input
+              type="file"
+              name="odometerStart"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files && e.target.files[0];
+                if (file && setOdometerStart) {
+                  setOdometerStart(file as any);
+                }
+              }}
+              disabled={disabled}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+          </label>
+        </div>
+        {odometerStart && typeof odometerStart === "string" && (
+          <img
+            src={odometerStart}
+            alt="start-odo"
+            className="mt-2 w-32 h-20 object-cover rounded"
+          />
+        )}
+        {odometerStart && typeof odometerStart !== "string" && (
+          <img
+            src={URL.createObjectURL(odometerStart as File)}
+            alt="start-odo-file"
+            className="mt-2 w-32 h-20 object-cover rounded"
+          />
+        )}
+      </div>
+
       {/* End Kilometers */}
       <div className="form-group">
         <label className="block text-sm font-medium mb-1">
@@ -183,6 +243,54 @@ const VendorFormFields: React.FC<Props> = ({
         />
       </div>
 
+      {/* Odometer End (driver) - image upload */}
+      <div className="form-group">
+        <label className="block text-sm font-medium mb-1">
+          Odometer End (Driver) Image
+        </label>
+        <div className="relative">
+          <label
+            className={`${inputClass} flex items-center justify-between bg-gray-100 cursor-pointer`}
+          >
+            <span className="text-sm font-medium">Choose File</span>
+            <span className="text-sm text-gray-600 ml-2">
+              {odometerEnd
+                ? typeof odometerEnd === "string"
+                  ? "Selected"
+                  : (odometerEnd as File).name
+                : "No file chosen"}
+            </span>
+            <input
+              type="file"
+              name="odometerEnd"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files && e.target.files[0];
+                if (file && setOdometerEnd) {
+                  setOdometerEnd(file as any);
+                }
+              }}
+              disabled={disabled}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+          </label>
+        </div>
+        {odometerEnd && typeof odometerEnd === "string" && (
+          <img
+            src={odometerEnd}
+            alt="end-odo"
+            className="mt-2 w-32 h-20 object-cover rounded"
+          />
+        )}
+        {odometerEnd && typeof odometerEnd !== "string" && (
+          <img
+            src={URL.createObjectURL(odometerEnd as File)}
+            alt="end-odo-file"
+            className="mt-2 w-32 h-20 object-cover rounded"
+          />
+        )}
+      </div>
+
       {/* Total Kilometers */}
       <div className="form-group">
         <label className="block text-sm font-medium mb-1">
@@ -194,6 +302,19 @@ const VendorFormFields: React.FC<Props> = ({
           value={typeof totalKm !== "undefined" ? String(totalKm) : ""}
           disabled
           className="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
+        />
+      </div>
+
+      {/* Fare */}
+      <div className="form-group">
+        <label className="block text-sm font-medium mb-1">Fare</label>
+        <input
+          type="number"
+          name="fare"
+          value={fare || ""}
+          onChange={(e) => setFare && setFare(e.target.value)}
+          disabled={disabled}
+          className={inputClass}
         />
       </div>
     </div>

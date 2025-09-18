@@ -88,8 +88,64 @@ const VendorBookingPage = () => {
       }
 
       // persist fields and mark payment due (vendor completed form)
-      const payload = { ...formData, status: "payment_due" };
+      const payload: any = { ...formData, status: "payment_due" };
+
+      // Helper to upload a File to S3 using existing presigned URL endpoint
+      const uploadFileToS3 = async (file: File) => {
+        const presignRes = await fetch("/api/v0/s3/upload-url", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+        });
+        if (!presignRes.ok) {
+          const txt = await presignRes.text().catch(() => "");
+          throw new Error(
+            `Failed to get upload URL: ${presignRes.status} ${txt}`
+          );
+        }
+        const presignData = await presignRes.json();
+        const { uploadUrl, fileUrl, fileName } = presignData;
+        if (!uploadUrl || !fileUrl) throw new Error("Invalid presign response");
+
+        const uploadRes = await fetch(uploadUrl, {
+          method: "PUT",
+          headers: { "Content-Type": file.type },
+          body: file,
+        });
+        if (!uploadRes.ok) {
+          throw new Error(`S3 upload failed: ${uploadRes.status}`);
+        }
+
+        return { fileUrl, fileName };
+      };
+
+      // If the form included File objects for odometer images, upload them first
+      try {
+        if (formData.odometerStartFile instanceof File) {
+          const { fileUrl } = await uploadFileToS3(formData.odometerStartFile);
+          payload.odometerStartImageUrl = fileUrl;
+        }
+        if (formData.odometerEndFile instanceof File) {
+          const { fileUrl } = await uploadFileToS3(formData.odometerEndFile);
+          payload.odometerEndImageUrl = fileUrl;
+        }
+      } catch (err) {
+        console.error("Failed to upload odometer images:", err);
+        // decide: abort update if uploads fail
+        return;
+      }
+
+      // Remove raw file objects & previews from payload to avoid sending them to backend
+      delete payload.odometerStartFile;
+      delete payload.odometerEndFile;
+      delete payload.odometerStartPreview;
+      delete payload.odometerEndPreview;
+
       if (bookingId && updateBookingFields) {
+        console.log(
+          "[vendor form] payload before updateBookingFields:",
+          payload
+        );
         const ok = await updateBookingFields(bookingId, payload);
         if (!ok) {
           console.error("Failed to persist vendor form data");
