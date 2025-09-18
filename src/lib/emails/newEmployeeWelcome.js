@@ -1,5 +1,5 @@
 // /lib/emails/newEmployeeWelcome.js
-import { mailer } from "@/lib/mailer";
+import mailer from "../mailer.js";
 
 const safe = (v) => (v == null ? "" : String(v));
 
@@ -23,9 +23,5 @@ export async function sendNewEmployeeWelcomeEmail({ employee, appUrl }) {
   <p>Thanks,<br/>Team Inrext</p>
 `;
 
-  await mailer({
-    to: employee.email,
-    subject: "Welcome to Inrext !!!",
-    html,
-  });
+  await mailer.sendEmail(employee.email, "Welcome to Inrext !!!", html);
 }

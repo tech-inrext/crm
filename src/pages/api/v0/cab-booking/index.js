@@ -127,7 +127,8 @@ const createBooking = async (req, res) => {
 const getAllBookings = async (req, res) => {
   const isManager = req.isManager || (res.locals && res.locals.isManager);
   // If middleware attached isSystemAdmin, allow full visibility across all bookings
-  const isSystemAdmin = req.isSystemAdmin || (res.locals && res.locals.isSystemAdmin);
+  const isSystemAdmin =
+    req.isSystemAdmin || (res.locals && res.locals.isSystemAdmin);
 
   // Allow exactly these statuses
   const ALLOWED_STATUSES = [
@@ -136,8 +137,8 @@ const getAllBookings = async (req, res) => {
     "rejected",
     "active",
     "completed",
-  "cancelled",
-  "payment_due",
+    "cancelled",
+    "payment_due",
   ];
 
   try {
@@ -202,7 +203,7 @@ const getAllBookings = async (req, res) => {
 
     const mainFilter = { ...visibilityFilter, ...statusFilter };
 
-  const [rows, total] = await Promise.all([
+    const [rows, total] = await Promise.all([
       CabBooking.find(mainFilter)
         .skip(skip)
         .limit(itemsPerPage)
@@ -241,8 +242,16 @@ const getAllBookings = async (req, res) => {
           model: "Employee",
           select: "name username email",
         })
-        .populate({ path: "driver", model: "Employee", select: "username phoneNumber" })
-        .populate({ path: "vehicle", model: "Vehicle", select: "model registrationNumber type capacity" });
+        .populate({
+          path: "driver",
+          model: "Employee",
+          select: "username phoneNumber",
+        })
+        .populate({
+          path: "vehicle",
+          model: "Vehicle",
+          select: "model registrationNumber type capacity",
+        });
       // adjust currentPage so response reflects the actual page returned
       // (client may wish to update its UI accordingly)
       // Note: we will return computedTotalPages in pagination below

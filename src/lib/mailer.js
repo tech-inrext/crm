@@ -1,20 +1,28 @@
 import nodemailer from "nodemailer";
 
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.SMTP_EMAIL,
-    pass: process.env.SMTP_PASS,
-  },
-});
+class Mailer {
+  constructor() {
+    this.transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.SMTP_EMAIL,
+        pass: process.env.SMTP_PASS,
+      },
+    });
+    this.senderEmail = process.env.SMTP_EMAIL;
+  }
 
-export async function mailer({ to, subject, html }) {
-  const mailOptions = {
-    from: process.env.EMAIL_FROM,
-    to,
-    subject,
-    html,
+  sendEmail = async (to, subject, html) => {
+    const mailOptions = {
+      from: this.senderEmail,
+      to,
+      subject,
+      html,
+    };
+
+    await this.transporter.sendMail(mailOptions);
   };
-
-  await transporter.sendMail(mailOptions);
 }
+const mailer = new Mailer();
+
+export default mailer;

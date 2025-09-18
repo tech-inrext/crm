@@ -11,7 +11,7 @@ const MODULES = [
   "department",
   "cab-booking",
   "cab-vendor",
-  "vendor"
+  "vendor",
 ];
 
 // Configure which actions on which modules should be allowed for roles
@@ -31,7 +31,7 @@ export function isSystemAdminAllowed(role, action, moduleName) {
   if (modulePerms.includes(action)) return true;
 
   // Wildcard module '*' allows actions across all modules
-  const wildcardPerms = SYSTEM_ADMIN_SPECIAL_PERMISSIONS['*'] || [];
+  const wildcardPerms = SYSTEM_ADMIN_SPECIAL_PERMISSIONS["*"] || [];
   if (wildcardPerms.includes(action)) return true;
 
   return false;
@@ -87,10 +87,10 @@ export async function userAuth(req, res, next) {
       return res.status(403).json({ message: "Invalid role" });
     }
 
-  // Attach isSystemAdmin flag to request and locals for downstream handlers
-  const isSystemAdminFlag = checkIsSystemAdmin(role);
-  req.isSystemAdmin = isSystemAdminFlag;
-  res.locals.isSystemAdmin = isSystemAdminFlag;
+    // Attach isSystemAdmin flag to request and locals for downstream handlers
+    const isSystemAdminFlag = checkIsSystemAdmin(role);
+    req.isSystemAdmin = isSystemAdminFlag;
+    res.locals.isSystemAdmin = isSystemAdminFlag;
 
     // 🔍 Determine moduleName from URL
     const url = req.url.toLowerCase();
@@ -138,9 +138,9 @@ export async function userAuth(req, res, next) {
     req.employee = employee;
     req.role = role;
 
-  // Ensure we await the next handler so this middleware only returns after
-  // the downstream handler completes and sends a response.
-  await next();
+    // Ensure we await the next handler so this middleware only returns after
+    // the downstream handler completes and sends a response.
+    await next(req, res);
   } catch (err) {
     res.status(400).json({ message: "Auth Error: " + err.message });
   }
