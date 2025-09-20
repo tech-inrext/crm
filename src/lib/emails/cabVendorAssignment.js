@@ -10,8 +10,7 @@ export async function sendCabVendorAssignmentEmail({
 }) {
   if (!vendor || !vendor.email) return;
 
-  const baseUrl =
-    appUrl || process.env.APP_URL || "https://dashboard.inrext.com";
+  const baseUrl = appUrl || process.env.APP_URL || "http://localhost:3000";
   const safe = (v) => (v == null ? "" : String(v));
 
   const when = booking?.requestedDateTime
@@ -51,7 +50,7 @@ export async function sendCabVendorAssignmentEmail({
           : ""
       }
     </ul>
-    <p>Please <a href="${baseUrl}/dashboard/cab-booking">log in</a> to view full details and proceed.</p>
+    <p>Please <a href="${baseUrl}/dashboard/vendor-booking">log in</a> to view full details and proceed.</p>
     <p>Thank you.</p>
   `;
 

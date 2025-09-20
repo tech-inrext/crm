@@ -23,6 +23,23 @@ const VendorBookingPage = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [showDialog, setShowDialog] = useState(false);
   const [bookingId, setBookingId] = useState<string | null>(null);
+  const [urlHandled, setUrlHandled] = useState(false);
+
+  const handledKey = (id: string) => `vendorBookingHandled_${id}`;
+  const isHandledFor = React.useCallback((id: string | null) => {
+    if (!id || typeof window === "undefined") return false;
+    try {
+      return Boolean(sessionStorage.getItem(handledKey(id)));
+    } catch {
+      return false;
+    }
+  }, []);
+  const markHandledFor = React.useCallback((id: string | null) => {
+    if (!id || typeof window === "undefined") return;
+    try {
+      sessionStorage.setItem(handledKey(id), "1");
+    } catch {}
+  }, []);
 
   // pagination (1-based)
   const [page, setPage] = useState(1);
@@ -79,6 +96,68 @@ const VendorBookingPage = () => {
     fetchVendorBookings(page, pageSize);
   }, [page, pageSize, fetchVendorBookings]);
 
+  // If URL contains cabBooking=1&bookingId=..., open details or form after
+  // initial load.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const cabFlag = params.get("cabBooking");
+    const bId = params.get("bookingId");
+    if (urlHandled) return;
+
+    if (cabFlag === "1" && bId) {
+      if (isHandledFor(bId)) {
+        setUrlHandled(true);
+        return;
+      }
+      // Wait until bookings are loaded, then attempt to find the booking.
+      const tryOpen = async () => {
+        // ensure we have the latest page of bookings
+        await fetchVendorBookings(page, pageSize);
+        const found = bookings.find(
+          (b: any) => b._id === bId || b.bookingId === bId
+        );
+        if (found) {
+          setSelectedBooking(found);
+          // mark URL handled so we don't reopen after close
+          setUrlHandled(true);
+          markHandledFor(bId);
+          // If vendor should fill form (status active), open form; else show details
+          if (found.status === "active") {
+            setBookingId(found._id);
+            setShowDialog(true);
+          } else {
+            setDetailsOpen(true);
+          }
+        } else {
+          // If not found on current page, try fetching first page and search
+          const prevPage = page;
+          setPage(1);
+          await fetchVendorBookings(1, pageSize);
+          const found2 = bookings.find(
+            (b: any) => b._id === bId || b.bookingId === bId
+          );
+          if (found2) {
+            setSelectedBooking(found2);
+            setUrlHandled(true);
+            markHandledFor(bId);
+            if (found2.status === "active") {
+              setBookingId(found2._id);
+              setShowDialog(true);
+            } else {
+              setDetailsOpen(true);
+            }
+          }
+          setPage(prevPage);
+        }
+      };
+
+      tryOpen().catch((e) =>
+        console.error("Failed to open booking from URL:", e)
+      );
+    }
+  }, [bookings, fetchVendorBookings, page, pageSize, urlHandled]);
+
   const handleVendorFormSubmit = async (formData: any) => {
     try {
       const found = bookings.find((b: any) => b._id === bookingId);
@@ -108,6 +187,31 @@ const VendorBookingPage = () => {
     } catch (err) {
       console.error("Error submitting vendor form:", err);
     }
+  };
+
+  const removeCabBookingQuery = () => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("cabBooking");
+    url.searchParams.delete("bookingId");
+    // Use replaceState to avoid adding history entries
+    window.history.replaceState({}, document.title, url.toString());
+  };
+
+  const handleCloseForm = () => {
+    setShowDialog(false);
+    setBookingId(null);
+    removeCabBookingQuery();
+    setUrlHandled(true);
+    markHandledFor(bookingId);
+  };
+
+  const handleCloseDetails = () => {
+    setDetailsOpen(false);
+    setSelectedBooking(null);
+    removeCabBookingQuery();
+    setUrlHandled(true);
+    markHandledFor(selectedBooking?._id || null);
   };
 
   return (
@@ -176,14 +280,14 @@ const VendorBookingPage = () => {
         {/* Vendor form dialog */}
         <Dialog
           open={showDialog}
-          onClose={() => setShowDialog(false)}
+          onClose={() => handleCloseForm()}
           fullWidth
           maxWidth="sm"
         >
           <DialogContent>
             <VendorBookingForm
               bookingId={bookingId}
-              onClose={() => setShowDialog(false)}
+              onClose={() => handleCloseForm()}
               onSubmit={handleVendorFormSubmit}
             />
           </DialogContent>
@@ -193,7 +297,7 @@ const VendorBookingPage = () => {
         <BookingDetailsDialog
           booking={selectedBooking}
           open={detailsOpen}
-          onClose={() => setDetailsOpen(false)}
+          onClose={() => handleCloseDetails()}
         />
       </Box>
     </PermissionGuard>

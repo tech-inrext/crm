@@ -11,8 +11,7 @@ export async function sendCabBookingStatusEmail({
 }) {
   if (!employee || !employee.email) return; // nothing to send
 
-  const baseUrl =
-    appUrl || process.env.APP_URL || "https://dashboard.inrext.com";
+  const baseUrl = appUrl || process.env.APP_URL || "http://localhost:3000";
   const safe = (v) => (v == null ? "" : String(v));
 
   const when = booking?.requestedDateTime
@@ -32,6 +31,8 @@ export async function sendCabBookingStatusEmail({
       ? "✅ Your cab booking request has been approved."
       : "❌ Unfortunately, your cab booking request has been rejected.";
 
+  const viewLink = `${baseUrl}/dashboard/cab-booking?cabBooking=1`;
+
   const html = `
     <p>Dear ${safe(employee.name) || "Employee"},</p>
     <p>${statusText}</p>
@@ -44,7 +45,7 @@ export async function sendCabBookingStatusEmail({
       <li><b>Booking ID:</b> ${safe(booking?.bookingId)}</li>
       <li><b>Reviewed By:</b> ${safe(manager?.name) || "Manager"}</li>
     </ul>
-    <p>You can <a href="${baseUrl}/dashboard/cab-booking">log in</a> to view more details.</p>
+    <p>You can <a href="${viewLink}">log in</a> to view more details.</p>
     <p>Thank you.</p>
   `;
 

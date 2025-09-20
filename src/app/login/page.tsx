@@ -44,18 +44,35 @@ const LandingPage: React.FC = () => {
   const [resetError, setResetError] = useState<string | null>(null);
   const theme = useTheme();
   const router = useRouter();
-  const { login: authLogin, user } = useAuth();
+  const { login: authLogin, user, setPostLoginRedirect } = useAuth();
 
   const handleInputChange =
     (field: keyof LoginForm) => (e: React.ChangeEvent<HTMLInputElement>) => {
       setForm((prev) => ({ ...prev, [field]: e.target.value }));
       if (error) setError(null);
     };
+  // Do not auto-redirect here. AuthContext will handle redirect after login
+  // (so that any `postLoginRedirect` set from query params is respected).
+
+  // Capture query params like ?cabBooking=1 or ?next=/some/path
   useEffect(() => {
-    if (user) {
-      router.push("/dashboard");
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    const cabBooking = params.get("cabBooking");
+    const next = params.get("next");
+
+    if (cabBooking === "1") {
+      const bookingId = params.get("bookingId");
+      const dest = bookingId
+        ? `/dashboard/cab-booking?cabBooking=1&bookingId=${encodeURIComponent(
+            bookingId
+          )}`
+        : "/dashboard/cab-booking";
+      setPostLoginRedirect(dest);
+    } else if (next) {
+      setPostLoginRedirect(next);
     }
-  }, [user, router]);
+  }, [setPostLoginRedirect]);
 
   const handleTogglePassword = () => {
     setShowPassword((prev) => !prev);
