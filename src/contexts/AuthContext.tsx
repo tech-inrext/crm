@@ -53,6 +53,8 @@ interface AuthContextType {
   completeRoleSelection: (roleId: string) => Promise<void>;
   cancelRoleSelection: () => void;
   setChangeRole: (value: boolean) => void;
+  setPostLoginRedirect: (path: string | null) => void;
+  postLoginRedirect: string | null;
   // Helper functions to work with role objects
   getCurrentRoleName: () => string | null;
   getAvailableRoleNames: () => string[];
@@ -87,6 +89,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [changeRole, setChangeRole] = useState<boolean>(false);
 
   const [roleSelected, setRoleSelected] = useState<boolean>(false);
+  const [postLoginRedirect, setPostLoginRedirect] = useState<string | null>(
+    null
+  );
 
   const getCurrentRoleName = () => {
     if (!user) return null;
@@ -119,15 +124,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         setUser(profileResponse.data);
       } else {
         setUser(null);
-        router.push("/login");
+        // Preserve the intended path when redirecting to login so we can
+        // redirect back after successful authentication.
+        const current =
+          typeof window !== "undefined"
+            ? window.location.pathname + window.location.search
+            : "/";
+        router.push(`/login?next=${encodeURIComponent(current)}`);
       }
     } catch (error) {
       setUser(null);
-      router.push("/login");
+      const current =
+        typeof window !== "undefined"
+          ? window.location.pathname + window.location.search
+          : "/";
+      router.push(`/login?next=${encodeURIComponent(current)}`);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [router]);
 
   // Complete the role selection process after login
   const completeRoleSelection = async (roleId: string) => {
@@ -157,10 +172,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (response.success) {
         setUser(response.employee);
         if (!response?.employee?.currentRole) {
+          // Need to select a role first — show role selector and DO NOT
+          // consume the postLoginRedirect yet. The redirect will be handled
+          // after role selection in `handleRoleSelect`.
           setPendingRoleSelection(true);
+          return;
         }
-        // Redirect to dashboard after login
-        router.push("/dashboard/select-role");
+
+        // If user already has a role, perform redirect now. Prefer
+        // postLoginRedirect if present.
+        if (postLoginRedirect) {
+          const dest = postLoginRedirect;
+          setPostLoginRedirect(null);
+          router.push(dest);
+        } else {
+          router.push("/dashboard/leads");
+        }
       } else {
         throw new Error(response.message || "Login failed");
       }
@@ -249,8 +276,41 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await completeRoleSelection(selectedRoleId);
       setPendingRoleSelection(false);
       setRoleSelected(true);
-      // Redirect to dashboard after role selection
-      router.push("/dashboard/leads");
+      // Redirect after role selection: prefer postLoginRedirect if set.
+      // If not set, try to detect `cabBooking` flag from current URL
+      // (handles cases where user navigated directly to a protected page
+      // and the login modal overlay appeared without the login page
+      // setting postLoginRedirect).
+      let dest: string | null = null;
+      if (postLoginRedirect) {
+        dest = postLoginRedirect;
+        setPostLoginRedirect(null);
+      } else if (typeof window !== "undefined") {
+        const params = new URLSearchParams(window.location.search);
+        if (params.get("cabBooking") === "1") {
+          const bookingId = params.get("bookingId");
+          dest = bookingId
+            ? `/dashboard/cab-booking?cabBooking=1&bookingId=${encodeURIComponent(
+                bookingId
+              )}`
+            : "/dashboard/cab-booking";
+        }
+      }
+
+      if (!dest) {
+        dest = "/dashboard/leads";
+      }
+
+      // If dest equals current location, use replace to force refresh.
+      const current =
+        typeof window !== "undefined"
+          ? window.location.pathname + window.location.search
+          : null;
+      if (current && dest === current) {
+        router.replace(dest);
+      } else {
+        router.push(dest);
+      }
     } catch (error) {
       console.error("Role selection failed:", error);
     }
@@ -312,6 +372,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     getPermissions,
     roleSelected,
     setRoleSelected,
+    setPostLoginRedirect,
+    postLoginRedirect,
   };
 
   return (

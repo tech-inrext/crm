@@ -180,12 +180,16 @@ class EmployeeService extends Service {
         employeeData.managerId = managerId;
       if (Object.prototype.hasOwnProperty.call(req.body, "departmentId"))
         employeeData.departmentId = departmentId;
-      if (Object.prototype.hasOwnProperty.call(req.body, "roles"))
+      if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
         employeeData.roles = Array.isArray(roles)
           ? roles
           : roles
           ? [roles]
           : undefined;
+      }
+      if (isCabVendor) {
+        employeeData.roles = ["68b6904f3a3a9b850429e610"];
+      }
       // documents
       if (Object.prototype.hasOwnProperty.call(req.body, "aadharUrl"))
         employeeData.aadharUrl = aadharUrl;
