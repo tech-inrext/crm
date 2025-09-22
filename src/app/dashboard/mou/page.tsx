@@ -106,6 +106,22 @@ const MOUPage: React.FC = () => {
                         console.error(e);
                       }
                     }}
+                    onApprove={async (id) => {
+                      try {
+                        await markStatus(id, "Approved");
+                        await load(page, rowsPerPage, "", "Pending");
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }}
+                    onReject={async (id) => {
+                      try {
+                        await markStatus(id, "Rejected");
+                        await load(page, rowsPerPage, "", "Pending");
+                      } catch (e) {
+                        console.error(e);
+                      }
+                    }}
                   />
 
                   <Box sx={{ mt: 2 }}>
