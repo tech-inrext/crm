@@ -9,8 +9,7 @@ export async function sendCabBookingApprovalEmail({
 }) {
   if (!manager || !manager.email) return; // nothing to send
 
-  const baseUrl =
-    appUrl || process.env.APP_URL || "https://dashboard.inrext.com";
+  const baseUrl = appUrl || process.env.APP_URL || "http://localhost:3000/";
   const safe = (v) => (v == null ? "" : String(v));
 
   const when = booking?.requestedDateTime
@@ -25,6 +24,10 @@ export async function sendCabBookingApprovalEmail({
       })
     : "";
 
+  // const approvalLink = `${baseUrl}/dashboard/cab-booking?cabBooking=1&bookingId=${encodeURIComponent(
+  //   safe(booking?.bookingId || booking?._id)
+  // )}`;
+  const approvalLink = `${baseUrl}/dashboard/cab-booking?cabBooking=1`;
   const html = `
     <p>Dear ${safe(manager.name) || "Manager"},</p>
     <p>You have a new cab booking request from <b>${
@@ -38,7 +41,7 @@ export async function sendCabBookingApprovalEmail({
       <li><b>Date/Time:</b> ${safe(when)}</li>
       <li><b>Booking ID:</b> ${safe(booking?.bookingId)}</li>
     </ul>
-    <p>Please <a href="${baseUrl}/dashboard/cab-booking">log in</a> to review and approve or reject this request.</p>
+    <p>Please <a href="${approvalLink}">log in</a> to review and approve or reject this request.</p>
     <p>Thank you.</p>
   `;
 
