@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Paper,
@@ -28,6 +29,8 @@ const MOUPage: React.FC = () => {
     markStatus,
     load,
   } = useMou("Pending");
+
+  const router = useRouter();
 
   const [view, setView] = useState<"pending" | "completed">("pending");
 
@@ -110,6 +113,8 @@ const MOUPage: React.FC = () => {
                       try {
                         await markStatus(id, "Approved");
                         await load(page, rowsPerPage, "", "Pending");
+                        // redirect to preview/send screen
+                        router.push(`/dashboard/mou/approved/${id}`);
                       } catch (e) {
                         console.error(e);
                       }
