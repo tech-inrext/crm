@@ -149,6 +149,10 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    mouPdfUrl: {
+      type: String,
+      default: "",
+    },
     panUrl: {
       type: String,
       default: "",
