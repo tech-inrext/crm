@@ -1,8 +1,31 @@
 import mongoose from "mongoose";
 import validator from "validator";
 
+/* 🔹 Atomic counter model for sequential IDs */
+const CounterSchema = new mongoose.Schema(
+  { _id: { type: String }, seq: { type: Number, default: 0 } },
+  { versionKey: false }
+);
+const Counter =
+  mongoose.models.Counter || mongoose.model("Counter", CounterSchema);
+
+/* 🔹 ID format config */
+const EMP_ID_PREFIX = process.env.EMP_ID_PREFIX || "INX"; // change if needed
+const EMP_ID_PAD = 5; // INX + 5 digits => INX00001
+const EMP_ID_SCOPE = "EMPLOYEE_PROFILE_ID"; // counter key
+
 const employeeSchema = new mongoose.Schema(
   {
+    /* 🔹 New field: employeeProfileId (immutable, unique, required) */
+    employeeProfileId: {
+      type: String,
+      unique: true,
+      index: true,
+      immutable: true,
+      required: true,
+      match: new RegExp(`^${EMP_ID_PREFIX}\\d{${EMP_ID_PAD}}$`),
+    },
+
     name: {
       type: String,
       required: [true, "Name is required"],
@@ -33,6 +56,13 @@ const employeeSchema = new mongoose.Schema(
           throw new Error("Email Id is not valid");
         }
       },
+    },
+    fatherName: {
+      type: String,
+      required: [true, "Father's Name is required"],
+      trim: true,
+      minlength: [2, "Father's Name must be at least 2 characters long"],
+      maxlength: [50, "Father's Name must be at most 50 characters long"],
     },
     altPhone: {
       type: String,
@@ -153,6 +183,25 @@ const employeeSchema = new mongoose.Schema(
 );
 
 employeeSchema.index({ isCabVendor: 1, createdAt: -1 });
+
+/* 🔹 Pre-validate hook to assign ID before required validation runs */
+employeeSchema.pre("validate", async function (next) {
+  try {
+    if (this.isNew && !this.employeeProfileId) {
+      const doc = await Counter.findOneAndUpdate(
+        { _id: EMP_ID_SCOPE },
+        { $inc: { seq: 1 } },
+        { new: true, upsert: true }
+      );
+      const n = doc.seq;
+      const id = `${EMP_ID_PREFIX}${String(n).padStart(EMP_ID_PAD, "0")}`;
+      this.employeeProfileId = id;
+    }
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Virtual property to check if employee is a manager (has subordinates)
 employeeSchema.virtual("isManager").get(function () {
