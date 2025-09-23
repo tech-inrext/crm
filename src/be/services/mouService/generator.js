@@ -4,7 +4,6 @@ const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
 const os = require("os");
-const moment = require("moment");
 const { finished } = require("stream");
 const { promisify } = require("util");
 const streamFinished = promisify(finished);
@@ -22,11 +21,11 @@ const KEYS = ["Noida", "Lucknow", "Patna", "Delhi"];
 // Utility: long date formatter used in docs (e.g. 10th day of July, 2025)
 function formatLongDate(date) {
   if (!date) return null;
-  const m = moment(date);
-  if (!m.isValid()) return null;
-  const day = m.date();
-  const year = m.year();
-  const monthName = m.format("MMMM");
+  const d = new Date(date);
+  if (isNaN(d.getTime())) return null;
+  const day = d.getDate();
+  const year = d.getFullYear();
+  const monthName = d.toLocaleString("en-US", { month: "long" });
   const ord = (n) => {
     const s = ["th", "st", "nd", "rd"],
       v = n % 100;
