@@ -19,11 +19,11 @@ export default async function handler(req, res) {
       // proceed without logged-in user if middleware import fails
     }
 
-    // require model here to avoid top-level resolution issues
-    const MOU_raw = require("../../../../../models/Employee");
-    const MOU = MOU_raw && MOU_raw.default ? MOU_raw.default : MOU_raw;
+  // import model using project alias so runtime resolution works after build
+  const empMod = await import('@/models/Employee');
+  const MOU = empMod && empMod.default ? empMod.default : empMod;
 
-    const mou = await MOU.findById(id).lean();
+  const mou = await MOU.findById(id).lean();
     if (!mou)
       return res
         .status(404)
@@ -42,7 +42,7 @@ export default async function handler(req, res) {
     // pass facilitator signature URL (if available from authenticated user) to generator
     const facilitatorSignatureUrl =
       req.employee && (req.employee.signatureUrl || req.employee.signatureURL)
-        ? req.employee.signatureUrl || req.nemployee.signatureURL
+        ? req.employee.signatureUrl || req.employee.signatureURL
         : "";
     const pdfPath = await m.generateMOUPDF(mou, facilitatorSignatureUrl);
     const stat = fs.statSync(pdfPath);

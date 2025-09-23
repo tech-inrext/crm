@@ -6,11 +6,8 @@ export default async function handler(req, res) {
 
     if (req.method !== "POST") return res.status(405).end();
 
-    const Employee_raw = require("../../../../../models/Employee");
-    const Employee =
-      Employee_raw && Employee_raw.default
-        ? Employee_raw.default
-        : Employee_raw;
+    const empMod = await import('@/models/Employee');
+    const Employee = empMod && empMod.default ? empMod.default : empMod;
 
     const mou = await Employee.findById(id).lean();
     if (!mou)
