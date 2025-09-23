@@ -29,18 +29,20 @@ export default async function handler(req, res) {
         .status(404)
         .json({ success: false, message: "Employee not found" });
 
-    // load the ESM implementation using dynamic import
-    const relServicePath = "../../../../../be/services/mouService.js";
+    // load the ESM generator implementation directly (avoid wrapper)
+    const relServicePath = "../../../../../be/services/mouService/generator.js";
     const mod = await import(relServicePath);
     const m = mod && mod.default ? mod.default : mod;
     if (!m || typeof m.generateMOUPDF !== "function") {
-      throw new Error("generateMOUPDF is not exported from mouService.js");
+      throw new Error(
+        "generateMOUPDF is not exported from mouService/generator.js"
+      );
     }
 
     // pass facilitator signature URL (if available from authenticated user) to generator
     const facilitatorSignatureUrl =
       req.employee && (req.employee.signatureUrl || req.employee.signatureURL)
-        ? req.employee.signatureUrl || req.employee.signatureURL
+        ? req.employee.signatureUrl || req.nemployee.signatureURL
         : "";
     const pdfPath = await m.generateMOUPDF(mou, facilitatorSignatureUrl);
     const stat = fs.statSync(pdfPath);
@@ -52,6 +54,7 @@ export default async function handler(req, res) {
         if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
       } catch (e) {}
     });
+    m;
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: err.message });
