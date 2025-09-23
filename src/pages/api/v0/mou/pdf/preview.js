@@ -55,6 +55,14 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     console.error(err);
+    if (err && err.code === "MISSING_PDFKIT") {
+      return res.status(503).json({
+        success: false,
+        message:
+          "Service temporarily unavailable: pdf generation dependency 'pdfkit' is missing in the runtime. Install 'pdfkit' and redeploy.",
+        detail: err.message,
+      });
+    }
     res.status(500).json({ success: false, message: err.message });
   }
 }
