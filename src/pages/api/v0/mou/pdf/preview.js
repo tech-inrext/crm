@@ -29,9 +29,8 @@ export default async function handler(req, res) {
         .status(404)
         .json({ success: false, message: "Employee not found" });
 
-    // load the ESM generator implementation directly (avoid wrapper)
-    const relServicePath = "../../../../../be/services/mouService/generator.js";
-    const mod = await import(relServicePath);
+  // load the ESM generator implementation directly (avoid wrapper)
+  const mod = await import("../../../../../be/services/mouService/generator.js");
     const m = mod && mod.default ? mod.default : mod;
     if (!m || typeof m.generateMOUPDF !== "function") {
       throw new Error(
@@ -54,7 +53,6 @@ export default async function handler(req, res) {
         if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
       } catch (e) {}
     });
-    m;
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, message: err.message });
