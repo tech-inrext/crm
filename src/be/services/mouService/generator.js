@@ -1,6 +1,5 @@
 import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const PDFDocument = require("pdfkit");
 const fs = require("fs");
 const fsp = fs.promises;
 const path = require("path");
@@ -160,6 +159,17 @@ async function fetchImageBuffer(url, maxRedirects = 5) {
 
 // The main exported function: generates MOU PDF and returns filepath
 export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
+  let PDFDocument;
+  try {
+    PDFDocument = require("pdfkit");
+  } catch (err) {
+    const e = new Error(
+      "Dependency missing: 'pdfkit' is not installed. Install it with 'npm install pdfkit' or 'yarn add pdfkit' and redeploy."
+    );
+    e.code = "MISSING_PDFKIT";
+    throw e;
+  }
+
   const doc = new PDFDocument({ margin: 50 });
   const filename = `MOU_${
     employee.associateId || employee._id || "unknown"
