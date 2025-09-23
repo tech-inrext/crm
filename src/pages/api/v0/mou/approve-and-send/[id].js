@@ -31,9 +31,8 @@ export default async function handler(req, res) {
         .status(404)
         .json({ success: false, message: "Employee not found" });
 
-    // load generator
-    const relServicePath = "../../../../../be/services/mouService/generator.js";
-    const mod = await import(relServicePath);
+  // load generator
+  const mod = await import("../../../../../be/services/mouService/generator.js");
     const m = mod && mod.default ? mod.default : mod;
     if (!m || typeof m.generateMOUPDF !== "function") {
       throw new Error(
