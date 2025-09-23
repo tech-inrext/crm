@@ -87,7 +87,7 @@ export const FIELD_LABELS = {
   EMAIL: "Email *",
   PHONE: "Phone *",
   ALT_PHONE: "Alternate Phone",
-  FATHER_NAME: "Father's Name",
+  FATHER_NAME: "Father's Name *",
   ADDRESS: "Address *",
   GENDER: "Gender *",
   NOMINEE_DETAILS: "Nominee Details",

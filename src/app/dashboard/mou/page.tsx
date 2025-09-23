@@ -8,11 +8,13 @@ import {
   CircularProgress,
   Button,
 } from "@mui/material";
+import { Dialog } from "@mui/material";
 import Pagination from "@/components/ui/Pagination";
 import PermissionGuard from "@/components/PermissionGuard";
 import MouList from "@/components/mou/MouList";
 import { useMou } from "@/hooks/useMou";
 import axios from "axios";
+import { Snackbar, Alert } from "@mui/material";
 
 const MOUPage: React.FC = () => {
   const {
@@ -33,10 +35,15 @@ const MOUPage: React.FC = () => {
   const router = useRouter();
 
   const [view, setView] = useState<"pending" | "completed">("pending");
+  const [snackOpen, setSnackOpen] = useState(false);
+  const [snackMsg, setSnackMsg] = useState("");
+  const [snackSeverity, setSnackSeverity] = useState<"success" | "error">(
+    "success"
+  );
 
   useEffect(() => {
     if (view === "pending") setStatus("Pending");
-    else setStatus("Completed");
+    else setStatus("Approved");
     setPage(1);
     setSearch("");
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -98,6 +105,7 @@ const MOUPage: React.FC = () => {
                   <MouList
                     items={items}
                     loading={mouLoading}
+                    view={view}
                     onMarkComplete={async (id) => {
                       try {
                         if (view === "pending") {
@@ -110,14 +118,26 @@ const MOUPage: React.FC = () => {
                       }
                     }}
                     onApprove={async (id) => {
+                      // optimistic update: remove from pending list immediately
+                      let prevItem: any = null;
                       try {
+                        // store previous item for rollback
+                        prevItem = items.find((it) => it._id === id);
                         await markStatus(id, "Approved");
-                        await load(page, rowsPerPage, "", "Pending");
-                        // redirect to preview/send screen
-                        router.push(`/dashboard/mou/approved/${id}`);
+
+                        // call server endpoint which will set status, upload PDF and send email
+                        await axios.post(`/api/v0/mou/approve-and-send/${id}`);
+
+                        // switch to Completed view and reload approved list so the item is visible
+                        setView("completed");
+                        // ensure hook status and page are reset by effect; also explicitly load Approved list
+                        await load(1, rowsPerPage, "", "Approved");
                       } catch (e) {
-                        console.error(e);
+                        console.error("approve failed", e);
+                        // rollback local optimistic change by reloading pending list
+                        await load(page, rowsPerPage, "", "Pending");
                       }
+                      return;
                     }}
                     onReject={async (id) => {
                       try {
@@ -125,6 +145,27 @@ const MOUPage: React.FC = () => {
                         await load(page, rowsPerPage, "", "Pending");
                       } catch (e) {
                         console.error(e);
+                      }
+                    }}
+                    onResend={async (id) => {
+                      try {
+                        const resp = await axios.post(
+                          `/api/v0/mou/resend-mail/${id}`
+                        );
+                        if (resp.data && resp.data.success) {
+                          setSnackMsg("Mail has been sent");
+                          setSnackSeverity("success");
+                          setSnackOpen(true);
+                        } else {
+                          setSnackMsg("Failed to send mail");
+                          setSnackSeverity("error");
+                          setSnackOpen(true);
+                        }
+                      } catch (e) {
+                        console.error("resend-mail failed", e);
+                        setSnackMsg("Failed to send mail");
+                        setSnackSeverity("error");
+                        setSnackOpen(true);
                       }
                     }}
                   />
@@ -148,6 +189,16 @@ const MOUPage: React.FC = () => {
         )}
 
         {/* AddRoleDialog removed from MOU page per request */}
+        <Snackbar
+          open={snackOpen}
+          autoHideDuration={4000}
+          anchorOrigin={{ vertical: "top", horizontal: "right" }}
+          onClose={() => setSnackOpen(false)}
+        >
+          <Alert severity={snackSeverity} onClose={() => setSnackOpen(false)}>
+            {snackMsg}
+          </Alert>
+        </Snackbar>
       </Box>
     </PermissionGuard>
   );
