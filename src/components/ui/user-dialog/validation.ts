@@ -6,6 +6,10 @@ export const userValidationSchema = Yup.object({
     .min(VALIDATION_RULES.NAME.min)
     .max(VALIDATION_RULES.NAME.max)
     .required("Name is required"),
+  fatherName: Yup.string()
+    .min(2, "Father's Name must be at least 2 characters")
+    .max(50, "Father's Name must be at most 50 characters")
+    .required("Father's Name is required"),
   email: Yup.string().email().required("Email is required"),
   phone: Yup.string().required("Phone is required"),
   address: Yup.string()

@@ -31,6 +31,7 @@ export interface UserFormData {
   gender: string;
   age?: number;
   altPhone?: string;
+  fatherName?: string;
   joiningDate?: string;
   designation: string;
   managerId: string;

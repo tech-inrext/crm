@@ -258,6 +258,7 @@ class EmployeeService extends Service {
         search = "",
         isCabVendor,
         mouStatus,
+        requireSlab,
       } = req.query;
 
       // 🔐 Logged-in user id (string)
@@ -306,6 +307,12 @@ class EmployeeService extends Service {
           }
         : {};
 
+      // slabPercentage requirement filter (only include employees where slabPercentage is set)
+      const slabReq = normalizeBool(requireSlab);
+      const slabFilter = slabReq
+        ? { slabPercentage: { $exists: true, $nin: ["", null] } }
+        : {};
+
       // ✅ Manager filter (only when mouStatus is present): managerId == loggedInId
       const castManagerId = (id) =>
         mongoose?.Types?.ObjectId?.isValid?.(id)
@@ -320,6 +327,7 @@ class EmployeeService extends Service {
         ...vendorFilter,
         ...mouFilter,
         ...managerFilter,
+        ...slabFilter,
       };
 
       const [employees, totalEmployees] = await Promise.all([
