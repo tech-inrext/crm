@@ -72,6 +72,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     module: "mou",
     icon: <HandshakeIcon sx={{ color: "#4CAF50" }} />,
   },
+  {
+    label: "Properties",
+    href: "/dashboard/properties",
+    module: "property", // ✅ Yehi module name hona chahiye
+    icon: <AppIcon src="/properties.png" alt="Properties" />,
+  },
 ];
 
 export default function DashboardLayout({
@@ -88,15 +94,30 @@ export default function DashboardLayout({
   const { getPermissions, user, pendingRoleSelection } = useAuth();
 
   // Compute accessible sidebar links
+  // const sidebarLinks = useMemo(() => {
+  //   return user && !pendingRoleSelection
+  //     ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
+  //         if (!link.module) return true;
+  //         const { hasReadAccess } = getPermissions(link.module);
+  //         return hasReadAccess;
+  //       })
+  //     : [];
+  // }, [user, pendingRoleSelection, getPermissions]);
+
   const sidebarLinks = useMemo(() => {
-    return user && !pendingRoleSelection
-      ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
-          if (!link.module) return true;
-          const { hasReadAccess } = getPermissions(link.module);
-          return hasReadAccess;
-        })
-      : [];
-  }, [user, pendingRoleSelection, getPermissions]);
+  const filteredLinks = user && !pendingRoleSelection
+    ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
+        if (!link.module) return true;
+        // ✅ Property always allow 
+        if (link.module === "property") return true;
+        
+        const { hasReadAccess } = getPermissions(link.module);
+        return hasReadAccess;
+      })
+    : [];
+
+  return filteredLinks;
+}, [user, pendingRoleSelection, getPermissions]);
 
   // Redirect to first accessible module after login or role switch
   useEffect(() => {
