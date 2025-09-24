@@ -196,7 +196,7 @@ export default function PropertiesPage() {
       {/* Properties Grid */}
       <Grid container spacing={3}>
         {properties.map((property) => (
-          <Grid item xs={12} md={6} lg={4} key={property.id}>
+          <Grid size={{ xs: 12, md: 6, lg: 4 }} key={property.id}>
             <Paper sx={{ p: 2, height: "100%", transition: "transform 0.2s", "&:hover": { transform: "translateY(-4px)" } }}>
               <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
                 <Typography variant="h6" fontWeight={600}>
@@ -266,7 +266,7 @@ export default function PropertiesPage() {
         </DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
               <TextField
                 fullWidth
                 label="Project Name"
@@ -275,7 +275,7 @@ export default function PropertiesPage() {
                 required
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
               <TextField
                 fullWidth
                 label="Builder Name"
@@ -284,7 +284,7 @@ export default function PropertiesPage() {
                 required
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
               <TextField
                 fullWidth
                 label="Location"
@@ -293,7 +293,7 @@ export default function PropertiesPage() {
                 required
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
               <TextField
                 fullWidth
                 label="Price"
@@ -302,7 +302,7 @@ export default function PropertiesPage() {
                 required
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
                 <Select
@@ -318,7 +318,7 @@ export default function PropertiesPage() {
                 </Select>
               </FormControl>
             </Grid>
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12}}>
               <TextField
                 fullWidth
                 label="Description"
@@ -330,7 +330,7 @@ export default function PropertiesPage() {
               />
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12}}>
               <Divider sx={{ my: 2 }} />
               <Typography variant="subtitle2" gutterBottom>
                 Features
@@ -360,7 +360,7 @@ export default function PropertiesPage() {
               </Box>
             </Grid>
 
-            <Grid item xs={12}>
+            <Grid size={{ xs: 12}}>
               <Typography variant="subtitle2" gutterBottom>
                 Amenities
               </Typography>
