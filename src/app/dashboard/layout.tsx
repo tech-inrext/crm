@@ -75,7 +75,7 @@ export const DASHBOARD_SIDEBAR_LINKS = [
   {
     label: "Properties",
     href: "/dashboard/properties",
-    module: "property", // ✅ Yehi module name hona chahiye
+    module: "property", 
     icon: <AppIcon src="/properties.png" alt="Properties" />,
   },
 ];
