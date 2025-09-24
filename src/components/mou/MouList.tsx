@@ -264,7 +264,6 @@ const MouList: React.FC<MouListProps> = ({
             <Box sx={{ width: "100%", height: "70vh" }}>
               {pendingAction?.id && (
                 // preview the generated PDF via the existing preview API
-                // eslint-disable-next-line @next/next/no-img-element
                 <iframe
                   title="MOU Preview"
                   src={`/api/v0/mou/pdf/preview?id=${pendingAction.id}`}

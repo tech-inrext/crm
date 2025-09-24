@@ -329,7 +329,6 @@ const Leads: React.FC = () => {
         <React.Suspense>
           {feedbackOpen && selectedLeadForFeedback && (
             // Lazy-imported component to avoid SSR issues
-            // eslint-disable-next-line @next/next/no-sync-scripts
             <FollowUpDialog
               open={feedbackOpen}
               onClose={() => {

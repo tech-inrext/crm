@@ -53,7 +53,7 @@ export function useLeads() {
         setLoading(false);
       }
     },
-    []
+      []
   );
 
   const saveLead = useCallback(
@@ -75,7 +75,7 @@ export function useLeads() {
         setSaving(false);
       }
     },
-    [loadLeads, page, rowsPerPage, search]
+      [loadLeads, page, rowsPerPage, search, status] // Added status to the dependency array
   );
 
   useEffect(() => {

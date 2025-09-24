@@ -29,18 +29,13 @@ const CabBooking: React.FC<CabBookingProps> = ({
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [vendorBookingId, setVendorBookingId] = useState<string | null>(null);
-  const searchParams =
-    typeof window !== "undefined"
-      ? new URLSearchParams(window.location.search)
-      : null;
-
   useEffect(() => {
-    if (searchParams) {
-      const bookingId = searchParams.get("bookingId");
-      if (bookingId) {
-        setVendorBookingId(bookingId);
-        setShowVendorDialog(true);
-      }
+    if (typeof window === "undefined") return;
+    const searchParams = new URLSearchParams(window.location.search);
+    const bookingId = searchParams.get("bookingId");
+    if (bookingId) {
+      setVendorBookingId(bookingId);
+      setShowVendorDialog(true);
     }
   }, []);
 

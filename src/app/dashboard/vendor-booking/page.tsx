@@ -156,7 +156,15 @@ const VendorBookingPage = () => {
         console.error("Failed to open booking from URL:", e)
       );
     }
-  }, [bookings, fetchVendorBookings, page, pageSize, urlHandled]);
+  }, [
+    bookings,
+    fetchVendorBookings,
+    page,
+    pageSize,
+    urlHandled,
+    isHandledFor,
+    markHandledFor,
+  ]);
 
   const handleVendorFormSubmit = async (formData: any) => {
     try {
