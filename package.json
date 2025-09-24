@@ -4,9 +4,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-  "dev": "next dev --turbopack",
-  "build": "next build",
-  "start": "next start",
+    "dev": "next dev --turbopack",
+    "build": "next build",
+    "start": "next start",
     "lint": "next lint",
     "run-worker": "node src/workers/worker.js"
   },
