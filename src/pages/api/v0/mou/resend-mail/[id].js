@@ -6,7 +6,7 @@ export default async function handler(req, res) {
 
     if (req.method !== "POST") return res.status(405).end();
 
-    const empMod = await import('@/models/Employee');
+    const empMod = await import("@/models/Employee");
     const Employee = empMod && empMod.default ? empMod.default : empMod;
 
     const mou = await Employee.findById(id).lean();
@@ -24,10 +24,16 @@ export default async function handler(req, res) {
       let sendMOUApprovalMail = null;
       try {
         const mailer = await import("@/lib/emails/sendMOUApprovedMail.js");
-        sendMOUApprovalMail = mailer && (mailer.sendMOUApprovalMail || mailer.default || mailer.sendMOUApprovalMail);
+        sendMOUApprovalMail =
+          mailer &&
+          (mailer.sendMOUApprovalMail ||
+            mailer.default ||
+            mailer.sendMOUApprovalMail);
       } catch (e) {
         const mailer2 = require("../../../../../lib/emails/sendMOUApprovedMail.js");
-        sendMOUApprovalMail = mailer2 && (mailer2.sendMOUApprovalMail || mailer2.default || mailer2);
+        sendMOUApprovalMail =
+          mailer2 &&
+          (mailer2.sendMOUApprovalMail || mailer2.default || mailer2);
       }
 
       if (sendMOUApprovalMail) {
@@ -39,10 +45,14 @@ export default async function handler(req, res) {
         );
         return res.json({ success: true });
       }
-      return res.status(500).json({ success: false, message: "Mailer not available" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Mailer not available" });
     } catch (e) {
       console.error("resend mail failed", e);
-      return res.status(500).json({ success: false, message: "Failed to send mail" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to send mail" });
     }
   } catch (err) {
     console.error(err);
