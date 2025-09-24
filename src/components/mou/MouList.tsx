@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -44,6 +44,9 @@ const MouList: React.FC<MouListProps> = ({
   } | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [previewId, setPreviewId] = useState<string | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [previewSrc, setPreviewSrc] = useState<string | null>(null);
 
   const openConfirm = (type: "approve" | "reject", id: string) => {
     setPendingAction({ type, id });
@@ -262,14 +265,7 @@ const MouList: React.FC<MouListProps> = ({
         >
           {pendingAction?.type === "approve" ? (
             <Box sx={{ width: "100%", height: "70vh" }}>
-              {pendingAction?.id && (
-                // preview the generated PDF via the existing preview API
-                <iframe
-                  title="MOU Preview"
-                  src={`/api/v0/mou/pdf/preview?id=${pendingAction.id}`}
-                  style={{ width: "100%", height: "100%", border: "none" }}
-                />
-              )}
+              {pendingAction?.id && <PreviewLoader id={pendingAction.id} />}
             </Box>
           ) : (
             <DialogContentText>
@@ -307,13 +303,7 @@ const MouList: React.FC<MouListProps> = ({
       >
         <DialogTitle>MOU Preview</DialogTitle>
         <DialogContent sx={{ height: "80vh" }}>
-          {previewId && (
-            <iframe
-              title="MOU Preview"
-              src={`/api/v0/mou/pdf/preview?id=${previewId}`}
-              style={{ width: "100%", height: "100%", border: "none" }}
-            />
-          )}
+          {previewId && <PreviewLoader id={previewId} />}
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPreviewOpen(false)}>Close</Button>
@@ -321,6 +311,89 @@ const MouList: React.FC<MouListProps> = ({
       </Dialog>
     </Box>
   );
+};
+
+// Small inline component to fetch the preview and handle errors
+const PreviewLoader: React.FC<{ id: string }> = ({ id }) => {
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [blobUrl, setBlobUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    let createdUrl: string | null = null;
+
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(
+          `/api/v0/mou/pdf/preview?id=${encodeURIComponent(id)}`,
+          {
+            credentials: "include",
+          }
+        );
+        const ct = res.headers.get("content-type") || "";
+        if (!res.ok) {
+          // Try parse JSON error body
+          let bodyText = await res.text();
+          try {
+            const json = JSON.parse(bodyText || "{}");
+            const message =
+              json.message ||
+              json.detail ||
+              bodyText ||
+              `Request failed ${res.status}`;
+            throw new Error(message);
+          } catch (e) {
+            throw new Error(bodyText || `Request failed ${res.status}`);
+          }
+        }
+
+        if (ct.includes("application/pdf")) {
+          const blob = await res.blob();
+          createdUrl = URL.createObjectURL(blob);
+          if (active) setBlobUrl(createdUrl);
+        } else {
+          // Non-PDF response - treat as error and show message
+          const text = await res.text();
+          try {
+            const json = JSON.parse(text || "{}");
+            const message = json.message || json.detail || JSON.stringify(json);
+            throw new Error(message);
+          } catch (e) {
+            throw new Error(
+              text || "Unexpected non-PDF response from preview API"
+            );
+          }
+        }
+      } catch (err: any) {
+        if (active) setError(err?.message || String(err));
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    load();
+
+    return () => {
+      active = false;
+      if (createdUrl) URL.revokeObjectURL(createdUrl);
+    };
+  }, [id]);
+
+  if (loading)
+    return <Box sx={{ width: "100%", height: "100%" }}>Loading preview…</Box>;
+  if (error) return <Typography color="error">{error}</Typography>;
+  if (blobUrl)
+    return (
+      <iframe
+        title="MOU Preview"
+        src={blobUrl}
+        style={{ width: "100%", height: "100%", border: "none" }}
+      />
+    );
+  return null;
 };
 
 export default MouList;
