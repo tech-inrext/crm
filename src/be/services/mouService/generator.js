@@ -108,7 +108,6 @@ async function fetchImageBuffer(url, maxRedirects = 5) {
         ? require("https")
         : require("http");
       // wrap in a promise
-      // eslint-disable-next-line no-await-in-loop
       const result = await new Promise((resolve) => {
         const req = lib.get(
           current,
@@ -577,4 +576,4 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
   return filePath;
 }
 
-export default { generateMOUPDF };
+// generator.js already exports the function at its declaration; no extra export here.

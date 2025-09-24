@@ -90,7 +90,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
     return () => {
       active = false;
     };
-  }, [url, refreshKey]);
+  }, [url, refreshKey, page]);
 
   const handleViewDetails = (booking: Booking) => setViewingBooking(booking);
   const handleCloseDialog = () => setViewingBooking(null);
