@@ -96,6 +96,8 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             cabvendor: "cab-vendor",
             cabVendor: "cab-vendor",
             "cab-vendor": "cab-vendor",
+            branch: "branch",
+            branches: "branch",
           };
           // Always map UI-friendly labels for cab vendors to 'cab-vendor' (backend)
           if (

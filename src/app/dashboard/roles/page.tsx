@@ -33,6 +33,7 @@ const modules = [
   "CabVendor",
   "Vendor",
   "MOU",
+  "Branch",
 ];
 
 // Defensive: ensure modules passed to UI are unique to avoid React key collisions
