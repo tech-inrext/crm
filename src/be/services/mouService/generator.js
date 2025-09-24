@@ -345,18 +345,18 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
     .font("Times-Roman")
     .font("Times-Bold")
     .fontSize(12)
-    .text(`Mr/Mrs ${employeeName}`, { continued: true });
+    .text(`Mr/Mrs. ${employeeName}`, { continued: true });
   if (employeeFatherName)
     doc
       .font("Times-Roman")
       .font("Times-Roman")
       .fontSize(12)
-      .text(` S/o ${employeeFatherName}`, { continued: true });
+      .text(` S/o. ${employeeFatherName}`, { continued: true });
   doc
     .font("Times-Roman")
     .font("Times-Bold")
     .fontSize(12)
-    .text(` At ${employeeAddress}.`, { continued: true });
+    .text(` R/o. ${employeeAddress}.`, { continued: true });
 
   doc
     .font("Times-Roman")

@@ -20,25 +20,29 @@ export default async function handler(req, res) {
         .status(400)
         .json({ success: false, message: "MOU PDF not available" });
 
-    const mailerMod = require("../../../../../lib/emails/sendMOUApprovedMail.js");
-    const sendMOUApprovalMail =
-      mailerMod && mailerMod.sendMOUApprovalMail
-        ? mailerMod.sendMOUApprovalMail
-        : mailerMod.default;
-
     try {
-      await sendMOUApprovalMail(
-        mou.email,
-        mou.name,
-        mou.employeeProfileId,
-        mou.mouPdfUrl
-      );
-      return res.json({ success: true });
+      let sendMOUApprovalMail = null;
+      try {
+        const mailer = await import("@/lib/emails/sendMOUApprovedMail.js");
+        sendMOUApprovalMail = mailer && (mailer.sendMOUApprovalMail || mailer.default || mailer.sendMOUApprovalMail);
+      } catch (e) {
+        const mailer2 = require("../../../../../lib/emails/sendMOUApprovedMail.js");
+        sendMOUApprovalMail = mailer2 && (mailer2.sendMOUApprovalMail || mailer2.default || mailer2);
+      }
+
+      if (sendMOUApprovalMail) {
+        await sendMOUApprovalMail(
+          mou.email,
+          mou.name,
+          mou.employeeProfileId,
+          mou.mouPdfUrl
+        );
+        return res.json({ success: true });
+      }
+      return res.status(500).json({ success: false, message: "Mailer not available" });
     } catch (e) {
       console.error("resend mail failed", e);
-      return res
-        .status(500)
-        .json({ success: false, message: "Failed to send mail" });
+      return res.status(500).json({ success: false, message: "Failed to send mail" });
     }
   } catch (err) {
     console.error(err);
