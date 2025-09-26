@@ -1,10 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { cabBookingApi, projectApi } from "@/services/cab-booking.service";
 import { DEFAULT_PROJECTS } from "@/constants/cab-booking";
 
 // options: { autoFetch?: boolean, refetchAfterMutations?: boolean }
 export const useCabBooking = (opts = {}) => {
   const { autoFetch = true, refetchAfterMutations = true } = opts;
+
+  const { user } = useAuth();
 
   const [bookings, setBookings] = useState([]);
   const [projects, setProjects] = useState(DEFAULT_PROJECTS);
@@ -89,7 +92,7 @@ export const useCabBooking = (opts = {}) => {
     // Return success immediately so UI can proceed (optimistic UX).
     setIsLoading(false);
     return true;
-  }, [fetchBookings, refetchAfterMutations]);
+  }, [fetchBookings, refetchAfterMutations, autoFetch]);
 
   const updateBookingStatus = useCallback(async (bookingId, status, vendorId) => {
     try {
@@ -105,7 +108,7 @@ export const useCabBooking = (opts = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchBookings, refetchAfterMutations]);
+  }, [fetchBookings, refetchAfterMutations, autoFetch]);
 
   const updateBookingFields = useCallback(async (bookingId, fields) => {
     try {
@@ -121,7 +124,7 @@ export const useCabBooking = (opts = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchBookings, refetchAfterMutations]);
+  }, [fetchBookings, refetchAfterMutations, autoFetch]);
 
   const updateTracking = useCallback(async (bookingId, trackingData) => {
     try {
@@ -135,7 +138,7 @@ export const useCabBooking = (opts = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchBookings, refetchAfterMutations]);
+  }, [fetchBookings, refetchAfterMutations, autoFetch]);
 
   const cancelBooking = useCallback(async (bookingId) => {
     try {
@@ -149,7 +152,7 @@ export const useCabBooking = (opts = {}) => {
     } finally {
       setIsLoading(false);
     }
-  }, [fetchBookings, refetchAfterMutations]);
+  }, [fetchBookings, refetchAfterMutations, autoFetch]);
 
   const clearMessages = () => {
     setError("");
@@ -158,10 +161,18 @@ export const useCabBooking = (opts = {}) => {
 
   useEffect(() => {
     if (!autoFetch) return; // ⛔ don't auto-read if you’re on vendor page
+
+    // If user hasn't selected a role yet, avoid calling protected endpoints
+    if (!user || !user.currentRole) {
+      // still fetch projects (public) but skip bookings to avoid 401
+      fetchProjects().catch(() => {});
+      return;
+    }
+
     (async () => {
       await Promise.all([fetchProjects(), fetchBookings()]);
     })();
-  }, [autoFetch, fetchProjects, fetchBookings]);
+  }, [autoFetch, fetchProjects, fetchBookings, user]);
 
   return {
     bookings,

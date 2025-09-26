@@ -12,6 +12,7 @@ const MODULES = [
   "cab-booking",
   "cab-vendor",
   "vendor",
+  "branch",
 ];
 
 // Configure which actions on which modules should be allowed for roles

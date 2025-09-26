@@ -35,6 +35,7 @@ export function useMou(initialStatus = "Pending") {
           limit,
           search: s?.trim() || undefined,
           mouStatus: st || undefined,
+          requireSlab: st === "Pending" ? true : undefined,
         };
 
         // Only include managerId when user is present and NOT a system admin
@@ -62,19 +63,29 @@ export function useMou(initialStatus = "Pending") {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page, rowsPerPage, search, status]);
 
-  const markStatus = useCallback(async (id: string, newStatus: string) => {
-    try {
-      const payload: any = {};
-      payload.mouStatus = newStatus;
-      const resp = await axios.patch(`${EMPLOYEE_API_BASE}/${id}`, payload);
-      // optimistically update local item
-      setItems((prev) => prev.map((it) => (it._id === id ? resp.data.data : it)));
-      return resp.data.data;
-    } catch (e) {
-      console.error("useMou: failed to update status", e);
-      throw e;
-    }
-  }, []);
+  const markStatus = useCallback(
+    async (id: string, newStatus: string) => {
+      try {
+        const payload: any = {};
+        payload.mouStatus = newStatus;
+        const resp = await axios.patch(`${EMPLOYEE_API_BASE}/${id}`, payload);
+        const updated = resp.data.data;
+        // If the updated status no longer matches the current view/status,
+        // remove it from the local items list so the UI reflects the change
+        if (newStatus !== status) {
+          setItems((prev) => prev.filter((it) => it._id !== id));
+        } else {
+          // otherwise replace the item with the updated data
+          setItems((prev) => prev.map((it) => (it._id === id ? updated : it)));
+        }
+        return updated;
+      } catch (e) {
+        console.error("useMou: failed to update status", e);
+        throw e;
+      }
+    },
+    [status]
+  );
 
   return {
     items,

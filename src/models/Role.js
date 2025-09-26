@@ -8,7 +8,8 @@ const modules = [
   "department",
   "cab-booking",
   "cab-vendor",
-  "vendor"
+  "vendor",
+  "branch",
 ];
 
 const roleSchema = new mongoose.Schema(

@@ -57,7 +57,7 @@ const AssignVendorDialog: React.FC<AssignVendorDialogProps> = ({
     const doFetch = async () => {
       setLoading(true);
       try {
-        const params = new URLSearchParams();
+        const params = new URLSearchParams({ isCabVendor: "true" });
         params.set("page", "1");
         params.set("limit", "50");
         if (query) params.set("search", query);

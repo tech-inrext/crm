@@ -139,6 +139,7 @@ class EmployeeService extends Service {
         nominee,
         slabPercentage,
         branch,
+        fatherName,
       } = req.body;
       const isCabVendor = req.body.isCabVendor || false;
       const dummyPassword = "Inrext@123";
@@ -160,6 +161,7 @@ class EmployeeService extends Service {
         password: hashedPassword,
         isCabVendor,
         mouStatus: "Pending",
+        fatherName,
       };
 
       if (Object.prototype.hasOwnProperty.call(req.body, "altPhone"))
@@ -180,12 +182,16 @@ class EmployeeService extends Service {
         employeeData.managerId = managerId;
       if (Object.prototype.hasOwnProperty.call(req.body, "departmentId"))
         employeeData.departmentId = departmentId;
-      if (Object.prototype.hasOwnProperty.call(req.body, "roles"))
+      if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
         employeeData.roles = Array.isArray(roles)
           ? roles
           : roles
           ? [roles]
           : undefined;
+      }
+      if (isCabVendor) {
+        employeeData.roles = ["68b6904f3a3a9b850429e610"];
+      }
       // documents
       if (Object.prototype.hasOwnProperty.call(req.body, "aadharUrl"))
         employeeData.aadharUrl = aadharUrl;
@@ -252,15 +258,22 @@ class EmployeeService extends Service {
         search = "",
         isCabVendor,
         mouStatus,
-        managerId,
+        requireSlab,
       } = req.query;
 
-      // robust pagination parsing
-      const currentPage = parseInt(page);
-      const itemsPerPage = parseInt(limit);
+      // 🔐 Logged-in user id (string)
+      const loggedInId = (
+        req.employee?._id?.toString?.() ||
+        req.user?._id?.toString?.() ||
+        ""
+      ).trim();
+
+      // Pagination
+      const currentPage = Number.parseInt(page, 10) || 1;
+      const itemsPerPage = Math.min(100, Number.parseInt(limit, 10) || 5);
       const skip = (currentPage - 1) * itemsPerPage;
 
-      // optional text search
+      // Search filter
       const searchFilter = search
         ? {
             $or: [
@@ -271,21 +284,20 @@ class EmployeeService extends Service {
           }
         : {};
 
-      // optional isCabVendor filter
+      // isCabVendor filter
       const normalizeBool = (v) => {
         if (typeof v === "boolean") return v;
         if (v == null) return undefined;
         const s = String(v).trim().toLowerCase();
         if (["true", "1", "yes", "y"].includes(s)) return true;
         if (["false", "0", "no", "n"].includes(s)) return false;
-        return undefined; // ignore bad values
+        return undefined;
       };
-
       const vendorVal = normalizeBool(isCabVendor);
       const vendorFilter =
         typeof vendorVal === "boolean" ? { isCabVendor: vendorVal } : {};
 
-      // optional mouStatus filter (case-insensitive exact match)
+      // mouStatus filter (case-insensitive exact match)
       const mouFilter = mouStatus
         ? {
             mouStatus: {
@@ -295,25 +307,27 @@ class EmployeeService extends Service {
           }
         : {};
 
-      // Manager filter: only apply if managerId provided AND requester is NOT a system admin
-      // The `userAuth` middleware sets `req.isSystemAdmin` when the request is authenticated.
-      let managerFilter = {};
-      try {
-        const requesterIsSystemAdmin =
-          req.isSystemAdmin || (res.locals && res.locals.isSystemAdmin);
-        if (!requesterIsSystemAdmin && managerId) {
-          managerFilter = { managerId: String(managerId).trim() };
-        }
-      } catch (e) {
-        // if any issue reading auth flags, default to applying manager filter when provided
-        if (managerId) managerFilter = { managerId: String(managerId).trim() };
-      }
+      // slabPercentage requirement filter (only include employees where slabPercentage is set)
+      const slabReq = normalizeBool(requireSlab);
+      const slabFilter = slabReq
+        ? { slabPercentage: { $exists: true, $nin: ["", null] } }
+        : {};
+
+      // ✅ Manager filter (only when mouStatus is present): managerId == loggedInId
+      const castManagerId = (id) =>
+        mongoose?.Types?.ObjectId?.isValid?.(id)
+          ? new mongoose.Types.ObjectId(id)
+          : id;
+
+      const managerFilter =
+        mouStatus && loggedInId ? { managerId: castManagerId(loggedInId) } : {};
 
       const query = {
         ...searchFilter,
         ...vendorFilter,
         ...mouFilter,
         ...managerFilter,
+        ...slabFilter,
       };
 
       const [employees, totalEmployees] = await Promise.all([
@@ -338,7 +352,7 @@ class EmployeeService extends Service {
           search: search || null,
           isCabVendor: typeof vendorVal === "boolean" ? vendorVal : null,
           mouStatus: mouStatus || null,
-          managerId: managerId || null,
+          managerIdUsed: mouStatus ? loggedInId : null,
         },
       });
     } catch (error) {

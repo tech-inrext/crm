@@ -31,6 +31,7 @@ const LocalFilePreview: React.FC<{ file: File; alt?: string }> = ({
         justifyContent: "center",
       }}
     >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={objectUrl}
         alt={alt || file.name}
@@ -130,6 +131,7 @@ const UploadBox: React.FC<{
                     justifyContent: "center",
                   }}
                 >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={urlValue}
                     alt={label}

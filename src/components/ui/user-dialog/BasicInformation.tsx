@@ -109,11 +109,11 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
             />
           )}
         </Field>
-        <Field name="address">
+        <Field name="fatherName">
           {({ field, meta }: FieldProps) => (
             <TextField
               {...field}
-              label={FIELD_LABELS.ADDRESS}
+              label={FIELD_LABELS.FATHER_NAME}
               fullWidth
               margin="normal"
               error={!!meta.touched && !!meta.error}
@@ -123,7 +123,19 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
           )}
         </Field>
       </Box>
-
+      <Field name="address">
+        {({ field, meta }: FieldProps) => (
+          <TextField
+            {...field}
+            label={FIELD_LABELS.ADDRESS}
+            fullWidth
+            margin="normal"
+            error={!!meta.touched && !!meta.error}
+            helperText={meta.touched && meta.error}
+            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+          />
+        )}
+      </Field>
       <Box
         sx={{
           display: "flex",

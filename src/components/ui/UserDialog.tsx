@@ -31,6 +31,7 @@ export interface UserFormData {
   gender: string;
   age?: number;
   altPhone?: string;
+  fatherName?: string;
   joiningDate?: string;
   designation: string;
   managerId: string;
@@ -74,6 +75,12 @@ const UserDialog: React.FC<UserDialogProps> = ({
 
   useEffect(() => {
     const fetchData = async () => {
+      const managerParams = new URLSearchParams({
+        isCabVendor: "false",
+        limit: "1000", // so you don’t get only 5 due to API default
+        page: "1",
+      }).toString();
+
       try {
         const [rolesRes, managersRes, departmentsRes] = await Promise.all([
           fetch(`${ROLES_API_BASE}/getAllRoleList`, {
@@ -81,7 +88,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
             credentials: "include",
             headers: { "Content-Type": "application/json" },
           }),
-          fetch(`${USERS_API_BASE}/getAllEmployeeList`, {
+          fetch(`${USERS_API_BASE}/getAllEmployeeList?${managerParams}`, {
             method: "GET",
             credentials: "include",
             headers: { "Content-Type": "application/json" },
