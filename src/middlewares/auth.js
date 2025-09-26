@@ -7,6 +7,7 @@ import { checkPermission } from "../utils/checkPermission";
 const MODULES = [
   "lead",
   "employee",
+  "team",
   "role",
   "department",
   "cab-booking",
