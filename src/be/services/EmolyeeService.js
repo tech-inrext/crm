@@ -30,6 +30,7 @@ class EmployeeService extends Service {
       name,
       altPhone,
       address,
+      fatherName,
       gender,
       age,
       designation,
@@ -102,6 +103,8 @@ class EmployeeService extends Service {
     if (Object.prototype.hasOwnProperty.call(req.body, "branch")) {
       updateFields.branch = branch;
     }
+    // allow updating father's name
+    setIfPresent("fatherName", fatherName);
 
     try {
       const updated = await Employee.findByIdAndUpdate(id, updateFields, {
