@@ -25,11 +25,27 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({
   const [dlNumber, setDlNumber] = useState("");
   const [startKm, setStartKm] = useState("");
   const [endKm, setEndKm] = useState("");
+  const [odometerStart, setOdometerStart] = useState<File | string | null>(
+    null
+  );
+  const [odometerEnd, setOdometerEnd] = useState<File | string | null>(null);
+  const [fare, setFare] = useState("");
   const [pickupPoint, setPickupPoint] = useState("");
   const [dropPoint, setDropPoint] = useState("");
 
-  const totalKm =
-    startKm && endKm ? Math.max(Number(endKm) - Number(startKm), 0) : 0;
+  const totalKm = (() => {
+    const isNumericString = (v: any) =>
+      typeof v === "string" && v.trim() !== "" && !Number.isNaN(Number(v));
+
+    // Prefer odometer image *values* only if they are numeric strings
+    if (isNumericString(odometerStart) && isNumericString(odometerEnd)) {
+      return Math.max(Number(odometerEnd) - Number(odometerStart), 0);
+    }
+    if (startKm && endKm) {
+      return Math.max(Number(endKm) - Number(startKm), 0);
+    }
+    return 0;
+  })();
 
   // validation errors
   const [aadharError, setAadharError] = useState("");
@@ -63,6 +79,15 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({
         dlNumber,
         startKm,
         endKm,
+        odometerStartPreview:
+          odometerStart && typeof odometerStart !== "string"
+            ? null
+            : odometerStart,
+        odometerEndPreview:
+          odometerEnd && typeof odometerEnd !== "string" ? null : odometerEnd,
+        odometerStartFile: odometerStart instanceof File ? odometerStart : null,
+        odometerEndFile: odometerEnd instanceof File ? odometerEnd : null,
+        fare: fare ? Number(fare) : null,
         pickupPoint,
         dropPoint,
         totalKm,
@@ -99,6 +124,12 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({
           setStartKm={setStartKm}
           endKm={endKm}
           setEndKm={setEndKm}
+          odometerStart={odometerStart}
+          setOdometerStart={setOdometerStart}
+          odometerEnd={odometerEnd}
+          setOdometerEnd={setOdometerEnd}
+          fare={fare}
+          setFare={setFare}
           totalKm={totalKm}
           aadharError={aadharError}
           dlError={dlError}

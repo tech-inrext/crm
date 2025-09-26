@@ -100,6 +100,20 @@ const cabBookingSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    odometerStartImageUrl: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    odometerEndImageUrl: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    fare: {
+      type: Number,
+      default: null,
+    },
     currentLocation: {
       type: String,
       trim: true,

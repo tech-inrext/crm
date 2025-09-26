@@ -217,9 +217,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
                     )}
                   </PermissionGuard>
                 )}
-                {/* Form Button: Show for vendor bookings with status active */}
-                {/* Form Button removed. Vendor form dialog is now managed in vendor booking dashboard. */}
-                {/* Share Icon */}
                 <Tooltip title="Share Booking">
                   <IconButton
                     size="small"
@@ -285,9 +282,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
           onAssign={handleAssignVendor}
         />
       )}
-      {/* Vendor form dialog removed. Vendor form dialog is now managed in vendor booking dashboard. */}
-      {/* Vendor form dialog removed. Vendor form dialog is now managed in vendor booking dashboard. */}
-    </>
+   </>
   );
 };
 
