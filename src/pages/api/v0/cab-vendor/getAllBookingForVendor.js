@@ -102,6 +102,11 @@ const getBookingsForLoggedInVendor = async (req, res) => {
           model: "Employee",
           select: "name email phone isCabVendor",
         })
+        .populate({
+          path: "cabBookedBy",
+          model: "Employee",
+          select: "name username email",
+        })
         .lean(),
       CabBooking.countDocuments(filter),
     ]);

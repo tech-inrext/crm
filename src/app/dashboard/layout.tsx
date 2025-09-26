@@ -46,13 +46,13 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "Vendors",
     href: "/dashboard/vendor",
     module: "vendor",
-    icon: <AppIcon src="/inrext.png" alt="Vendors" />,
+    icon: <AppIcon src="/vendor.png" alt="Vendors" />,
   },
   {
     label: "Vendor Booking",
     href: "/dashboard/vendor-booking",
     module: "cab-vendor",
-    icon: <AppIcon src="/cab.png" alt="Vendor Booking" />,
+    icon: <AppIcon src="/cab-vendor.png" alt="Vendor Booking" />,
   },
   {
     label: "Roles",
@@ -64,7 +64,7 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "Cab Booking",
     href: "/dashboard/cab-booking",
     module: "cab-booking",
-    icon: <AppIcon src="/cab.png" alt="Cab Booking" />,
+    icon: <AppIcon src="/cab-booking.png" alt="Cab Booking" />,
   },
   {
     label: "MOU",

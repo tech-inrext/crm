@@ -58,7 +58,6 @@ export const useCabBooking = (opts = {}) => {
   }, []);
 
   const createBooking = useCallback(async (formData) => {
-    // Start create request but don't block caller on the network latency.
     setIsLoading(true);
     setError("");
     setSuccess("");
@@ -69,29 +68,20 @@ export const useCabBooking = (opts = {}) => {
       numberOfClients: Number(formData.numberOfClients),
     };
 
-    // fire-and-forget: kick off network request and handle result in background
-    cabBookingApi
-      .createBooking(payload)
-        .then((res) => {
-          setSuccess("Booking created successfully!");
-          // Only perform background refetch if the hook was configured to both
-          // autoFetch and refetchAfterMutations. Vendor pages set autoFetch=false
-          // to avoid calling protected GET endpoints.
-          if (refetchAfterMutations && autoFetch) {
-            fetchBookings().catch((err) => console.error("Background fetchBookings failed:", err));
-          }
-        })
-      .catch((err) => {
-        setError(err?.response?.data?.message || "Failed to create booking");
-      })
-      .finally(() => {
-        // ensure loading indicator is cleared when background request completes
-        setIsLoading(false);
-      });
-
-    // Return success immediately so UI can proceed (optimistic UX).
-    setIsLoading(false);
-    return true;
+    try {
+      const res = await cabBookingApi.createBooking(payload);
+      setSuccess("Booking created successfully!");
+      // Only perform refetch if configured
+      if (refetchAfterMutations && autoFetch) {
+        await fetchBookings();
+      }
+      return true;
+    } catch (err: any) {
+      setError(err?.response?.data?.message || "Failed to create booking");
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
   }, [fetchBookings, refetchAfterMutations, autoFetch]);
 
   const updateBookingStatus = useCallback(async (bookingId, status, vendorId) => {
