@@ -40,9 +40,19 @@ export default async function handler(req, res) {
     const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const expiry = Date.now() + 10 * 60 * 1000;
 
-    employee.resetOTP = otp;
-    employee.resetOTPExpires = expiry;
-    await employee.save();
+    // Use a direct update to avoid triggering full-document validation
+    // (some Employee documents may be missing required fields used by validation)
+    const updateResult = await Employee.updateOne(
+      { _id: employee._id },
+      { $set: { resetOTP: otp, resetOTPExpires: expiry } }
+    );
+
+    if (updateResult.matchedCount === 0 && updateResult.modifiedCount === 0) {
+      console.error("❌ Failed to update employee OTP:", updateResult);
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to save OTP for the user" });
+    }
 
     try {
       await leadQueue.add("sendOTPJob", { email, otp });
@@ -59,7 +69,9 @@ export default async function handler(req, res) {
     // Catch any unexpected errors and ensure we always return JSON
     console.error("❌ Unhandled error in request-otp:", err);
     try {
-      return res.status(500).json({ success: false, message: "Internal Server Error" });
+      return res
+        .status(500)
+        .json({ success: false, message: "Internal Server Error" });
     } catch (e) {
       // If even sending JSON fails, fall back to plain text with proper header
       res.setHeader("Content-Type", "text/plain");
