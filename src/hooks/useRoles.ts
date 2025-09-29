@@ -34,3 +34,4 @@ export function useRoles(page, rowsPerPage, search) {
 
   return { roles, loading, total, loadRoles };
 }
+

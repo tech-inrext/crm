@@ -1,7 +1,7 @@
 import dbConnect from "@/lib/mongodb";
 import Property from "@/models/Property";
 import * as cookie from "cookie";
-import { userAuth } from "../../../../../middlewares/auth";
+import { userAuth } from "../../../../middlewares/auth";
 
 // Create a new property (Admin only)
 const createProperty = async (req, res) => {
@@ -18,6 +18,7 @@ const createProperty = async (req, res) => {
       nearby,
       projectHighlights,
       mapLocation,
+      images,
       brochureUrls,
       creatives,
       videoIds
@@ -43,6 +44,7 @@ const createProperty = async (req, res) => {
       nearby,
       projectHighlights,
       mapLocation,
+      images: images || [],
       brochureUrls,
       creatives,
       videoIds,
@@ -124,8 +126,35 @@ function withAuth(handler) {
 }
 
 // Main handler
+// const handler = async (req, res) => {
+//   await dbConnect();
+
+//   if (req.method === "GET") {
+//     return getAllProperties(req, res);
+//   }
+
+//   if (req.method === "POST") {
+//     return createProperty(req, res);
+//   }
+
+//   return res.status(405).json({
+//     success: false,
+//     message: "Method not allowed"
+//   });
+// };
 const handler = async (req, res) => {
   await dbConnect();
+
+  // Set CORS headers
+  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Origin', process.env.NEXTAUTH_URL || 'http://localhost:3000');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+
+  if (req.method === 'OPTIONS') {
+    res.status(200).end();
+    return;
+  }
 
   if (req.method === "GET") {
     return getAllProperties(req, res);
@@ -142,3 +171,4 @@ const handler = async (req, res) => {
 };
 
 export default withAuth(handler);
+

@@ -229,6 +229,97 @@ export const ROLES_STYLES = {
   } as SxProps<Theme>,
 };
 
+// Properties module specific styles
+export const PROPERTIES_STYLES = {
+  // Properties main container
+  propertiesContainer: {
+    p: { xs: 0.5, sm: 1, md: 2 },
+    pt: { xs: 1, sm: 2, md: 3 },
+    mt: 0,
+    minHeight: "100vh",
+    bgcolor: "background.default",
+    overflow: "hidden",
+  } as SxProps<Theme>,
+
+  // Properties title
+  propertiesTitle: {
+    fontWeight: 700,
+    color: "text.primary",
+    fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
+    mb: { xs: 2, md: 3 },
+    textAlign: { xs: "center", sm: "left" },
+  } as SxProps<Theme>,
+
+  // Properties grid layout
+  propertiesGrid: {
+    display: "grid",
+    gridTemplateColumns: {
+      xs: "1fr",
+      sm: "repeat(auto-fill, minmax(280px, 1fr))",
+      md: "repeat(auto-fill, minmax(300px, 1fr))",
+      lg: "repeat(auto-fill, minmax(320px, 1fr))",
+    },
+    gap: { xs: 2, sm: 2.5, md: 3 },
+    mb: { xs: 2, sm: 3 },
+    width: "100%",
+    alignItems: "stretch",
+  } as SxProps<Theme>,
+
+  // Property card wrapper
+  propertyCardWrapper: {
+    display: "flex",
+    minHeight: "100%",
+  } as SxProps<Theme>,
+
+  // Properties FAB
+  propertiesFab: {
+    position: "fixed",
+    bottom: 24,
+    right: 24,
+    display: { xs: "flex", md: "none" },
+    zIndex: 1201,
+    boxShadow: 3,
+    background: "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
+    "&:hover": {
+      background: "linear-gradient(45deg, #5a67d8 30%, #6b46c1 90%)",
+    },
+  } as SxProps<Theme>,
+
+  // Property status chip colors
+  statusChip: {
+    "&.Under-Construction": {
+      backgroundColor: "warning.main",
+      color: "warning.contrastText",
+    },
+    "&.Ready-to-Move": {
+      backgroundColor: "success.main",
+      color: "success.contrastText",
+    },
+    "&.Pre-Launch": {
+      backgroundColor: "info.main",
+      color: "info.contrastText",
+    },
+  } as SxProps<Theme>,
+
+  // Property detail section
+  detailSection: {
+    mt: 2,
+    p: 2,
+    borderRadius: 2,
+    backgroundColor: "grey.50",
+    border: "1px solid",
+    borderColor: "grey.200",
+  } as SxProps<Theme>,
+
+  // Property feature list
+  featureList: {
+    display: "flex",
+    flexWrap: "wrap",
+    gap: 0.5,
+    mt: 1,
+  } as SxProps<Theme>,
+};
+
 // Common component styles that can be reused
 export const COMMON_COMPONENT_STYLES = {
   // Standard action button in table rows
@@ -278,6 +369,7 @@ export const MODULE_STYLES = {
   leads: LEADS_STYLES,
   users: USERS_STYLES,
   roles: ROLES_STYLES,
+  properties: PROPERTIES_STYLES,
   common: COMMON_COMPONENT_STYLES,
   visual: VISUAL_CONSTANTS,
 };

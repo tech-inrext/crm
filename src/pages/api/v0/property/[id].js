@@ -1,7 +1,7 @@
 import dbConnect from "@/lib/mongodb";
 import Property from "@/models/Property";
 import * as cookie from "cookie";
-import { userAuth } from "../../../../../middlewares/auth";
+import { userAuth } from "../../../../middlewares/auth";
 
 // Get property by ID
 const getPropertyById = async (req, res) => {
@@ -108,3 +108,5 @@ const handler = async (req, res) => {
 };
 
 export default withAuth(handler);
+
+
