@@ -98,6 +98,8 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             "cab-vendor": "cab-vendor",
             branch: "branch",
             branches: "branch",
+            team: "team",
+            teams: "team",
           };
           // Always map UI-friendly labels for cab vendors to 'cab-vendor' (backend)
           if (
@@ -106,6 +108,9 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             mod.toLowerCase() === "vendor booking"
           )
             return "cab-vendor";
+          // Map Team UI labels to backend 'team'
+          if (mod === "Team" || mod === "Teams" || mod.toLowerCase() === "team")
+            return "team";
           return map[mod.toLowerCase()] || mod.toLowerCase();
         };
         // Normalize all module names to backend format for mapping

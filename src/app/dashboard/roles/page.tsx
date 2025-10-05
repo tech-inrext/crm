@@ -32,6 +32,7 @@ const modules = [
   "CabBooking",
   "CabVendor",
   "Vendor",
+  "Team",
   "MOU",
   "Branch",
 ];

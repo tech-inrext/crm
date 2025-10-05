@@ -4,6 +4,7 @@ const modules = [
   "employee",
   "lead",
   "mou",
+  "team",
   "role",
   "department",
   "cab-booking",
