@@ -8,37 +8,6 @@ const api = axios.create({
   withCredentials: true,
 });
 
-// export interface Property {
-//   _id?: string;
-//   projectName: string;
-//   builderName: string;
-//   description: string;
-//   location: string;
-//   price: string;
-//   status: string[];
-//   features: string[];
-//   amenities: string[];
-//   nearby: string[];
-//   projectHighlights: string[];
-//   mapLocation: {
-//     lat: number;
-//     lng: number;
-//   };
-//   images: {
-//     url: string;
-//     title?: string;
-//     description?: string;
-//     isPrimary?: boolean;
-//     uploadedAt?: string;
-//   }[];
-//   brochureUrls: string[];
-//   creatives: string[];
-//   videoIds: string[];
-//   isActive?: boolean;
-//   createdBy?: string;
-//   createdAt?: string;
-//   updatedAt?: string;
-// }
 export interface Property {
   _id?: string;
   projectName: string;
@@ -72,7 +41,12 @@ export interface Property {
     url: string;
     type: string;
   }[];
-  videoIds: string[];
+  // videoIds: string[];
+  videoFiles: {
+    title: string;
+    url: string;
+    type: string;
+  }[];
   isActive?: boolean;
   createdBy?: string;
   createdAt?: string;
@@ -107,3 +81,4 @@ export const propertyService = {
     return response.data;
   },
 };
+

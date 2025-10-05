@@ -63,7 +63,14 @@ const propertySchema = new mongoose.Schema(
         type: { type: String, default: "Image" },
       },
     ],
-    videoIds: [String],
+    // videoIds: [String],
+    videoFiles: [
+      {
+        title: String,
+        url: String,
+        type: { type: String, default: "Video File" },
+      },
+    ],
     isActive: {
       type: Boolean,
       default: true,
