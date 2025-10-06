@@ -151,9 +151,10 @@ class EmployeeService extends Service {
       // 🚫 Check duplicate email/phone
       const exists = await Employee.findOne({ $or: [{ email }, { phone }] });
       if (exists) {
-        return res
-          .status(409)
-          .json({ success: false, message: "Employee already exists" });
+        return res.status(409).json({
+          success: false,
+          message: "Employee's Email or Phone No. already exists",
+        });
       }
 
       // ✅ Create new employee (only set optional fields if present)

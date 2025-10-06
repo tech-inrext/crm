@@ -24,7 +24,7 @@ class LeadService extends Service {
       if (existingLead) {
         return res.status(409).json({
           success: false,
-          message: "Phone number already exists for another lead",
+          message: "Lead already exists with this phone number.",
         });
       }
 

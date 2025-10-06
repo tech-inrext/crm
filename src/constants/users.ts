@@ -99,7 +99,7 @@ export const FIELD_LABELS = {
   AGE: "Age",
   JOINING_DATE: "Joining Date",
   DESIGNATION: "Designation *",
-  MANAGER: "Manager",
+  MANAGER: "Manager * [Only for VP/Director, Select self as Manager]",
   DEPARTMENT: "Department",
   ROLES: "Roles *",
   FOR_FREELANCER: "For Freelancer",

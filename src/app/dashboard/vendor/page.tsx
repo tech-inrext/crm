@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Box, Typography, CircularProgress } from "@mui/material";
+import { Box, Typography, CircularProgress, Snackbar } from "@mui/material";
+import Alert from "@mui/material/Alert";
 import dynamic from "next/dynamic";
 
 import { useVendors } from "@/hooks/useVendors";
@@ -46,6 +47,12 @@ const Vendors: React.FC = () => {
     addVendor,
     updateVendor,
   } = useVendors(debouncedSearch, page, rowsPerPage);
+
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    "success" | "error" | "info" | "warning"
+  >("success");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   // Reset to first page when search or page size changes
   useEffect(() => {
@@ -117,17 +124,65 @@ const Vendors: React.FC = () => {
               if (editId) {
                 // updateVendor expects (vendorId, data)
                 await updateVendor(editId, values as any);
-                setEditId(null);
+                setSnackbarMessage("Vendor updated successfully");
               } else {
                 await addVendor(values as any);
+                setSnackbarMessage("Vendor created successfully");
               }
+              setSnackbarSeverity("success");
+              setSnackbarOpen(true);
+              setEditId(null);
               setOpen(false);
-            } catch (err) {
-              // rethrow so VendorDialog/Formik can handle submission errors
+            } catch (err: any) {
+              // Extract API message if available
+              const status = err?.response?.status || err?.status || err?.statusCode;
+              const extractMessage = (e: any) => {
+                if (!e) return "Failed to save vendor";
+                const resp = e.response?.data ?? e.data ?? null;
+                if (typeof resp === "string") return resp;
+                if (resp) {
+                  if (resp.message) return resp.message;
+                  if (resp.msg) return resp.msg;
+                  if (resp.error) return resp.error;
+                  if (resp.data && typeof resp.data === "string") return resp.data;
+                  if (resp.data && resp.data.message) return resp.data.message;
+                  if (Array.isArray(resp.errors) && resp.errors.length) {
+                    return resp.errors[0].message || JSON.stringify(resp.errors[0]);
+                  }
+                }
+                if (e.message) return e.message;
+                try {
+                  return JSON.stringify(e);
+                } catch (_) {
+                  return "Failed to save vendor";
+                }
+              };
+              const message = extractMessage(err);
+              if (status === 409) {
+                setSnackbarMessage(message || "Vendor with same identifier exists");
+              } else {
+                setSnackbarMessage(message);
+              }
+              setSnackbarSeverity("error");
+              setSnackbarOpen(true);
+              // rethrow so upstream can also handle if needed
               throw err;
             }
           }}
         />
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={(event, reason) => {
+          if (reason === "clickaway") return;
+          setSnackbarOpen(false);
+        }}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity={snackbarSeverity} variant="filled">
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
       </Box>
     </PermissionGuard>
   );
