@@ -79,12 +79,10 @@ export default async function handler(req, res) {
     const key = `mou/${mou._id}_${Date.now()}.pdf`;
     if (!uploadToS3 || typeof uploadToS3 !== "function") {
       console.error("uploadToS3 is not available");
-      return res
-        .status(500)
-        .json({
-          success: false,
-          message: "S3 upload function not available on server",
-        });
+      return res.status(500).json({
+        success: false,
+        message: "S3 upload function not available on server",
+      });
     }
     const s3Url = await uploadToS3(buffer, key, "application/pdf");
 
@@ -111,12 +109,13 @@ export default async function handler(req, res) {
           (mailer2.sendMOUApprovalMail || mailer2.default || mailer2);
       }
       if (sendMOUApprovalMail)
-        await sendMOUApprovalMail(
-          mou.email,
-          mou.name,
-          mou.employeeProfileId,
-          s3Url
-        );
+        // await sendMOUApprovalMail(
+        //   mou.email,
+        //   mou.name,
+        //   mou.employeeProfileId,
+        //   s3Url
+        // );
+        return res.json({ success: true });
     } catch (e) {
       console.error("Failed to send approval mail:", e);
     }

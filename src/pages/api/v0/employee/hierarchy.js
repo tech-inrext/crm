@@ -7,7 +7,11 @@ import { userAuth } from "../../../../middlewares/auth";
 const buildHierarchy = (employees, managerId) => {
   const tree = [];
   employees
-    .filter((emp) => String(emp.managerId) === String(managerId)) // Find employees reporting to the manager
+    .filter(
+      (emp) =>
+        String(emp.managerId) === String(managerId) &&
+        String(emp._id) !== String(managerId)
+    )
     .forEach((emp) => {
       const children = buildHierarchy(employees, emp._id); // Recursively find employees under each employee
       tree.push({
