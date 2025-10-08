@@ -85,41 +85,43 @@ const Users: React.FC = () => {
     setForm(DEFAULT_USER_FORM);
   };
 
-  const usersTableHeader = USERS_TABLE_HEADER.map((header) =>
-    header.label === "Actions"
-      ? {
-          ...header,
-          component: (row) => (
-            <PermissionGuard
-              module={USERS_PERMISSION_MODULE}
-              action="write"
-              fallback={null}
-            >
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => {
-                  setSelectedUser(row);
-                  setEditId(row.id || row._id);
-                  setOpen(true);
-                }}
-                sx={{
-                  minWidth: 0,
-                  px: 1,
-                  py: 0.5,
-                  minHeight: 0,
-                  lineHeight: 1,
-                }}
-              >
-                <Edit fontSize="small" />
-              </Button>
-            </PermissionGuard>
-          ),
-        }
-      : header
-  );
+  const usersTableHeader = [
+    { label: "Name", dataKey: "name" },
+    { label: "Email", dataKey: "email" },
+    { label: "Phone", dataKey: "phone" },
+    { label: "Designation", dataKey: "designation" },
+    {
+      label: "Actions",
+      component: (row, { onEdit }) => (
+        <PermissionGuard
+          module={USERS_PERMISSION_MODULE}
+          action="write"
+          fallback={null}
+        >
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={() => {
+              setSelectedUser(row);
+              setEditId(row.id || row._id);
+              setOpen(true);
+            }}
+            sx={{
+              minWidth: 0,
+              px: 1,
+              py: 0.5,
+              minHeight: 0,
+              lineHeight: 1,
+            }}
+          >
+            <Edit fontSize="small" />
+          </Button>
+        </PermissionGuard>
+      ),
+    },
+  ];
 
-  const getInitialUserForm = (form: any) => {
+  const getInitialUserForm = (form: any): import("@/components/ui/dialogs/UserDialog").UserFormData => {
     const safeForm = Object.fromEntries(
       Object.entries(form || {}).filter(
         ([_, v]) => v !== undefined && v !== null
@@ -127,7 +129,7 @@ const Users: React.FC = () => {
     );
 
     let joiningDate = safeForm.joiningDate || "";
-    if (joiningDate) {
+    if (joiningDate && typeof joiningDate === "string") {
       const dateObj = new Date(joiningDate);
       if (!isNaN(dateObj.getTime())) {
         joiningDate = dateObj.toISOString().slice(0, 10);
@@ -137,22 +139,21 @@ const Users: React.FC = () => {
     return {
       ...DEFAULT_USER_FORM,
       ...safeForm,
-      gender: safeForm.gender ?? DEFAULT_USER_FORM.gender,
-      managerId: safeForm.managerId || "",
-      departmentId: safeForm.departmentId || "",
+      gender: typeof safeForm.gender === "string" ? safeForm.gender : DEFAULT_USER_FORM.gender,
+      managerId: typeof safeForm.managerId === "string" ? safeForm.managerId : "",
+      departmentId: typeof safeForm.departmentId === "string" ? safeForm.departmentId : "",
       roles: Array.isArray(safeForm.roles)
         ? safeForm.roles.map((r: any) =>
             typeof r === "string" ? r : r._id || r.id || ""
           )
         : [],
       joiningDate,
-      aadharUrl: safeForm.aadharUrl || "",
-      panUrl: safeForm.panUrl || "",
-      bankProofUrl: safeForm.bankProofUrl || "",
-      nominee: safeForm.nominee ?? DEFAULT_USER_FORM.nominee,
-      // ensure freelancer fields are present in initial values
-      slabPercentage: safeForm.slabPercentage || "",
-      branch: safeForm.branch || "",
+      aadharUrl: typeof safeForm.aadharUrl === "string" ? safeForm.aadharUrl : "",
+      panUrl: typeof safeForm.panUrl === "string" ? safeForm.panUrl : "",
+      bankProofUrl: typeof safeForm.bankProofUrl === "string" ? safeForm.bankProofUrl : "",
+      nominee: typeof safeForm.nominee === "object" && safeForm.nominee !== null ? safeForm.nominee : DEFAULT_USER_FORM.nominee,
+      slabPercentage: typeof safeForm.slabPercentage === "string" ? safeForm.slabPercentage : "",
+      branch: typeof safeForm.branch === "string" ? safeForm.branch : "",
     };
   };
 

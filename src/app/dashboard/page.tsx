@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useEffect } from "react";
-import ProtectedRoute from "../components/ProtectedRoute";
-import Dashboard from "./dashboard/page";
+import ProtectedRoute from "../../components/ProtectedRoute";
+import Dashboard from "../dashboard";
 import { useRouter } from "next/navigation";
 
 export default function Home() {

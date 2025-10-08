@@ -16,7 +16,7 @@ import {
   InputAdornment,
   Link,
 } from "@mui/material";
-import ForgotPasswordDialog from "../../components/ui/ForgotPasswordDialog";
+import ForgotPasswordDialog from "../../components/ui/dialogs/ForgotPasswordDialog";
 import { Visibility, VisibilityOff } from "@mui/icons-material";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
