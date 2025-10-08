@@ -2,9 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
-import MuiRootProvider from "../components/ui/MuiRootProvider";
-import { PermissionsProvider } from "../contexts/PermissionsContext";
-import LoginWrapper from "../components/ui/LoginWrapper";
+import MuiRootProvider from "../components/ui/provider/MuiRootProvider";
+import LoginWrapper from "../components/ui/wrapper/LoginWrapper";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -28,9 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         <MuiRootProvider>
           <AuthProvider>
             <LoginWrapper>{children}</LoginWrapper>

@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import RoleSelectionDialog from "@/components/ui/RoleSelectionDialog";
 
 interface LoginWrapperProps {
   children: React.ReactNode;
@@ -11,6 +10,7 @@ interface LoginWrapperProps {
 const LoginWrapper: React.FC<LoginWrapperProps> = ({ children }) => {
   const { user, switchRole } = useAuth();
   const [showRoleSelection, setShowRoleSelection] = useState(false);
+
   useEffect(() => {
     // Show role selection if user has multiple roles and no current role is set
     const getAvailableRoleNames = () => {
@@ -20,6 +20,9 @@ const LoginWrapper: React.FC<LoginWrapperProps> = ({ children }) => {
 
     const getCurrentRoleName = () => {
       if (user?.currentRole) {
+        if (typeof user.currentRole === "string") {
+          return user.currentRole;
+        }
         return user.currentRole.name;
       }
       return null;
@@ -29,12 +32,13 @@ const LoginWrapper: React.FC<LoginWrapperProps> = ({ children }) => {
       setShowRoleSelection(true);
     }
   }, [user]);
+
   const handleRoleSelect = async (roleName: string) => {
     try {
       // Find the role ID from the role name
       const getRoleId = (name: string) => {
         if (!user?.roles) return name;
-        const role = user.roles.find((r) => r.name === name);
+        const role = user.roles.find((r: any) => r.name === name);
         return role ? role._id : name;
       };
 
@@ -45,6 +49,7 @@ const LoginWrapper: React.FC<LoginWrapperProps> = ({ children }) => {
       console.error("Failed to select role:", error);
     }
   };
+
   const handleCloseRoleSelection = () => {
     // If user doesn't select a role, use the first available role
     if (user?.roles && user.roles.length > 0) {

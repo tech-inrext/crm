@@ -14,7 +14,7 @@ import {
 import { Settings, Security } from "@mui/icons-material";
 import PermissionGuard from "@/components/PermissionGuard";
 import Skeleton from "@mui/material/Skeleton";
-import { roleCardStyles, permissionColors } from "./RoleCard.styles";
+import { roleCardStyles, permissionColors } from "../../styles/RoleCard.style";
 
 interface RoleCardProps {
   role: any;

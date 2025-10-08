@@ -1,5 +1,4 @@
-"use client";
-
+ 
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -19,9 +18,9 @@ import {
   DEPARTMENTS_API_BASE,
   BUTTON_LABELS,
 } from "@/constants/users";
-import { userValidationSchema } from "./user-dialog/validation";
-import BasicInformation from "./user-dialog/BasicInformation";
-import OrganizationSection from "./user-dialog/OrganizationSection";
+import { userValidationSchema } from "./../../user-dialog/validation";
+import BasicInformation from "./../../user-dialog/BasicInformation";
+import OrganizationSection from "./../../user-dialog/OrganizationSection";
 
 export interface UserFormData {
   name: string;

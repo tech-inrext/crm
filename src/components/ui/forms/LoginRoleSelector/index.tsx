@@ -110,8 +110,8 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
               <MenuItem key={role._id} value={role._id}>
                 <Box
                   sx={{
-                    display: "flex",
-                    alignItems: "center",
+                    display: "flex",                                  
+                    alignItems: "center",   
                     gap: 2,
                     width: "100%",
                   }}

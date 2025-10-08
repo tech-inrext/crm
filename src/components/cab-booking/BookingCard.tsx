@@ -22,8 +22,8 @@ import AssignVendorDialog from "./AssignVendorDialog";
 import BookingStatus from "./BookingStatus";
 import ShareBookingDialog from "./ShareBookingDialog";
 import PermissionGuard from "@/components/PermissionGuard";
-import CardComponent from "@/components/ui/Card";
-import Avatar from "@/components/ui/Avatar";
+import CardComponent from "@/components/ui/cards/Card";
+import Avatar from "@/components/ui/avatar/Avatar";
 import MODULE_STYLES from "@/styles/moduleStyles";
 import { Booking } from "@/types/cab-booking";
 import {

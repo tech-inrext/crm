@@ -7,8 +7,8 @@ import {
   useTheme,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
-import SearchBar from "@/components/ui/SearchBar";
-import PermissionGuard from "@/components/PermissionGuard";
+import SearchBar from "@/components/ui/search/SearchBar";
+import PermissionGuard from "../../../PermissionGuard";
 
 interface RolesActionBarProps {
   search: string;

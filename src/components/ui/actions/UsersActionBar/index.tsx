@@ -1,7 +1,3 @@
-// Copied from UsersActionBar.tsx, replaced 'user' with 'vendor'
-// ...existing code...
-// Copied from UsersActionBar.tsx, replaced 'user' with 'vendor'
-// ...existing code...
 import React from "react";
 import {
   Box,
@@ -9,24 +5,20 @@ import {
   CircularProgress,
   useMediaQuery,
   useTheme,
-  Fab,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
-import SearchBar from "@/components/ui/SearchBar";
+import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
-import {
-  VENDORS_PERMISSION_MODULE,
-  SEARCH_PLACEHOLDER,
-} from "@/constants/vendors";
+import { USERS_PERMISSION_MODULE, SEARCH_PLACEHOLDER } from "@/constants/users";
 
-interface VendorsActionBarProps {
+interface UsersActionBarProps {
   search: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAdd: () => void;
   saving: boolean;
 }
 
-const VendorsActionBar: React.FC<VendorsActionBarProps> = ({
+const UsersActionBar: React.FC<UsersActionBarProps> = ({
   search,
   onSearchChange,
   onAdd,
@@ -55,14 +47,14 @@ const VendorsActionBar: React.FC<VendorsActionBarProps> = ({
       </Box>
       {!isMobile && (
         <PermissionGuard
-          module={VENDORS_PERMISSION_MODULE}
+          module={USERS_PERMISSION_MODULE}
           action="write"
           fallback={<></>}
         >
           <Button
             variant="contained"
             startIcon={<Add />}
-            onClick={() => onAdd()}
+            onClick={onAdd}
             disabled={saving}
             size="large"
             sx={{
@@ -81,31 +73,13 @@ const VendorsActionBar: React.FC<VendorsActionBarProps> = ({
             {saving ? (
               <CircularProgress size={20} color="inherit" />
             ) : (
-              "Add Vendor"
+              "Add User"
             )}
           </Button>
-        </PermissionGuard>
-      )}
-      {isMobile && (
-        <PermissionGuard
-          module={VENDORS_PERMISSION_MODULE}
-          action="write"
-          fallback={<></>}
-        >
-          <Fab
-            color="primary"
-            aria-label="add-vendor"
-            onClick={() => onAdd()}
-            disabled={saving}
-            sx={{ position: "fixed", bottom: 24, right: 24, zIndex: 1300 }}
-            size="medium"
-          >
-            {saving ? <CircularProgress size={20} color="inherit" /> : <Add />}
-          </Fab>
         </PermissionGuard>
       )}
     </Box>
   );
 };
 
-export default VendorsActionBar;
+export default UsersActionBar;

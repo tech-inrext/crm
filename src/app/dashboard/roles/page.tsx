@@ -11,16 +11,16 @@ import {
   CircularProgress,
 } from "@mui/material";
 import { Add } from "@mui/icons-material";
-import RoleCard from "@/components/ui/RoleCard";
+import RoleCard from "@/components/ui/cards/RoleCard";
 import { useRoles } from "@/hooks/useRoles";
 import { useDebounce } from "@/hooks/useDebounce"; // 👈 Add this
 import { ROLE_PERMISSIONS, GRADIENTS } from "@/constants/leads";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import PermissionGuard from "@/components/PermissionGuard";
-import AddRoleDialog from "@/components/ui/AddRoleDialog";
-import RolePermissionsDialog from "@/components/ui/RolePermissionsDialog";
-import RolesActionBar from "@/components/ui/RolesActionBar";
-import Pagination from "@/components/ui/Pagination";
+import AddRoleDialog from "@/components/ui/dialogs/AddRoleDialog";
+import RolePermissionsDialog from "@/components/ui/dialogs/RolePermissionsDialog";
+import RolesActionBar from "@/components/ui/actions/RolesActionBar";
+import Pagination from "@/components/ui/Navigation/Pagination";
 import axios from "axios";
 import { transformToAPIRole } from "@/utils/leadUtils";
 

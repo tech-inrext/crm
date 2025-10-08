@@ -21,7 +21,7 @@ import {
   History,
 } from "@mui/icons-material";
 import FilterAltIcon from "@mui/icons-material/FilterAlt";
-import SearchBar from "@/components/ui/SearchBar";
+import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import dynamic from "next/dynamic";
 import { LEAD_STATUSES } from "@/constants/leads";

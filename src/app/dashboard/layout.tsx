@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useState, useMemo, useEffect } from "react";
-import Sidebar from "@/components/ui/Sidebar";
-import Navbar from "@/components/ui/Navbar";
+import Sidebar from "@/components/ui/Navigation/Sidebar";
+import Navbar from "@/components/ui/Navigation/Navbar";
 import { Box, useMediaQuery, useTheme } from "@mui/material";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";

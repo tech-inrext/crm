@@ -24,7 +24,7 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import { useRouter } from "next/navigation";
 
-import Profile from "@/components/ui/Profile";
+import Profile from "@/components/ui/profile/Profile";
 import RoleSelectionDialog from "@/components/ui/RoleSelectionDialog";
 
 const ProfileMenu: React.FC = () => {

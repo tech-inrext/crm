@@ -241,7 +241,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
           }}
         </Field>
         <Field name="designation">
-          {({ field, meta }: FieldProps) => (
+          {({ field,  meta }: FieldProps) => (
             <TextField
               {...field}
               label={FIELD_LABELS.DESIGNATION}

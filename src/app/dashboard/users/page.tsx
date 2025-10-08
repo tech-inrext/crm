@@ -16,9 +16,9 @@ import { Add, Edit } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 import { useUsers } from "@/hooks/useUsers";
 import PermissionGuard from "@/components/PermissionGuard";
-import UserDialog from "@/components/ui/UserDialog";
-import UsersActionBar from "@/components/ui/UsersActionBar";
-import UserCard from "@/components/ui/UserCard";
+import UserDialog from "@/components/ui/dialogs/UserDialog";
+import UsersActionBar from "@/components/ui/actions/UsersActionBar";
+import UserCard from "@/components/ui/cards/UserCard";
 import {
   GRADIENTS,
   COMMON_STYLES,
@@ -32,10 +32,10 @@ import {
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import { useDebounce } from "@/hooks/useDebounce";
 
-const TableMap = dynamic(() => import("@/components/ui/TableMap"), {
+const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
   ssr: false,
 });
-const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
+const Pagination = dynamic(() => import("@/components/ui/Navigation/Pagination"), {
   ssr: false,
 });
 

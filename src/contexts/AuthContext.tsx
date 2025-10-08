@@ -7,7 +7,7 @@ import {
   selectRole,
   createLogin,
 } from "@/service/auth.service";
-import LoginRoleSelector from "@/components/ui/LoginRoleSelector";
+import LoginRoleSelector from "@/components/ui/forms/LoginRoleSelector";
 import { useRouter } from "next/navigation";
 
 // Configure axios to include credentials

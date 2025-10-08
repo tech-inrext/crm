@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/Navigation/Pagination";
 import { Box, Dialog, DialogContent, Typography } from "@mui/material";
 import VendorBookingForm from "@/components/cab-booking/VendorBookingForm";
 import BookingDetailsDialog from "@/components/cab-booking/BookingDetailsDialog";

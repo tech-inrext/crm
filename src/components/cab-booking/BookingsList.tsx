@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Booking } from "@/types/cab-booking";
 import BookingCard from "./BookingCard";
 import BookingDetailsDialog from "./BookingDetailsDialog";
-import Pagination from "../ui/Pagination";
+import Pagination from "../ui/Navigation/Pagination";
 
 interface BookingsListProps {
   /** Pass the current status value from your dropdown.

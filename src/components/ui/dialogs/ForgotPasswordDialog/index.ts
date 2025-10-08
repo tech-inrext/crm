@@ -8,7 +8,7 @@ import Button from "@mui/material/Button";
 import TextField from "@mui/material/TextField";
 import CircularProgress from "@mui/material/CircularProgress";
 
-interface ForgotPasswordDialogProps {
+interface ForgotPasswordDialogProps { 
   open: boolean;
   onClose: () => void;
 }
@@ -33,8 +33,8 @@ export default function ForgotPasswordDialog({
       setOtp("");
       setNewPassword("");
       setConfirmPassword("");
-      setError("");
-      setSuccess("");
+      setError("");  
+      setSuccess("");  
       setLoading(false);
     }
   }, [open]);

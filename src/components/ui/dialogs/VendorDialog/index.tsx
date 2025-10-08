@@ -20,8 +20,8 @@ import {
 import {
   vendorValidationSchema,
   vendorAddValidationSchema,
-} from "./vendor-dialog/validation";
-import BasicInformation from "./vendor-dialog/BasicInformation";
+} from "../../vendor-dialog/validation";
+import BasicInformation from "../../vendor-dialog/BasicInformation";
 export interface VendorFormData {
   name: string;
   email: string;

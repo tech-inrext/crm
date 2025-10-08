@@ -6,9 +6,9 @@ import dynamic from "next/dynamic";
 
 import { useVendors } from "@/hooks/useVendors";
 import PermissionGuard from "@/components/PermissionGuard";
-import VendorDialog from "@/components/ui/VendorDialog";
-import VendorsActionBar from "@/components/ui/VendorsActionBar";
-import VendorCard from "@/components/ui/VendorCard";
+import VendorDialog from "@/components/ui/dialogs/VendorDialog";
+import VendorsActionBar from "@/components/ui/actions/VendorsActionBar";
+import VendorCard from "@/components/ui/cards/VendorCard";
 
 import {
   DEFAULT_VENDOR_FORM,
@@ -19,7 +19,7 @@ import {
 import { useDebounce } from "@/hooks/useDebounce";
 
 // Your Pagination component expects: page, pageSize, total, onPageChange, onPageSizeChange, pageSizeOptions
-const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
+const Pagination = dynamic(() => import("@/components/ui/Navigation/Pagination"), {
   ssr: false,
 });
 

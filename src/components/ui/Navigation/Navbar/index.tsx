@@ -4,8 +4,8 @@ import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
 import Typography from "@mui/material/Typography";
 import { useTheme, useMediaQuery } from "@mui/material";
-import AvatarComponent from "./Avatar";
-import ProfileMenu from "./ProfileMenu";
+import AvatarComponent from "./../../avatar/Avatar";
+import ProfileMenu from "@/components/ui/profile/ProfileMenu";
 
 interface NavbarProps {
   sidebarOpen: boolean;

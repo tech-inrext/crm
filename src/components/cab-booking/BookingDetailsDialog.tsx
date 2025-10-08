@@ -21,7 +21,7 @@ import {
   MonetizationOn,
 } from "@mui/icons-material";
 import MODULE_STYLES from "@/styles/moduleStyles";
-import Avatar from "@/components/ui/Avatar";
+import Avatar from "@/components/ui/avatar/Avatar";
 import { Booking } from "@/types/cab-booking";
 import {
   formatDateTime,

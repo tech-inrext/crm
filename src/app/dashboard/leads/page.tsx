@@ -32,7 +32,7 @@ import {
   getDefaultLeadFormData,
   transformAPILeadToForm,
 } from "@/utils/leadUtils";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/Navigation/Pagination";
 import { leadsTableHeader } from "@/components/leads/LeadsTableHeaderConfig";
 
 // Lazy Load Components

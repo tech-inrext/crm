@@ -19,7 +19,7 @@ import { Close, Security } from "@mui/icons-material";
 import {
   permissionColors,
   rolePermissionsDialogStyles,
-} from "./RoleCard.styles";
+} from "../../styles/RoleCard.style";
 
 interface RolePermissionsDialogProps {
   open: boolean;
