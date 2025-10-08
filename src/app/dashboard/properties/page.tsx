@@ -30,6 +30,8 @@ import {
   Select,
   Collapse,
   Tooltip,
+  Card,
+  CardContent,
 } from "@mui/material";
 import {
   Add,
@@ -49,18 +51,402 @@ import {
   ExpandMore,
   ExpandLess,
   Clear,
+  MyLocation,
+  Home,
+  Business,
 } from "@mui/icons-material";
 import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Toaster, toast } from 'sonner';
 
 // Leaflet imports for map
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 
 // Import your services
-import { propertyService, type Property } from '@/services/propertyService';
+import { propertyService, type Property, type PropertyType } from '@/services/propertyService';
+
+// Fix for default markers in react-leaflet
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+});
+
+// Custom draggable marker icon
+const createDraggableIcon = () => {
+  return L.divIcon({
+    html: `
+      <div style="
+        background-color: #1976d2;
+        width: 30px;
+        height: 30px;
+        border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg);
+        border: 3px solid white;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        position: relative;
+        cursor: move;
+      ">
+        <div style="
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: rotate(45deg) translate(-30%, -30%);
+          color: white;
+          font-size: 16px;
+        "></div>
+      </div>
+    `,
+    className: 'draggable-marker',
+    iconSize: [30, 30],
+    iconAnchor: [15, 30],
+  });
+};
+
+// Location Marker Component
+const LocationMarker = ({ 
+  position, 
+  onPositionChange,
+  isEditMode 
+}: { 
+  position: [number, number];
+  onPositionChange: (lat: number, lng: number) => void;
+  isEditMode: boolean;
+}) => {
+  const [markerPosition, setMarkerPosition] = useState<[number, number]>(position);
+
+  useEffect(() => {
+    setMarkerPosition(position);
+  }, [position]);
+
+  const map = useMapEvents({
+    click(e) {
+      if (isEditMode) {
+        const newPosition: [number, number] = [e.latlng.lat, e.latlng.lng];
+        setMarkerPosition(newPosition);
+        onPositionChange(newPosition[0], newPosition[1]);
+        map.flyTo(e.latlng, map.getZoom());
+      }
+    },
+  });
+
+  const handleDragEnd = (e: any) => {
+    if (isEditMode) {
+      const marker = e.target;
+      const newPosition = marker.getLatLng();
+      setMarkerPosition([newPosition.lat, newPosition.lng]);
+      onPositionChange(newPosition.lat, newPosition.lng);
+    }
+  };
+
+  return markerPosition ? (
+    <Marker
+      position={markerPosition}
+      icon={createDraggableIcon()}
+      draggable={isEditMode}
+      eventHandlers={{
+        dragend: handleDragEnd,
+      }}
+    >
+      <Popup>
+        <Typography variant="subtitle2" gutterBottom>
+          Property Location
+        </Typography>
+        <Typography variant="body2">
+          Lat: {markerPosition[0].toFixed(6)}
+          <br />
+          Lng: {markerPosition[1].toFixed(6)}
+        </Typography>
+        {isEditMode && (
+          <Typography variant="caption" color="text.secondary">
+            Drag to adjust or click elsewhere on map
+          </Typography>
+        )}
+      </Popup>
+    </Marker>
+  ) : null;
+};
+
+// Enhanced Draggable Map Component
+const DraggablePropertyMap = ({ 
+  lat, 
+  lng, 
+  onLocationChange,
+  isEditMode = false 
+}: { 
+  lat: number; 
+  lng: number; 
+  onLocationChange: (lat: number, lng: number) => void;
+  isEditMode?: boolean;
+}) => {
+  const [map, setMap] = useState<any>(null);
+  const defaultPosition: [number, number] = [20.5937, 78.9629];
+
+  const handlePositionChange = (newLat: number, newLng: number) => {
+    onLocationChange(newLat, newLng);
+  };
+
+  const getCurrentLocation = () => {
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const { latitude, longitude } = position.coords;
+          onLocationChange(latitude, longitude);
+          if (map) {
+            map.flyTo([latitude, longitude], 15);
+          }
+        },
+        (error) => {
+          toast.error('Unable to get current location');
+          console.error('Geolocation error:', error);
+        }
+      );
+    } else {
+      toast.error('Geolocation is not supported by this browser');
+    }
+  };
+
+  return (
+    <Box sx={{ 
+      height: '300px', 
+      position: 'relative',
+      borderRadius: '15px',
+      overflow: 'hidden',
+      border: '1px solid #e0e0e0'
+    }}>
+      {isEditMode && (
+        <Box sx={{
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          zIndex: 1000,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1
+        }}>
+          <Tooltip title="Use Current Location">
+            <IconButton
+              onClick={getCurrentLocation}
+              sx={{
+                backgroundColor: 'white',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+                '&:hover': {
+                  backgroundColor: '#f5f5f5',
+                }
+              }}
+            >
+              <MyLocation fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        </Box>
+      )}
+
+      {isEditMode && (!lat || !lng) && (
+        <Box sx={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          backgroundColor: '#1976d2',
+          color: 'white',
+          padding: '8px 12px',
+          zIndex: 1000,
+          textAlign: 'center',
+          fontSize: '0.875rem'
+        }}>
+          Click on the map to set property location
+        </Box>
+      )}
+      
+      <MapContainer
+        center={lat && lng ? [lat, lng] : defaultPosition}
+        zoom={lat && lng ? 15 : 5}
+        style={{ height: '100%', width: '100%' }}
+        scrollWheelZoom={true}
+        whenCreated={setMap}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        
+        <LocationMarker 
+          position={lat && lng ? [lat, lng] : defaultPosition}
+          onPositionChange={handlePositionChange}
+          isEditMode={isEditMode}
+        />
+      </MapContainer>
+      
+      <Box sx={{
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        padding: '12px',
+        borderTop: '1px solid #e0e0e0',
+        fontSize: '0.75rem'
+      }}>
+        <Grid container spacing={1} alignItems="center">
+          <Grid size={{ xs: 12, sm: 5 }}>
+            <Typography variant="body2" noWrap>
+              <strong>Latitude:</strong> {(lat || defaultPosition[0]).toFixed(6)}
+            </Typography>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 5 }}>
+            <Typography variant="body2" noWrap>
+              <strong>Longitude:</strong> {(lng || defaultPosition[1]).toFixed(6)}
+            </Typography>
+          </Grid>
+          {isEditMode && (
+            <Grid size={{ xs: 12, sm: 2 }}>
+              <Button 
+                size="small" 
+                variant="outlined"
+                onClick={() => onLocationChange(defaultPosition[0], defaultPosition[1])}
+                fullWidth
+              >
+                Reset
+              </Button>
+            </Grid>
+          )}
+        </Grid>
+      </Box>
+    </Box>
+  );
+};
+
+// Location Search Component with CORS Proxy Fix
+const LocationSearch = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number, address: string) => void }) => {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  const searchLocation = async (query: string) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      return;
+    }
+
+    setLoading(true);
+    try {
+      // Using CORS proxy to fix the CORS error
+      const proxyUrl = 'https://corsproxy.io/?';
+      const targetUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=in`;
+      
+      const response = await fetch(proxyUrl + encodeURIComponent(targetUrl), {
+        headers: {
+          'Accept': 'application/json',
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+      
+      const data = await response.json();
+      setSearchResults(data);
+    } catch (error: any) {
+      console.error('Error searching location:', error);
+      
+      // Fallback: Try alternative CORS proxy
+      try {
+        const fallbackProxyUrl = 'https://api.allorigins.win/raw?url=';
+        const targetUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=in`;
+        
+        const fallbackResponse = await fetch(fallbackProxyUrl + encodeURIComponent(targetUrl));
+        
+        if (fallbackResponse.ok) {
+          const fallbackData = await fallbackResponse.json();
+          setSearchResults(fallbackData);
+        } else {
+          throw new Error('Fallback also failed');
+        }
+      } catch (fallbackError) {
+        console.error('Fallback geocoding also failed:', fallbackError);
+        toast.error('Location service temporarily unavailable. Please try again later.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResultSelect = (result: any) => {
+    const lat = parseFloat(result.lat);
+    const lng = parseFloat(result.lon);
+    const address = result.display_name;
+    
+    onLocationSelect(lat, lng, address);
+    setSearchQuery(address);
+    setSearchResults([]);
+  };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      searchLocation(searchQuery);
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  return (
+    <Box sx={{ position: 'relative', width: '100%' }}>
+      <TextField
+        fullWidth
+        label="Search Location"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        placeholder="Enter address, city, or landmark..."
+        InputProps={{
+          endAdornment: loading ? <CircularProgress size={20} /> : null,
+        }}
+        sx={{ mb: 2 }}
+      />
+      
+      {searchResults.length > 0 && (
+        <Paper sx={{
+          position: 'absolute',
+          top: '100%',
+          left: 0,
+          right: 0,
+          zIndex: 1000,
+          maxHeight: 200,
+          overflow: 'auto',
+          mt: 0.5,
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+        }}>
+          <List dense>
+            {searchResults.map((result, index) => (
+              <ListItem 
+                key={index}
+                button
+                onClick={() => handleResultSelect(result)}
+                sx={{
+                  borderBottom: '1px solid #f0f0f0',
+                  '&:last-child': { borderBottom: 'none' },
+                  '&:hover': {
+                    backgroundColor: '#f5f5f5'
+                  }
+                }}
+              >
+                <LocationOn sx={{ mr: 1, color: 'primary.main', fontSize: '1rem' }} />
+                <ListItemText 
+                  primary={result.display_name}
+                  secondary={`Lat: ${parseFloat(result.lat).toFixed(4)}, Lng: ${parseFloat(result.lon).toFixed(4)}`}
+                  primaryTypographyProps={{ fontSize: '0.875rem' }}
+                  secondaryTypographyProps={{ fontSize: '0.75rem' }}
+                />
+              </ListItem>
+            ))}
+          </List>
+        </Paper>
+      )}
+    </Box>
+  );
+};
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
@@ -79,15 +465,7 @@ function useDebounce<T>(value: T, delay: number): T {
   return debouncedValue;
 }
 
-// Fix for default markers in react-leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// File upload service using Base64 (no API needed)
+// File upload service using Base64
 const uploadService = {
   uploadFile: async (file: File): Promise<{ success: boolean; data?: { url: string; fileName: string }; message?: string }> => {
     return new Promise((resolve) => {
@@ -116,7 +494,7 @@ const uploadService = {
   },
 };
 
-// Map Component
+// PropertyMap Component
 const PropertyMap = ({ lat, lng, projectName }: { lat: number; lng: number; projectName: string }) => {
   if (!lat || !lng) {
     return (
@@ -189,13 +567,8 @@ const ImageCarousel = ({ images, projectName }: { images: any[], projectName: st
     setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
-  const goToImage = (index: number) => {
-    setCurrentIndex(index);
-  };
-
   return (
     <Box sx={{ position: 'relative' }}>
-      {/* Main Image Display */}
       <Box sx={{ 
         height: '400px', 
         position: 'relative',
@@ -216,7 +589,6 @@ const ImageCarousel = ({ images, projectName }: { images: any[], projectName: st
           }}
         />
         
-        {/* Navigation Arrows */}
         {images.length > 1 && (
           <>
             <IconButton
@@ -254,7 +626,6 @@ const ImageCarousel = ({ images, projectName }: { images: any[], projectName: st
           </>
         )}
 
-        {/* Image Counter */}
         {images.length > 1 && (
           <Box sx={{
             position: 'absolute',
@@ -293,7 +664,7 @@ const FileUploadSection = ({
     if (!files || files.length === 0) return;
     
     onFileUpload(files[0]);
-    event.target.value = ''; // Reset input
+    event.target.value = '';
   };
 
   return (
@@ -341,7 +712,523 @@ const FileUploadSection = ({
   );
 };
 
-// Filter types
+// Property Type Form Component
+const PropertyTypeForm = ({
+  propertyType,
+  index,
+  onChange,
+  onRemove
+}: {
+  propertyType: PropertyType;
+  index: number;
+  onChange: (index: number, field: string, value: any) => void;
+  onRemove: (index: number) => void;
+}) => {
+  const isResidential = propertyType.propertyType === 'residential';
+  const isCommercial = propertyType.propertyType === 'commercial';
+  
+  // Upload states for this specific property type
+  const [uploadingImages, setUploadingImages] = useState(false);
+  const [uploadingFloorPlans, setUploadingFloorPlans] = useState(false);
+
+  // Handle image upload for this property type
+  const handleImageUpload = async (file: File) => {
+    setUploadingImages(true);
+
+    try {
+      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validImageTypes.includes(file.type)) {
+        toast.error('Please select a valid image file (JPEG, PNG, GIF, WebP)');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+
+      const uploadResponse = await uploadService.uploadFile(file);
+      
+      if (uploadResponse.success && uploadResponse.data) {
+        const uploadedImage = {
+          url: uploadResponse.data.url,
+          title: file.name.replace(/\.[^/.]+$/, ""),
+          description: "",
+          isPrimary: (propertyType.images || []).length === 0,
+          uploadedAt: new Date()
+        };
+
+        const updatedImages = [...(propertyType.images || []), uploadedImage];
+        onChange(index, 'images', updatedImages);
+        toast.success('Image uploaded successfully');
+      } else {
+        throw new Error(uploadResponse.message || 'Upload failed');
+      }
+    } catch (error: any) {
+      console.error('Image upload error:', error);
+      toast.error(error.message || 'Failed to upload image');
+    } finally {
+      setUploadingImages(false);
+    }
+  };
+
+  // Handle floor plan upload for this property type
+  const handleFloorPlanUpload = async (file: File) => {
+    setUploadingFloorPlans(true);
+
+    try {
+      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+      if (!validImageTypes.includes(file.type)) {
+        toast.error('Please select a valid image file (JPEG, PNG, GIF, WebP)');
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Floor plan size should be less than 5MB');
+        return;
+      }
+
+      const uploadResponse = await uploadService.uploadFile(file);
+      
+      if (uploadResponse.success && uploadResponse.data) {
+        const uploadedFloorPlan = {
+          url: uploadResponse.data.url,
+          title: file.name.replace(/\.[^/.]+$/, ""),
+          description: "",
+          isPrimary: (propertyType.floorPlan || []).length === 0,
+          uploadedAt: new Date()
+        };
+
+        const updatedFloorPlans = [...(propertyType.floorPlan || []), uploadedFloorPlan];
+        onChange(index, 'floorPlan', updatedFloorPlans);
+        toast.success('Floor plan uploaded successfully');
+      } else {
+        throw new Error(uploadResponse.message || 'Upload failed');
+      }
+    } catch (error: any) {
+      console.error('Floor plan upload error:', error);
+      toast.error(error.message || 'Failed to upload floor plan');
+    } finally {
+      setUploadingFloorPlans(false);
+    }
+  };
+
+  // Remove image from this property type
+  const removeImage = (imageIndex: number) => {
+    const updatedImages = (propertyType.images || []).filter((_, i) => i !== imageIndex);
+    onChange(index, 'images', updatedImages);
+  };
+
+  // Remove floor plan from this property type
+  const removeFloorPlan = (floorPlanIndex: number) => {
+    const updatedFloorPlans = (propertyType.floorPlan || []).filter((_, i) => i !== floorPlanIndex);
+    onChange(index, 'floorPlan', updatedFloorPlans);
+  };
+
+  // Set primary image for this property type
+  const setPrimaryImage = (imageIndex: number) => {
+    const updatedImages = (propertyType.images || []).map((img, i) => ({
+      ...img,
+      isPrimary: i === imageIndex
+    }));
+    onChange(index, 'images', updatedImages);
+  };
+
+  // Set primary floor plan for this property type
+  const setPrimaryFloorPlan = (floorPlanIndex: number) => {
+    const updatedFloorPlans = (propertyType.floorPlan || []).map((plan, i) => ({
+      ...plan,
+      isPrimary: i === floorPlanIndex
+    }));
+    onChange(index, 'floorPlan', updatedFloorPlans);
+  };
+
+  return (
+    <Paper sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0', borderRadius: '15px' }}>
+      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          {isResidential ? '🏠 Residential' : '🏢 Commercial'} Type {index + 1}
+        </Typography>
+        <IconButton onClick={() => onRemove(index)} color="error" size="small">
+          <Delete />
+        </IconButton>
+      </Box>
+
+      <Grid container spacing={2}>
+        {/* Property Type */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Property Type *</InputLabel>
+            <Select
+              value={propertyType.propertyType}
+              onChange={(e) => onChange(index, 'propertyType', e.target.value)}
+              label="Property Type *"
+            >
+              <MenuItem value="residential">
+                <Home sx={{ mr: 1 }} />
+                Residential
+              </MenuItem>
+              <MenuItem value="commercial">
+                <Business sx={{ mr: 1 }} />
+                Commercial
+              </MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {/* Price */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            fullWidth
+            label="Price *"
+            value={propertyType.price}
+            onChange={(e) => onChange(index, 'price', e.target.value)}
+            placeholder="e.g., ₹1.2 Cr onwards"
+            sx={{ mb: 2 }}
+          />
+        </Grid>
+
+        {/* Payment Plan */}
+        <Grid size={{ xs: 12 }}>
+          <TextField
+            fullWidth
+            label="Payment Plan *"
+            value={propertyType.paymentPlan}
+            onChange={(e) => onChange(index, 'paymentPlan', e.target.value)}
+            placeholder="e.g., 20:80, Construction Linked"
+            sx={{ mb: 2 }}
+          />
+        </Grid>
+
+        {/* Description */}
+        <Grid size={{ xs: 12 }}>
+          <TextField
+            fullWidth
+            label="Description"
+            value={propertyType.description}
+            onChange={(e) => onChange(index, 'description', e.target.value)}
+            multiline
+            rows={2}
+            placeholder="Describe this property type..."
+            sx={{ mb: 2 }}
+          />
+        </Grid>
+
+        {/* Common Area Fields for Both Types */}
+        {(isResidential || isCommercial) && (
+          <>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                required
+                label="Carpet Area"
+                value={propertyType.carpetArea || ''}
+                onChange={(e) => onChange(index, 'carpetArea', e.target.value)}
+                placeholder="e.g., 1200 sq.ft."
+                sx={{ mb: 2 }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                label="Built-up Area"
+                value={propertyType.builtUpArea || ''}
+                onChange={(e) => onChange(index, 'builtUpArea', e.target.value)}
+                placeholder="e.g., 1400 sq.ft."
+                sx={{ mb: 2 }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 4 }}>
+              <TextField
+                fullWidth
+                label="Loading Area"
+                value={propertyType.loadingArea || ''}
+                onChange={(e) => onChange(index, 'loadingArea', e.target.value)}
+                placeholder="e.g., 1800 sq.ft."
+                sx={{ mb: 2 }}
+              />
+            </Grid>
+          </>
+        )}
+
+        {/* Residential Specific Fields */}
+        {isResidential && (
+          <>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <TextField
+                fullWidth
+                label="Bedrooms *"
+                type="number"
+                value={propertyType.bedrooms || ''}
+                onChange={(e) => onChange(index, 'bedrooms', parseInt(e.target.value) || 0)}
+                sx={{ mb: 2 }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <TextField
+                fullWidth
+                label="Bathrooms *"
+                type="number"
+                value={propertyType.bathrooms || ''}
+                onChange={(e) => onChange(index, 'bathrooms', parseInt(e.target.value) || 0)}
+                sx={{ mb: 2 }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <TextField
+                fullWidth
+                label="Toilets *"
+                type="number"
+                value={propertyType.toilet || ''}
+                onChange={(e) => onChange(index, 'toilet', parseInt(e.target.value) || 0)}
+                sx={{ mb: 2 }}
+              />
+            </Grid>
+            <Grid size={{ xs: 12, md: 3 }}>
+              <TextField
+                fullWidth
+                label="Balcony *"
+                type="number"
+                value={propertyType.balcony || ''}
+                onChange={(e) => onChange(index, 'balcony', parseInt(e.target.value) || 0)}
+                sx={{ mb: 2 }}
+              />
+            </Grid>
+          </>
+        )}
+
+        {/* Features */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Features</InputLabel>
+            <Select
+              multiple
+              value={propertyType.features || []}
+              onChange={(e) => onChange(index, 'features', e.target.value)}
+              input={<OutlinedInput label="Features" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {(selected as string[]).map((value) => (
+                    <Chip key={value} label={value} size="small" />
+                  ))}
+                </Box>
+              )}
+            >
+              <MenuItem value="Swimming Pool">Swimming Pool</MenuItem>
+              <MenuItem value="Gym">Gym</MenuItem>
+              <MenuItem value="Clubhouse">Clubhouse</MenuItem>
+              <MenuItem value="Children's Play Area">Children's Play Area</MenuItem>
+              <MenuItem value="24/7 Security">24/7 Security</MenuItem>
+              <MenuItem value="Power Backup">Power Backup</MenuItem>
+              <MenuItem value="Landscaped Gardens">Landscaped Gardens</MenuItem>
+              <MenuItem value="Jogging Track">Jogging Track</MenuItem>
+              <MenuItem value="Sports Facilities">Sports Facilities</MenuItem>
+              <MenuItem value="Parking">Parking</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {/* Amenities */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <FormControl fullWidth sx={{ mb: 2 }}>
+            <InputLabel>Amenities</InputLabel>
+            <Select
+              multiple
+              value={propertyType.amenities || []}
+              onChange={(e) => onChange(index, 'amenities', e.target.value)}
+              input={<OutlinedInput label="Amenities" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {(selected as string[]).map((value) => (
+                    <Chip key={value} label={value} size="small" color="primary" />
+                  ))}
+                </Box>
+              )}
+            >
+              <MenuItem value="Wi-Fi Connectivity">Wi-Fi Connectivity</MenuItem>
+              <MenuItem value="Cafeteria">Cafeteria</MenuItem>
+              <MenuItem value="Community Hall">Community Hall</MenuItem>
+              <MenuItem value="Yoga/Meditation Area">Yoga/Meditation Area</MenuItem>
+              <MenuItem value="Convenience Store">Convenience Store</MenuItem>
+              <MenuItem value="ATM">ATM</MenuItem>
+              <MenuItem value="Salon/Spa">Salon/Spa</MenuItem>
+              <MenuItem value="Pet Area">Pet Area</MenuItem>
+              <MenuItem value="Garbage Disposal">Garbage Disposal</MenuItem>
+              <MenuItem value="Water Supply">Water Supply</MenuItem>
+            </Select>
+          </FormControl>
+        </Grid>
+
+        {/* Images Section */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, mt: 2 }}>
+            Property Type Images
+          </Typography>
+          
+          <FileUploadSection
+            title="Upload Property Type Images"
+            accept="image/*"
+            onFileUpload={handleImageUpload}
+            uploading={uploadingImages}
+            description="JPEG, PNG, GIF, WebP (Max 5MB)"
+          />
+
+          {(propertyType.images || []).length > 0 && (
+            <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px', mt: 1 }}>
+              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+                Uploaded Images ({(propertyType.images || []).length})
+              </Typography>
+              <Grid container spacing={1}>
+                {(propertyType.images || []).map((image, imageIndex) => (
+                  <Grid size={{ xs: 6, md: 4, lg: 3 }} key={imageIndex}>
+                    <Card 
+                      variant="outlined" 
+                      sx={{ 
+                        position: 'relative',
+                        border: image.isPrimary ? '2px solid #1976d2' : '1px solid #e0e0e0'
+                      }}
+                    >
+                      <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                        <img
+                          src={image.url}
+                          alt={image.title}
+                          style={{
+                            width: '100%',
+                            height: '80px',
+                            objectFit: 'cover',
+                            borderRadius: '4px'
+                          }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100x80?text=Image';
+                          }}
+                        />
+                        <Typography variant="caption" display="block" noWrap title={image.title}>
+                          {image.title}
+                        </Typography>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mt={0.5}>
+                          {!image.isPrimary && (
+                            <Button
+                              size="small"
+                              onClick={() => setPrimaryImage(imageIndex)}
+                              sx={{ minWidth: 'auto', p: 0.5 }}
+                            >
+                              Set Primary
+                            </Button>
+                          )}
+                          {image.isPrimary && (
+                            <Chip 
+                              label="Primary" 
+                              size="small" 
+                              color="primary" 
+                              sx={{ height: 20, fontSize: '0.6rem' }}
+                            />
+                          )}
+                          <IconButton 
+                            size="small" 
+                            onClick={() => removeImage(imageIndex)}
+                            color="error"
+                            sx={{ p: 0.5 }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Paper>
+          )}
+        </Grid>
+
+        {/* Floor Plans Section */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, mt: 2 }}>
+            Floor Plans
+          </Typography>
+          
+          <FileUploadSection
+            title="Upload Floor Plans"
+            accept="image/*"
+            onFileUpload={handleFloorPlanUpload}
+            uploading={uploadingFloorPlans}
+            description="JPEG, PNG, GIF, WebP (Max 5MB)"
+          />
+
+          {(propertyType.floorPlan || []).length > 0 && (
+            <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px', mt: 1 }}>
+              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
+                Uploaded Floor Plans ({(propertyType.floorPlan || []).length})
+              </Typography>
+              <Grid container spacing={1}>
+                {(propertyType.floorPlan || []).map((floorPlan, floorPlanIndex) => (
+                  <Grid size={{ xs: 6, md: 4, lg: 3 }} key={floorPlanIndex}>
+                    <Card 
+                      variant="outlined" 
+                      sx={{ 
+                        position: 'relative',
+                        border: floorPlan.isPrimary ? '2px solid #1976d2' : '1px solid #e0e0e0'
+                      }}
+                    >
+                      <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
+                        <img
+                          src={floorPlan.url}
+                          alt={floorPlan.title}
+                          style={{
+                            width: '100%',
+                            height: '80px',
+                            objectFit: 'cover',
+                            borderRadius: '4px'
+                          }}
+                          onError={(e) => {
+                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100x80?text=Floor+Plan';
+                          }}
+                        />
+                        <Typography variant="caption" display="block" noWrap title={floorPlan.title}>
+                          {floorPlan.title}
+                        </Typography>
+                        <Box display="flex" justifyContent="space-between" alignItems="center" mt={0.5}>
+                          {!floorPlan.isPrimary && (
+                            <Button
+                              size="small"
+                              onClick={() => setPrimaryFloorPlan(floorPlanIndex)}
+                              sx={{ minWidth: 'auto', p: 0.5 }}
+                            >
+                              Set Primary
+                            </Button>
+                          )}
+                          {floorPlan.isPrimary && (
+                            <Chip 
+                              label="Primary" 
+                              size="small" 
+                              color="primary" 
+                              sx={{ height: 20, fontSize: '0.6rem' }}
+                            />
+                          )}
+                          <IconButton 
+                            size="small" 
+                            onClick={() => removeFloorPlan(floorPlanIndex)}
+                            color="error"
+                            sx={{ p: 0.5 }}
+                          >
+                            <Delete fontSize="small" />
+                          </IconButton>
+                        </Box>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Paper>
+          )}
+        </Grid>
+      </Grid>
+    </Paper>
+  );
+};
+
+
+// Filter types and main component
 interface FilterState {
   status: string[];
   features: string[];
@@ -352,19 +1239,18 @@ interface FilterState {
   };
   builderName: string;
   location: string;
+  propertyType: string[];
 }
 
-// Validation types
 interface ValidationErrors {
   projectName?: string;
   builderName?: string;
   description?: string;
   location?: string;
-  price?: string;
+  propertyTypes?: string;
   status?: string;
   mapLocation?: string;
-  features?: string;
-  amenities?: string;
+  [key: string]: string | undefined;
 }
 
 export default function PropertiesPage() {
@@ -372,7 +1258,7 @@ export default function PropertiesPage() {
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearchTerm = useDebounce(searchTerm, 500); // 500ms debounce delay
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [openDialog, setOpenDialog] = useState(false);
   const [openViewDialog, setOpenViewDialog] = useState(false);
   const [editingProperty, setEditingProperty] = useState<Property | null>(null);
@@ -389,6 +1275,7 @@ export default function PropertiesPage() {
     },
     builderName: "",
     location: "",
+    propertyType: [],
   });
   
   const [showFilters, setShowFilters] = useState(false);
@@ -402,33 +1289,26 @@ export default function PropertiesPage() {
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
   const [isFormValid, setIsFormValid] = useState(false);
   
-  // Updated form data structure with videoFiles
+  // Updated form data structure
   const [formData, setFormData] = useState({
     projectName: "",
     builderName: "",
     description: "",
     location: "",
-    price: "",
+    propertyTypes: [] as PropertyType[],
     status: [] as string[],
-    features: [] as string[],
-    amenities: [] as string[],
     nearby: [] as string[],
     projectHighlights: [] as string[],
     mapLocation: { lat: 0, lng: 0 },
     images: [] as { url: string; title?: string; description?: string; isPrimary?: boolean }[],
     brochureUrls: [] as { title: string; url: string; type: string }[],
     creatives: [] as { title: string; url: string; type: string }[],
-    videoIds: [] as string[],
-    videoFiles: [] as { title: string; url: string; type: string }[] // New field for uploaded videos
+    videoFiles: [] as { title: string; url: string; type: string }[]
   });
   
-  // Updated form input states
-  const [newFeature, setNewFeature] = useState("");
-  const [newAmenity, setNewAmenity] = useState("");
-  const [newStatus, setNewStatus] = useState("");
+  // Form input states
   const [newNearby, setNewNearby] = useState("");
   const [newProjectHighlight, setNewProjectHighlight] = useState("");
-  const [newVideoId, setNewVideoId] = useState("");
 
   // Filter options
   const statusOptions = [
@@ -466,12 +1346,18 @@ export default function PropertiesPage() {
     "Water Supply"
   ];
 
+  const propertyTypeOptions = [
+    "Residential",
+    "Commercial"
+  ];
+
   // Calculate active filters count
   useEffect(() => {
     let count = 0;
     if (filters.status.length > 0) count++;
     if (filters.features.length > 0) count++;
     if (filters.amenities.length > 0) count++;
+    if (filters.propertyType.length > 0) count++;
     if (filters.priceRange.min || filters.priceRange.max) count++;
     if (filters.builderName) count++;
     if (filters.location) count++;
@@ -499,7 +1385,7 @@ export default function PropertiesPage() {
         formData.description?.trim().length >= 10 &&
         formData.description?.trim().length <= 2000 &&
         formData.location?.trim().length > 0 &&
-        formData.price?.trim().length > 0 && // Only check if price is not empty, no format validation
+        formData.propertyTypes.length > 0 &&
         formData.status.length > 0 &&
         (!formData.mapLocation.lat || 
          !formData.mapLocation.lng || 
@@ -535,65 +1421,35 @@ export default function PropertiesPage() {
   const applyFilters = () => {
     let filtered = [...properties];
 
-    // Search filter - uses debounced search term
     if (debouncedSearchTerm) {
       filtered = filtered.filter(property =>
         property.projectName?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         property.builderName?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
         property.location?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        property.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        property.features?.some(feature => 
-          feature.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-        ) ||
-        property.amenities?.some(amenity => 
-          amenity.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-        )
+        property.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
       );
     }
 
-    // Status filter
     if (filters.status.length > 0) {
       filtered = filtered.filter(property =>
         property.status?.some(status => filters.status.includes(status))
       );
     }
 
-    // Features filter
-    if (filters.features.length > 0) {
+    if (filters.propertyType.length > 0) {
       filtered = filtered.filter(property =>
-        filters.features.every(filterFeature =>
-          property.features?.includes(filterFeature)
+        property.propertyTypes?.some(type => 
+          filters.propertyType.includes(type.propertyType === 'residential' ? 'Residential' : 'Commercial')
         )
       );
     }
 
-    // Amenities filter
-    if (filters.amenities.length > 0) {
-      filtered = filtered.filter(property =>
-        filters.amenities.every(filterAmenity =>
-          property.amenities?.includes(filterAmenity)
-        )
-      );
-    }
-
-    // Price range filter
-    if (filters.priceRange.min || filters.priceRange.max) {
-      filtered = filtered.filter(property => {
-        const price = parseFloat(property.price?.replace(/[^\d.]/g, '') || '0');
-        const minPrice = parseFloat(filters.priceRange.min) || 0;
-        const maxPrice = parseFloat(filters.priceRange.max) || Infinity;
-        return price >= minPrice && price <= maxPrice;
-      });
-    }
-
-    // Builder name filter
     if (filters.builderName) {
       filtered = filtered.filter(property =>
         property.builderName?.toLowerCase().includes(filters.builderName.toLowerCase())
       );
     }
 
-    // Location filter
     if (filters.location) {
       filtered = filtered.filter(property =>
         property.location?.toLowerCase().includes(filters.location.toLowerCase())
@@ -626,6 +1482,7 @@ export default function PropertiesPage() {
       status: [],
       features: [],
       amenities: [],
+      propertyType: [],
       priceRange: {
         min: "",
         max: "",
@@ -638,13 +1495,11 @@ export default function PropertiesPage() {
 
   const removeFilter = (filterType: keyof FilterState, value?: string) => {
     if (value) {
-      // Remove specific value from array filter
       setFilters(prev => ({
         ...prev,
         [filterType]: (prev[filterType] as string[]).filter(item => item !== value)
       }));
     } else {
-      // Clear entire filter
       setFilters(prev => ({
         ...prev,
         [filterType]: Array.isArray(prev[filterType]) ? [] : ""
@@ -655,11 +1510,9 @@ export default function PropertiesPage() {
   // Search handler with debouncing
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
-    // The actual search will be triggered automatically by the debouncedSearchTerm effect
   };
 
   const handleSearch = () => {
-    // Manual search trigger - uses current searchTerm immediately
     applyFilters();
   };
 
@@ -669,14 +1522,12 @@ export default function PropertiesPage() {
     setUploadingType('image');
 
     try {
-      // Validate file type
       const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
       if (!validImageTypes.includes(file.type)) {
         toast.error('Please select a valid image file (JPEG, PNG, GIF, WebP)');
         return;
       }
 
-      // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         toast.error('Image size should be less than 5MB');
         return;
@@ -685,12 +1536,11 @@ export default function PropertiesPage() {
       const uploadResponse = await uploadService.uploadFile(file);
       
       if (uploadResponse.success && uploadResponse.data) {
-        // Add uploaded image to form data
         const uploadedImage = {
           url: uploadResponse.data.url,
-          title: file.name.replace(/\.[^/.]+$/, ""), // Remove extension
+          title: file.name.replace(/\.[^/.]+$/, ""),
           description: "",
-          isPrimary: formData.images.length === 0 // Set as primary if first image
+          isPrimary: formData.images.length === 0
         };
 
         setFormData(prev => ({
@@ -716,14 +1566,12 @@ export default function PropertiesPage() {
     setUploadingType('brochure');
 
     try {
-      // Validate file type
       const validDocTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       if (!validDocTypes.includes(file.type)) {
         toast.error('Please select a PDF or Word document');
         return;
       }
 
-      // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
         toast.error('File size should be less than 10MB');
         return;
@@ -732,7 +1580,6 @@ export default function PropertiesPage() {
       const uploadResponse = await uploadService.uploadFile(file);
       
       if (uploadResponse.success && uploadResponse.data) {
-        // Add uploaded brochure to form data
         const uploadedBrochure = {
           title: file.name.replace(/\.[^/.]+$/, ""),
           url: uploadResponse.data.url,
@@ -762,14 +1609,12 @@ export default function PropertiesPage() {
     setUploadingType('creative');
 
     try {
-      // Validate file type
       const validCreativeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'application/pdf'];
       if (!validCreativeTypes.includes(file.type)) {
         toast.error('Please select a valid image or PDF file');
         return;
       }
 
-      // Validate file size (max 10MB)
       if (file.size > 10 * 1024 * 1024) {
         toast.error('File size should be less than 10MB');
         return;
@@ -778,7 +1623,6 @@ export default function PropertiesPage() {
       const uploadResponse = await uploadService.uploadFile(file);
       
       if (uploadResponse.success && uploadResponse.data) {
-        // Add uploaded creative to form data
         const uploadedCreative = {
           title: file.name.replace(/\.[^/.]+$/, ""),
           url: uploadResponse.data.url,
@@ -803,20 +1647,17 @@ export default function PropertiesPage() {
     }
   };
 
-  // New video upload handler
   const handleVideoUpload = async (file: File) => {
     setUploading(true);
     setUploadingType('video');
 
     try {
-      // Validate file type
       const validVideoTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/mkv', 'video/quicktime'];
       if (!validVideoTypes.includes(file.type)) {
         toast.error('Please select a valid video file (MP4, MOV, AVI, MKV)');
         return;
       }
 
-      // Validate file size (max 50MB)
       if (file.size > 50 * 1024 * 1024) {
         toast.error('Video size should be less than 50MB');
         return;
@@ -825,7 +1666,6 @@ export default function PropertiesPage() {
       const uploadResponse = await uploadService.uploadFile(file);
       
       if (uploadResponse.success && uploadResponse.data) {
-        // Add uploaded video to form data
         const uploadedVideo = {
           title: file.name.replace(/\.[^/.]+$/, ""),
           url: uploadResponse.data.url,
@@ -854,7 +1694,6 @@ export default function PropertiesPage() {
   const validateForm = (): boolean => {
     const errors: ValidationErrors = {};
 
-    // Required field validations
     if (!formData.projectName?.trim()) {
       errors.projectName = "Project name is required";
     } else if (formData.projectName.trim().length < 2) {
@@ -883,16 +1722,33 @@ export default function PropertiesPage() {
       errors.location = "Location is required";
     }
 
-    if (!formData.price?.trim()) {
-      errors.price = "Price is required";
+    if (formData.propertyTypes.length === 0) {
+      errors.propertyTypes = "At least one property type is required";
+    } else {
+      formData.propertyTypes.forEach((type, index) => {
+        if (!type.price?.trim()) {
+          errors[`propertyType_${index}_price`] = `Price is required for property type ${index + 1}`;
+        }
+        if (!type.paymentPlan?.trim()) {
+          errors[`propertyType_${index}_paymentPlan`] = `Payment plan is required for property type ${index + 1}`;
+        }
+        if (type.propertyType === 'residential') {
+          if (type.bedrooms === undefined || type.bedrooms < 0) {
+            errors[`propertyType_${index}_bedrooms`] = `Bedrooms are required for residential property type ${index + 1}`;
+          }
+        }
+        if (type.propertyType === 'commercial') {
+          if (!type.carpetArea?.trim()) {
+            errors[`propertyType_${index}_carpetArea`] = `Carpet area is required for commercial property type ${index + 1}`;
+          }
+        }
+      });
     }
-    // REMOVED: Price format validation
 
     if (formData.status.length === 0) {
       errors.status = "At least one status is required";
     }
 
-    // Map location validation (optional but if provided, both should be valid)
     if ((formData.mapLocation.lat && !formData.mapLocation.lng) || 
         (!formData.mapLocation.lat && formData.mapLocation.lng)) {
       errors.mapLocation = "Both latitude and longitude are required for map location";
@@ -916,7 +1772,6 @@ export default function PropertiesPage() {
     const value = e.target.value;
     setFormData(prev => ({ ...prev, [field]: value }));
     
-    // Clear validation error for this field when user starts typing
     if (validationErrors[field as keyof ValidationErrors]) {
       setValidationErrors(prev => ({
         ...prev,
@@ -945,16 +1800,72 @@ export default function PropertiesPage() {
       messages.push("• Location");
     }
     
-    if (!formData.price?.trim()) {
-      messages.push("• Price");
+    if (formData.propertyTypes.length === 0) {
+      messages.push("• At least one property type");
     }
-    // REMOVED: Price format validation message
     
     if (formData.status.length === 0) {
       messages.push("• At least one status");
     }
     
     return messages;
+  };
+
+  // Add new property type
+  const addPropertyType = (type: 'residential' | 'commercial') => {
+    const baseType: PropertyType = {
+      propertyType: type,
+      description: "",
+      price: "",
+      paymentPlan: "",
+      features: [],
+      amenities: [],
+      images: [],
+      floorPlan: [],
+      isActive: true
+    };
+
+    const specificFields = type === 'residential' 
+      ? { bedrooms: 0, bathrooms: 0, toilet: 0, balcony: 0 }
+      : { carpetArea: "", builtUpArea: "", loadingArea: "" };
+
+    const newPropertyType = { ...baseType, ...specificFields };
+    
+    setFormData(prev => ({
+      ...prev,
+      propertyTypes: [...prev.propertyTypes, newPropertyType]
+    }));
+
+    if (validationErrors.propertyTypes) {
+      setValidationErrors(prev => ({ ...prev, propertyTypes: undefined }));
+    }
+  };
+
+  // Update property type
+  const updatePropertyType = (index: number, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      propertyTypes: prev.propertyTypes.map((type, i) => 
+        i === index ? { ...type, [field]: value } : type
+      )
+    }));
+
+    // Clear validation error for this field
+    const errorKey = `propertyType_${index}_${field}`;
+    if (validationErrors[errorKey]) {
+      setValidationErrors(prev => ({
+        ...prev,
+        [errorKey]: undefined
+      }));
+    }
+  };
+
+  // Remove property type
+  const removePropertyType = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      propertyTypes: prev.propertyTypes.filter((_, i) => i !== index)
+    }));
   };
 
   const handleOpenDialog = (property: Property | null = null) => {
@@ -965,18 +1876,15 @@ export default function PropertiesPage() {
         builderName: property.builderName || "",
         description: property.description || "",
         location: property.location || "",
-        price: property.price || "",
+        propertyTypes: property.propertyTypes || [],
         status: property.status || [],
-        features: property.features || [],
-        amenities: property.amenities || [],
         nearby: property.nearby || [],
         projectHighlights: property.projectHighlights || [],
         mapLocation: property.mapLocation || { lat: 0, lng: 0 },
         images: property.images || [],
         brochureUrls: property.brochureUrls || [],
         creatives: property.creatives || [],
-        videoIds: property.videoIds || [],
-        videoFiles: property.videoFiles || [] // Initialize videoFiles
+        videoFiles: property.videoFiles || []
       });
     } else {
       setEditingProperty(null);
@@ -985,21 +1893,17 @@ export default function PropertiesPage() {
         builderName: "",
         description: "",
         location: "",
-        price: "",
+        propertyTypes: [],
         status: [],
-        features: [],
-        amenities: [],
         nearby: [],
         projectHighlights: [],
         mapLocation: { lat: 0, lng: 0 },
         images: [],
         brochureUrls: [],
         creatives: [],
-        videoIds: [],
-        videoFiles: [] // Initialize videoFiles
+        videoFiles: []
       });
     }
-    // Clear validation errors when opening dialog
     setValidationErrors({});
     setOpenDialog(true);
   };
@@ -1007,14 +1911,8 @@ export default function PropertiesPage() {
   const handleCloseDialog = () => {
     setOpenDialog(false);
     setEditingProperty(null);
-    // Reset form input states
-    setNewFeature("");
-    setNewAmenity("");
-    setNewStatus("");
     setNewNearby("");
     setNewProjectHighlight("");
-    setNewVideoId("");
-    // Clear validation errors
     setValidationErrors({});
     setIsFormValid(false);
   };
@@ -1086,7 +1984,6 @@ export default function PropertiesPage() {
     }
   };
 
-  // New video download handler
   const handleDownloadVideo = (url: string, propertyName: string, index: number, title?: string) => {
     try {
       const link = document.createElement('a');
@@ -1133,7 +2030,6 @@ export default function PropertiesPage() {
     }
   };
 
-  // New function to download all videos
   const handleDownloadAllVideos = (property: Property) => {
     if (property.videoFiles && property.videoFiles.length > 0) {
       property.videoFiles.forEach((video: any, index: number) => {
@@ -1154,7 +2050,32 @@ export default function PropertiesPage() {
       ...prev,
       mapLocation: { ...prev.mapLocation, [field]: value }
     }));
-    // Clear map location error when user starts typing
+    if (validationErrors.mapLocation) {
+      setValidationErrors(prev => ({ ...prev, mapLocation: undefined }));
+    }
+  };
+
+  // Handle map location change from draggable map
+  const handleMapLocationUpdate = (lat: number, lng: number) => {
+    setFormData(prev => ({
+      ...prev,
+      mapLocation: { lat, lng }
+    }));
+    if (validationErrors.mapLocation) {
+      setValidationErrors(prev => ({ ...prev, mapLocation: undefined }));
+    }
+  };
+
+  // Handle location search selection
+  const handleLocationSelect = (lat: number, lng: number, address: string) => {
+    setFormData(prev => ({
+      ...prev,
+      location: address,
+      mapLocation: { lat, lng }
+    }));
+    if (validationErrors.location) {
+      setValidationErrors(prev => ({ ...prev, location: undefined }));
+    }
     if (validationErrors.mapLocation) {
       setValidationErrors(prev => ({ ...prev, mapLocation: undefined }));
     }
@@ -1189,7 +2110,6 @@ export default function PropertiesPage() {
     }));
   };
 
-  // New function to remove video files
   const removeVideoFile = (index: number) => {
     setFormData(prev => ({
       ...prev,
@@ -1197,66 +2117,30 @@ export default function PropertiesPage() {
     }));
   };
 
-  const handleAddVideoId = () => {
-    if (newVideoId.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        videoIds: [...prev.videoIds, newVideoId.trim()]
-      }));
-      setNewVideoId("");
-    }
-  };
-
-  const removeVideoId = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      videoIds: prev.videoIds.filter((_, i) => i !== index)
-    }));
-  };
-
-  // Helper function to detect video platform
-  const getVideoPlatform = (url: string) => {
-    if (url.includes('youtube.com') || url.includes('youtu.be')) {
-      return 'YouTube';
-    } else if (url.includes('vimeo.com')) {
-      return 'Vimeo';
-    } else if (url.length === 11) { // YouTube video ID length
-      return 'YouTube Video ID';
-    } else {
-      return 'Video URL';
-    }
-  };
-
   const handleSubmit = async () => {
-  // Validate form before submission
-  if (!validateForm()) {
-    toast.error("Please fix the validation errors before submitting");
-    return;
-  }
-
-  try {
-    // Show loading state for better UX
-    const toastId = toast.loading(editingProperty ? "Updating property..." : "Creating property...");
-    
-    if (editingProperty && editingProperty._id) {
-      // Update existing property
-      await propertyService.updateProperty(editingProperty._id, formData);
-      toast.success("Property updated successfully", { id: toastId });
-    } else {
-      // Create new property
-      await propertyService.createProperty(formData);
-      toast.success("Property added successfully", { id: toastId });
+    if (!validateForm()) {
+      toast.error("Please fix the validation errors before submitting");
+      return;
     }
-    
-    // Close dialog and reload only after success
-    handleCloseDialog();
-    loadProperties();
-    
-  } catch (error: any) {
-    console.error('Error saving property:', error);
-    toast.error(error.message || "Failed to save property");
-    // Keep the dialog open so user can see the error and try again
-  }
+
+    try {
+      const toastId = toast.loading(editingProperty ? "Updating property..." : "Creating property...");
+      
+      if (editingProperty && editingProperty._id) {
+        await propertyService.updateProperty(editingProperty._id, formData);
+        toast.success("Property updated successfully", { id: toastId });
+      } else {
+        await propertyService.createProperty(formData);
+        toast.success("Property added successfully", { id: toastId });
+      }
+      
+      handleCloseDialog();
+      loadProperties();
+      
+    } catch (error: any) {
+      console.error('Error saving property:', error);
+      toast.error(error.message || "Failed to save property");
+    }
   };
 
   const handleDelete = async (id: string) => {
@@ -1266,7 +2150,7 @@ export default function PropertiesPage() {
       await propertyService.deleteProperty(id);
       
       toast.success("Property deleted successfully", { id: toastId });
-      loadProperties(); // Reload the properties list
+      loadProperties();
       
     } catch (error: any) {
       console.error('Error deleting property:', error);
@@ -1287,7 +2171,6 @@ export default function PropertiesPage() {
 
   return (
     <Box sx={{ p: 3 }}>
-      {/* Sonner Toaster */}
       <Toaster 
         position="top-right"
         toastOptions={{
@@ -1307,6 +2190,7 @@ export default function PropertiesPage() {
           p: { xs: 2, sm: 3 },
           mb: 3,
           background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+          borderRadius: '15px'
         }}
       >
         <Grid
@@ -1315,8 +2199,7 @@ export default function PropertiesPage() {
           alignItems="center"
           justifyContent="space-between"
         >
-          {/* Title */}
-          <Grid  item xs={12} md="auto">
+          <Grid item xs={12} md="auto">
             <Typography
               variant="h5"
               fontWeight={700}
@@ -1326,7 +2209,6 @@ export default function PropertiesPage() {
             </Typography>
           </Grid>
 
-          {/* Search & Buttons */}
           <Grid
             item
             xs={12}
@@ -1338,13 +2220,12 @@ export default function PropertiesPage() {
             justifyContent={{ xs: "center", md: "flex-end" }}
             sx={{ maxWidth: "100%" }}
           >
-            {/* Search Field with Debouncing */}
             <TextField
               fullWidth
               variant="outlined"
-              placeholder="Search properties by name, builder, location, features..."
+              placeholder="Search properties by name, builder, location..."
               value={searchTerm}
-              onChange={handleSearchChange} // Updated to use debounced handler
+              onChange={handleSearchChange}
               onKeyPress={(e) => e.key === "Enter" && handleSearch()}
               size="small"
               sx={{
@@ -1357,7 +2238,6 @@ export default function PropertiesPage() {
             />
 
             <Grid item sx={{ width: { xs: '100%', sm: 'auto' }, display: 'flex', flexWrap: 'wrap', gap: 1,  justifyContent: { xs: 'center', md: 'flex-end' } }}>
-              {/* Filter Toggle Button */}
               <Button
                 variant="outlined"
                 startIcon={<FilterList />}
@@ -1391,7 +2271,6 @@ export default function PropertiesPage() {
                 )}
               </Button>
 
-              {/* Add Property Button */}
               <Button
                 variant="contained"
                 startIcon={<Add />}
@@ -1410,7 +2289,6 @@ export default function PropertiesPage() {
           </Grid>
         </Grid>
 
-        {/* Search Results Count */}
         {(searchTerm || activeFiltersCount > 0) && (
           <Typography
             variant="body2"
@@ -1424,8 +2302,7 @@ export default function PropertiesPage() {
           </Typography>
         )}
 
-        {/* Active Filters Chips */}
-        {(filters.status.length > 0 || filters.features.length > 0 || filters.amenities.length > 0 || 
+        {(filters.status.length > 0 || filters.propertyType.length > 0 || 
           filters.priceRange.min || filters.priceRange.max || filters.builderName || filters.location) && (
           <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
             {filters.status.map((status, index) => (
@@ -1438,23 +2315,13 @@ export default function PropertiesPage() {
                 variant="outlined"
               />
             ))}
-            {filters.features.map((feature, index) => (
+            {filters.propertyType.map((type, index) => (
               <Chip
-                key={feature}
-                label={`Feature: ${feature}`}
-                onDelete={() => removeFilter('features', feature)}
+                key={type}
+                label={`Type: ${type}`}
+                onDelete={() => removeFilter('propertyType', type)}
                 size="small"
                 color="secondary"
-                variant="outlined"
-              />
-            ))}
-            {filters.amenities.map((amenity, index) => (
-              <Chip
-                key={amenity}
-                label={`Amenity: ${amenity}`}
-                onDelete={() => removeFilter('amenities', amenity)}
-                size="small"
-                color="success"
                 variant="outlined"
               />
             ))}
@@ -1508,7 +2375,6 @@ export default function PropertiesPage() {
           </Box>
           
           <Grid container spacing={3}>
-            {/* Status Filter */}
             <Grid size={{ xs: 12, md: 6, lg: 4 }}>
               <FormControl fullWidth>
                 <InputLabel>Status</InputLabel>
@@ -1534,15 +2400,14 @@ export default function PropertiesPage() {
               </FormControl>
             </Grid>
 
-            {/* Features Filter */}
             <Grid size={{ xs: 12, md: 6, lg: 4 }}>
               <FormControl fullWidth>
-                <InputLabel>Features</InputLabel>
+                <InputLabel>Property Type</InputLabel>
                 <Select
                   multiple
-                  value={filters.features}
-                  onChange={(e) => handleFilterChange('features', e.target.value)}
-                  input={<OutlinedInput label="Features" />}
+                  value={filters.propertyType}
+                  onChange={(e) => handleFilterChange('propertyType', e.target.value)}
+                  input={<OutlinedInput label="Property Type" />}
                   renderValue={(selected) => (
                     <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                       {(selected as string[]).map((value) => (
@@ -1551,42 +2416,15 @@ export default function PropertiesPage() {
                     </Box>
                   )}
                 >
-                  {featureOptions.map((feature) => (
-                    <MenuItem key={feature} value={feature}>
-                      {feature}
+                  {propertyTypeOptions.map((type) => (
+                    <MenuItem key={type} value={type}>
+                      {type}
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
             </Grid>
 
-            {/* Amenities Filter */}
-            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Amenities</InputLabel>
-                <Select
-                  multiple
-                  value={filters.amenities}
-                  onChange={(e) => handleFilterChange('amenities', e.target.value)}
-                  input={<OutlinedInput label="Amenities" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {(selected as string[]).map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
-                >
-                  {amenityOptions.map((amenity) => (
-                    <MenuItem key={amenity} value={amenity}>
-                      {amenity}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Price Range Filter */}
             <Grid size={{ xs: 12, md: 6 }}>
               <Box display="flex" gap={2}>
                 <TextField
@@ -1606,7 +2444,6 @@ export default function PropertiesPage() {
               </Box>
             </Grid>
 
-            {/* Builder Name Filter */}
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
@@ -1617,7 +2454,6 @@ export default function PropertiesPage() {
               />
             </Grid>
 
-            {/* Location Filter */}
             <Grid size={{ xs: 12 }}>
               <TextField
                 fullWidth
@@ -1635,6 +2471,7 @@ export default function PropertiesPage() {
       <Grid container spacing={3}>
         {filteredProperties.map((property) => {
           const primaryImage = property.images?.find(img => img.isPrimary) || property.images?.[0];
+          const priceRange = property.propertyTypes?.map(type => type.price).join(' - ');
         
           return (
             <Grid size={{ xs: 12, sm: 6, md: 6, lg: 4 }} key={property._id}>
@@ -1667,7 +2504,6 @@ export default function PropertiesPage() {
                   borderRadius: '15px'
                 }}
               >
-                {/* Icon buttons positioned at the end (top right) */}
                 <Box display="flex" justifyContent="flex-end" alignItems="flex-start">
                   <Box>
                     <IconButton size="small" onClick={() => handleViewProperty(property)} sx={{ color: 'white' }} title="Preview Property">
@@ -1682,7 +2518,6 @@ export default function PropertiesPage() {
                   </Box>
                 </Box>
 
-                {/* Centered typography content */}
                 <Box 
                   position="absolute" 
                   zIndex={1} 
@@ -1705,6 +2540,12 @@ export default function PropertiesPage() {
                   <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)' }} gutterBottom>
                     by {property.builderName}
                   </Typography>
+                  {priceRange && (
+                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+                      <CurrencyRupeeIcon sx={{ fontSize: '1rem', verticalAlign: 'middle' }} />
+                      {priceRange}
+                    </Typography>
+                  )}
                 </Box>
               </Paper>
             </Grid>
@@ -1749,9 +2590,7 @@ export default function PropertiesPage() {
         
         <DialogContent>
           <Grid container spacing={3}>
-            {/* Primary Image */}
-            <Grid  display={"flex"} flexWrap={'wrap'} gap={'1.5rem'} maxHeight={'100%'}>
-              {/* image */}
+            <Grid display={"flex"} flexWrap={'wrap'} gap={'1.5rem'} maxHeight={'100%'}>
               <Grid size={{ xs: 12, lg: 8 }}>
               {viewingProperty?.images && viewingProperty.images.length > 0 && (
                 <Grid size={{ xs: 12, md: 12 }}>
@@ -1762,19 +2601,13 @@ export default function PropertiesPage() {
                 </Grid>
               )}
               </Grid>
-              {/* Basic Information */}
               <Grid size={{ xs: 12, lg: 4 }}>
-                <Paper sx={{ p: 2, height: '100%' }}>
+                <Paper sx={{ p: 2, height: '100%', borderRadius: '15px' }}>
                   <Typography variant="h6" gutterBottom>Basic Information</Typography>
                   
                   <Box display="flex" alignItems="center" mb={1}>
                     <LocationOn fontSize="small" color="action" sx={{ mr: 1 }} />
                     <Typography variant="body2">{viewingProperty?.location}</Typography>
-                  </Box>
-                  
-                  <Box display="flex" alignItems="center" mb={2}>
-                    <CurrencyRupeeIcon fontSize="small" color="action" sx={{ mr: 1 }} />
-                    <Typography variant="body2" fontWeight={600}>{viewingProperty?.price}</Typography>
                   </Box>
                   
                   <Typography variant="body2" paragraph>
@@ -1795,38 +2628,109 @@ export default function PropertiesPage() {
               </Grid>
             </Grid>
             
-            {/* Features & Amenities */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Paper sx={{ p: 2, height: '100%' }}>
-                <Typography variant="h6" gutterBottom>Features & Amenities</Typography>
-                
-                {viewingProperty?.features && viewingProperty.features.length > 0 && (
-                  <Box mb={2}>
-                    <Typography variant="subtitle2" gutterBottom>Features</Typography>
-                    <Box display="flex" flexWrap="wrap" gap={0.5} mb={2}>
-                      {viewingProperty.features.map((feature: string, index: number) => (
-                        <Chip key={index} label={feature} size="small" variant="outlined" />
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-                
-                {viewingProperty?.amenities && viewingProperty.amenities.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>Amenities</Typography>
-                    <Box display="flex" flexWrap="wrap" gap={0.5}>
-                      {viewingProperty.amenities.map((amenity: string, index: number) => (
-                        <Chip key={index} label={amenity} size="small" color="primary" />
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-              </Paper>
-            </Grid>
+            {/* Property Types */}
+            {viewingProperty?.propertyTypes && viewingProperty.propertyTypes.length > 0 && (
+              <Grid size={{ xs: 12 }}>
+                <Paper sx={{ p: 2, borderRadius: '15px' }}>
+                  <Typography variant="h6" gutterBottom>Property Types</Typography>
+                  <Grid container spacing={2}>
+                    {viewingProperty.propertyTypes.map((type, index) => (
+                      <Grid size={{ xs: 12, md: 6 }} key={index}>
+                        <Card variant="outlined" sx={{ borderRadius: '10px' }}>
+                          <CardContent>
+                            <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
+                              <Typography variant="subtitle1" fontWeight={600}>
+                                {type.propertyType === 'residential' ? '🏠 Residential' : '🏢 Commercial'}
+                              </Typography>
+                              <Chip 
+                                label={type.price} 
+                                color="primary" 
+                                size="small"
+                                icon={<CurrencyRupeeIcon />}
+                              />
+                            </Box>
+                            
+                            <Typography variant="body2" color="text.secondary" gutterBottom>
+                              {type.description}
+                            </Typography>
+                            
+                            <Typography variant="body2" gutterBottom>
+                              <strong>Payment Plan:</strong> {type.paymentPlan}
+                            </Typography>
 
-            {/* Status & Project Highlights */}
+                            {type.propertyType === 'residential' && (
+                              <Box display="flex" gap={1} flexWrap="wrap" mb={1}>
+                                <Chip label={`${type.bedrooms} Beds`} size="small" variant="outlined" />
+                                <Chip label={`${type.bathrooms} Baths`} size="small" variant="outlined" />
+                                <Chip label={`${type.toilet} Toilets`} size="small" variant="outlined" />
+                                <Chip label={`${type.balcony} Balcony`} size="small" variant="outlined" />
+                              </Box>
+                            )}
+
+                            {type.propertyType === 'commercial' && (
+                              <Box mb={1}>
+                                <Typography variant="body2">
+                                  <strong>Carpet Area:</strong> {type.carpetArea}
+                                </Typography>
+                                {type.builtUpArea && (
+                                  <Typography variant="body2">
+                                    <strong>Built-up Area:</strong> {type.builtUpArea}
+                                  </Typography>
+                                )}
+                                {type.loadingArea && (
+                                  <Typography variant="body2">
+                                    <strong>Loading Area:</strong> {type.loadingArea}
+                                  </Typography>
+                                )}
+                              </Box>
+                            )}
+
+                            {(type.features?.length > 0 || type.amenities?.length > 0) && (
+                              <>
+                                {type.features?.length > 0 && (
+                                  <Box mb={1}>
+                                    <Typography variant="caption" display="block" fontWeight={600}>
+                                      Features:
+                                    </Typography>
+                                    <Box display="flex" flexWrap="wrap" gap={0.5}>
+                                      {type.features.slice(0, 3).map((feature, i) => (
+                                        <Chip key={i} label={feature} size="small" />
+                                      ))}
+                                      {type.features.length > 3 && (
+                                        <Chip label={`+${type.features.length - 3} more`} size="small" variant="outlined" />
+                                      )}
+                                    </Box>
+                                  </Box>
+                                )}
+                                
+                                {type.amenities?.length > 0 && (
+                                  <Box>
+                                    <Typography variant="caption" display="block" fontWeight={600}>
+                                      Amenities:
+                                    </Typography>
+                                    <Box display="flex" flexWrap="wrap" gap={0.5}>
+                                      {type.amenities.slice(0, 3).map((amenity, i) => (
+                                        <Chip key={i} label={amenity} size="small" color="primary" />
+                                      ))}
+                                      {type.amenities.length > 3 && (
+                                        <Chip label={`+${type.amenities.length - 3} more`} size="small" variant="outlined" />
+                                      )}
+                                    </Box>
+                                  </Box>
+                                )}
+                              </>
+                            )}
+                          </CardContent>
+                        </Card>
+                      </Grid>
+                    ))}
+                  </Grid>
+                </Paper>
+              </Grid>
+            )}
+
             <Grid size={{ xs: 12, md: 6 }}>
-              <Paper sx={{ p: 2, height: '100%' }}>
+              <Paper sx={{ p: 2, borderRadius: '15px' }}>
                 <Typography variant="h6" gutterBottom>Status & Project Highlights</Typography>
                 
                 {viewingProperty?.status && viewingProperty.status.length > 0 && (
@@ -1867,7 +2771,7 @@ export default function PropertiesPage() {
             {/* Map Location */}
             {viewingProperty?.mapLocation && (
               <Grid size={{ xs: 12, md: 6 }}>
-                <Paper sx={{ p: 2 }}>
+                <Paper sx={{ p: 2, borderRadius: '15px' }}>
                   <Typography variant="h6" gutterBottom>Location</Typography>
                   <PropertyMap 
                     lat={viewingProperty.mapLocation.lat} 
@@ -1888,7 +2792,7 @@ export default function PropertiesPage() {
 
             {/* Enhanced Media Assets with Download */}
             <Grid size={{ xs: 12, md: 6 }}>
-              <Paper sx={{ p: 2 }}>
+              <Paper sx={{ p: 2, borderRadius: '15px' }}>
                 <Typography variant="h6" gutterBottom>Media Assets</Typography>
                 
                 {viewingProperty?.brochureUrls && viewingProperty.brochureUrls.length > 0 && (
@@ -1985,7 +2889,6 @@ export default function PropertiesPage() {
                   </Box>
                 )}
 
-                {/* Video Files Section */}
                 {viewingProperty?.videoFiles && viewingProperty.videoFiles.length > 0 && (
                   <Box mb={2}>
                     <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
@@ -2033,44 +2936,7 @@ export default function PropertiesPage() {
                   </Box>
                 )}
 
-                {viewingProperty?.videoIds && viewingProperty.videoIds.length > 0 && (
-                  <Box>
-                    <Typography variant="subtitle2" gutterBottom>
-                      <VideoLibrary fontSize="small" sx={{ mr: 0.5, verticalAlign: "middle" }} />
-                      Video URLs ({viewingProperty.videoIds.length})
-                    </Typography>
-                    <List dense>
-                      {viewingProperty.videoIds.map((videoId: string, index: number) => (
-                        <ListItem key={index} sx={{ pl: 0 }}>
-                          <ListItemText 
-                            primary={`Video URL ${index + 1}`}
-                            secondary={
-                              <Box>
-                                <Typography variant="caption" display="block">
-                                  {videoId.length > 50 ? `${videoId.substring(0, 50)}...` : videoId}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  Platform: {getVideoPlatform(videoId)}
-                                </Typography>
-                              </Box>
-                            }
-                          />
-                          <ListItemSecondaryAction>
-                            <IconButton 
-                              size="small" 
-                              onClick={() => window.open(videoId.includes('http') ? videoId : `https://youtube.com/watch?v=${videoId}`, '_blank')}
-                              title="Open Video"
-                            >
-                              <VideoLibrary />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
-                )}
-
-                {(!viewingProperty?.brochureUrls?.length && !viewingProperty?.creatives?.length && !viewingProperty?.videoFiles?.length && !viewingProperty?.videoIds?.length) && (
+                {(!viewingProperty?.brochureUrls?.length && !viewingProperty?.creatives?.length && !viewingProperty?.videoFiles?.length) && (
                   <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
                     No media assets available
                   </Typography>
@@ -2081,7 +2947,7 @@ export default function PropertiesPage() {
             {/* Image Gallery with Download Functionality */}
             {viewingProperty?.images && viewingProperty.images.filter((img: any) => !img.isPrimary).length > 0 && (
               <Grid size={{ xs: 12 }}>
-                <Paper sx={{ p: 2 }}>
+                <Paper sx={{ p: 2, borderRadius: '15px' }}>
                   <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
                     <Typography variant="h6">
                       <Photo sx={{ mr: 1, verticalAlign: "middle" }} />
@@ -2113,7 +2979,6 @@ export default function PropertiesPage() {
                               (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150x120?text=Image';
                             }}
                           />
-                          {/* Download button overlay */}
                           <Box
                             position="absolute"
                             top={4}
@@ -2166,9 +3031,9 @@ export default function PropertiesPage() {
         </DialogActions>
       </Dialog>
 
-      {/* Add/Edit Dialog with Validation */}
+      {/* Add/Edit Dialog with Enhanced Map */}
       <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth scroll="paper">
-        <DialogTitle sx={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0', color: '#1976d2' }}>
+        <DialogTitle sx={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0', color: '#1976d2', borderRadius: '15px 15px 0 0' }}>
           <Typography variant="h5" fontWeight={600}>
             {editingProperty ? "Edit Property" : "Add New Property"}
           </Typography>
@@ -2182,7 +3047,6 @@ export default function PropertiesPage() {
               </Typography>
             </Grid>
             
-            {/* Project Name */}
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
@@ -2196,7 +3060,6 @@ export default function PropertiesPage() {
               />
             </Grid>
             
-            {/* Builder Name */}
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
@@ -2210,7 +3073,6 @@ export default function PropertiesPage() {
               />
             </Grid>
             
-            {/* Status - Multi Select */}
             <Grid size={{ xs: 12, md: 6 }}>
               <FormControl fullWidth sx={{ mb: 2 }} error={!!validationErrors.status}>
                 <InputLabel>Status *</InputLabel>
@@ -2225,7 +3087,6 @@ export default function PropertiesPage() {
                         ? selectedStatus.split(",")
                         : selectedStatus,
                     }));
-                    // Clear status error when user selects something
                     if (validationErrors.status) {
                       setValidationErrors(prev => ({ ...prev, status: undefined }));
                     }
@@ -2253,23 +3114,8 @@ export default function PropertiesPage() {
                 )}
               </FormControl>
             </Grid>
-            
-            {/* Price */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Price"
-                value={formData.price}
-                onChange={handleInputChangeWithValidation("price")}
-                required
-                error={!!validationErrors.price}
-                helperText={validationErrors.price || "Enter the property price"}
-                sx={{ mb: 2 }}
-              />
-            </Grid>
 
-            {/* Project Highlights */}
-            <Grid size={{ xs: 12 }}>
+            <Grid size={{ xs: 12, md: 6  }}>
               <FormControl fullWidth sx={{ mb: 2 }}>
                 <InputLabel>Project Highlights</InputLabel>
                 <Select
@@ -2306,7 +3152,6 @@ export default function PropertiesPage() {
               </FormControl>
             </Grid>
             
-            {/* Description */}
             <Grid size={{ xs: 12}}>
               <TextField
                 fullWidth
@@ -2323,63 +3168,79 @@ export default function PropertiesPage() {
               />
             </Grid>
 
-            {/* Location Section */}
+            {/* Property Types Section */}
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="h6" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>
+                Property Types <Typography component="span" color="error">*</Typography>
+              </Typography>
+
+              <Box display="flex" gap={2} mb={2}>
+                <Button
+                  variant="outlined"
+                  startIcon={<Home />}
+                  onClick={() => addPropertyType('residential')}
+                  sx={{ borderRadius: '8px' }}
+                >
+                  Add Residential Type
+                </Button>
+                <Button
+                  variant="outlined"
+                  startIcon={<Business />}
+                  onClick={() => addPropertyType('commercial')}
+                  sx={{ borderRadius: '8px' }}
+                >
+                  Add Commercial Type
+                </Button>
+              </Box>
+
+              {formData.propertyTypes.map((propertyType, index) => (
+                <PropertyTypeForm
+                  key={index}
+                  propertyType={propertyType}
+                  index={index}
+                  onChange={updatePropertyType}
+                  onRemove={removePropertyType}
+                />
+              ))}
+
+              {validationErrors.propertyTypes && (
+                <Typography color="error" variant="caption">
+                  {validationErrors.propertyTypes}
+                </Typography>
+              )}
+            </Grid>
+
+            {/* Enhanced Location Section with Draggable Map */}
             <Grid size={{ xs: 12 }}>
               <Typography variant="h6" gutterBottom sx={{ mb: 2 , fontWeight: 600 }}>
                 Location <Typography component="span" color="error">*</Typography>
               </Typography>
             </Grid>
             
-            {/* Location */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Location"
-                value={formData.location}
-                onChange={handleInputChangeWithValidation("location")}
-                required
-                error={!!validationErrors.location}
-                helperText={validationErrors.location || "Enter the project location"}
-                sx={{ mb: 2 }}
+            {/* Location Search */}
+            <Grid size={{ xs: 12 }}>
+              <LocationSearch
+                onLocationSelect={handleLocationSelect}
               />
             </Grid>
-            
-            {/* Nearby Places */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Nearby Places</InputLabel>
-                <Select
-                  multiple
-                  value={formData.nearby || []}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      nearby: typeof e.target.value === "string"
-                        ? e.target.value.split(",")
-                        : e.target.value,
-                    }))
-                  }
-                  input={<OutlinedInput label="Nearby Places" />}
-                  renderValue={(selected) => (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </div>
-                  )}
-                >
-                  <MenuItem value="School">School</MenuItem>
-                  <MenuItem value="Hospital">Hospital</MenuItem>
-                  <MenuItem value="Mall">Mall</MenuItem>
-                  <MenuItem value="Park">Park</MenuItem>
-                  <MenuItem value="Metro Station">Metro Station</MenuItem>
-                  <MenuItem value="Bus Stop">Bus Stop</MenuItem>
-                  <MenuItem value="Airport">Airport</MenuItem>
-                </Select>
-              </FormControl>
+
+            {/* Interactive Draggable Map */}
+            <Grid size={{ xs: 12 }}>
+              <DraggablePropertyMap
+                lat={formData.mapLocation.lat}
+                lng={formData.mapLocation.lng}
+                onLocationChange={handleMapLocationUpdate}
+                isEditMode={true}
+              />
             </Grid>
-            
-            {/* Map Coordinates */}
+
+            {/* Manual Coordinates Input */}
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1, color: 'text.secondary' }}>
+                Or enter coordinates manually:
+              </Typography>
+            </Grid>
+
             <Grid size={{ xs: 12, md: 6 }}>
               <TextField
                 fullWidth
@@ -2414,88 +3275,38 @@ export default function PropertiesPage() {
                 sx={{ mb: 2 }}
               />
             </Grid>
-
-            {/* Features & Amenities */}
-            <Grid size={{ xs: 12 }}>
-              <Typography variant="h6" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>
-                Features & Amenities
-              </Typography>
-            </Grid>
             
-            {/* Features */}
-            <Grid size={{ xs: 12, md: 6 }}>
+            {/* Nearby Places */}
+            <Grid size={{ xs: 12 }}>
               <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Features</InputLabel>
+                <InputLabel>Nearby Places</InputLabel>
                 <Select
                   multiple
-                  value={formData.features || []}
-                  onChange={(e) => {
-                    const selectedFeatures = e.target.value;
+                  value={formData.nearby || []}
+                  onChange={(e) =>
                     setFormData((prev) => ({
                       ...prev,
-                      features: typeof selectedFeatures === "string"
-                        ? selectedFeatures.split(",")
-                        : selectedFeatures,
-                    }));
-                  }}
-                  input={<OutlinedInput label="Features" />}
+                      nearby: typeof e.target.value === "string"
+                        ? e.target.value.split(",")
+                        : e.target.value,
+                    }))
+                  }
+                  input={<OutlinedInput label="Nearby Places" />}
                   renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {(selected as string[]).map((value) => (
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+                      {selected.map((value) => (
                         <Chip key={value} label={value} size="small" />
                       ))}
-                    </Box>
+                    </div>
                   )}
                 >
-                  <MenuItem value="Swimming Pool">Swimming Pool</MenuItem>
-                  <MenuItem value="Gym">Gym</MenuItem>
-                  <MenuItem value="Clubhouse">Clubhouse</MenuItem>
-                  <MenuItem value="Children's Play Area">Children's Play Area</MenuItem>
-                  <MenuItem value="24/7 Security">24/7 Security</MenuItem>
-                  <MenuItem value="Power Backup">Power Backup</MenuItem>
-                  <MenuItem value="Landscaped Gardens">Landscaped Gardens</MenuItem>
-                  <MenuItem value="Jogging Track">Jogging Track</MenuItem>
-                  <MenuItem value="Sports Facilities">Sports Facilities</MenuItem>
-                  <MenuItem value="Parking">Parking</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* Amenities */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Amenities</InputLabel>
-                <Select
-                  multiple
-                  value={formData.amenities || []}
-                  onChange={(e) => {
-                    const selectedAmenities = e.target.value;
-                    setFormData((prev) => ({
-                      ...prev,
-                      amenities: typeof selectedAmenities === "string"
-                        ? selectedAmenities.split(",")
-                        : selectedAmenities,
-                    }));
-                  }}
-                  input={<OutlinedInput label="Amenities" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {(selected as string[]).map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
-                >
-                  <MenuItem value="Wi-Fi Connectivity">Wi-Fi Connectivity</MenuItem>
-                  <MenuItem value="Cafeteria">Cafeteria</MenuItem>
-                  <MenuItem value="Community Hall">Community Hall</MenuItem>
-                  <MenuItem value="Yoga/Meditation Area">Yoga/Meditation Area</MenuItem>
-                  <MenuItem value="Convenience Store">Convenience Store</MenuItem>
-                  <MenuItem value="ATM">ATM</MenuItem>
-                  <MenuItem value="Salon/Spa">Salon/Spa</MenuItem>
-                  <MenuItem value="Pet Area">Pet Area</MenuItem>
-                  <MenuItem value="Garbage Disposal">Garbage Disposal</MenuItem>
-                  <MenuItem value="Water Supply">Water Supply</MenuItem>
+                  <MenuItem value="School">School</MenuItem>
+                  <MenuItem value="Hospital">Hospital</MenuItem>
+                  <MenuItem value="Mall">Mall</MenuItem>
+                  <MenuItem value="Park">Park</MenuItem>
+                  <MenuItem value="Metro Station">Metro Station</MenuItem>
+                  <MenuItem value="Bus Stop">Bus Stop</MenuItem>
+                  <MenuItem value="Airport">Airport</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
@@ -2507,9 +3318,7 @@ export default function PropertiesPage() {
               </Typography>
             </Grid>
 
-            {/* Images Section */}
             <Grid size={{ xs: 12, md: 4}}>
-              {/* File Upload for Images */}
               <FileUploadSection
                 title="Upload Property Images"
                 accept="image/*"
@@ -2518,9 +3327,8 @@ export default function PropertiesPage() {
                 description="JPEG, PNG, GIF, WebP (Max 5MB)"
               />
 
-              {/* Images List */}
               {formData.images.length > 0 && (
-                <Paper sx={{ p: 2, backgroundColor: '#fafafa' }}>
+                <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px' }}>
                   <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
                     Uploaded Images ({formData.images.length})
                   </Typography>
@@ -2566,10 +3374,9 @@ export default function PropertiesPage() {
                             onClick={() => removeImage(index)}
                             size="small"
                             color="error"
-                          >
+                          />
                             <Delete />
-                          </IconButton>
-                        </ListItemSecondaryAction>
+                          </ListItemSecondaryAction>
                       </ListItem>
                     ))}
                   </List>
@@ -2577,9 +3384,7 @@ export default function PropertiesPage() {
               )}
             </Grid>
 
-            {/* Brochure URLs Section */}
             <Grid size={{ xs: 12, md: 4}}>
-              {/* File Upload for Brochures */}
               <FileUploadSection
                 title="Upload Brochures"
                 accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
@@ -2588,9 +3393,8 @@ export default function PropertiesPage() {
                 description="PDF, Word Documents (Max 10MB)"
               />
               
-              {/* Brochures List */}
               {formData.brochureUrls.length > 0 && (
-                <Paper sx={{ p: 2, backgroundColor: '#fafafa' }}>
+                <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px' }}>
                   <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
                     Brochures ({formData.brochureUrls.length})
                   </Typography>
@@ -2624,9 +3428,7 @@ export default function PropertiesPage() {
               )}
             </Grid>
 
-            {/* Creatives Section */}
             <Grid size={{ xs: 12, md: 4}}>
-              {/* File Upload for Creatives */}
               <FileUploadSection
                 title="Upload Creative Assets"
                 accept="image/*,.pdf,.doc,.docx"
@@ -2635,9 +3437,8 @@ export default function PropertiesPage() {
                 description="Images, PDF Documents (Max 10MB)"
               />
               
-              {/* Creatives List */}
               {formData.creatives.length > 0 && (
-                <Paper sx={{ p: 2, backgroundColor: '#fafafa' }}>
+                <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px' }}>
                   <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
                     Creative Assets ({formData.creatives.length})
                   </Typography>
@@ -2689,9 +3490,7 @@ export default function PropertiesPage() {
               )}
             </Grid>
 
-            {/* Video Files Upload */}
             <Grid size={{ xs: 12 }}>
-              {/* File Upload for Videos */}
               <FileUploadSection
                 title="Upload Video Files"
                 accept="video/*,.mp4,.mov,.avi,.mkv"
@@ -2700,9 +3499,8 @@ export default function PropertiesPage() {
                 description="MP4, MOV, AVI, MKV (Max 50MB)"
               />
               
-              {/* Videos List */}
               {formData.videoFiles.length > 0 && (
-                <Paper sx={{ p: 2, backgroundColor: '#fafafa' }}>
+                <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px' }}>
                   <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
                     Uploaded Videos ({formData.videoFiles.length})
                   </Typography>
@@ -2748,75 +3546,10 @@ export default function PropertiesPage() {
                 </Paper>
               )}
             </Grid>
-
-            {/* Video URLs Section */}
-            <Grid size={{ xs: 12 }}>
-              <Box display="flex" alignItems="center" gap={1} mb={2}>
-                <TextField
-                  fullWidth
-                  placeholder="YouTube Video ID, URL"
-                  value={newVideoId}
-                  onChange={(e) => setNewVideoId(e.target.value)}
-                  onKeyPress={(e) => e.key === "Enter" && handleAddVideoId()}
-                />
-                <Button 
-                  onClick={handleAddVideoId} 
-                  variant="outlined"
-                  disabled={!newVideoId.trim()}
-                >
-                  Add URL
-                </Button>
-              </Box>
-              {formData.videoIds.length > 0 && (
-                <Paper sx={{ p: 2, backgroundColor: '#fafafa' }}>
-                  <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                    Video URLs ({formData.videoIds.length})
-                  </Typography>
-                  <List dense>
-                    {formData.videoIds.map((videoId, index) => (
-                      <ListItem 
-                        key={index}
-                        sx={{ 
-                          backgroundColor: 'white',
-                          mb: 1,
-                          borderRadius: 1,
-                          border: '1px solid #e0e0e0'
-                        }}
-                      >
-                        <VideoLibrary sx={{ mr: 2, color: 'primary.main' }} />
-                        <ListItemText 
-                          primary={`Video URL ${index + 1}`}
-                          secondary={
-                            <Box>
-                              <Typography variant="caption" display="block" sx={{ wordBreak: 'break-all' }}>
-                                {videoId.length > 50 ? `${videoId.substring(0, 50)}...` : videoId}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                Platform: {getVideoPlatform(videoId)}
-                              </Typography>
-                            </Box>
-                          }
-                        />
-                        <ListItemSecondaryAction>
-                          <IconButton 
-                            edge="end" 
-                            onClick={() => removeVideoId(index)}
-                            size="small"
-                            color="error"
-                          >
-                            <Remove />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
-              )}
-            </Grid>
           </Grid>
         </DialogContent>
         
-        <DialogActions sx={{ p: 3, backgroundColor: '#f5f5f5', borderTop: '1px solid #e0e0e0' }}>
+        <DialogActions sx={{ p: 3, backgroundColor: '#f5f5f5', borderTop: '1px solid #e0e0e0', borderRadius: '0 0 15px 15px' }}>
           <Button 
             onClick={handleCloseDialog} 
             sx={{ 
@@ -2882,4 +3615,5 @@ export default function PropertiesPage() {
     </Box>
   );
 }
+
 

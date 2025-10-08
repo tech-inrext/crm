@@ -1,3 +1,4 @@
+// app/properties/[id]/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(
