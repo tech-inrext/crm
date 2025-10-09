@@ -1,6 +1,6 @@
 import React from "react";
 import { TextField, Box, MenuItem, Typography } from "@mui/material";
-import { Field, FieldProps } from "formik";
+import { Field, FieldProps, useFormikContext } from "formik";
 import { FIELD_LABELS } from "@/constants/vendors";
 
 interface BasicInformationProps {
@@ -8,6 +8,7 @@ interface BasicInformationProps {
 }
 
 const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
+  const { setFieldTouched } = useFormikContext();
   return (
     <>
       <Typography variant="h6" sx={{ mt: 1, fontWeight: 600 }}>
@@ -25,6 +26,10 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
             error={!!meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
             sx={{ bgcolor: "#fff", borderRadius: 1 }}
+            onChange={(e) => {
+              if (field.name) setFieldTouched(field.name, true, true);
+              if ((field as any).onChange) (field as any).onChange(e);
+            }}
           />
         )}
       </Field>
@@ -46,6 +51,10 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              onChange={(e) => {
+                if (field.name) setFieldTouched(field.name, true, true);
+                if ((field as any).onChange) (field as any).onChange(e);
+              }}
             />
           )}
         </Field>
@@ -53,12 +62,26 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
           {({ field, meta }: FieldProps) => (
             <TextField
               {...field}
+              value={field.value ?? ""}
               label={FIELD_LABELS?.PHONE || "Phone"}
               fullWidth
               margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+              onChange={(e) => {
+                if (field.name) setFieldTouched(field.name, true, true);
+                const v = (e.target as HTMLInputElement).value.replace(
+                  /\D/g,
+                  ""
+                );
+                if (field.name && (field as any).onChange) {
+                  (field as any).onChange({
+                    target: { name: field.name, value: v },
+                  });
+                }
+              }}
             />
           )}
         </Field>

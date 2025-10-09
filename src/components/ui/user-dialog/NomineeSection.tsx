@@ -1,9 +1,10 @@
 import React from "react";
 import { Box, MenuItem, TextField, Typography } from "@mui/material";
-import { Field, FieldProps } from "formik";
+import { Field, FieldProps, useFormikContext } from "formik";
 import { FIELD_LABELS, GENDER_OPTIONS } from "@/constants/users";
 
 const NomineeSection: React.FC = () => {
+  const { setFieldTouched } = useFormikContext();
   return (
     <>
       <Typography variant="h6" sx={{ mt: 2, fontWeight: 600 }}>
@@ -28,6 +29,10 @@ const NomineeSection: React.FC = () => {
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1 }}
+              onChange={(e) => {
+                if (field.name) setFieldTouched(field.name, true, true);
+                if ((field as any).onChange) (field as any).onChange(e);
+              }}
             />
           )}
         </Field>
@@ -43,6 +48,10 @@ const NomineeSection: React.FC = () => {
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1 }}
+              onChange={(e) => {
+                if (field.name) setFieldTouched(field.name, true, true);
+                if ((field as any).onChange) (field as any).onChange(e);
+              }}
             />
           )}
         </Field>
@@ -58,6 +67,19 @@ const NomineeSection: React.FC = () => {
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1 }}
+              inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+              onChange={(e) => {
+                if (field.name) setFieldTouched(field.name, true, true);
+                const v = (e.target as HTMLInputElement).value.replace(
+                  /\D/g,
+                  ""
+                );
+                if (field.name && (field as any).onChange) {
+                  (field as any).onChange({
+                    target: { name: field.name, value: v },
+                  });
+                }
+              }}
             />
           )}
         </Field>
@@ -74,6 +96,10 @@ const NomineeSection: React.FC = () => {
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1 }}
+              onChange={(e) => {
+                if (field.name) setFieldTouched(field.name, true, true);
+                if ((field as any).onChange) (field as any).onChange(e);
+              }}
             >
               {GENDER_OPTIONS.map((option) => (
                 <MenuItem key={option} value={option}>
@@ -95,6 +121,10 @@ const NomineeSection: React.FC = () => {
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1, gridColumn: "1 / -1" }}
+              onChange={(e) => {
+                if (field.name) setFieldTouched(field.name, true, true);
+                if ((field as any).onChange) (field as any).onChange(e);
+              }}
             />
           )}
         </Field>

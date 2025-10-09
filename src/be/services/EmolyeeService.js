@@ -1,6 +1,7 @@
 import { Service } from "@framework";
 import Employee from "../../models/Employee";
 import bcrypt from "bcrypt";
+import validator from "validator";
 import { sendNewEmployeeWelcomeEmail } from "@/lib/emails/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "@/lib/emails/managerNewReport";
 
@@ -76,7 +77,24 @@ class EmployeeService extends Service {
     };
 
     setIfPresent("name", name);
+    // validate name on update - should not start with a digit
+    if (Object.prototype.hasOwnProperty.call(req.body, "name")) {
+      if (name && /^\d/.test(String(name).trim())) {
+        return res.status(400).json({
+          success: false,
+          message: "Full name must not start with a digit",
+        });
+      }
+    }
     setIfPresent("altPhone", altPhone);
+    // validate altPhone if provided
+    if (Object.prototype.hasOwnProperty.call(req.body, "altPhone")) {
+      if (altPhone && !validator.isMobilePhone(String(altPhone), "any")) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid alternate phone number" });
+      }
+    }
     setIfPresent("address", address);
     setIfPresent("gender", gender);
     // allow clearing age by sending null
@@ -144,6 +162,25 @@ class EmployeeService extends Service {
         branch,
         fatherName,
       } = req.body;
+      // validate name - should not start with a digit
+      if (name && /^\d/.test(String(name).trim())) {
+        return res.status(400).json({
+          success: false,
+          message: "Full name Should not start with a digit",
+        });
+      }
+
+      // validate phone formats (if provided)
+      if (phone && !validator.isMobilePhone(String(phone), "any")) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid phone number" });
+      }
+      if (altPhone && !validator.isMobilePhone(String(altPhone), "any")) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid alternate phone number" });
+      }
       const isCabVendor = req.body.isCabVendor || false;
       const dummyPassword = "Inrext@123";
       const hashedPassword = await bcrypt.hash(dummyPassword, 10);
@@ -151,9 +188,12 @@ class EmployeeService extends Service {
       // 🚫 Check duplicate email/phone
       const exists = await Employee.findOne({ $or: [{ email }, { phone }] });
       if (exists) {
-        return res
-          .status(409)
-          .json({ success: false, message: "Employee already exists" });
+        return res.status(409).json({
+          success: false,
+          message: `${
+            isCabVendor == true ? "Vendor's" : "Employee's"
+          } Email or Phone No. already exists`,
+        });
       }
 
       // ✅ Create new employee (only set optional fields if present)
@@ -247,7 +287,7 @@ class EmployeeService extends Service {
       console.log(error);
       return res.status(500).json({
         success: false,
-        message: "Error creating employee",
+        message: `Error creating employee: ${error.message}`,
         error: error.message,
       });
     }

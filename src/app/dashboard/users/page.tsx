@@ -11,7 +11,9 @@ import {
   useMediaQuery,
   Button,
   TableContainer,
+  Snackbar,
 } from "@mui/material";
+import Alert from "@mui/material/Alert";
 import { Add, Edit } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 import { useUsers } from "@/hooks/useUsers";
@@ -64,6 +66,11 @@ const Users: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    "success" | "error" | "info" | "warning"
+  >("success");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -309,16 +316,23 @@ const Users: React.FC = () => {
                 // Remove fields that cannot be updated for existing users
                 const { email, phone, joiningDate, ...updateData } = values;
                 await updateUser(editId, updateData);
+                // show success toast for update
+                setSnackbarMessage("User updated successfully");
               } else {
                 await addUser(values);
+                // show success toast for creation
+                setSnackbarMessage("User created successfully");
               }
+
+              setSnackbarSeverity("success");
+              setSnackbarOpen(true);
 
               handleCloseDialog();
               setPage(1);
               setSearch("");
               await loadEmployees();
             } catch (err: any) {
-              // Minimal user feedback: alert with server message when possible
+              // Show error in a toast (Snackbar) instead of window.alert
               const status =
                 err?.status ||
                 err?.statusCode ||
@@ -331,15 +345,37 @@ const Users: React.FC = () => {
                 "Failed to save user";
               if (status === 409) {
                 // Duplicate user (email/phone)
-                window.alert(message || "User with same email or phone exists");
+                setSnackbarMessage(
+                  message || "User with same email or phone exists"
+                );
               } else {
-                window.alert(message);
+                setSnackbarMessage(message);
               }
+              setSnackbarSeverity("error");
+              setSnackbarOpen(true);
               // keep dialog open so user can correct input
             }
           }}
         />
       </PermissionGuard>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={(event, reason) => {
+          // ignore clickaway to allow manual dismissal only via close button or timeout
+          if (reason === "clickaway") return;
+          setSnackbarOpen(false);
+        }}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          variant="filled"
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
