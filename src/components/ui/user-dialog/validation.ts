@@ -5,13 +5,33 @@ export const userValidationSchema = Yup.object({
   name: Yup.string()
     .min(VALIDATION_RULES.NAME.min)
     .max(VALIDATION_RULES.NAME.max)
-    .required("Name is required"),
+    .required("Name is required")
+    .matches(/^[\p{L}\s'-]+$/u, "Name must not contain special characters")
+    .test(
+      "no-leading-digit",
+      "Full name must not start with a digit",
+      (value) => {
+        if (!value) return true;
+        return !/^\d/.test(String(value).trim());
+      }
+    ),
   fatherName: Yup.string()
-    .min(2, "Father's Name must be at least 2 characters")
+    .min(3, "Father's Name must be at least 3 characters")
     .max(50, "Father's Name must be at most 50 characters")
-    .required("Father's Name is required"),
+    .required("Father's Name is required")
+    .matches(/^[\p{L}\s'-]+$/u, "Father's name must not contain special characters")
+    .test(
+      "father-no-leading-digit",
+      "Father's name must not start with a digit",
+      (value) => {
+        if (!value) return true;
+        return !/^\d/.test(String(value).trim());
+      }
+    ),
   email: Yup.string().email().required("Email is required"),
-  phone: Yup.string().required("Phone is required"),
+  phone: Yup.string()
+    .required("Phone is required")
+    .matches(/^\d{10}$/, "Phone must contain only digits and 10 digits long"),
   address: Yup.string()
     .min(VALIDATION_RULES.ADDRESS.min)
     .required("Address is required"),
@@ -26,8 +46,30 @@ export const userValidationSchema = Yup.object({
     .min(VALIDATION_RULES.AGE.min)
     .max(VALIDATION_RULES.AGE.max)
     .nullable(),
-  altPhone: Yup.string().nullable(),
-  joiningDate: Yup.string().nullable(),
+  altPhone: Yup.string()
+    .transform((value, originalValue) => (originalValue === "" ? null : value))
+    .nullable()
+    .test("alt-phone-format", "Phone must contain only digits and 10 digits long", (val) => {
+      if (val === null || val === undefined || val === "") return true;
+      return /^\d{10}$/.test(String(val));
+    }),
+  joiningDate: Yup.string()
+    .nullable()
+    .test(
+      "not-in-future",
+      "Joining date cannot be a future date",
+      (val) => {
+        if (!val) return true;
+        // Parse the value; if invalid, don't block here (format checks can be separate)
+        const d = new Date(val);
+        if (isNaN(d.getTime())) return true;
+        const today = new Date();
+        // Compare only dates (ignore time)
+        today.setHours(0, 0, 0, 0);
+        d.setHours(0, 0, 0, 0);
+        return d <= today;
+      }
+    ),
   designation: Yup.string()
     .min(VALIDATION_RULES.DESIGNATION.min)
     .max(VALIDATION_RULES.DESIGNATION.max)
@@ -45,13 +87,22 @@ export const userValidationSchema = Yup.object({
       name: Yup.string()
         .transform((value, originalValue) => (originalValue === "" ? null : value))
         .nullable()
-        .test("nominee-name-min", "Nominee name must be at least 2 characters", function (value) {
+        .matches(/^[\p{L}\s'-]+$/u, "Nominee name must not contain special characters")
+        .test("nominee-name-min", "Nominee name must be at least 3 characters", function (value) {
           if (value === null || value === undefined) return true;
-          return String(value).trim().length >= 2;
+          return String(value).trim().length >= 3;
+        })
+        .test("nominee-no-leading-digit", "Nominee name must not start with a digit", (value) => {
+          if (!value) return true;
+          return !/^\d/.test(String(value).trim());
         }),
       phone: Yup.string()
         .transform((value, originalValue) => (originalValue === "" ? null : value))
-        .nullable(),
+        .nullable()
+        .test("nominee-phone-format", "Phone must contain only digits and 10 digits long", (val) => {
+          if (val === null || val === undefined || val === "") return true;
+          return /^\d{10}$/.test(String(val));
+        }),
       occupation: Yup.string()
         .transform((value, originalValue) => (originalValue === "" ? null : value))
         .nullable(),

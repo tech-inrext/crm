@@ -96,7 +96,11 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
                     margin="normal"
                     fullWidth
                     error={!!meta.touched && !!meta.error}
-                    helperText={meta.touched && meta.error}
+                    helperText={
+                      meta.touched && meta.error
+                        ? meta.error
+                        : "Notes : [Only for VP/Director, Select self as Manager]"
+                    }
                     onBlur={field.onBlur}
                     sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
                   />

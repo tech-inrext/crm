@@ -4,6 +4,7 @@ import DialogTitle from "@mui/material/DialogTitle";
 import DialogContent from "@mui/material/DialogContent";
 import DialogActions from "@mui/material/DialogActions";
 import TextField from "@mui/material/TextField";
+import Tooltip from "@mui/material/Tooltip";
 import Typography from "@mui/material/Typography";
 import Box from "@mui/material/Box";
 import Checkbox from "@mui/material/Checkbox";
@@ -211,16 +212,44 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           flex: 1,
         }}
       >
-        <TextField
-          autoFocus
-          margin="dense"
-          label="Role Name"
-          fullWidth
-          value={roleName}
-          onChange={(e) => setRoleName(e.target.value)}
-          sx={{ mb: 2, fontSize: { xs: "0.95rem", sm: "1rem" } }}
-          inputProps={{ style: { fontSize: "1rem" } }}
-        />
+        {role ? (
+          <Tooltip title="Role name cannot be edited" placement="top">
+            <div>
+              <TextField
+                autoFocus={false}
+                margin="dense"
+                label="Role Name"
+                fullWidth
+                value={roleName}
+                onChange={(e) => setRoleName(e.target.value)}
+                sx={{
+                  mb: 2,
+                  fontSize: { xs: "0.95rem", sm: "1rem" },
+                  // ensure visual disabled look
+                  "& .MuiInputBase-root": {
+                    bgcolor: "#f5f5f5",
+                    cursor: "not-allowed",
+                  },
+                }}
+                inputProps={{
+                  style: { fontSize: "1rem", cursor: "not-allowed" },
+                  readOnly: true,
+                }}
+              />
+            </div>
+          </Tooltip>
+        ) : (
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Role Name"
+            fullWidth
+            value={roleName}
+            onChange={(e) => setRoleName(e.target.value)}
+            sx={{ mb: 2, fontSize: { xs: "0.95rem", sm: "1rem" } }}
+            inputProps={{ style: { fontSize: "1rem" } }}
+          />
+        )}
         <Box sx={{ mt: 1 }}>
           <Typography
             sx={{

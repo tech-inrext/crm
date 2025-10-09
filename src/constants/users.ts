@@ -69,8 +69,8 @@ export const USERS_PERMISSION_MODULE = "employee";
 
 // Validation Schema Constants
 export const VALIDATION_RULES = {
-  NAME: { min: 2, max: 50 },
-  ADDRESS: { min: 2 },
+  NAME: { min: 3, max: 50 },
+  ADDRESS: { min: 5 },
   AGE: { min: 0, max: 120 },
   DESIGNATION: { min: 2, max: 50 },
 };
@@ -80,10 +80,10 @@ export const FIELD_LABELS = {
   BASIC_INFO: "Basic Information",
   ORGANIZATION: "Organization",
   FULL_NAME: "Full Name *",
-  AADHAR: "Aadhar Card",
-  PAN: "PAN Card",
-  BANK_PROOF: "Bank Proof",
-  SIGNATURE: "Signature",
+  AADHAR: "Aadhar Card (Max 1 MB)",
+  PAN: "PAN Card (Max 1 MB)",
+  BANK_PROOF: "Bank Proof (Max 1 MB)",
+  SIGNATURE: "Signature (Max 1 MB)",
   EMAIL: "Email *",
   PHONE: "Phone *",
   ALT_PHONE: "Alternate Phone",
@@ -99,7 +99,7 @@ export const FIELD_LABELS = {
   AGE: "Age",
   JOINING_DATE: "Joining Date",
   DESIGNATION: "Designation *",
-  MANAGER: "Manager * [Only for VP/Director, Select self as Manager]",
+  MANAGER: "Manager *",
   DEPARTMENT: "Department",
   ROLES: "Roles *",
   FOR_FREELANCER: "For Freelancer",

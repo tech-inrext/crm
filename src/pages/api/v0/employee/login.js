@@ -19,15 +19,23 @@ export default async function handler(req, res) {
 
   try {
     const employee = await Employee.findOne({ email }).populate("roles");
-    console.log(employee);
+
     if (!employee) {
       return res
         .status(404)
         .json({ success: false, message: "Invalid Credentials." });
     }
 
-    const isPasswordCorrect = await bcrypt.compare(password, employee.password);
+    // 🔍 Fetch manager name if exists
+    let managerName = null;
+    if (employee.managerId) {
+      const manager = await Employee.findById(employee.managerId).select(
+        "name"
+      );
+      if (manager) managerName = manager.name;
+    }
 
+    const isPasswordCorrect = await bcrypt.compare(password, employee.password);
     if (!isPasswordCorrect) {
       return res
         .status(401)
@@ -70,11 +78,18 @@ export default async function handler(req, res) {
       })
     );
 
-    console.log(token);
-    res
-      .status(200)
-      .json({ success: true, message: "Login successful", employee });
+    // ✅ Convert to plain object before sending
+    const employeeData = employee.toObject();
+    employeeData.managerName = managerName;
+    delete employeeData.password;
+    console.log("Employee logged in:", employeeData);
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      employee: employeeData,
+    });
   } catch (err) {
-    res.status(500).json({ success: false, message: `Error : ${err.message}` });
+    res.status(500).json({ success: false, message: `Error: ${err.message}` });
   }
 }
