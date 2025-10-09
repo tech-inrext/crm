@@ -10,7 +10,7 @@ import {
 } from "@mui/material";
 import { Dialog } from "@mui/material";
 import Pagination from "@/components/ui/Navigation/Pagination";
-import PermissionGuard from "@/components/PermissionGuard";
+import PermissionGuard from "@/components/ui/permission/PermissionGuard";
 import MouList from "@/components/mou/MouList";
 import { useMou } from "@/hooks/useMou";
 import axios from "axios";

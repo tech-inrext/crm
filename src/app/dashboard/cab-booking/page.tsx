@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import PermissionGuard from "@/components/PermissionGuard";
+import PermissionGuard from "@/components/ui/permission/PermissionGuard";
 import { useCabBooking } from "@/hooks/useCabBooking";
 import { CabBookingProps } from "@/types/cab-booking";
 import {

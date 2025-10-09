@@ -5,7 +5,7 @@ import { Box, Typography, CircularProgress } from "@mui/material";
 import dynamic from "next/dynamic";
 
 import { useVendors } from "@/hooks/useVendors";
-import PermissionGuard from "@/components/PermissionGuard";
+import PermissionGuard from "@/components/ui/permission/PermissionGuard";
 import VendorDialog from "@/components/ui/dialogs/VendorDialog";
 import VendorsActionBar from "@/components/ui/actions/VendorsActionBar";
 import VendorCard from "@/components/ui/cards/VendorCard";

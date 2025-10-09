@@ -12,7 +12,7 @@ import {
   Typography,
 } from "@mui/material";
 import { Settings, Security } from "@mui/icons-material";
-import PermissionGuard from "@/components/PermissionGuard";
+import PermissionGuard from "@/components/ui/permission/PermissionGuard";
 import Skeleton from "@mui/material/Skeleton";
 import { roleCardStyles, permissionColors } from "../../styles/RoleCard.style";
 

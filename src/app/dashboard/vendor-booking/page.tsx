@@ -6,7 +6,7 @@ import { Box, Dialog, DialogContent, Typography } from "@mui/material";
 import VendorBookingForm from "@/components/cab-booking/VendorBookingForm";
 import BookingDetailsDialog from "@/components/cab-booking/BookingDetailsDialog";
 import BookingCard from "@/components/cab-booking/BookingCard";
-import PermissionGuard from "@/components/PermissionGuard";
+import PermissionGuard from "@/components/ui/permission/PermissionGuard";
 import { useCabBooking } from "@/hooks/useCabBooking"; // for updateBookingFields only
 
 type Booking = any; // replace with your real Booking type

@@ -13,7 +13,7 @@ import {
 import { Email, Phone, TrendingUp, Edit, Delete } from "@mui/icons-material";
 import type { LeadDisplay as Lead } from "../../types/lead";
 import StatusChip, { getStatusColor } from "./StatusChip";
-import PermissionGuard from "../PermissionGuard";
+import PermissionGuard from "../ui/permission/PermissionGuard";
 
 // Style constants
 const GRADIENTS = {

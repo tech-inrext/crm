@@ -27,7 +27,7 @@ import dynamic from "next/dynamic";
 import { useLeads } from "@/hooks/useLeads";
 import { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
-import PermissionGuard from "@/components/PermissionGuard";
+import PermissionGuard from "@/components/ui/permission/PermissionGuard";
 import {
   getDefaultLeadFormData,
   transformAPILeadToForm,

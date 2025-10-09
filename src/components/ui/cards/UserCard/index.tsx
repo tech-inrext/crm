@@ -9,7 +9,7 @@ import {
   Stack,
 } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
-import PermissionGuard from "@/components/PermissionGuard";
+import PermissionGuard from "@/components/ui/permission/PermissionGuard";
 import { USERS_PERMISSION_MODULE } from "@/constants/users";
 
 interface UserCardProps {

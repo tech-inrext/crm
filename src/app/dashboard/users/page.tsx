@@ -15,7 +15,7 @@ import {
 import { Add, Edit } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 import { useUsers } from "@/hooks/useUsers";
-import PermissionGuard from "@/components/PermissionGuard";
+import PermissionGuard from "@/components/ui/permission/PermissionGuard";
 import UserDialog from "@/components/ui/dialogs/UserDialog";
 import UsersActionBar from "@/components/ui/actions/UsersActionBar";
 import UserCard from "@/components/ui/cards/UserCard";
