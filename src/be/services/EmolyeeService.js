@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import validator from "validator";
 import { sendNewEmployeeWelcomeEmail } from "@/lib/emails/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "@/lib/emails/managerNewReport";
+import { sendRoleChangeEmail } from "../../lib/emails/sendRoleChangeEmail";
 
 class EmployeeService extends Service {
   constructor() {
@@ -125,15 +126,60 @@ class EmployeeService extends Service {
     setIfPresent("fatherName", fatherName);
 
     try {
-      const updated = await Employee.findByIdAndUpdate(id, updateFields, {
-        new: true,
-      }).populate("roles");
-      if (!updated)
+      const existingEmployee = await Employee.findById(id).populate("roles");
+
+      if (!existingEmployee) {
         return res
           .status(404)
           .json({ success: false, error: "Employee not found" });
+      }
+
+      const oldRoles = existingEmployee.roles.map((r) => ({
+        id: r._id.toString(),
+        name: r.name,
+      }));
+
+      const updated = await Employee.findByIdAndUpdate(id, updateFields, {
+        new: true,
+      }).populate("roles");
+
+      if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
+        const newRoles = Array.isArray(updated.roles)
+          ? updated.roles.map((r) => ({ id: r._id.toString(), name: r.name }))
+          : [];
+
+        const oldSet = new Set(oldRoles.map((r) => r.id));
+        const newSet = new Set(newRoles.map((r) => r.id));
+
+        const addedRoles = newRoles
+          .filter((r) => !oldSet.has(r.id))
+          .map((r) => r.name);
+        const removedRoles = oldRoles
+          .filter((r) => !newSet.has(r.id))
+          .map((r) => r.name);
+
+        const rolesChanged = addedRoles.length > 0 || removedRoles.length > 0;
+
+        if (rolesChanged) {
+          const changedByName = req.employee?.name || "Unknown User";
+          const changedByEmail = req.employee?.email || "unknown@company.com";
+
+          await sendRoleChangeEmail({
+            adminEmail: "rahulmithu002@gmail.com",
+            changedByName,
+            changedByEmail,
+            changedEmployeeName: updated.name,
+            changedEmployeeEmail: updated.email,
+            newRole: updated.roles.map((r) => r.name).join(", "),
+            addedRoles,
+            removedRoles,
+          });
+        }
+      }
+
       return res.status(200).json({ success: true, data: updated });
     } catch (err) {
+      console.error("Error in updateEmployeeDetails:", err);
       return res.status(400).json({ success: false, error: err.message });
     }
   }
