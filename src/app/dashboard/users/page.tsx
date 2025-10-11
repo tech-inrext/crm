@@ -12,15 +12,16 @@ import {
   Button,
   TableContainer,
   Snackbar,
-} from "@mui/material";
-import Alert from "@mui/material/Alert";
-import { Add, Edit } from "@mui/icons-material";
+  Alert,
+  AddIcon,
+  EditIcon,
+} from "../../../components/ui/Component";
 import dynamic from "next/dynamic";
 import { useUsers } from "@/hooks/useUsers";
 import PermissionGuard from "@/components/PermissionGuard";
-import UserDialog from "@/components/ui/UserDialog";
-import UsersActionBar from "@/components/ui/UsersActionBar";
-import UserCard from "@/components/ui/UserCard";
+import UserDialog from "@/components/ui/dialog/UserDialog";
+import UsersActionBar from "@/components/ui/action/UsersActionBar";
+import UserCard from "@/components/ui/card/UserCard";
 import {
   GRADIENTS,
   COMMON_STYLES,
@@ -34,10 +35,10 @@ import {
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import { useDebounce } from "@/hooks/useDebounce";
 
-const TableMap = dynamic(() => import("@/components/ui/TableMap"), {
+const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
   ssr: false,
 });
-const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
+const Pagination = dynamic(() => import("@/components/ui/Navigation/Pagination"), {
   ssr: false,
 });
 
@@ -118,7 +119,7 @@ const Users: React.FC = () => {
                   lineHeight: 1,
                 }}
               >
-                <Edit fontSize="small" />
+                <EditIcon fontSize="small" />
               </Button>
             </PermissionGuard>
           ),
@@ -135,7 +136,7 @@ const Users: React.FC = () => {
 
     let joiningDate = safeForm.joiningDate || "";
     if (joiningDate) {
-      const dateObj = new Date(joiningDate);
+      const dateObj = new Date(joiningDate as string);
       if (!isNaN(dateObj.getTime())) {
         joiningDate = dateObj.toISOString().slice(0, 10);
       }
@@ -246,8 +247,7 @@ const Users: React.FC = () => {
       ) : (
         <Box sx={MODULE_STYLES.leads.tableWrapper}>
           <TableContainer
-            component={Paper}
-            elevation={8}
+            component={(props) => <Paper elevation={8} {...props} />}
             sx={{
               ...COMMON_STYLES.roundedPaper,
               ...MODULE_STYLES.leads.tableContainer,
@@ -302,7 +302,7 @@ const Users: React.FC = () => {
             "&:hover": { background: GRADIENTS.buttonHover },
           }}
         >
-          {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
+          {saving ? <CircularProgress size={24} color="inherit" /> : <AddIcon />}
         </Fab>
         <UserDialog
           open={open}

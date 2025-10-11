@@ -2,8 +2,6 @@
 
 import React from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { Box, Typography, Alert } from "@mui/material";
-import { Lock } from "@mui/icons-material";
 
 interface PermissionGuardProps {
   children: React.ReactNode;

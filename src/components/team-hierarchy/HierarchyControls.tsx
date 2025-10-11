@@ -8,13 +8,13 @@ import {
   IconButton,
   Typography,
   Box,
-} from "@mui/material";
+} from "@/components/ui/Component";
 import {
   People as PeopleIcon,
   Search as SearchIcon,
   Refresh as RefreshIcon,
   Clear as ClearIcon,
-} from "@mui/icons-material";
+} from "@/components/ui/Component";
 import { Employee } from "@/types/team-hierarchy";
 
 interface HierarchyControlsProps {
@@ -59,24 +59,33 @@ export const HierarchyControls: React.FC<HierarchyControlsProps> = ({
 
       <Autocomplete
         options={employees}
-        getOptionLabel={(opt) => opt.name || opt.employeeProfileId || ""}
+        getOptionLabel={(opt) => {
+          if (typeof opt === 'string') return opt;
+          return opt.name || opt.employeeProfileId || "";
+        }}
         sx={{ width: 280 }}
         value={selectedEmployee || null}
-        onChange={(_, val) => onManagerChange(val?._id || null)}
-        renderOption={(props, option) => (
-          <Box component="li" {...props} key={option._id}>
-            <Stack spacing={0.5}>
-              <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                {option.name || option.employeeProfileId}
-              </Typography>
-              {option.designation && (
-                <Typography variant="caption" sx={{ color: "text.secondary" }}>
-                  {option.designation}
+        onChange={(_, val) => {
+          if (typeof val === 'string' || Array.isArray(val)) return;
+          onManagerChange(val?._id || null);
+        }}
+        renderOption={(props, option) => {
+          const { key, ...otherProps } = props;
+          return (
+            <li key={option._id} {...otherProps}>
+              <Stack spacing={0.5}>
+                <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                  {option.name || option.employeeProfileId}
                 </Typography>
-              )}
-            </Stack>
-          </Box>
-        )}
+                {option.designation && (
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    {option.designation}
+                  </Typography>
+                )}
+              </Stack>
+            </li>
+          );
+        }}
         renderInput={(params) => (
           <TextField {...params} size="small" label="Select Manager" />
         )}

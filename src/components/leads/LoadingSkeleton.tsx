@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Box, Card, Stack, Skeleton } from "@mui/material";
+import { Box, Card, Stack, Skeleton } from "@/components/ui/Component";
 
 const LoadingSkeleton = memo(() => (
   <Box sx={{ mt: 2 }}>

@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Typography, TextField, Button } from "@mui/material";
+import { Box, Typography, TextField, Button } from "@/components/ui/Component";
 
 interface Props {
   open: boolean;

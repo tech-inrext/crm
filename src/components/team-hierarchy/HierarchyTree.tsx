@@ -1,12 +1,12 @@
 import React from "react";
-import { Box, Stack, Chip, Button, Divider } from "@mui/material";
+import { Box, Stack, Chip, Button, Divider } from "@/components/ui/Component";
 import {
   ExpandMore,
   ChevronRight as ChevronRightIcon,
   Person as PersonIcon,
   People as PeopleIcon,
   Search as SearchIcon,
-} from "@mui/icons-material";
+} from "@/components/ui/Component";
 import { Employee } from "@/types/team-hierarchy";
 import { HierarchyNode } from "./HierarchyNode";
 

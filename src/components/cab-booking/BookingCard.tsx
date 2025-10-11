@@ -9,21 +9,21 @@ import {
   Typography,
   TextField,
   Button,
-} from "@mui/material";
-import ShareIcon from "@mui/icons-material/Share";
+  ShareIcon,
+} from "@/components/ui/Component";
 import {
   Visibility,
   LocationOn,
   ArrowForward,
   Event,
   AssignmentInd,
-} from "@mui/icons-material";
+} from "@/components/ui/Component";
 import AssignVendorDialog from "./AssignVendorDialog";
 import BookingStatus from "./BookingStatus";
 import ShareBookingDialog from "./ShareBookingDialog";
 import PermissionGuard from "@/components/PermissionGuard";
-import CardComponent from "@/components/ui/Card";
-import Avatar from "@/components/ui/Avatar";
+import CardComponent from "@/components/ui/card/Card";
+import Avatar from "@/components/ui/Component/Avatar";
 import MODULE_STYLES from "@/styles/moduleStyles";
 import { Booking } from "@/types/cab-booking";
 import {
@@ -77,10 +77,11 @@ const BookingCard: React.FC<BookingCardProps> = ({
   // ...existing code...
 
   const handleStatusChange = async (newStatus: string) => {
-    setStatus(newStatus);
+    const validStatus = newStatus as Booking["status"];
+    setStatus(validStatus);
     setUpdating(true);
     try {
-      await updateBookingStatus(booking._id, newStatus);
+      await updateBookingStatus(booking._id, validStatus, undefined);
     } finally {
       setUpdating(false);
     }
@@ -90,9 +91,9 @@ const BookingCard: React.FC<BookingCardProps> = ({
   const handleAssignVendor = async (vendorId: string) => {
     setUpdating(true);
     try {
-      // Call backend to assign vendor and set status to 'active'
-      await updateBookingStatus(booking._id, "active", vendorId);
-      setStatus("active");
+      // Call backend to assign vendor and set status to 'approved'
+      await updateBookingStatus(booking._id, "approved", vendorId);
+      setStatus("approved");
       setAssignOpen(false);
     } finally {
       setUpdating(false);

@@ -1,5 +1,5 @@
 import React from "react";
-import { TableCell, TableRow, Chip } from "@mui/material";
+import { TableCell, TableRow, Chip } from "@/components/ui/";
 import type { LeadDisplay as Lead } from "../../types/lead";
 
 interface LeadsTableRowProps {

@@ -12,7 +12,7 @@ import {
   Tooltip,
   Collapse,
   alpha,
-} from "@mui/material";
+} from "@/components/ui/Component";
 import {
   ExpandLess,
   ChevronRight as ChevronRightIcon,
@@ -20,7 +20,7 @@ import {
   Work as WorkIcon,
   LocationOn as LocationOnIcon,
   Person as PersonIcon,
-} from "@mui/icons-material";
+} from "@/components/ui/Component";
 import { Employee } from "@/types/team-hierarchy";
 import { HIERARCHY_COLORS } from "@/constants/team-hierarchy";
 import { getNodeColor } from "@/utils/hierarchy.utils";

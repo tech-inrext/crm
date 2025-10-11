@@ -16,25 +16,25 @@ import {
   Snackbar,
   useTheme,
   useMediaQuery,
-} from "@mui/material";
-import Alert from "@mui/material/Alert";
+} from "@/components/ui/Component";
+import Alert from "@/components/ui/Component/Alert";
 import {
   Add,
   Edit as EditIcon,
   Feedback as FeedbackIcon,
-} from "@mui/icons-material";
-import Badge from "@mui/material/Badge";
+  Badge,
+  PermissionGuard,
+} from "@/components/ui/Component";
 import { useDebounce } from "@/hooks/useDebounce";
 import dynamic from "next/dynamic";
 import { useLeads } from "@/hooks/useLeads";
 import { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
-import PermissionGuard from "@/components/PermissionGuard";
 import {
   getDefaultLeadFormData,
   transformAPILeadToForm,
 } from "@/utils/leadUtils";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/Navigation/Pagination";
 import { leadsTableHeader } from "@/components/leads/LeadsTableHeaderConfig";
 
 // Lazy Load Components
@@ -255,14 +255,14 @@ const Leads: React.FC = () => {
         </Box>
       ) : (
         <Box sx={MODULE_STYLES.leads.tableWrapper}>
-          <TableContainer
-            component={Paper}
+          <Paper
             elevation={8}
             sx={{
               ...COMMON_STYLES.roundedPaper,
               ...MODULE_STYLES.leads.tableContainer,
             }}
           >
+            <TableContainer>
             <Table
               stickyHeader
               size={MODULE_STYLES.common.getResponsiveTableSize()}
@@ -292,6 +292,7 @@ const Leads: React.FC = () => {
               </TableBody>
             </Table>
           </TableContainer>
+          </Paper>
 
           {/* Pagination outside the scrollable table */}
           <Box sx={MODULE_STYLES.leads.paginationWrapper}>
