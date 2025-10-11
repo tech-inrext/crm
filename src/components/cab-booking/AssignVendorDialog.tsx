@@ -16,9 +16,9 @@ import {
   Divider,
   TextField,
   InputAdornment,
-} from "@mui/material";
-import SearchIcon from "@mui/icons-material/Search";
-import AssignmentInd from "@mui/icons-material/AssignmentInd";
+  SearchIcon,
+  AssignmentInd,
+} from "@/components/ui/Component";
 
 interface Vendor {
   _id: string;

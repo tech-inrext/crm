@@ -7,14 +7,14 @@ import {
   Typography,
   CircularProgress,
   Button,
-} from "@mui/material";
-import { Dialog } from "@mui/material";
-import Pagination from "@/components/ui/Pagination";
+} from "@/components/ui/Component";
+import { Dialog } from "@/components/ui/Component";
+import Pagination from "@/components/ui/Navigation/Pagination";
 import PermissionGuard from "@/components/PermissionGuard";
 import MouList from "@/components/mou/MouList";
 import { useMou } from "@/hooks/useMou";
 import axios from "axios";
-import { Snackbar, Alert } from "@mui/material";
+import { Snackbar, Alert } from "@/components/ui/Component";
 
 const MOUPage: React.FC = () => {
   const {

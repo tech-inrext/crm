@@ -10,7 +10,7 @@ import {
   TextField,
   CircularProgress,
   Typography,
-} from "@mui/material";
+} from "@/components/ui/Component";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 

@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, TextField, Typography, MenuItem } from "@mui/material";
+import { Box, TextField, Typography, MenuItem } from "@/components/ui/Component";
 import { Field, FieldProps } from "formik";
 
 const propertyTypeOptions = [

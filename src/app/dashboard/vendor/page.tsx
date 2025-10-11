@@ -1,15 +1,15 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Box, Typography, CircularProgress, Snackbar } from "@mui/material";
-import Alert from "@mui/material/Alert";
+import { Box, Typography, CircularProgress, Snackbar } from "@/components/ui/Component";
+import Alert from "@/components/ui/Component/Alert";
 import dynamic from "next/dynamic";
 
 import { useVendors } from "@/hooks/useVendors";
 import PermissionGuard from "@/components/PermissionGuard";
-import VendorDialog from "@/components/ui/VendorDialog";
-import VendorsActionBar from "@/components/ui/VendorsActionBar";
-import VendorCard from "@/components/ui/VendorCard";
+import VendorDialog from "@/components/ui/dialog/VendorDialog"
+import VendorsActionBar from "@/components/ui/action/VendorsActionBar";
+import VendorCard from "@/components/ui/card/VendorCard";
 
 import {
   DEFAULT_VENDOR_FORM,
@@ -20,7 +20,7 @@ import {
 import { useDebounce } from "@/hooks/useDebounce";
 
 // Your Pagination component expects: page, pageSize, total, onPageChange, onPageSizeChange, pageSizeOptions
-const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
+const Pagination = dynamic(() => import("@/components/ui/Navigation/Pagination"), {
   ssr: false,
 });
 

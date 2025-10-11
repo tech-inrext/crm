@@ -5,8 +5,8 @@ import {
   MenuItem,
   Typography,
   Autocomplete,
-  Popper,
-} from "@mui/material";
+} from "@/components/ui/Component";
+import { Popper } from "@mui/material";
 import { Field, FieldProps } from "formik";
 import { FIELD_LABELS } from "@/constants/users";
 
@@ -65,10 +65,11 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
                 value={selected}
                 onChange={(_, value) => {
                   // prefer form.setFieldValue when available, fallback to prop
+                  const selectedValue = value && typeof value === 'object' && '_id' in value ? value._id : "";
                   if (form && typeof form.setFieldValue === "function") {
-                    form.setFieldValue(field.name, value ? value._id : "");
+                    form.setFieldValue(field.name, selectedValue);
                   } else {
-                    setFieldValue(field.name, value ? value._id : "");
+                    setFieldValue(field.name, selectedValue);
                   }
                 }}
                 isOptionEqualToValue={(option, value) =>

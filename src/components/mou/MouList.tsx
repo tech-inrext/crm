@@ -15,8 +15,8 @@ import {
   DialogActions,
   Avatar,
   Divider,
-} from "@mui/material";
-import { Check } from "@mui/icons-material";
+  Check,
+} from "@/components/ui/Component";
 
 interface MouListProps {
   items: any[];

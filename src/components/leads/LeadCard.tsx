@@ -9,8 +9,12 @@ import {
   Divider,
   IconButton,
   Tooltip,
-} from "@mui/material";
-import { Email, Phone, TrendingUp, Edit, Delete } from "@mui/icons-material";
+  Email,
+  Phone,
+  TrendingUp,
+  Edit,
+  Delete,
+} from "@/components/ui/Component";
 import type { LeadDisplay as Lead } from "../../types/lead";
 import StatusChip, { getStatusColor } from "./StatusChip";
 import PermissionGuard from "../PermissionGuard";

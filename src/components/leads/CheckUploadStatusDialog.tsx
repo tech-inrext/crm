@@ -15,11 +15,11 @@ import {
   Box,
   Skeleton,
   Alert,
-} from "@mui/material";
-import CloseIcon from "@mui/icons-material/Close";
-import RefreshIcon from "@mui/icons-material/Refresh";
-import DownloadIcon from "@mui/icons-material/Download";
-import Pagination from "../ui/Pagination"; // Pagination component
+  CloseIcon,
+  RefreshIcon,
+  DownloadIcon,
+} from "@/components/ui/Component";
+import Pagination from "../ui/Navigation/Pagination"; // Pagination component
 
 interface Upload {
   _id: string;

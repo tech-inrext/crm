@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, MenuItem, TextField, Typography } from "@mui/material";
+import { Box, MenuItem, TextField, Typography } from "@/components/ui/Component";
 import { Field, FieldProps, useFormikContext } from "formik";
 import { FIELD_LABELS, GENDER_OPTIONS } from "@/constants/users";
 

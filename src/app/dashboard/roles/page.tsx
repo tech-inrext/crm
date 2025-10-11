@@ -9,18 +9,18 @@ import {
   Paper,
   Typography,
   CircularProgress,
-} from "@mui/material";
-import { Add } from "@mui/icons-material";
-import RoleCard from "@/components/ui/RoleCard";
+  AddIcon
+} from "@/components/ui/Component";
+ import RoleCard from "@/components/ui/card/RoleCard";
 import { useRoles } from "@/hooks/useRoles";
 import { useDebounce } from "@/hooks/useDebounce"; // 👈 Add this
 import { ROLE_PERMISSIONS, GRADIENTS } from "@/constants/leads";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import PermissionGuard from "@/components/PermissionGuard";
-import AddRoleDialog from "@/components/ui/AddRoleDialog";
-import RolePermissionsDialog from "@/components/ui/RolePermissionsDialog";
-import RolesActionBar from "@/components/ui/RolesActionBar";
-import Pagination from "@/components/ui/Pagination";
+import AddRoleDialog from "@/components/ui/dialog/AddRoleDialog";
+import RolePermissionsDialog from "@/components/ui/dialog/RolePermissionsDialog";
+import RolesActionBar from "@/components/ui/action/RolesActionBar";
+import Pagination from "@/components/ui/Navigation/Pagination";
 import axios from "axios";
 import { transformToAPIRole } from "@/utils/leadUtils";
 
@@ -233,7 +233,7 @@ const Roles: React.FC = () => {
             "&:hover": { background: GRADIENTS.buttonHover },
           }}
         >
-          <Add />
+          <AddIcon />
         </Fab>
       </PermissionGuard>
 

@@ -6,9 +6,9 @@ import {
   Snackbar,
   useMediaQuery,
   useTheme,
-} from "@mui/material";
-import UploadFile from "@mui/icons-material/UploadFile";
-import Alert from "@mui/material/Alert";
+  UploadFile,
+  Alert,
+} from "@/components/ui/Component";
 
 const BulkUpload = ({ loadLeads }) => {
   const theme = useTheme();

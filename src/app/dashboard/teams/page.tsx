@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Box, Paper, Typography } from "@mui/material";
+import { Box, Paper, Typography } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useTeamHierarchy } from "@/hooks/useTeamHierarchy";

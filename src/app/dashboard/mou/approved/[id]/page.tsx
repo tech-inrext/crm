@@ -7,7 +7,7 @@ import {
   Typography,
   Button,
   CircularProgress,
-} from "@mui/material";
+} from "@/components/ui/Component";
 import axios from "axios";
 
 const ApprovedMouPage: React.FC = () => {

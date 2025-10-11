@@ -6,7 +6,7 @@ import {
   DialogActions,
   Button,
   CircularProgress,
-} from "@mui/material";
+} from "@/components/ui/Component";
 import { Formik, Form } from "formik";
 import axios from "axios";
 import {
