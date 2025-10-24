@@ -17,25 +17,28 @@ const mapFileType = (fileType) => {
 
 // Helper function to extract numeric value from price string
 const extractNumericPrice = (priceString) => {
-  if (!priceString || priceString === 'Contact for price') return Infinity;
+  if (!priceString || priceString === 'Contact for price') return null;
   
   // Remove currency symbols, commas, and non-numeric characters except decimal point
   const numericString = priceString.replace(/[^\d.]/g, '');
   const price = parseFloat(numericString);
   
-  return isNaN(price) ? Infinity : price;
+  return isNaN(price) ? null : price;
 };
 
-// Helper function to find minimum price from sub-properties
-const findMinimumPriceFromSubProperties = (subPropertiesData) => {
-  let minPrice = Infinity;
+// Helper function to find minimum and maximum price from sub-properties
+const findPriceRangeFromSubProperties = (subPropertiesData) => {
+  let minPrice = null;
+  let maxPrice = null;
+  
+  const allPrices = [];
   
   // Check residential properties
   if (subPropertiesData.residentialProperties && subPropertiesData.residentialProperties.length > 0) {
     subPropertiesData.residentialProperties.forEach(prop => {
       if (prop.price && prop.price !== 'Contact for price') {
         const price = extractNumericPrice(prop.price);
-        if (price < minPrice) minPrice = price;
+        if (price !== null) allPrices.push(price);
       }
     });
   }
@@ -45,7 +48,7 @@ const findMinimumPriceFromSubProperties = (subPropertiesData) => {
     subPropertiesData.commercialProperties.forEach(prop => {
       if (prop.price && prop.price !== 'Contact for price') {
         const price = extractNumericPrice(prop.price);
-        if (price < minPrice) minPrice = price;
+        if (price !== null) allPrices.push(price);
       }
     });
   }
@@ -55,18 +58,26 @@ const findMinimumPriceFromSubProperties = (subPropertiesData) => {
     subPropertiesData.plotProperties.forEach(prop => {
       if (prop.price && prop.price !== 'Contact for price') {
         const price = extractNumericPrice(prop.price);
-        if (price < minPrice) minPrice = price;
+        if (price !== null) allPrices.push(price);
       }
     });
   }
   
-  return minPrice !== Infinity ? minPrice : null;
+  if (allPrices.length > 0) {
+    minPrice = Math.min(...allPrices);
+    maxPrice = Math.max(...allPrices);
+  }
+  
+  return { minPrice, maxPrice };
 };
 
-// Format price for display
-const formatPrice = (price) => {
-  if (!price || price === Infinity) return 'Contact for price';
-  return `₹${price.toLocaleString('en-IN')}`;
+// Format price range for display
+const formatPriceRange = (minPrice, maxPrice) => {
+  if (!minPrice && !maxPrice) return 'Contact for price';
+  if (minPrice && !maxPrice) return `₹${minPrice.toLocaleString('en-IN')}`;
+  if (!minPrice && maxPrice) return `₹${maxPrice.toLocaleString('en-IN')}`;
+  if (minPrice === maxPrice) return `₹${minPrice.toLocaleString('en-IN')}`;
+  return `₹${minPrice.toLocaleString('en-IN')} - ₹${maxPrice.toLocaleString('en-IN')}`;
 };
 
 // Create a new property with automatic hierarchy management
@@ -115,268 +126,6 @@ const createProperty = async (req, res) => {
 };
 
 // Create single property
-// const createSingleProperty = async (req, res) => {
-//   const { propertyType, projectName, builderName, location, description, ...otherData } = req.body;
-//   let finalData = { ...req.body };
-
-//   try {
-//     // Convert propertyType to string if it's an array with one element
-//     if (Array.isArray(propertyType)) {
-//       finalData.propertyType = propertyType[0];
-//     }
-
-//     // ✅ Extract and map nested properties data to main fields
-//     if (finalData.propertyType === 'residential' && finalData.residentialProperties && finalData.residentialProperties.length > 0) {
-//       const residentialData = finalData.residentialProperties[0];
-//       finalData = {
-//         ...finalData,
-//         propertyName: residentialData.propertyName,
-//         propertyDescription: residentialData.propertyDescription,
-//         // ✅ Auto-inherit price from parent if not provided
-//         price: residentialData.price || finalData.price || 'Contact for price',
-//         paymentPlan: residentialData.paymentPlan || finalData.paymentPlan,
-//         bedrooms: residentialData.bedrooms,
-//         bathrooms: residentialData.bathrooms,
-//         toilet: residentialData.toilet,
-//         balcony: residentialData.balcony,
-//         carpetArea: residentialData.carpetArea,
-//         builtUpArea: residentialData.builtUpArea,
-//         minSize: residentialData.minSize,
-//         maxSize: residentialData.maxSize,
-//         sizeUnit: residentialData.sizeUnit,
-//         propertyImages: residentialData.propertyImages || [],
-//         floorPlans: residentialData.floorPlans || [],
-//         amenities: residentialData.amenities || finalData.amenities || []
-//       };
-      
-//       // ✅ Remove plot/commercial specific fields for residential
-//       delete finalData.ownershipType;
-//       delete finalData.landType;
-//       delete finalData.approvedBy;
-//       delete finalData.boundaryWall;
-//       delete finalData.residentialProperties;
-//     }
-//     else if (finalData.propertyType === 'commercial' && finalData.commercialProperties && finalData.commercialProperties.length > 0) {
-//       const commercialData = finalData.commercialProperties[0];
-//       finalData = {
-//         ...finalData,
-//         propertyName: commercialData.propertyName,
-//         propertyDescription: commercialData.propertyDescription,
-//         // ✅ Auto-inherit price from parent if not provided
-//         price: commercialData.price || finalData.price || 'Contact for price',
-//         paymentPlan: commercialData.paymentPlan || finalData.paymentPlan,
-//         carpetArea: commercialData.carpetArea,
-//         builtUpArea: commercialData.builtUpArea,
-//         minSize: commercialData.minSize,
-//         maxSize: commercialData.maxSize,
-//         sizeUnit: commercialData.sizeUnit,
-//         propertyImages: commercialData.propertyImages || [],
-//         floorPlans: commercialData.floorPlans || [],
-//         amenities: commercialData.amenities || finalData.amenities || []
-//       };
-      
-//       // ✅ Remove residential/plot specific fields for commercial
-//       delete finalData.bedrooms;
-//       delete finalData.bathrooms;
-//       delete finalData.toilet;
-//       delete finalData.balcony;
-//       delete finalData.ownershipType;
-//       delete finalData.landType;
-//       delete finalData.approvedBy;
-//       delete finalData.boundaryWall;
-//       delete finalData.commercialProperties;
-//     }
-//     else if (finalData.propertyType === 'plot' && finalData.plotProperties && finalData.plotProperties.length > 0) {
-//       const plotData = finalData.plotProperties[0];
-//       finalData = {
-//         ...finalData,
-//         propertyName: plotData.propertyName,
-//         propertyDescription: plotData.propertyDescription,
-//         // ✅ Auto-inherit price from parent if not provided
-//         price: plotData.price || finalData.price || 'Contact for price',
-//         paymentPlan: plotData.paymentPlan || finalData.paymentPlan,
-//         ownershipType: plotData.ownershipType,
-//         landType: plotData.landType,
-//         approvedBy: plotData.approvedBy,
-//         boundaryWall: plotData.boundaryWall,
-//         minSize: plotData.minSize,
-//         maxSize: plotData.maxSize,
-//         sizeUnit: plotData.sizeUnit,
-//         propertyImages: plotData.propertyImages || [],
-//         floorPlans: plotData.floorPlans || [],
-//         amenities: plotData.amenities || finalData.amenities || []
-//       };
-      
-//       // ✅ Remove residential/commercial specific fields for plot
-//       delete finalData.bedrooms;
-//       delete finalData.bathrooms;
-//       delete finalData.toilet;
-//       delete finalData.balcony;
-//       delete finalData.carpetArea;
-//       delete finalData.builtUpArea;
-//       delete finalData.plotProperties;
-//     }
-//     else if (finalData.propertyType === 'project') {
-//       // ✅ For project type, remove all property-specific fields
-//       delete finalData.propertyImages;
-//       delete finalData.floorPlans;
-//       delete finalData.bedrooms;
-//       delete finalData.bathrooms;
-//       delete finalData.toilet;
-//       delete finalData.balcony;
-//       delete finalData.carpetArea;
-//       delete finalData.builtUpArea;
-//       delete finalData.ownershipType;
-//       delete finalData.landType;
-//       delete finalData.approvedBy;
-//       delete finalData.boundaryWall;
-//       delete finalData.residentialProperties;
-//       delete finalData.commercialProperties;
-//       delete finalData.plotProperties;
-      
-//       // Ensure project has basic property fields
-//       finalData.propertyName = finalData.propertyName || `${finalData.projectName} Project`;
-//       finalData.propertyDescription = finalData.propertyDescription || finalData.description;
-//     }
-
-//     // ✅ If creating residential, commercial, or plot WITHOUT parentId, auto-create main project
-//     if (finalData.propertyType !== 'project' && !finalData.parentId) {
-//       // Check if a main project already exists with same details
-//       const existingMainProject = await Property.findOne({
-//         projectName: projectName.trim(),
-//         builderName: builderName.trim(),
-//         location: location.trim(),
-//         propertyType: 'project',
-//         isActive: true,
-//         parentId: null
-//       });
-
-//       if (existingMainProject) {
-//         // Use existing main project as parent
-//         finalData.parentId = existingMainProject._id;
-        
-//         // ✅ NEW: Auto-inherit price from existing parent project for sub-properties
-//         if ((!finalData.price || finalData.price === 'Contact for price') && existingMainProject.price && existingMainProject.price !== 'Contact for price') {
-//           finalData.price = existingMainProject.price;
-//           console.log(`Auto-inherited price from existing parent: ${existingMainProject.price}`);
-//         }
-//       } else {
-//         // Create a new main project first
-//         const mainProjectData = {
-//           projectName: projectName.trim(),
-//           builderName: builderName.trim(),
-//           location: location.trim(),
-//           description: description || `Main project for ${projectName}`,
-//           propertyType: 'project',
-//           propertyName: `${projectName.trim()} Project`,
-//           price: finalData.price || 'Contact for price', // Use provided price
-//           paymentPlan: finalData.paymentPlan || 'Flexible',
-//           status: finalData.status || ['Under Construction'],
-//           amenities: finalData.amenities || [],
-//           nearby: finalData.nearby || [],
-//           projectHighlights: finalData.projectHighlights || [],
-//           mapLocation: finalData.mapLocation || { lat: 0, lng: 0 },
-//           images: finalData.images || [],
-//           brochureUrls: finalData.brochureUrls || [],
-//           creatives: finalData.creatives || [],
-//           videos: finalData.videos || [],
-//           createdBy: req.employee._id,
-//           parentId: null,
-//           hierarchyLevel: 0
-//         };
-
-//         const mainProject = new Property(mainProjectData);
-//         await mainProject.save();
-        
-//         // Use the new main project as parent
-//         finalData.parentId = mainProject._id;
-        
-//         console.log(`Auto-created main project: ${mainProject._id}`);
-//       }
-//     }
-
-//     // ✅ Validate parentId if provided AND auto-inherit price from parent
-//     if (finalData.parentId) {
-//       const parentProperty = await Property.findOne({
-//         _id: finalData.parentId,
-//         isActive: true
-//       });
-      
-//       if (!parentProperty) {
-//         return res.status(400).json({
-//           success: false,
-//           message: "Parent property not found or inactive"
-//         });
-//       }
-
-//       // Ensure parent is a main project
-//       if (parentProperty.propertyType !== 'project') {
-//         return res.status(400).json({
-//           success: false,
-//           message: "Sub-properties can only be created under main projects"
-//         });
-//       }
-
-//       // ✅ NEW: Auto-inherit price from parent project if not explicitly set
-//       if ((!finalData.price || finalData.price === 'Contact for price') && parentProperty.price && parentProperty.price !== 'Contact for price') {
-//         finalData.price = parentProperty.price;
-//         console.log(`Auto-inherited price from parent project: ${parentProperty.price}`);
-//       }
-//     }
-
-//     // ✅ Create the property with cleaned data
-//     const newProperty = new Property({
-//       ...finalData,
-//       floorPlans: finalData.floorPlans ? finalData.floorPlans.map(plan => ({
-//         ...plan,
-//         type: mapFileType(plan.type)
-//       })) : [],
-//       createdBy: req.employee._id,
-//       hierarchyLevel: finalData.parentId ? 1 : 0
-//     });
-
-//     await newProperty.save();
-    
-//     // ✅ Populate createdBy and parent details for response
-//     await newProperty.populate("createdBy", "name email");
-//     if (newProperty.parentId) {
-//       await newProperty.populate("parentId", "projectName builderName location price");
-//     }
-
-//     return res.status(201).json({
-//       success: true,
-//       data: newProperty,
-//       message: finalData.parentId 
-//         ? `${finalData.propertyType} property created successfully under main project` 
-//         : "Main project created successfully"
-//     });
-
-//   } catch (error) {
-//     console.error("Error in createSingleProperty:", error);
-    
-//     if (error.name === 'ValidationError') {
-//       const errors = Object.values(error.errors).map(err => err.message);
-//       return res.status(400).json({
-//         success: false,
-//         message: "Validation Error",
-//         errors: errors
-//       });
-//     }
-    
-//     if (error.code === 11000) {
-//       return res.status(400).json({
-//         success: false,
-//         message: "Property with similar details already exists"
-//       });
-//     }
-
-//     return res.status(500).json({
-//       success: false,
-//       message: "Error creating property: " + error.message
-//     });
-//   }
-// };
-
 const createSingleProperty = async (req, res) => {
   const { propertyType, projectName, builderName, location, description, ...otherData } = req.body;
   let finalData = { ...req.body };
@@ -411,6 +160,13 @@ const createSingleProperty = async (req, res) => {
         amenities: residentialData.amenities || finalData.amenities || []
       };
       
+      // ✅ Set minPrice and maxPrice for individual properties
+      const numericPrice = extractNumericPrice(finalData.price);
+      if (numericPrice !== null) {
+        finalData.minPrice = numericPrice;
+        finalData.maxPrice = numericPrice;
+      }
+      
       // ✅ Remove plot/commercial specific fields for residential
       delete finalData.ownershipType;
       delete finalData.landType;
@@ -436,6 +192,13 @@ const createSingleProperty = async (req, res) => {
         floorPlans: commercialData.floorPlans || [],
         amenities: commercialData.amenities || finalData.amenities || []
       };
+      
+      // ✅ Set minPrice and maxPrice for individual properties
+      const numericPrice = extractNumericPrice(finalData.price);
+      if (numericPrice !== null) {
+        finalData.minPrice = numericPrice;
+        finalData.maxPrice = numericPrice;
+      }
       
       // ✅ Remove residential/plot specific fields for commercial
       delete finalData.bedrooms;
@@ -468,6 +231,13 @@ const createSingleProperty = async (req, res) => {
         floorPlans: plotData.floorPlans || [],
         amenities: plotData.amenities || finalData.amenities || []
       };
+      
+      // ✅ Set minPrice and maxPrice for individual properties
+      const numericPrice = extractNumericPrice(finalData.price);
+      if (numericPrice !== null) {
+        finalData.minPrice = numericPrice;
+        finalData.maxPrice = numericPrice;
+      }
       
       // ✅ Remove residential/commercial specific fields for plot
       delete finalData.bedrooms;
@@ -517,16 +287,23 @@ const createSingleProperty = async (req, res) => {
         // Use existing main project as parent
         finalData.parentId = existingMainProject._id;
         
-        // ✅ NEW: Auto-inherit price from existing parent project for sub-properties
+        // Auto-inherit price from existing parent project for sub-properties
         if ((!finalData.price || finalData.price === 'Contact for price') && existingMainProject.price && existingMainProject.price !== 'Contact for price') {
           finalData.price = existingMainProject.price;
           console.log(`Auto-inherited price from existing parent: ${existingMainProject.price}`);
         }
+        
+        // ✅ Update existing main project's price range
+        await updateMainProjectPriceRange(existingMainProject._id);
+        
       } else {
         // Generate unique slug for main project
         const slug = await Property.generateUniqueSlug(projectName.trim(), builderName.trim());
         
-        // Create a new main project first
+        // Create a new main project first with current property's price
+        const numericPrice = extractNumericPrice(finalData.price);
+        const mainProjectPrice = numericPrice !== null ? `₹${numericPrice.toLocaleString('en-IN')}` : 'Contact for price';
+        
         const mainProjectData = {
           projectName: projectName.trim(),
           builderName: builderName.trim(),
@@ -534,7 +311,9 @@ const createSingleProperty = async (req, res) => {
           description: description || `Main project for ${projectName}`,
           propertyType: 'project',
           propertyName: `${projectName.trim()} Project`,
-          price: finalData.price || 'Contact for price', // Use provided price
+          price: mainProjectPrice,
+          minPrice: numericPrice,
+          maxPrice: numericPrice,
           paymentPlan: finalData.paymentPlan || 'Flexible',
           status: finalData.status || ['Under Construction'],
           amenities: finalData.amenities || [],
@@ -548,7 +327,7 @@ const createSingleProperty = async (req, res) => {
           createdBy: req.employee._id,
           parentId: null,
           hierarchyLevel: 0,
-          slug: slug // Add the generated slug
+          slug: slug
         };
 
         const mainProject = new Property(mainProjectData);
@@ -583,7 +362,7 @@ const createSingleProperty = async (req, res) => {
         });
       }
 
-      // ✅ NEW: Auto-inherit price from parent project if not explicitly set
+      // Auto-inherit price from parent project if not explicitly set
       if ((!finalData.price || finalData.price === 'Contact for price') && parentProperty.price && parentProperty.price !== 'Contact for price') {
         finalData.price = parentProperty.price;
         console.log(`Auto-inherited price from parent project: ${parentProperty.price}`);
@@ -612,10 +391,15 @@ const createSingleProperty = async (req, res) => {
 
     await newProperty.save();
     
+    // ✅ If this is a sub-property, update the main project's price range
+    if (finalData.parentId) {
+      await updateMainProjectPriceRange(finalData.parentId);
+    }
+    
     // ✅ Populate createdBy and parent details for response
     await newProperty.populate("createdBy", "name email");
     if (newProperty.parentId) {
-      await newProperty.populate("parentId", "projectName builderName location price");
+      await newProperty.populate("parentId", "projectName builderName location price minPrice maxPrice");
     }
 
     return res.status(201).json({
@@ -658,18 +442,51 @@ const createSingleProperty = async (req, res) => {
   }
 };
 
+// Function to update main project price range based on sub-properties
+const updateMainProjectPriceRange = async (mainProjectId) => {
+  try {
+    const subProperties = await Property.find({
+      parentId: mainProjectId,
+      isActive: true
+    });
+    
+    const validPrices = subProperties
+      .map(prop => extractNumericPrice(prop.price))
+      .filter(price => price !== null);
+    
+    if (validPrices.length > 0) {
+      const minPrice = Math.min(...validPrices);
+      const maxPrice = Math.max(...validPrices);
+      const priceRange = formatPriceRange(minPrice, maxPrice);
+      
+      await Property.findByIdAndUpdate(mainProjectId, {
+        price: priceRange,
+        minPrice: minPrice,
+        maxPrice: maxPrice
+      });
+      
+      console.log(`Updated main project ${mainProjectId} price range: ${minPrice} - ${maxPrice}`);
+    }
+  } catch (error) {
+    console.error("Error updating main project price range:", error);
+  }
+};
+
 // Create multiple properties (main project + sub-properties)
 const createMultipleProperties = async (req, res) => {
   const { propertyType, projectName, builderName, location, description, ...otherData } = req.body;
   
-  // ✅ NEW: Calculate minimum price from all sub-properties before creating main project
-  const minPrice = findMinimumPriceFromSubProperties(otherData);
-  const mainProjectPrice = minPrice !== null ? formatPrice(minPrice) : (otherData.price || 'Contact for price');
+  // ✅ NEW: Calculate price range from all sub-properties before creating main project
+  const priceRange = findPriceRangeFromSubProperties(otherData);
+  const mainProjectPrice = formatPriceRange(priceRange.minPrice, priceRange.maxPrice);
 
-  console.log(`Calculated minimum price from sub-properties: ${minPrice}`);
+  console.log(`Calculated price range from sub-properties: ${priceRange.minPrice} - ${priceRange.maxPrice}`);
   console.log(`Main project price will be: ${mainProjectPrice}`);
 
-  // Create main project first with minimum price from sub-properties
+  // Generate unique slug for main project
+  const slug = await Property.generateUniqueSlug(projectName.trim(), builderName.trim());
+
+  // Create main project first with price range from sub-properties
   const mainProjectData = {
     projectName: projectName.trim(),
     builderName: builderName.trim(),
@@ -677,7 +494,9 @@ const createMultipleProperties = async (req, res) => {
     description: description || `Main project for ${projectName}`,
     propertyType: 'project',
     propertyName: `${projectName.trim()} Project`,
-    price: mainProjectPrice, // ✅ Set to minimum price from sub-properties
+    price: mainProjectPrice, // ✅ Set to price range from sub-properties
+    minPrice: priceRange.minPrice, // ✅ Store min price
+    maxPrice: priceRange.maxPrice, // ✅ Store max price
     paymentPlan: otherData.paymentPlan || 'Flexible',
     status: otherData.status || ['Under Construction'],
     amenities: otherData.amenities || [],
@@ -688,7 +507,8 @@ const createMultipleProperties = async (req, res) => {
     brochureUrls: otherData.brochureUrls || [],
     createdBy: req.employee._id,
     parentId: null,
-    hierarchyLevel: 0
+    hierarchyLevel: 0,
+    slug: slug
   };
 
   const mainProject = new Property(mainProjectData);
@@ -714,6 +534,8 @@ const createMultipleProperties = async (req, res) => {
       subPropertyPrice = subPropertySpecificData.price || mainProjectPrice;
     }
 
+    const numericPrice = extractNumericPrice(subPropertyPrice);
+
     const subPropertyData = {
       projectName: projectName.trim(),
       builderName: builderName.trim(),
@@ -723,6 +545,8 @@ const createMultipleProperties = async (req, res) => {
       propertyName: subPropertySpecificData.propertyName || `${subType} Unit`,
       // ✅ Use specific price if provided, otherwise use main project price
       price: subPropertyPrice,
+      minPrice: numericPrice,
+      maxPrice: numericPrice,
       paymentPlan: subPropertySpecificData.paymentPlan || otherData.paymentPlan || 'Flexible',
       status: otherData.status || ['Under Construction'],
       amenities: subPropertySpecificData.amenities || otherData.amenities || [],
@@ -771,7 +595,7 @@ const createMultipleProperties = async (req, res) => {
 
     const subProperty = new Property(subPropertyData);
     await subProperty.save();
-    await subProperty.populate("parentId", "projectName builderName location price");
+    await subProperty.populate("parentId", "projectName builderName location price minPrice maxPrice");
     createdSubProperties.push(subProperty);
   }
 
@@ -784,7 +608,7 @@ const createMultipleProperties = async (req, res) => {
       mainProject,
       subProperties: createdSubProperties
     },
-    message: `Main project created with ${createdSubProperties.length} sub-properties. Main project price set to minimum from sub-properties: ${mainProjectPrice}`
+    message: `Main project created with ${createdSubProperties.length} sub-properties. Main project price range: ${mainProjectPrice}`
   });
 };
 
@@ -802,7 +626,9 @@ const getAllProperties = async (req, res) => {
       includeChildren = "false",
       hierarchyView = "false",
       location,
-      builderName
+      builderName,
+      minPrice,
+      maxPrice
     } = req.query;
 
     const currentPage = Math.max(parseInt(page), 1);
@@ -860,9 +686,33 @@ const getAllProperties = async (req, res) => {
       query.builderName = { $regex: builderName, $options: "i" };
     }
 
+    // Filter by price range
+    if (minPrice || maxPrice) {
+      query.$and = [];
+      if (minPrice) {
+        query.$and.push({
+          $or: [
+            { maxPrice: { $gte: parseFloat(minPrice) } },
+            { minPrice: { $gte: parseFloat(minPrice) } }
+          ]
+        });
+      }
+      if (maxPrice) {
+        query.$and.push({
+          $or: [
+            { minPrice: { $lte: parseFloat(maxPrice) } },
+            { maxPrice: { $lte: parseFloat(maxPrice) } }
+          ]
+        });
+      }
+      if (query.$and.length === 0) {
+        delete query.$and;
+      }
+    }
+
     // For hierarchical view
     if (hierarchyView === "true") {
-      const hierarchicalData = await getHierarchicalProperties(search, status, propertyType, location, builderName);
+      const hierarchicalData = await getHierarchicalProperties(search, status, propertyType, location, builderName, minPrice, maxPrice);
       return res.status(200).json({
         success: true,
         data: hierarchicalData,
@@ -876,7 +726,7 @@ const getAllProperties = async (req, res) => {
         .limit(itemsPerPage)
         .sort({ createdAt: -1 })
         .populate("createdBy", "name email")
-        .populate("parentId", "projectName builderName location price")
+        .populate("parentId", "projectName builderName location price minPrice maxPrice")
         .lean(),
       Property.countDocuments(query)
     ]);
@@ -931,10 +781,10 @@ const getAllProperties = async (req, res) => {
 };
 
 // Update getHierarchicalProperties function
-const getHierarchicalProperties = async (search = "", status, propertyType, location, builderName) => {
+const getHierarchicalProperties = async (search = "", status, propertyType, location, builderName, minPrice, maxPrice) => {
   const query = { 
     isActive: true,
-    parentId: null // Start with main projects only
+    parentId: null 
   };
 
   // Add search filter
@@ -971,6 +821,30 @@ const getHierarchicalProperties = async (search = "", status, propertyType, loca
   // Filter by builderName
   if (builderName) {
     query.builderName = { $regex: builderName, $options: "i" };
+  }
+
+  // NEW: Filter by price range
+  if (minPrice || maxPrice) {
+    query.$and = [];
+    if (minPrice) {
+      query.$and.push({
+        $or: [
+          { maxPrice: { $gte: parseFloat(minPrice) } },
+          { minPrice: { $gte: parseFloat(minPrice) } }
+        ]
+      });
+    }
+    if (maxPrice) {
+      query.$and.push({
+        $or: [
+          { minPrice: { $lte: parseFloat(maxPrice) } },
+          { maxPrice: { $lte: parseFloat(maxPrice) } }
+        ]
+      });
+    }
+    if (query.$and.length === 0) {
+      delete query.$and;
+    }
   }
 
   const mainProjects = await Property.find(query)
@@ -1040,7 +914,7 @@ const getSubProperties = async (req, res) => {
         .limit(itemsPerPage)
         .sort({ createdAt: -1 })
         .populate("createdBy", "name email")
-        .populate("parentId", "projectName builderName location price")
+        .populate("parentId", "projectName builderName location price minPrice maxPrice")
         .lean(),
       Property.countDocuments(query)
     ]);

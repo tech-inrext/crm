@@ -20,6 +20,8 @@ export interface Property {
   propertyName: string;
   propertyDescription: string;
   price: string;
+  minPrice?: number;
+  maxPrice?: number;
   paymentPlan: string;
 
   minSize?: string;
@@ -102,6 +104,9 @@ export interface Property {
     projectName: string;
     builderName: string;
     location: string;
+    price: string;
+    minPrice?: number;
+    maxPrice?: number;
   };
   subPropertyCount?: number;
   subProperties?: Property[];
@@ -152,53 +157,6 @@ export interface HierarchicalPropertyResponse {
 export type PropertyResponse = SinglePropertyResponse | MultiplePropertiesResponse | PropertyListResponse | HierarchicalPropertyResponse;
 
 export const propertyService = {
-  // getAllProperties: async (
-  //   search = '', 
-  //   page = 1, 
-  //   limit = 100, 
-  //   parentOnly = "false", 
-  //   parentId?: string,
-  //   propertyType?: string,
-  //   status?: string,
-  //   location?: string,
-  //   builderName?: string,
-  //   includeChildren = "false"
-  // ): Promise<PropertyListResponse> => {
-  //   const params: any = { search, page, limit, parentOnly, includeChildren };
-  //   if (parentId) params.parentId = parentId;
-  //   if (propertyType) params.propertyType = propertyType;
-  //   if (status) params.status = status;
-  //   if (location) params.location = location;
-  //   if (builderName) params.builderName = builderName;
-    
-  //   const response = await api.get('/property', { params });
-  //   return response.data;
-  // },
-
-  // getHierarchicalProperties: async (
-  //   search = '', 
-  //   status?: string, 
-  //   propertyType?: string,
-  //   location?: string,
-  //   builderName?: string
-  // ): Promise<HierarchicalPropertyResponse> => {
-  //   const params: any = { hierarchyView: "true", search };
-  //   if (status) params.status = status;
-  //   if (propertyType) params.propertyType = propertyType;
-  //   if (location) params.location = location;
-  //   if (builderName) params.builderName = builderName;
-    
-  //   const response = await api.get('/property', { params });
-  //   return response.data;
-  // },
-
-  // getPropertyById: async (id: string, withChildren = "false"): Promise<SinglePropertyResponse> => {
-  //   const response = await api.get(`/property/${id}`, {
-  //     params: { withChildren }
-  //   });
-  //   return response.data;
-  // },
-
   getAllProperties: async (
     search = '', 
     page = 1, 
@@ -209,7 +167,9 @@ export const propertyService = {
     status?: string,
     location?: string,
     builderName?: string,
-    includeChildren = "false"
+    includeChildren = "false",
+    minPrice?: number,
+    maxPrice?: number
   ): Promise<PropertyListResponse> => {
     const params: any = { search, page, limit, parentOnly, includeChildren };
     if (parentId) params.parentId = parentId;
@@ -217,6 +177,8 @@ export const propertyService = {
     if (status) params.status = status;
     if (location) params.location = location;
     if (builderName) params.builderName = builderName;
+    if (minPrice) params.minPrice = minPrice;
+    if (maxPrice) params.maxPrice = maxPrice;
     
     const response = await api.get('/property', { params });
     return response.data;
@@ -227,19 +189,22 @@ export const propertyService = {
     status?: string, 
     propertyType?: string,
     location?: string,
-    builderName?: string
+    builderName?: string,
+    minPrice?: number,
+    maxPrice?: number
   ): Promise<HierarchicalPropertyResponse> => {
     const params: any = { hierarchyView: "true", search };
     if (status) params.status = status;
     if (propertyType) params.propertyType = propertyType;
     if (location) params.location = location;
     if (builderName) params.builderName = builderName;
+    if (minPrice) params.minPrice = minPrice;
+    if (maxPrice) params.maxPrice = maxPrice;
     
     const response = await api.get('/property', { params });
     return response.data;
   },
 
-  // This method now works with both ID and slug
   getPropertyById: async (idOrSlug: string, withChildren = "false"): Promise<SinglePropertyResponse> => {
     const response = await api.get(`/property/${idOrSlug}`, {
       params: { withChildren }
@@ -247,7 +212,6 @@ export const propertyService = {
     return response.data;
   },
 
-  // New method specifically for slugs
   getPropertyBySlug: async (slug: string, withChildren = "false"): Promise<SinglePropertyResponse> => {
     const response = await api.get(`/property/${slug}`, {
       params: { withChildren }
@@ -419,16 +383,6 @@ export const propertyService = {
       throw new Error(error.message || "Failed to create property");
     }
   },
-
-  // updateProperty: async (id: string, propertyData: Partial<Property>): Promise<SinglePropertyResponse> => {
-  //   const response = await api.patch(`/property/${id}`, propertyData);
-  //   return response.data;
-  // },
-
-  // deleteProperty: async (id: string): Promise<SinglePropertyResponse> => {
-  //   const response = await api.delete(`/property/${id}`);
-  //   return response.data;
-  // },
 
   updateProperty: async (idOrSlug: string, propertyData: Partial<Property>): Promise<SinglePropertyResponse> => {
     const response = await api.patch(`/property/${idOrSlug}`, propertyData);

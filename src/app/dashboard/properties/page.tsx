@@ -3449,7 +3449,7 @@ export default function PropertiesPage() {
   {/* Enhanced Header with Gradient Overlay */}
   <Box sx={{ 
     position: 'relative',
-    height: { xs: 240, md: 240 },
+    height: { xs: 200, md: 200 },
     background: viewingProperty?.images?.length > 0 
       ? `linear-gradient(135deg, rgba(25, 118, 210, 0.95) 0%, rgba(15, 82, 147, 0.85) 100%), url(${viewingProperty.images.find(img => img.isPrimary)?.url || viewingProperty.images[0]?.url})`
       : 'linear-gradient(135deg, #1976d2 0%, #0f5293 100%)',
@@ -3467,7 +3467,7 @@ export default function PropertiesPage() {
       display: 'flex', 
       justifyContent: 'end', 
       alignItems: 'flex-end',
-      mb: 2
+      // mb: 2
     }}>
       <IconButton 
         onClick={handleCloseViewDialog}
@@ -3493,7 +3493,7 @@ export default function PropertiesPage() {
       alignItems: 'flex-end', 
       justifyContent: 'space-between', 
       flexWrap: 'wrap', 
-      gap: 3,
+      // gap: 3,
       mt: 'auto'
     }}>
       <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
@@ -3501,7 +3501,7 @@ export default function PropertiesPage() {
           fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
           textShadow: '0 4px 20px rgba(0,0,0,0.4)',
           lineHeight: 1.1,
-          mb: 2
+          // mb: 2
         }}>
           {viewingProperty?.projectName}
         </Typography>
@@ -3514,12 +3514,12 @@ export default function PropertiesPage() {
             </Typography>
           </Box>
           
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+          {/* <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
             <LocationOn sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
             <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 500 }}>
               {viewingProperty?.location}
             </Typography>
-          </Box>
+          </Box> */}
         </Box>
       </Box>
 
@@ -3529,7 +3529,7 @@ export default function PropertiesPage() {
         backdropFilter: 'blur(10px)',
         border: '1px solid rgba(255,255,255,0.2)',
         borderRadius: 4,
-        p: 3,
+        p: { xs: 1, md: 2 },
         minWidth: { xs: '100%', md: 280 }
       }}>
         <Typography variant="h3" fontWeight={800} sx={{ 
@@ -3537,22 +3537,11 @@ export default function PropertiesPage() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: { xs: 'flex-start', md: 'flex-end' },
-          fontSize: { xs: '2rem', md: '2.5rem' }
+          fontSize: { xs: '1.5rem', md: '2.5rem' }
         }}>
           {/* <CurrencyRupee sx={{ fontSize: '2rem', mr: 0.5 }} /> */}
           {viewingProperty?.price || 'Contact for Price'}
         </Typography>
-        {/* <Typography variant="body1" sx={{ 
-          opacity: 0.9, 
-          mt: 1,
-          background: 'rgba(255,255,255,0.2)',
-          borderRadius: 2,
-          px: 2,
-          py: 0.5,
-          display: 'inline-block'
-        }}>
-          {viewingProperty?.paymentPlan}
-        </Typography> */}
       </Box>
     </Box>
   </Box>
@@ -3566,13 +3555,18 @@ export default function PropertiesPage() {
       borderBottom: '1px solid #e2e8f0',
       boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
     }}>
-      <Box sx={{ 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'space-between', 
-        flexWrap: 'wrap', 
-        gap: 2 
-      }}>
+      <Box
+  sx={{
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: {
+      xs: 'center',  
+      sm: 'space-between',
+    },
+    flexWrap: 'wrap',
+    gap: 2,
+  }}
+>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           {/* Quick Stats */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -3624,7 +3618,7 @@ export default function PropertiesPage() {
     </Paper>
 
     {/* Main Content */}
-    <Box sx={{ p: { xs: 3, md: 4 } }}>
+    <Box sx={{ p: { xs: 2, md: 4 } }}>
       <Grid container spacing={4}>
         {/* Left Column - Property Details */}
         <Grid size={{ xs: 12, lg: 8 }}>
@@ -3636,7 +3630,7 @@ export default function PropertiesPage() {
             border: '1px solid rgba(0,0,0,0.05)',
             overflow: 'visible'
           }}>
-            <CardContent sx={{ p: 4 }}>
+            <CardContent sx={{ p: 2 }}>
               <Box sx={{ 
                 display: 'flex', 
                 alignItems: 'center', 
@@ -3711,7 +3705,7 @@ export default function PropertiesPage() {
                       <Grid container spacing={2}>
                         {(Array.isArray(viewingProperty.projectHighlights) ? viewingProperty.projectHighlights : viewingProperty.projectHighlights.split(',')).map((point, index) => (
                           <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
-                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, }}>
                               <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
                               <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                 {point.trim()}
@@ -3738,7 +3732,7 @@ export default function PropertiesPage() {
             border: '1px solid rgba(0,0,0,0.05)'
           }}>
             <CardContent sx={{ p: 0, overflow: 'hidden' }}>
-              <Box sx={{ p: 3, pb: 2 }}>
+              <Box sx={{ p: 3, pb: 0 }}>
                 <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
                   display: 'flex', 
                   alignItems: 'center',
@@ -3748,6 +3742,12 @@ export default function PropertiesPage() {
                   Location
                 </Typography>
               </Box>
+
+              <Box sx={{ p: 0, pb: 2 }}>
+                    <Typography sx={{ p: 2,  }}>
+                      {viewingProperty?.location}
+                    </Typography>
+                  </Box>
 
               {viewingProperty?.mapLocation ? (
                 <>
@@ -3811,12 +3811,12 @@ export default function PropertiesPage() {
             boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
             border: '1px solid rgba(0,0,0,0.05)'
           }}>
-            <CardContent sx={{ p: 3 }}>
+            <CardContent sx={{ p: 2 }}>
               <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: 'primary.main' }}>
                 ℹ️ Quick Info
               </Typography>
               
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
                   <Typography variant="body2" color="text.secondary">Property Type</Typography>
                   <Chip 
@@ -3855,7 +3855,7 @@ export default function PropertiesPage() {
           boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
           border: '1px solid rgba(0,0,0,0.05)'
         }}>
-          <CardContent sx={{ p: 4 }}>
+          <CardContent sx={{ p: 2 }}>
             <Box sx={{ 
               display: 'flex', 
               alignItems: 'center', 
@@ -3887,8 +3887,8 @@ export default function PropertiesPage() {
               boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
               border: '1px solid rgba(0,0,0,0.05)'
             }}>
-              <CardContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                   <Typography variant="h6" fontWeight={700} sx={{ 
                     color: 'primary.main',
                     display: 'flex',
@@ -3993,8 +3993,8 @@ export default function PropertiesPage() {
               boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
               border: '1px solid rgba(0,0,0,0.05)'
             }}>
-              <CardContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                   <Typography variant="h6" fontWeight={700} sx={{ 
                     color: 'primary.main',
                     display: 'flex',
@@ -4108,8 +4108,8 @@ export default function PropertiesPage() {
               boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
               border: '1px solid rgba(0,0,0,0.05)'
             }}>
-              <CardContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                   <Typography variant="h6" fontWeight={700} sx={{ 
                     color: 'primary.main',
                     display: 'flex',
@@ -4191,8 +4191,8 @@ export default function PropertiesPage() {
               boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
               border: '1px solid rgba(0,0,0,0.05)'
             }}>
-              <CardContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <CardContent sx={{ p: 2 }}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
                   <Typography variant="h6" fontWeight={700} sx={{ 
                     color: 'primary.main',
                     display: 'flex',
@@ -4326,7 +4326,8 @@ export default function PropertiesPage() {
   </DialogContent>
 
   <DialogActions sx={{ 
-    p: 3, 
+    py: 2,
+    px: {sx: 2, md: 3}, 
     borderTop: '1px solid #e2e8f0', 
     background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
     gap: 2
@@ -4337,7 +4338,7 @@ export default function PropertiesPage() {
       sx={{ 
         borderRadius: 3, 
         fontWeight: 600,
-        px: 4,
+        px: {xs: 1, md: 4}, 
         py: 1,
         borderWidth: 2,
         '&:hover': {
@@ -4357,7 +4358,7 @@ export default function PropertiesPage() {
       sx={{ 
         borderRadius: 3, 
         fontWeight: 600,
-        px: 4,
+        px: {xs: 1, md: 4},        
         py: 1,
         background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
         boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
@@ -4373,7 +4374,7 @@ export default function PropertiesPage() {
   </DialogActions>
 </Dialog>
 
-      {/* NEW: Sub-Property View Dialog */}
+{/* NEW: Sub-Property View Dialog */}
 <Dialog 
   open={openSubPropertyDialog} 
   onClose={() => setOpenSubPropertyDialog(false)} 
@@ -4394,10 +4395,10 @@ export default function PropertiesPage() {
       {/* Enhanced Header with Gradient Overlay */}
       <Box sx={{ 
         position: 'relative',
-        height: { xs: 240, md: 240 },
+        height: { xs: 200, md: 200 },
         background: selectedSubProperty?.propertyImages?.length > 0 
-          ? `linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.85) 100%), url(${typeof selectedSubProperty.propertyImages[0] === 'string' ? selectedSubProperty.propertyImages[0] : selectedSubProperty.propertyImages[0]?.url})`
-          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+          ? `linear-gradient(135deg, rgba(25, 118, 210, 0.95) 0%, rgba(15, 82, 147, 0.85) 100%), url(${typeof selectedSubProperty.propertyImages[0] === 'string' ? selectedSubProperty.propertyImages[0] : selectedSubProperty.propertyImages[0]?.url})`
+          : 'linear-gradient(135deg, #1976d2 0%, #0f5293 100%)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundAttachment: 'fixed',
@@ -4412,7 +4413,7 @@ export default function PropertiesPage() {
           display: 'flex', 
           justifyContent: 'end', 
           alignItems: 'flex-end',
-          mb: 2
+          // mb: 2
         }}>
           <IconButton 
             onClick={() => setOpenSubPropertyDialog(false)}
@@ -4438,7 +4439,7 @@ export default function PropertiesPage() {
           alignItems: 'flex-end', 
           justifyContent: 'space-between', 
           flexWrap: 'wrap', 
-          gap: 3,
+          // gap: 3,
           mt: 'auto'
         }}>
           <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
@@ -4446,27 +4447,18 @@ export default function PropertiesPage() {
               fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
               textShadow: '0 4px 20px rgba(0,0,0,0.4)',
               lineHeight: 1.1,
-              mb: 2
+              // mb: 2
             }}>
               {selectedSubProperty?.propertyName}
             </Typography>
             
             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Category sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
+                <Business sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
                 <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 600, textTransform: 'capitalize' }}>
                   {selectedSubProperty?.propertyType} Property
                 </Typography>
               </Box>
-              
-              {selectedSubProperty?.price && (
-                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                  <CurrencyRupee sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
-                  <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 500 }}>
-                    {selectedSubProperty.price.toLocaleString()}
-                  </Typography>
-                </Box>
-              )}
             </Box>
           </Box>
 
@@ -4476,7 +4468,7 @@ export default function PropertiesPage() {
             backdropFilter: 'blur(10px)',
             border: '1px solid rgba(255,255,255,0.2)',
             borderRadius: 4,
-            p: 3,
+            p: { xs: 1, md: 2 },
             minWidth: { xs: '100%', md: 280 }
           }}>
             <Typography variant="h3" fontWeight={800} sx={{ 
@@ -4484,20 +4476,9 @@ export default function PropertiesPage() {
               display: 'flex',
               alignItems: 'center',
               justifyContent: { xs: 'flex-start', md: 'flex-end' },
-              fontSize: { xs: '2rem', md: '2.5rem' }
+              fontSize: { xs: '1.5rem', md: '2.5rem' }
             }}>
-              {selectedSubProperty?.paymentPlan || 'Flexible Plans'}
-            </Typography>
-            <Typography variant="body1" sx={{ 
-              opacity: 0.9, 
-              mt: 1,
-              background: 'rgba(255,255,255,0.2)',
-              borderRadius: 2,
-              px: 2,
-              py: 0.5,
-              display: 'inline-block'
-            }}>
-              {selectedSubProperty?.propertyType?.charAt(0).toUpperCase() + selectedSubProperty?.propertyType?.slice(1)}
+              {selectedSubProperty?.price ? `₹${selectedSubProperty.price.toLocaleString()}` : 'Contact for Price'}
             </Typography>
           </Box>
         </Box>
@@ -4512,13 +4493,18 @@ export default function PropertiesPage() {
           borderBottom: '1px solid #e2e8f0',
           boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
         }}>
-          <Box sx={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'space-between', 
-            flexWrap: 'wrap', 
-            gap: 2 
-          }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: {
+                xs: 'center',  
+                sm: 'space-between',
+              },
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {/* Quick Stats */}
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -4538,7 +4524,7 @@ export default function PropertiesPage() {
               )}
             </Box>
             
-            {/* Download Button */}
+            {/* Download All Button */}
             {selectedSubProperty?.propertyImages?.length > 0 && (
               <Button
                 variant="contained"
@@ -4549,27 +4535,27 @@ export default function PropertiesPage() {
                   px: 3,
                   py: 1,
                   fontWeight: 600,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                  background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                  boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
                   '&:hover': {
-                    boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)',
+                    boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
                     transform: 'translateY(-1px)'
                   },
                   transition: 'all 0.2s ease'
                 }}
               >
-                Download All Images
+                Download All Media
               </Button>
             )}
           </Box>
         </Paper>
 
         {/* Main Content */}
-        <Box sx={{ p: { xs: 3, md: 4 } }}>
+        <Box sx={{ p: { xs: 2, md: 4 } }}>
           <Grid container spacing={4}>
             {/* Left Column - Property Details */}
             <Grid size={{ xs: 12, lg: 8 }}>
-              {/* Basic Information Card */}
+              {/* Description Card */}
               <Card sx={{ 
                 mb: 4, 
                 borderRadius: 3, 
@@ -4577,7 +4563,7 @@ export default function PropertiesPage() {
                 border: '1px solid rgba(0,0,0,0.05)',
                 overflow: 'visible'
               }}>
-                <CardContent sx={{ p: 4 }}>
+                <CardContent sx={{ p: 2 }}>
                   <Box sx={{ 
                     display: 'flex', 
                     alignItems: 'center', 
@@ -4586,495 +4572,455 @@ export default function PropertiesPage() {
                     borderBottom: '2px solid',
                     borderColor: 'primary.100'
                   }}>
-                    <Info sx={{ mr: 2, color: 'primary.main', fontSize: 28 }} />
+                    <Description sx={{ mr: 2, color: 'primary.main', fontSize: 28 }} />
                     <Typography variant="h5" fontWeight={700} sx={{ color: 'primary.main' }}>
-                      Property Details
+                      Property Overview
                     </Typography>
                   </Box>
                   
-                  <Grid container spacing={3}>
-                    {/* Property Type */}
-                    <Grid size={{ xs: 12, md: 6 }}>
-                      <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'primary.50', height: '100%' }}>
-                        <Typography variant="h6" fontWeight={700} sx={{ color: 'primary.main', mb: 2 }}>
-                          🏠 Property Type
-                        </Typography>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                          <Category sx={{ color: 'primary.main' }} />
-                          <Typography variant="body1" fontWeight={600} sx={{ textTransform: 'capitalize' }}>
-                            {selectedSubProperty.propertyType}
-                          </Typography>
-                        </Box>
-                      </Paper>
-                    </Grid>
-
-                    {/* Price */}
-                    {selectedSubProperty.price && (
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'success.50', height: '100%' }}>
-                          <Typography variant="h6" fontWeight={700} sx={{ color: 'success.main', mb: 2 }}>
-                            💰 Price
-                          </Typography>
-                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                            <CurrencyRupee sx={{ color: 'success.main' }} />
-                            <Typography variant="body1" fontWeight={600}>
-                              {selectedSubProperty.price.toLocaleString()}
-                            </Typography>
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    )}
-
-                    {/* Size Information */}
-                    {(selectedSubProperty.minSize || selectedSubProperty.maxSize) && (
-                      <Grid size={{ xs: 12 }}>
-                        <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'warning.50' }}>
-                          <Typography variant="h6" fontWeight={700} sx={{ color: 'warning.main', mb: 2 }}>
-                            📐 Size Information
-                          </Typography>
-                          <Grid container spacing={2}>
-                            {selectedSubProperty.minSize && (
-                              <Grid size={{ xs: 12, sm: 4 }}>
-                                <Box sx={{ textAlign: 'center', p: 2 }}>
-                                  <Typography variant="body2" color="text.secondary" fontWeight={600}>
-                                    Minimum Size
-                                  </Typography>
-                                  <Typography variant="h6" fontWeight={700} color="warning.main">
-                                    {selectedSubProperty.minSize}
-                                  </Typography>
-                                  {/* <Typography variant="caption" color="text.secondary">
-                                    {selectedSubProperty.sizeUnit}
-                                  </Typography> */}
-                                </Box>
-                              </Grid>
-                            )}
-                            
-                            {selectedSubProperty.maxSize && (
-                              <Grid size={{ xs: 12, sm: 4 }}>
-                                <Box sx={{ textAlign: 'center', p: 2 }}>
-                                  <Typography variant="body2" color="text.secondary" fontWeight={600}>
-                                    Maximum Size
-                                  </Typography>
-                                  <Typography variant="h6" fontWeight={700} color="warning.main">
-                                    {selectedSubProperty.maxSize}
-                                  </Typography>
-                                  {/* <Typography variant="caption" color="text.secondary">
-                                    {selectedSubProperty.sizeUnit}
-                                  </Typography> */}
-                                </Box>
-                              </Grid>
-                            )}
-                            
-                            {selectedSubProperty.sizeUnit && (
-                              <Grid size={{ xs: 12, sm: 4 }}>
-                                <Box sx={{ textAlign: 'center', p: 2 }}>
-                                  <Typography variant="body2" color="text.secondary" fontWeight={600}>
-                                    Size Unit
-                                  </Typography>
-                                  <Typography variant="h6" fontWeight={700} color="warning.main">
-                                    {selectedSubProperty.sizeUnit}
-                                  </Typography>
-                                </Box>
-                              </Grid>
-                            )}
-                          </Grid>
-                        </Paper>
-                      </Grid>
-                    )}
-
-                    {/* Property Type Specific Details */}
-                    {(selectedSubProperty.propertyType === 'residential' || selectedSubProperty.propertyType === 'plot') && (
-                      <Grid size={{ xs: 12 }}>
-                        <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'info.50' }}>
-                          <Typography variant="h6" fontWeight={700} sx={{ color: 'info.main', mb: 2 }}>
-                            {selectedSubProperty.propertyType === 'residential' ? '🏡 Residential Details' : '📊 Plot Details'}
-                          </Typography>
-                          <Grid container spacing={2}>
-                            {selectedSubProperty.propertyType === 'residential' && (
-                              <>
-                                {selectedSubProperty.bedrooms && selectedSubProperty.bedrooms > 0 && (
-                                  <Grid size={{ xs: 6, sm: 3 }}>
-                                    <Box sx={{ textAlign: 'center', p: 2 }}>
-                                      <Bed sx={{ fontSize: '2rem', color: 'info.main', mb: 1 }} />
-                                      <Typography variant="h4" fontWeight={700} color="info.main">
-                                        {selectedSubProperty.bedrooms}
-                                      </Typography>
-                                      <Typography variant="body2" color="text.secondary">
-                                        Bedrooms
-                                      </Typography>
-                                    </Box>
-                                  </Grid>
-                                )}
-                                
-                                {selectedSubProperty.bathrooms && selectedSubProperty.bathrooms > 0 && (
-                                  <Grid size={{ xs: 6, sm: 3 }}>
-                                    <Box sx={{ textAlign: 'center', p: 2 }}>
-                                      <Bathtub sx={{ fontSize: '2rem', color: 'info.main', mb: 1 }} />
-                                      <Typography variant="h4" fontWeight={700} color="info.main">
-                                        {selectedSubProperty.bathrooms}
-                                      </Typography>
-                                      <Typography variant="body2" color="text.secondary">
-                                        Bathrooms
-                                      </Typography>
-                                    </Box>
-                                  </Grid>
-                                )}
-                                
-                                {selectedSubProperty.carpetArea && (
-                                  <Grid size={{ xs: 6, sm: 3 }}>
-                                    <Box sx={{ textAlign: 'center', p: 2 }}>
-                                      <SquareFoot sx={{ fontSize: '2rem', color: 'info.main', mb: 1 }} />
-                                      <Typography variant="h4" fontWeight={700} color="info.main">
-                                        {selectedSubProperty.carpetArea}
-                                      </Typography>
-                                      <Typography variant="body2" color="text.secondary">
-                                        Carpet Area
-                                      </Typography>
-                                    </Box>
-                                  </Grid>
-                                )}
-                                
-                                {selectedSubProperty.builtUpArea && (
-                                  <Grid size={{ xs: 6, sm: 3 }}>
-                                    <Box sx={{ textAlign: 'center', p: 2 }}>
-                                      <AreaChart sx={{ fontSize: '2rem', color: 'info.main', mb: 1 }} />
-                                      <Typography variant="h4" fontWeight={700} color="info.main">
-                                        {selectedSubProperty.builtUpArea}
-                                      </Typography>
-                                      <Typography variant="body2" color="text.secondary">
-                                        Built-up Area
-                                      </Typography>
-                                    </Box>
-                                  </Grid>
-                                )}
-                              </>
-                            )}
-                            
-                            {selectedSubProperty.propertyType === 'plot' && (
-                              <>
-                                {selectedSubProperty.ownershipType && (
-                                  <Grid size={{ xs: 12, md: 6 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
-                                      <AccountBalance sx={{ color: 'info.main' }} />
-                                      <Box>
-                                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
-                                          Ownership Type
-                                        </Typography>
-                                        <Typography variant="body1" fontWeight={600}>
-                                          {selectedSubProperty.ownershipType}
-                                        </Typography>
-                                      </Box>
-                                    </Box>
-                                  </Grid>
-                                )}
-                                
-                                {selectedSubProperty.landType && (
-                                  <Grid size={{ xs: 12, md: 6 }}>
-                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
-                                      <Grass sx={{ color: 'info.main' }} />
-                                      <Box>
-                                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
-                                          Land Type
-                                        </Typography>
-                                        <Typography variant="body1" fontWeight={600}>
-                                          {selectedSubProperty.landType}
-                                        </Typography>
-                                      </Box>
-                                    </Box>
-                                  </Grid>
-                                )}
-                                
-                                <Grid size={{ xs: 12, md: 6 }}>
-                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
-                                    <Fence sx={{ color: 'info.main' }} />
-                                    <Box>
-                                      <Typography variant="body2" color="text.secondary" fontWeight={600}>
-                                        Boundary Wall
-                                      </Typography>
-                                      <Chip 
-                                        label={selectedSubProperty.boundaryWall ? 'Yes' : 'No'}
-                                        color={selectedSubProperty.boundaryWall ? 'success' : 'default'}
-                                        size="small"
-                                      />
-                                    </Box>
-                                  </Box>
-                                </Grid>
-                              </>
-                            )}
-                          </Grid>
-                        </Paper>
-                      </Grid>
-                    )}
-
-                    {/* Description */}
-                    {selectedSubProperty.propertyDescription && (
-                      <Grid size={{ xs: 12 }}>
-                        <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'grey.50' }}>
-                          <Typography variant="h6" fontWeight={700} sx={{ color: 'text.primary', mb: 2 }}>
-                            📝 Description
-                          </Typography>
-                          <Typography variant="body1" sx={{ 
-                            color: 'text.secondary', 
-                            lineHeight: 1.7,
-                            p: 2,
-                            background: 'white',
-                            borderRadius: 2,
-                            borderLeft: '4px solid',
-                            borderLeftColor: 'primary.main'
-                          }}>
-                            {selectedSubProperty.propertyDescription}
-                          </Typography>
-                        </Paper>
-                      </Grid>
-                    )}
-                  </Grid>
-                </CardContent>
-              </Card>
-            </Grid>
-
-            {/* Right Column - Side Information */}
-            <Grid size={{ xs: 12, lg: 4 }}>
-              {/* Amenities Card */}
-              {selectedSubProperty.amenities && selectedSubProperty.amenities.length > 0 && (
-                <Card sx={{ 
-                  mb: 3, 
-                  borderRadius: 3, 
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                  border: '1px solid rgba(0,0,0,0.05)'
-                }}>
-                  <CardContent sx={{ p: 3 }}>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      color: 'primary.main'
-                    }}>
-                      <Star sx={{ mr: 1.5 }} />
-                      Amenities ({selectedSubProperty.amenities.length})
-                    </Typography>
-                    
-                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 2 }}>
-                      {selectedSubProperty.amenities.map((amenity, index) => (
-                        <Box key={index} sx={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: 2,
-                          p: 1.5,
-                          borderRadius: 2,
-                          background: 'rgba(102, 126, 234, 0.05)',
-                          border: '1px solid rgba(102, 126, 234, 0.1)',
-                          transition: 'all 0.2s ease',
-                          '&:hover': {
-                            background: 'rgba(102, 126, 234, 0.1)',
-                            transform: 'translateX(4px)'
-                          }
-                        }}>
-                          <CheckCircle sx={{ fontSize: '1rem', color: 'success.main' }} />
-                          <Typography variant="body2" fontWeight={600}>
-                            {amenity}
-                          </Typography>
-                        </Box>
-                      ))}
-                    </Box>
-                  </CardContent>
-                </Card>
-              )}
-
-              {/* Quick Info Card */}
-              <Card sx={{ 
-                borderRadius: 3, 
-                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                border: '1px solid rgba(0,0,0,0.05)'
-              }}>
-                <CardContent sx={{ p: 3 }}>
-                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: 'primary.main' }}>
-                    ℹ️ Quick Info
+                  <Typography variant="body1" sx={{ 
+                    color: 'text.secondary', 
+                    lineHeight: 1.8,
+                    fontSize: '1.1rem',
+                    mb: 4
+                  }}>
+                    {selectedSubProperty?.propertyDescription || 'No description available.'}
                   </Typography>
-                  
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
-                      <Typography variant="body2" color="text.secondary">Property Type</Typography>
-                      <Chip 
-                        label={selectedSubProperty.propertyType} 
-                        size="small" 
-                        color="primary"
-                        sx={{ textTransform: 'capitalize' }}
-                      />
-                    </Box>
-                    
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
-                      <Typography variant="body2" color="text.secondary">Total Images</Typography>
-                      <Typography variant="body2" fontWeight={600}>
-                        {selectedSubProperty?.propertyImages?.length || 0}
-                      </Typography>
-                    </Box>
-                    
-                    {selectedSubProperty.paymentPlan && (
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
-                        <Typography variant="body2" color="text.secondary">Payment Plan</Typography>
-                        <Typography variant="body2" fontWeight={600}>
-                          {selectedSubProperty.paymentPlan}
+
+              {/* Highlights Grid */}
+              <Grid container spacing={3}>
+                {/* Property Type */}
+                <Grid size={{ xs: 12, md: 6 }}>
+                  <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'primary.50', height: '100%' }}>
+                    <Typography variant="h6" fontWeight={700} sx={{ color: 'primary.main', mb: 2 }}>
+                      🏠 Property Type
+                    </Typography>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                        <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main' }} />
+                        <Typography variant="body2" sx={{ color: 'text.secondary', textTransform: 'capitalize' }}>
+                          {selectedSubProperty?.propertyType}
                         </Typography>
                       </Box>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
+                      {selectedSubProperty?.paymentPlan && (
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main' }} />
+                          <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                            {selectedSubProperty.paymentPlan}
+                          </Typography>
+                        </Box>
+                      )}
+                    </Box>
+                  </Paper>
+                </Grid>
 
-          {/* Images Section */}
-          {selectedSubProperty?.propertyImages && selectedSubProperty.propertyImages.length > 0 && (
+                {/* Size Information */}
+                {(selectedSubProperty?.minSize || selectedSubProperty?.maxSize) && (
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'success.50', height: '100%' }}>
+                      <Typography variant="h6" fontWeight={700} sx={{ color: 'success.main', mb: 2 }}>
+                        📐 Size Details
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {selectedSubProperty?.minSize && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'success.main' }} />
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                              Min: {selectedSubProperty.minSize} {selectedSubProperty?.sizeUnit || ''}
+                            </Typography>
+                          </Box>
+                        )}
+                        {selectedSubProperty?.maxSize && (
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'success.main' }} />
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                              Max: {selectedSubProperty.maxSize} {selectedSubProperty?.sizeUnit || ''}
+                            </Typography>
+                          </Box>
+                        )}
+                      </Box>
+                    </Paper>
+                  </Grid>
+                )}
+
+                {/* Residential Details */}
+                {selectedSubProperty?.propertyType === 'residential' && (
+                  <Grid size={{ xs: 12 }}>
+                    <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'warning.50' }}>
+                      <Typography variant="h6" fontWeight={700} sx={{ color: 'warning.main', mb: 2 }}>
+                        🏡 Residential Specifications
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {selectedSubProperty?.bedrooms && (
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {selectedSubProperty.bedrooms} Bedrooms
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        )}
+                        {selectedSubProperty?.bathrooms && (
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {selectedSubProperty.bathrooms} Bathrooms
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        )}
+                        {selectedSubProperty?.carpetArea && (
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                Carpet: {selectedSubProperty.carpetArea}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        )}
+                        {selectedSubProperty?.builtUpArea && (
+                          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                Built-up: {selectedSubProperty.builtUpArea}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        )}
+                      </Grid>
+                    </Paper>
+                  </Grid>
+                )}
+
+                {/* Plot Details */}
+                {selectedSubProperty?.propertyType === 'plot' && (
+                  <Grid size={{ xs: 12 }}>
+                    <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'info.50' }}>
+                      <Typography variant="h6" fontWeight={700} sx={{ color: 'info.main', mb: 2 }}>
+                        📊 Plot Information
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {selectedSubProperty?.ownershipType && (
+                          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'info.main' }} />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {selectedSubProperty.ownershipType}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        )}
+                        {selectedSubProperty?.landType && (
+                          <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'info.main' }} />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {selectedSubProperty.landType}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        )}
+                        <Grid size={{ xs: 12, sm: 6, md: 4 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'info.main' }} />
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                              Boundary: {selectedSubProperty?.boundaryWall ? 'Yes' : 'No'}
+                            </Typography>
+                          </Box>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Grid>
+                )}
+
+                {/* Amenities */}
+                {selectedSubProperty?.amenities && selectedSubProperty.amenities.length > 0 && (
+                  <Grid size={{ xs: 12 }}>
+                    <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'secondary.50' }}>
+                      <Typography variant="h6" fontWeight={700} sx={{ color: 'secondary.main', mb: 2 }}>
+                        ⭐ Amenities & Features
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {selectedSubProperty.amenities.map((amenity, index) => (
+                          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'secondary.main' }} />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {amenity.trim()}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Paper>
+                  </Grid>
+                )}
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Right Column - Side Information */}
+        <Grid size={{ xs: 12, lg: 4 }}>
+          {/* Quick Info Card */}
+          <Card sx={{ 
+            mb: 3, 
+            borderRadius: 3, 
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <CardContent sx={{ p: 2 }}>
+              <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: 'primary.main' }}>
+                ℹ️ Quick Info
+              </Typography>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                  <Typography variant="body2" color="text.secondary">Property Type</Typography>
+                  <Chip 
+                    label={selectedSubProperty?.propertyType} 
+                    size="small" 
+                    color="primary"
+                    sx={{ textTransform: 'capitalize' }}
+                  />
+                </Box>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                  <Typography variant="body2" color="text.secondary">Total Images</Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    {selectedSubProperty?.propertyImages?.length || 0}
+                  </Typography>
+                </Box>
+                
+                {selectedSubProperty?.paymentPlan && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                    <Typography variant="body2" color="text.secondary">Payment Plan</Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      {selectedSubProperty.paymentPlan}
+                    </Typography>
+                  </Box>
+                )}
+
+                {selectedSubProperty?.amenities && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                    <Typography variant="body2" color="text.secondary">Amenities</Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      {selectedSubProperty.amenities.length}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+
+          {/* Amenities Card */}
+          {selectedSubProperty?.amenities && selectedSubProperty.amenities.length > 0 && (
             <Card sx={{ 
-              mt: 4, 
               borderRadius: 3, 
               boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
               border: '1px solid rgba(0,0,0,0.05)'
             }}>
-              <CardContent sx={{ p: 4 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6" fontWeight={700} sx={{ 
-                    color: 'primary.main',
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    <CloudUpload sx={{ mr: 1.5 }} />
-                    Property Images ({selectedSubProperty.propertyImages.length})
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<CloudDownload />}
-                    onClick={() => handleDownloadImages(selectedSubProperty.propertyImages)}
-                    size="small"
-                    sx={{ borderRadius: 2 }}
-                  >
-                    Download All
-                  </Button>
+              <CardContent sx={{ p: 2 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  color: 'primary.main'
+                }}>
+                  <Star sx={{ mr: 1.5 }} />
+                  Top Amenities
+                </Typography>
+                
+                <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 2 }}>
+                  {selectedSubProperty.amenities.slice(0, 6).map((amenity, index) => (
+                    <Box key={index} sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: 2,
+                      p: 1.5,
+                      borderRadius: 2,
+                      background: 'rgba(25, 118, 210, 0.05)',
+                      border: '1px solid rgba(25, 118, 210, 0.1)',
+                      transition: 'all 0.2s ease',
+                      '&:hover': {
+                        background: 'rgba(25, 118, 210, 0.1)',
+                        transform: 'translateX(4px)'
+                      }
+                    }}>
+                      <CheckCircle sx={{ fontSize: '1rem', color: 'success.main' }} />
+                      <Typography variant="body2" fontWeight={600}>
+                        {amenity}
+                      </Typography>
+                    </Box>
+                  ))}
+                  {selectedSubProperty.amenities.length > 6 && (
+                    <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center', mt: 1 }}>
+                      +{selectedSubProperty.amenities.length - 6} more amenities
+                    </Typography>
+                  )}
                 </Box>
-                <Grid container spacing={2}>
-                  {selectedSubProperty.propertyImages.map((image, index) => {
-                    const imageUrl = typeof image === 'string' ? image : image.url;
-                    const imageTitle = typeof image === 'string' 
-                      ? `Image ${index + 1}` 
-                      : image.title || `Image ${index + 1}`;
-
-                    return (
-                      <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
-                        <Card 
-                          sx={{ 
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            border: '2px solid transparent',
-                            '&:hover': {
-                              transform: 'translateY(-4px)',
-                              boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
-                              borderColor: 'primary.main'
-                            }
-                          }}
-                        >
-                          <Box sx={{ position: 'relative', paddingTop: '75%' }}>
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundImage: `url(${imageUrl})`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                                borderRadius: '8px 8px 0 0',
-                              }}
-                            >
-                              {/* Download Button */}
-                              <IconButton
-                                sx={{
-                                  position: 'absolute',
-                                  top: 8,
-                                  right: 8,
-                                  backgroundColor: 'rgba(255,255,255,0.95)',
-                                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                                  '&:hover': {
-                                    backgroundColor: 'white',
-                                    transform: 'scale(1.1)'
-                                  },
-                                  transition: 'all 0.2s ease'
-                                }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDownloadFile(imageUrl, imageTitle);
-                                }}
-                                size="small"
-                              >
-                                <CloudDownload sx={{ fontSize: 16 }} />
-                              </IconButton>
-                            </Box>
-                          </Box>
-                          <Box sx={{ p: 1 }}>
-                            <Typography variant="caption" color="text.secondary" noWrap>
-                              {imageTitle}
-                            </Typography>
-                          </Box>
-                        </Card>
-                      </Grid>
-                    );
-                  })}
-                </Grid>
               </CardContent>
             </Card>
           )}
-        </Box>
-      </DialogContent>
+        </Grid>
+      </Grid>
 
-      <DialogActions sx={{ 
-        p: 3, 
-        borderTop: '1px solid #e2e8f0', 
-        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-        gap: 2
-      }}>
-        <Button 
-          onClick={() => setOpenSubPropertyDialog(false)}
-          variant="outlined"
-          sx={{ 
-            borderRadius: 3, 
-            fontWeight: 600,
-            px: 4,
-            py: 1,
-            borderWidth: 2,
-            '&:hover': {
-              borderWidth: 2
-            }
-          }}
-        >
-          Close
-        </Button>
-        <Button 
-          onClick={() => { 
-            setOpenSubPropertyDialog(false); 
-            handleOpenDialog(selectedSubProperty); 
-          }} 
-          variant="contained" 
-          startIcon={<Edit />}
-          sx={{ 
-            borderRadius: 3, 
-            fontWeight: 600,
-            px: 4,
-            py: 1,
-            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
-            '&:hover': {
-              boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)',
-              transform: 'translateY(-1px)'
-            },
-            transition: 'all 0.2s ease'
-          }}
-        >
-          Edit Property
-        </Button>
-      </DialogActions>
+      {/* Images Section */}
+      {selectedSubProperty?.propertyImages && selectedSubProperty.propertyImages.length > 0 && (
+        <Card sx={{ 
+          mt: 4, 
+          borderRadius: 3, 
+          boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.05)'
+        }}>
+          <CardContent sx={{ p: 2 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography variant="h6" fontWeight={700} sx={{ 
+                color: 'primary.main',
+                display: 'flex',
+                alignItems: 'center'
+              }}>
+                <CloudUpload sx={{ mr: 1.5 }} />
+                Property Images ({selectedSubProperty.propertyImages.length})
+              </Typography>
+              <Button
+                variant="outlined"
+                startIcon={<CloudDownload />}
+                onClick={() => handleDownloadImages(selectedSubProperty.propertyImages)}
+                size="small"
+                sx={{ borderRadius: 2 }}
+              >
+                Download All
+              </Button>
+            </Box>
+            <Grid container spacing={2}>
+              {selectedSubProperty.propertyImages.map((image, index) => {
+                const imageUrl = typeof image === 'string' ? image : image.url;
+                const imageTitle = typeof image === 'string' 
+                  ? `Image ${index + 1}` 
+                  : image.title || `Image ${index + 1}`;
+
+                return (
+                  <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
+                    <Card 
+                      sx={{ 
+                        cursor: 'pointer',
+                        transition: 'all 0.3s ease',
+                        border: '2px solid transparent',
+                        '&:hover': {
+                          transform: 'translateY(-4px)',
+                          boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
+                          borderColor: 'primary.main'
+                        }
+                      }}
+                    >
+                      <Box sx={{ position: 'relative', paddingTop: '75%' }}>
+                        <Box
+                          sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            backgroundImage: `url(${imageUrl})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            borderRadius: '8px 8px 0 0',
+                          }}
+                        >
+                          {/* Download Button */}
+                          <IconButton
+                            sx={{
+                              position: 'absolute',
+                              top: 8,
+                              right: 8,
+                              backgroundColor: 'rgba(255,255,255,0.95)',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                              '&:hover': {
+                                backgroundColor: 'white',
+                                transform: 'scale(1.1)'
+                              },
+                              transition: 'all 0.2s ease'
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadFile(imageUrl, imageTitle);
+                            }}
+                            size="small"
+                          >
+                            <CloudDownload sx={{ fontSize: 16 }} />
+                          </IconButton>
+                        </Box>
+                      </Box>
+                      <Box sx={{ p: 1 }}>
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {imageTitle}
+                        </Typography>
+                      </Box>
+                    </Card>
+                  </Grid>
+                );
+              })}
+            </Grid>
+          </CardContent>
+        </Card>
+      )}
+    </Box>
+  </DialogContent>
+
+  <DialogActions sx={{ 
+    py: 2,
+    px: {sx: 2, md: 3}, 
+    borderTop: '1px solid #e2e8f0', 
+    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+    gap: 2
+  }}>
+    <Button 
+      onClick={() => setOpenSubPropertyDialog(false)}
+      variant="outlined"
+      sx={{ 
+        borderRadius: 3, 
+        fontWeight: 600,
+        px: {xs: 1, md: 4}, 
+        py: 1,
+        borderWidth: 2,
+        '&:hover': {
+          borderWidth: 2
+        }
+      }}
+    >
+      Close
+    </Button>
+    <Button 
+      onClick={() => { 
+        setOpenSubPropertyDialog(false); 
+        handleOpenDialog(selectedSubProperty); 
+      }} 
+      variant="contained" 
+      startIcon={<Edit />}
+      sx={{ 
+        borderRadius: 3, 
+        fontWeight: 600,
+        px: {xs: 1, md: 4},        
+        py: 1,
+        background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+        boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
+        '&:hover': {
+          boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+          transform: 'translateY(-1px)'
+        },
+        transition: 'all 0.2s ease'
+      }}
+    >
+      Edit Property
+    </Button>
+  </DialogActions>
     </>
   )}
-</Dialog>
-    </Box>
+</Dialog>    </Box>
   );
 }
 
