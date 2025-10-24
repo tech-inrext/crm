@@ -1,6 +1,4 @@
-/* eslint-disable react/no-unescaped-entities */
 // app/dashboard/properties/page.tsx
-
 "use client";
 
 import React, { useState, useEffect } from "react";
@@ -17,11 +15,6 @@ import {
   Grid,
   Chip,
   IconButton,
-  Divider,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemSecondaryAction,
   CircularProgress,
   MenuItem,
   OutlinedInput,
@@ -30,982 +23,1820 @@ import {
   Select,
   Collapse,
   Tooltip,
+  FormHelperText,
+  Alert,
+  Tabs,
+  Tab,
+  Checkbox,
+  FormControlLabel,
   Card,
   CardContent,
+  Divider,
+  Badge,
 } from "@mui/material";
 import {
   Add,
   Edit,
   Delete,
-  LocationOn,
-  Photo,
-  VideoLibrary,
-  Description,
-  Download,
-  ArrowBack,
-  ArrowForward,
   Search,
-  Remove,
   CloudUpload,
   FilterList,
-  ExpandMore,
-  ExpandLess,
   Clear,
-  MyLocation,
   Home,
   Business,
+  Landscape,
+  LocationOn,
+  ExpandMore,
+  ExpandLess,
+  Visibility,
+  CurrencyRupee,
+  Edit as EditIcon,
+  Delete as DeleteIcon,
+  Description,
+  Info,
+  PlayArrow,
+  CloudDownload,
+  StarBorder,
+  Close,
+  Download,
+  CheckCircle,
+  Star,
+  Fence,
+  Grass,
+  AccountBalance,
+  SquareFoot,
+  Bathtub,
+  Apartment,
+  Straighten,
+  Payment,
+  Category,
+  Label,
+  PhotoCamera,
+  Bed,
+  AreaChart,
+  ArrowBackIos,
+  ArrowForwardIos,
+  Pause,
+  Fullscreen,
 } from "@mui/icons-material";
-import CurrencyRupeeIcon from '@mui/icons-material/CurrencyRupee';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import { Toaster, toast } from 'sonner';
-
-// Leaflet imports for map
-import { MapContainer, TileLayer, Marker, Popup, useMapEvents } from 'react-leaflet';
-import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
-
-// Import your services
-import { propertyService, type Property, type PropertyType } from '@/services/propertyService';
-
-// Fix for default markers in react-leaflet
-delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
-});
-
-// Custom draggable marker icon
-const createDraggableIcon = () => {
-  return L.divIcon({
-    html: `
-      <div style="
-        background-color: #1976d2;
-        width: 30px;
-        height: 30px;
-        border-radius: 50% 50% 50% 0;
-        transform: rotate(-45deg);
-        border: 3px solid white;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-        position: relative;
-        cursor: move;
-      ">
-        <div style="
-          position: absolute;
-          top: 50%;
-          left: 50%;
-          transform: rotate(45deg) translate(-30%, -30%);
-          color: white;
-          font-size: 16px;
-        "></div>
-      </div>
-    `,
-    className: 'draggable-marker',
-    iconSize: [30, 30],
-    iconAnchor: [15, 30],
-  });
-};
-
-// Location Marker Component
-const LocationMarker = ({ 
-  position, 
-  onPositionChange,
-  isEditMode 
-}: { 
-  position: [number, number];
-  onPositionChange: (lat: number, lng: number) => void;
-  isEditMode: boolean;
-}) => {
-  const [markerPosition, setMarkerPosition] = useState<[number, number]>(position);
-
-  useEffect(() => {
-    setMarkerPosition(position);
-  }, [position]);
-
-  const map = useMapEvents({
-    click(e) {
-      if (isEditMode) {
-        const newPosition: [number, number] = [e.latlng.lat, e.latlng.lng];
-        setMarkerPosition(newPosition);
-        onPositionChange(newPosition[0], newPosition[1]);
-        map.flyTo(e.latlng, map.getZoom());
-      }
-    },
-  });
-
-  const handleDragEnd = (e: any) => {
-    if (isEditMode) {
-      const marker = e.target;
-      const newPosition = marker.getLatLng();
-      setMarkerPosition([newPosition.lat, newPosition.lng]);
-      onPositionChange(newPosition.lat, newPosition.lng);
-    }
-  };
-
-  return markerPosition ? (
-    <Marker
-      position={markerPosition}
-      icon={createDraggableIcon()}
-      draggable={isEditMode}
-      eventHandlers={{
-        dragend: handleDragEnd,
-      }}
-    >
-      <Popup>
-        <Typography variant="subtitle2" gutterBottom>
-          Property Location
-        </Typography>
-        <Typography variant="body2">
-          Lat: {markerPosition[0].toFixed(6)}
-          <br />
-          Lng: {markerPosition[1].toFixed(6)}
-        </Typography>
-        {isEditMode && (
-          <Typography variant="caption" color="text.secondary">
-            Drag to adjust or click elsewhere on map
-          </Typography>
-        )}
-      </Popup>
-    </Marker>
-  ) : null;
-};
-
-// Enhanced Draggable Map Component
-const DraggablePropertyMap = ({ 
-  lat, 
-  lng, 
-  onLocationChange,
-  isEditMode = false 
-}: { 
-  lat: number; 
-  lng: number; 
-  onLocationChange: (lat: number, lng: number) => void;
-  isEditMode?: boolean;
-}) => {
-  const [map, setMap] = useState<any>(null);
-  const defaultPosition: [number, number] = [20.5937, 78.9629];
-
-  const handlePositionChange = (newLat: number, newLng: number) => {
-    onLocationChange(newLat, newLng);
-  };
-
-  const getCurrentLocation = () => {
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const { latitude, longitude } = position.coords;
-          onLocationChange(latitude, longitude);
-          if (map) {
-            map.flyTo([latitude, longitude], 15);
-          }
-        },
-        (error) => {
-          toast.error('Unable to get current location');
-          console.error('Geolocation error:', error);
-        }
-      );
-    } else {
-      toast.error('Geolocation is not supported by this browser');
-    }
-  };
-
-  return (
-    <Box sx={{ 
-      height: '300px', 
-      position: 'relative',
-      borderRadius: '15px',
-      overflow: 'hidden',
-      border: '1px solid #e0e0e0'
-    }}>
-      {isEditMode && (
-        <Box sx={{
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          zIndex: 1000,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 1
-        }}>
-          <Tooltip title="Use Current Location">
-            <IconButton
-              onClick={getCurrentLocation}
-              sx={{
-                backgroundColor: 'white',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-                '&:hover': {
-                  backgroundColor: '#f5f5f5',
-                }
-              }}
-            >
-              <MyLocation fontSize="small" />
-            </IconButton>
-          </Tooltip>
-        </Box>
-      )}
-
-      {isEditMode && (!lat || !lng) && (
-        <Box sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          backgroundColor: '#1976d2',
-          color: 'white',
-          padding: '8px 12px',
-          zIndex: 1000,
-          textAlign: 'center',
-          fontSize: '0.875rem'
-        }}>
-          Click on the map to set property location
-        </Box>
-      )}
-      
-      <MapContainer
-        center={lat && lng ? [lat, lng] : defaultPosition}
-        zoom={lat && lng ? 15 : 5}
-        style={{ height: '100%', width: '100%' }}
-        scrollWheelZoom={true}
-        whenCreated={setMap}
-      >
-        <TileLayer
-          attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        />
-        
-        <LocationMarker 
-          position={lat && lng ? [lat, lng] : defaultPosition}
-          onPositionChange={handlePositionChange}
-          isEditMode={isEditMode}
-        />
-      </MapContainer>
-      
-      <Box sx={{
-        position: 'absolute',
-        bottom: 0,
-        left: 0,
-        right: 0,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        padding: '12px',
-        borderTop: '1px solid #e0e0e0',
-        fontSize: '0.75rem'
-      }}>
-        <Grid container spacing={1} alignItems="center">
-          <Grid size={{ xs: 12, sm: 5 }}>
-            <Typography variant="body2" noWrap>
-              <strong>Latitude:</strong> {(lat || defaultPosition[0]).toFixed(6)}
-            </Typography>
-          </Grid>
-          <Grid size={{ xs: 12, sm: 5 }}>
-            <Typography variant="body2" noWrap>
-              <strong>Longitude:</strong> {(lng || defaultPosition[1]).toFixed(6)}
-            </Typography>
-          </Grid>
-          {isEditMode && (
-            <Grid size={{ xs: 12, sm: 2 }}>
-              <Button 
-                size="small" 
-                variant="outlined"
-                onClick={() => onLocationChange(defaultPosition[0], defaultPosition[1])}
-                fullWidth
-              >
-                Reset
-              </Button>
-            </Grid>
-          )}
-        </Grid>
-      </Box>
-    </Box>
-  );
-};
-
-// Location Search Component with CORS Proxy Fix
-const LocationSearch = ({ onLocationSelect }: { onLocationSelect: (lat: number, lng: number, address: string) => void }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  const searchLocation = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Using CORS proxy to fix the CORS error
-      const proxyUrl = 'https://corsproxy.io/?';
-      const targetUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=in`;
-      
-      const response = await fetch(proxyUrl + encodeURIComponent(targetUrl), {
-        headers: {
-          'Accept': 'application/json',
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-      
-      const data = await response.json();
-      setSearchResults(data);
-    } catch (error: any) {
-      console.error('Error searching location:', error);
-      
-      // Fallback: Try alternative CORS proxy
-      try {
-        const fallbackProxyUrl = 'https://api.allorigins.win/raw?url=';
-        const targetUrl = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&limit=5&countrycodes=in`;
-        
-        const fallbackResponse = await fetch(fallbackProxyUrl + encodeURIComponent(targetUrl));
-        
-        if (fallbackResponse.ok) {
-          const fallbackData = await fallbackResponse.json();
-          setSearchResults(fallbackData);
-        } else {
-          throw new Error('Fallback also failed');
-        }
-      } catch (fallbackError) {
-        console.error('Fallback geocoding also failed:', fallbackError);
-        toast.error('Location service temporarily unavailable. Please try again later.');
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleResultSelect = (result: any) => {
-    const lat = parseFloat(result.lat);
-    const lng = parseFloat(result.lon);
-    const address = result.display_name;
-    
-    onLocationSelect(lat, lng, address);
-    setSearchQuery(address);
-    setSearchResults([]);
-  };
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      searchLocation(searchQuery);
-    }, 800);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  return (
-    <Box sx={{ position: 'relative', width: '100%' }}>
-      <TextField
-        fullWidth
-        label="Search Location"
-        value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
-        placeholder="Enter address, city, or landmark..."
-        InputProps={{
-          endAdornment: loading ? <CircularProgress size={20} /> : null,
-        }}
-        sx={{ mb: 2 }}
-      />
-      
-      {searchResults.length > 0 && (
-        <Paper sx={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          maxHeight: 200,
-          overflow: 'auto',
-          mt: 0.5,
-          boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-        }}>
-          <List dense>
-            {searchResults.map((result, index) => (
-              <ListItem 
-                key={index}
-                button
-                onClick={() => handleResultSelect(result)}
-                sx={{
-                  borderBottom: '1px solid #f0f0f0',
-                  '&:last-child': { borderBottom: 'none' },
-                  '&:hover': {
-                    backgroundColor: '#f5f5f5'
-                  }
-                }}
-              >
-                <LocationOn sx={{ mr: 1, color: 'primary.main', fontSize: '1rem' }} />
-                <ListItemText 
-                  primary={result.display_name}
-                  secondary={`Lat: ${parseFloat(result.lat).toFixed(4)}, Lng: ${parseFloat(result.lon).toFixed(4)}`}
-                  primaryTypographyProps={{ fontSize: '0.875rem' }}
-                  secondaryTypographyProps={{ fontSize: '0.75rem' }}
-                />
-              </ListItem>
-            ))}
-          </List>
-        </Paper>
-      )}
-    </Box>
-  );
-};
+import { propertyService, type Property } from '@/services/propertyService';
+import LeafletMap from "./LeafletMap";
 
 // Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
-
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
   }, [value, delay]);
-
   return debouncedValue;
 }
 
-// File upload service using Base64
+// File upload service
 const uploadService = {
   uploadFile: async (file: File): Promise<{ success: boolean; data?: { url: string; fileName: string }; message?: string }> => {
     return new Promise((resolve) => {
       const reader = new FileReader();
-      
       reader.onload = (e) => {
         const base64 = e.target?.result as string;
-        resolve({
-          success: true,
-          data: {
-            url: base64,
-            fileName: file.name
-          }
-        });
+        resolve({ success: true, data: { url: base64, fileName: file.name } });
       };
-      
-      reader.onerror = () => {
-        resolve({
-          success: false,
-          message: 'Failed to read file'
-        });
-      };
-      
+      reader.onerror = () => resolve({ success: false, message: 'Failed to read file' });
       reader.readAsDataURL(file);
     });
   },
 };
 
-// PropertyMap Component
-const PropertyMap = ({ lat, lng, projectName }: { lat: number; lng: number; projectName: string }) => {
-  if (!lat || !lng) {
-    return (
-      <Box sx={{ 
-        height: '250px', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '15px'
-      }}>
-        <Typography variant="body2" color="text.secondary">
-          Location not available
-        </Typography>
-      </Box>
-    );
-  }
+// Property Property Forms
+const ResidentialForm = ({ formData, setFormData, validationErrors, index }: any) => {
+  const [uploading, setUploading] = useState<string | null>(null);
 
-  return (
-    <MapContainer
-      center={[lat, lng]}
-      zoom={15}
-      style={{ height: '250px', width: '100%', borderRadius: '15px' }}
-      scrollWheelZoom={false}
-      className="property-map"
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <Marker position={[lat, lng]}>
-        <Popup>
-          <strong>{projectName}</strong>
-          <br />
-          Latitude: {lat.toFixed(6)}
-          <br />
-          Longitude: {lng.toFixed(6)}
-        </Popup>
-      </Marker>
-    </MapContainer>
-  );
-};
-
-// Image Carousel Component
-const ImageCarousel = ({ images, projectName }: { images: any[], projectName: string }) => {
-  const [currentIndex, setCurrentIndex] = useState(0);
-
-  if (!images || images.length === 0) {
-    return (
-      <Box sx={{ 
-        height: '400px', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        backgroundColor: '#f5f5f5',
-        borderRadius: '15px'
-      }}>
-        <Typography variant="body1" color="text.secondary">
-          No images available
-        </Typography>
-      </Box>
-    );
-  }
-
-  const nextImage = () => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
+  const mapFloorPlanType = (fileType: string) => {
+    if (!fileType) return '2d';
+    if (fileType.includes('pdf')) return 'pdf';
+    if (fileType.includes('image')) return 'image';
+    return '2d';
   };
 
-  const prevImage = () => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+  const handleFileUpload = async (files: FileList, type: 'propertyImages' | 'floorPlans') => {
+    setUploading(type);
+    try {
+      const fileArray = Array.from(files);
+      const uploadedFiles = [];
+
+      for (const file of fileArray) {
+        const uploadResponse = await uploadService.uploadFile(file);
+        if (uploadResponse.success && uploadResponse.data) {
+          const newFile = {
+            url: uploadResponse.data.url,
+            title: file.name.replace(/\.[^/.]+$/, ""),
+            description: "",
+            isPrimary: false,
+            uploadedAt: new Date().toISOString(),
+            ...(type === 'floorPlans' && { 
+              type: mapFloorPlanType(file.type)
+            })
+          };
+          uploadedFiles.push(newFile);
+        }
+      }
+
+      const newResidential = [...(formData.residentialProperties || [])];
+      if (!newResidential[index]) newResidential[index] = {};
+      
+      if (type === 'propertyImages') {
+        newResidential[index].propertyImages = [
+          ...(newResidential[index].propertyImages || []),
+          ...uploadedFiles
+        ];
+      } else {
+        newResidential[index].floorPlans = [
+          ...(newResidential[index].floorPlans || []),
+          ...uploadedFiles
+        ];
+      }
+
+      setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+      toast.success(`Successfully uploaded ${uploadedFiles.length} file(s)`);
+      
+    } catch (error) {
+      toast.error('Failed to upload files');
+    } finally {
+      setUploading(null);
+    }
   };
 
+  const removeFile = (type: 'propertyImages' | 'floorPlans', fileIndex: number) => {
+    const newResidential = [...(formData.residentialProperties || [])];
+    if (!newResidential[index]) return;
+
+    if (type === 'propertyImages') {
+      newResidential[index].propertyImages = newResidential[index].propertyImages?.filter((_: any, i: number) => i !== fileIndex) || [];
+    } else {
+      newResidential[index].floorPlans = newResidential[index].floorPlans?.filter((_: any, i: number) => i !== fileIndex) || [];
+    }
+
+    setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+    toast.success('File removed successfully');
+  };
+
+  const setPrimaryImage = (fileIndex: number) => {
+    const newResidential = [...(formData.residentialProperties || [])];
+    if (!newResidential[index]?.propertyImages) return;
+
+    newResidential[index].propertyImages = newResidential[index].propertyImages.map((img: any, i: number) => ({
+      ...img,
+      isPrimary: i === fileIndex
+    }));
+
+    setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+    toast.success('Primary image updated');
+  };
+
+  const currentProperty = formData.residentialProperties?.[index] || {};
+
   return (
-    <Box sx={{ position: 'relative' }}>
-      <Box sx={{ 
-        height: '400px', 
-        position: 'relative',
-        borderRadius: '15px',
-        overflow: 'hidden',
-        backgroundColor: '#f5f5f5'
-      }}>
-        <img
-          src={images[currentIndex]?.url}
-          alt={images[currentIndex]?.title || `${projectName} Image ${currentIndex + 1}`}
-          style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-          }}
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x300?text=Property+Image';
+    <Grid container spacing={2}>
+      <Grid size={{ xs: 12 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', display: 'flex', alignItems: 'center' }}>
+          <Home sx={{ mr: 1 }} />
+          Residential Property #{index + 1}
+        </Typography>
+      </Grid>
+
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Property Name" value={currentProperty.propertyName || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].propertyName = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
           }}
         />
-        
-        {images.length > 1 && (
-          <>
-            <IconButton
-              onClick={prevImage}
-              sx={{
-                position: 'absolute',
-                left: 8,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(0,0,0,0.7)',
-                }
-              }}
-            >
-              <ArrowBack />
-            </IconButton>
-            <IconButton
-              onClick={nextImage}
-              sx={{
-                position: 'absolute',
-                right: 8,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                backgroundColor: 'rgba(0,0,0,0.5)',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'rgba(0,0,0,0.7)',
-                }
-              }}
-            >
-              <ArrowForward />
-            </IconButton>
-          </>
-        )}
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+  <TextField 
+    fullWidth 
+    label="Price" 
+    value={currentProperty.price || ''}
+    onChange={(e) => {
+      const newResidential = [...(formData.residentialProperties || [])];
+      if (!newResidential[index]) newResidential[index] = {};
+      newResidential[index].price = e.target.value;
+      setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+    }}
+    placeholder="Leave empty to inherit from main project"
+    helperText={formData.parentId ? "Leave empty to automatically use main project price" : "Enter price for this residential property"}
+  />
+</Grid>
+      <Grid size={{ xs: 12 }}>
+        <TextField fullWidth label="Property Description" value={currentProperty.propertyDescription || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].propertyDescription = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+          multiline rows={2}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 3 }}>
+        <TextField fullWidth label="Bedrooms" type="number" value={currentProperty.bedrooms || 0}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].bedrooms = parseInt(e.target.value) || 0;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 3 }}>
+        <TextField fullWidth label="Bathrooms" type="number" value={currentProperty.bathrooms || 0}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].bathrooms = parseInt(e.target.value) || 0;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 3 }}>
+        <TextField fullWidth label="Toilets" type="number" value={currentProperty.toilet || 0}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].toilet = parseInt(e.target.value) || 0;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 3 }}>
+        <TextField fullWidth label="Balcony" type="number" value={currentProperty.balcony || 0}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].balcony = parseInt(e.target.value) || 0;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Carpet Area" value={currentProperty.carpetArea || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].carpetArea = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Built-up Area" value={currentProperty.builtUpArea || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].builtUpArea = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Minimum Size" value={currentProperty.minSize || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].minSize = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Maximum Size" value={currentProperty.maxSize || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].maxSize = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Size Unit" value={currentProperty.sizeUnit || 'sq.ft.'}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].sizeUnit = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
 
-        {images.length > 1 && (
-          <Box sx={{
-            position: 'absolute',
-            bottom: 8,
-            right: 8,
-            backgroundColor: 'rgba(0,0,0,0.7)',
-            color: 'white',
-            padding: '4px 8px',
-            borderRadius: '4px',
-            fontSize: '0.75rem'
-          }}>
-            {currentIndex + 1} / {images.length}
-          </Box>
-        )}
-      </Box>
-    </Box>
+      <Grid size={{ xs: 12 }}>
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Amenities</InputLabel>
+          <Select
+            multiple
+            value={currentProperty.amenities || []}
+            onChange={(e) => {
+              const newResidential = [...(formData.residentialProperties || [])];
+              if (!newResidential[index]) newResidential[index] = {};
+              newResidential[index].amenities = e.target.value as string[];
+              setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+            }}
+            input={<OutlinedInput label="Amenities" />}
+            renderValue={(selected) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {(selected as string[]).map((value) => (
+                  <Chip key={value} label={value} size="small" />
+                ))}
+              </Box>
+            )}
+          >
+            {[
+              "Swimming Pool", "Gym", "Park", "Club House", "Security", "Power Backup",
+              "Water Supply", "Car Parking", "Lift", "Play Area", "Garden", "Shopping Center"
+            ].map(amenity => (
+              <MenuItem key={amenity} value={amenity}>
+                {amenity}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      <Grid size={{ xs: 12 }}>
+        <Paper sx={{ p: 3, mt: 2, border: '1px solid #e0e0e0', borderRadius: '12px', backgroundColor: '#fafafa' }}>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'primary.main' }}>
+            <CloudUpload sx={{ mr: 1 }} />
+            Property Images
+            {currentProperty.propertyImages && currentProperty.propertyImages.length > 0 && (
+              <Chip 
+                label={`${currentProperty.propertyImages.length} uploaded`} 
+                size="small" 
+                color="primary" 
+                sx={{ ml: 2 }} 
+              />
+            )}
+          </Typography>
+          
+          <input
+            accept="image/*"
+            style={{ display: 'none' }}
+            id={`residential-images-${index}`}
+            type="file"
+            multiple
+            onChange={(e) => e.target.files && handleFileUpload(e.target.files, 'propertyImages')}
+            disabled={uploading === 'propertyImages'}
+          />
+          <label htmlFor={`residential-images-${index}`}>
+            <Button 
+              variant="contained" 
+              component="span" 
+              startIcon={uploading === 'propertyImages' ? <CircularProgress size={20} /> : <CloudUpload />}
+              fullWidth
+              disabled={uploading === 'propertyImages'}
+              sx={{ mb: 2 }}
+            >
+              {uploading === 'propertyImages' ? 'Uploading Images...' : 'Upload Property Images'}
+            </Button>
+          </label>
+          
+          {currentProperty.propertyImages && currentProperty.propertyImages.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                Uploaded Images
+              </Typography>
+              <Grid container spacing={2}>
+                {currentProperty.propertyImages.map((image: any, imgIndex: number) => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={imgIndex}>
+                    <Card 
+                      sx={{ 
+                        position: 'relative',
+                        border: image.isPrimary ? '2px solid #1976d2' : '1px solid #e0e0e0',
+                      }}
+                    >
+                      <CardContent sx={{ p: 2 }}>
+                        <Box
+                          sx={{
+                            height: 120,
+                            backgroundImage: `url(${image.url})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            borderRadius: 1,
+                            position: 'relative',
+                            mb: 1
+                          }}
+                        >
+                          {image.isPrimary && (
+                            <Chip 
+                              label="Primary" 
+                              size="small" 
+                              color="primary" 
+                              sx={{ 
+                                position: 'absolute',
+                                top: 8,
+                                left: 8,
+                              }} 
+                            />
+                          )}
+                          
+                          <Box sx={{ 
+                            position: 'absolute', 
+                            top: 8, 
+                            right: 8,
+                            display: 'flex',
+                            gap: 0.5
+                          }}>
+                            {!image.isPrimary && (
+                              <Tooltip title="Set as primary image">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setPrimaryImage(imgIndex)}
+                                  sx={{ 
+                                    backgroundColor: 'rgba(255,255,255,0.95)',
+                                  }}
+                                >
+                                  <StarBorder sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            <Tooltip title="Remove image">
+                              <IconButton
+                                size="small"
+                                onClick={() => removeFile('propertyImages', imgIndex)}
+                                sx={{ 
+                                  backgroundColor: 'rgba(255,255,255,0.95)',
+                                }}
+                              >
+                                <Delete sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </Box>
+                        <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+                          {image.title}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+        </Paper>
+      </Grid>
+
+      <Grid size={{ xs: 12 }}>
+        <Paper sx={{ p: 3, mt: 2, border: '1px solid #e0e0e0', borderRadius: '12px', backgroundColor: '#fafafa' }}>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'secondary.main' }}>
+            <Description sx={{ mr: 1 }} />
+            Floor Plans
+            {currentProperty.floorPlans && currentProperty.floorPlans.length > 0 && (
+              <Chip 
+                label={`${currentProperty.floorPlans.length} uploaded`} 
+                size="small" 
+                color="secondary" 
+                sx={{ ml: 2 }} 
+              />
+            )}
+          </Typography>
+          
+          <input
+            accept="image/*,.pdf"
+            style={{ display: 'none' }}
+            id={`residential-floorplans-${index}`}
+            type="file"
+            multiple
+            onChange={(e) => e.target.files && handleFileUpload(e.target.files, 'floorPlans')}
+            disabled={uploading === 'floorPlans'}
+          />
+          <label htmlFor={`residential-floorplans-${index}`}>
+            <Button 
+              variant="contained" 
+              component="span" 
+              color="secondary"
+              startIcon={uploading === 'floorPlans' ? <CircularProgress size={20} /> : <CloudUpload />}
+              fullWidth
+              disabled={uploading === 'floorPlans'}
+              sx={{ mb: 2 }}
+            >
+              {uploading === 'floorPlans' ? 'Uploading Floor Plans...' : 'Upload Floor Plans'}
+            </Button>
+          </label>
+          
+          {currentProperty.floorPlans && currentProperty.floorPlans.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                Uploaded Floor Plans
+              </Typography>
+              <Grid container spacing={2}>
+                {currentProperty.floorPlans.map((plan: any, planIndex: number) => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={planIndex}>
+                    <Card>
+                      <CardContent sx={{ p: 2 }}>
+                        <Box
+                          sx={{
+                            height: 120,
+                            backgroundColor: 'grey.50',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 1,
+                            position: 'relative',
+                            mb: 1,
+                            border: '1px dashed #e0e0e0'
+                          }}
+                        >
+                          {plan.type?.includes('image') ? (
+                            <img 
+                              src={plan.url} 
+                              alt={plan.title}
+                              style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'contain',
+                              }} 
+                            />
+                          ) : (
+                            <Box sx={{ textAlign: 'center' }}>
+                              <Description sx={{ fontSize: 48, color: 'secondary.main', mb: 1 }} />
+                              <Typography variant="caption" display="block">
+                                PDF Document
+                              </Typography>
+                            </Box>
+                          )}
+                          
+                          <Tooltip title="Remove floor plan">
+                            <IconButton
+                              size="small"
+                              onClick={() => removeFile('floorPlans', planIndex)}
+                              sx={{ 
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                                backgroundColor: 'rgba(255,255,255,0.95)',
+                              }}
+                            >
+                              <Delete sx={{ fontSize: 18 }} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                        <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+                          {plan.title}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+        </Paper>
+      </Grid>
+    </Grid>
   );
 };
 
-// File Upload Component
-const FileUploadSection = ({ 
-  title, 
-  accept, 
-  onFileUpload, 
-  uploading,
-  description 
-}: { 
-  title: string;
-  accept: string;
-  onFileUpload: (file: File) => void;
-  uploading: boolean;
-  description: string;
-}) => {
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
-    
-    onFileUpload(files[0]);
-    event.target.value = '';
+// Commercial Property Form
+const CommercialForm = ({ formData, setFormData, validationErrors, index }: any) => {
+  const [uploading, setUploading] = useState<string | null>(null);
+
+  const mapFloorPlanType = (fileType: string) => {
+    if (!fileType) return '2d';
+    if (fileType.includes('pdf')) return 'pdf';
+    if (fileType.includes('image')) return 'image';
+    return '2d';
   };
+
+  const handleFileUpload = async (files: FileList, type: 'propertyImages' | 'floorPlans') => {
+    setUploading(type);
+    try {
+      const fileArray = Array.from(files);
+      const uploadedFiles = [];
+
+      for (const file of fileArray) {
+        const uploadResponse = await uploadService.uploadFile(file);
+        if (uploadResponse.success && uploadResponse.data) {
+          const newFile = {
+            url: uploadResponse.data.url,
+            title: file.name.replace(/\.[^/.]+$/, ""),
+            description: "",
+            isPrimary: false,
+            uploadedAt: new Date().toISOString(),
+            ...(type === 'floorPlans' && { 
+              type: mapFloorPlanType(file.type)
+            })
+          };
+          uploadedFiles.push(newFile);
+        }
+      }
+
+      const newCommercial = [...(formData.commercialProperties || [])];
+      if (!newCommercial[index]) newCommercial[index] = {};
+      
+      if (type === 'propertyImages') {
+        newCommercial[index].propertyImages = [
+          ...(newCommercial[index].propertyImages || []),
+          ...uploadedFiles
+        ];
+      } else {
+        newCommercial[index].floorPlans = [
+          ...(newCommercial[index].floorPlans || []),
+          ...uploadedFiles
+        ];
+      }
+
+      setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+      toast.success(`Successfully uploaded ${uploadedFiles.length} file(s)`);
+      
+    } catch (error) {
+      toast.error('Failed to upload files');
+    } finally {
+      setUploading(null);
+    }
+  };
+
+  const removeFile = (type: 'propertyImages' | 'floorPlans', fileIndex: number) => {
+    const newCommercial = [...(formData.commercialProperties || [])];
+    if (!newCommercial[index]) return;
+
+    if (type === 'propertyImages') {
+      newCommercial[index].propertyImages = newCommercial[index].propertyImages?.filter((_: any, i: number) => i !== fileIndex) || [];
+    } else {
+      newCommercial[index].floorPlans = newCommercial[index].floorPlans?.filter((_: any, i: number) => i !== fileIndex) || [];
+    }
+
+    setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+    toast.success('File removed successfully');
+  };
+
+  const setPrimaryImage = (fileIndex: number) => {
+    const newCommercial = [...(formData.commercialProperties || [])];
+    if (!newCommercial[index]?.propertyImages) return;
+
+    newCommercial[index].propertyImages = newCommercial[index].propertyImages.map((img: any, i: number) => ({
+      ...img,
+      isPrimary: i === fileIndex
+    }));
+
+    setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+    toast.success('Primary image updated');
+  };
+
+  const currentProperty = formData.commercialProperties?.[index] || {};
 
   return (
-    <Box sx={{ mb: 2, p: 2, border: '1px dashed #e0e0e0', borderRadius: '8px', backgroundColor: '#fafafa' }}>
-      <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600, color: '#1976d2' }}>
-        {title}
-      </Typography>
-      <Box display="flex" alignItems="center" gap={1}>
-        <Button
-          variant="outlined"
-          component="label"
-          startIcon={<CloudUpload />}
-          disabled={uploading}
-          sx={{
-            width: '150px',
-            borderRadius: '8px',
-            textTransform: 'none',
-            borderColor: '#1976d2',
-            color: '#1976d2',
-            '&:hover': {
-              borderColor: '#115293',
-              backgroundColor: 'rgba(25, 118, 210, 0.04)',
-            }
-          }}
-        >
-          Choose File
-          <input
-            type="file"
-            hidden
-            accept={accept}
-            onChange={handleFileChange}
-          />
-        </Button>
-        <Typography variant="caption" color="text.secondary">
-          {description}
+    <Grid container spacing={2}>
+      <Grid size={{ xs: 12 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'warning.main', display: 'flex', alignItems: 'center' }}>
+          <Business sx={{ mr: 1 }} />
+          Commercial Property #{index + 1}
         </Typography>
-        {uploading && (
-          <Box display="flex" alignItems="center" gap={1}>
-            <CircularProgress size={16} />
-            <Typography variant="caption">Uploading...</Typography>
-          </Box>
-        )}
-      </Box>
-    </Box>
+      </Grid>
+
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Property Name" value={currentProperty.propertyName || ''}
+          onChange={(e) => {
+            const newCommercial = [...(formData.commercialProperties || [])];
+            if (!newCommercial[index]) newCommercial[index] = {};
+            newCommercial[index].propertyName = e.target.value;
+            setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+  <TextField 
+    fullWidth 
+    label="Price" 
+    value={currentProperty.price || ''}
+    onChange={(e) => {
+      const newCommercial = [...(formData.commercialProperties || [])];
+      if (!newCommercial[index]) newCommercial[index] = {};
+      newCommercial[index].price = e.target.value;
+      setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+    }}
+    placeholder="Leave empty to inherit from main project"
+    helperText={formData.parentId ? "Leave empty to automatically use main project price" : "Enter price for this commercial property"}
+  />
+</Grid>
+      <Grid size={{ xs: 12 }}>
+        <TextField fullWidth label="Property Description" value={currentProperty.propertyDescription || ''}
+          onChange={(e) => {
+            const newCommercial = [...(formData.commercialProperties || [])];
+            if (!newCommercial[index]) newCommercial[index] = {};
+            newCommercial[index].propertyDescription = e.target.value;
+            setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+          }}
+          multiline rows={2}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Carpet Area" value={currentProperty.carpetArea || ''}
+          onChange={(e) => {
+            const newCommercial = [...(formData.commercialProperties || [])];
+            if (!newCommercial[index]) newCommercial[index] = {};
+            newCommercial[index].carpetArea = e.target.value;
+            setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Built-up Area" value={currentProperty.builtUpArea || ''}
+          onChange={(e) => {
+            const newCommercial = [...(formData.commercialProperties || [])];
+            if (!newCommercial[index]) newCommercial[index] = {};
+            newCommercial[index].builtUpArea = e.target.value;
+            setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Minimum Size" value={currentProperty.minSize || ''}
+          onChange={(e) => {
+            const newCommercial = [...(formData.commercialProperties || [])];
+            if (!newCommercial[index]) newCommercial[index] = {};
+            newCommercial[index].minSize = e.target.value;
+            setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Maximum Size" value={currentProperty.maxSize || ''}
+          onChange={(e) => {
+            const newCommercial = [...(formData.commercialProperties || [])];
+            if (!newCommercial[index]) newCommercial[index] = {};
+            newCommercial[index].maxSize = e.target.value;
+            setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Size Unit" value={currentProperty.sizeUnit || 'sq.ft.'}
+          onChange={(e) => {
+            const newCommercial = [...(formData.commercialProperties || [])];
+            if (!newCommercial[index]) newCommercial[index] = {};
+            newCommercial[index].sizeUnit = e.target.value;
+            setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+          }}
+        />
+      </Grid>
+
+      <Grid size={{ xs: 12 }}>
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Amenities</InputLabel>
+          <Select
+            multiple
+            value={currentProperty.amenities || []}
+            onChange={(e) => {
+              const newCommercial = [...(formData.commercialProperties || [])];
+              if (!newCommercial[index]) newCommercial[index] = {};
+              newCommercial[index].amenities = e.target.value as string[];
+              setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+            }}
+            input={<OutlinedInput label="Amenities" />}
+            renderValue={(selected) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {(selected as string[]).map((value) => (
+                  <Chip key={value} label={value} size="small" />
+                ))}
+              </Box>
+            )}
+          >
+            {[
+              "Parking", "Security", "Power Backup", "Lift", "Fire Safety", "Conference Room",
+              "Reception", "Pantry", "Internet", "AC", "Modular Kitchen", "Restrooms"
+            ].map(amenity => (
+              <MenuItem key={amenity} value={amenity}>
+                {amenity}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      <Grid size={{ xs: 12 }}>
+        <Paper sx={{ p: 3, mt: 2, border: '1px solid #e0e0e0', borderRadius: '12px', backgroundColor: '#fafafa' }}>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'warning.main' }}>
+            <CloudUpload sx={{ mr: 1 }} />
+            Commercial Property Images
+            {currentProperty.propertyImages && currentProperty.propertyImages.length > 0 && (
+              <Chip 
+                label={`${currentProperty.propertyImages.length} uploaded`} 
+                size="small" 
+                color="warning" 
+                sx={{ ml: 2 }} 
+              />
+            )}
+          </Typography>
+          
+          <input
+            accept="image/*"
+            style={{ display: 'none' }}
+            id={`commercial-images-${index}`}
+            type="file"
+            multiple
+            onChange={(e) => e.target.files && handleFileUpload(e.target.files, 'propertyImages')}
+            disabled={uploading === 'propertyImages'}
+          />
+          <label htmlFor={`commercial-images-${index}`}>
+            <Button 
+              variant="contained" 
+              component="span" 
+              color="warning"
+              startIcon={uploading === 'propertyImages' ? <CircularProgress size={20} /> : <CloudUpload />}
+              fullWidth
+              disabled={uploading === 'propertyImages'}
+              sx={{ mb: 2 }}
+            >
+              {uploading === 'propertyImages' ? 'Uploading Images...' : 'Upload Commercial Images'}
+            </Button>
+          </label>
+          
+          {currentProperty.propertyImages && currentProperty.propertyImages.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                Uploaded Images
+              </Typography>
+              <Grid container spacing={2}>
+                {currentProperty.propertyImages.map((image: any, imgIndex: number) => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={imgIndex}>
+                    <Card 
+                      sx={{ 
+                        position: 'relative',
+                        border: image.isPrimary ? '2px solid #ed6c02' : '1px solid #e0e0e0',
+                      }}
+                    >
+                      <CardContent sx={{ p: 2 }}>
+                        <Box
+                          sx={{
+                            height: 120,
+                            backgroundImage: `url(${image.url})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            borderRadius: 1,
+                            position: 'relative',
+                            mb: 1
+                          }}
+                        >
+                          {image.isPrimary && (
+                            <Chip 
+                              label="Primary" 
+                              size="small" 
+                              color="warning" 
+                              sx={{ 
+                                position: 'absolute',
+                                top: 8,
+                                left: 8,
+                              }} 
+                            />
+                          )}
+                          
+                          <Box sx={{ 
+                            position: 'absolute', 
+                            top: 8, 
+                            right: 8,
+                            display: 'flex',
+                            gap: 0.5
+                          }}>
+                            {!image.isPrimary && (
+                              <Tooltip title="Set as primary image">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setPrimaryImage(imgIndex)}
+                                  sx={{ 
+                                    backgroundColor: 'rgba(255,255,255,0.95)',
+                                  }}
+                                >
+                                  <StarBorder sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            <Tooltip title="Remove image">
+                              <IconButton
+                                size="small"
+                                onClick={() => removeFile('propertyImages', imgIndex)}
+                                sx={{ 
+                                  backgroundColor: 'rgba(255,255,255,0.95)',
+                                }}
+                              >
+                                <Delete sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </Box>
+                        <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+                          {image.title}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+        </Paper>
+      </Grid>
+
+      <Grid size={{ xs: 12 }}>
+        <Paper sx={{ p: 3, mt: 2, border: '1px solid #e0e0e0', borderRadius: '12px', backgroundColor: '#fafafa' }}>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'warning.main' }}>
+            <Description sx={{ mr: 1 }} />
+            Commercial Floor Plans
+            {currentProperty.floorPlans && currentProperty.floorPlans.length > 0 && (
+              <Chip 
+                label={`${currentProperty.floorPlans.length} uploaded`} 
+                size="small" 
+                color="warning" 
+                sx={{ ml: 2 }} 
+              />
+            )}
+          </Typography>
+          
+          <input
+            accept="image/*,.pdf"
+            style={{ display: 'none' }}
+            id={`commercial-floorplans-${index}`}
+            type="file"
+            multiple
+            onChange={(e) => e.target.files && handleFileUpload(e.target.files, 'floorPlans')}
+            disabled={uploading === 'floorPlans'}
+          />
+          <label htmlFor={`commercial-floorplans-${index}`}>
+            <Button 
+              variant="contained" 
+              component="span" 
+              color="warning"
+              startIcon={uploading === 'floorPlans' ? <CircularProgress size={20} /> : <CloudUpload />}
+              fullWidth
+              disabled={uploading === 'floorPlans'}
+              sx={{ mb: 2 }}
+            >
+              {uploading === 'floorPlans' ? 'Uploading Floor Plans...' : 'Upload Floor Plans'}
+            </Button>
+          </label>
+          
+          {currentProperty.floorPlans && currentProperty.floorPlans.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                Uploaded Floor Plans
+              </Typography>
+              <Grid container spacing={2}>
+                {currentProperty.floorPlans.map((plan: any, planIndex: number) => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={planIndex}>
+                    <Card>
+                      <CardContent sx={{ p: 2 }}>
+                        <Box
+                          sx={{
+                            height: 120,
+                            backgroundColor: 'grey.50',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 1,
+                            position: 'relative',
+                            mb: 1,
+                            border: '1px dashed #e0e0e0'
+                          }}
+                        >
+                          {plan.type?.includes('image') ? (
+                            <img 
+                              src={plan.url} 
+                              alt={plan.title}
+                              style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'contain',
+                              }} 
+                            />
+                          ) : (
+                            <Box sx={{ textAlign: 'center' }}>
+                              <Description sx={{ fontSize: 48, color: 'warning.main', mb: 1 }} />
+                              <Typography variant="caption" display="block">
+                                PDF Document
+                              </Typography>
+                            </Box>
+                          )}
+                          
+                          <Tooltip title="Remove floor plan">
+                            <IconButton
+                              size="small"
+                              onClick={() => removeFile('floorPlans', planIndex)}
+                              sx={{ 
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                                backgroundColor: 'rgba(255,255,255,0.95)',
+                              }}
+                            >
+                              <Delete sx={{ fontSize: 18 }} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                        <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+                          {plan.title}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+        </Paper>
+      </Grid>
+    </Grid>
   );
 };
 
-// Property Type Form Component
-const PropertyTypeForm = ({
-  propertyType,
-  index,
-  onChange,
-  onRemove
-}: {
-  propertyType: PropertyType;
-  index: number;
-  onChange: (index: number, field: string, value: any) => void;
-  onRemove: (index: number) => void;
-}) => {
-  const isResidential = propertyType.propertyType === 'residential';
-  const isCommercial = propertyType.propertyType === 'commercial';
-  
-  // Upload states for this specific property type
-  const [uploadingImages, setUploadingImages] = useState(false);
-  const [uploadingFloorPlans, setUploadingFloorPlans] = useState(false);
+// Plot Property Form
+const PlotForm = ({ formData, setFormData, validationErrors, index }: any) => {
+  const [uploading, setUploading] = useState<string | null>(null);
 
-  // Handle image upload for this property type
-  const handleImageUpload = async (file: File) => {
-    setUploadingImages(true);
+  const mapFloorPlanType = (fileType: string) => {
+    if (!fileType) return '2d';
+    if (fileType.includes('pdf')) return 'pdf';
+    if (fileType.includes('image')) return 'image';
+    return '2d';
+  };
 
+  const handleFileUpload = async (files: FileList, type: 'propertyImages' | 'floorPlans') => {
+    setUploading(type);
     try {
-      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validImageTypes.includes(file.type)) {
-        toast.error('Please select a valid image file (JPEG, PNG, GIF, WebP)');
-        return;
+      const fileArray = Array.from(files);
+      const uploadedFiles = [];
+
+      for (const file of fileArray) {
+        const uploadResponse = await uploadService.uploadFile(file);
+        if (uploadResponse.success && uploadResponse.data) {
+          const newFile = {
+            url: uploadResponse.data.url,
+            title: file.name.replace(/\.[^/.]+$/, ""),
+            description: "",
+            isPrimary: false,
+            uploadedAt: new Date().toISOString(),
+            ...(type === 'floorPlans' && { 
+              type: mapFloorPlanType(file.type)
+            })
+          };
+          uploadedFiles.push(newFile);
+        }
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size should be less than 5MB');
-        return;
-      }
-
-      const uploadResponse = await uploadService.uploadFile(file);
+      const newPlot = [...(formData.plotProperties || [])];
+      if (!newPlot[index]) newPlot[index] = {};
       
-      if (uploadResponse.success && uploadResponse.data) {
-        const uploadedImage = {
-          url: uploadResponse.data.url,
-          title: file.name.replace(/\.[^/.]+$/, ""),
-          description: "",
-          isPrimary: (propertyType.images || []).length === 0,
-          uploadedAt: new Date()
-        };
-
-        const updatedImages = [...(propertyType.images || []), uploadedImage];
-        onChange(index, 'images', updatedImages);
-        toast.success('Image uploaded successfully');
+      if (type === 'propertyImages') {
+        newPlot[index].propertyImages = [
+          ...(newPlot[index].propertyImages || []),
+          ...uploadedFiles
+        ];
       } else {
-        throw new Error(uploadResponse.message || 'Upload failed');
+        newPlot[index].floorPlans = [
+          ...(newPlot[index].floorPlans || []),
+          ...uploadedFiles
+        ];
       }
-    } catch (error: any) {
-      console.error('Image upload error:', error);
-      toast.error(error.message || 'Failed to upload image');
+
+      setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+      toast.success(`Successfully uploaded ${uploadedFiles.length} file(s)`);
+      
+    } catch (error) {
+      toast.error('Failed to upload files');
     } finally {
-      setUploadingImages(false);
+      setUploading(null);
     }
   };
 
-  // Handle floor plan upload for this property type
-  const handleFloorPlanUpload = async (file: File) => {
-    setUploadingFloorPlans(true);
+  const removeFile = (type: 'propertyImages' | 'floorPlans', fileIndex: number) => {
+    const newPlot = [...(formData.plotProperties || [])];
+    if (!newPlot[index]) return;
 
-    try {
-      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validImageTypes.includes(file.type)) {
-        toast.error('Please select a valid image file (JPEG, PNG, GIF, WebP)');
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Floor plan size should be less than 5MB');
-        return;
-      }
-
-      const uploadResponse = await uploadService.uploadFile(file);
-      
-      if (uploadResponse.success && uploadResponse.data) {
-        const uploadedFloorPlan = {
-          url: uploadResponse.data.url,
-          title: file.name.replace(/\.[^/.]+$/, ""),
-          description: "",
-          isPrimary: (propertyType.floorPlan || []).length === 0,
-          uploadedAt: new Date()
-        };
-
-        const updatedFloorPlans = [...(propertyType.floorPlan || []), uploadedFloorPlan];
-        onChange(index, 'floorPlan', updatedFloorPlans);
-        toast.success('Floor plan uploaded successfully');
-      } else {
-        throw new Error(uploadResponse.message || 'Upload failed');
-      }
-    } catch (error: any) {
-      console.error('Floor plan upload error:', error);
-      toast.error(error.message || 'Failed to upload floor plan');
-    } finally {
-      setUploadingFloorPlans(false);
+    if (type === 'propertyImages') {
+      newPlot[index].propertyImages = newPlot[index].propertyImages?.filter((_: any, i: number) => i !== fileIndex) || [];
+    } else {
+      newPlot[index].floorPlans = newPlot[index].floorPlans?.filter((_: any, i: number) => i !== fileIndex) || [];
     }
+
+    setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+    toast.success('File removed successfully');
   };
 
-  // Remove image from this property type
-  const removeImage = (imageIndex: number) => {
-    const updatedImages = (propertyType.images || []).filter((_, i) => i !== imageIndex);
-    onChange(index, 'images', updatedImages);
-  };
+  const setPrimaryImage = (fileIndex: number) => {
+    const newPlot = [...(formData.plotProperties || [])];
+    if (!newPlot[index]?.propertyImages) return;
 
-  // Remove floor plan from this property type
-  const removeFloorPlan = (floorPlanIndex: number) => {
-    const updatedFloorPlans = (propertyType.floorPlan || []).filter((_, i) => i !== floorPlanIndex);
-    onChange(index, 'floorPlan', updatedFloorPlans);
-  };
-
-  // Set primary image for this property type
-  const setPrimaryImage = (imageIndex: number) => {
-    const updatedImages = (propertyType.images || []).map((img, i) => ({
+    newPlot[index].propertyImages = newPlot[index].propertyImages.map((img: any, i: number) => ({
       ...img,
-      isPrimary: i === imageIndex
+      isPrimary: i === fileIndex
     }));
-    onChange(index, 'images', updatedImages);
+
+    setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+    toast.success('Primary image updated');
   };
 
-  // Set primary floor plan for this property type
-  const setPrimaryFloorPlan = (floorPlanIndex: number) => {
-    const updatedFloorPlans = (propertyType.floorPlan || []).map((plan, i) => ({
-      ...plan,
-      isPrimary: i === floorPlanIndex
+  const currentProperty = formData.plotProperties?.[index] || {};
+
+  return (
+    <Grid container spacing={2}>
+      <Grid size={{ xs: 12 }}>
+        <Typography variant="h6" gutterBottom sx={{ color: 'info.main', display: 'flex', alignItems: 'center' }}>
+          <Landscape sx={{ mr: 1 }} />
+          Plot #{index + 1}
+        </Typography>
+      </Grid>
+
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Property Name" value={currentProperty.propertyName || ''}
+          onChange={(e) => {
+            const newPlot = [...(formData.plotProperties || [])];
+            if (!newPlot[index]) newPlot[index] = {};
+            newPlot[index].propertyName = e.target.value;
+            setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+  <TextField 
+    fullWidth 
+    label="Price" 
+    value={currentProperty.price || ''}
+    onChange={(e) => {
+      const newPlot = [...(formData.plotProperties || [])];
+      if (!newPlot[index]) newPlot[index] = {};
+      newPlot[index].price = e.target.value;
+      setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+    }}
+    placeholder="Leave empty to inherit from main project"
+    helperText={formData.parentId ? "Leave empty to automatically use main project price" : "Enter price for this plot"}
+  />
+</Grid>
+      <Grid size={{ xs: 12 }}>
+        <TextField fullWidth label="Property Description" value={currentProperty.propertyDescription || ''}
+          onChange={(e) => {
+            const newPlot = [...(formData.plotProperties || [])];
+            if (!newPlot[index]) newPlot[index] = {};
+            newPlot[index].propertyDescription = e.target.value;
+            setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+          }}
+          multiline rows={2}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <FormControl fullWidth>
+          <InputLabel>Ownership Type</InputLabel>
+          <Select value={currentProperty.ownershipType || "Freehold"}
+            onChange={(e) => {
+              const newPlot = [...(formData.plotProperties || [])];
+              if (!newPlot[index]) newPlot[index] = {};
+              newPlot[index].ownershipType = e.target.value;
+              setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+            }}
+            label="Ownership Type"
+          >
+            <MenuItem value="Freehold">Freehold</MenuItem>
+            <MenuItem value="Leasehold">Leasehold</MenuItem>
+            <MenuItem value="GPA">GPA</MenuItem>
+            <MenuItem value="Power of Attorney">Power of Attorney</MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <FormControl fullWidth>
+          <InputLabel>Land Type</InputLabel>
+          <Select value={currentProperty.landType || "Residential Plot"}
+            onChange={(e) => {
+              const newPlot = [...(formData.plotProperties || [])];
+              if (!newPlot[index]) newPlot[index] = {};
+              newPlot[index].landType = e.target.value;
+              setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+            }}
+            label="Land Type"
+          >
+            <MenuItem value="Residential Plot">Residential Plot</MenuItem>
+            <MenuItem value="Commercial Plot">Commercial Plot</MenuItem>
+            <MenuItem value="Farm Land">Farm Land</MenuItem>
+            <MenuItem value="Industrial Plot">Industrial Plot</MenuItem>
+            <MenuItem value="Mixed Use">Mixed Use</MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Approved By" value={currentProperty.approvedBy || ''}
+          onChange={(e) => {
+            const newPlot = [...(formData.plotProperties || [])];
+            if (!newPlot[index]) newPlot[index] = {};
+            newPlot[index].approvedBy = e.target.value;
+            setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <FormControl fullWidth>
+          <InputLabel>Boundary Wall</InputLabel>
+          <Select value={currentProperty.boundaryWall?.toString() || "false"}
+            onChange={(e) => {
+              const newPlot = [...(formData.plotProperties || [])];
+              if (!newPlot[index]) newPlot[index] = {};
+              newPlot[index].boundaryWall = e.target.value === 'true';
+              setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+            }}
+            label="Boundary Wall"
+          >
+            <MenuItem value="true">Yes</MenuItem>
+            <MenuItem value="false">No</MenuItem>
+          </Select>
+        </FormControl>
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Minimum Size" value={currentProperty.minSize || ''}
+          onChange={(e) => {
+            const newPlot = [...(formData.plotProperties || [])];
+            if (!newPlot[index]) newPlot[index] = {};
+            newPlot[index].minSize = e.target.value;
+            setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Maximum Size" value={currentProperty.maxSize || ''}
+          onChange={(e) => {
+            const newPlot = [...(formData.plotProperties || [])];
+            if (!newPlot[index]) newPlot[index] = {};
+            newPlot[index].maxSize = e.target.value;
+            setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Size Unit" value={currentProperty.sizeUnit || 'sq.ft.'}
+          onChange={(e) => {
+            const newPlot = [...(formData.plotProperties || [])];
+            if (!newPlot[index]) newPlot[index] = {};
+            newPlot[index].sizeUnit = e.target.value;
+            setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+          }}
+        />
+      </Grid>
+
+      <Grid size={{ xs: 12 }}>
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Amenities</InputLabel>
+          <Select
+            multiple
+            value={currentProperty.amenities || []}
+            onChange={(e) => {
+              const newPlot = [...(formData.plotProperties || [])];
+              if (!newPlot[index]) newPlot[index] = {};
+              newPlot[index].amenities = e.target.value as string[];
+              setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+            }}
+            input={<OutlinedInput label="Amenities" />}
+            renderValue={(selected) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {(selected as string[]).map((value) => (
+                  <Chip key={value} label={value} size="small" />
+                ))}
+              </Box>
+            )}
+          >
+            {[
+              "Boundary Wall", "Gate", "Security", "Road Access", "Water Supply", "Electricity",
+              "Drainage", "Street Lights", "Park", "Community Center"
+            ].map(amenity => (
+              <MenuItem key={amenity} value={amenity}>
+                {amenity}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
+
+      <Grid size={{ xs: 12 }}>
+        <Paper sx={{ p: 3, mt: 2, border: '1px solid #e0e0e0', borderRadius: '12px', backgroundColor: '#fafafa' }}>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'info.main' }}>
+            <CloudUpload sx={{ mr: 1 }} />
+            Plot Images
+            {currentProperty.propertyImages && currentProperty.propertyImages.length > 0 && (
+              <Chip 
+                label={`${currentProperty.propertyImages.length} uploaded`} 
+                size="small" 
+                color="info" 
+                sx={{ ml: 2 }} 
+              />
+            )}
+          </Typography>
+          
+          <input
+            accept="image/*"
+            style={{ display: 'none' }}
+            id={`plot-images-${index}`}
+            type="file"
+            multiple
+            onChange={(e) => e.target.files && handleFileUpload(e.target.files, 'propertyImages')}
+            disabled={uploading === 'propertyImages'}
+          />
+          <label htmlFor={`plot-images-${index}`}>
+            <Button 
+              variant="contained" 
+              component="span" 
+              color="info"
+              startIcon={uploading === 'propertyImages' ? <CircularProgress size={20} /> : <CloudUpload />}
+              fullWidth
+              disabled={uploading === 'propertyImages'}
+              sx={{ mb: 2 }}
+            >
+              {uploading === 'propertyImages' ? 'Uploading Images...' : 'Upload Plot Images'}
+            </Button>
+          </label>
+          
+          {currentProperty.propertyImages && currentProperty.propertyImages.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                Uploaded Images
+              </Typography>
+              <Grid container spacing={2}>
+                {currentProperty.propertyImages.map((image: any, imgIndex: number) => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={imgIndex}>
+                    <Card 
+                      sx={{ 
+                        position: 'relative',
+                        border: image.isPrimary ? '2px solid #0288d1' : '1px solid #e0e0e0',
+                      }}
+                    >
+                      <CardContent sx={{ p: 2 }}>
+                        <Box
+                          sx={{
+                            height: 120,
+                            backgroundImage: `url(${image.url})`,
+                            backgroundSize: 'cover',
+                            backgroundPosition: 'center',
+                            borderRadius: 1,
+                            position: 'relative',
+                            mb: 1
+                          }}
+                        >
+                          {image.isPrimary && (
+                            <Chip 
+                              label="Primary" 
+                              size="small" 
+                              color="info" 
+                              sx={{ 
+                                position: 'absolute',
+                                top: 8,
+                                left: 8,
+                              }} 
+                            />
+                          )}
+                          
+                          <Box sx={{ 
+                            position: 'absolute', 
+                            top: 8, 
+                            right: 8,
+                            display: 'flex',
+                            gap: 0.5
+                          }}>
+                            {!image.isPrimary && (
+                              <Tooltip title="Set as primary image">
+                                <IconButton
+                                  size="small"
+                                  onClick={() => setPrimaryImage(imgIndex)}
+                                  sx={{ 
+                                    backgroundColor: 'rgba(255,255,255,0.95)',
+                                  }}
+                                >
+                                  <StarBorder sx={{ fontSize: 18 }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            <Tooltip title="Remove image">
+                              <IconButton
+                                size="small"
+                                onClick={() => removeFile('propertyImages', imgIndex)}
+                                sx={{ 
+                                  backgroundColor: 'rgba(255,255,255,0.95)',
+                                }}
+                              >
+                                <Delete sx={{ fontSize: 18 }} />
+                              </IconButton>
+                            </Tooltip>
+                          </Box>
+                        </Box>
+                        <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+                          {image.title}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+        </Paper>
+      </Grid>
+
+      <Grid size={{ xs: 12 }}>
+        <Paper sx={{ p: 3, mt: 2, border: '1px solid #e0e0e0', borderRadius: '12px', backgroundColor: '#fafafa' }}>
+          <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'info.main' }}>
+            <Description sx={{ mr: 1 }} />
+            Plot Layouts & Plans
+            {currentProperty.floorPlans && currentProperty.floorPlans.length > 0 && (
+              <Chip 
+                label={`${currentProperty.floorPlans.length} uploaded`} 
+                size="small" 
+                color="info" 
+                sx={{ ml: 2 }} 
+              />
+            )}
+          </Typography>
+          
+          <input
+            accept="image/*,.pdf"
+            style={{ display: 'none' }}
+            id={`plot-floorplans-${index}`}
+            type="file"
+            multiple
+            onChange={(e) => e.target.files && handleFileUpload(e.target.files, 'floorPlans')}
+            disabled={uploading === 'floorPlans'}
+          />
+          <label htmlFor={`plot-floorplans-${index}`}>
+            <Button 
+              variant="contained" 
+              component="span" 
+              color="info"
+              startIcon={uploading === 'floorPlans' ? <CircularProgress size={20} /> : <CloudUpload />}
+              fullWidth
+              disabled={uploading === 'floorPlans'}
+              sx={{ mb: 2 }}
+            >
+              {uploading === 'floorPlans' ? 'Uploading Layouts...' : 'Upload Plot Layouts'}
+            </Button>
+          </label>
+          
+          {currentProperty.floorPlans && currentProperty.floorPlans.length > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                Uploaded Layouts & Plans
+              </Typography>
+              <Grid container spacing={2}>
+                {currentProperty.floorPlans.map((plan: any, planIndex: number) => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4 }} key={planIndex}>
+                    <Card>
+                      <CardContent sx={{ p: 2 }}>
+                        <Box
+                          sx={{
+                            height: 120,
+                            backgroundColor: 'grey.50',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            borderRadius: 1,
+                            position: 'relative',
+                            mb: 1,
+                            border: '1px dashed #e0e0e0'
+                          }}
+                        >
+                          {plan.type?.includes('image') ? (
+                            <img 
+                              src={plan.url} 
+                              alt={plan.title}
+                              style={{ 
+                                width: '100%', 
+                                height: '100%', 
+                                objectFit: 'contain',
+                              }} 
+                            />
+                          ) : (
+                            <Box sx={{ textAlign: 'center' }}>
+                              <Description sx={{ fontSize: 48, color: 'info.main', mb: 1 }} />
+                              <Typography variant="caption" display="block">
+                                PDF Document
+                              </Typography>
+                            </Box>
+                          )}
+                          
+                          <Tooltip title="Remove layout">
+                            <IconButton
+                              size="small"
+                              onClick={() => removeFile('floorPlans', planIndex)}
+                              sx={{ 
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                                backgroundColor: 'rgba(255,255,255,0.95)',
+                              }}
+                            >
+                              <Delete sx={{ fontSize: 18 }} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                        <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
+                          {plan.title}
+                        </Typography>
+                      </CardContent>
+                    </Card>
+                  </Grid>
+                ))}
+              </Grid>
+            </Box>
+          )}
+        </Paper>
+      </Grid>
+    </Grid>
+  );
+};
+
+const PropertyTypeSelector = ({ formData, setFormData, validationErrors }: any) => {
+  const [activeTab, setActiveTab] = useState(0);
+
+  const handlePropertyTypeChange = (selectedTypes: string[]) => {
+    setFormData((prev: any) => ({ 
+      ...prev, 
+      propertyType: selectedTypes,
+      residentialProperties: selectedTypes.includes('residential') ? (prev.residentialProperties || [{}]) : [],
+      commercialProperties: selectedTypes.includes('commercial') ? (prev.commercialProperties || [{}]) : [],
+      plotProperties: selectedTypes.includes('plot') ? (prev.plotProperties || [{}]) : [],
     }));
-    onChange(index, 'floorPlan', updatedFloorPlans);
+  };
+
+  const addPropertyOfType = (type: string) => {
+    const key = `${type}Properties`;
+    const currentProperties = formData[key] || [];
+    
+    const defaultProperty = {
+      propertyName: '',
+      propertyDescription: '',
+      price: '',
+      paymentPlan: formData.paymentPlan || '',
+      amenities: [],
+      propertyImages: [], 
+      floorPlans: [],
+      ...(type === 'residential' && {
+        bedrooms: 0,
+        bathrooms: 0,
+        toilet: 0,
+        balcony: 0,
+        carpetArea: '',
+        builtUpArea: '',
+        minSize: '',
+        maxSize: '',
+        sizeUnit: 'sq.ft.'
+      }),
+      ...(type === 'commercial' && {
+        carpetArea: '',
+        builtUpArea: '',
+        minSize: '',
+        maxSize: '',
+        sizeUnit: 'sq.ft.'
+      }),
+      ...(type === 'plot' && {
+        ownershipType: 'Freehold',
+        landType: 'Residential Plot',
+        approvedBy: '',
+        boundaryWall: false,
+        minSize: '',
+        maxSize: '',
+        sizeUnit: 'sq.ft.'
+      })
+    };
+
+    setFormData((prev: any) => ({ 
+      ...prev, 
+      [key]: [...currentProperties, defaultProperty] 
+    }));
+    
+    setActiveTab(formData.propertyType.indexOf(type));
+  };
+
+  const removePropertyOfType = (type: string, index: number) => {
+    const key = `${type}Properties`;
+    const currentProperties = formData[key] || [];
+    const newProperties = currentProperties.filter((_: any, i: number) => i !== index);
+    setFormData((prev: any) => ({ 
+      ...prev, 
+      [key]: newProperties 
+    }));
+  };
+
+  const selectedTypes = Array.isArray(formData.propertyType) ? formData.propertyType : [];
+
+  return (
+    <Paper sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0', borderRadius: '15px' }}>
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+        Property Types Configuration <Typography component="span" color="error">*</Typography>
+      </Typography>
+
+      <Grid container spacing={2} sx={{ mb: 3 }}>
+        <Grid size={{ xs: 12 }}>
+          <FormControl fullWidth sx={{ mb: 2 }} error={!!validationErrors.propertyType}>
+            <InputLabel>Select Property Types *</InputLabel>
+            <Select
+              multiple
+              value={selectedTypes}
+              onChange={(e) => handlePropertyTypeChange(e.target.value as string[])}
+              input={<OutlinedInput label="Select Property Types *" />}
+              renderValue={(selected) => (
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                  {(selected as string[]).map((value) => (
+                    <Chip key={value} label={value} size="small" 
+                      color={value === 'residential' ? 'secondary' : value === 'commercial' ? 'warning' : 'info'} />
+                  ))}
+                </Box>
+              )}
+            >
+              <MenuItem value="residential">
+                <Box sx={{ display: 'flex', alignItems: 'center' }}><Home sx={{ mr: 1 }} />Residential</Box>
+              </MenuItem>
+              <MenuItem value="commercial">
+                <Box sx={{ display: 'flex', alignItems: 'center' }}><Business sx={{ mr: 1 }} />Commercial</Box>
+              </MenuItem>
+              <MenuItem value="plot">
+                <Box sx={{ display: 'flex', alignItems: 'center' }}><Landscape sx={{ mr: 1 }} />Plot</Box>
+              </MenuItem>
+            </Select>
+            {validationErrors.propertyType && <FormHelperText error>{validationErrors.propertyType}</FormHelperText>}
+          </FormControl>
+        </Grid>
+      </Grid>
+
+      {selectedTypes.length > 0 && (
+        <Box sx={{ width: '100%' }}>
+          <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} variant="scrollable">
+              {selectedTypes.map((type, index) => (
+                <Tab key={type} label={type.charAt(0).toUpperCase() + type.slice(1)} />
+              ))}
+            </Tabs>
+          </Box>
+
+          {selectedTypes.map((type, typeIndex) => (
+            <div key={type} role="tabpanel" hidden={activeTab !== typeIndex}>
+              {activeTab === typeIndex && (
+                <Box sx={{ py: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6">
+                      {type === 'residential' ? 'Residential Properties' : 
+                      type === 'commercial' ? 'Commercial Properties' : 'Plots'}
+                    </Typography>
+                    <Button variant="outlined" startIcon={<Add />} onClick={() => addPropertyOfType(type)}>
+                      Add {type.charAt(0).toUpperCase() + type.slice(1)}
+                    </Button>
+                  </Box>
+
+                  {(formData[`${type}Properties`] || []).map((_: any, index: number) => (
+                    <Paper key={index} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0' }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                        <Typography variant="subtitle1">
+                          {type.charAt(0).toUpperCase() + type.slice(1)} Property #{index + 1}
+                        </Typography>
+                        <IconButton onClick={() => removePropertyOfType(type, index)} color="error">
+                          <Delete />
+                        </IconButton>
+                      </Box>
+
+                      {type === 'residential' && (
+                        <ResidentialForm formData={formData} setFormData={setFormData} validationErrors={validationErrors} index={index} />
+                      )}
+                      {type === 'commercial' && (
+                        <CommercialForm formData={formData} setFormData={setFormData} validationErrors={validationErrors} index={index} />
+                      )}
+                      {type === 'plot' && (
+                        <PlotForm formData={formData} setFormData={setFormData} validationErrors={validationErrors} index={index} />
+                      )}
+                    </Paper>
+                  ))}
+                </Box>
+              )}
+            </div>
+          ))}
+        </Box>
+      )}
+
+      {selectedTypes.length > 1 && (
+        <Alert severity="info" sx={{ mt: 2 }}>
+          <Typography variant="body2">
+            <strong>Note:</strong> A main project will be created automatically with all selected property types.
+            Each property type will have its own section and can be managed independently.
+          </Typography>
+        </Alert>
+      )}
+    </Paper>
+  );
+};
+
+// Additional Details Section
+const AdditionalDetailsSection = ({ formData, setFormData, validationErrors }: any) => {
+  const [geocoding, setGeocoding] = useState(false);
+
+  const geocodeAddress = async (address: string) => {
+    if (!address || address.trim().length < 3) return;
+    
+    setGeocoding(true);
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(address)}&limit=1`
+      );
+      
+      if (response.ok) {
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+          const { lat, lon } = data[0];
+          
+          setFormData((prev: any) => ({
+            ...prev,
+            mapLocation: { 
+              lat: parseFloat(lat), 
+              lng: parseFloat(lon) 
+            }
+          }));
+          
+          toast.success('Location coordinates fetched automatically');
+        } else {
+          toast.warning('Address not found. Please enter coordinates manually.');
+        }
+      }
+    } catch (error) {
+      console.error('Geocoding error:', error);
+      toast.error('Failed to fetch coordinates. Please enter manually.');
+    } finally {
+      setGeocoding(false);
+    }
+  };
+
+  const debouncedGeocode = useDebounce(geocodeAddress, 1000);
+
+  const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const address = e.target.value;
+    setFormData((prev: any) => ({ ...prev, location: address }));
+    
+    if (address && address.trim().length > 5) {
+      debouncedGeocode(address);
+    }
+  };
+
+  const handleManualGeocode = () => {
+    if (formData.location && formData.location.trim().length > 3) {
+      geocodeAddress(formData.location);
+    } else {
+      toast.warning('Please enter a valid address first');
+    }
   };
 
   return (
     <Paper sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0', borderRadius: '15px' }}>
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="h6" sx={{ fontWeight: 600 }}>
-          {isResidential ? '🏠 Residential' : '🏢 Commercial'} Type {index + 1}
-        </Typography>
-        <IconButton onClick={() => onRemove(index)} color="error" size="small">
-          <Delete />
-        </IconButton>
-      </Box>
+      <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, display: 'flex', alignItems: 'center' }}>
+        <LocationOn sx={{ mr: 1 }} />
+        Location & Map
+      </Typography>
 
       <Grid container spacing={2}>
-        {/* Property Type */}
+        <Grid size={{ xs: 12, md: 6 }}>
+          <Box sx={{ position: 'relative' }}>
+            <TextField 
+              fullWidth 
+              label="Location *" 
+              value={formData.location} 
+              onChange={handleLocationChange}
+              required 
+              error={!!validationErrors.location} 
+              helperText={validationErrors.location} 
+              sx={{ mb: 2 }}
+              placeholder="Enter full address for automatic map detection"
+            />
+            {geocoding && (
+              <CircularProgress 
+                size={20} 
+                sx={{ 
+                  position: 'absolute', 
+                  right: 40, 
+                  top: 12 
+                }} 
+              />
+            )}
+          </Box>
+          
+          <Button
+            variant="outlined"
+            size="small"
+            onClick={handleManualGeocode}
+            disabled={geocoding || !formData.location}
+            startIcon={<LocationOn />}
+            sx={{ mb: 2 }}
+          >
+            {geocoding ? 'Fetching Location...' : 'Get Coordinates'}
+          </Button>
+        </Grid>
+
         <Grid size={{ xs: 12, md: 6 }}>
           <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Property Type *</InputLabel>
-            <Select
-              value={propertyType.propertyType}
-              onChange={(e) => onChange(index, 'propertyType', e.target.value)}
-              label="Property Type *"
-            >
-              <MenuItem value="residential">
-                <Home sx={{ mr: 1 }} />
-                Residential
-              </MenuItem>
-              <MenuItem value="commercial">
-                <Business sx={{ mr: 1 }} />
-                Commercial
-              </MenuItem>
-            </Select>
-          </FormControl>
-        </Grid>
-
-        {/* Price */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <TextField
-            fullWidth
-            label="Price *"
-            value={propertyType.price}
-            onChange={(e) => onChange(index, 'price', e.target.value)}
-            placeholder="e.g., ₹1.2 Cr onwards"
-            sx={{ mb: 2 }}
-          />
-        </Grid>
-
-        {/* Payment Plan */}
-        <Grid size={{ xs: 12 }}>
-          <TextField
-            fullWidth
-            label="Payment Plan *"
-            value={propertyType.paymentPlan}
-            onChange={(e) => onChange(index, 'paymentPlan', e.target.value)}
-            placeholder="e.g., 20:80, Construction Linked"
-            sx={{ mb: 2 }}
-          />
-        </Grid>
-
-        {/* Description */}
-        <Grid size={{ xs: 12 }}>
-          <TextField
-            fullWidth
-            label="Description"
-            value={propertyType.description}
-            onChange={(e) => onChange(index, 'description', e.target.value)}
-            multiline
-            rows={2}
-            placeholder="Describe this property type..."
-            sx={{ mb: 2 }}
-          />
-        </Grid>
-
-        {/* Common Area Fields for Both Types */}
-        {(isResidential || isCommercial) && (
-          <>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
-                required
-                label="Carpet Area"
-                value={propertyType.carpetArea || ''}
-                onChange={(e) => onChange(index, 'carpetArea', e.target.value)}
-                placeholder="e.g., 1200 sq.ft."
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
-                label="Built-up Area"
-                value={propertyType.builtUpArea || ''}
-                onChange={(e) => onChange(index, 'builtUpArea', e.target.value)}
-                placeholder="e.g., 1400 sq.ft."
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }}>
-              <TextField
-                fullWidth
-                label="Loading Area"
-                value={propertyType.loadingArea || ''}
-                onChange={(e) => onChange(index, 'loadingArea', e.target.value)}
-                placeholder="e.g., 1800 sq.ft."
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-          </>
-        )}
-
-        {/* Residential Specific Fields */}
-        {isResidential && (
-          <>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <TextField
-                fullWidth
-                label="Bedrooms *"
-                type="number"
-                value={propertyType.bedrooms || ''}
-                onChange={(e) => onChange(index, 'bedrooms', parseInt(e.target.value) || 0)}
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <TextField
-                fullWidth
-                label="Bathrooms *"
-                type="number"
-                value={propertyType.bathrooms || ''}
-                onChange={(e) => onChange(index, 'bathrooms', parseInt(e.target.value) || 0)}
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <TextField
-                fullWidth
-                label="Toilets *"
-                type="number"
-                value={propertyType.toilet || ''}
-                onChange={(e) => onChange(index, 'toilet', parseInt(e.target.value) || 0)}
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 3 }}>
-              <TextField
-                fullWidth
-                label="Balcony *"
-                type="number"
-                value={propertyType.balcony || ''}
-                onChange={(e) => onChange(index, 'balcony', parseInt(e.target.value) || 0)}
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-          </>
-        )}
-
-        {/* Features */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Features</InputLabel>
+            <InputLabel>Nearby Locations</InputLabel>
             <Select
               multiple
-              value={propertyType.features || []}
-              onChange={(e) => onChange(index, 'features', e.target.value)}
-              input={<OutlinedInput label="Features" />}
+              value={formData.nearby || []}
+              onChange={(e) => setFormData((prev: any) => ({ ...prev, nearby: e.target.value as string[] }))}
+              input={<OutlinedInput label="Nearby Locations" />}
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {(selected as string[]).map((value) => (
@@ -1014,858 +1845,643 @@ const PropertyTypeForm = ({
                 </Box>
               )}
             >
-              <MenuItem value="Swimming Pool">Swimming Pool</MenuItem>
-              <MenuItem value="Gym">Gym</MenuItem>
-              <MenuItem value="Clubhouse">Clubhouse</MenuItem>
-              <MenuItem value="Children's Play Area">Children's Play Area</MenuItem>
-              <MenuItem value="24/7 Security">24/7 Security</MenuItem>
-              <MenuItem value="Power Backup">Power Backup</MenuItem>
-              <MenuItem value="Landscaped Gardens">Landscaped Gardens</MenuItem>
-              <MenuItem value="Jogging Track">Jogging Track</MenuItem>
-              <MenuItem value="Sports Facilities">Sports Facilities</MenuItem>
-              <MenuItem value="Parking">Parking</MenuItem>
+              {[
+                "Metro Station", "Bus Stand", "Railway Station", "Airport", "Shopping Mall",
+                "Hospital", "School", "College", "Market", "Restaurant", "Bank", "ATM"
+              ].map(location => (
+                <MenuItem key={location} value={location}>
+                  {location}
+                </MenuItem>
+              ))}
             </Select>
           </FormControl>
         </Grid>
-
-        {/* Amenities */}
+        
+        <Grid size={{ xs: 12 }}>
+          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, color: 'primary.main' }}>
+            Map Coordinates
+          </Typography>
+          <Alert severity="info" sx={{ mb: 2 }}>
+            <Typography variant="body2">
+              Coordinates will be automatically fetched when you enter an address. 
+              You can also manually adjust them below.
+            </Typography>
+          </Alert>
+        </Grid>
+        
         <Grid size={{ xs: 12, md: 6 }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Amenities</InputLabel>
-            <Select
-              multiple
-              value={propertyType.amenities || []}
-              onChange={(e) => onChange(index, 'amenities', e.target.value)}
-              input={<OutlinedInput label="Amenities" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {(selected as string[]).map((value) => (
-                    <Chip key={value} label={value} size="small" color="primary" />
-                  ))}
-                </Box>
-              )}
-            >
-              <MenuItem value="Wi-Fi Connectivity">Wi-Fi Connectivity</MenuItem>
-              <MenuItem value="Cafeteria">Cafeteria</MenuItem>
-              <MenuItem value="Community Hall">Community Hall</MenuItem>
-              <MenuItem value="Yoga/Meditation Area">Yoga/Meditation Area</MenuItem>
-              <MenuItem value="Convenience Store">Convenience Store</MenuItem>
-              <MenuItem value="ATM">ATM</MenuItem>
-              <MenuItem value="Salon/Spa">Salon/Spa</MenuItem>
-              <MenuItem value="Pet Area">Pet Area</MenuItem>
-              <MenuItem value="Garbage Disposal">Garbage Disposal</MenuItem>
-              <MenuItem value="Water Supply">Water Supply</MenuItem>
-            </Select>
-          </FormControl>
+          <TextField
+            fullWidth
+            label="Latitude"
+            type="number"
+            value={formData.mapLocation?.lat || ''}
+            onChange={(e) => setFormData((prev: any) => ({
+              ...prev,
+              mapLocation: { ...prev.mapLocation, lat: parseFloat(e.target.value) || 0 }
+            }))}
+            sx={{ mb: 2 }}
+            helperText="Automatically filled from address"
+          />
+        </Grid>
+        
+        <Grid size={{ xs: 12, md: 6 }}>
+          <TextField
+            fullWidth
+            label="Longitude"
+            type="number"
+            value={formData.mapLocation?.lng || ''}
+            onChange={(e) => setFormData((prev: any) => ({
+              ...prev,
+              mapLocation: { ...prev.mapLocation, lng: parseFloat(e.target.value) || 0 }
+            }))}
+            sx={{ mb: 2 }}
+            helperText="Automatically filled from address"
+          />
         </Grid>
 
-        {/* Images Section */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, mt: 2 }}>
-            Property Type Images
-          </Typography>
-          
-          <FileUploadSection
-            title="Upload Property Type Images"
-            accept="image/*"
-            onFileUpload={handleImageUpload}
-            uploading={uploadingImages}
-            description="JPEG, PNG, GIF, WebP (Max 5MB)"
-          />
-
-          {(propertyType.images || []).length > 0 && (
-            <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px', mt: 1 }}>
-              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                Uploaded Images ({(propertyType.images || []).length})
+        {(formData.mapLocation?.lat !== 0 && formData.mapLocation?.lng !== 0) && (
+          <Grid size={{ xs: 12 }}>
+            <Paper sx={{ p: 2, border: '1px solid #e0e0e0', borderRadius: '12px' }}>
+              <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600 }}>
+                Map Preview
               </Typography>
-              <Grid container spacing={1}>
-                {(propertyType.images || []).map((image, imageIndex) => (
-                  <Grid size={{ xs: 6, md: 4, lg: 3 }} key={imageIndex}>
-                    <Card 
-                      variant="outlined" 
-                      sx={{ 
-                        position: 'relative',
-                        border: image.isPrimary ? '2px solid #1976d2' : '1px solid #e0e0e0'
-                      }}
-                    >
-                      <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
-                        <img
-                          src={image.url}
-                          alt={image.title}
-                          style={{
-                            width: '100%',
-                            height: '80px',
-                            objectFit: 'cover',
-                            borderRadius: '4px'
-                          }}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100x80?text=Image';
-                          }}
-                        />
-                        <Typography variant="caption" display="block" noWrap title={image.title}>
-                          {image.title}
-                        </Typography>
-                        <Box display="flex" justifyContent="space-between" alignItems="center" mt={0.5}>
-                          {!image.isPrimary && (
-                            <Button
-                              size="small"
-                              onClick={() => setPrimaryImage(imageIndex)}
-                              sx={{ minWidth: 'auto', p: 0.5 }}
-                            >
-                              Set Primary
-                            </Button>
-                          )}
-                          {image.isPrimary && (
-                            <Chip 
-                              label="Primary" 
-                              size="small" 
-                              color="primary" 
-                              sx={{ height: 20, fontSize: '0.6rem' }}
-                            />
-                          )}
-                          <IconButton 
-                            size="small" 
-                            onClick={() => removeImage(imageIndex)}
-                            color="error"
-                            sx={{ p: 0.5 }}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
-            </Paper>
-          )}
-        </Grid>
-
-        {/* Floor Plans Section */}
-        <Grid size={{ xs: 12, md: 6 }}>
-          <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 600, mt: 2 }}>
-            Floor Plans
-          </Typography>
-          
-          <FileUploadSection
-            title="Upload Floor Plans"
-            accept="image/*"
-            onFileUpload={handleFloorPlanUpload}
-            uploading={uploadingFloorPlans}
-            description="JPEG, PNG, GIF, WebP (Max 5MB)"
-          />
-
-          {(propertyType.floorPlan || []).length > 0 && (
-            <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px', mt: 1 }}>
-              <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                Uploaded Floor Plans ({(propertyType.floorPlan || []).length})
+              <Box sx={{ height: 200, borderRadius: '8px', overflow: 'hidden' }}>
+                <LeafletMap 
+                  location={formData.mapLocation}
+                  propertyName={formData.projectName || "Property Location"}
+                />
+              </Box>
+              <Typography variant="caption" color="text.secondary" sx={{ mt: 1, display: 'block' }}>
+                Coordinates: {formData.mapLocation.lat.toFixed(6)}, {formData.mapLocation.lng.toFixed(6)}
               </Typography>
-              <Grid container spacing={1}>
-                {(propertyType.floorPlan || []).map((floorPlan, floorPlanIndex) => (
-                  <Grid size={{ xs: 6, md: 4, lg: 3 }} key={floorPlanIndex}>
-                    <Card 
-                      variant="outlined" 
-                      sx={{ 
-                        position: 'relative',
-                        border: floorPlan.isPrimary ? '2px solid #1976d2' : '1px solid #e0e0e0'
-                      }}
-                    >
-                      <CardContent sx={{ p: 1, '&:last-child': { pb: 1 } }}>
-                        <img
-                          src={floorPlan.url}
-                          alt={floorPlan.title}
-                          style={{
-                            width: '100%',
-                            height: '80px',
-                            objectFit: 'cover',
-                            borderRadius: '4px'
-                          }}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = 'https://via.placeholder.com/100x80?text=Floor+Plan';
-                          }}
-                        />
-                        <Typography variant="caption" display="block" noWrap title={floorPlan.title}>
-                          {floorPlan.title}
-                        </Typography>
-                        <Box display="flex" justifyContent="space-between" alignItems="center" mt={0.5}>
-                          {!floorPlan.isPrimary && (
-                            <Button
-                              size="small"
-                              onClick={() => setPrimaryFloorPlan(floorPlanIndex)}
-                              sx={{ minWidth: 'auto', p: 0.5 }}
-                            >
-                              Set Primary
-                            </Button>
-                          )}
-                          {floorPlan.isPrimary && (
-                            <Chip 
-                              label="Primary" 
-                              size="small" 
-                              color="primary" 
-                              sx={{ height: 20, fontSize: '0.6rem' }}
-                            />
-                          )}
-                          <IconButton 
-                            size="small" 
-                            onClick={() => removeFloorPlan(floorPlanIndex)}
-                            color="error"
-                            sx={{ p: 0.5 }}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Box>
-                      </CardContent>
-                    </Card>
-                  </Grid>
-                ))}
-              </Grid>
             </Paper>
-          )}
+          </Grid>
+        )}
+
+        <Grid size={{ xs: 12 }}>
+          <FormControlLabel
+            control={
+              <Checkbox
+                checked={formData.isActive !== undefined ? formData.isActive : true}
+                onChange={(e) => setFormData((prev: any) => ({ ...prev, isActive: e.target.checked }))}
+                color="primary"
+              />
+            }
+            label="Property is Active and Visible"
+          />
         </Grid>
       </Grid>
     </Paper>
   );
 };
 
-
-// Filter types and main component
-interface FilterState {
-  status: string[];
-  features: string[];
-  amenities: string[];
-  priceRange: {
-    min: string;
-    max: string;
-  };
-  builderName: string;
-  location: string;
-  propertyType: string[];
+interface SubPropertiesViewerProps {
+  parentId: string;
+  onViewSubProperty: (property: Property) => void;
 }
 
-interface ValidationErrors {
-  projectName?: string;
-  builderName?: string;
-  description?: string;
-  location?: string;
-  propertyTypes?: string;
-  status?: string;
-  mapLocation?: string;
-  [key: string]: string | undefined;
-}
-
-export default function PropertiesPage() {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
+function SubPropertiesViewer({ parentId, onViewSubProperty }: SubPropertiesViewerProps) {
+  const [subProperties, setSubProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState("");
-  const debouncedSearchTerm = useDebounce(searchTerm, 500);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [openViewDialog, setOpenViewDialog] = useState(false);
-  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
-  const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
-  
-  // Filter states
-  const [filters, setFilters] = useState<FilterState>({
-    status: [],
-    features: [],
-    amenities: [],
-    priceRange: {
-      min: "",
-      max: "",
-    },
-    builderName: "",
-    location: "",
-    propertyType: [],
-  });
-  
-  const [showFilters, setShowFilters] = useState(false);
-  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
 
-  // Upload states
-  const [uploading, setUploading] = useState(false);
-  const [uploadingType, setUploadingType] = useState<'image' | 'brochure' | 'creative' | 'video' | null>(null);
-  
-  // Validation state
-  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-  const [isFormValid, setIsFormValid] = useState(false);
-  
-  // Updated form data structure
-  const [formData, setFormData] = useState({
-    projectName: "",
-    builderName: "",
-    description: "",
-    location: "",
-    propertyTypes: [] as PropertyType[],
-    status: [] as string[],
-    nearby: [] as string[],
-    projectHighlights: [] as string[],
-    mapLocation: { lat: 0, lng: 0 },
-    images: [] as { url: string; title?: string; description?: string; isPrimary?: boolean }[],
-    brochureUrls: [] as { title: string; url: string; type: string }[],
-    creatives: [] as { title: string; url: string; type: string }[],
-    videoFiles: [] as { title: string; url: string; type: string }[]
-  });
-  
-  // Form input states
-  const [newNearby, setNewNearby] = useState("");
-  const [newProjectHighlight, setNewProjectHighlight] = useState("");
-
-  // Filter options
-  const statusOptions = [
-    "Ready to Move",
-    "Under Construction",
-    "New Launch",
-    "Pre Launch",
-    "Sold Out",
-    "Coming Soon"
-  ];
-
-  const featureOptions = [
-    "Swimming Pool",
-    "Gym",
-    "Clubhouse",
-    "Children's Play Area",
-    "24/7 Security",
-    "Power Backup",
-    "Landscaped Gardens",
-    "Jogging Track",
-    "Sports Facilities",
-    "Parking"
-  ];
-
-  const amenityOptions = [
-    "Wi-Fi Connectivity",
-    "Cafeteria",
-    "Community Hall",
-    "Yoga/Meditation Area",
-    "Convenience Store",
-    "ATM",
-    "Salon/Spa",
-    "Pet Area",
-    "Garbage Disposal",
-    "Water Supply"
-  ];
-
-  const propertyTypeOptions = [
-    "Residential",
-    "Commercial"
-  ];
-
-  // Calculate active filters count
   useEffect(() => {
-    let count = 0;
-    if (filters.status.length > 0) count++;
-    if (filters.features.length > 0) count++;
-    if (filters.amenities.length > 0) count++;
-    if (filters.propertyType.length > 0) count++;
-    if (filters.priceRange.min || filters.priceRange.max) count++;
-    if (filters.builderName) count++;
-    if (filters.location) count++;
-    setActiveFiltersCount(count);
-  }, [filters]);
+    loadSubProperties();
+  }, [parentId]);
 
-  // Load properties on component mount
-  useEffect(() => {
-    loadProperties();
-  }, []);
-
-  // Apply filters when debounced search term or filters change
-  useEffect(() => {
-    applyFilters();
-  }, [debouncedSearchTerm, properties, filters]);
-
-  // Check form validity whenever formData changes
-  useEffect(() => {
-    const checkFormValidity = () => {
-      const valid = (
-        formData.projectName?.trim().length >= 2 &&
-        formData.projectName?.trim().length <= 200 &&
-        formData.builderName?.trim().length >= 2 &&
-        formData.builderName?.trim().length <= 100 &&
-        formData.description?.trim().length >= 10 &&
-        formData.description?.trim().length <= 2000 &&
-        formData.location?.trim().length > 0 &&
-        formData.propertyTypes.length > 0 &&
-        formData.status.length > 0 &&
-        (!formData.mapLocation.lat || 
-         !formData.mapLocation.lng || 
-         (formData.mapLocation.lat >= -90 && 
-          formData.mapLocation.lat <= 90 && 
-          formData.mapLocation.lng >= -180 && 
-          formData.mapLocation.lng <= 180))
-      );
-      setIsFormValid(valid);
-    };
-
-    checkFormValidity();
-  }, [formData]);
-
-  const loadProperties = async (search = "") => {
+  const loadSubProperties = async () => {
     try {
       setLoading(true);
-      const response = await propertyService.getAllProperties(search);
+      const response = await propertyService.getSubProperties(parentId);
       if (response.success) {
-        setProperties(response.data);
-      } else {
-        throw new Error(response.message || "Failed to load properties");
+        setSubProperties(response.data as Property[]);
       }
-    } catch (error: any) {
-      console.error('Error loading properties:', error);
-      toast.error(error.message || "Failed to load properties");
+    } catch (error) {
+      console.error("Failed to load sub-properties:", error);
+      toast.error("Failed to load sub-properties");
     } finally {
       setLoading(false);
     }
   };
 
-  // Apply filters
-  const applyFilters = () => {
-    let filtered = [...properties];
-
-    if (debouncedSearchTerm) {
-      filtered = filtered.filter(property =>
-        property.projectName?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        property.builderName?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        property.location?.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
-        property.description?.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
-      );
+  const getFirstImage = (property: Property) => {
+    if (property.propertyImages && property.propertyImages.length > 0) {
+      return property.propertyImages[0];
     }
-
-    if (filters.status.length > 0) {
-      filtered = filtered.filter(property =>
-        property.status?.some(status => filters.status.includes(status))
-      );
+    if (property.images && property.images.length > 0) {
+      return property.images[0].url || property.images[0];
     }
-
-    if (filters.propertyType.length > 0) {
-      filtered = filtered.filter(property =>
-        property.propertyTypes?.some(type => 
-          filters.propertyType.includes(type.propertyType === 'residential' ? 'Residential' : 'Commercial')
-        )
-      );
-    }
-
-    if (filters.builderName) {
-      filtered = filtered.filter(property =>
-        property.builderName?.toLowerCase().includes(filters.builderName.toLowerCase())
-      );
-    }
-
-    if (filters.location) {
-      filtered = filtered.filter(property =>
-        property.location?.toLowerCase().includes(filters.location.toLowerCase())
-      );
-    }
-
-    setFilteredProperties(filtered);
+    return null;
   };
 
-  // Filter handlers
-  const handleFilterChange = (filterType: keyof FilterState, value: any) => {
-    setFilters(prev => ({
-      ...prev,
-      [filterType]: value
-    }));
+  const renderPropertyImage = (property: Property) => {
+    const imageSrc = getFirstImage(property);
+    
+    if (imageSrc) {
+      const imageUrl = typeof imageSrc === 'string' ? imageSrc : imageSrc.url;
+      return (
+        <img 
+          src={imageUrl} 
+          alt={property.propertyName} 
+          style={{ 
+            width: '100%', 
+            height: '130px', 
+            objectFit: 'cover',
+            borderRadius: '8px'
+          }} 
+          onError={(e) => {
+            const target = e.target as HTMLImageElement;
+            target.style.display = 'none';
+          }}
+        />
+      );
+    }
+
+    return (
+      <Box 
+        sx={{ 
+          width: '100%', 
+          height: '120px', 
+          backgroundColor: 'grey.200',
+          borderRadius: '8px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}
+      >
+        <Home sx={{ color: 'grey.400' }} />
+      </Box>
+    );
   };
 
-  const handlePriceRangeChange = (field: 'min' | 'max') => (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFilters(prev => ({
-      ...prev,
-      priceRange: {
-        ...prev.priceRange,
-        [field]: e.target.value
+  if (loading) {
+    return (
+      <Box display="flex" justifyContent="center" alignItems="center" py={2}>
+        <CircularProgress size={20} />
+        <Typography variant="body2" sx={{ ml: 1 }}>Loading sub-properties...</Typography>
+      </Box>
+    );
+  }
+
+  if (subProperties.length === 0) {
+    return (
+      <Paper sx={{ p: 3, textAlign: 'center', backgroundColor: 'grey.50' }}>
+        <Typography variant="body1" color="text.secondary">
+          No sub-properties found for this project
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+          Add residential, commercial, or plot properties to this project
+        </Typography>
+      </Paper>
+    );
+  }
+
+  return (
+    <Box sx={{ mt: 2 }}>
+      <Grid container spacing={2}>
+        {subProperties.map((subProperty) => (
+          <Grid size={{ xs: 12 }} key={subProperty._id}>
+            <Card variant="outlined" sx={{ mb: 1 }}>
+              <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
+                <Grid container spacing={2} alignItems="center">
+                  <Grid size={{ xs: 12, md: 2 }}>
+                    {renderPropertyImage(subProperty)}
+                  </Grid>
+                  
+                  <Grid size={{ xs: 12, md: 10 }}>
+                    <Typography variant="subtitle1" fontWeight={600}>
+                      {subProperty.propertyName}
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mt: 1 }}>
+                      {subProperty.price && (
+                        <Chip 
+                          label={`${subProperty.price}`} 
+                          size="small" 
+                          variant="outlined"
+                          icon={<CurrencyRupee sx={{ fontSize: '14px' }} />}
+                        />
+                      )}
+                      {subProperty.propertyType && (
+                        <Chip 
+                          label={`${subProperty.propertyType}`} 
+                          size="small" 
+                          variant="outlined"
+                        />
+                      )}
+                      {subProperty.minSize && (
+                        <Chip 
+                          label={`${subProperty.minSize} - ${subProperty.maxSize} ${subProperty.sizeUnit}`} 
+                          size="small" 
+                          variant="outlined"
+                        />
+                      )}
+                      {subProperty.bedrooms && subProperty.bedrooms > 0 && (
+                        <Chip 
+                          label={`${subProperty.bedrooms} Beds`} 
+                          size="small" 
+                          variant="outlined"
+                        />
+                      )}
+                      {subProperty.bathrooms && subProperty.bathrooms > 0 && (
+                        <Chip 
+                          label={`${subProperty.bathrooms} Baths`} 
+                          size="small" 
+                          variant="outlined"
+                        />
+                      )}
+                    </Box>
+
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mt: 1 }}>
+                      {subProperty.propertyDescription && (
+                        <Typography variant="body2" color="text.secondary">
+                          {subProperty.propertyDescription.split(' ').slice(0, 20).join(' ')}
+                          {subProperty.propertyDescription.split(' ').length > 20 && '...'}
+                        </Typography>
+                      )}
+                    </Box>
+                    
+                    <Box sx={{ mt: 0.5 }}>
+                      <Typography 
+                        variant="body2" 
+                        color="primary.main" 
+                        sx={{ 
+                          cursor: 'pointer',
+                          '&:hover': {
+                            textDecoration: 'underline'
+                          }
+                        }}
+                        onClick={() => onViewSubProperty(subProperty)}
+                      >
+                        view more details
+                      </Typography>
+                    </Box>
+                  </Grid>
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    </Box>
+  );
+}
+
+interface MainProjectCardProps {
+  project: Property;
+  onEdit: (property: Property) => void;
+  onView: (property: Property) => void;
+  onDelete: (id: string) => void;
+  onViewSubProperty: (property: Property) => void;
+  onEditSubProperty: (property: Property) => void;
+  onDeleteSubProperty: (id: string) => void;
+}
+
+function MainProjectCard({ 
+  project, 
+  onEdit, 
+  onView, 
+  onDelete,
+  onViewSubProperty,
+  onEditSubProperty,
+  onDeleteSubProperty
+}: MainProjectCardProps) {
+  const [expanded, setExpanded] = useState(false);
+  const [subProperties, setSubProperties] = useState<Property[]>([]);
+  const [loadingSubProperties, setLoadingSubProperties] = useState(false);
+
+  const loadSubProperties = async () => {
+    if (subProperties.length > 0) return;
+    
+    try {
+      setLoadingSubProperties(true);
+      const response = await propertyService.getSubProperties(project._id!);
+      if (response.success) {
+        setSubProperties(response.data as Property[]);
       }
-    }));
+    } catch (error) {
+      console.error("Failed to load sub-properties:", error);
+      toast.error("Failed to load properties");
+    } finally {
+      setLoadingSubProperties(false);
+    }
+  };
+
+  const primaryImage = project.images?.find(img => img.isPrimary) || project.images?.[0];
+
+  return (
+    <Paper 
+      sx={{ 
+        mb: 3,
+        overflow: 'hidden',
+        border: '1px solid',
+        borderColor: expanded ? 'primary.main' : 'divider',
+        borderRadius: '15px',
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          boxShadow: 3,
+        }
+      }}
+    >
+      <Box 
+        sx={{ 
+          p: 2,
+          height: "15rem",
+          transition: "transform 0.2s",
+          backgroundImage: primaryImage ? `url(${primaryImage.url})` : 'none',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          position: 'relative',
+          '&::before': {
+            content: '""',
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            borderRadius: '15px 15px 0 0'
+          },
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+        }}
+      >
+        <Box display="flex" justifyContent="flex-end" alignItems="flex-start">
+          <Box>
+            <IconButton 
+              size="small" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(project);
+              }} 
+              sx={{ color: 'white' }}
+            >
+              <VisibilityIcon />
+            </IconButton>
+            <IconButton 
+              size="small" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(project);
+              }} 
+              sx={{ color: 'white' }}
+            >
+              <EditIcon />
+            </IconButton>
+            <IconButton 
+              size="small" 
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(project._id!);
+              }} 
+              sx={{ color: 'white' }}
+            >
+              <DeleteIcon />
+            </IconButton>
+          </Box>
+        </Box>
+
+        <Box position="absolute" zIndex={1} sx={{ 
+          color: 'white', 
+          textAlign: 'center', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          bottom: '10px', 
+          left: 0, 
+          right: 0 
+        }}>
+          <Typography variant="h5" fontWeight={600}>{project.projectName}</Typography>
+          <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.8)' }} gutterBottom>
+            by {project.builderName}
+          </Typography>
+          <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            
+            {project.price || 'Contact for Price'}
+          </Typography>
+          <Box display="flex" alignItems="center" gap={1} sx={{ mt: 1 }}>
+            <Chip 
+              label={`${project.subPropertyCount || 0} Properties`}
+              sx={{ 
+                backgroundColor: 'rgba(255, 255, 255, 0.9)', 
+                color: 'black', 
+                fontWeight: 600 
+              }}
+            />
+          </Box>
+        </Box>
+      </Box>
+    </Paper>
+  );
+}
+
+const PaginationControls = ({ currentPage, totalPages, onPageChange, totalItems, itemsPerPage }: any) => {
+  if (totalPages <= 1) return null;
+  const startItem = (currentPage - 1) * itemsPerPage + 1;
+  const endItem = Math.min(currentPage * itemsPerPage, totalItems);
+
+  return (
+    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 2, gap: 2 }}>
+      <Typography variant="body2" color="text.secondary">Showing {startItem}-{endItem} of {totalItems} projects</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 1 }}>
+        <Button variant="outlined" onClick={() => onPageChange(currentPage - 1)} disabled={currentPage === 1}>Previous</Button>
+        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+          <Button key={page} variant={currentPage === page ? "contained" : "outlined"} onClick={() => onPageChange(page)}>
+            {page}
+          </Button>
+        ))}
+        <Button variant="outlined" onClick={() => onPageChange(currentPage + 1)} disabled={currentPage === totalPages}>Next</Button>
+      </Box>
+    </Box>
+  );
+};
+
+export default function PropertiesPage() {
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
+  const debouncedSearchTerm = useDebounce(searchTerm, 500);
+  const [openDialog, setOpenDialog] = useState(false);
+  const [openViewDialog, setOpenViewDialog] = useState(false);
+  const [openSubPropertyDialog, setOpenSubPropertyDialog] = useState(false);
+  const [editingProperty, setEditingProperty] = useState<Property | null>(null);
+  const [viewingProperty, setViewingProperty] = useState<Property | null>(null);
+  const [selectedSubProperty, setSelectedSubProperty] = useState<Property | null>(null);
+  
+  const PROPERTIES_PER_PAGE = 6;
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  
+  const [filters, setFilters] = useState({
+    propertyType: "", 
+    status: "", 
+    location: "", 
+    builderName: "",
+  });
+  const [showFilters, setShowFilters] = useState(false);
+  const [activeFiltersCount, setActiveFiltersCount] = useState(0);
+
+  const [uploading, setUploading] = useState(false);
+  const [uploadingType, setUploadingType] = useState<'image' | 'brochure' | null>(null);
+  
+  const [validationErrors, setValidationErrors] = useState<any>({});
+  const [isFormValid, setIsFormValid] = useState(false);
+  
+  const [formData, setFormData] = useState({
+    projectName: "",
+    builderName: "",
+    location: "",
+    paymentPlan: "",
+    propertyType: [] as string[],
+    description: "",
+    propertyName: "",
+    propertyDescription: "",
+    price: "",
+    minSize: "",
+    maxSize: "",
+    sizeUnit: "",
+    bedrooms: 0,
+    bathrooms: 0,
+    toilet: 0,
+    balcony: 0,
+    carpetArea: "",
+    builtUpArea: "",
+    ownershipType: "Freehold" as "Freehold" | "Leasehold" | "GPA" | "Power of Attorney",
+    landType: "Residential Plot" as "Residential Plot" | "Commercial Plot" | "Farm Land" | "Industrial Plot" | "Mixed Use",
+    approvedBy: "",
+    boundaryWall: false,
+    amenities: [] as string[],
+    status: [] as string[],
+    nearby: [] as string[],
+    projectHighlights: [] as string[],
+    images: [] as any[],
+    propertyImages: [] as any[],
+    floorPlans: [] as any[],
+    creatives: [] as any[],
+    videos: [] as any[],
+    brochureUrls: [] as any[],
+    mapLocation: { lat: 0, lng: 0 },
+    isActive: true,
+    parentId: null as string | null,
+    residentialProperties: [] as any[],
+    commercialProperties: [] as any[],
+    plotProperties: [] as any[],
+  });
+
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [autoPlay, setAutoPlay] = useState(true);
+
+  useEffect(() => {
+    if (!autoPlay || !selectedSubProperty?.propertyImages || selectedSubProperty.propertyImages.length <= 1) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setCurrentImageIndex(prev => 
+        prev === selectedSubProperty.propertyImages.length - 1 ? 0 : prev + 1
+      );
+    }, 3000);
+
+    return () => clearInterval(interval);
+  }, [autoPlay, selectedSubProperty?.propertyImages]);
+
+  useEffect(() => {
+    setCurrentImageIndex(0);
+    setAutoPlay(true);
+  }, [openSubPropertyDialog, selectedSubProperty]);
+
+  useEffect(() => {
+    let count = 0;
+    if (filters.propertyType) count++;
+    if (filters.status) count++;
+    if (filters.location) count++;
+    if (filters.builderName) count++;
+    setActiveFiltersCount(count);
+  }, [filters]);
+
+  useEffect(() => { 
+    loadProperties(); 
+  }, []);
+
+  useEffect(() => { 
+    setCurrentPage(1);
+    loadProperties(); 
+  }, [debouncedSearchTerm, filters]);
+
+  useEffect(() => {
+    const total = Math.ceil(properties.length / PROPERTIES_PER_PAGE);
+    setTotalPages(total || 1);
+    if (currentPage > total && total > 0) setCurrentPage(total);
+  }, [properties, currentPage]);
+
+  useEffect(() => {
+    const requiredFieldsValid = (
+      formData.projectName?.trim().length >= 2 && 
+      formData.builderName?.trim().length >= 2 &&
+      formData.location?.trim().length > 0 &&
+      formData.paymentPlan?.trim().length > 0 &&
+      formData.propertyType && formData.propertyType.length > 0
+    );
+    setIsFormValid(requiredFieldsValid);
+  }, [formData]);
+
+  const loadProperties = async () => {
+    try {
+      setLoading(true);
+      const response = await propertyService.getHierarchicalProperties(
+        debouncedSearchTerm,
+        filters.status,
+        filters.propertyType,
+        filters.location,
+        filters.builderName
+      );
+      if (response.success) {
+        setProperties(response.data as Property[]);
+      } else {
+        throw new Error(response.message || "Failed to load properties");
+      }
+    } catch (error: any) {
+      toast.error(error.message || "Failed to load properties");
+      setProperties([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFilterChange = (filterType: string, value: any) => {
+    setFilters(prev => ({ ...prev, [filterType]: value }));
+    setCurrentPage(1);
   };
 
   const clearAllFilters = () => {
-    setFilters({
-      status: [],
-      features: [],
-      amenities: [],
-      propertyType: [],
-      priceRange: {
-        min: "",
-        max: "",
-      },
+    setFilters({ 
+      propertyType: "", 
+      status: "", 
+      location: "", 
       builderName: "",
-      location: "",
     });
     setSearchTerm("");
+    setCurrentPage(1);
   };
 
-  const removeFilter = (filterType: keyof FilterState, value?: string) => {
-    if (value) {
-      setFilters(prev => ({
-        ...prev,
-        [filterType]: (prev[filterType] as string[]).filter(item => item !== value)
-      }));
-    } else {
-      setFilters(prev => ({
-        ...prev,
-        [filterType]: Array.isArray(prev[filterType]) ? [] : ""
-      }));
-    }
+  const removeFilter = (filterType: string) => {
+    setFilters(prev => ({ ...prev, [filterType]: "" }));
+    setCurrentPage(1);
   };
 
-  // Search handler with debouncing
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
   };
 
-  const handleSearch = () => {
-    applyFilters();
+  const getPaginatedProperties = () => {
+    const startIndex = (currentPage - 1) * PROPERTIES_PER_PAGE;
+    return properties.slice(startIndex, startIndex + PROPERTIES_PER_PAGE);
   };
 
-  // File upload handlers
-  const handleImageUpload = async (file: File) => {
-    setUploading(true);
-    setUploadingType('image');
-
-    try {
-      const validImageTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-      if (!validImageTypes.includes(file.type)) {
-        toast.error('Please select a valid image file (JPEG, PNG, GIF, WebP)');
-        return;
-      }
-
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('Image size should be less than 5MB');
-        return;
-      }
-
-      const uploadResponse = await uploadService.uploadFile(file);
-      
-      if (uploadResponse.success && uploadResponse.data) {
-        const uploadedImage = {
-          url: uploadResponse.data.url,
-          title: file.name.replace(/\.[^/.]+$/, ""),
-          description: "",
-          isPrimary: formData.images.length === 0
-        };
-
-        setFormData(prev => ({
-          ...prev,
-          images: [...prev.images, uploadedImage]
-        }));
-
-        toast.success('Image uploaded successfully');
-      } else {
-        throw new Error(uploadResponse.message || 'Upload failed');
-      }
-    } catch (error: any) {
-      console.error('Image upload error:', error);
-      toast.error(error.message || 'Failed to upload image');
-    } finally {
-      setUploading(false);
-      setUploadingType(null);
-    }
-  };
-
-  const handleBrochureUpload = async (file: File) => {
-    setUploading(true);
-    setUploadingType('brochure');
-
-    try {
-      const validDocTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      if (!validDocTypes.includes(file.type)) {
-        toast.error('Please select a PDF or Word document');
-        return;
-      }
-
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('File size should be less than 10MB');
-        return;
-      }
-
-      const uploadResponse = await uploadService.uploadFile(file);
-      
-      if (uploadResponse.success && uploadResponse.data) {
-        const uploadedBrochure = {
-          title: file.name.replace(/\.[^/.]+$/, ""),
-          url: uploadResponse.data.url,
-          type: "PDF Document"
-        };
-
-        setFormData(prev => ({
-          ...prev,
-          brochureUrls: [...prev.brochureUrls, uploadedBrochure]
-        }));
-
-        toast.success('Brochure uploaded successfully');
-      } else {
-        throw new Error(uploadResponse.message || 'Upload failed');
-      }
-    } catch (error: any) {
-      console.error('Brochure upload error:', error);
-      toast.error(error.message || 'Failed to upload brochure');
-    } finally {
-      setUploading(false);
-      setUploadingType(null);
-    }
-  };
-
-  const handleCreativeUpload = async (file: File) => {
-    setUploading(true);
-    setUploadingType('creative');
-
-    try {
-      const validCreativeTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp', 'image/svg+xml', 'application/pdf'];
-      if (!validCreativeTypes.includes(file.type)) {
-        toast.error('Please select a valid image or PDF file');
-        return;
-      }
-
-      if (file.size > 10 * 1024 * 1024) {
-        toast.error('File size should be less than 10MB');
-        return;
-      }
-
-      const uploadResponse = await uploadService.uploadFile(file);
-      
-      if (uploadResponse.success && uploadResponse.data) {
-        const uploadedCreative = {
-          title: file.name.replace(/\.[^/.]+$/, ""),
-          url: uploadResponse.data.url,
-          type: file.type.includes('image') ? 'Image' : 'PDF Document'
-        };
-
-        setFormData(prev => ({
-          ...prev,
-          creatives: [...prev.creatives, uploadedCreative]
-        }));
-
-        toast.success('Creative asset uploaded successfully');
-      } else {
-        throw new Error(uploadResponse.message || 'Upload failed');
-      }
-    } catch (error: any) {
-      console.error('Creative upload error:', error);
-      toast.error(error.message || 'Failed to upload creative asset');
-    } finally {
-      setUploading(false);
-      setUploadingType(null);
-    }
-  };
-
-  const handleVideoUpload = async (file: File) => {
-    setUploading(true);
-    setUploadingType('video');
-
-    try {
-      const validVideoTypes = ['video/mp4', 'video/mov', 'video/avi', 'video/mkv', 'video/quicktime'];
-      if (!validVideoTypes.includes(file.type)) {
-        toast.error('Please select a valid video file (MP4, MOV, AVI, MKV)');
-        return;
-      }
-
-      if (file.size > 50 * 1024 * 1024) {
-        toast.error('Video size should be less than 50MB');
-        return;
-      }
-
-      const uploadResponse = await uploadService.uploadFile(file);
-      
-      if (uploadResponse.success && uploadResponse.data) {
-        const uploadedVideo = {
-          title: file.name.replace(/\.[^/.]+$/, ""),
-          url: uploadResponse.data.url,
-          type: "Video File"
-        };
-
-        setFormData(prev => ({
-          ...prev,
-          videoFiles: [...prev.videoFiles, uploadedVideo]
-        }));
-
-        toast.success('Video uploaded successfully');
-      } else {
-        throw new Error(uploadResponse.message || 'Upload failed');
-      }
-    } catch (error: any) {
-      console.error('Video upload error:', error);
-      toast.error(error.message || 'Failed to upload video');
-    } finally {
-      setUploading(false);
-      setUploadingType(null);
-    }
-  };
-
-  // Validation function
-  const validateForm = (): boolean => {
-    const errors: ValidationErrors = {};
-
-    if (!formData.projectName?.trim()) {
-      errors.projectName = "Project name is required";
-    } else if (formData.projectName.trim().length < 2) {
-      errors.projectName = "Project name must be at least 2 characters";
-    } else if (formData.projectName.trim().length > 200) {
-      errors.projectName = "Project name cannot exceed 200 characters";
-    }
-
-    if (!formData.builderName?.trim()) {
-      errors.builderName = "Builder name is required";
-    } else if (formData.builderName.trim().length < 2) {
-      errors.builderName = "Builder name must be at least 2 characters";
-    } else if (formData.builderName.trim().length > 100) {
-      errors.builderName = "Builder name cannot exceed 100 characters";
-    }
-
-    if (!formData.description?.trim()) {
-      errors.description = "Description is required";
-    } else if (formData.description.trim().length < 10) {
-      errors.description = "Description must be at least 10 characters";
-    } else if (formData.description.trim().length > 2000) {
-      errors.description = "Description cannot exceed 2000 characters";
-    }
-
-    if (!formData.location?.trim()) {
-      errors.location = "Location is required";
-    }
-
-    if (formData.propertyTypes.length === 0) {
-      errors.propertyTypes = "At least one property type is required";
-    } else {
-      formData.propertyTypes.forEach((type, index) => {
-        if (!type.price?.trim()) {
-          errors[`propertyType_${index}_price`] = `Price is required for property type ${index + 1}`;
-        }
-        if (!type.paymentPlan?.trim()) {
-          errors[`propertyType_${index}_paymentPlan`] = `Payment plan is required for property type ${index + 1}`;
-        }
-        if (type.propertyType === 'residential') {
-          if (type.bedrooms === undefined || type.bedrooms < 0) {
-            errors[`propertyType_${index}_bedrooms`] = `Bedrooms are required for residential property type ${index + 1}`;
-          }
-        }
-        if (type.propertyType === 'commercial') {
-          if (!type.carpetArea?.trim()) {
-            errors[`propertyType_${index}_carpetArea`] = `Carpet area is required for commercial property type ${index + 1}`;
-          }
-        }
-      });
-    }
-
-    if (formData.status.length === 0) {
-      errors.status = "At least one status is required";
-    }
-
-    if ((formData.mapLocation.lat && !formData.mapLocation.lng) || 
-        (!formData.mapLocation.lat && formData.mapLocation.lng)) {
-      errors.mapLocation = "Both latitude and longitude are required for map location";
-    }
-
-    if (formData.mapLocation.lat && formData.mapLocation.lng) {
-      if (formData.mapLocation.lat < -90 || formData.mapLocation.lat > 90) {
-        errors.mapLocation = "Latitude must be between -90 and 90";
-      }
-      if (formData.mapLocation.lng < -180 || formData.mapLocation.lng > 180) {
-        errors.mapLocation = "Longitude must be between -180 and 180";
-      }
-    }
-
-    setValidationErrors(errors);
-    return Object.keys(errors).length === 0;
-  };
-
-  // Input change handler with validation clearing
-  const handleInputChangeWithValidation = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setFormData(prev => ({ ...prev, [field]: value }));
-    
-    if (validationErrors[field as keyof ValidationErrors]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [field]: undefined
-      }));
-    }
-  };
-
-  // Function to get validation messages for tooltip
-  const getValidationMessages = (): string[] => {
-    const messages: string[] = [];
-    
-    if (!formData.projectName?.trim() || formData.projectName.trim().length < 2) {
-      messages.push("• Project name (min 2 characters)");
-    }
-    
-    if (!formData.builderName?.trim() || formData.builderName.trim().length < 2) {
-      messages.push("• Builder name (min 2 characters)");
-    }
-    
-    if (!formData.description?.trim() || formData.description.trim().length < 10) {
-      messages.push("• Description (min 10 characters)");
-    }
-    
-    if (!formData.location?.trim()) {
-      messages.push("• Location");
-    }
-    
-    if (formData.propertyTypes.length === 0) {
-      messages.push("• At least one property type");
-    }
-    
-    if (formData.status.length === 0) {
-      messages.push("• At least one status");
-    }
-    
-    return messages;
-  };
-
-  // Add new property type
-  const addPropertyType = (type: 'residential' | 'commercial') => {
-    const baseType: PropertyType = {
-      propertyType: type,
-      description: "",
-      price: "",
-      paymentPlan: "",
-      features: [],
-      amenities: [],
-      images: [],
-      floorPlan: [],
-      isActive: true
-    };
-
-    const specificFields = type === 'residential' 
-      ? { bedrooms: 0, bathrooms: 0, toilet: 0, balcony: 0 }
-      : { carpetArea: "", builtUpArea: "", loadingArea: "" };
-
-    const newPropertyType = { ...baseType, ...specificFields };
-    
-    setFormData(prev => ({
-      ...prev,
-      propertyTypes: [...prev.propertyTypes, newPropertyType]
-    }));
-
-    if (validationErrors.propertyTypes) {
-      setValidationErrors(prev => ({ ...prev, propertyTypes: undefined }));
-    }
-  };
-
-  // Update property type
-  const updatePropertyType = (index: number, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      propertyTypes: prev.propertyTypes.map((type, i) => 
-        i === index ? { ...type, [field]: value } : type
-      )
-    }));
-
-    // Clear validation error for this field
-    const errorKey = `propertyType_${index}_${field}`;
-    if (validationErrors[errorKey]) {
-      setValidationErrors(prev => ({
-        ...prev,
-        [errorKey]: undefined
-      }));
-    }
-  };
-
-  // Remove property type
-  const removePropertyType = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      propertyTypes: prev.propertyTypes.filter((_, i) => i !== index)
-    }));
+  const handlePageChange = (newPage: number) => {
+    setCurrentPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleOpenDialog = (property: Property | null = null) => {
@@ -1874,34 +2490,95 @@ export default function PropertiesPage() {
       setFormData({
         projectName: property.projectName || "",
         builderName: property.builderName || "",
-        description: property.description || "",
         location: property.location || "",
-        propertyTypes: property.propertyTypes || [],
+        paymentPlan: property.paymentPlan || "",
+        propertyType: [property.propertyType],
+        description: property.description || "",
+        propertyName: property.propertyName || "",
+        propertyDescription: property.propertyDescription || "",
+        price: property.price || "",
+        minSize: property.minSize || "",
+        maxSize: property.maxSize || "",
+        sizeUnit: property.sizeUnit || "",
+        bedrooms: property.bedrooms || 0,
+        bathrooms: property.bathrooms || 0,
+        toilet: property.toilet || 0,
+        balcony: property.balcony || 0,
+        carpetArea: property.carpetArea || "",
+        builtUpArea: property.builtUpArea || "",
+        ownershipType: property.ownershipType || "Freehold",
+        landType: property.landType || "Residential Plot",
+        approvedBy: property.approvedBy || "",
+        boundaryWall: property.boundaryWall || false,
+        amenities: property.amenities || [],
         status: property.status || [],
         nearby: property.nearby || [],
         projectHighlights: property.projectHighlights || [],
-        mapLocation: property.mapLocation || { lat: 0, lng: 0 },
         images: property.images || [],
-        brochureUrls: property.brochureUrls || [],
+        propertyImages: property.propertyImages || [],
+        floorPlans: property.floorPlans || [],
         creatives: property.creatives || [],
-        videoFiles: property.videoFiles || []
+        videos: property.videos || [],
+        brochureUrls: property.brochureUrls || [],
+        mapLocation: property.mapLocation || { lat: 0, lng: 0 },
+        isActive: property.isActive !== undefined ? property.isActive : true,
+        parentId: property.parentId || null,
+        residentialProperties: property.propertyType === 'residential' ? [{
+          propertyName: property.propertyName,
+          propertyDescription: property.propertyDescription,
+          price: property.price,
+          paymentPlan: property.paymentPlan,
+          bedrooms: property.bedrooms,
+          bathrooms: property.bathrooms,
+          toilet: property.toilet,
+          balcony: property.balcony,
+          carpetArea: property.carpetArea,
+          builtUpArea: property.builtUpArea,
+          minSize: property.minSize,
+          maxSize: property.maxSize,
+          sizeUnit: property.sizeUnit,
+          amenities: property.amenities
+        }] : [],
+        commercialProperties: property.propertyType === 'commercial' ? [{
+          propertyName: property.propertyName,
+          propertyDescription: property.propertyDescription,
+          price: property.price,
+          paymentPlan: property.paymentPlan,
+          carpetArea: property.carpetArea,
+          builtUpArea: property.builtUpArea,
+          minSize: property.minSize,
+          maxSize: property.maxSize,
+          sizeUnit: property.sizeUnit,
+          amenities: property.amenities
+        }] : [],
+        plotProperties: property.propertyType === 'plot' ? [{
+          propertyName: property.propertyName,
+          propertyDescription: property.propertyDescription,
+          price: property.price,
+          paymentPlan: property.paymentPlan,
+          ownershipType: property.ownershipType,
+          landType: property.landType,
+          approvedBy: property.approvedBy,
+          boundaryWall: property.boundaryWall,
+          minSize: property.minSize,
+          maxSize: property.maxSize,
+          sizeUnit: property.sizeUnit,
+          amenities: property.amenities
+        }] : [],
       });
     } else {
       setEditingProperty(null);
       setFormData({
-        projectName: "",
-        builderName: "",
-        description: "",
-        location: "",
-        propertyTypes: [],
-        status: [],
-        nearby: [],
-        projectHighlights: [],
+        projectName: "", builderName: "", location: "", paymentPlan: "", propertyType: [],
+        description: "", propertyName: "", propertyDescription: "", price: "",
+        minSize: "", maxSize: "", sizeUnit: "",
+        bedrooms: 0, bathrooms: 0, toilet: 0, balcony: 0, carpetArea: "", builtUpArea: "",
+        ownershipType: "Freehold", landType: "Residential Plot", approvedBy: "", boundaryWall: false,
+        amenities: [], status: [], nearby: [], projectHighlights: [],
+        images: [], propertyImages: [], floorPlans: [], creatives: [], videos: [], brochureUrls: [],
         mapLocation: { lat: 0, lng: 0 },
-        images: [],
-        brochureUrls: [],
-        creatives: [],
-        videoFiles: []
+        isActive: true, parentId: null,
+        residentialProperties: [], commercialProperties: [], plotProperties: [],
       });
     }
     setValidationErrors({});
@@ -1909,212 +2586,51 @@ export default function PropertiesPage() {
   };
 
   const handleCloseDialog = () => {
-    setOpenDialog(false);
-    setEditingProperty(null);
-    setNewNearby("");
-    setNewProjectHighlight("");
-    setValidationErrors({});
+    setOpenDialog(false); 
+    setEditingProperty(null); 
+    setValidationErrors({}); 
     setIsFormValid(false);
   };
 
   const handleViewProperty = (property: Property) => {
-    setViewingProperty(property);
+    setViewingProperty(property); 
     setOpenViewDialog(true);
   };
 
   const handleCloseViewDialog = () => {
-    setOpenViewDialog(false);
+    setOpenViewDialog(false); 
     setViewingProperty(null);
   };
 
-  // Download handlers
-  const handleDownloadBrochure = (url: string, propertyName: string, index: number, title?: string) => {
+  const handleViewSubProperty = (subProperty: Property) => {
+    setSelectedSubProperty(subProperty);
+    setOpenSubPropertyDialog(true);
+  };
+
+  const handleDeleteProperty = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this property?")) return;
+    
     try {
-      const link = document.createElement('a');
-      link.href = url;
-      const fileName = title 
-        ? `${propertyName.replace(/\s+/g, '_')}_${title.replace(/[^a-z0-9]/gi, '_')}.pdf`
-        : `${propertyName.replace(/\s+/g, '_')}_Brochure_${index + 1}.pdf`;
-      link.download = fileName;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Brochure download started");
-    } catch (error) {
-      toast.error("Download failed");
+      const toastId = toast.loading("Deleting property...");
+      await propertyService.deleteProperty(id);
+      toast.success("Property deleted successfully", { id: toastId });
+      loadProperties();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to delete property");
     }
   };
 
-  const handleDownloadCreative = (url: string, propertyName: string, index: number, title?: string) => {
-    try {
-      const link = document.createElement('a');
-      link.href = url;
-      const extension = url.split('.').pop() || 'jpg';
-      const fileName = title 
-        ? `${propertyName.replace(/\s+/g, '_')}_${title.replace(/[^a-z0-9]/gi, '_')}.${extension}`
-        : `${propertyName.replace(/\s+/g, '_')}_Creative_${index + 1}.${extension}`;
-      link.download = fileName;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Creative asset download started");
-    } catch (error) {
-      toast.error("Download failed");
-    }
-  };
+  const validateForm = (): boolean => {
+    const errors: any = {};
+    
+    if (!formData.projectName?.trim()) errors.projectName = "Project name is required";
+    if (!formData.builderName?.trim()) errors.builderName = "Builder name is required";
+    if (!formData.location?.trim()) errors.location = "Location is required";
+    if (!formData.paymentPlan?.trim()) errors.paymentPlan = "Payment plan is required";
+    if (!formData.propertyType || formData.propertyType.length === 0) errors.propertyType = "At least one property type is required";
 
-  const handleDownloadImage = (url: string, propertyName: string, index: number, title?: string) => {
-    try {
-      const link = document.createElement('a');
-      link.href = url;
-      const extension = url.split('.').pop() || 'jpg';
-      const fileName = title 
-        ? `${propertyName.replace(/\s+/g, '_')}_${title.replace(/[^a-z0-9]/gi, '_')}.${extension}`
-        : `${propertyName.replace(/\s+/g, '_')}_Image_${index + 1}.${extension}`;
-      link.download = fileName;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Image download started");
-    } catch (error) {
-      toast.error("Download failed");
-    }
-  };
-
-  const handleDownloadVideo = (url: string, propertyName: string, index: number, title?: string) => {
-    try {
-      const link = document.createElement('a');
-      link.href = url;
-      const extension = url.split('.').pop() || 'mp4';
-      const fileName = title 
-        ? `${propertyName.replace(/\s+/g, '_')}_${title.replace(/[^a-z0-9]/gi, '_')}.${extension}`
-        : `${propertyName.replace(/\s+/g, '_')}_Video_${index + 1}.${extension}`;
-      link.download = fileName;
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      toast.success("Video download started");
-    } catch (error) {
-      toast.error("Download failed");
-    }
-  };
-
-  const handleDownloadAllBrochures = (property: Property) => {
-    if (property.brochureUrls && property.brochureUrls.length > 0) {
-      property.brochureUrls.forEach((brochure: any, index: number) => {
-        setTimeout(() => handleDownloadBrochure(brochure.url, property.projectName, index, brochure.title), index * 500);
-      });
-      toast.success(`Downloading ${property.brochureUrls.length} brochures`);
-    }
-  };
-
-  const handleDownloadAllCreatives = (property: Property) => {
-    if (property.creatives && property.creatives.length > 0) {
-      property.creatives.forEach((creative: any, index: number) => {
-        setTimeout(() => handleDownloadCreative(creative.url, property.projectName, index, creative.title), index * 500);
-      });
-      toast.success(`Downloading ${property.creatives.length} creative assets`);
-    }
-  };
-
-  const handleDownloadAllImages = (property: Property) => {
-    if (property.images && property.images.length > 0) {
-      property.images.forEach((image: any, index: number) => {
-        setTimeout(() => handleDownloadImage(image.url, property.projectName, index, image.title), index * 500);
-      });
-      toast.success(`Downloading ${property.images.length} images`);
-    }
-  };
-
-  const handleDownloadAllVideos = (property: Property) => {
-    if (property.videoFiles && property.videoFiles.length > 0) {
-      property.videoFiles.forEach((video: any, index: number) => {
-        setTimeout(() => handleDownloadVideo(video.url, property.projectName, index, video.title), index * 500);
-      });
-      toast.success(`Downloading ${property.videoFiles.length} videos`);
-    }
-  };
-
-  // Form handlers
-  const handleInputChange = (field: string) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    setFormData(prev => ({ ...prev, [field]: e.target.value }));
-  };
-
-  const handleMapLocationChange = (field: 'lat' | 'lng') => (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseFloat(e.target.value) || 0;
-    setFormData(prev => ({
-      ...prev,
-      mapLocation: { ...prev.mapLocation, [field]: value }
-    }));
-    if (validationErrors.mapLocation) {
-      setValidationErrors(prev => ({ ...prev, mapLocation: undefined }));
-    }
-  };
-
-  // Handle map location change from draggable map
-  const handleMapLocationUpdate = (lat: number, lng: number) => {
-    setFormData(prev => ({
-      ...prev,
-      mapLocation: { lat, lng }
-    }));
-    if (validationErrors.mapLocation) {
-      setValidationErrors(prev => ({ ...prev, mapLocation: undefined }));
-    }
-  };
-
-  // Handle location search selection
-  const handleLocationSelect = (lat: number, lng: number, address: string) => {
-    setFormData(prev => ({
-      ...prev,
-      location: address,
-      mapLocation: { lat, lng }
-    }));
-    if (validationErrors.location) {
-      setValidationErrors(prev => ({ ...prev, location: undefined }));
-    }
-    if (validationErrors.mapLocation) {
-      setValidationErrors(prev => ({ ...prev, mapLocation: undefined }));
-    }
-  };
-
-  // Array field handlers
-  const removeImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-  };
-
-  const setPrimaryImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.map((img, i) => ({ ...img, isPrimary: i === index }))
-    }));
-  };
-
-  const removeBrochureUrl = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      brochureUrls: prev.brochureUrls.filter((_, i) => i !== index)
-    }));
-  };
-
-  const removeCreative = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      creatives: prev.creatives.filter((_, i) => i !== index)
-    }));
-  };
-
-  const removeVideoFile = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      videoFiles: prev.videoFiles.filter((_, i) => i !== index)
-    }));
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
   };
 
   const handleSubmit = async () => {
@@ -2124,65 +2640,205 @@ export default function PropertiesPage() {
     }
 
     try {
-      const toastId = toast.loading(editingProperty ? "Updating property..." : "Creating property...");
+      const toastId = toast.loading(editingProperty ? "Updating property..." : "Creating properties...");
+      
+      const submitData = {
+        ...formData,
+        images: formData.images.map(img => ({
+          ...img,
+          uploadedAt: img.uploadedAt || new Date().toISOString()
+        })),
+        propertyImages: formData.propertyImages.map(img => ({
+          ...img,
+          uploadedAt: img.uploadedAt || new Date().toISOString()
+        })),
+        floorPlans: formData.floorPlans.map(plan => ({
+          ...plan,
+          uploadedAt: plan.uploadedAt || new Date().toISOString()
+        })),
+        creatives: formData.creatives.map(creative => ({
+          ...creative,
+          uploadedAt: creative.uploadedAt || new Date().toISOString()
+        })),
+        videos: formData.videos.map(video => ({
+          ...video,
+          uploadedAt: video.uploadedAt || new Date().toISOString()
+        })),
+        brochureUrls: formData.brochureUrls,
+        residentialProperties: formData.residentialProperties.map(prop => ({
+          ...prop,
+          propertyImages: prop.propertyImages?.map((img: any) => ({
+            ...img,
+            uploadedAt: img.uploadedAt || new Date().toISOString()
+          })) || [],
+          floorPlans: prop.floorPlans?.map((plan: any) => ({
+            ...plan,
+            uploadedAt: plan.uploadedAt || new Date().toISOString()
+          })) || []
+        })),
+        commercialProperties: formData.commercialProperties.map(prop => ({
+          ...prop,
+          propertyImages: prop.propertyImages?.map((img: any) => ({
+            ...img,
+            uploadedAt: img.uploadedAt || new Date().toISOString()
+          })) || [],
+          floorPlans: prop.floorPlans?.map((plan: any) => ({
+            ...plan,
+            uploadedAt: plan.uploadedAt || new Date().toISOString()
+          })) || []
+        })),
+        plotProperties: formData.plotProperties.map(prop => ({
+          ...prop,
+          propertyImages: prop.propertyImages?.map((img: any) => ({
+            ...img,
+            uploadedAt: img.uploadedAt || new Date().toISOString()
+          })) || [],
+          floorPlans: prop.floorPlans?.map((plan: any) => ({
+            ...plan,
+            uploadedAt: plan.uploadedAt || new Date().toISOString()
+          })) || []
+        }))
+      };
+
+      let response;
       
       if (editingProperty && editingProperty._id) {
-        await propertyService.updateProperty(editingProperty._id, formData);
+        const editData = { 
+          ...submitData, 
+          propertyType: Array.isArray(submitData.propertyType) ? submitData.propertyType[0] : submitData.propertyType 
+        };
+        response = await propertyService.updateProperty(editingProperty._id, editData);
         toast.success("Property updated successfully", { id: toastId });
       } else {
-        await propertyService.createProperty(formData);
-        toast.success("Property added successfully", { id: toastId });
+        response = await propertyService.createProperty(submitData);
+        
+        if (response.success) {
+          if ('mainProject' in response.data) {
+            const { mainProject, subProperties } = response.data;
+            toast.success(`Main project created with ${subProperties.length} sub-properties`, { id: toastId });
+          } else {
+            toast.success("Property created successfully", { id: toastId });
+          }
+        }
       }
       
       handleCloseDialog();
       loadProperties();
       
     } catch (error: any) {
-      console.error('Error saving property:', error);
+      console.error('Submission error:', error);
       toast.error(error.message || "Failed to save property");
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDownloadFile = (url: string, filename: string) => {
     try {
-      const toastId = toast.loading("Deleting property...");
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
-      await propertyService.deleteProperty(id);
-      
-      toast.success("Property deleted successfully", { id: toastId });
-      loadProperties();
-      
-    } catch (error: any) {
-      console.error('Error deleting property:', error);
-      toast.error(error.message || "Failed to delete property");
+      toast.success(`Downloading ${filename}`);
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Download failed. Please try again.');
     }
+  };
+
+  const handleDownloadImages = (images: any[]) => {
+    images.forEach((image, index) => {
+      setTimeout(() => {
+        handleDownloadFile(
+          image.url, 
+          image.title || `image-${index + 1}.jpg`
+        );
+      }, index * 500);
+    });
+    toast.success(`Starting download of ${images.length} images`);
+  };
+
+  const handleDownloadBrochures = (brochures: any[]) => {
+    brochures.forEach((brochure, index) => {
+      setTimeout(() => {
+        handleDownloadFile(
+          brochure.url, 
+          brochure.title || `brochure-${index + 1}.pdf`
+        );
+      }, index * 500);
+    });
+    toast.success(`Starting download of ${brochures.length} brochures`);
+  };
+
+  const handleDownloadCreatives = (creatives: any[]) => {
+    creatives.forEach((creative, index) => {
+      setTimeout(() => {
+        const extension = creative.type === 'image' ? 'jpg' : 'mp4';
+        handleDownloadFile(
+          creative.url, 
+          creative.title || `creative-${index + 1}.${extension}`
+        );
+      }, index * 500);
+    });
+    toast.success(`Starting download of ${creatives.length} creatives`);
+  };
+
+  const handleDownloadVideos = (videos: any[]) => {
+    videos.forEach((video, index) => {
+      setTimeout(() => {
+        handleDownloadFile(
+          video.url, 
+          video.title || `video-${index + 1}.mp4`
+        );
+      }, index * 500);
+    });
+    toast.success(`Starting download of ${videos.length} videos`);
+  };
+
+  const handleDownloadAllMedia = (property: Property) => {
+    const allMedia = [
+      ...(property.images || []),
+      ...(property.brochureUrls || []),
+      ...(property.creatives || []),
+      ...(property.videos || [])
+    ];
+    
+    if (allMedia.length === 0) {
+      toast.info('No media files available for download');
+      return;
+    }
+    
+    allMedia.forEach((media, index) => {
+      setTimeout(() => {
+        let filename = media.title || `file-${index + 1}`;
+        let extension = 'file';
+        
+        if (media.type === 'image') extension = 'jpg';
+        else if (media.type === 'video') extension = 'mp4';
+        else if (media.url.includes('.pdf')) extension = 'pdf';
+        else if (media.url.includes('.doc')) extension = 'doc';
+        else if (media.url.includes('.docx')) extension = 'docx';
+        
+        handleDownloadFile(media.url, `${filename}.${extension}`);
+      }, index * 300);
+    });
+    
+    toast.success(`Starting download of ${allMedia.length} files`);
   };
 
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '50vh' }}>
         <CircularProgress />
-        <Typography variant="h6" sx={{ ml: 2 }}>
-          Loading properties...
-        </Typography>
+        <Typography variant="h6" sx={{ ml: 2 }}>Loading properties...</Typography>
       </Box>
     );
   }
 
   return (
     <Box sx={{ p: 3 }}>
-      <Toaster 
-        position="top-right"
-        toastOptions={{
-          style: {
-            background: '#363636',
-            color: '#fff',
-            borderRadius: '8px',
-            fontSize: '14px',
-          },
-          duration: 3000,
-        }}
-      />
+      <Toaster position="top-right" />
 
       {/* Header */}
       <Paper
@@ -2190,7 +2846,7 @@ export default function PropertiesPage() {
           p: { xs: 2, sm: 3 },
           mb: 3,
           background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-          borderRadius: '15px'
+          borderRadius: "15px",
         }}
       >
         <Grid
@@ -2199,76 +2855,68 @@ export default function PropertiesPage() {
           alignItems="center"
           justifyContent="space-between"
         >
+          {/* Title */}
           <Grid item xs={12} md="auto">
             <Typography
               variant="h5"
               fontWeight={700}
-              sx={{ textAlign: { xs: "center", md: "left" }, mb: { xs: 2, md: 0 } }}
+              sx={{
+                textAlign: { xs: "center", md: "left" },
+                mb: { xs: 2, md: 0 },
+              }}
             >
               Properties
             </Typography>
           </Grid>
 
+          {/* Search + Buttons */}
           <Grid
             item
             xs={12}
             md
-            display="flex"
-            flexDirection={{ xs: "column", sm: "row" }}
-            gap={1}
-            alignItems="center"
-            justifyContent={{ xs: "center", md: "flex-end" }}
-            sx={{ maxWidth: "100%" }}
+            sx={{
+              display: "flex",
+              flexDirection: { xs: "column", sm: "row" },
+              gap: 1,
+              alignItems: "center",
+              justifyContent: { xs: "center", md: "flex-end" },
+              flexWrap: "wrap",
+            }}
           >
+            {/* Search Field */}
             <TextField
               fullWidth
               variant="outlined"
-              placeholder="Search properties by name, builder, location..."
+              placeholder="Search properties..."
               value={searchTerm}
               onChange={handleSearchChange}
-              onKeyPress={(e) => e.key === "Enter" && handleSearch()}
               size="small"
               sx={{
-                flex: 1,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: "25px",
-                  backgroundColor: "white",
-                },
+                width: { xs: "100%", sm: "250px", md: "300px" },
               }}
             />
 
-            <Grid item sx={{ width: { xs: '100%', sm: 'auto' }, display: 'flex', flexWrap: 'wrap', gap: 1,  justifyContent: { xs: 'center', md: 'flex-end' } }}>
+            {/* Button Group */}
+            <Grid
+              item
+              sx={{
+                width: { xs: "100%", sm: "auto" },
+                display: "flex",
+                flexWrap: "wrap",
+                gap: 1,
+                justifyContent: { xs: "center", md: "flex-end" },
+              }}
+            >
               <Button
                 variant="outlined"
                 startIcon={<FilterList />}
                 onClick={() => setShowFilters(!showFilters)}
                 sx={{
-                  borderRadius: "8px",
-                  whiteSpace: "nowrap",
-                  position: 'relative',
+                  flexGrow: { xs: 1, sm: 0 },
+                  width: { xs: "100%", sm: "auto" },
                 }}
               >
-                Filters
-                {activeFiltersCount > 0 && (
-                  <Box
-                    sx={{
-                      position: 'absolute',
-                      top: -8,
-                      right: -8,
-                      backgroundColor: '#1976d2',
-                      color: 'white',
-                      borderRadius: '50%',
-                      width: 20,
-                      height: 20,
-                      fontSize: '0.75rem',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    {activeFiltersCount}
-                  </Box>
-                )}
+                Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
               </Button>
 
               <Button
@@ -2277,10 +2925,9 @@ export default function PropertiesPage() {
                 onClick={() => handleOpenDialog()}
                 sx={{
                   backgroundColor: "#1976d2",
-                  borderRadius: "8px",
-                  px: 3,
-                  whiteSpace: "nowrap",
                   "&:hover": { backgroundColor: "#115293" },
+                  flexGrow: { xs: 1, sm: 0 },
+                  width: { xs: "100%", sm: "auto" },
                 }}
               >
                 Add Property
@@ -2289,817 +2936,80 @@ export default function PropertiesPage() {
           </Grid>
         </Grid>
 
+        {/* Results Summary */}
         {(searchTerm || activeFiltersCount > 0) && (
           <Typography
             variant="body2"
             color="text.secondary"
-            sx={{ mt: 2, textAlign: { xs: "center", md: "left" } }}
+            sx={{
+              mt: 2,
+              textAlign: { xs: "center", md: "left" },
+            }}
           >
-            Found {filteredProperties.length} property
-            {filteredProperties.length !== 1 ? "ies" : ""} 
+            Found {properties.length} project{properties.length !== 1 ? "s" : ""}{" "}
             {searchTerm && ` matching "${searchTerm}"`}
-            {activeFiltersCount > 0 && ` with ${activeFiltersCount} filter${activeFiltersCount !== 1 ? 's' : ''} applied`}
+            {activeFiltersCount > 0 &&
+              ` with ${activeFiltersCount} filter${
+                activeFiltersCount !== 1 ? "s" : ""
+              } applied`}
           </Typography>
-        )}
-
-        {(filters.status.length > 0 || filters.propertyType.length > 0 || 
-          filters.priceRange.min || filters.priceRange.max || filters.builderName || filters.location) && (
-          <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 1 }}>
-            {filters.status.map((status, index) => (
-              <Chip
-                key={status}
-                label={`Status: ${status}`}
-                onDelete={() => removeFilter('status', status)}
-                size="small"
-                color="primary"
-                variant="outlined"
-              />
-            ))}
-            {filters.propertyType.map((type, index) => (
-              <Chip
-                key={type}
-                label={`Type: ${type}`}
-                onDelete={() => removeFilter('propertyType', type)}
-                size="small"
-                color="secondary"
-                variant="outlined"
-              />
-            ))}
-            {(filters.priceRange.min || filters.priceRange.max) && (
-              <Chip
-                label={`Price: ${filters.priceRange.min || '0'} - ${filters.priceRange.max || '∞'}`}
-                onDelete={() => removeFilter('priceRange')}
-                size="small"
-                color="warning"
-                variant="outlined"
-              />
-            )}
-            {filters.builderName && (
-              <Chip
-                label={`Builder: ${filters.builderName}`}
-                onDelete={() => removeFilter('builderName')}
-                size="small"
-                color="info"
-                variant="outlined"
-              />
-            )}
-            {filters.location && (
-              <Chip
-                label={`Location: ${filters.location}`}
-                onDelete={() => removeFilter('location')}
-                size="small"
-                color="error"
-                variant="outlined"
-              />
-            )}
-          </Box>
         )}
       </Paper>
 
-      {/* Filters Panel */}
+      {/* Enhanced Filters Section */}
       <Collapse in={showFilters}>
-        <Paper sx={{ p: 3, mb: 3, borderRadius: '15px', border: '1px solid #e0e0e0' }}>
-          <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-            <Typography variant="h6" sx={{ display: 'flex', alignItems: 'center', fontWeight: 600 }}>
-              <FilterList sx={{ mr: 1 }} />
-              Filter Properties
+        <Paper sx={{ p: 3, mb: 3, borderRadius: "15px" }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" fontWeight={600}>
+              Filters
+              {activeFiltersCount > 0 && (
+                <Chip 
+                  label={`${activeFiltersCount} active`} 
+                  size="small" 
+                  color="primary" 
+                  sx={{ ml: 2 }} 
+                />
+              )}
             </Typography>
-            <Button
-              startIcon={<Clear />}
-              onClick={clearAllFilters}
+            <Button 
+              onClick={clearAllFilters} 
+              variant="outlined" 
               size="small"
-              sx={{ borderRadius: '8px' }}
+              disabled={activeFiltersCount === 0}
             >
               Clear All
             </Button>
           </Box>
-          
-          <Grid container spacing={3}>
-            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-              <FormControl fullWidth>
-                <InputLabel>Status</InputLabel>
-                <Select
-                  multiple
-                  value={filters.status}
-                  onChange={(e) => handleFilterChange('status', e.target.value)}
-                  input={<OutlinedInput label="Status" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {(selected as string[]).map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
-                >
-                  {statusOptions.map((status) => (
-                    <MenuItem key={status} value={status}>
-                      {status}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
-            </Grid>
 
-            <Grid size={{ xs: 12, md: 6, lg: 4 }}>
-              <FormControl fullWidth>
+          <Grid container spacing={2}>
+            {/* Property Type Filter */}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <FormControl fullWidth size="small">
                 <InputLabel>Property Type</InputLabel>
                 <Select
-                  multiple
                   value={filters.propertyType}
                   onChange={(e) => handleFilterChange('propertyType', e.target.value)}
-                  input={<OutlinedInput label="Property Type" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {(selected as string[]).map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
+                  label="Property Type"
                 >
-                  {propertyTypeOptions.map((type) => (
-                    <MenuItem key={type} value={type}>
-                      {type}
-                    </MenuItem>
-                  ))}
+                  <MenuItem value="">All Types</MenuItem>
+                  <MenuItem value="project">Main Projects</MenuItem>
+                  <MenuItem value="residential">Residential</MenuItem>
+                  <MenuItem value="commercial">Commercial</MenuItem>
+                  <MenuItem value="plot">Plot</MenuItem>
                 </Select>
               </FormControl>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Box display="flex" gap={2}>
-                <TextField
-                  fullWidth
-                  label="Min Price"
-                  value={filters.priceRange.min}
-                  onChange={handlePriceRangeChange('min')}
-                  placeholder="0"
-                />
-                <TextField
-                  fullWidth
-                  label="Max Price"
-                  value={filters.priceRange.max}
-                  onChange={handlePriceRangeChange('max')}
-                  placeholder="No limit"
-                />
-              </Box>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Builder Name"
-                value={filters.builderName}
-                onChange={(e) => handleFilterChange('builderName', e.target.value)}
-                placeholder="Search by builder..."
-              />
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <TextField
-                fullWidth
-                label="Location"
-                value={filters.location}
-                onChange={(e) => handleFilterChange('location', e.target.value)}
-                placeholder="Search by location..."
-              />
-            </Grid>
-          </Grid>
-        </Paper>
-      </Collapse>
-
-      {/* Properties Grid */}
-      <Grid container spacing={3}>
-        {filteredProperties.map((property) => {
-          const primaryImage = property.images?.find(img => img.isPrimary) || property.images?.[0];
-          const priceRange = property.propertyTypes?.map(type => type.price).join(' - ');
-        
-          return (
-            <Grid size={{ xs: 12, sm: 6, md: 6, lg: 4 }} key={property._id}>
-              <Paper
-                onClick={() => handleViewProperty(property)} 
-                sx={{ 
-                  p: 2, 
-                  height: "15rem", 
-                  transition: "transform 0.2s", 
-                  "&:hover": { transform: "translateY(-4px)" },
-                  backgroundImage: primaryImage ? `url(${primaryImage.url})` : 'none',
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                  position: 'relative',
-                  '&::before': {
-                    content: '""',
-                    position: 'absolute',
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-                    borderRadius: 'inherit',
-                  },
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'space-between', 
-                  cursor: 'pointer',
-                  borderRadius: '15px'
-                }}
-              >
-                <Box display="flex" justifyContent="flex-end" alignItems="flex-start">
-                  <Box>
-                    <IconButton size="small" onClick={() => handleViewProperty(property)} sx={{ color: 'white' }} title="Preview Property">
-                      <VisibilityIcon />
-                    </IconButton>
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleOpenDialog(property); }} sx={{ color: 'white' }} title="Edit Property">
-                      <Edit />
-                    </IconButton>
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); handleDelete(property._id!); }} sx={{ color: 'white' }} title="Delete Property">
-                      <Delete />
-                    </IconButton>
-                  </Box>
-                </Box>
-
-                <Box 
-                  position="absolute" 
-                  zIndex={1} 
-                  sx={{ 
-                    color: 'white',
-                    textAlign: 'center', 
-                    display: 'flex',
-                    flexDirection: 'column',
-                    justifyContent: 'center', 
-                    alignItems: 'center', 
-                    bottom: '10px', 
-                    left: 0,
-                    right: 0,
-                    width: '100%'
-                  }}
-                >
-                  <Typography variant="h6" fontWeight={600} sx={{ color: 'white' }}>
-                    {property.projectName}
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)' }} gutterBottom>
-                    by {property.builderName}
-                  </Typography>
-                  {priceRange && (
-                    <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-                      <CurrencyRupeeIcon sx={{ fontSize: '1rem', verticalAlign: 'middle' }} />
-                      {priceRange}
-                    </Typography>
-                  )}
-                </Box>
-              </Paper>
-            </Grid>
-          );
-        })}
-      </Grid>
-
-      {/* Show message when no results found */}
-      {filteredProperties.length === 0 && !loading && (
-        <Paper sx={{ p: 4, textAlign: 'center', mt: 2, borderRadius: '15px' }}>
-          <Typography variant="h6" color="text.secondary" gutterBottom>
-            {searchTerm || activeFiltersCount > 0 
-              ? 'No properties found matching your search criteria.' 
-              : 'No properties found.'}
-          </Typography>
-          {(searchTerm || activeFiltersCount > 0) && (
-            <Button 
-              variant="contained" 
-              onClick={clearAllFilters}
-              sx={{ mt: 2 }}
-            >
-              Clear Search & Filters
-            </Button>
-          )}
-        </Paper>
-      )}
-
-      {/* View Property Dialog */}
-      <Dialog open={openViewDialog} onClose={handleCloseViewDialog} maxWidth="lg" fullWidth>
-        <DialogTitle>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
-            <Box>
-              <Typography variant="h5" fontWeight={600}>
-                {viewingProperty?.projectName}
-              </Typography>
-              <Typography variant="subtitle1" color="text.secondary">
-                by {viewingProperty?.builderName}
-              </Typography>
-            </Box>
-          </Box>
-        </DialogTitle>
-        
-        <DialogContent>
-          <Grid container spacing={3}>
-            <Grid display={"flex"} flexWrap={'wrap'} gap={'1.5rem'} maxHeight={'100%'}>
-              <Grid size={{ xs: 12, lg: 8 }}>
-              {viewingProperty?.images && viewingProperty.images.length > 0 && (
-                <Grid size={{ xs: 12, md: 12 }}>
-                  <ImageCarousel 
-                      images={viewingProperty.images} 
-                      projectName={viewingProperty.projectName}
-                    />
-                </Grid>
-              )}
-              </Grid>
-              <Grid size={{ xs: 12, lg: 4 }}>
-                <Paper sx={{ p: 2, height: '100%', borderRadius: '15px' }}>
-                  <Typography variant="h6" gutterBottom>Basic Information</Typography>
-                  
-                  <Box display="flex" alignItems="center" mb={1}>
-                    <LocationOn fontSize="small" color="action" sx={{ mr: 1 }} />
-                    <Typography variant="body2">{viewingProperty?.location}</Typography>
-                  </Box>
-                  
-                  <Typography variant="body2" paragraph>
-                    {viewingProperty?.description}
-                  </Typography>
-                  
-                  {viewingProperty?.nearby && viewingProperty.nearby.length > 0 && (
-                    <Box>
-                      <Typography variant="subtitle2" gutterBottom>Nearby Places</Typography>
-                      <Box display="flex" flexWrap="wrap" gap={0.5}>
-                        {viewingProperty.nearby.map((place: string, index: number) => (
-                          <Chip key={index} label={place} size="small" variant="outlined" />
-                        ))}
-                      </Box>
-                    </Box>
-                  )}
-                </Paper>
-              </Grid>
-            </Grid>
-            
-            {/* Property Types */}
-            {viewingProperty?.propertyTypes && viewingProperty.propertyTypes.length > 0 && (
-              <Grid size={{ xs: 12 }}>
-                <Paper sx={{ p: 2, borderRadius: '15px' }}>
-                  <Typography variant="h6" gutterBottom>Property Types</Typography>
-                  <Grid container spacing={2}>
-                    {viewingProperty.propertyTypes.map((type, index) => (
-                      <Grid size={{ xs: 12, md: 6 }} key={index}>
-                        <Card variant="outlined" sx={{ borderRadius: '10px' }}>
-                          <CardContent>
-                            <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={1}>
-                              <Typography variant="subtitle1" fontWeight={600}>
-                                {type.propertyType === 'residential' ? '🏠 Residential' : '🏢 Commercial'}
-                              </Typography>
-                              <Chip 
-                                label={type.price} 
-                                color="primary" 
-                                size="small"
-                                icon={<CurrencyRupeeIcon />}
-                              />
-                            </Box>
-                            
-                            <Typography variant="body2" color="text.secondary" gutterBottom>
-                              {type.description}
-                            </Typography>
-                            
-                            <Typography variant="body2" gutterBottom>
-                              <strong>Payment Plan:</strong> {type.paymentPlan}
-                            </Typography>
-
-                            {type.propertyType === 'residential' && (
-                              <Box display="flex" gap={1} flexWrap="wrap" mb={1}>
-                                <Chip label={`${type.bedrooms} Beds`} size="small" variant="outlined" />
-                                <Chip label={`${type.bathrooms} Baths`} size="small" variant="outlined" />
-                                <Chip label={`${type.toilet} Toilets`} size="small" variant="outlined" />
-                                <Chip label={`${type.balcony} Balcony`} size="small" variant="outlined" />
-                              </Box>
-                            )}
-
-                            {type.propertyType === 'commercial' && (
-                              <Box mb={1}>
-                                <Typography variant="body2">
-                                  <strong>Carpet Area:</strong> {type.carpetArea}
-                                </Typography>
-                                {type.builtUpArea && (
-                                  <Typography variant="body2">
-                                    <strong>Built-up Area:</strong> {type.builtUpArea}
-                                  </Typography>
-                                )}
-                                {type.loadingArea && (
-                                  <Typography variant="body2">
-                                    <strong>Loading Area:</strong> {type.loadingArea}
-                                  </Typography>
-                                )}
-                              </Box>
-                            )}
-
-                            {(type.features?.length > 0 || type.amenities?.length > 0) && (
-                              <>
-                                {type.features?.length > 0 && (
-                                  <Box mb={1}>
-                                    <Typography variant="caption" display="block" fontWeight={600}>
-                                      Features:
-                                    </Typography>
-                                    <Box display="flex" flexWrap="wrap" gap={0.5}>
-                                      {type.features.slice(0, 3).map((feature, i) => (
-                                        <Chip key={i} label={feature} size="small" />
-                                      ))}
-                                      {type.features.length > 3 && (
-                                        <Chip label={`+${type.features.length - 3} more`} size="small" variant="outlined" />
-                                      )}
-                                    </Box>
-                                  </Box>
-                                )}
-                                
-                                {type.amenities?.length > 0 && (
-                                  <Box>
-                                    <Typography variant="caption" display="block" fontWeight={600}>
-                                      Amenities:
-                                    </Typography>
-                                    <Box display="flex" flexWrap="wrap" gap={0.5}>
-                                      {type.amenities.slice(0, 3).map((amenity, i) => (
-                                        <Chip key={i} label={amenity} size="small" color="primary" />
-                                      ))}
-                                      {type.amenities.length > 3 && (
-                                        <Chip label={`+${type.amenities.length - 3} more`} size="small" variant="outlined" />
-                                      )}
-                                    </Box>
-                                  </Box>
-                                )}
-                              </>
-                            )}
-                          </CardContent>
-                        </Card>
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Paper>
-              </Grid>
-            )}
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Paper sx={{ p: 2, borderRadius: '15px' }}>
-                <Typography variant="h6" gutterBottom>Status & Project Highlights</Typography>
-                
-                {viewingProperty?.status && viewingProperty.status.length > 0 && (
-                  <Box mb={2}>
-                    <Typography variant="subtitle2" gutterBottom>Status</Typography>
-                    <Box display="flex" flexWrap="wrap" gap={0.5} mb={2}>
-                      {viewingProperty.status.map((statusItem: string, index: number) => (
-                        <Chip 
-                          key={index}
-                          label={statusItem} 
-                          size="small" 
-                          color={statusItem === "Ready to Move" ? "success" : "warning"}
-                        />
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-                
-                {viewingProperty?.projectHighlights && viewingProperty.projectHighlights.length > 0 && (
-                  <Box mb={2}>
-                    <Typography variant="subtitle2" gutterBottom>Project Highlights</Typography>
-                    <Box display="flex" flexWrap="wrap" gap={0.5}>
-                      {viewingProperty.projectHighlights.map((highlight: string, index: number) => (
-                        <Chip 
-                          key={index}
-                          label={highlight} 
-                          size="small" 
-                          variant="outlined"
-                          color="secondary"
-                        />
-                      ))}
-                    </Box>
-                  </Box>
-                )}
-              </Paper>
-            </Grid>
-            
-            {/* Map Location */}
-            {viewingProperty?.mapLocation && (
-              <Grid size={{ xs: 12, md: 6 }}>
-                <Paper sx={{ p: 2, borderRadius: '15px' }}>
-                  <Typography variant="h6" gutterBottom>Location</Typography>
-                  <PropertyMap 
-                    lat={viewingProperty.mapLocation.lat} 
-                    lng={viewingProperty.mapLocation.lng}
-                    projectName={viewingProperty.projectName}
-                  />
-                  <Box sx={{ mt: 1, display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Latitude: {viewingProperty.mapLocation.lat}
-                    </Typography>
-                    <Typography variant="body2" color="text.secondary">
-                      Longitude: {viewingProperty.mapLocation.lng}
-                    </Typography>
-                  </Box>
-                </Paper>
-              </Grid>
-            )}
-
-            {/* Enhanced Media Assets with Download */}
-            <Grid size={{ xs: 12, md: 6 }}>
-              <Paper sx={{ p: 2, borderRadius: '15px' }}>
-                <Typography variant="h6" gutterBottom>Media Assets</Typography>
-                
-                {viewingProperty?.brochureUrls && viewingProperty.brochureUrls.length > 0 && (
-                  <Box mb={2}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                      <Typography variant="subtitle2">
-                        <Description fontSize="small" sx={{ mr: 0.5, verticalAlign: "middle" }} />
-                        Brochures ({viewingProperty.brochureUrls.length})
-                      </Typography>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<Download />}
-                        onClick={() => handleDownloadAllBrochures(viewingProperty)}
-                      >
-                        Download All
-                      </Button>
-                    </Box>
-                    <List dense>
-                      {viewingProperty.brochureUrls.map((brochure: any, index: number) => (
-                        <ListItem key={index} sx={{ pl: 0 }}>
-                          <ListItemText 
-                            primary={brochure.title || `Brochure ${index + 1}`}
-                            secondary={
-                              <Box>
-                                <Typography variant="caption" display="block">
-                                  {brochure.url.length > 50 ? `${brochure.url.substring(0, 50)}...` : brochure.url}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  Type: {brochure.type}
-                                </Typography>
-                              </Box>
-                            }
-                          />
-                          <ListItemSecondaryAction>
-                            <IconButton 
-                              size="small" 
-                              onClick={() => handleDownloadBrochure(brochure.url, viewingProperty.projectName, index, brochure.title)}
-                              title="Download Brochure"
-                            >
-                              <Download />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
-                )}
-
-                {viewingProperty?.creatives && viewingProperty.creatives.length > 0 && (
-                  <Box mb={2}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                      <Typography variant="subtitle2">
-                        <Photo fontSize="small" sx={{ mr: 0.5, verticalAlign: "middle" }} />
-                        Creative Assets ({viewingProperty.creatives.length})
-                      </Typography>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<Download />}
-                        onClick={() => handleDownloadAllCreatives(viewingProperty)}
-                      >
-                        Download All
-                      </Button>
-                    </Box>
-                    <List dense>
-                      {viewingProperty.creatives.map((creative: any, index: number) => (
-                        <ListItem key={index} sx={{ pl: 0 }}>
-                          <ListItemText 
-                            primary={creative.title || `Creative ${index + 1}`}
-                            secondary={
-                              <Box>
-                                <Typography variant="caption" display="block">
-                                  {creative.url.length > 50 ? `${creative.url.substring(0, 50)}...` : creative.url}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  Type: {creative.type}
-                                </Typography>
-                              </Box>
-                            }
-                          />
-                          <ListItemSecondaryAction>
-                            <IconButton 
-                              size="small" 
-                              onClick={() => handleDownloadCreative(creative.url, viewingProperty.projectName, index, creative.title)}
-                              title="Download Creative"
-                            >
-                              <Download />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
-                )}
-
-                {viewingProperty?.videoFiles && viewingProperty.videoFiles.length > 0 && (
-                  <Box mb={2}>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                      <Typography variant="subtitle2">
-                        <VideoLibrary fontSize="small" sx={{ mr: 0.5, verticalAlign: "middle" }} />
-                        Uploaded Videos ({viewingProperty.videoFiles.length})
-                      </Typography>
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        startIcon={<Download />}
-                        onClick={() => handleDownloadAllVideos(viewingProperty)}
-                      >
-                        Download All
-                      </Button>
-                    </Box>
-                    <List dense>
-                      {viewingProperty.videoFiles.map((video: any, index: number) => (
-                        <ListItem key={index} sx={{ pl: 0 }}>
-                          <ListItemText 
-                            primary={video.title || `Video ${index + 1}`}
-                            secondary={
-                              <Box>
-                                <Typography variant="caption" display="block">
-                                  {video.url.length > 50 ? `${video.url.substring(0, 50)}...` : video.url}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  Type: {video.type}
-                                </Typography>
-                              </Box>
-                            }
-                          />
-                          <ListItemSecondaryAction>
-                            <IconButton 
-                              size="small" 
-                              onClick={() => handleDownloadVideo(video.url, viewingProperty.projectName, index, video.title)}
-                              title="Download Video"
-                            >
-                              <Download />
-                            </IconButton>
-                          </ListItemSecondaryAction>
-                        </ListItem>
-                      ))}
-                    </List>
-                  </Box>
-                )}
-
-                {(!viewingProperty?.brochureUrls?.length && !viewingProperty?.creatives?.length && !viewingProperty?.videoFiles?.length) && (
-                  <Typography variant="body2" color="text.secondary" sx={{ fontStyle: 'italic' }}>
-                    No media assets available
-                  </Typography>
-                )}
-              </Paper>
-            </Grid>
-            
-            {/* Image Gallery with Download Functionality */}
-            {viewingProperty?.images && viewingProperty.images.filter((img: any) => !img.isPrimary).length > 0 && (
-              <Grid size={{ xs: 12 }}>
-                <Paper sx={{ p: 2, borderRadius: '15px' }}>
-                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-                    <Typography variant="h6">
-                      <Photo sx={{ mr: 1, verticalAlign: "middle" }} />
-                      Image Gallery ({viewingProperty.images.filter((img: any) => !img.isPrimary).length})
-                    </Typography>
-                    <Button
-                      variant="outlined"
-                      startIcon={<Download />}
-                      onClick={() => handleDownloadAllImages(viewingProperty)}
-                      size="small"
-                    >
-                      Download All Images
-                    </Button>
-                  </Box>
-                  <Grid container spacing={1}>
-                    {viewingProperty.images.filter((img: any) => !img.isPrimary).map((image: any, index: number) => (
-                      <Grid size={{ xs: 6, md: 3 }} key={index}>
-                        <Box position="relative" sx={{ borderRadius: '10px', overflow: 'hidden' }}>
-                          <img
-                            src={image.url}
-                            alt={image.title || `Gallery Image ${index + 1}`}
-                            style={{
-                              width: '100%',
-                              height: '120px',
-                              objectFit: 'cover',
-                              cursor: 'pointer'
-                            }}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/150x120?text=Image';
-                            }}
-                          />
-                          <Box
-                            position="absolute"
-                            top={4}
-                            right={4}
-                            sx={{
-                              opacity: 0,
-                              transition: 'opacity 0.2s',
-                              '&:hover': { opacity: 1 },
-                              '.MuiGrid-root:hover &': { opacity: 1 }
-                            }}
-                          >
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDownloadImage(image.url, viewingProperty.projectName, index, image.title)}
-                              sx={{
-                                backgroundColor: 'rgba(0,0,0,0.7)',
-                                color: 'white',
-                                '&:hover': {
-                                  backgroundColor: 'rgba(0,0,0,0.9)',
-                                }
-                              }}
-                              title="Download Image"
-                            >
-                              <Download fontSize="small" />
-                            </IconButton>
-                          </Box>
-                        </Box>
-                        {image.title && (
-                          <Typography variant="caption" display="block" mt={0.5}>
-                            {image.title}
-                          </Typography>
-                        )}
-                      </Grid>
-                    ))}
-                  </Grid>
-                </Paper>
-              </Grid>
-            )}
-          </Grid>
-        </DialogContent>
-        
-        <DialogActions>
-          <Button onClick={() => {
-            handleCloseViewDialog();
-            handleOpenDialog(viewingProperty);
-          }} startIcon={<Edit />}>
-            Edit Property
-          </Button>
-          <Button onClick={handleCloseViewDialog}>Close</Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Add/Edit Dialog with Enhanced Map */}
-      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth scroll="paper">
-        <DialogTitle sx={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0', color: '#1976d2', borderRadius: '15px 15px 0 0' }}>
-          <Typography variant="h5" fontWeight={600}>
-            {editingProperty ? "Edit Property" : "Add New Property"}
-          </Typography>
-        </DialogTitle>
-        <DialogContent sx={{ p: 3 }}>
-          <Grid container spacing={3}>
-            {/* Basic Information */}
-            <Grid size={{ xs: 12 }}>
-              <Typography variant="h6" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>
-                Basic Information <Typography component="span" color="error">*</Typography>
-              </Typography>
-            </Grid>
-            
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Project Name"
-                value={formData.projectName}
-                onChange={handleInputChangeWithValidation("projectName")}
-                required
-                error={!!validationErrors.projectName}
-                helperText={validationErrors.projectName || "Enter the project name (2-200 characters)"}
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-            
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Builder Name"
-                value={formData.builderName}
-                onChange={handleInputChangeWithValidation("builderName")}
-                required
-                error={!!validationErrors.builderName}
-                helperText={validationErrors.builderName || "Enter the builder name (2-100 characters)"}
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-            
-            <Grid size={{ xs: 12, md: 6 }}>
-              <FormControl fullWidth sx={{ mb: 2 }} error={!!validationErrors.status}>
-                <InputLabel>Status *</InputLabel>
+            {/* Status Filter */}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Status</InputLabel>
                 <Select
-                  multiple
-                  value={formData.status || []}
-                  onChange={(e) => {
-                    const selectedStatus = e.target.value;
-                    setFormData((prev) => ({
-                      ...prev,
-                      status: typeof selectedStatus === "string"
-                        ? selectedStatus.split(",")
-                        : selectedStatus,
-                    }));
-                    if (validationErrors.status) {
-                      setValidationErrors(prev => ({ ...prev, status: undefined }));
-                    }
-                  }}
-                  input={<OutlinedInput label="Status *" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {(selected as string[]).map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </Box>
-                  )}
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  label="Status"
                 >
+                  <MenuItem value="">All Status</MenuItem>
                   <MenuItem value="Ready to Move">Ready to Move</MenuItem>
                   <MenuItem value="Under Construction">Under Construction</MenuItem>
                   <MenuItem value="New Launch">New Launch</MenuItem>
@@ -3107,513 +3017,2064 @@ export default function PropertiesPage() {
                   <MenuItem value="Sold Out">Sold Out</MenuItem>
                   <MenuItem value="Coming Soon">Coming Soon</MenuItem>
                 </Select>
-                {validationErrors.status && (
-                  <Typography variant="caption" color="error" sx={{ mt: 0.5, display: 'block' }}>
-                    {validationErrors.status}
-                  </Typography>
-                )}
               </FormControl>
             </Grid>
 
-            <Grid size={{ xs: 12, md: 6  }}>
+            {/* Location Filter */}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Location"
+                value={filters.location}
+                onChange={(e) => handleFilterChange('location', e.target.value)}
+                placeholder="Enter location"
+              />
+            </Grid>
+
+            {/* Builder Filter */}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <TextField
+                fullWidth
+                size="small"
+                label="Builder"
+                value={filters.builderName}
+                onChange={(e) => handleFilterChange('builderName', e.target.value)}
+                placeholder="Builder name"
+              />
+            </Grid>
+          </Grid>
+
+          {/* Active Filters Display */}
+          {activeFiltersCount > 0 && (
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="subtitle2" gutterBottom>
+                Active Filters:
+              </Typography>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1 }}>
+                {filters.propertyType && (
+                  <Chip
+                    label={`Type: ${filters.propertyType}`}
+                    onDelete={() => removeFilter('propertyType')}
+                    size="small"
+                  />
+                )}
+                {filters.status && (
+                  <Chip
+                    label={`Status: ${filters.status}`}
+                    onDelete={() => removeFilter('status')}
+                    size="small"
+                  />
+                )}
+                {filters.location && (
+                  <Chip
+                    label={`Location: ${filters.location}`}
+                    onDelete={() => removeFilter('location')}
+                    size="small"
+                  />
+                )}
+                {filters.builderName && (
+                  <Chip
+                    label={`Builder: ${filters.builderName}`}
+                    onDelete={() => removeFilter('builderName')}
+                    size="small"
+                  />
+                )}
+              </Box>
+            </Box>
+          )}
+        </Paper>
+      </Collapse>
+
+      {/* Properties List with Hierarchy */}
+      <Box sx={{ width: '100%' }}>
+        {properties.length === 0 ? (
+          <Paper sx={{ p: 4, textAlign: 'center' }}>
+            <Typography variant="h6" color="text.secondary">
+              No properties found
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
+              {searchTerm ? `No results for "${searchTerm}"` : 'Create your first property to get started'}
+            </Typography>
+            <Button 
+              variant="contained" 
+              startIcon={<Add />} 
+              onClick={() => handleOpenDialog()} 
+              sx={{ mt: 2 }}
+            >
+              Add Your First Property
+            </Button>
+          </Paper>
+        ) : (
+          <>
+          <Box sx={{ gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 2, display: 'grid' }}>
+            {getPaginatedProperties().map((project) => (
+              <MainProjectCard
+                key={project._id}
+                project={project}
+                onEdit={handleOpenDialog}
+                onView={handleViewProperty}
+                onDelete={handleDeleteProperty}
+                onViewSubProperty={handleViewSubProperty}
+                onEditSubProperty={handleOpenDialog}
+                onDeleteSubProperty={handleDeleteProperty}
+              />
+            ))}
+            </Box>
+          </>
+        )}
+      </Box>
+
+      {/* Pagination */}
+      {properties.length > 0 && (
+        <PaginationControls 
+          currentPage={currentPage} 
+          totalPages={totalPages} 
+          onPageChange={handlePageChange} 
+          totalItems={properties.length} 
+          itemsPerPage={PROPERTIES_PER_PAGE} 
+        />
+      )}
+
+      {/* Add/Edit Dialog */}
+      <Dialog open={openDialog} onClose={handleCloseDialog} maxWidth="md" fullWidth scroll="paper">
+        <DialogTitle sx={{ backgroundColor: '#f5f5f5', borderBottom: '1px solid #e0e0e0', color: '#1976d2', borderRadius: '15px 15px 0 0' }}>
+          <Typography variant="h5" fontWeight={600}>{editingProperty ? "Edit Property" : "Add New Properties"}</Typography>
+        </DialogTitle>
+        <DialogContent sx={{ p: 3 }}>
+          <Grid container spacing={3}>
+            <Grid size={{ xs: 12 }}>
+              <Typography variant="h6" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>Basic Project Information</Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Fields marked with <Typography component="span" color="error">*</Typography> are required
+              </Typography>
+            </Grid>
+            
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField fullWidth label="Project Name *" value={formData.projectName} onChange={(e) => setFormData((prev: any) => ({ ...prev, projectName: e.target.value }))}
+                required error={!!validationErrors.projectName} helperText={validationErrors.projectName} sx={{ mb: 2 }} />
+            </Grid>
+            
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField fullWidth label="Builder Name *" value={formData.builderName} onChange={(e) => setFormData((prev: any) => ({ ...prev, builderName: e.target.value }))}
+                required error={!!validationErrors.builderName} helperText={validationErrors.builderName} sx={{ mb: 2 }} />
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <FormControl fullWidth sx={{ mb: 2 }}>
+                <InputLabel>Status</InputLabel>
+                <Select multiple value={formData.status} onChange={(e) => setFormData((prev: any) => ({ ...prev, status: e.target.value }))} input={<OutlinedInput label="Status" />}
+                  renderValue={(selected) => (<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>{(selected as string[]).map((value) => (<Chip key={value} label={value} size="small" />))}</Box>)}>
+                  {["Ready to Move", "Under Construction", "New Launch", "Pre Launch", "Sold Out", "Coming Soon"].map(status => (
+                    <MenuItem key={status} value={status}>{status}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid size={{ xs: 12, md: 6 }}>
+              <TextField fullWidth label="Payment Plan *" value={formData.paymentPlan} onChange={(e) => setFormData((prev: any) => ({ ...prev, paymentPlan: e.target.value }))}
+                required error={!!validationErrors.paymentPlan} helperText={validationErrors.paymentPlan} sx={{ mb: 2 }} />
+            </Grid>
+
+            <Grid size={{ xs: 12}}>
+              <TextField fullWidth label="Description" value={formData.description} onChange={(e) => setFormData((prev: any) => ({ ...prev, description: e.target.value }))} multiline rows={3}
+                sx={{ mb: 2 }} />
+            </Grid>
+
+            <Grid size={{ xs: 12}}>
               <FormControl fullWidth sx={{ mb: 2 }}>
                 <InputLabel>Project Highlights</InputLabel>
-                <Select
-                  multiple
-                  value={formData.projectHighlights || []}
-                  onChange={(e) => {
-                    const selectedProjectHighlights = e.target.value;
-                    setFormData((prev) => ({
-                      ...prev,
-                      projectHighlights: typeof selectedProjectHighlights === "string"
-                        ? selectedProjectHighlights.split(",")
-                        : selectedProjectHighlights,
-                    }));
-                  }}
-                  input={<OutlinedInput label="ProjectHighlights" />}
-                  renderValue={(selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {(selected as string[]).map((value) => (
-                        <Chip key={value} label={value} size="small" />
+                <Select multiple value={formData.projectHighlights} onChange={(e) => setFormData((prev: any) => ({ ...prev, projectHighlights: e.target.value }))} input={<OutlinedInput label="ProjectHighlights" />}
+                  renderValue={(selected) => (<Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>{(selected as string[]).map((value) => (<Chip key={value} label={value} size="small" />))}</Box>)}>
+                  {["Gated Community", "Eco-Friendly", "Luxury Living", "Affordable Housing", "Smart Home Features", "Waterfront Property", "High-Rise Building", "Low-Rise Building", "Vastu Compliant"].map(highlight => (
+                    <MenuItem key={highlight} value={highlight}>{highlight}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <PropertyTypeSelector formData={formData} setFormData={setFormData} validationErrors={validationErrors} />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <AdditionalDetailsSection formData={formData} setFormData={setFormData} validationErrors={validationErrors} />
+            </Grid>
+
+            <Grid size={{ xs: 12 }}>
+              <Paper sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0', borderRadius: '15px' }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+                  Project Media Uploads
+                </Typography>
+
+                <Grid container spacing={2} sx={{ mb: 2 }}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <input
+                      accept="image/*"
+                      style={{ display: 'none' }}
+                      id="project-images"
+                      type="file"
+                      multiple
+                      onChange={async (e) => {
+                        if (e.target.files) {
+                          const files = Array.from(e.target.files);
+                          for (const file of files) {
+                            const uploadResponse = await uploadService.uploadFile(file);
+                            if (uploadResponse.success && uploadResponse.data) {
+                              const newImage = {
+                                url: uploadResponse.data.url,
+                                title: file.name.replace(/\.[^/.]+$/, ""),
+                                description: "",
+                                isPrimary: formData.images.length === 0,
+                                uploadedAt: new Date().toISOString()
+                              };
+                              setFormData((prev: any) => ({ 
+                                ...prev, 
+                                images: [...prev.images, newImage] 
+                              }));
+                            }
+                          }
+                        }
+                      }}
+                    />
+                    <label htmlFor="project-images">
+                      <Button variant="outlined" component="span" startIcon={<CloudUpload />} fullWidth>
+                        Upload Project Images
+                      </Button>
+                    </label>
+                    
+                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {formData.images.map((img, imgIndex) => (
+                        <Chip
+                          key={imgIndex}
+                          label={img.title}
+                          onDelete={() => {
+                            setFormData((prev: any) => ({ 
+                              ...prev, 
+                              images: prev.images.filter((_: any, i: number) => i !== imgIndex) 
+                            }));
+                          }}
+                        />
                       ))}
                     </Box>
-                  )}
-                >
-                  <MenuItem value="Gated Community">Gated Community</MenuItem>
-                  <MenuItem value="Eco-Friendly">Eco-Friendly</MenuItem>
-                  <MenuItem value="Luxury Living">Luxury Living</MenuItem>
-                  <MenuItem value="Affordable Housing">Affordable Housing</MenuItem>
-                  <MenuItem value="Smart Home Features">Smart Home Features</MenuItem>
-                  <MenuItem value="Waterfront Property">Waterfront Property</MenuItem>
-                  <MenuItem value="High-Rise Building">High-Rise Building</MenuItem>
-                  <MenuItem value="Low-Rise Building">Low-Rise Building</MenuItem>
-                  <MenuItem value="Vastu Compliant">Vastu Compliant</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-            
-            <Grid size={{ xs: 12}}>
-              <TextField
-                fullWidth
-                label="Description"
-                value={formData.description}
-                onChange={handleInputChangeWithValidation("description")}
-                multiline
-                rows={3}
-                required
-                error={!!validationErrors.description}
-                helperText={validationErrors.description || "Enter project description (10-2000 characters)"}
-                inputProps={{ maxLength: 2000 }}
-                sx={{ mb: 2 }}
-              />
-            </Grid>
+                  </Grid>
 
-            {/* Property Types Section */}
-            <Grid size={{ xs: 12 }}>
-              <Typography variant="h6" gutterBottom sx={{ mb: 2, fontWeight: 600 }}>
-                Property Types <Typography component="span" color="error">*</Typography>
-              </Typography>
-
-              <Box display="flex" gap={2} mb={2}>
-                <Button
-                  variant="outlined"
-                  startIcon={<Home />}
-                  onClick={() => addPropertyType('residential')}
-                  sx={{ borderRadius: '8px' }}
-                >
-                  Add Residential Type
-                </Button>
-                <Button
-                  variant="outlined"
-                  startIcon={<Business />}
-                  onClick={() => addPropertyType('commercial')}
-                  sx={{ borderRadius: '8px' }}
-                >
-                  Add Commercial Type
-                </Button>
-              </Box>
-
-              {formData.propertyTypes.map((propertyType, index) => (
-                <PropertyTypeForm
-                  key={index}
-                  propertyType={propertyType}
-                  index={index}
-                  onChange={updatePropertyType}
-                  onRemove={removePropertyType}
-                />
-              ))}
-
-              {validationErrors.propertyTypes && (
-                <Typography color="error" variant="caption">
-                  {validationErrors.propertyTypes}
-                </Typography>
-              )}
-            </Grid>
-
-            {/* Enhanced Location Section with Draggable Map */}
-            <Grid size={{ xs: 12 }}>
-              <Typography variant="h6" gutterBottom sx={{ mb: 2 , fontWeight: 600 }}>
-                Location <Typography component="span" color="error">*</Typography>
-              </Typography>
-            </Grid>
-            
-            {/* Location Search */}
-            <Grid size={{ xs: 12 }}>
-              <LocationSearch
-                onLocationSelect={handleLocationSelect}
-              />
-            </Grid>
-
-            {/* Interactive Draggable Map */}
-            <Grid size={{ xs: 12 }}>
-              <DraggablePropertyMap
-                lat={formData.mapLocation.lat}
-                lng={formData.mapLocation.lng}
-                onLocationChange={handleMapLocationUpdate}
-                isEditMode={true}
-              />
-            </Grid>
-
-            {/* Manual Coordinates Input */}
-            <Grid size={{ xs: 12 }}>
-              <Typography variant="subtitle2" gutterBottom sx={{ mt: 2, mb: 1, color: 'text.secondary' }}>
-                Or enter coordinates manually:
-              </Typography>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Latitude"
-                type="number"
-                value={formData.mapLocation.lat}
-                onChange={handleMapLocationChange('lat')}
-                inputProps={{ 
-                  step: "any",
-                  min: -90,
-                  max: 90
-                }}
-                error={!!validationErrors.mapLocation}
-                helperText={validationErrors.mapLocation || "Enter latitude (-90 to 90)"}
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-            <Grid size={{ xs: 12, md: 6 }}>
-              <TextField
-                fullWidth
-                label="Longitude"
-                type="number"
-                value={formData.mapLocation.lng}
-                onChange={handleMapLocationChange('lng')}
-                inputProps={{ 
-                  step: "any",
-                  min: -180,
-                  max: 180
-                }}
-                error={!!validationErrors.mapLocation}
-                helperText="Enter longitude (-180 to 180)"
-                sx={{ mb: 2 }}
-              />
-            </Grid>
-            
-            {/* Nearby Places */}
-            <Grid size={{ xs: 12 }}>
-              <FormControl fullWidth sx={{ mb: 2 }}>
-                <InputLabel>Nearby Places</InputLabel>
-                <Select
-                  multiple
-                  value={formData.nearby || []}
-                  onChange={(e) =>
-                    setFormData((prev) => ({
-                      ...prev,
-                      nearby: typeof e.target.value === "string"
-                        ? e.target.value.split(",")
-                        : e.target.value,
-                    }))
-                  }
-                  input={<OutlinedInput label="Nearby Places" />}
-                  renderValue={(selected) => (
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-                      {selected.map((value) => (
-                        <Chip key={value} label={value} size="small" />
-                      ))}
-                    </div>
-                  )}
-                >
-                  <MenuItem value="School">School</MenuItem>
-                  <MenuItem value="Hospital">Hospital</MenuItem>
-                  <MenuItem value="Mall">Mall</MenuItem>
-                  <MenuItem value="Park">Park</MenuItem>
-                  <MenuItem value="Metro Station">Metro Station</MenuItem>
-                  <MenuItem value="Bus Stop">Bus Stop</MenuItem>
-                  <MenuItem value="Airport">Airport</MenuItem>
-                </Select>
-              </FormControl>
-            </Grid>
-
-            {/* File Uploads Section */}
-            <Grid size={{ xs: 12 }}>
-              <Typography variant="h6" gutterBottom sx={{ mb: 2 , fontWeight: 600 }}>
-                File Uploads
-              </Typography>
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4}}>
-              <FileUploadSection
-                title="Upload Property Images"
-                accept="image/*"
-                onFileUpload={handleImageUpload}
-                uploading={uploading && uploadingType === 'image'}
-                description="JPEG, PNG, GIF, WebP (Max 5MB)"
-              />
-
-              {formData.images.length > 0 && (
-                <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px' }}>
-                  <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                    Uploaded Images ({formData.images.length})
-                  </Typography>
-                  <List dense>
-                    {formData.images.map((image, index) => (
-                      <ListItem 
-                        key={index} 
-                        divider
-                        sx={{ 
-                          backgroundColor: 'white',
-                          mb: 1,
-                          borderRadius: 1,
-                          border: '1px solid #e0e0e0'
-                        }}
-                      >
-                        <Box sx={{ mr: 2, flexShrink: 0 }}>
-                          <img
-                            src={image.url}
-                            alt={image.title}
-                            style={{
-                              width: '60px',
-                              height: '60px',
-                              objectFit: 'cover',
-                              borderRadius: '4px'
-                            }}
-                            onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/60x60?text=Image';
-                            }}
-                          />
-                        </Box>
-                        <ListItemSecondaryAction>
-                          {!image.isPrimary && (
-                            <Button
-                              size="small"
-                              onClick={() => setPrimaryImage(index)}
-                              sx={{ mr: 1 }}
-                            >
-                              Set Primary
-                            </Button>
-                          )}
-                          <IconButton 
-                            edge="end" 
-                            onClick={() => removeImage(index)}
-                            size="small"
-                            color="error"
-                          />
-                            <Delete />
-                          </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
-              )}
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4}}>
-              <FileUploadSection
-                title="Upload Brochures"
-                accept=".pdf,.doc,.docx,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-                onFileUpload={handleBrochureUpload}
-                uploading={uploading && uploadingType === 'brochure'}
-                description="PDF, Word Documents (Max 10MB)"
-              />
-              
-              {formData.brochureUrls.length > 0 && (
-                <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px' }}>
-                  <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                    Brochures ({formData.brochureUrls.length})
-                  </Typography>
-                  <List dense>
-                    {formData.brochureUrls.map((brochure, index) => (
-                      <ListItem 
-                        key={index} 
-                        divider
-                        sx={{ 
-                          backgroundColor: 'white',
-                          mb: 1,
-                          borderRadius: 1,
-                          border: '1px solid #e0e0e0'
-                        }}
-                      >
-                        <Description sx={{ mr: 2, color: 'primary.main' }} />
-                        <ListItemSecondaryAction>
-                          <IconButton 
-                            edge="end" 
-                            onClick={() => removeBrochureUrl(index)} 
-                            size="small"
-                            color="error"
-                          >
-                            <Delete />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
-              )}
-            </Grid>
-
-            <Grid size={{ xs: 12, md: 4}}>
-              <FileUploadSection
-                title="Upload Creative Assets"
-                accept="image/*,.pdf,.doc,.docx"
-                onFileUpload={handleCreativeUpload}
-                uploading={uploading && uploadingType === 'creative'}
-                description="Images, PDF Documents (Max 10MB)"
-              />
-              
-              {formData.creatives.length > 0 && (
-                <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px' }}>
-                  <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                    Creative Assets ({formData.creatives.length})
-                  </Typography>
-                  <List dense>
-                    {formData.creatives.map((creative, index) => (
-                      <ListItem 
-                        key={index} 
-                        divider
-                        sx={{ 
-                          backgroundColor: 'white',
-                          mb: 1,
-                          borderRadius: 1,
-                          border: '1px solid #e0e0e0'
-                        }}
-                      >
-                        <Box sx={{ mr: 2, flexShrink: 0 }}>
-                          {creative.type === 'Image' ? (
-                            <img
-                              src={creative.url}
-                              alt={creative.title}
-                              style={{
-                                width: '40px',
-                                height: '40px',
-                                objectFit: 'cover',
-                                borderRadius: '4px'
-                              }}
-                              onError={(e) => {
-                                (e.target as HTMLImageElement).src = 'https://via.placeholder.com/40x40?text=Creative';
-                              }}
-                            />
-                          ) : (
-                            <Description sx={{ fontSize: 40, color: 'primary.main' }} />
-                          )}
-                        </Box>
-                        <ListItemSecondaryAction>
-                          <IconButton 
-                            edge="end" 
-                            onClick={() => removeCreative(index)} 
-                            size="small"
-                            color="error"
-                          >
-                            <Delete />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
-              )}
-            </Grid>
-
-            <Grid size={{ xs: 12 }}>
-              <FileUploadSection
-                title="Upload Video Files"
-                accept="video/*,.mp4,.mov,.avi,.mkv"
-                onFileUpload={handleVideoUpload}
-                uploading={uploading && uploadingType === 'video'}
-                description="MP4, MOV, AVI, MKV (Max 50MB)"
-              />
-              
-              {formData.videoFiles.length > 0 && (
-                <Paper sx={{ p: 2, backgroundColor: '#fafafa', borderRadius: '10px' }}>
-                  <Typography variant="subtitle2" gutterBottom sx={{ fontWeight: 600 }}>
-                    Uploaded Videos ({formData.videoFiles.length})
-                  </Typography>
-                  <List dense>
-                    {formData.videoFiles.map((video, index) => (
-                      <ListItem 
-                        key={index} 
-                        divider
-                        sx={{ 
-                          backgroundColor: 'white',
-                          mb: 1,
-                          borderRadius: 1,
-                          border: '1px solid #e0e0e0'
-                        }}
-                      >
-                        <VideoLibrary sx={{ mr: 2, color: 'primary.main' }} />
-                        <ListItemText
-                          primary={video.title}
-                          secondary={
-                            <Box>
-                              <Typography variant="caption" display="block" sx={{ wordBreak: 'break-all' }}>
-                                {video.url.length > 50 ? `${video.url.substring(0, 50)}...` : video.url}
-                              </Typography>
-                              <Typography variant="caption" color="text.secondary">
-                                Type: {video.type}
-                              </Typography>
-                            </Box>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <input
+                      accept=".pdf,.doc,.docx"
+                      style={{ display: 'none' }}
+                      id="brochure-upload"
+                      type="file"
+                      onChange={async (e) => {
+                        if (e.target.files && e.target.files[0]) {
+                          const file = e.target.files[0];
+                          const uploadResponse = await uploadService.uploadFile(file);
+                          if (uploadResponse.success && uploadResponse.data) {
+                            const newBrochure = {
+                              title: file.name.replace(/\.[^/.]+$/, ""),
+                              url: uploadResponse.data.url,
+                              type: "PDF Document"
+                            };
+                            setFormData((prev: any) => ({ 
+                              ...prev, 
+                              brochureUrls: [...prev.brochureUrls, newBrochure] 
+                            }));
                           }
+                        }
+                      }}
+                    />
+                    <label htmlFor="brochure-upload">
+                      <Button variant="outlined" component="span" startIcon={<CloudUpload />} fullWidth>
+                        Upload Brochure
+                      </Button>
+                    </label>
+                    
+                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {formData.brochureUrls.map((brochure, brochureIndex) => (
+                        <Chip
+                          key={brochureIndex}
+                          label={brochure.title}
+                          onDelete={() => {
+                            setFormData((prev: any) => ({ 
+                              ...prev, 
+                              brochureUrls: prev.brochureUrls.filter((_: any, i: number) => i !== brochureIndex) 
+                            }));
+                          }}
                         />
-                        <ListItemSecondaryAction>
-                          <IconButton 
-                            edge="end" 
-                            onClick={() => removeVideoFile(index)} 
-                            size="small"
-                            color="error"
-                          >
-                            <Delete />
-                          </IconButton>
-                        </ListItemSecondaryAction>
-                      </ListItem>
-                    ))}
-                  </List>
-                </Paper>
-              )}
+                      ))}
+                    </Box>
+                  </Grid>
+                </Grid>
+
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <input
+                      accept="image/*,video/*"
+                      style={{ display: 'none' }}
+                      id="creatives-upload"
+                      type="file"
+                      multiple
+                      onChange={async (e) => {
+                        if (e.target.files) {
+                          const files = Array.from(e.target.files);
+                          for (const file of files) {
+                            const uploadResponse = await uploadService.uploadFile(file);
+                            if (uploadResponse.success && uploadResponse.data) {
+                              const isVideo = file.type.startsWith('video/');
+                              const newCreative = {
+                                type: isVideo ? "video" as "image" | "video" | "3d-tour" : "image" as "image" | "video" | "3d-tour",
+                                url: uploadResponse.data.url,
+                                title: file.name.replace(/\.[^/.]+$/, ""),
+                                description: "",
+                                thumbnail: isVideo ? "" : uploadResponse.data.url,
+                                uploadedAt: new Date().toISOString()
+                              };
+                              setFormData((prev: any) => ({ 
+                                ...prev, 
+                                creatives: [...prev.creatives, newCreative] 
+                              }));
+                            }
+                          }
+                        }
+                      }}
+                    />
+                    <label htmlFor="creatives-upload">
+                      <Button variant="outlined" component="span" startIcon={<CloudUpload />} fullWidth>
+                        Upload Creatives (Images/Videos)
+                      </Button>
+                    </label>
+                    
+                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {formData.creatives.map((creative, creativeIndex) => (
+                        <Chip
+                          key={creativeIndex}
+                          label={creative.title}
+                          onDelete={() => {
+                            setFormData((prev: any) => ({ 
+                              ...prev, 
+                              creatives: prev.creatives.filter((_: any, i: number) => i !== creativeIndex) 
+                            }));
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Grid>
+
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <input
+                      accept="video/*"
+                      style={{ display: 'none' }}
+                      id="videos-upload"
+                      type="file"
+                      multiple
+                      onChange={async (e) => {
+                        if (e.target.files) {
+                          const files = Array.from(e.target.files);
+                          for (const file of files) {
+                            const uploadResponse = await uploadService.uploadFile(file);
+                            if (uploadResponse.success && uploadResponse.data) {
+                              const newVideo = {
+                                url: uploadResponse.data.url,
+                                title: file.name.replace(/\.[^/.]+$/, ""),
+                                description: "",
+                                thumbnail: "",
+                                type: "direct" as "youtube" | "vimeo" | "direct",
+                                uploadedAt: new Date().toISOString()
+                              };
+                              setFormData((prev: any) => ({ 
+                                ...prev, 
+                                videos: [...prev.videos, newVideo] 
+                              }));
+                            }
+                          }
+                        }
+                      }}
+                    />
+                    <label htmlFor="videos-upload">
+                      <Button variant="outlined" component="span" startIcon={<CloudUpload />} fullWidth>
+                        Upload Videos
+                      </Button>
+                    </label>
+                    
+                    <Box sx={{ mt: 1, display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {formData.videos.map((video, videoIndex) => (
+                        <Chip
+                          key={videoIndex}
+                          label={video.title}
+                          onDelete={() => {
+                            setFormData((prev: any) => ({ 
+                              ...prev, 
+                              videos: prev.videos.filter((_: any, i: number) => i !== videoIndex) 
+                            }));
+                          }}
+                        />
+                      ))}
+                    </Box>
+                  </Grid>
+                </Grid>
+              </Paper>
             </Grid>
           </Grid>
         </DialogContent>
         
         <DialogActions sx={{ p: 3, backgroundColor: '#f5f5f5', borderTop: '1px solid #e0e0e0', borderRadius: '0 0 15px 15px' }}>
-          <Button 
-            onClick={handleCloseDialog} 
-            sx={{ 
-              borderRadius: '8px',
-              px: 3,
-              color: '#666',
-              borderColor: '#666'
-            }}
-          >
-            Cancel
-          </Button>
-          
-          <Tooltip 
-            title={
-              !isFormValid ? (
-                <Box>
-                  <Typography variant="subtitle2" gutterBottom>
-                    Please fill all required fields:
-                  </Typography>
-                  <Box sx={{ maxHeight: '120px', overflow: 'auto' }}>
-                    {getValidationMessages().map((msg, index) => (
-                      <Typography key={index} variant="body2" sx={{ fontSize: '0.75rem', lineHeight: 1.4 }}>
-                        {msg}
-                      </Typography>
-                    ))}
-                  </Box>
-                </Box>
-              ) : (
-                "All required fields are filled. You can now create the property."
-              )
-            }
-            arrow
-            placement="top"
-          >
+          <Button onClick={handleCloseDialog}>Cancel</Button>
+          <Tooltip title={!isFormValid ? "Please fill all required fields" : "All required fields are filled"} arrow placement="top">
             <span>
-              <Button 
-                onClick={handleSubmit} 
-                variant="contained"
-                disabled={!isFormValid}
-                sx={{ 
-                  borderRadius: '8px',
-                  px: 3,
-                  backgroundColor: isFormValid ? '#1976d2' : '#e0e0e0',
-                  color: isFormValid ? 'white' : '#9e9e9e',
-                  "&:hover": isFormValid ? {
-                    backgroundColor: '#115293',
-                  } : {
-                    backgroundColor: '#e0e0e0',
-                  },
-                  "&.Mui-disabled": {
-                    backgroundColor: '#f5f5f5',
-                    color: '#bdbdbd',
-                    border: '1px solid #e0e0e0'
-                  }
-                }}
-              >
-                {editingProperty ? "Update Property" : "Create Property"}
+              <Button onClick={handleSubmit} variant="contained" disabled={!isFormValid}>
+                {editingProperty ? "Update Property" : "Create Properties"}
               </Button>
             </span>
           </Tooltip>
         </DialogActions>
       </Dialog>
+
+            {/* View Property Dialog */}
+      <Dialog 
+  open={openViewDialog} 
+  onClose={handleCloseViewDialog} 
+  maxWidth="lg" 
+  fullWidth
+  scroll="paper"
+  sx={{
+    '& .MuiDialog-paper': {
+      borderRadius: 3,
+      overflow: 'hidden',
+      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+    }
+  }}
+>
+  {/* Enhanced Header with Gradient Overlay */}
+  <Box sx={{ 
+    position: 'relative',
+    height: { xs: 240, md: 240 },
+    background: viewingProperty?.images?.length > 0 
+      ? `linear-gradient(135deg, rgba(25, 118, 210, 0.95) 0%, rgba(15, 82, 147, 0.85) 100%), url(${viewingProperty.images.find(img => img.isPrimary)?.url || viewingProperty.images[0]?.url})`
+      : 'linear-gradient(135deg, #1976d2 0%, #0f5293 100%)',
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+    backgroundAttachment: 'fixed',
+    color: 'white',
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'space-between',
+    p: { xs: 3, md: 4 }
+  }}>
+    {/* Top Action Bar */}
+    <Box sx={{ 
+      display: 'flex', 
+      justifyContent: 'end', 
+      alignItems: 'flex-end',
+      mb: 2
+    }}>
+      <IconButton 
+        onClick={handleCloseViewDialog}
+        sx={{
+          color: 'white',
+          backgroundColor: 'rgba(255,255,255,0.15)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(255,255,255,0.2)',
+          '&:hover': {
+            backgroundColor: 'rgba(255,255,255,0.25)',
+            transform: 'scale(1.1)'
+          },
+          transition: 'all 0.2s ease'
+        }}
+      >
+        <Clear />
+      </IconButton>
+    </Box>
+
+    {/* Header Content */}
+    <Box sx={{ 
+      display: 'flex', 
+      alignItems: 'flex-end', 
+      justifyContent: 'space-between', 
+      flexWrap: 'wrap', 
+      gap: 3,
+      mt: 'auto'
+    }}>
+      <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
+        <Typography variant="h2" fontWeight={800} sx={{ 
+          fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+          textShadow: '0 4px 20px rgba(0,0,0,0.4)',
+          lineHeight: 1.1,
+          mb: 2
+        }}>
+          {viewingProperty?.projectName}
+        </Typography>
+        
+        <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <Business sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
+            <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 600 }}>
+              {viewingProperty?.builderName}
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+            <LocationOn sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
+            <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 500 }}>
+              {viewingProperty?.location}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      <Box sx={{ 
+        textAlign: { xs: 'left', md: 'right' },
+        background: 'rgba(255,255,255,0.15)',
+        backdropFilter: 'blur(10px)',
+        border: '1px solid rgba(255,255,255,0.2)',
+        borderRadius: 4,
+        p: 3,
+        minWidth: { xs: '100%', md: 280 }
+      }}>
+        <Typography variant="h3" fontWeight={800} sx={{ 
+          textShadow: '0 2px 10px rgba(0,0,0,0.3)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: { xs: 'flex-start', md: 'flex-end' },
+          fontSize: { xs: '2rem', md: '2.5rem' }
+        }}>
+          {/* <CurrencyRupee sx={{ fontSize: '2rem', mr: 0.5 }} /> */}
+          {viewingProperty?.price || 'Contact for Price'}
+        </Typography>
+        {/* <Typography variant="body1" sx={{ 
+          opacity: 0.9, 
+          mt: 1,
+          background: 'rgba(255,255,255,0.2)',
+          borderRadius: 2,
+          px: 2,
+          py: 0.5,
+          display: 'inline-block'
+        }}>
+          {viewingProperty?.paymentPlan}
+        </Typography> */}
+      </Box>
+    </Box>
+  </Box>
+
+  <DialogContent sx={{ p: 0 }}>
+    {/* Quick Actions Bar */}
+    <Paper sx={{ 
+      p: 3, 
+      borderRadius: 0,
+      background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+      borderBottom: '1px solid #e2e8f0',
+      boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+    }}>
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        justifyContent: 'space-between', 
+        flexWrap: 'wrap', 
+        gap: 2 
+      }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          {/* Quick Stats */}
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <CloudUpload color="primary" />
+            <Typography variant="body2" fontWeight={600}>
+              {viewingProperty?.images?.length || 0} Images
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <PlayArrow color="primary" />
+            <Typography variant="body2" fontWeight={600}>
+              {viewingProperty?.videos?.length || 0} Videos
+            </Typography>
+          </Box>
+          
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Description color="primary" />
+            <Typography variant="body2" fontWeight={600}>
+              {viewingProperty?.brochureUrls?.length || 0} Brochures
+            </Typography>
+          </Box>
+        </Box>
+        
+        {/* Download All Button */}
+        {(viewingProperty?.brochureUrls?.length > 0 || viewingProperty?.images?.length > 0) && (
+          <Button
+            variant="contained"
+            startIcon={<CloudDownload />}
+            onClick={() => handleDownloadAllMedia(viewingProperty)}
+            sx={{ 
+              borderRadius: 3,
+              px: 3,
+              py: 1,
+              fontWeight: 600,
+              background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+              boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
+              '&:hover': {
+                boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+                transform: 'translateY(-1px)'
+              },
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Download All Media
+          </Button>
+        )}
+      </Box>
+    </Paper>
+
+    {/* Main Content */}
+    <Box sx={{ p: { xs: 3, md: 4 } }}>
+      <Grid container spacing={4}>
+        {/* Left Column - Property Details */}
+        <Grid size={{ xs: 12, lg: 8 }}>
+          {/* Description Card */}
+          <Card sx={{ 
+            mb: 4, 
+            borderRadius: 3, 
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            border: '1px solid rgba(0,0,0,0.05)',
+            overflow: 'visible'
+          }}>
+            <CardContent sx={{ p: 4 }}>
+              <Box sx={{ 
+                display: 'flex', 
+                alignItems: 'center', 
+                mb: 3,
+                pb: 2,
+                borderBottom: '2px solid',
+                borderColor: 'primary.100'
+              }}>
+                <Description sx={{ mr: 2, color: 'primary.main', fontSize: 28 }} />
+                <Typography variant="h5" fontWeight={700} sx={{ color: 'primary.main' }}>
+                  Project Overview
+                </Typography>
+              </Box>
+              
+              <Typography variant="body1" sx={{ 
+                color: 'text.secondary', 
+                lineHeight: 1.8,
+                fontSize: '1.1rem',
+                mb: 4
+              }}>
+                {viewingProperty?.description}
+              </Typography>
+
+              {/* Highlights Grid */}
+              <Grid container spacing={3}>
+                {viewingProperty?.status && (
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'primary.50', height: '100%' }}>
+                      <Typography variant="h6" fontWeight={700} sx={{ color: 'primary.main', mb: 2 }}>
+                        🏗️ Project Status
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {(Array.isArray(viewingProperty.status) ? viewingProperty.status : viewingProperty.status.split(',')).map((item, index) => (
+                          <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main' }} />
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                              {item.trim()}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Paper>
+                  </Grid>
+                )}
+
+                {viewingProperty?.nearby && (
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'success.50', height: '100%' }}>
+                      <Typography variant="h6" fontWeight={700} sx={{ color: 'success.main', mb: 2 }}>
+                        📍 Nearby Locations
+                      </Typography>
+                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                        {(Array.isArray(viewingProperty.nearby) ? viewingProperty.nearby : viewingProperty.nearby.split(',')).map((item, index) => (
+                          <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'success.main' }} />
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                              {item.trim()}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Box>
+                    </Paper>
+                  </Grid>
+                )}
+
+                {viewingProperty?.projectHighlights && (
+                  <Grid size={{ xs: 12 }}>
+                    <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'warning.50' }}>
+                      <Typography variant="h6" fontWeight={700} sx={{ color: 'warning.main', mb: 2 }}>
+                        ⭐ Project Highlights
+                      </Typography>
+                      <Grid container spacing={2}>
+                        {(Array.isArray(viewingProperty.projectHighlights) ? viewingProperty.projectHighlights : viewingProperty.projectHighlights.split(',')).map((point, index) => (
+                          <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1 }}>
+                              <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                              <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {point.trim()}
+                              </Typography>
+                            </Box>
+                          </Grid>
+                        ))}
+                      </Grid>
+                    </Paper>
+                  </Grid>
+                )}
+              </Grid>
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Right Column - Side Information */}
+        <Grid size={{ xs: 12, lg: 4 }}>
+          {/* Location & Map Card */}
+          <Card sx={{ 
+            mb: 3, 
+            borderRadius: 3, 
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <CardContent sx={{ p: 0, overflow: 'hidden' }}>
+              <Box sx={{ p: 3, pb: 2 }}>
+                <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
+                  display: 'flex', 
+                  alignItems: 'center',
+                  color: 'primary.main'
+                }}>
+                  <LocationOn sx={{ mr: 1.5 }} />
+                  Location
+                </Typography>
+              </Box>
+
+              {viewingProperty?.mapLocation ? (
+                <>
+                  <Box sx={{ height: 200, position: 'relative' }}>
+                    <LeafletMap 
+                      location={viewingProperty.mapLocation}
+                      propertyName={viewingProperty.projectName}
+                    />
+                  </Box>
+                  
+                  <Box sx={{ p: 3, pt: 2 }}>
+                    <Paper sx={{ p: 2, borderRadius: 2, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.100' }}>
+                      <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{ color: 'primary.main' }}>
+                        📍 Coordinates
+                      </Typography>
+                      <Grid container spacing={2}>
+                        <Grid size={{ xs: 6 }}>
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Latitude
+                          </Typography>
+                          <Typography variant="body2" fontWeight={600}>
+                            {viewingProperty.mapLocation.lat?.toFixed(6) || 'N/A'}
+                          </Typography>
+                        </Grid>
+                        <Grid size={{ xs: 6 }}>
+                          <Typography variant="caption" color="text.secondary" display="block">
+                            Longitude
+                          </Typography>
+                          <Typography variant="body2" fontWeight={600}>
+                            {viewingProperty.mapLocation.lng?.toFixed(6) || 'N/A'}
+                          </Typography>
+                        </Grid>
+                      </Grid>
+                    </Paper>
+                  </Box>
+                </>
+              ) : (
+                <Paper 
+                  sx={{ 
+                    height: 200, 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    bgcolor: 'grey.50',
+                    borderRadius: 0
+                  }}
+                >
+                  <LocationOn sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
+                  <Typography variant="body2" color="text.secondary">
+                    Location not specified
+                  </Typography>
+                </Paper>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Quick Info Card */}
+          <Card sx={{ 
+            borderRadius: 3, 
+            boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+            border: '1px solid rgba(0,0,0,0.05)'
+          }}>
+            <CardContent sx={{ p: 3 }}>
+              <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: 'primary.main' }}>
+                ℹ️ Quick Info
+              </Typography>
+              
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                  <Typography variant="body2" color="text.secondary">Property Type</Typography>
+                  <Chip 
+                    label={viewingProperty?.parentId === null ? "Main" : "Sub"} 
+                    size="small" 
+                    color={viewingProperty?.parentId === null ? "primary" : "secondary"}
+                  />
+                </Box>
+                
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                  <Typography variant="body2" color="text.secondary">Total Media</Typography>
+                  <Typography variant="body2" fontWeight={600}>
+                    {(viewingProperty?.images?.length || 0) + (viewingProperty?.videos?.length || 0) + (viewingProperty?.brochureUrls?.length || 0)}
+                  </Typography>
+                </Box>
+                
+                {viewingProperty?.parentId === null && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                    <Typography variant="body2" color="text.secondary">Sub Properties</Typography>
+                    <Typography variant="body2" fontWeight={600}>
+                      {viewingProperty?.subPropertyCount || 0}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
+            </CardContent>
+          </Card>
+        </Grid>
+      </Grid>
+
+      {/* Sub Properties Section */}
+      {viewingProperty?.parentId === null && (
+        <Card sx={{ 
+          mt: 4, 
+          borderRadius: 3, 
+          boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+          border: '1px solid rgba(0,0,0,0.05)'
+        }}>
+          <CardContent sx={{ p: 4 }}>
+            <Box sx={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              mb: 3,
+              pb: 2,
+              borderBottom: '2px solid',
+              borderColor: 'primary.100'
+            }}>
+              <Business sx={{ mr: 2, color: 'primary.main', fontSize: 28 }} />
+              <Typography variant="h5" fontWeight={700} sx={{ color: 'primary.main' }}>
+                Property Types ({viewingProperty?.subPropertyCount || 0})
+              </Typography>
+            </Box>
+            <SubPropertiesViewer 
+              parentId={viewingProperty._id!} 
+              onViewSubProperty={handleViewSubProperty} 
+            />
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Media Sections */}
+      <Grid container spacing={4} sx={{ mt: 2 }}>
+        {/* Images Section */}
+        {viewingProperty?.images && viewingProperty.images.length > 0 && (
+          <Grid size={{ xs: 12, lg: 6 }}>
+            <Card sx={{ 
+              borderRadius: 3, 
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              border: '1px solid rgba(0,0,0,0.05)'
+            }}>
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ 
+                    color: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <CloudUpload sx={{ mr: 1.5 }} />
+                    Project Images ({viewingProperty.images.length})
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CloudDownload />}
+                    onClick={() => handleDownloadImages(viewingProperty.images)}
+                    size="small"
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Download All
+                  </Button>
+                </Box>
+                <Grid container spacing={2}>
+                  {viewingProperty.images.map((image, index) => (
+                    <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
+                      <Card 
+                        sx={{ 
+                          cursor: 'pointer',
+                          transition: 'all 0.3s ease',
+                          border: '2px solid transparent',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
+                            borderColor: 'primary.main'
+                          }
+                        }}
+                      >
+                        <Box sx={{ position: 'relative', paddingTop: '75%' }}>
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              backgroundImage: `url(${image.url})`,
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center',
+                              borderRadius: '8px 8px 0 0',
+                            }}
+                          >
+                            {/* Download Button */}
+                            <IconButton
+                              sx={{
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                                backgroundColor: 'rgba(255,255,255,0.95)',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                '&:hover': {
+                                  backgroundColor: 'white',
+                                  transform: 'scale(1.1)'
+                                },
+                                transition: 'all 0.2s ease'
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadFile(image.url, image.title || `image-${index + 1}.jpg`);
+                              }}
+                              size="small"
+                            >
+                              <CloudDownload sx={{ fontSize: 16 }} />
+                            </IconButton>
+                            
+                            {image.isPrimary && (
+                              <Chip 
+                                label="Primary" 
+                                size="small" 
+                                color="primary" 
+                                sx={{ 
+                                  position: 'absolute',
+                                  top: 8,
+                                  left: 8,
+                                  height: 20, 
+                                  fontSize: '0.65rem',
+                                  fontWeight: 600
+                                }} 
+                              />
+                            )}
+                          </Box>
+                        </Box>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Videos Section */}
+        {viewingProperty?.videos && viewingProperty.videos.length > 0 && (
+          <Grid size={{ xs: 12, lg: 6 }}>
+            <Card sx={{ 
+              borderRadius: 3, 
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              border: '1px solid rgba(0,0,0,0.05)'
+            }}>
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ 
+                    color: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <PlayArrow sx={{ mr: 1.5 }} />
+                    Videos ({viewingProperty.videos.length})
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CloudDownload />}
+                    onClick={() => handleDownloadVideos(viewingProperty.videos)}
+                    size="small"
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Download All
+                  </Button>
+                </Box>
+                <Grid container spacing={2}>
+                  {viewingProperty.videos.map((video, index) => (
+                    <Grid size={{ xs: 12, sm: 6 }} key={index}>
+                      <Card sx={{ 
+                        transition: 'all 0.3s ease', 
+                        border: '2px solid transparent',
+                        '&:hover': { 
+                          transform: 'translateY(-4px)', 
+                          boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
+                          borderColor: 'primary.main'
+                        } 
+                      }}>
+                        <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
+                          <Box
+                            sx={{
+                              position: 'absolute',
+                              top: 0,
+                              left: 0,
+                              right: 0,
+                              bottom: 0,
+                              backgroundColor: 'grey.100',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              borderRadius: '8px 8px 0 0',
+                              cursor: 'pointer',
+                              backgroundImage: video.thumbnail ? `url(${video.thumbnail})` : 'none',
+                              backgroundSize: 'cover',
+                              backgroundPosition: 'center'
+                            }}
+                            onClick={() => window.open(video.url, '_blank')}
+                          >
+                            {!video.thumbnail && (
+                              <PlayArrow sx={{ fontSize: 48, color: 'primary.main' }} />
+                            )}
+                            
+                            <Box sx={{ 
+                              position: 'absolute', 
+                              inset: 0, 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              justifyContent: 'center',
+                              background: video.thumbnail ? 'rgba(0,0,0,0.3)' : 'transparent'
+                            }}>
+                              <PlayArrow sx={{ fontSize: 48, color: 'white', filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))' }} />
+                            </Box>
+                            
+                            <IconButton
+                              sx={{
+                                position: 'absolute',
+                                top: 8,
+                                right: 8,
+                                backgroundColor: 'rgba(255,255,255,0.95)',
+                                boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                '&:hover': {
+                                  backgroundColor: 'white',
+                                  transform: 'scale(1.1)'
+                                },
+                                transition: 'all 0.2s ease'
+                              }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadFile(video.url, video.title || `video-${index + 1}.mp4`);
+                              }}
+                            >
+                              <CloudDownload />
+                            </IconButton>
+                          </Box>
+                        </Box>
+                        
+                        <Box sx={{ p: 2 }}>
+                          <Typography variant="body2" fontWeight={600} noWrap>
+                            {video.title || `Video ${index + 1}`}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {video.type || 'MP4 Video'}
+                          </Typography>
+                        </Box>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Brochures Section */}
+        {viewingProperty?.brochureUrls && viewingProperty.brochureUrls.length > 0 && (
+          <Grid size={{ xs: 12, lg: 6 }}>
+            <Card sx={{ 
+              borderRadius: 3, 
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              border: '1px solid rgba(0,0,0,0.05)'
+            }}>
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ 
+                    color: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <Description sx={{ mr: 1.5 }} />
+                    Brochures ({viewingProperty.brochureUrls.length})
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CloudDownload />}
+                    onClick={() => handleDownloadBrochures(viewingProperty.brochureUrls)}
+                    size="small"
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Download All
+                  </Button>
+                </Box>
+                <Grid container spacing={2}>
+                  {viewingProperty.brochureUrls.map((brochure, index) => (
+                    <Grid size={{ xs: 12 }} key={index}>
+                      <Paper
+                        variant="outlined"
+                        sx={{ 
+                          p: 2, 
+                          borderRadius: 3,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          transition: 'all 0.2s ease',
+                          border: '2px solid',
+                          borderColor: 'grey.200',
+                          '&:hover': {
+                            backgroundColor: 'primary.50',
+                            borderColor: 'primary.main',
+                            transform: 'translateX(4px)'
+                          }
+                        }}
+                      >
+                        <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
+                          <Description sx={{ color: 'primary.main', mr: 2, fontSize: 32 }} />
+                          <Box sx={{ minWidth: 0, flex: 1 }}>
+                            <Typography variant="body1" fontWeight={600} noWrap>
+                              {brochure.title || `Brochure ${index + 1}`}
+                            </Typography>
+                            <Typography variant="caption" color="text.secondary">
+                              {brochure.type || 'PDF Document'}
+                            </Typography>
+                          </Box>
+                        </Box>
+                        <IconButton 
+                          onClick={() => handleDownloadFile(brochure.url, brochure.title || `brochure-${index + 1}.pdf`)}
+                          color="primary"
+                          sx={{
+                            backgroundColor: 'primary.50',
+                            '&:hover': {
+                              backgroundColor: 'primary.100',
+                              transform: 'scale(1.1)'
+                            },
+                            transition: 'all 0.2s ease'
+                          }}
+                        >
+                          <CloudDownload />
+                        </IconButton>
+                      </Paper>
+                    </Grid>
+                  ))}
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
+        {/* Creatives Section */}
+        {viewingProperty?.creatives && viewingProperty.creatives.length > 0 && (
+          <Grid size={{ xs: 12, lg: 6 }}>
+            <Card sx={{ 
+              borderRadius: 3, 
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              border: '1px solid rgba(0,0,0,0.05)'
+            }}>
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ 
+                    color: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <CloudUpload sx={{ mr: 1.5 }} />
+                    Creatives ({viewingProperty.creatives.length})
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CloudDownload />}
+                    onClick={() => handleDownloadCreatives(viewingProperty.creatives)}
+                    size="small"
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Download All
+                  </Button>
+                </Box>
+                <Grid container spacing={2}>
+                  {viewingProperty.creatives.map((creative, index) => (
+                    <Grid size={{ xs: 12, sm: 6 }} key={index}>
+                      <Card 
+                        sx={{ 
+                          transition: 'all 0.3s ease',
+                          border: '2px solid transparent',
+                          '&:hover': {
+                            transform: 'translateY(-4px)',
+                            boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
+                            borderColor: creative.type === 'image' ? 'primary.main' : 'secondary.main'
+                          }
+                        }}
+                      >
+                        {creative.type === 'image' ? (
+                          <Box sx={{ position: 'relative', paddingTop: '75%' }}>
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundImage: `url(${creative.url})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                borderRadius: '8px 8px 0 0'
+                              }}
+                            >
+                              <IconButton
+                                sx={{
+                                  position: 'absolute',
+                                  top: 8,
+                                  right: 8,
+                                  backgroundColor: 'rgba(255,255,255,0.95)',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                  '&:hover': {
+                                    backgroundColor: 'white',
+                                    transform: 'scale(1.1)'
+                                  },
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadFile(creative.url, creative.title || `creative-${index + 1}.jpg`);
+                                }}
+                                size="small"
+                              >
+                                <CloudDownload sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        ) : (
+                          <Box sx={{ position: 'relative', paddingTop: '75%' }}>
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundColor: 'grey.100',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderRadius: '8px 8px 0 0'
+                              }}
+                            >
+                              <PlayArrow sx={{ fontSize: 48, color: 'secondary.main' }} />
+                              <IconButton
+                                sx={{
+                                  position: 'absolute',
+                                  top: 8,
+                                  right: 8,
+                                  backgroundColor: 'rgba(255,255,255,0.95)',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                  '&:hover': {
+                                    backgroundColor: 'white',
+                                    transform: 'scale(1.1)'
+                                  },
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadFile(creative.url, creative.title || `creative-${index + 1}.mp4`);
+                                }}
+                                size="small"
+                              >
+                                <CloudDownload sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        )}
+                        
+                        <Box sx={{ p: 2 }}>
+                          <Typography variant="body2" fontWeight={600} noWrap>
+                            {creative.title || `Creative ${index + 1}`}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary" textTransform="capitalize">
+                            {creative.type} • {creative.size || 'N/A'}
+                          </Typography>
+                        </Box>
+                      </Card>
+                    </Grid>
+                  ))}
+                </Grid>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+      </Grid>
+    </Box>
+  </DialogContent>
+
+  <DialogActions sx={{ 
+    p: 3, 
+    borderTop: '1px solid #e2e8f0', 
+    background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+    gap: 2
+  }}>
+    <Button 
+      onClick={handleCloseViewDialog}
+      variant="outlined"
+      sx={{ 
+        borderRadius: 3, 
+        fontWeight: 600,
+        px: 4,
+        py: 1,
+        borderWidth: 2,
+        '&:hover': {
+          borderWidth: 2
+        }
+      }}
+    >
+      Close
+    </Button>
+    <Button 
+      onClick={() => { 
+        handleCloseViewDialog(); 
+        handleOpenDialog(viewingProperty); 
+      }} 
+      variant="contained" 
+      startIcon={<Edit />}
+      sx={{ 
+        borderRadius: 3, 
+        fontWeight: 600,
+        px: 4,
+        py: 1,
+        background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+        boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
+        '&:hover': {
+          boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+          transform: 'translateY(-1px)'
+        },
+        transition: 'all 0.2s ease'
+      }}
+    >
+      Edit Property
+    </Button>
+  </DialogActions>
+</Dialog>
+
+      {/* NEW: Sub-Property View Dialog */}
+<Dialog 
+  open={openSubPropertyDialog} 
+  onClose={() => setOpenSubPropertyDialog(false)} 
+  maxWidth="lg" 
+  fullWidth
+  scroll="paper"
+  sx={{
+    '& .MuiDialog-paper': {
+      borderRadius: 3,
+      overflow: 'hidden',
+      boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+    }
+  }}
+>
+  {selectedSubProperty && (
+    <>
+      {/* Enhanced Header with Gradient Overlay */}
+      <Box sx={{ 
+        position: 'relative',
+        height: { xs: 240, md: 240 },
+        background: selectedSubProperty?.propertyImages?.length > 0 
+          ? `linear-gradient(135deg, rgba(102, 126, 234, 0.95) 0%, rgba(118, 75, 162, 0.85) 100%), url(${typeof selectedSubProperty.propertyImages[0] === 'string' ? selectedSubProperty.propertyImages[0] : selectedSubProperty.propertyImages[0]?.url})`
+          : 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed',
+        color: 'white',
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        p: { xs: 3, md: 4 }
+      }}>
+        {/* Top Action Bar */}
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'end', 
+          alignItems: 'flex-end',
+          mb: 2
+        }}>
+          <IconButton 
+            onClick={() => setOpenSubPropertyDialog(false)}
+            sx={{
+              color: 'white',
+              backgroundColor: 'rgba(255,255,255,0.15)',
+              backdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255,255,255,0.2)',
+              '&:hover': {
+                backgroundColor: 'rgba(255,255,255,0.25)',
+                transform: 'scale(1.1)'
+              },
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <Clear />
+          </IconButton>
+        </Box>
+
+        {/* Header Content */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'flex-end', 
+          justifyContent: 'space-between', 
+          flexWrap: 'wrap', 
+          gap: 3,
+          mt: 'auto'
+        }}>
+          <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
+            <Typography variant="h2" fontWeight={800} sx={{ 
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+              textShadow: '0 4px 20px rgba(0,0,0,0.4)',
+              lineHeight: 1.1,
+              mb: 2
+            }}>
+              {selectedSubProperty?.propertyName}
+            </Typography>
+            
+            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
+              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                <Category sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
+                <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 600, textTransform: 'capitalize' }}>
+                  {selectedSubProperty?.propertyType} Property
+                </Typography>
+              </Box>
+              
+              {selectedSubProperty?.price && (
+                <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
+                  <CurrencyRupee sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
+                  <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 500 }}>
+                    {selectedSubProperty.price.toLocaleString()}
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+          </Box>
+
+          <Box sx={{ 
+            textAlign: { xs: 'left', md: 'right' },
+            background: 'rgba(255,255,255,0.15)',
+            backdropFilter: 'blur(10px)',
+            border: '1px solid rgba(255,255,255,0.2)',
+            borderRadius: 4,
+            p: 3,
+            minWidth: { xs: '100%', md: 280 }
+          }}>
+            <Typography variant="h3" fontWeight={800} sx={{ 
+              textShadow: '0 2px 10px rgba(0,0,0,0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: { xs: 'flex-start', md: 'flex-end' },
+              fontSize: { xs: '2rem', md: '2.5rem' }
+            }}>
+              {selectedSubProperty?.paymentPlan || 'Flexible Plans'}
+            </Typography>
+            <Typography variant="body1" sx={{ 
+              opacity: 0.9, 
+              mt: 1,
+              background: 'rgba(255,255,255,0.2)',
+              borderRadius: 2,
+              px: 2,
+              py: 0.5,
+              display: 'inline-block'
+            }}>
+              {selectedSubProperty?.propertyType?.charAt(0).toUpperCase() + selectedSubProperty?.propertyType?.slice(1)}
+            </Typography>
+          </Box>
+        </Box>
+      </Box>
+
+      <DialogContent sx={{ p: 0 }}>
+        {/* Quick Actions Bar */}
+        <Paper sx={{ 
+          p: 3, 
+          borderRadius: 0,
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          borderBottom: '1px solid #e2e8f0',
+          boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
+        }}>
+          <Box sx={{ 
+            display: 'flex', 
+            alignItems: 'center', 
+            justifyContent: 'space-between', 
+            flexWrap: 'wrap', 
+            gap: 2 
+          }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+              {/* Quick Stats */}
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CloudUpload color="primary" />
+                <Typography variant="body2" fontWeight={600}>
+                  {selectedSubProperty?.propertyImages?.length || 0} Images
+                </Typography>
+              </Box>
+              
+              {selectedSubProperty?.amenities && selectedSubProperty.amenities.length > 0 && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Star color="primary" />
+                  <Typography variant="body2" fontWeight={600}>
+                    {selectedSubProperty.amenities.length} Amenities
+                  </Typography>
+                </Box>
+              )}
+            </Box>
+            
+            {/* Download Button */}
+            {selectedSubProperty?.propertyImages?.length > 0 && (
+              <Button
+                variant="contained"
+                startIcon={<CloudDownload />}
+                onClick={() => handleDownloadAllMedia(selectedSubProperty)}
+                sx={{ 
+                  borderRadius: 3,
+                  px: 3,
+                  py: 1,
+                  fontWeight: 600,
+                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                  '&:hover': {
+                    boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)',
+                    transform: 'translateY(-1px)'
+                  },
+                  transition: 'all 0.2s ease'
+                }}
+              >
+                Download All Images
+              </Button>
+            )}
+          </Box>
+        </Paper>
+
+        {/* Main Content */}
+        <Box sx={{ p: { xs: 3, md: 4 } }}>
+          <Grid container spacing={4}>
+            {/* Left Column - Property Details */}
+            <Grid size={{ xs: 12, lg: 8 }}>
+              {/* Basic Information Card */}
+              <Card sx={{ 
+                mb: 4, 
+                borderRadius: 3, 
+                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(0,0,0,0.05)',
+                overflow: 'visible'
+              }}>
+                <CardContent sx={{ p: 4 }}>
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    mb: 3,
+                    pb: 2,
+                    borderBottom: '2px solid',
+                    borderColor: 'primary.100'
+                  }}>
+                    <Info sx={{ mr: 2, color: 'primary.main', fontSize: 28 }} />
+                    <Typography variant="h5" fontWeight={700} sx={{ color: 'primary.main' }}>
+                      Property Details
+                    </Typography>
+                  </Box>
+                  
+                  <Grid container spacing={3}>
+                    {/* Property Type */}
+                    <Grid size={{ xs: 12, md: 6 }}>
+                      <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'primary.50', height: '100%' }}>
+                        <Typography variant="h6" fontWeight={700} sx={{ color: 'primary.main', mb: 2 }}>
+                          🏠 Property Type
+                        </Typography>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                          <Category sx={{ color: 'primary.main' }} />
+                          <Typography variant="body1" fontWeight={600} sx={{ textTransform: 'capitalize' }}>
+                            {selectedSubProperty.propertyType}
+                          </Typography>
+                        </Box>
+                      </Paper>
+                    </Grid>
+
+                    {/* Price */}
+                    {selectedSubProperty.price && (
+                      <Grid size={{ xs: 12, md: 6 }}>
+                        <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'success.50', height: '100%' }}>
+                          <Typography variant="h6" fontWeight={700} sx={{ color: 'success.main', mb: 2 }}>
+                            💰 Price
+                          </Typography>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                            <CurrencyRupee sx={{ color: 'success.main' }} />
+                            <Typography variant="body1" fontWeight={600}>
+                              {selectedSubProperty.price.toLocaleString()}
+                            </Typography>
+                          </Box>
+                        </Paper>
+                      </Grid>
+                    )}
+
+                    {/* Size Information */}
+                    {(selectedSubProperty.minSize || selectedSubProperty.maxSize) && (
+                      <Grid size={{ xs: 12 }}>
+                        <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'warning.50' }}>
+                          <Typography variant="h6" fontWeight={700} sx={{ color: 'warning.main', mb: 2 }}>
+                            📐 Size Information
+                          </Typography>
+                          <Grid container spacing={2}>
+                            {selectedSubProperty.minSize && (
+                              <Grid size={{ xs: 12, sm: 4 }}>
+                                <Box sx={{ textAlign: 'center', p: 2 }}>
+                                  <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                                    Minimum Size
+                                  </Typography>
+                                  <Typography variant="h6" fontWeight={700} color="warning.main">
+                                    {selectedSubProperty.minSize}
+                                  </Typography>
+                                  {/* <Typography variant="caption" color="text.secondary">
+                                    {selectedSubProperty.sizeUnit}
+                                  </Typography> */}
+                                </Box>
+                              </Grid>
+                            )}
+                            
+                            {selectedSubProperty.maxSize && (
+                              <Grid size={{ xs: 12, sm: 4 }}>
+                                <Box sx={{ textAlign: 'center', p: 2 }}>
+                                  <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                                    Maximum Size
+                                  </Typography>
+                                  <Typography variant="h6" fontWeight={700} color="warning.main">
+                                    {selectedSubProperty.maxSize}
+                                  </Typography>
+                                  {/* <Typography variant="caption" color="text.secondary">
+                                    {selectedSubProperty.sizeUnit}
+                                  </Typography> */}
+                                </Box>
+                              </Grid>
+                            )}
+                            
+                            {selectedSubProperty.sizeUnit && (
+                              <Grid size={{ xs: 12, sm: 4 }}>
+                                <Box sx={{ textAlign: 'center', p: 2 }}>
+                                  <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                                    Size Unit
+                                  </Typography>
+                                  <Typography variant="h6" fontWeight={700} color="warning.main">
+                                    {selectedSubProperty.sizeUnit}
+                                  </Typography>
+                                </Box>
+                              </Grid>
+                            )}
+                          </Grid>
+                        </Paper>
+                      </Grid>
+                    )}
+
+                    {/* Property Type Specific Details */}
+                    {(selectedSubProperty.propertyType === 'residential' || selectedSubProperty.propertyType === 'plot') && (
+                      <Grid size={{ xs: 12 }}>
+                        <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'info.50' }}>
+                          <Typography variant="h6" fontWeight={700} sx={{ color: 'info.main', mb: 2 }}>
+                            {selectedSubProperty.propertyType === 'residential' ? '🏡 Residential Details' : '📊 Plot Details'}
+                          </Typography>
+                          <Grid container spacing={2}>
+                            {selectedSubProperty.propertyType === 'residential' && (
+                              <>
+                                {selectedSubProperty.bedrooms && selectedSubProperty.bedrooms > 0 && (
+                                  <Grid size={{ xs: 6, sm: 3 }}>
+                                    <Box sx={{ textAlign: 'center', p: 2 }}>
+                                      <Bed sx={{ fontSize: '2rem', color: 'info.main', mb: 1 }} />
+                                      <Typography variant="h4" fontWeight={700} color="info.main">
+                                        {selectedSubProperty.bedrooms}
+                                      </Typography>
+                                      <Typography variant="body2" color="text.secondary">
+                                        Bedrooms
+                                      </Typography>
+                                    </Box>
+                                  </Grid>
+                                )}
+                                
+                                {selectedSubProperty.bathrooms && selectedSubProperty.bathrooms > 0 && (
+                                  <Grid size={{ xs: 6, sm: 3 }}>
+                                    <Box sx={{ textAlign: 'center', p: 2 }}>
+                                      <Bathtub sx={{ fontSize: '2rem', color: 'info.main', mb: 1 }} />
+                                      <Typography variant="h4" fontWeight={700} color="info.main">
+                                        {selectedSubProperty.bathrooms}
+                                      </Typography>
+                                      <Typography variant="body2" color="text.secondary">
+                                        Bathrooms
+                                      </Typography>
+                                    </Box>
+                                  </Grid>
+                                )}
+                                
+                                {selectedSubProperty.carpetArea && (
+                                  <Grid size={{ xs: 6, sm: 3 }}>
+                                    <Box sx={{ textAlign: 'center', p: 2 }}>
+                                      <SquareFoot sx={{ fontSize: '2rem', color: 'info.main', mb: 1 }} />
+                                      <Typography variant="h4" fontWeight={700} color="info.main">
+                                        {selectedSubProperty.carpetArea}
+                                      </Typography>
+                                      <Typography variant="body2" color="text.secondary">
+                                        Carpet Area
+                                      </Typography>
+                                    </Box>
+                                  </Grid>
+                                )}
+                                
+                                {selectedSubProperty.builtUpArea && (
+                                  <Grid size={{ xs: 6, sm: 3 }}>
+                                    <Box sx={{ textAlign: 'center', p: 2 }}>
+                                      <AreaChart sx={{ fontSize: '2rem', color: 'info.main', mb: 1 }} />
+                                      <Typography variant="h4" fontWeight={700} color="info.main">
+                                        {selectedSubProperty.builtUpArea}
+                                      </Typography>
+                                      <Typography variant="body2" color="text.secondary">
+                                        Built-up Area
+                                      </Typography>
+                                    </Box>
+                                  </Grid>
+                                )}
+                              </>
+                            )}
+                            
+                            {selectedSubProperty.propertyType === 'plot' && (
+                              <>
+                                {selectedSubProperty.ownershipType && (
+                                  <Grid size={{ xs: 12, md: 6 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
+                                      <AccountBalance sx={{ color: 'info.main' }} />
+                                      <Box>
+                                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                                          Ownership Type
+                                        </Typography>
+                                        <Typography variant="body1" fontWeight={600}>
+                                          {selectedSubProperty.ownershipType}
+                                        </Typography>
+                                      </Box>
+                                    </Box>
+                                  </Grid>
+                                )}
+                                
+                                {selectedSubProperty.landType && (
+                                  <Grid size={{ xs: 12, md: 6 }}>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
+                                      <Grass sx={{ color: 'info.main' }} />
+                                      <Box>
+                                        <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                                          Land Type
+                                        </Typography>
+                                        <Typography variant="body1" fontWeight={600}>
+                                          {selectedSubProperty.landType}
+                                        </Typography>
+                                      </Box>
+                                    </Box>
+                                  </Grid>
+                                )}
+                                
+                                <Grid size={{ xs: 12, md: 6 }}>
+                                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, p: 2 }}>
+                                    <Fence sx={{ color: 'info.main' }} />
+                                    <Box>
+                                      <Typography variant="body2" color="text.secondary" fontWeight={600}>
+                                        Boundary Wall
+                                      </Typography>
+                                      <Chip 
+                                        label={selectedSubProperty.boundaryWall ? 'Yes' : 'No'}
+                                        color={selectedSubProperty.boundaryWall ? 'success' : 'default'}
+                                        size="small"
+                                      />
+                                    </Box>
+                                  </Box>
+                                </Grid>
+                              </>
+                            )}
+                          </Grid>
+                        </Paper>
+                      </Grid>
+                    )}
+
+                    {/* Description */}
+                    {selectedSubProperty.propertyDescription && (
+                      <Grid size={{ xs: 12 }}>
+                        <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'grey.50' }}>
+                          <Typography variant="h6" fontWeight={700} sx={{ color: 'text.primary', mb: 2 }}>
+                            📝 Description
+                          </Typography>
+                          <Typography variant="body1" sx={{ 
+                            color: 'text.secondary', 
+                            lineHeight: 1.7,
+                            p: 2,
+                            background: 'white',
+                            borderRadius: 2,
+                            borderLeft: '4px solid',
+                            borderLeftColor: 'primary.main'
+                          }}>
+                            {selectedSubProperty.propertyDescription}
+                          </Typography>
+                        </Paper>
+                      </Grid>
+                    )}
+                  </Grid>
+                </CardContent>
+              </Card>
+            </Grid>
+
+            {/* Right Column - Side Information */}
+            <Grid size={{ xs: 12, lg: 4 }}>
+              {/* Amenities Card */}
+              {selectedSubProperty.amenities && selectedSubProperty.amenities.length > 0 && (
+                <Card sx={{ 
+                  mb: 3, 
+                  borderRadius: 3, 
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                  border: '1px solid rgba(0,0,0,0.05)'
+                }}>
+                  <CardContent sx={{ p: 3 }}>
+                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
+                      display: 'flex', 
+                      alignItems: 'center',
+                      color: 'primary.main'
+                    }}>
+                      <Star sx={{ mr: 1.5 }} />
+                      Amenities ({selectedSubProperty.amenities.length})
+                    </Typography>
+                    
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, mt: 2 }}>
+                      {selectedSubProperty.amenities.map((amenity, index) => (
+                        <Box key={index} sx={{ 
+                          display: 'flex', 
+                          alignItems: 'center', 
+                          gap: 2,
+                          p: 1.5,
+                          borderRadius: 2,
+                          background: 'rgba(102, 126, 234, 0.05)',
+                          border: '1px solid rgba(102, 126, 234, 0.1)',
+                          transition: 'all 0.2s ease',
+                          '&:hover': {
+                            background: 'rgba(102, 126, 234, 0.1)',
+                            transform: 'translateX(4px)'
+                          }
+                        }}>
+                          <CheckCircle sx={{ fontSize: '1rem', color: 'success.main' }} />
+                          <Typography variant="body2" fontWeight={600}>
+                            {amenity}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Quick Info Card */}
+              <Card sx={{ 
+                borderRadius: 3, 
+                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+                border: '1px solid rgba(0,0,0,0.05)'
+              }}>
+                <CardContent sx={{ p: 3 }}>
+                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: 'primary.main' }}>
+                    ℹ️ Quick Info
+                  </Typography>
+                  
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Property Type</Typography>
+                      <Chip 
+                        label={selectedSubProperty.propertyType} 
+                        size="small" 
+                        color="primary"
+                        sx={{ textTransform: 'capitalize' }}
+                      />
+                    </Box>
+                    
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Total Images</Typography>
+                      <Typography variant="body2" fontWeight={600}>
+                        {selectedSubProperty?.propertyImages?.length || 0}
+                      </Typography>
+                    </Box>
+                    
+                    {selectedSubProperty.paymentPlan && (
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                        <Typography variant="body2" color="text.secondary">Payment Plan</Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {selectedSubProperty.paymentPlan}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+                </CardContent>
+              </Card>
+            </Grid>
+          </Grid>
+
+          {/* Images Section */}
+          {selectedSubProperty?.propertyImages && selectedSubProperty.propertyImages.length > 0 && (
+            <Card sx={{ 
+              mt: 4, 
+              borderRadius: 3, 
+              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
+              border: '1px solid rgba(0,0,0,0.05)'
+            }}>
+              <CardContent sx={{ p: 4 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                  <Typography variant="h6" fontWeight={700} sx={{ 
+                    color: 'primary.main',
+                    display: 'flex',
+                    alignItems: 'center'
+                  }}>
+                    <CloudUpload sx={{ mr: 1.5 }} />
+                    Property Images ({selectedSubProperty.propertyImages.length})
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    startIcon={<CloudDownload />}
+                    onClick={() => handleDownloadImages(selectedSubProperty.propertyImages)}
+                    size="small"
+                    sx={{ borderRadius: 2 }}
+                  >
+                    Download All
+                  </Button>
+                </Box>
+                <Grid container spacing={2}>
+                  {selectedSubProperty.propertyImages.map((image, index) => {
+                    const imageUrl = typeof image === 'string' ? image : image.url;
+                    const imageTitle = typeof image === 'string' 
+                      ? `Image ${index + 1}` 
+                      : image.title || `Image ${index + 1}`;
+
+                    return (
+                      <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
+                        <Card 
+                          sx={{ 
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            border: '2px solid transparent',
+                            '&:hover': {
+                              transform: 'translateY(-4px)',
+                              boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
+                              borderColor: 'primary.main'
+                            }
+                          }}
+                        >
+                          <Box sx={{ position: 'relative', paddingTop: '75%' }}>
+                            <Box
+                              sx={{
+                                position: 'absolute',
+                                top: 0,
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                backgroundImage: `url(${imageUrl})`,
+                                backgroundSize: 'cover',
+                                backgroundPosition: 'center',
+                                borderRadius: '8px 8px 0 0',
+                              }}
+                            >
+                              {/* Download Button */}
+                              <IconButton
+                                sx={{
+                                  position: 'absolute',
+                                  top: 8,
+                                  right: 8,
+                                  backgroundColor: 'rgba(255,255,255,0.95)',
+                                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                  '&:hover': {
+                                    backgroundColor: 'white',
+                                    transform: 'scale(1.1)'
+                                  },
+                                  transition: 'all 0.2s ease'
+                                }}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDownloadFile(imageUrl, imageTitle);
+                                }}
+                                size="small"
+                              >
+                                <CloudDownload sx={{ fontSize: 16 }} />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                          <Box sx={{ p: 1 }}>
+                            <Typography variant="caption" color="text.secondary" noWrap>
+                              {imageTitle}
+                            </Typography>
+                          </Box>
+                        </Card>
+                      </Grid>
+                    );
+                  })}
+                </Grid>
+              </CardContent>
+            </Card>
+          )}
+        </Box>
+      </DialogContent>
+
+      <DialogActions sx={{ 
+        p: 3, 
+        borderTop: '1px solid #e2e8f0', 
+        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+        gap: 2
+      }}>
+        <Button 
+          onClick={() => setOpenSubPropertyDialog(false)}
+          variant="outlined"
+          sx={{ 
+            borderRadius: 3, 
+            fontWeight: 600,
+            px: 4,
+            py: 1,
+            borderWidth: 2,
+            '&:hover': {
+              borderWidth: 2
+            }
+          }}
+        >
+          Close
+        </Button>
+        <Button 
+          onClick={() => { 
+            setOpenSubPropertyDialog(false); 
+            handleOpenDialog(selectedSubProperty); 
+          }} 
+          variant="contained" 
+          startIcon={<Edit />}
+          sx={{ 
+            borderRadius: 3, 
+            fontWeight: 600,
+            px: 4,
+            py: 1,
+            background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+            boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+            '&:hover': {
+              boxShadow: '0 6px 20px rgba(102, 126, 234, 0.4)',
+              transform: 'translateY(-1px)'
+            },
+            transition: 'all 0.2s ease'
+          }}
+        >
+          Edit Property
+        </Button>
+      </DialogActions>
+    </>
+  )}
+</Dialog>
     </Box>
   );
 }
-
 
