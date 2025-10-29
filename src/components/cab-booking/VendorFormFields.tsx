@@ -1,56 +1,62 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
+import { useFormikContext } from "formik";
+import Image from "next/image";
+
+interface Values {
+  cabOwner: string;
+  driverName: string;
+  aadharNumber: string;
+  dlNumber: string;
+  startKm: string | number;
+  endKm: string | number;
+  odometerStart: File | string | null;
+  odometerEnd: File | string | null;
+  fare: string | number | null;
+  pickupPoint: string;
+  dropPoint: string;
+}
 
 interface Props {
   disabled?: boolean;
   inputClass: string;
-  cabOwner: string;
-  setCabOwner: React.Dispatch<React.SetStateAction<string>>;
-  driverName: string;
-  setDriverName: React.Dispatch<React.SetStateAction<string>>;
-  aadharNumber: string;
-  setAadharNumber: React.Dispatch<React.SetStateAction<string>>;
-  dlNumber: string;
-  setDlNumber: React.Dispatch<React.SetStateAction<string>>;
-  pickupPoint: string;
-  setPickupPoint: React.Dispatch<React.SetStateAction<string>>;
-  dropPoint: string;
-  setDropPoint: React.Dispatch<React.SetStateAction<string>>;
-  startKm: string;
-  setStartKm: React.Dispatch<React.SetStateAction<string>>;
-  endKm: string;
-  setEndKm: React.Dispatch<React.SetStateAction<string>>;
+
   totalKm?: number | string;
-  aadharError?: string;
-  dlError?: string;
-  clearAadharError: () => void;
-  clearDlError: () => void;
 }
 
 const VendorFormFields: React.FC<Props> = ({
   disabled,
   inputClass,
-  cabOwner,
-  setCabOwner,
-  driverName,
-  setDriverName,
-  aadharNumber,
-  setAadharNumber,
-  dlNumber,
-  setDlNumber,
-  pickupPoint,
-  setPickupPoint,
-  dropPoint,
-  setDropPoint,
-  startKm,
-  setStartKm,
-  endKm,
-  setEndKm,
   totalKm,
-  aadharError,
-  dlError,
-  clearAadharError,
-  clearDlError,
 }) => {
+  const {
+    values,
+    errors,
+    touched,
+    handleChange,
+    setFieldValue,
+    setFieldError,
+    setFieldTouched,
+  } = useFormikContext<Values>();
+
+  // Local file error state to ensure immediate visibility
+  const [odometerStartLocalError, setOdometerStartLocalError] = useState<
+    string | null
+  >(null);
+  const [odometerEndLocalError, setOdometerEndLocalError] = useState<
+    string | null
+  >(null);
+
+  const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
+
+  const shouldShowError = (name: keyof Values) => {
+    const val = (values as any)[name];
+    const t = (touched as any)[name];
+    const hasStartedTyping = val !== undefined && val !== null && val !== "";
+    return !!(t || hasStartedTyping);
+  };
+
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
       {/* Cab Owner */}
@@ -61,12 +67,17 @@ const VendorFormFields: React.FC<Props> = ({
         <input
           type="text"
           name="cabOwner"
-          value={cabOwner}
-          onChange={(e) => setCabOwner(e.target.value)}
+          value={values.cabOwner}
+          onChange={(e) => {
+            setFieldTouched("cabOwner", true, false);
+            handleChange(e);
+          }}
           disabled={disabled}
-          required
           className={inputClass}
         />
+        {shouldShowError("cabOwner") && errors.cabOwner && (
+          <p className="mt-1 text-sm text-red-600">{errors.cabOwner}</p>
+        )}
       </div>
 
       {/* Driver Name */}
@@ -75,32 +86,40 @@ const VendorFormFields: React.FC<Props> = ({
         <input
           type="text"
           name="driverName"
-          value={driverName}
-          onChange={(e) => setDriverName(e.target.value)}
+          value={values.driverName}
+          onChange={(e) => {
+            setFieldTouched("driverName", true, false);
+            handleChange(e);
+          }}
           disabled={disabled}
-          required
           className={inputClass}
         />
+        {shouldShowError("driverName") && errors.driverName && (
+          <p className="mt-1 text-sm text-red-600">{errors.driverName}</p>
+        )}
       </div>
 
       {/* Aadhar Number (optional) */}
       <div className="form-group">
         <label className="block text-sm font-medium mb-1">
-          Aadhar Number(Driver)
+          Aadhar Number (Driver)
         </label>
         <input
           type="text"
           name="aadharNumber"
-          value={aadharNumber}
+          value={values.aadharNumber as string}
           onChange={(e) => {
-            setAadharNumber(e.target.value);
-            clearAadharError();
+            setFieldTouched("aadharNumber", true, false);
+            setFieldValue(
+              "aadharNumber",
+              String(e.target.value).replace(/\D/g, "")
+            );
           }}
           disabled={disabled}
           className={inputClass}
         />
-        {aadharError && (
-          <p className="mt-1 text-sm text-red-600">{aadharError}</p>
+        {shouldShowError("aadharNumber") && errors.aadharNumber && (
+          <p className="mt-1 text-sm text-red-600">{errors.aadharNumber}</p>
         )}
       </div>
 
@@ -112,15 +131,17 @@ const VendorFormFields: React.FC<Props> = ({
         <input
           type="text"
           name="dlNumber"
-          value={dlNumber}
+          value={values.dlNumber as string}
           onChange={(e) => {
-            setDlNumber(e.target.value);
-            clearDlError();
+            setFieldTouched("dlNumber", true, false);
+            handleChange(e);
           }}
           disabled={disabled}
           className={inputClass}
         />
-        {dlError && <p className="mt-1 text-sm text-red-600">{dlError}</p>}
+        {shouldShowError("dlNumber") && errors.dlNumber && (
+          <p className="mt-1 text-sm text-red-600">{errors.dlNumber}</p>
+        )}
       </div>
 
       {/* Pickup Point */}
@@ -129,12 +150,17 @@ const VendorFormFields: React.FC<Props> = ({
         <input
           type="text"
           name="pickupPoint"
-          value={pickupPoint}
-          onChange={(e) => setPickupPoint(e.target.value)}
+          value={values.pickupPoint}
+          onChange={(e) => {
+            setFieldTouched("pickupPoint", true, false);
+            handleChange(e);
+          }}
           disabled={disabled}
-          required
           className={inputClass}
         />
+        {shouldShowError("pickupPoint") && errors.pickupPoint && (
+          <p className="mt-1 text-sm text-red-600">{errors.pickupPoint}</p>
+        )}
       </div>
 
       {/* Drop Point */}
@@ -143,12 +169,17 @@ const VendorFormFields: React.FC<Props> = ({
         <input
           type="text"
           name="dropPoint"
-          value={dropPoint}
-          onChange={(e) => setDropPoint(e.target.value)}
+          value={values.dropPoint}
+          onChange={(e) => {
+            setFieldTouched("dropPoint", true, false);
+            handleChange(e);
+          }}
           disabled={disabled}
-          required
           className={inputClass}
         />
+        {shouldShowError("dropPoint") && errors.dropPoint && (
+          <p className="mt-1 text-sm text-red-600">{errors.dropPoint}</p>
+        )}
       </div>
 
       {/* Start Kilometers */}
@@ -159,12 +190,92 @@ const VendorFormFields: React.FC<Props> = ({
         <input
           type="number"
           name="startKm"
-          value={startKm}
-          onChange={(e) => setStartKm(e.target.value)}
+          value={values.startKm as any}
+          onChange={(e) => {
+            setFieldTouched("startKm", true, false);
+            handleChange(e);
+          }}
           disabled={disabled}
-          required
           className={inputClass}
         />
+        {shouldShowError("startKm") && errors.startKm && (
+          <p className="mt-1 text-sm text-red-600">{errors.startKm}</p>
+        )}
+      </div>
+
+      {/* Odometer Start (driver) - image upload */}
+      <div className="form-group">
+        <label className="block text-sm font-medium mb-1">
+          Odometer Start Image (Max 1 MB)
+        </label>
+        <div className="relative">
+          <label
+            className={`${inputClass} flex items-center justify-between bg-gray-100 cursor-pointer`}
+          >
+            <span className="text-sm font-medium">Choose File</span>
+            <span className="text-sm text-gray-600 ml-2">
+              {values.odometerStart
+                ? typeof values.odometerStart === "string"
+                  ? "Selected"
+                  : (values.odometerStart as File).name
+                : "No file chosen"}
+            </span>
+            <input
+              type="file"
+              name="odometerStart"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files && e.target.files[0];
+                setFieldTouched("odometerStart", true, false);
+                if (file) {
+                  if (file.size > MAX_FILE_SIZE) {
+                    setFieldValue("odometerStart", null);
+                    setFieldError(
+                      "odometerStart",
+                      "File size must be 1 MB or smaller."
+                    );
+                    setOdometerStartLocalError(
+                      "File size must be 1 MB or smaller."
+                    );
+                  } else {
+                    setFieldValue("odometerStart", file);
+                    setFieldError("odometerStart", undefined as any);
+                    setOdometerStartLocalError(null);
+                  }
+                } else {
+                  setFieldValue("odometerStart", null);
+                  setFieldError("odometerStart", undefined as any);
+                  setOdometerStartLocalError(null);
+                }
+              }}
+              disabled={disabled}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+          </label>
+        </div>
+        {values.odometerStart && typeof values.odometerStart === "string" && (
+          <Image
+            src={values.odometerStart}
+            alt="start-odo"
+            width={128}
+            height={80}
+            className="mt-2 w-32 h-20 object-cover rounded"
+          />
+        )}
+        {values.odometerStart && typeof values.odometerStart !== "string" && (
+          <Image
+            src={URL.createObjectURL(values.odometerStart as File)}
+            alt="start-odo-file"
+            width={128}
+            height={80}
+            className="mt-2 w-32 h-20 object-cover rounded"
+          />
+        )}
+        {(odometerStartLocalError || errors.odometerStart) && (
+          <p className="mt-1 text-sm text-red-600">
+            {odometerStartLocalError || errors.odometerStart}
+          </p>
+        )}
       </div>
 
       {/* End Kilometers */}
@@ -175,12 +286,92 @@ const VendorFormFields: React.FC<Props> = ({
         <input
           type="number"
           name="endKm"
-          value={endKm}
-          onChange={(e) => setEndKm(e.target.value)}
+          value={values.endKm as any}
+          onChange={(e) => {
+            setFieldTouched("endKm", true, false);
+            handleChange(e);
+          }}
           disabled={disabled}
-          required
           className={inputClass}
         />
+        {shouldShowError("endKm") && errors.endKm && (
+          <p className="mt-1 text-sm text-red-600">{errors.endKm}</p>
+        )}
+      </div>
+
+      {/* Odometer End (driver) - image upload */}
+      <div className="form-group">
+        <label className="block text-sm font-medium mb-1">
+          Odometer End Image (Max 1 MB)
+        </label>
+        <div className="relative">
+          <label
+            className={`${inputClass} flex items-center justify-between bg-gray-100 cursor-pointer`}
+          >
+            <span className="text-sm font-medium">Choose File</span>
+            <span className="text-sm text-gray-600 ml-2">
+              {values.odometerEnd
+                ? typeof values.odometerEnd === "string"
+                  ? "Selected"
+                  : (values.odometerEnd as File).name
+                : "No file chosen"}
+            </span>
+            <input
+              type="file"
+              name="odometerEnd"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files && e.target.files[0];
+                setFieldTouched("odometerEnd", true, false);
+                if (file) {
+                  if (file.size > MAX_FILE_SIZE) {
+                    setFieldValue("odometerEnd", null);
+                    setFieldError(
+                      "odometerEnd",
+                      "File size must be 1 MB or smaller."
+                    );
+                    setOdometerEndLocalError(
+                      "File size must be 1 MB or smaller."
+                    );
+                  } else {
+                    setFieldValue("odometerEnd", file);
+                    setFieldError("odometerEnd", undefined as any);
+                    setOdometerEndLocalError(null);
+                  }
+                } else {
+                  setFieldValue("odometerEnd", null);
+                  setFieldError("odometerEnd", undefined as any);
+                  setOdometerEndLocalError(null);
+                }
+              }}
+              disabled={disabled}
+              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+            />
+          </label>
+        </div>
+        {values.odometerEnd && typeof values.odometerEnd === "string" && (
+          <Image
+            src={values.odometerEnd}
+            alt="end-odo"
+            width={128}
+            height={80}
+            className="mt-2 w-32 h-20 object-cover rounded"
+          />
+        )}
+        {values.odometerEnd && typeof values.odometerEnd !== "string" && (
+          <Image
+            src={URL.createObjectURL(values.odometerEnd as File)}
+            alt="end-odo-file"
+            width={128}
+            height={80}
+            className="mt-2 w-32 h-20 object-cover rounded"
+          />
+        )}
+        {(odometerEndLocalError || errors.odometerEnd) && (
+          <p className="mt-1 text-sm text-red-600">
+            {odometerEndLocalError || errors.odometerEnd}
+          </p>
+        )}
       </div>
 
       {/* Total Kilometers */}
@@ -195,6 +386,25 @@ const VendorFormFields: React.FC<Props> = ({
           disabled
           className="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
         />
+      </div>
+
+      {/* Fare */}
+      <div className="form-group">
+        <label className="block text-sm font-medium mb-1">Fare</label>
+        <input
+          type="number"
+          name="fare"
+          value={values.fare as any}
+          onChange={(e) => {
+            setFieldTouched("fare", true, false);
+            handleChange(e);
+          }}
+          disabled={disabled}
+          className={inputClass}
+        />
+        {shouldShowError("fare") && errors.fare && (
+          <p className="mt-1 text-sm text-red-600">{errors.fare}</p>
+        )}
       </div>
     </div>
   );

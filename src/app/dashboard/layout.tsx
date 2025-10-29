@@ -8,6 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import HandshakeIcon from "@mui/icons-material/Handshake";
+import GroupIcon from "@mui/icons-material/Group";
 
 const AppIcon = ({
   src,
@@ -46,13 +47,13 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "Vendors",
     href: "/dashboard/vendor",
     module: "vendor",
-    icon: <AppIcon src="/inrext.png" alt="Vendors" />,
+    icon: <AppIcon src="/vendor.png" alt="Vendors" />,
   },
   {
     label: "Vendor Booking",
     href: "/dashboard/vendor-booking",
     module: "cab-vendor",
-    icon: <AppIcon src="/cab.png" alt="Vendor Booking" />,
+    icon: <AppIcon src="/cab-vendor.png" alt="Vendor Booking" />,
   },
   {
     label: "Roles",
@@ -64,7 +65,7 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "Cab Booking",
     href: "/dashboard/cab-booking",
     module: "cab-booking",
-    icon: <AppIcon src="/cab.png" alt="Cab Booking" />,
+    icon: <AppIcon src="/cab-booking.png" alt="Cab Booking" />,
   },
   {
     label: "MOU",
@@ -77,6 +78,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     href: "/dashboard/properties",
     module: "property", 
     icon: <AppIcon src="/properties.png" alt="Properties" />,
+  },
+  { 
+    label: "Teams",
+    href: "/dashboard/teams",
+    module: "team",
+    icon: <GroupIcon sx={{ color: "#3f51b5" }} />,
   },
 ];
 

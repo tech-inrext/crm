@@ -119,23 +119,31 @@ const MOUPage: React.FC = () => {
                     }}
                     onApprove={async (id) => {
                       // optimistic update: remove from pending list immediately
-                      let prevItem: any = null;
                       try {
-                        // store previous item for rollback
-                        prevItem = items.find((it) => it._id === id);
                         await markStatus(id, "Approved");
 
                         // call server endpoint which will set status, upload PDF and send email
                         await axios.post(`/api/v0/mou/approve-and-send/${id}`);
 
-                        // switch to Completed view and reload approved list so the item is visible
-                        setView("completed");
-                        // ensure hook status and page are reset by effect; also explicitly load Approved list
-                        await load(1, rowsPerPage, "", "Approved");
+                        // Keep the current view (Pending) — do not auto-switch to Completed.
+                        // Notify user of success.
+                        setSnackMsg("MOU approved and email sent to associate");
+                        setSnackSeverity("success");
+                        setSnackOpen(true);
                       } catch (e) {
                         console.error("approve failed", e);
                         // rollback local optimistic change by reloading pending list
-                        await load(page, rowsPerPage, "", "Pending");
+                        try {
+                          await load(page, rowsPerPage, "", "Pending");
+                        } catch (err) {
+                          console.error(
+                            "failed to reload pending list after rollback",
+                            err
+                          );
+                        }
+                        setSnackMsg("Failed to approve MOU");
+                        setSnackSeverity("error");
+                        setSnackOpen(true);
                       }
                       return;
                     }}

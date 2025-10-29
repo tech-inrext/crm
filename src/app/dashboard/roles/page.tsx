@@ -32,8 +32,10 @@ const modules = [
   "CabBooking",
   "CabVendor",
   "Vendor",
+  "Team",
   "MOU",
   "Property",
+  "Branch",
 ];
 
 // Defensive: ensure modules passed to UI are unique to avoid React key collisions

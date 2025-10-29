@@ -4,12 +4,14 @@ const modules = [
   "employee",
   "lead",
   "mou",
+  "team",
   "role",
   "department",
   "cab-booking",
   "cab-vendor",
   "vendor",
   "property",
+  "branch",
 ];
 
 const roleSchema = new mongoose.Schema(

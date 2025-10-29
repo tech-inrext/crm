@@ -54,6 +54,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
     notes: "",
   });
   const [submitting, setSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (!showEmployeeDropdown) return;
@@ -75,11 +77,82 @@ const BookingForm: React.FC<BookingFormProps> = ({
     e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // update form data
+    const newData = { ...formData, [name]: value };
+    setFormData(newData);
+
+    // mark field as touched on first change
+    setTouched((prev) => ({ ...prev, [name]: true }));
+
+    // validate only this field so user sees errors while typing
+    const validationErrors = validate(newData);
+    setErrors((prev) => {
+      const copy = { ...prev };
+      if (validationErrors[name]) {
+        copy[name] = validationErrors[name];
+      } else {
+        delete copy[name];
+      }
+      return copy;
+    });
+  };
+
+  const validate = (data: BookingFormData) => {
+    const e: Record<string, string> = {};
+    if (!data.project || String(data.project).trim() === "") {
+      e.project = "Project is required";
+    }
+    if (!data.clientName || String(data.clientName).trim() === "") {
+      e.clientName = "Client name is required";
+    } else if (String(data.clientName).trim().length < 3) {
+      e.clientName =
+        "Please enter the client's full name (minimum 3 characters).";
+    }
+    if (!data.numberOfClients || Number(data.numberOfClients) < 1) {
+      e.numberOfClients = "Number of clients must be at least 1";
+    } else if (Number(data.numberOfClients) > 20) {
+      e.numberOfClients = "Number of clients cannot exceed 20.";
+    }
+    if (
+      !data.requestedDateTime ||
+      String(data.requestedDateTime).trim() === ""
+    ) {
+      e.requestedDateTime = "Requested date and time is required";
+    }
+    if (!data.pickupPoint || String(data.pickupPoint).trim() === "") {
+      e.pickupPoint = "Pickup point is required";
+    } else if (String(data.pickupPoint).trim().length < 3) {
+      e.pickupPoint =
+        "Please enter a valid pickup location (minimum 3 characters).";
+    }
+    if (!data.dropPoint || String(data.dropPoint).trim() === "") {
+      e.dropPoint = "Drop point is required";
+    } else if (String(data.dropPoint).trim().length < 3) {
+      e.dropPoint =
+        "Please enter a valid drop location (minimum 3 characters).";
+    }
+    return e;
   };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
+    const validationErrors = validate(formData);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      // mark all fields as touched so all errors are visible
+      const allTouched: Record<string, boolean> = {};
+      Object.keys(formData).forEach((k) => (allTouched[k] = true));
+      setTouched(allTouched);
+      // focus first invalid field
+      const firstField = Object.keys(validationErrors)[0];
+      const el = document.querySelector(
+        `[name="${firstField}"]`
+      ) as HTMLElement | null;
+      if (el && typeof el.focus === "function") el.focus();
+      return;
+    }
+
     setSubmitting(true);
     try {
       const success = await onSubmit(formData);
@@ -95,6 +168,8 @@ const BookingForm: React.FC<BookingFormProps> = ({
           requestedDateTime: getCurrentDateTime(),
           notes: "",
         });
+        setErrors({});
+        setTouched({});
       }
     } finally {
       setSubmitting(false);
@@ -112,8 +187,9 @@ const BookingForm: React.FC<BookingFormProps> = ({
               name="project"
               value={formData.project}
               onChange={handleChange}
-              required
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className={`w-full p-2 border rounded-md ${
+                errors.project ? "border-red-500" : "border-gray-300"
+              }`}
             >
               <option value="" className="text-black">
                 Select Project
@@ -128,6 +204,10 @@ const BookingForm: React.FC<BookingFormProps> = ({
                 </option>
               ))}
             </select>
+            {(touched.project || String(formData.project) !== "") &&
+              errors.project && (
+                <p className="text-sm text-red-600 mt-1">{errors.project}</p>
+              )}
           </div>
 
           <div className="form-group">
@@ -139,10 +219,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
               name="clientName"
               value={formData.clientName}
               onChange={handleChange}
-              required
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className={`w-full p-2 border rounded-md ${
+                errors.clientName ? "border-red-500" : "border-gray-300"
+              }`}
               onFocus={(e) => e.target.select()}
             />
+            {(touched.clientName || String(formData.clientName) !== "") &&
+              errors.clientName && (
+                <p className="text-sm text-red-600 mt-1">{errors.clientName}</p>
+              )}
           </div>
 
           <div className="form-group">
@@ -156,9 +241,17 @@ const BookingForm: React.FC<BookingFormProps> = ({
               max="20"
               value={formData.numberOfClients}
               onChange={handleChange}
-              required
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className={`w-full p-2 border rounded-md ${
+                errors.numberOfClients ? "border-red-500" : "border-gray-300"
+              }`}
             />
+            {(touched.numberOfClients ||
+              String(formData.numberOfClients) !== "") &&
+              errors.numberOfClients && (
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.numberOfClients}
+                </p>
+              )}
           </div>
 
           <div className="form-group">
@@ -171,9 +264,17 @@ const BookingForm: React.FC<BookingFormProps> = ({
               value={formData.requestedDateTime}
               onChange={handleChange}
               min={getCurrentDateTime()}
-              required
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className={`w-full p-2 border rounded-md ${
+                errors.requestedDateTime ? "border-red-500" : "border-gray-300"
+              }`}
             />
+            {(touched.requestedDateTime ||
+              String(formData.requestedDateTime) !== "") &&
+              errors.requestedDateTime && (
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.requestedDateTime}
+                </p>
+              )}
           </div>
 
           <div className="form-group">
@@ -185,10 +286,17 @@ const BookingForm: React.FC<BookingFormProps> = ({
               name="pickupPoint"
               value={formData.pickupPoint}
               onChange={handleChange}
-              required
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className={`w-full p-2 border rounded-md ${
+                errors.pickupPoint ? "border-red-500" : "border-gray-300"
+              }`}
               onFocus={(e) => e.target.select()}
             />
+            {(touched.pickupPoint || String(formData.pickupPoint) !== "") &&
+              errors.pickupPoint && (
+                <p className="text-sm text-red-600 mt-1">
+                  {errors.pickupPoint}
+                </p>
+              )}
           </div>
 
           <div className="form-group">
@@ -200,10 +308,15 @@ const BookingForm: React.FC<BookingFormProps> = ({
               name="dropPoint"
               value={formData.dropPoint}
               onChange={handleChange}
-              required
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className={`w-full p-2 border rounded-md ${
+                errors.dropPoint ? "border-red-500" : "border-gray-300"
+              }`}
               onFocus={(e) => e.target.select()}
             />
+            {(touched.dropPoint || String(formData.dropPoint) !== "") &&
+              errors.dropPoint && (
+                <p className="text-sm text-red-600 mt-1">{errors.dropPoint}</p>
+              )}
           </div>
           {/* <div className="form-group">
             <label className="block text-sm font-medium mb-1">

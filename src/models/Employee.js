@@ -60,7 +60,6 @@ const employeeSchema = new mongoose.Schema(
     },
     fatherName: {
       type: String,
-      required: [true, "Father's Name is required"],
       trim: true,
       minlength: [2, "Father's Name must be at least 2 characters long"],
       maxlength: [50, "Father's Name must be at most 50 characters long"],

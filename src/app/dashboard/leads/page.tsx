@@ -13,9 +13,11 @@ import {
   TableBody,
   TableContainer,
   IconButton,
+  Snackbar,
   useTheme,
   useMediaQuery,
 } from "@mui/material";
+import Alert from "@mui/material/Alert";
 import {
   Add,
   Edit as EditIcon,
@@ -113,6 +115,11 @@ const Leads: React.FC = () => {
   const [selectedLeadForFeedback, setSelectedLeadForFeedback] = useState<
     string | null
   >(null);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<
+    "success" | "error" | "info" | "warning"
+  >("success");
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
@@ -316,10 +323,59 @@ const Leads: React.FC = () => {
         onSave={async (data) => {
           try {
             await saveLead(data, editId);
+            // success toast
+            if (editId) {
+              setSnackbarMessage("Lead updated successfully");
+            } else {
+              setSnackbarMessage("Lead created successfully");
+            }
+            setSnackbarSeverity("success");
+            setSnackbarOpen(true);
+
             setOpen(false);
             setEditId(null);
-          } catch (error) {
-            console.error("Failed to save lead:", error);
+          } catch (err: any) {
+            // Robust error extraction for various API error shapes
+            const status =
+              err?.response?.status || err?.status || err?.statusCode;
+
+            const extractMessage = (e: any) => {
+              if (!e) return "Failed to save lead";
+              // axios response body
+              const resp = e.response?.data ?? e.data ?? null;
+              if (typeof resp === "string") return resp;
+              if (resp) {
+                if (resp.message) return resp.message;
+                if (resp.msg) return resp.msg;
+                if (resp.error) return resp.error;
+                if (resp.data && typeof resp.data === "string")
+                  return resp.data;
+                if (resp.data && resp.data.message) return resp.data.message;
+                if (Array.isArray(resp.errors) && resp.errors.length) {
+                  return (
+                    resp.errors[0].message || JSON.stringify(resp.errors[0])
+                  );
+                }
+              }
+              // fallback to error.message or JSON
+              if (e.message) return e.message;
+              try {
+                return JSON.stringify(e);
+              } catch (_) {
+                return "Failed to save lead";
+              }
+            };
+
+            const message = extractMessage(err);
+
+            if (status === 409) {
+              setSnackbarMessage(message || "Lead with same identifier exists");
+            } else {
+              setSnackbarMessage(message);
+            }
+            setSnackbarSeverity("error");
+            setSnackbarOpen(true);
+            console.error("Failed to save lead:", err);
           }
         }}
       />
@@ -361,6 +417,23 @@ const Leads: React.FC = () => {
           {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
         </Fab>
       </PermissionGuard>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={(event, reason) => {
+          if (reason === "clickaway") return;
+          setSnackbarOpen(false);
+        }}
+        anchorOrigin={{ vertical: "top", horizontal: "right" }}
+      >
+        <Alert
+          onClose={() => setSnackbarOpen(false)}
+          severity={snackbarSeverity}
+          variant="filled"
+        >
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

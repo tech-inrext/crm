@@ -47,13 +47,34 @@ export default async function handler(req, res) {
       .json({ success: false, message: "Invalid or expired OTP" });
   }
 
-  const hashedPassword = await bcrypt.hash(newPassword, 10);
-  employee.password = hashedPassword;
-  employee.resetOTP = undefined;
-  employee.resetOTPExpires = undefined;
-  employee.isPasswordReset = true;
-  employee.passwordLastResetAt = new Date(); // ✅ for 3-month expiry tracking
-  await employee.save();
+  try {
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Use an atomic update to avoid triggering full document validation
+    // (some legacy documents may be missing required fields like employeeProfileId)
+    const result = await Employee.updateOne(
+      { _id: employee._id },
+      {
+        $set: {
+          password: hashedPassword,
+          isPasswordReset: true,
+          passwordLastResetAt: new Date(),
+        },
+        $unset: { resetOTP: "", resetOTPExpires: "" },
+      }
+    );
+
+    if (!result || result.matchedCount === 0) {
+      return res
+        .status(500)
+        .json({ success: false, message: "Failed to update password" });
+    }
+  } catch (err) {
+    console.error("Error updating password:", err);
+    return res
+      .status(500)
+      .json({ success: false, message: "Internal server error" });
+  }
 
   return res
     .status(200)

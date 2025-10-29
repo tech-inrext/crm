@@ -15,12 +15,12 @@ async function getProfile(req, res) {
     const user = req.employee;
 
     // Fetch manager name if managerId exists
-    let managerName = null;
-    if (user.managerId) {
-      const Employee = (await import('@/models/Employee')).default;
-      const manager = await Employee.findById(user.managerId).select("name");
-      if (manager) managerName = manager.name;
-    }
+    // let managerName = null;
+    // if (user.managerId) {
+    //   const Employee = (await import("@/models/Employee")).default;
+    //   const manager = await Employee.findById(user.managerId).select("name");
+    //   if (manager) managerName = manager.name;
+    // }
 
     res.status(200).json({
       success: true,
@@ -35,7 +35,7 @@ async function getProfile(req, res) {
         designation: user.designation,
         departmentId: user.departmentId,
         managerId: user.managerId,
-        managerName,
+        managerName: user.managerName || "N/A",
         joiningDate: user.joiningDate,
         currentRole: req.roleId,
       },

@@ -160,6 +160,7 @@ const MouList: React.FC<MouListProps> = ({
                     {(!view || view === "pending") && (
                       <>
                         <Button
+                          type="button"
                           size="medium"
                           color="success"
                           variant="contained"
@@ -178,6 +179,7 @@ const MouList: React.FC<MouListProps> = ({
                           Approve
                         </Button>
                         <Button
+                          type="button"
                           size="medium"
                           color="error"
                           variant="outlined"
@@ -200,6 +202,7 @@ const MouList: React.FC<MouListProps> = ({
                     {view === "completed" && (
                       <>
                         <Button
+                          type="button"
                           size="medium"
                           variant="outlined"
                           onClick={() => {
@@ -217,6 +220,7 @@ const MouList: React.FC<MouListProps> = ({
                           Preview
                         </Button>
                         <Button
+                          type="button"
                           size="medium"
                           color="primary"
                           variant="contained"
@@ -285,6 +289,7 @@ const MouList: React.FC<MouListProps> = ({
           )}
           <Button onClick={handleCancel}>Cancel</Button>
           <Button
+            type="button"
             onClick={handleConfirm}
             color={pendingAction?.type === "approve" ? "success" : "error"}
             variant={
@@ -318,6 +323,8 @@ const PreviewLoader: React.FC<{ id: string }> = ({ id }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [blobUrl, setBlobUrl] = useState<string | null>(null);
+  const [filename, setFilename] = useState<string | null>(null);
+  const [iframeSrc, setIframeSrc] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -351,9 +358,44 @@ const PreviewLoader: React.FC<{ id: string }> = ({ id }) => {
         }
 
         if (ct.includes("application/pdf")) {
-          const blob = await res.blob();
-          createdUrl = URL.createObjectURL(blob);
-          if (active) setBlobUrl(createdUrl);
+          // try to get filename from Content-Disposition header
+          try {
+            const cd = res.headers.get("content-disposition") || "";
+            let name: string | null = null;
+            const fnStarMatch = cd.match(
+              /filename\*=(?:UTF-8'')?([^;\n\r\"]+)/i
+            );
+            const fnMatch = cd.match(/filename=\"([^\"]+)\"/i);
+            if (fnStarMatch && fnStarMatch[1]) {
+              try {
+                name = decodeURIComponent(fnStarMatch[1]);
+              } catch (e) {
+                name = fnStarMatch[1];
+              }
+            } else if (fnMatch && fnMatch[1]) {
+              name = fnMatch[1];
+            }
+            if (name) {
+              const cleaned = name.replace(/\s+/g, "");
+              console.debug(
+                "PreviewLoader: Content-Disposition header:",
+                cd,
+                "-> filename:",
+                cleaned
+              );
+              setFilename(cleaned);
+            } else {
+              console.debug(
+                "PreviewLoader: no filename in Content-Disposition:",
+                cd
+              );
+            }
+          } catch (e) {
+            // ignore parsing errors
+          }
+          // use direct API URL for iframe so built-in PDF viewer uses server headers
+          const apiUrl = `/api/v0/mou/pdf/preview?id=${encodeURIComponent(id)}`;
+          if (active) setIframeSrc(apiUrl);
         } else {
           // Non-PDF response - treat as error and show message
           const text = await res.text();
@@ -385,13 +427,125 @@ const PreviewLoader: React.FC<{ id: string }> = ({ id }) => {
   if (loading)
     return <Box sx={{ width: "100%", height: "100%" }}>Loading preview…</Box>;
   if (error) return <Typography color="error">{error}</Typography>;
-  if (blobUrl)
+  if (iframeSrc || blobUrl)
     return (
-      <iframe
-        title="MOU Preview"
-        src={blobUrl}
-        style={{ width: "100%", height: "100%", border: "none" }}
-      />
+      <Box
+        sx={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "column",
+        }}
+      >
+        <Box
+          sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mb: 1 }}
+        >
+          <Button
+            size="small"
+            variant="outlined"
+            onClick={async () => {
+              try {
+                // Fetch PDF blob directly so we can control the download filename
+                const resp = await fetch(
+                  `/api/v0/mou/pdf/preview?id=${encodeURIComponent(id)}`,
+                  {
+                    credentials: "include",
+                  }
+                );
+                if (!resp.ok)
+                  throw new Error(`Failed to fetch PDF: ${resp.status}`);
+                const ct = resp.headers.get("content-type") || "";
+                if (!ct.includes("application/pdf")) {
+                  const text = await resp.text();
+                  throw new Error(text || "Preview did not return a PDF");
+                }
+                const blob = await resp.blob();
+
+                // try to obtain filename from response
+                let fname: string | null = null;
+                try {
+                  const cd = resp.headers.get("content-disposition") || "";
+                  console.debug("Download: Content-Disposition:", cd);
+                  const fnStarMatch = cd.match(
+                    /filename\*=(?:UTF-8'')?([^;\n\r\"]+)/i
+                  );
+                  const fnMatch = cd.match(/filename=\"([^\"]+)\"/i);
+                  if (fnStarMatch && fnStarMatch[1]) {
+                    try {
+                      fname = decodeURIComponent(fnStarMatch[1]);
+                    } catch (e) {
+                      fname = fnStarMatch[1];
+                    }
+                  } else if (fnMatch && fnMatch[1]) {
+                    fname = fnMatch[1];
+                  }
+                  if (fname)
+                    console.debug("Download: parsed filename ->", fname);
+                } catch (e) {
+                  console.debug("Download: filename parse failed", e);
+                }
+
+                // fallback: fetch employee record to construct filename
+                if (!fname) {
+                  try {
+                    const empResp = await fetch(
+                      `/api/v0/employee/${encodeURIComponent(id)}`,
+                      { credentials: "include" }
+                    );
+                    if (empResp.ok) {
+                      const empJson = await empResp.json();
+                      const emp = empJson && (empJson.data || empJson);
+                      const rawName =
+                        emp &&
+                        (emp.name ||
+                          emp.username ||
+                          emp.employeeProfileId ||
+                          emp._id)
+                          ? emp.name ||
+                            emp.username ||
+                            emp.employeeProfileId ||
+                            emp._id
+                          : "preview";
+                      const sanitized =
+                        String(rawName)
+                          .replace(/[^\x00-\x7F]/g, "")
+                          .replace(/[^a-zA-Z0-9 _\-\.]/g, "")
+                          .replace(/\s+/g, "")
+                          .trim() || "preview";
+                      fname = `${sanitized}MOU.pdf`;
+                    }
+                  } catch (e) {
+                    // ignore
+                  }
+                }
+
+                if (!fname) fname = "preview.pdf";
+
+                const downloadUrl = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = downloadUrl;
+                a.download = fname;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                URL.revokeObjectURL(downloadUrl);
+              } catch (e) {
+                // fallback: open iframe or blob in new tab
+                if (iframeSrc) window.open(iframeSrc, "_blank");
+                else if (blobUrl) window.open(blobUrl, "_blank");
+                else console.error(e);
+              }
+            }}
+          >
+            Download
+          </Button>
+        </Box>
+        <iframe
+          title="MOU Preview"
+          src={iframeSrc || blobUrl || undefined}
+          style={{ width: "100%", height: "100%", border: "none", flex: 1 }}
+        />
+      </Box>
     );
   return null;
 };

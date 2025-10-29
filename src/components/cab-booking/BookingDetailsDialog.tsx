@@ -18,6 +18,7 @@ import {
   Person,
   Info,
   AssignmentInd,
+  MonetizationOn,
 } from "@mui/icons-material";
 import MODULE_STYLES from "@/styles/moduleStyles";
 import Avatar from "@/components/ui/Avatar";
@@ -41,6 +42,7 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
   onClose,
 }) => {
   const [managerName, setManagerName] = useState<string | null>(null);
+  const [bookedByName, setBookedByName] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -53,18 +55,31 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
           return;
         }
         const mgrId = booking.managerId || booking.manager || null;
-        if (!mgrId) return;
+        const bookedById =
+          (booking as any).cabBookedBy || (booking as any).cabBookedBy || null;
+        if (!mgrId && !bookedById) return;
         const res = await fetch("/api/v0/employee/getAllEmployeeList");
         if (!res.ok) return;
         const payload = await res.json();
         const employees = payload.data || payload;
-        const found = (employees || []).find(
-          (e: any) => String(e._id) === String(mgrId)
-        );
-        if (mounted)
-          setManagerName(
-            found ? found.name || found.username || found.email : null
+        if (mgrId) {
+          const found = (employees || []).find(
+            (e: any) => String(e._id) === String(mgrId)
           );
+          if (mounted)
+            setManagerName(
+              found ? found.name || found.username || found.email : null
+            );
+        }
+        if (bookedById) {
+          const found2 = (employees || []).find(
+            (e: any) => String(e._id) === String(bookedById)
+          );
+          if (mounted)
+            setBookedByName(
+              found2 ? found2.name || found2.username || found2.email : null
+            );
+        }
       } catch (err) {
         // ignore
       }
@@ -214,6 +229,17 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
           <Box display="flex" alignItems="center" gap={1}>
             <AssignmentInd color="action" fontSize="small" />
             <Typography fontSize={15}>
+              <b>Booked By:</b>{" "}
+              {((booking as any).cabBookedBy &&
+                (booking as any).cabBookedBy.name) ||
+                bookedByName ||
+                (booking as any).cabBookedBy ||
+                "-"}
+            </Typography>
+          </Box>
+          <Box display="flex" alignItems="center" gap={1}>
+            <AssignmentInd color="action" fontSize="small" />
+            <Typography fontSize={15}>
               <b>Driver Name:</b>{" "}
               {(booking as any).driverName ||
                 (booking as any).driverDetails?.username ||
@@ -230,6 +256,16 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
             <Info color="action" fontSize="small" />
             <Typography fontSize={15}>
               <b>DL Number (Driver):</b> {(booking as any).dlNumber || "-"}
+            </Typography>
+          </Box>
+          <Box display="flex" alignItems="center" gap={1}>
+            <MonetizationOn color="action" fontSize="small" />
+            <Typography fontSize={15}>
+              <b>Fare:</b>{" "}
+              {typeof (booking as any).fare !== "undefined" &&
+              (booking as any).fare !== null
+                ? `₹ ${booking.fare}`
+                : "-"}
             </Typography>
           </Box>
           {/* Vehicle, Driver, Current Location and Est. Arrival intentionally removed */}

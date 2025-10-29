@@ -22,7 +22,13 @@ async function patchBooking(req, res) {
       .json({ success: false, message: "Missing booking id" });
 
   try {
-    console.log("[cab-booking PATCH] id", id, "body", req.body);
+    console.log(
+      "[cab-booking PATCH] id",
+      id,
+      "body keys",
+      Object.keys(req.body)
+    );
+    console.log("[cab-booking PATCH] full body", req.body);
 
     const booking = await CabBooking.findById(id);
     if (!booking)
@@ -51,6 +57,16 @@ async function patchBooking(req, res) {
       update.aadharNumber = req.body.aadharNumber;
     if (typeof req.body.dlNumber === "string")
       update.dlNumber = req.body.dlNumber;
+    if (req.body.odometerStartImageUrl) {
+      update.odometerStartImageUrl = String(req.body.odometerStartImageUrl);
+    }
+    if (req.body.odometerEndImageUrl) {
+      update.odometerEndImageUrl = String(req.body.odometerEndImageUrl);
+    }
+    if (req.body.fare !== undefined && req.body.fare !== null) {
+      const coerced = Number(req.body.fare);
+      if (!Number.isNaN(coerced)) update.fare = coerced;
+    }
     if (req.body.driver) update.driver = req.body.driver; // User ref
     if (req.body.vehicle) update.vehicle = req.body.vehicle; // Vehicle ref
     if (req.body.managerId) update.managerId = req.body.managerId;
@@ -62,16 +78,19 @@ async function patchBooking(req, res) {
       const rawFlag =
         req.isSystemAdmin ||
         (res.locals && res.locals.isSystemAdmin) ||
-        (req.role && (req.role.isSystemAdmin || req.role.isSystemAdmin === "true"));
-      const roleBased = req.role ? isSystemAdminAllowed(req.role, "write", "cab-booking") : false;
+        (req.role &&
+          (req.role.isSystemAdmin || req.role.isSystemAdmin === "true"));
+      const roleBased = req.role
+        ? isSystemAdminAllowed(req.role, "write", "cab-booking")
+        : false;
 
       // Debug: log computed flags to help diagnose permission failures
       console.log("[cab-booking PATCH] admin-check", {
         rawFlag,
         roleBased,
-  roleId: req.role ? (req.role._id || req.role.id) : null,
-  roleName: req.role ? req.role.name : null,
-  roleIsSystemAdminFlag: req.role ? req.role.isSystemAdmin : null,
+        roleId: req.role ? req.role._id || req.role.id : null,
+        roleName: req.role ? req.role.name : null,
+        roleIsSystemAdminFlag: req.role ? req.role.isSystemAdmin : null,
       });
 
       if (!rawFlag && !roleBased) {
@@ -83,10 +102,18 @@ async function patchBooking(req, res) {
       }
     }
 
+    console.log("[cab-booking PATCH] computed update:", update);
     const updated = await CabBooking.findByIdAndUpdate(id, update, {
       new: true,
     });
     console.log("[cab-booking PATCH] updated", updated && updated._id);
+    if (updated) {
+      console.log("[cab-booking PATCH] updated fields snapshot:", {
+        odometerStartImageUrl: updated.odometerStartImageUrl,
+        odometerEndImageUrl: updated.odometerEndImageUrl,
+        fare: updated.fare,
+      });
+    }
 
     // === STATUS EMAIL (employee) ===
     const newStatus = updated?.status;
