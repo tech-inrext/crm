@@ -26,8 +26,10 @@
     "cookie": "^1.0.2",
     "date-fns": "^4.1.0",
     "formik": "^2.4.6",
+    "framer-motion": "^12.23.24",
     "ioredis": "^5.6.1",
     "jsonwebtoken": "^9.0.2",
+    "leaflet": "^1.9.4",
     "mongodb": "^6.16.0",
     "mongoose": "^8.15.1",
     "multer": "^2.0.1",
@@ -38,6 +40,9 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
+    "react-leaflet": "^5.0.0",
+    "slugify": "^1.6.6",
+    "sonner": "^2.0.7",
     "use-sync-external-store": "^1.5.0",
     "uuid": "^11.1.0",
     "validator": "^13.15.15",
@@ -55,5 +60,6 @@
     "eslint-config-next": "15.3.2",
     "tailwindcss": "^4",
     "typescript": "^5"
-  }
+  },
+  "packageManager": "yarn@4.10.2+sha512.0b0e54ad5381f0a35184957bd3ea44e37f5a4fb1960b903b0fb9a3c7c2c009190455c41ef2a1977b1dbd3b72c5f152da696e9c52e2bc78a011b6adea8ee73ba3"
 }

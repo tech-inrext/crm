@@ -34,6 +34,7 @@ const modules = [
   "Vendor",
   "Team",
   "MOU",
+  "Property",
   "Branch",
 ];
 
@@ -263,3 +264,4 @@ const Roles: React.FC = () => {
 };
 
 export default Roles;
+

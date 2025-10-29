@@ -74,6 +74,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <HandshakeIcon sx={{ color: "#4CAF50" }} />,
   },
   {
+    label: "Properties",
+    href: "/dashboard/properties",
+    module: "property", 
+    icon: <AppIcon src="/properties.png" alt="Properties" />,
+  },
+  { 
     label: "Teams",
     href: "/dashboard/teams",
     module: "team",
@@ -95,15 +101,30 @@ export default function DashboardLayout({
   const { getPermissions, user, pendingRoleSelection } = useAuth();
 
   // Compute accessible sidebar links
+  // const sidebarLinks = useMemo(() => {
+  //   return user && !pendingRoleSelection
+  //     ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
+  //         if (!link.module) return true;
+  //         const { hasReadAccess } = getPermissions(link.module);
+  //         return hasReadAccess;
+  //       })
+  //     : [];
+  // }, [user, pendingRoleSelection, getPermissions]);
+
   const sidebarLinks = useMemo(() => {
-    return user && !pendingRoleSelection
-      ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
-          if (!link.module) return true;
-          const { hasReadAccess } = getPermissions(link.module);
-          return hasReadAccess;
-        })
-      : [];
-  }, [user, pendingRoleSelection, getPermissions]);
+  const filteredLinks = user && !pendingRoleSelection
+    ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
+        if (!link.module) return true;
+        // ✅ Property always allow 
+        if (link.module === "property") return true;
+        
+        const { hasReadAccess } = getPermissions(link.module);
+        return hasReadAccess;
+      })
+    : [];
+
+  return filteredLinks;
+}, [user, pendingRoleSelection, getPermissions]);
 
   // Redirect to first accessible module after login or role switch
   useEffect(() => {
@@ -136,7 +157,7 @@ export default function DashboardLayout({
               open={true}
               onClose={() => {}}
               links={sidebarLinks}
-              selected={selectedLink?.href}
+              // selected={selectedLink?.href}
             />
           )}
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -162,7 +183,7 @@ export default function DashboardLayout({
               open={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
               links={sidebarLinks}
-              selected={selectedLink?.href}
+              // selected={selectedLink?.href}
             />
           )}
         </Box>
@@ -170,3 +191,4 @@ export default function DashboardLayout({
     </>
   );
 }
+

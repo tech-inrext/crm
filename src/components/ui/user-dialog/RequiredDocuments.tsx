@@ -89,13 +89,13 @@ const UploadBox: React.FC<{
                 const f = e.target.files?.[0] || null;
                 if (!f) return;
 
-                const maxBytes = 1 * 1024 * 1024; // 1MB limit
-
+                const maxBytes = 50 * 1024 * 1024; // 50 MB
+                
                 // 🔴 File size validation
                 if (f.size > maxBytes) {
                   form?.setFieldValue(fieldName, "");
-                  form?.setFieldError(fieldName, "File must be less than 1 MB");
-                  setLocalError("File must be less than 1 MB");
+                  form?.setFieldError(fieldName, "File must be less than 50 MB");
+                  setLocalError("File must be less than 50 MB");
                   return;
                 }
 

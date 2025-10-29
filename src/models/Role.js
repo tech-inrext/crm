@@ -10,6 +10,7 @@ const modules = [
   "cab-booking",
   "cab-vendor",
   "vendor",
+  "property",
   "branch",
 ];
 
