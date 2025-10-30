@@ -4956,7 +4956,6 @@ __metadata:
     tailwindcss: "npm:^4"
     typescript: "npm:^5"
     use-sync-external-store: "npm:^1.5.0"
-    uuid: "npm:^11.1.0"
     validator: "npm:^13.15.15"
     xlsx: "npm:^0.18.5"
     yup: "npm:^1.6.1"

@@ -8,6 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import HandshakeIcon from "@mui/icons-material/Handshake";
+import { RealEstateAgent } from "@mui/icons-material";
 
 const AppIcon = ({
   src,
@@ -76,7 +77,7 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "Properties",
     href: "/dashboard/properties",
     module: "property", 
-    icon: <AppIcon src="/properties.png" alt="Properties" />,
+    icon: <RealEstateAgent sx={{ color: "#3785FF" }} />
   },
 ];
 

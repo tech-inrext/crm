@@ -4,6 +4,7 @@ import Property from "@/models/Property";
 import * as cookie from "cookie";
 import { userAuth } from "@/middlewares/auth";
 
+
 const mapFileType = (fileType) => {
   if (!fileType) return '2d';
   
