@@ -320,7 +320,7 @@ propertySchema.statics.findByIdOrSlug = function(identifier) {
 };
 
 // Index for better query performance
-propertySchema.index({ slug: 1 });
+// propertySchema.index({ slug: 1 });
 propertySchema.index({ projectName: 1, builderName: 1, location: 1 });
 propertySchema.index({ parentId: 1 });
 propertySchema.index({ propertyType: 1 });
