@@ -11,7 +11,6 @@ const modules = [
   "cab-vendor",
   "vendor",
   "property",
-  "branch",
 ];
 
 const roleSchema = new mongoose.Schema(
