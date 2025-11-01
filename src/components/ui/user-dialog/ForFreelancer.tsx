@@ -57,7 +57,7 @@ const ForFreelancer: React.FC = () => {
   );
 
   const slabOptions = useMemo(
-    () => ["", "100", "90", "80", "70", "60", "50"],
+    () => ["", "100", "95", "90", "80", "70", "60", "50"],
     []
   );
 
@@ -127,15 +127,17 @@ const ForFreelancer: React.FC = () => {
                       ? "Select a slab"
                       : `${opt}%` +
                         (opt === "100"
-                          ? " (VP)"
+                          ? " President"
+                          : opt === "95"
+                          ? " V.P."
                           : opt === "90"
-                          ? " (AVP)"
+                          ? " A.V.P. (Core Member)"
                           : opt === "80"
-                          ? " (General Manager Sales)"
+                          ? " General Manager"
                           : opt === "70"
-                          ? " (Sr. Manager Sales)"
+                          ? " Senior Manager"
                           : opt === "60"
-                          ? " (Manager Sales)"
+                          ? " Manager"
                           : " (Sales Executive)")}
                   </MenuItem>
                 ))}
