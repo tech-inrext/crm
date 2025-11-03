@@ -10,13 +10,25 @@ import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { Field, FieldProps } from "formik";
 
+// const statusOptions = [
+//   { value: "New", label: "New" },
+//   { value: "Contacted", label: "Contacted" },
+//   { value: "Site Visit", label: "Site Visit" },
+//   { value: "Closed", label: "Closed" },
+//   { value: "Dropped", label: "Dropped" },
+// ];
 const statusOptions = [
-  { value: "New", label: "New" },
-  { value: "Contacted", label: "Contacted" },
-  { value: "Site Visit", label: "Site Visit" },
-  { value: "Closed", label: "Closed" },
-  { value: "Dropped", label: "Dropped" },
+  { value: "new", label: "New" },
+  { value: "follow-up", label: "Follow-Up" },
+  { value: "call back", label: "Call Back" },
+  { value: "not connected", label: "Not Connected" },
+  { value: "details shared", label: "Details Shared" },
+  { value: "site visit done", label: "Site Visit Done" },
+  { value: "closed", label: "Closed" },
+  { value: "not interested", label: "Not Interested" },
+  // { value: "", label: "No Status" }, // optional placeholder for empty
 ];
+
 
 const sourceOptions = [
   { value: "Web Form", label: "Web Form" },
