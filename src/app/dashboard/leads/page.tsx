@@ -89,6 +89,7 @@ const Leads: React.FC = () => {
     total,
     loadLeads,
     saveLead,
+    updateLeadStatus,
     status,
     setStatus,
   } = useLeads();
@@ -235,6 +236,7 @@ const Leads: React.FC = () => {
                   setOpen(true);
                 }}
                 onDelete={() => {}}
+                onStatusChange={updateLeadStatus}
               />
             ))}
           </Box>
@@ -287,6 +289,7 @@ const Leads: React.FC = () => {
                       setOpen(true);
                     }}
                     onDelete={() => {}}
+                    onStatusChange={updateLeadStatus}
                   />
                 ))}
               </TableBody>

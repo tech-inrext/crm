@@ -4,10 +4,13 @@ import { Chip } from "@mui/material";
 // Constants
 const STATUS_COLORS = {
   new: "#2196F3",
-  contacted: "#FF9800",
-  "site visit": "#9C27B0",
+  "not interested": "#F44336",
+  "not connected": "#FF5722",
+  "follow-up": "#FF9800",
+  "call back": "#FFC107",
+  "details shared": "#9C27B0",
+  "site visit done": "#673AB7",
   closed: "#4CAF50",
-  dropped: "#F44336",
   default: "#757575",
 } as const;
 

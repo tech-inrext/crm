@@ -1,6 +1,7 @@
 import React from "react";
 import { TableCell, TableRow, Chip } from "@mui/material";
 import type { LeadDisplay as Lead } from "../../types/lead";
+import StatusDropdown from "./StatusDropdown";
 
 interface LeadsTableRowProps {
   row: Lead;
@@ -9,11 +10,16 @@ interface LeadsTableRowProps {
     dataKey?: string;
     component?: (
       row: Lead,
-      handlers: { onEdit: (lead: Lead) => void; onDelete: (lead: Lead) => void }
+      handlers: {
+        onEdit: (lead: Lead) => void;
+        onDelete: (lead: Lead) => void;
+        onStatusChange: (leadId: string, newStatus: string) => Promise<void>;
+      }
     ) => React.ReactNode;
   }>;
   onEdit: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
+  onStatusChange: (leadId: string, newStatus: string) => Promise<void>;
 }
 
 const LeadsTableRow: React.FC<LeadsTableRowProps> = ({
@@ -21,20 +27,27 @@ const LeadsTableRow: React.FC<LeadsTableRowProps> = ({
   header,
   onEdit,
   onDelete,
+  onStatusChange,
 }) => {
   // Status color mapping
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
       case "new":
         return "#2196F3";
-      case "contacted":
+      case "not interested":
+        return "#F44336";
+      case "not connected":
+        return "#FF5722";
+      case "follow-up":
         return "#FF9800";
-      case "site visit":
+      case "call back":
+        return "#FFC107";
+      case "details shared":
         return "#9C27B0";
+      case "site visit done":
+        return "#673AB7";
       case "closed":
         return "#4CAF50";
-      case "dropped":
-        return "#F44336";
       default:
         return "#757575";
     }
@@ -42,24 +55,20 @@ const LeadsTableRow: React.FC<LeadsTableRowProps> = ({
 
   const renderCellContent = (head: (typeof header)[0], row: Lead) => {
     if (head.component) {
-      return head.component(row, { onEdit, onDelete });
+      return head.component(row, { onEdit, onDelete, onStatusChange });
     }
 
     const value = row[head.dataKey as keyof Lead];
 
-    // Special rendering for status
+    // Special rendering for status with dropdown
     if (head.dataKey === "status") {
       return (
-        <Chip
-          label={value}
+        <StatusDropdown
+          leadId={row._id || row.id || row.leadId || ""}
+          currentStatus={value as string}
+          onStatusChange={onStatusChange}
+          variant="chip"
           size="small"
-          sx={{
-            backgroundColor: getStatusColor(value as string),
-            color: "white",
-            fontWeight: 600,
-            fontSize: "0.75rem",
-            minWidth: "80px",
-          }}
         />
       );
     }

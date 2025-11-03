@@ -12,21 +12,23 @@ import { Field, FieldProps } from "formik";
 
 const statusOptions = [
   { value: "New", label: "New" },
-  { value: "Contacted", label: "Contacted" },
-  { value: "Site Visit", label: "Site Visit" },
+  { value: "Not Interested", label: "Not Interested" },
+  { value: "Not Connected", label: "Not Connected" },
+  { value: "Follow-up", label: "Follow-up" },
+  { value: "Call Back", label: "Call Back" },
+  { value: "Details Shared", label: "Details Shared" },
+  { value: "Site Visit Done", label: "Site Visit Done" },
   { value: "Closed", label: "Closed" },
-  { value: "Dropped", label: "Dropped" },
 ];
 
 const sourceOptions = [
-  { value: "Web Form", label: "Web Form" },
-  { value: "Phone Call", label: "Phone Call" },
-  { value: "Email", label: "Email" },
-  { value: "Walk-in", label: "Walk-in" },
+  { value: "Website", label: "Website" },
   { value: "Referral", label: "Referral" },
+  { value: "Raw Data", label: "Raw Data" },
   { value: "Social Media", label: "Social Media" },
-  { value: "Advertisement", label: "Advertisement" },
-  { value: "Other", label: "Other" },
+  { value: "Google", label: "Google" },
+  { value: "Activity", label: "Activity" },
+  { value: "Direct Call", label: "Direct Call" },
 ];
 
 interface LeadManagementProps {
