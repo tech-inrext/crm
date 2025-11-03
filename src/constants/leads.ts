@@ -20,13 +20,13 @@ export const COMMON_STYLES = LEADS_COMMON_STYLES;
 
 // Lead status values used across the leads feature
 export const LEAD_STATUSES = [
-  "",
-  "New",
-  "Not Interested",
-  "Not Connected",
-  "Follow-up",
-  "Call Back",
-  "Details Shared",
-  "Site Visit Done",
-  "Closed",
+	"",
+	"new", 
+	"follow-up", 
+	"call back", 
+	"not connected", 
+	"details shared", 
+	"site visit done", 
+	"closed", 
+	"not interested",
 ];

@@ -3,9 +3,12 @@ import { Box, TextField, Typography, MenuItem } from "@mui/material";
 import { Field, FieldProps } from "formik";
 
 const propertyTypeOptions = [
-  { value: "Rent", label: "Rent" },
-  { value: "Buy", label: "Buy" },
-  { value: "Sell", label: "Sell" },
+  // { value: "Rent", label: "Rent" },
+  // { value: "Buy", label: "Buy" },
+  // { value: "Sell", label: "Sell" },
+  { value: "residential", label: "Residential" },
+  { value: "commercial", label: "Commercial" },
+  { value: "plot", label: "Plot" },
 ];
 
 const budgetRangeOptions = [

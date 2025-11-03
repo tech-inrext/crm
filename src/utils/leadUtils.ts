@@ -110,7 +110,7 @@ export const transformAPILeadToForm = (apiLead: Lead): LeadFormData => {
     propertyType: apiLead.propertyType || '',
     location: apiLead.location || '',
     budgetRange: apiLead.budgetRange || '',
-    status: apiLead.status || 'New',
+    status: apiLead.status || 'new',
     source: apiLead.source || '',
     assignedTo: apiLead.assignedTo ? String(apiLead.assignedTo) : '',
     nextFollowUp: apiLead.nextFollowUp ? new Date(apiLead.nextFollowUp).toISOString().split('T')[0] : '',
@@ -160,7 +160,7 @@ export const transformFormToAPI = (formData: LeadFormData, isEdit = false): Part
 // Calculate lead statistics
 export const calculateLeadStats = (leads: Lead[]) => {
   const total = leads.length;
-  const newLeads = leads.filter(l => l.status === 'New').length;
+  const newLeads = leads.filter(l => l.status === 'new').length;
   const closed = leads.filter(l => l.status === 'Closed' || l.status === 'Dropped').length;
   // Conversion: closed/total (if you want only closed deals)
   const conversion = total > 0 ? Math.round((closed / total) * 100) : 0;
@@ -184,7 +184,7 @@ export const getDefaultLeadFormData = (): LeadFormData => {
     propertyType: '',
     location: '',
     budgetRange: '',
-    status: 'New',
+    status: 'new',
     source: '',
     assignedTo: '',
     nextFollowUp: '',

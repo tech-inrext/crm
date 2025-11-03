@@ -75,7 +75,7 @@ async function bulkUploadLeads(job) {
       propertyType: row.propertyType || "",
       location: row.location || "",
       budgetRange: row.budgetRange || "",
-      status: row.status || "New",
+      status: row.status || "new",
       source: row.source || "",
       assignedTo: row.assignedTo || null,
       followUpNotes: [],
