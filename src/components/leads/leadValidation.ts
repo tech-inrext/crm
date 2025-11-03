@@ -14,7 +14,8 @@ export const leadValidationSchema = Yup.object({
     .trim()
     .max(100, "Email must be less than 100 characters"),
   propertyType: Yup.string().oneOf(
-    ["Rent", "Buy", "Sell", ""],
+    // ["Rent", "Buy", "Sell", ""],
+    ["residential", "commercial", "plot", ""],
     "Invalid property type"
   ),
   location: Yup.string()
@@ -36,7 +37,8 @@ export const leadValidationSchema = Yup.object({
     )
     .trim(),
   status: Yup.string().oneOf(
-    ["New", "Contacted", "Site Visit", "Closed", "Dropped", ""],
+    // ["New", "Contacted", "Site Visit", "Closed", "Dropped", ""],
+    ["new", "follow-up", "call back", "not connected", "details shared", "site visit done", "closed", "not interested", ""],
     "Invalid status"
   ),
   source: Yup.string()

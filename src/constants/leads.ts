@@ -18,9 +18,17 @@ export const COMMON_STYLES = LEADS_COMMON_STYLES;
 // Lead status values used across the leads feature
 export const LEAD_STATUSES = [
 	"",
-	"New",
-	"Contacted",
-	"Site Visit",
-	"Closed",
-	"Dropped",
+	// "New",
+	// "Contacted",
+	// "Site Visit",
+	// "Closed",
+	// "Dropped",
+	"new", 
+	"follow-up", 
+	"call back", 
+	"not connected", 
+	"details shared", 
+	"site visit done", 
+	"closed", 
+	"not interested",
 ];

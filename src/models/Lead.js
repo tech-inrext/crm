@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import validator from "validator";
 
-const range = [
+const budgetRanges = [
   "<1 Lakh",
   "1 Lakh to 10 Lakh",
   "10 Lakh to 20 Lakh",
@@ -12,9 +12,11 @@ const range = [
   "",
 ];
 
-const type = ["Rent", "Buy", "Sell", ""];
+// const type = ["Rent", "Buy", "Sell", ""];
+const propertyTypes = ["residential", "commercial", "plot", ""];
 
-const status = ["New", "Contacted", "Site Visit", "Closed", "Dropped", ""];
+// const status = ["New", "Contacted", "Site Visit", "Closed", "Dropped", ""];
+const leadStatuses = ["new", "follow-up", "call back", "not connected", "details shared", "site visit done", "closed", "not interested", ""];
 
 const leadSchema = new mongoose.Schema(
   {
@@ -54,7 +56,7 @@ const leadSchema = new mongoose.Schema(
     },
     propertyType: {
       type: String,
-      enum: type,
+      enum: propertyTypes,
     },
     location: {
       type: String,
@@ -62,13 +64,13 @@ const leadSchema = new mongoose.Schema(
     },
     budgetRange: {
       type: String,
-      enum: range,
+      enum: budgetRanges,
       trim: true,
     },
     status: {
       type: String,
-      enum: status,
-      default: "New",
+      enum: leadStatuses,
+      default: "new",
     },
     source: {
       type: String,
@@ -88,3 +90,5 @@ const leadSchema = new mongoose.Schema(
 );
 
 export default mongoose.models.Lead || mongoose.model("Lead", leadSchema);
+
+
