@@ -6,17 +6,10 @@ import {
   MenuItem,
   Autocomplete,
 } from "@mui/material";
-import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { Field, FieldProps } from "formik";
 
-// const statusOptions = [
-//   { value: "New", label: "New" },
-//   { value: "Contacted", label: "Contacted" },
-//   { value: "Site Visit", label: "Site Visit" },
-//   { value: "Closed", label: "Closed" },
-//   { value: "Dropped", label: "Dropped" },
-// ];
 const statusOptions = [
   { value: "new", label: "New" },
   { value: "follow-up", label: "Follow-Up" },
@@ -28,7 +21,6 @@ const statusOptions = [
   { value: "not interested", label: "Not Interested" },
   // { value: "", label: "No Status" }, // optional placeholder for empty
 ];
-
 
 const sourceOptions = [
   { value: "Website", label: "Website" },
@@ -89,6 +81,7 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
           <Autocomplete
             options={users}
             getOptionLabel={(option) => option.name || ""}
+            getOptionKey={(option) => option._id || option.id}
             value={users.find((user) => user._id === values.assignedTo) || null}
             onChange={(_, newValue) => {
               setFieldValue("assignedTo", newValue ? newValue._id : "");
@@ -107,7 +100,11 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
             renderOption={(props, option) => {
               const { key, ...rest } = props;
               return (
-                <Box component="li" key={key} {...rest}>
+                <Box
+                  component="li"
+                  key={option._id || option.id || key}
+                  {...rest}
+                >
                   {option.name}
                 </Box>
               );
@@ -162,23 +159,21 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
       <Field name="nextFollowUp">
         {({ field, meta }: FieldProps) => (
           <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DatePicker
+            <DateTimePicker
               label="Next Follow-up"
               value={values.nextFollowUp ? new Date(values.nextFollowUp) : null}
               onChange={(date) => {
-                setFieldValue(
-                  "nextFollowUp",
-                  date ? date.toISOString().split("T")[0] : ""
-                );
+                setFieldValue("nextFollowUp", date ? date.toISOString() : "");
               }}
               slotProps={{
                 textField: {
                   error: meta.touched && !!meta.error,
                   helperText: meta.touched && meta.error,
-                  placeholder: "dd/mm/yyyy",
+                  placeholder: "dd/mm/yyyy hh:mm",
                   sx: { bgcolor: "#fff", borderRadius: 1, flex: 1, height: 56 },
                 },
               }}
+              format="dd/MM/yyyy HH:mm"
             />
           </LocalizationProvider>
         )}

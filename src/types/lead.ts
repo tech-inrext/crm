@@ -12,9 +12,14 @@ export interface Lead {
   _id?: string;
   id?: string;
   leadId?: string; // For API compatibility
-  name: string;
-  email: string;
+  fullName?: string;
+  name?: string; // Legacy field
+  email?: string;
   phone: string;
+  propertyName?: string;
+  propertyType?: string;
+  location?: string;
+  budgetRange?: string;
   contact?: string; // Contact person name
   company?: string;
   status: string;
@@ -22,6 +27,9 @@ export interface Lead {
   assignedTo?: string;
   value?: number;
   notes?: string;
+  followUpNotes?: string[];
+  nextFollowUp?: string | Date;
+  uploadedBy?: string;
   createdAt?: string;
   updatedAt?: string;
 }

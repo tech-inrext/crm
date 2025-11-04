@@ -10,7 +10,14 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
-import { Email, Phone, TrendingUp, Edit, Delete } from "@mui/icons-material";
+import {
+  Email,
+  Phone,
+  TrendingUp,
+  Edit,
+  Delete,
+  Schedule,
+} from "@mui/icons-material";
 import type { LeadDisplay as Lead } from "../../types/lead";
 import StatusChip, { getStatusColor } from "./StatusChip";
 import StatusDropdown from "./StatusDropdown";
@@ -147,6 +154,25 @@ const LeadCard = memo(
                   {lead.budgetRange}
                 </Typography>
               </Box>
+              {lead.nextFollowUp && (
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                  <Schedule sx={{ color: "text.secondary", fontSize: 18 }} />
+                  <Typography
+                    variant="body2"
+                    color="text.primary"
+                    sx={{ fontSize: "0.875rem" }}
+                  >
+                    {(() => {
+                      const date = new Date(lead.nextFollowUp);
+                      if (isNaN(date.getTime())) return "Invalid date";
+                      return `${date.toLocaleDateString()} ${date.toLocaleTimeString(
+                        [],
+                        { hour: "2-digit", minute: "2-digit" }
+                      )}`;
+                    })()}
+                  </Typography>
+                </Box>
+              )}
             </Stack>
 
             <Box

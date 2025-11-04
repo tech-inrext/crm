@@ -73,6 +73,20 @@ const LeadsTableRow: React.FC<LeadsTableRowProps> = ({
       );
     }
 
+    // Special rendering for nextFollowUp date
+    if (head.dataKey === "nextFollowUp") {
+      if (!value) return <span style={{ color: "#9e9e9e" }}>Not set</span>;
+      const date = new Date(value as string);
+      if (isNaN(date.getTime()))
+        return <span style={{ color: "#f44336" }}>Invalid date</span>;
+      return (
+        <span style={{ fontSize: "0.875rem", color: "#424242" }}>
+          {date.toLocaleDateString()}{" "}
+          {date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+        </span>
+      );
+    }
+
     // Special rendering for value/budget
     if (head.dataKey === "value") {
       return <span style={{ fontWeight: 600, color: "#2e7d32" }}>{value}</span>;
