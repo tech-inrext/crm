@@ -163,7 +163,7 @@ const bookingLoginSchema = new mongoose.Schema(
         validator: function(v) {
           return ["50% Sales Executive", "60% Manager", "70% Senior Manager", "80% General Manager", "90% A.V.P (Core Member)", "95% V.P", "100% President"].includes(v);
         },
-        message: "Slab percentage must be one of: 50% Sales Executive, 60% Manager, 70% Senior Manager, 80% General Manager, 90% A.V.P (Core Member), 95% V.P, 100% President"
+        message: "Slab percentage must be one of: 50% Sales Executive, 60% Manager, 70% Senior Manager, 80% General Manager, 90% A.V.P (Core Member), 95% V.P, 100% President."
       }
     },
     totalDiscountFromComm: {
