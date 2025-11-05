@@ -13,7 +13,17 @@ const range = [
 
 const type = ["Rent", "Buy", "Sell", ""];
 
-const status = ["New", "Contacted", "Site Visit", "Closed", "Dropped", ""];
+const status = [
+  "new",
+  "follow-up",
+  "call back",
+  "not connected",
+  "details shared",
+  "site visit done",
+  "closed",
+  "not interested",
+  "",
+];
 const schema = {
   leadId: {
     type: String,
@@ -65,7 +75,7 @@ const schema = {
   status: {
     type: String,
     enum: status,
-    default: "New",
+    default: "new",
   },
   source: {
     type: String,

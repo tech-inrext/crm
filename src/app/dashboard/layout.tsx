@@ -8,7 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import HandshakeIcon from "@mui/icons-material/Handshake";
-import { RealEstateAgent } from "@mui/icons-material";
+import { RealEstateAgent, Group as GroupIcon } from "@mui/icons-material";
 
 const AppIcon = ({
   src,
@@ -74,10 +74,16 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <HandshakeIcon sx={{ color: "#4CAF50" }} />,
   },
   {
+    label: "Teams",
+    href: "/dashboard/teams",
+    module: "team",
+    icon: <GroupIcon sx={{ color: "#3f51b5" }} />,
+  },
+  {
     label: "Properties",
     href: "/dashboard/properties",
-    module: "property", 
-    icon: <RealEstateAgent sx={{ color: "#3785FF" }} />
+    module: "property",
+    icon: <RealEstateAgent sx={{ color: "#3785FF" }} />,
   },
 ];
 
@@ -106,19 +112,20 @@ export default function DashboardLayout({
   // }, [user, pendingRoleSelection, getPermissions]);
 
   const sidebarLinks = useMemo(() => {
-  const filteredLinks = user && !pendingRoleSelection
-    ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
-        if (!link.module) return true;
-        // ✅ Property always allow 
-        if (link.module === "property") return true;
-        
-        const { hasReadAccess } = getPermissions(link.module);
-        return hasReadAccess;
-      })
-    : [];
+    const filteredLinks =
+      user && !pendingRoleSelection
+        ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
+            if (!link.module) return true;
+            // ✅ Property always allow
+            if (link.module === "property") return true;
 
-  return filteredLinks;
-}, [user, pendingRoleSelection, getPermissions]);
+            const { hasReadAccess } = getPermissions(link.module);
+            return hasReadAccess;
+          })
+        : [];
+
+    return filteredLinks;
+  }, [user, pendingRoleSelection, getPermissions]);
 
   // Redirect to first accessible module after login or role switch
   useEffect(() => {
@@ -185,4 +192,3 @@ export default function DashboardLayout({
     </>
   );
 }
-
