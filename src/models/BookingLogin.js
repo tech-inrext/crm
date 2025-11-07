@@ -62,92 +62,101 @@ const bookingLoginSchema = new mongoose.Schema(
       trim: true,
     },
     area: {
-      type: Number,
+      type: String,
       required: [true, "Area is required"],
-      min: [0, "Area cannot be negative"],
+      trim: true,
     },
     floor: {
       type: String,
-      required: [true, "Floor is required"],
       trim: true,
     },
-    plcPercentage: {
-      type: Number,
-      min: [0, "PLC percentage cannot be negative"],
+    plcType: {
+      type: String,
+      enum: ["percentage", "per_sq_ft", "per_sq_yard", "unit"],
+      default: "percentage"
     },
-    plcAmount: {
-      type: Number,
-      min: [0, "PLC amount cannot be negative"],
+    plcValue: {
+      type: String,
+      trim: true,
     },
     otherCharges1: {
-      type: Number,
-      min: [0, "Other charges cannot be negative"],
-    },
-    otherCharges2: {
-      type: Number,
-      min: [0, "Other charges cannot be negative"],
+      type: String,
+      trim: true,
     },
     paymentPlan: {
       type: String,
       trim: true,
     },
     projectRate: {
-      type: Number,
+      type: String,
       required: [true, "Project rate is required"],
-      min: [0, "Project rate cannot be negative"],
+      trim: true,
     },
     companyDiscount: {
-      type: Number,
-      min: [0, "Company discount cannot be negative"],
-    },
-    actualLoggedInRate: {
-      type: Number,
-      min: [0, "Rate cannot be negative"],
-    },
-    salesPersonDiscountBSP: {
-      type: Number,
-      min: [0, "Discount cannot be negative"],
-    },
-    salesPersonDiscountPLC: {
-      type: Number,
-      min: [0, "Discount cannot be negative"],
-    },
-    salesPersonDiscountClub: {
-      type: Number,
-      min: [0, "Discount cannot be negative"],
-    },
-    salesPersonDiscountOthers: {
-      type: Number,
-      min: [0, "Discount cannot be negative"],
-    },
-    soldPriceBSP: {
-      type: Number,
-      min: [0, "Price cannot be negative"],
-    },
-    soldPricePLC: {
-      type: Number,
-      min: [0, "Price cannot be negative"],
-    },
-    soldPriceClub: {
-      type: Number,
-      min: [0, "Price cannot be negative"],
-    },
-    soldPriceOthers: {
-      type: Number,
-      min: [0, "Price cannot be negative"],
-    },
-    netSoldCopAmount: {
-      type: Number,
-      min: [0, "Amount cannot be negative"],
-    },
-    bookingAmount: {
-      type: Number,
-      min: [0, "Booking amount cannot be negative"],
-    },
-    chequeTransactionDetails: {
       type: String,
       trim: true,
     },
+    companyLoggedInRate: {
+      type: String,
+      trim: true,
+    },
+    salesPersonDiscountBSP: {
+      type: String,
+      trim: true,
+    },
+    salesPersonDiscountPLC: {
+      type: String,
+      trim: true,
+    },
+    salesPersonDiscountClub: {
+      type: String,
+      trim: true,
+    },
+    salesPersonDiscountOthers: {
+      type: String,
+      trim: true,
+    },
+    soldPriceBSP: {
+      type: String,
+      trim: true,
+    },
+    soldPricePLC: {
+      type: String,
+      trim: true,
+    },
+    soldPriceClub: {
+      type: String,
+      trim: true,
+    },
+    soldPriceOthers: {
+      type: String,
+      trim: true,
+    },
+    netSoldCopAmount: {
+      type: String,
+      trim: true,
+    },
+    bookingAmount: {
+      type: String,
+      trim: true,
+    },
+    paymentMode: {
+      type: String,
+      enum: ["cheque", "online", "cash"],
+      default: "cheque"
+    },
+    chequeNumber: {
+    type: String,
+    trim: true,
+  },
+  transactionId: {
+    type: String,
+    trim: true,
+  },
+  cashReceiptNumber: {
+    type: String,
+    trim: true,
+  },
     transactionDate: {
       type: Date,
     },
@@ -159,20 +168,14 @@ const bookingLoginSchema = new mongoose.Schema(
       type: String,
       enum: ["50% Sales Executive", "60% Manager", "70% Senior Manager", "80% General Manager", "90% A.V.P (Core Member)", "95% V.P", "100% President"],
       default: "50% Sales Executive",
-      validate: {
-        validator: function(v) {
-          return ["50% Sales Executive", "60% Manager", "70% Senior Manager", "80% General Manager", "90% A.V.P (Core Member)", "95% V.P", "100% President"].includes(v);
-        },
-        message: "Slab percentage must be one of: 50% Sales Executive, 60% Manager, 70% Senior Manager, 80% General Manager, 90% A.V.P (Core Member), 95% V.P, 100% President."
-      }
     },
     totalDiscountFromComm: {
-      type: Number,
-      min: [0, "Discount cannot be negative"],
+      type: String,
+      trim: true,
     },
     netApplicableComm: {
-      type: Number,
-      min: [0, "Commission cannot be negative"],
+      type: String,
+      trim: true,
     },
     salesPersonName: {
       type: String,
@@ -214,30 +217,60 @@ const bookingLoginSchema = new mongoose.Schema(
   }
 );
 
+// Method to calculate netSoldCopAmount
+bookingLoginSchema.methods.calculateNetSoldCopAmount = function() {
+  const area = parseFloat(this.area) || 0;
+  const projectRate = parseFloat(this.projectRate) || 0;
+  const otherCharges1 = parseFloat(this.otherCharges1) || 0;
+  const companyDiscount = parseFloat(this.companyDiscount) || 0;
+  const plcValue = parseFloat(this.plcValue) || 0;
+  
+  // Base amount
+  let baseAmount = area * projectRate;
+  
+  // Add other charges
+  baseAmount += otherCharges1;
+  
+  // Apply company discount
+  baseAmount -= companyDiscount;
+  
+  // Apply PLC calculation based on type
+  if (this.plcType && plcValue > 0) {
+    switch (this.plcType) {
+      case "percentage":
+        baseAmount -= (baseAmount * plcValue) / 100;
+        break;
+      case "per_sq_ft":
+        baseAmount -= (plcValue * area);
+        break;
+      case "per_sq_yard":
+        baseAmount -= (plcValue * area * 0.111111);
+        break;
+      case "unit":
+        baseAmount -= plcValue;
+        break;
+    }
+  }
+  
+  return Math.max(0, baseAmount).toString();
+};
+
+// Pre-save middleware to auto-calculate netSoldCopAmount
+bookingLoginSchema.pre('save', function(next) {
+  if (this.isModified('area') || this.isModified('projectRate') || 
+      this.isModified('otherCharges1') || this.isModified('companyDiscount') ||
+      this.isModified('plcType') || this.isModified('plcValue')) {
+    this.netSoldCopAmount = this.calculateNetSoldCopAmount();
+  }
+  next();
+});
+
 // Index for better query performance
 bookingLoginSchema.index({ projectName: 1, unitNo: 1 });
 bookingLoginSchema.index({ status: 1 });
 bookingLoginSchema.index({ createdBy: 1 });
 bookingLoginSchema.index({ phoneNo: 1 });
 
-// Virtual for total amount calculation
-bookingLoginSchema.virtual("totalAmount").get(function () {
-  return (this.area * this.projectRate) || 0;
-});
-
-// Method to update status
-bookingLoginSchema.methods.updateStatus = function (status, approvedBy = null, rejectionReason = "") {
-  this.status = status;
-  if (status === "approved" && approvedBy) {
-    this.approvedBy = approvedBy;
-  }
-  if (status === "rejected") {
-    this.rejectionReason = rejectionReason;
-  }
-  return this.save();
-};
-
 const BookingLogin = mongoose.models.BookingLogin || mongoose.model("BookingLogin", bookingLoginSchema);
 export default BookingLogin;
-
 

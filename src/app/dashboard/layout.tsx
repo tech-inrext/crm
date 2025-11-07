@@ -8,7 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import HandshakeIcon from "@mui/icons-material/Handshake";
-import { RealEstateAgent, Group as GroupIcon } from "@mui/icons-material";
+import { RealEstateAgent, Group as GroupIcon, Description } from "@mui/icons-material";
 
 const AppIcon = ({
   src,
@@ -85,6 +85,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     module: "property",
     icon: <RealEstateAgent sx={{ color: "#3785FF" }} />,
   },
+  {
+    label: "Booking Login",
+    href: "/dashboard/booking-login",
+    module: "booking-login",
+    icon: <Description sx={{ color: "#3785FF" }} />,
+  },
 ];
 
 export default function DashboardLayout({
@@ -101,31 +107,31 @@ export default function DashboardLayout({
   const { getPermissions, user, pendingRoleSelection } = useAuth();
 
   // Compute accessible sidebar links
-  // const sidebarLinks = useMemo(() => {
-  //   return user && !pendingRoleSelection
-  //     ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
-  //         if (!link.module) return true;
-  //         const { hasReadAccess } = getPermissions(link.module);
-  //         return hasReadAccess;
-  //       })
-  //     : [];
-  // }, [user, pendingRoleSelection, getPermissions]);
-
   const sidebarLinks = useMemo(() => {
-    const filteredLinks =
-      user && !pendingRoleSelection
-        ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
-            if (!link.module) return true;
-            // ✅ Property always allow
-            if (link.module === "property") return true;
-
-            const { hasReadAccess } = getPermissions(link.module);
-            return hasReadAccess;
-          })
-        : [];
-
-    return filteredLinks;
+    return user && !pendingRoleSelection
+      ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
+          if (!link.module) return true;
+          const { hasReadAccess } = getPermissions(link.module);
+          return hasReadAccess;
+        })
+      : [];
   }, [user, pendingRoleSelection, getPermissions]);
+
+  // const sidebarLinks = useMemo(() => {
+  //   const filteredLinks =
+  //     user && !pendingRoleSelection
+  //       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
+  //           if (!link.module) return true;
+  //           // ✅ Property always allow
+  //           if (link.module === "property") return true;
+
+  //           const { hasReadAccess } = getPermissions(link.module);
+  //           return hasReadAccess;
+  //         })
+  //       : [];
+
+  //   return filteredLinks;
+  // }, [user, pendingRoleSelection, getPermissions]);
 
   // Redirect to first accessible module after login or role switch
   useEffect(() => {
@@ -192,3 +198,5 @@ export default function DashboardLayout({
     </>
   );
 }
+
+
