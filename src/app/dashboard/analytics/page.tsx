@@ -12,6 +12,11 @@ import SiteVisitConversionChart from './SiteVisitConversionChart';
 
 // Simple in-memory request coalescing for cabbooking endpoint to avoid duplicate network calls
 const cabbookingRequests: Map<string, Promise<any>> = new Map();
+// Short-lived response cache to avoid refetching the same URL repeatedly during navigation/dev HMR
+const cabbookingCache: Map<string, any> = new Map();
+// Cache TTL in ms (30 seconds)
+const CABBOOKING_CACHE_TTL = 30 * 1000;
+const cabbookingCacheTimestamps: Map<string, number> = new Map();
 
 // --- Pie Chart Component (SVG) ---
 // Renders a simple SVG pie with colored wedges. Falls back to a message when no slices.
@@ -247,13 +252,33 @@ function VendorBreakdown() {
         url += '?' + params.toString();
       }
       
-      // Coalesce identical requests: if same URL is already being fetched, await that promise
+      // Coalesce identical requests: use cache first, then in-flight promise map
       const key = url;
       let data;
-      if (cabbookingRequests.has(key)) {
+
+      // Return cached response if available and fresh
+      const ts = cabbookingCacheTimestamps.get(key);
+      if (cabbookingCache.has(key) && ts && (Date.now() - ts) < CABBOOKING_CACHE_TTL) {
+        // console.debug('[cabbooking] returning cached data for', key);
+        data = cabbookingCache.get(key);
+      } else if (cabbookingRequests.has(key)) {
+        // console.debug('[cabbooking] awaiting in-flight request for', key);
         data = await cabbookingRequests.get(key);
       } else {
-        const p = fetch(url).then(r => r.json()).finally(() => cabbookingRequests.delete(key));
+        // console.debug('[cabbooking] issuing network request for', key);
+        const controller = new AbortController();
+        const p = fetch(url, { signal: controller.signal })
+          .then(r => r.json())
+          .then((resp) => {
+            try {
+              cabbookingCache.set(key, resp);
+              cabbookingCacheTimestamps.set(key, Date.now());
+            } catch (e) {
+              // ignore cache set errors
+            }
+            return resp;
+          })
+          .finally(() => cabbookingRequests.delete(key));
         cabbookingRequests.set(key, p);
         data = await p;
       }
