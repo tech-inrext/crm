@@ -77,11 +77,10 @@ const BookingCard: React.FC<BookingCardProps> = ({
   // ...existing code...
 
   const handleStatusChange = async (newStatus: string) => {
-    const validStatus = newStatus as Booking["status"];
-    setStatus(validStatus);
+    setStatus(newStatus);
     setUpdating(true);
     try {
-      await updateBookingStatus(booking._id, validStatus, undefined);
+      await updateBookingStatus(booking._id, newStatus);
     } finally {
       setUpdating(false);
     }
@@ -91,9 +90,9 @@ const BookingCard: React.FC<BookingCardProps> = ({
   const handleAssignVendor = async (vendorId: string) => {
     setUpdating(true);
     try {
-      // Call backend to assign vendor and set status to 'approved'
-      await updateBookingStatus(booking._id, "approved", vendorId);
-      setStatus("approved");
+      // Call backend to assign vendor and set status to 'active'
+      await updateBookingStatus(booking._id, "active", vendorId);
+      setStatus("active");
       setAssignOpen(false);
     } finally {
       setUpdating(false);
