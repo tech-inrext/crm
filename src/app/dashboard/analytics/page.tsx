@@ -10,6 +10,9 @@ import { FaUsers, FaHome, FaDollarSign, FaBuilding } from "react-icons/fa";
 import LeadGenerationChart from '../analytics/LeadGenerationChart';
 import SiteVisitConversionChart from './SiteVisitConversionChart';
 
+// Simple in-memory request coalescing for cabbooking endpoint to avoid duplicate network calls
+const cabbookingRequests: Map<string, Promise<any>> = new Map();
+
 // --- Pie Chart Component (SVG) ---
 // Renders a simple SVG pie with colored wedges. Falls back to a message when no slices.
 const LeadSourcesPieChart: React.FC<{ slices?: Array<{ label: string; value: number; color?: string }> }> = ({ slices = [] }) => {
@@ -209,88 +212,13 @@ function VendorBreakdown() {
   const [avpLoading, setAvpLoading] = React.useState(false);
   const [avpError, setAvpError] = React.useState(null);
 
-  // Fetch AVP users from employees API
-  const fetchAvpUsers = async () => {
-    setAvpLoading(true);
-    setAvpError(null);
-    try {
-      // Fetch all employees and roles in parallel
-      const [employeesResponse, rolesResponse] = await Promise.all([
-        fetch('/api/v0/employee/getAllEmployeeList'),
-        fetch('/api/v0/role/getAllRoleList').catch(() => ({ json: () => ({ success: false, data: [] }) }))
-      ]);
-      
-      const employeesData = await employeesResponse.json();
-      const rolesData = await rolesResponse.json();
-      
-      let avpUsers = [];
-      
-      if (employeesData.success && employeesData.data) {
-        // Get all AVP-related role IDs from roles collection
-        const avpRoleIds = [];
-        if (rolesData.success && rolesData.data) {
-          const avpRoles = rolesData.data.filter(role => 
-            role.name && role.name.toLowerCase().includes('avp')
-          );
-          avpRoleIds.push(...avpRoles.map(role => role._id));
-        }
-        
-        // Filter employees who have AVP in their role, designation, or are assigned AVP roles
-        avpUsers = employeesData.data.filter(employee => {
-          const role = (employee.role || '').toLowerCase();
-          const designation = (employee.designation || '').toLowerCase();
-          const employeeRoles = Array.isArray(employee.roles) ? employee.roles : [];
-          
-          // Check text-based fields
-          const hasAvpInText = role.includes('avp') || 
-                              role.includes('assistant vice president') ||
-                              designation.includes('avp') ||
-                              designation.includes('assistant vice president');
-          
-          // Check if employee has any AVP role IDs assigned
-          const hasAvpRole = employeeRoles.some(empRole => {
-            const roleId = typeof empRole === 'string' ? empRole : empRole._id || empRole.id;
-            return avpRoleIds.includes(roleId);
-          });
-          
-          return hasAvpInText || hasAvpRole;
-        });
-        
-        // If no real AVP users found, create manual options based on common AVP titles
-        if (avpUsers.length === 0) {
-          avpUsers = [
-            { _id: 'manual_avp_sales', name: 'AVP - Sales', designation: 'Assistant Vice President - Sales' },
-            { _id: 'manual_avp_operations', name: 'AVP - Operations', designation: 'Assistant Vice President - Operations' },
-            { _id: 'manual_avp_marketing', name: 'AVP - Marketing', designation: 'Assistant Vice President - Marketing' },
-            { _id: 'manual_avp_hr', name: 'AVP - Human Resources', designation: 'Assistant Vice President - HR' },
-            { _id: 'manual_avp_finance', name: 'AVP - Finance', designation: 'Assistant Vice President - Finance' }
-          ];
-        }
-        
-        setAvpUsers(avpUsers);
-        
-      } else {
-        setAvpError('Failed to load employees from API');
-        setAvpUsers([]);
-      }
-      
-    } catch (error) {
-      setAvpError('Error connecting to employees API');
-      setAvpUsers([]);
-    } finally {
-      setAvpLoading(false);
-    }
-  };
-
-  // Fetch AVP users on component mount
-  React.useEffect(() => {
-    fetchAvpUsers();
-  }, []);
+  // Prevent duplicate initial fetches (React StrictMode in dev can mount twice)
+  const mountRef = React.useRef(false);
   const fetchVendors = async (filters = appliedFilters) => {
     setLoading(true);
     try {
-      // Build API URL with filters
-      let url = '/api/v0/analytics/vendor';
+      // Build API URL with filters (use combined cab analytics endpoint)
+      let url = '/api/v0/analytics/cabbooking';
       const params = new URLSearchParams();
       
       // Add month filter
@@ -319,10 +247,22 @@ function VendorBreakdown() {
         url += '?' + params.toString();
       }
       
-      const res = await fetch(url);
-      const data = await res.json();
+      // Coalesce identical requests: if same URL is already being fetched, await that promise
+      const key = url;
+      let data;
+      if (cabbookingRequests.has(key)) {
+        data = await cabbookingRequests.get(key);
+      } else {
+        const p = fetch(url).then(r => r.json()).finally(() => cabbookingRequests.delete(key));
+        cabbookingRequests.set(key, p);
+        data = await p;
+      }
       
       if (data.success) {
+        // If server returned AVP users, set them (so we don't call employee/role endpoints separately)
+        if (data.avpUsers && Array.isArray(data.avpUsers) && data.avpUsers.length > 0) {
+          setAvpUsers(data.avpUsers);
+        }
         // Filter out vendors with no bookings if month filter is applied
         let filteredVendors = data.allVendors;
         
@@ -365,8 +305,10 @@ function VendorBreakdown() {
     fetchVendors(resetFilters);
   };
 
-  // Auto-fetch vendors on component mount only
+  // Auto-fetch vendors on component mount only (guarded to avoid double calls in StrictMode)
   React.useEffect(() => {
+    if (mountRef.current) return;
+    mountRef.current = true;
     fetchVendors();
   }, []);
 
