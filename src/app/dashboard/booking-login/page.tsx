@@ -1,4 +1,5 @@
 // app/dashboard/booking-login/page.tsx
+
 "use client";
 
 import React, { useState, useCallback } from "react";
@@ -12,11 +13,13 @@ import {
   useMediaQuery,
   TableContainer,
   Snackbar,
+  Button,
 } from "@mui/material";
 import Alert from "@mui/material/Alert";
-import { Add, Delete, Edit, Visibility } from "@mui/icons-material";
+import { Add, Delete, Edit, Visibility, Check, Close } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 import { useBookingLogin } from "@/hooks/useBookingLogin";
+import { useAuth } from "@/contexts/AuthContext";
 import PermissionGuard from "@/components/PermissionGuard";
 import BookingLoginDialog from "@/components/ui/BookingLoginDialog";
 import BookingLoginActionBar from "@/components/ui/BookingLoginActionBar";
@@ -41,6 +44,7 @@ const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
 });
 
 const BookingLogin: React.FC = () => {
+  const { hasAccountsRole } = useAuth();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
   const {
@@ -59,6 +63,7 @@ const BookingLogin: React.FC = () => {
     addBooking,
     updateBooking,
     deleteBooking,
+    updateBookingStatus,
     loadBookings,
   } = useBookingLogin(debouncedSearch);
 
@@ -92,6 +97,13 @@ const BookingLogin: React.FC = () => {
   };
 
   const handleEditBooking = (booking: any) => {
+    // Prevent editing of approved/rejected bookings for non-accounts users
+    if (!hasAccountsRole() && (booking.status === 'approved' || booking.status === 'rejected')) {
+      setSnackbarMessage("Cannot edit approved or rejected bookings");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+      return;
+    }
     setSelectedBooking(booking);
     setEditId(booking._id);
     setOpen(true);
@@ -122,6 +134,58 @@ const BookingLogin: React.FC = () => {
     }
   };
 
+  // Handle approve booking
+  const handleApproveBooking = async (bookingId: string) => {
+    if (!hasAccountsRole()) {
+      setSnackbarMessage("Only Accounts role can approve bookings");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    try {
+      await updateBookingStatus(bookingId, 'approved');
+      setSnackbarMessage("Booking approved successfully");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+      await loadBookings();
+    } catch (error) {
+      setSnackbarMessage("Failed to approve booking");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  // Handle reject booking
+  const handleRejectBooking = async (bookingId: string) => {
+    if (!hasAccountsRole()) {
+      setSnackbarMessage("Only Accounts role can reject bookings");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    const rejectionReason = prompt('Please enter rejection reason:');
+    if (!rejectionReason) {
+      setSnackbarMessage("Rejection reason is required");
+      setSnackbarSeverity("warning");
+      setSnackbarOpen(true);
+      return;
+    }
+
+    try {
+      await updateBookingStatus(bookingId, 'rejected', rejectionReason);
+      setSnackbarMessage("Booking rejected successfully");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+      await loadBookings();
+    } catch (error) {
+      setSnackbarMessage("Failed to reject booking");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
   const getInitialBookingForm = (booking: any) => {
     if (!booking) return {};
 
@@ -149,7 +213,7 @@ const BookingLogin: React.FC = () => {
       label: "Status", 
       dataKey: "status",
       component: (row: any) => (
-        <Box display="flex" gap={1}>
+        <Box display="flex" gap={1} alignItems="center">
           <Box
             sx={{
               px: 1,
@@ -169,10 +233,35 @@ const BookingLogin: React.FC = () => {
           >
             {row.status}
           </Box>
+          
+          {/* Show approve/reject buttons only for Accounts role and submitted status */}
+          {hasAccountsRole() && row.status === 'submitted' && (
+            <>
+              <Button
+                size="small"
+                variant="contained"
+                color="success"
+                startIcon={<Check />}
+                onClick={() => handleApproveBooking(row._id)}
+                sx={{ minWidth: 'auto', px: 1 }}
+              >
+                Approve
+              </Button>
+              <Button
+                size="small"
+                variant="contained"
+                color="error"
+                startIcon={<Close />}
+                onClick={() => handleRejectBooking(row._id)}
+                sx={{ minWidth: 'auto', px: 1 }}
+              >
+                Reject
+              </Button>
+            </>
+          )}
         </Box>
       )
     },
-    // { label: "Created By", dataKey: "createdBy.name" },
     { 
       label: "Actions", 
       component: (row: any) => (
@@ -201,7 +290,7 @@ const BookingLogin: React.FC = () => {
               }}
               title="View Booking"
             >
-              <Box component="span" sx={{ fontSize: '1.2rem' }}><Visibility/></Box>
+              <Visibility/>
             </Box>
           </PermissionGuard>
           <PermissionGuard
@@ -228,36 +317,44 @@ const BookingLogin: React.FC = () => {
               }}
               title="Edit Booking"
             >
-              <Box component="span" sx={{ fontSize: '1.2rem' }}><Edit/></Box>
+              <Edit/>
             </Box>
           </PermissionGuard>
-          <PermissionGuard
-            module={BOOKING_LOGIN_PERMISSION_MODULE}
-            action="delete"
-            fallback={null}
-          >
-            <Box
-              component="button"
-              onClick={() => handleDeleteBooking(row)}
-              sx={{
-                border: 'none',
-                background: 'none',
-                cursor: 'pointer',
-                color: 'error.main',
-                p: 0.5,
-                borderRadius: 1,
-                '&:hover': { backgroundColor: 'error.light', color: 'white' },
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                minWidth: 32,
-                minHeight: 32,
-              }}
-              title="Delete Booking"
-            >
-              <Box component="span" sx={{ fontSize: '1.2rem' }}><Delete/></Box>
-            </Box>
-          </PermissionGuard>
+<PermissionGuard
+  module={BOOKING_LOGIN_PERMISSION_MODULE}
+  action="delete"
+  fallback={null}
+>
+  <Box
+    component="button"
+    onClick={() => handleDeleteBooking(row)}
+    disabled={!hasAccountsRole() && row.status !== 'draft'}
+    sx={{
+      border: 'none',
+      background: 'none',
+      cursor: (!hasAccountsRole() && row.status !== 'draft') ? 'not-allowed' : 'pointer',
+      color: (!hasAccountsRole() && row.status !== 'draft') ? 'grey.400' : 'error.main',
+      p: 0.5,
+      borderRadius: 1,
+      '&:hover': { 
+        backgroundColor: (!hasAccountsRole() && row.status !== 'draft') ? 'transparent' : 'error.light', 
+        color: (!hasAccountsRole() && row.status !== 'draft') ? 'grey.400' : 'white' 
+      },
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minWidth: 32,
+      minHeight: 32,
+    }}
+    title={
+      (!hasAccountsRole() && row.status !== 'draft') 
+        ? "Only draft bookings can be deleted" 
+        : "Delete Booking"
+    }
+  >
+    <Delete/>
+  </Box>
+</PermissionGuard>
         </Box>
       )
     },
@@ -326,6 +423,8 @@ const BookingLogin: React.FC = () => {
                 onEdit={() => handleEditBooking(booking)}
                 onView={() => handleViewBooking(booking)}
                 onDelete={() => handleDeleteBooking(booking)}
+                onApprove={hasAccountsRole() ? () => handleApproveBooking(booking._id) : undefined}
+                onReject={hasAccountsRole() ? () => handleRejectBooking(booking._id) : undefined}
               />
             ))}
           </Box>
@@ -382,6 +481,8 @@ const BookingLogin: React.FC = () => {
         open={viewModalOpen}
         booking={selectedBooking}
         onClose={handleCloseViewModal}
+        onApprove={hasAccountsRole() ? () => selectedBooking && handleApproveBooking(selectedBooking._id) : undefined}
+        onReject={hasAccountsRole() ? () => selectedBooking && handleRejectBooking(selectedBooking._id) : undefined}
       />
 
       <PermissionGuard
@@ -466,5 +567,3 @@ const BookingLogin: React.FC = () => {
 };
 
 export default BookingLogin;
-
-

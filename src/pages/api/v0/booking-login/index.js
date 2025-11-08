@@ -31,6 +31,12 @@ const createBookingLogin = async (req, res) => {
 
 const getAllBookingLogins = async (req, res) => {
   try {
+    // Disable caching
+    res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Surrogate-Control', 'no-store');
+    
     const {
       page = 1,
       limit = 10,

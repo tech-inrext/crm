@@ -65,6 +65,7 @@ interface AuthContextType {
   };
   roleSelected: boolean;
   setRoleSelected: (value: boolean) => void;
+  hasAccountsRole: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -351,6 +352,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return { hasReadAccess, hasWriteAccess, hasDeleteAccess };
   };
 
+  const hasAccountsRole = () => {
+    if (!user) return false;
+    
+    const currentRoleName = getCurrentRoleName()?.toLowerCase();
+    return currentRoleName === 'accounts';
+  };
+
   useEffect(() => {
     // Let's have this failing api for now
     checkAuth();
@@ -374,6 +382,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setRoleSelected,
     setPostLoginRedirect,
     postLoginRedirect,
+    hasAccountsRole,
   };
 
   return (

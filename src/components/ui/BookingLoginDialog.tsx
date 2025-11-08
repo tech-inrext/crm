@@ -17,10 +17,10 @@ import {
   Chip,
   IconButton,
   FormHelperText,
-  Divider,
 } from "@mui/material";
 import { Close, Delete, CloudUpload } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DEFAULT_BOOKING_LOGIN_FORM,
   SLAB_PERCENTAGE_OPTIONS,
@@ -42,10 +42,6 @@ const VisuallyHiddenInput = styled("input")({
   width: 1,
 });
 
-// File validation constants
-const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB in bytes
-const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
-
 interface BookingLoginDialogProps {
   open: boolean;
   editId: string | null;
@@ -55,7 +51,7 @@ interface BookingLoginDialogProps {
   onSave: (values: any) => Promise<void>;
 }
 
-// Helper function to ensure all fields have safe default values
+// Helper function to ensure all fields have safe default values - MOVED OUTSIDE COMPONENT
 const getSafeFormData = (initialData: any) => {
   const defaultForm = { ...DEFAULT_BOOKING_LOGIN_FORM };
   
@@ -98,8 +94,22 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
   onClose,
   onSave,
 }) => {
+  const { hasAccountsRole } = useAuth();
   const [form, setForm] = useState(() => getSafeFormData(null));
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
+
+  // Get status options based on user role
+  const getStatusOptions = () => {
+    if (hasAccountsRole()) {
+      // Accounts role can see all status options
+      return STATUS_OPTIONS;
+    } else {
+      // Non-accounts role can only see draft and submitted
+      return STATUS_OPTIONS.filter(option => 
+        option.value === 'draft' || option.value === 'submitted'
+      );
+    }
+  };
 
   useEffect(() => {
     if (open) {
@@ -123,12 +133,10 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
     const companyDiscount = parseFloat(form.companyDiscount) || 0;
     const plcValue = parseFloat(form.plcValue) || 0;
     
-    // Base amount calculation
     let baseAmount = area * projectRate;
     baseAmount += otherCharges1;
     baseAmount -= companyDiscount;
     
-    // Apply PLC based on type
     if (form.plcType && plcValue > 0) {
       switch (form.plcType) {
         case "percentage":
@@ -138,7 +146,7 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
           baseAmount -= (plcValue * area);
           break;
         case "per_sq_yard":
-          baseAmount -= (plcValue * area * 0.111111); // Convert sq ft to sq yard
+          baseAmount -= (plcValue * area * 0.111111);
           break;
         case "unit":
           baseAmount -= plcValue;
@@ -153,21 +161,6 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
     }));
   };
 
-  // File validation function
-  const validateFile = (file: File, fieldName: string): string | null => {
-    // Check file size
-    if (file.size > MAX_FILE_SIZE) {
-      return `${fieldName} must be less than 1MB. Current size: ${(file.size / 1024 / 1024).toFixed(2)}MB`;
-    }
-
-    // Check file type
-    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
-      return `${fieldName} must be JPEG, PNG, WebP, or PDF format`;
-    }
-
-    return null;
-  };
-
   const handleChange = (field: string) => (event: any) => {
     const value = event.target.value;
     setForm((prev) => ({
@@ -175,7 +168,6 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
       [field]: value,
     }));
 
-    // Clear error when user starts typing
     if (errors[field]) {
       setErrors((prev) => ({ ...prev, [field]: "" }));
     }
@@ -188,25 +180,6 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
     const fileList = Array.from(files);
     const newErrors: { [key: string]: string } = { ...errors };
 
-    // Validate each file
-    for (const file of fileList) {
-      const fieldName = field === 'panImage' ? 'PAN card' : 'Aadhar card';
-      const error = validateFile(file, fieldName);
-      
-      if (error) {
-        newErrors[field] = error;
-        setErrors(newErrors);
-        event.target.value = '';
-        return; // Stop processing if any file is invalid
-      }
-    }
-
-    // Clear error if validation passes
-    if (newErrors[field]) {
-      delete newErrors[field];
-      setErrors(newErrors);
-    }
-
     if (field === "aadharImages") {
       setForm((prev) => ({
         ...prev,
@@ -217,6 +190,11 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
         ...prev,
         [field]: fileList[0],
       }));
+    }
+    
+    if (newErrors[field]) {
+      delete newErrors[field];
+      setErrors(newErrors);
     }
     event.target.value = '';
   };
@@ -234,7 +212,6 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
       }));
     }
     
-    // Clear file error when file is removed
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev };
@@ -247,7 +224,6 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    // Required fields validation
     if (!form.projectName?.trim()) newErrors.projectName = "Project name is required";
     if (!form.customer1Name?.trim()) newErrors.customer1Name = "Customer 1 name is required";
     if (!form.address?.trim()) newErrors.address = "Address is required";
@@ -256,7 +232,6 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
     if (!form.area) newErrors.area = "Area is required";
     if (!form.projectRate) newErrors.projectRate = "Project rate is required";
 
-    // Payment mode specific validations
     if (form.paymentMode === 'cheque' && !form.chequeNumber?.trim()) {
       newErrors.chequeNumber = "Cheque number is required for cheque payments";
     }
@@ -267,12 +242,10 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
       newErrors.cashReceiptNumber = "Cash receipt number is required for cash payments";
     }
 
-    // Phone validation
     if (form.phoneNo && !/^[0-9]{10}$/.test(form.phoneNo)) {
       newErrors.phoneNo = "Phone number must be 10 digits";
     }
 
-    // Email validation
     if (form.email && !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(form.email)) {
       newErrors.email = "Please enter a valid email";
     }
@@ -299,7 +272,6 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
     return `${file.name} (${sizeInMB}MB)`;
   };
 
-  // Render payment mode specific fields
   const renderPaymentModeFields = () => {
     switch (form.paymentMode) {
       case 'cheque':
@@ -514,7 +486,7 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
             />
           </Grid>
 
-          {/* PLC Fields - UPDATED */}
+          {/* PLC Fields */}
           <Grid size={{ xs: 12, md: 6 }}>
             <FormControl fullWidth>
               <InputLabel>PLC Type</InputLabel>
@@ -699,7 +671,7 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
             />
           </Grid>
 
-          {/* Transaction Details - UPDATED */}
+          {/* Transaction Details */}
           <Grid size={{ xs: 12 }}>
             <Typography variant="h6" gutterBottom sx={{ color: "primary.main", mt: 2 }}>
               Transaction Details
@@ -836,7 +808,7 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
             />
           </Grid>
 
-          {/* Status */}
+          {/* Status - updated for role base access */}
           <Grid size={{ xs: 12, md: 6 }}>
             <FormControl fullWidth>
               <InputLabel>Status</InputLabel>
@@ -844,13 +816,31 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
                 value={form.status || 'draft'}
                 label="Status"
                 onChange={handleChange("status")}
+                disabled={
+                  // Disable status field for non-accounts users when editing approved/rejected bookings
+                  editId && !hasAccountsRole() && 
+                  (form.status === 'approved' || form.status === 'rejected')
+                }
               >
-                {STATUS_OPTIONS.map((option) => (
-                  <MenuItem key={option.value} value={option.value}>
+                {getStatusOptions().map((option) => (
+                  <MenuItem 
+                    key={option.value} 
+                    value={option.value}
+                    disabled={
+                      // Disable approved/rejected for non-accounts users
+                      !hasAccountsRole() && 
+                      (option.value === 'approved' || option.value === 'rejected')
+                    }
+                  >
                     {option.label}
                   </MenuItem>
                 ))}
               </Select>
+              {!hasAccountsRole() && (
+                <FormHelperText>
+                  Only Accounts role can set status to Approved or Rejected
+                </FormHelperText>
+              )}
             </FormControl>
           </Grid>
 
@@ -954,4 +944,3 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
 };
 
 export default BookingLoginDialog;
-

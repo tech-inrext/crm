@@ -77,6 +77,7 @@ export function useBookingLogin(debouncedSearch: string) {
             page,
             limit,
             search: search.trim() || undefined,
+            _t: Date.now(),
           },
         });
 
@@ -279,17 +280,23 @@ export function useBookingLogin(debouncedSearch: string) {
   );
 
   const deleteBooking = useCallback(
-    async (id: string) => {
-      try {
-        await axios.delete(`${BOOKING_LOGIN_API_BASE}/${id}`);
-        await loadBookings(page, rowsPerPage, debouncedSearch);
-      } catch (error) {
-        console.error("Failed to delete booking:", error);
-        throw error;
+  async (id: string) => {
+    try {
+      await axios.delete(`${BOOKING_LOGIN_API_BASE}/${id}`);
+      await loadBookings(page, rowsPerPage, debouncedSearch);
+    } catch (error: any) {
+      const status = error?.response?.status;
+      const message = error?.response?.data?.message || "Failed to delete booking";
+      
+      // Handle specific error cases
+      if (status === 403) {
+        throw new Error("Access denied: " + message);
       }
-    },
-    [page, rowsPerPage, debouncedSearch, loadBookings]
-  );
+      throw error;
+    }
+  },
+  [page, rowsPerPage, debouncedSearch, loadBookings]
+);
 
   return {
     bookings,
@@ -315,3 +322,4 @@ export function useBookingLogin(debouncedSearch: string) {
     loadBookings,
   };
 }
+

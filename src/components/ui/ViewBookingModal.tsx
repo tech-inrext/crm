@@ -16,18 +16,24 @@ import {
   Tooltip,
 } from "@mui/material";
 import { Close, ZoomIn, ZoomOut, Download, Visibility, GetApp } from "@mui/icons-material";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface ViewBookingModalProps {
   open: boolean;
   booking: any;
   onClose: () => void;
+  onApprove?: () => void;
+  onReject?: () => void;
 }
 
 const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
   open,
   booking,
   onClose,
+  onApprove,
+  onReject,
 }) => {
+  const { hasAccountsRole } = useAuth();
   const [zoomLevel, setZoomLevel] = useState(1);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
@@ -172,7 +178,7 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
     value, 
     half = false 
   }) => (
-    <Grid size={{xs: 12, md: half ? 6 : 12}}>
+    <Grid item xs={12} md={half ? 6 : 12}>
       <Typography variant="subtitle2" color="text.secondary" gutterBottom>
         {label}
       </Typography>
@@ -217,7 +223,7 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
     }
     
     return (
-      <Grid size={{xs: 12}}>
+      <Grid item xs={12}>
         <Typography variant="subtitle2" color="text.secondary" gutterBottom>
           {title}
         </Typography>
@@ -525,13 +531,13 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                 Total Amount Summary
               </Typography>
               <Grid container spacing={2}>
-                <Grid size={{xs: 12, md: 6}}>
+                <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1">
                     Base Amount: {formatCurrency(booking.projectRate && booking.area ? 
                       (parseFloat(booking.projectRate) * parseFloat(booking.area)) : 0)}
                   </Typography>
                 </Grid>
-                <Grid size={{xs: 12, md: 6}}>
+                <Grid item xs={12} md={6}>
                   <Typography variant="subtitle1">
                     Total with Charges: {formatCurrency(booking.netSoldCopAmount)}
                   </Typography>
@@ -554,7 +560,7 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
 
             <Divider sx={{ my: 3 }} />
 
-            {/* Transaction Details - UPDATED */}
+            {/* Transaction Details */}
             <Section title="Transaction Details">
               <InfoRow label="Payment Mode" value={getPaymentModeLabel(booking.paymentMode)} half />
               <InfoRow label="Payment Details" value={getPaymentDetails()} half />
@@ -585,6 +591,37 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
                 type="aadhar"
               />
             </Section>
+
+            {/* Rejection Reason (if rejected) */}
+            {booking.status === 'rejected' && booking.rejectionReason && (
+              <Section title="Rejection Details">
+                <InfoRow 
+                  label="Rejection Reason" 
+                  value={
+                    <Box sx={{ 
+                      p: 2, 
+                      bgcolor: 'error.light', 
+                      color: 'error.dark',
+                      borderRadius: 1,
+                      border: '1px solid',
+                      borderColor: 'error.main'
+                    }}>
+                      {booking.rejectionReason}
+                    </Box>
+                  } 
+                />
+                {booking.approvedBy && (
+                  <InfoRow label="Rejected By" value={booking.approvedBy?.name} half />
+                )}
+              </Section>
+            )}
+
+            {/* Approval Details (if approved) */}
+            {booking.status === 'approved' && booking.approvedBy && (
+              <Section title="Approval Details">
+                <InfoRow label="Approved By" value={booking.approvedBy?.name} />
+              </Section>
+            )}
           </Box>
         </DialogContent>
 
@@ -596,14 +633,29 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
           >
             Close
           </Button>
-          {booking.status === 'submitted' && (
-            <Button 
-              variant="contained" 
-              color="primary"
-              size="large"
-            >
-              Approve Booking
-            </Button>
+          
+          {/* Show approve/reject buttons only for Accounts role and when status is submitted */}
+          {hasAccountsRole && onApprove && onReject && booking.status === 'submitted' && (
+            <>
+              <Button 
+                variant="contained" 
+                color="success"
+                size="large"
+                onClick={onApprove}
+                startIcon={<GetApp />}
+              >
+                Approve Booking
+              </Button>
+              <Button 
+                variant="contained" 
+                color="error"
+                size="large"
+                onClick={onReject}
+                startIcon={<Close />}
+              >
+                Reject Booking
+              </Button>
+            </>
           )}
         </DialogActions>
       </Dialog>
@@ -615,3 +667,5 @@ const ViewBookingModal: React.FC<ViewBookingModalProps> = ({
 };
 
 export default ViewBookingModal;
+
+

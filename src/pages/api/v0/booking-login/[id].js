@@ -45,8 +45,20 @@ const updateBookingLogin = async (req, res) => {
       });
     }
 
-    // Prevent updates if already approved/rejected
-    if (booking.status === "approved" || booking.status === "rejected") {
+    // Check if non-accounts user is trying to change status to approved/rejected
+    if (req.body.status && ['approved', 'rejected'].includes(req.body.status)) {
+      const userRole = req.role?.name?.toLowerCase();
+      if (userRole !== 'accounts') {
+        return res.status(403).json({
+          success: false,
+          message: "Only Accounts role can approve or reject bookings",
+        });
+      }
+    }
+
+    // Prevent updates if already approved/rejected for non-accounts users
+    if ((booking.status === 'approved' || booking.status === 'rejected') && 
+        req.role?.name?.toLowerCase() !== 'accounts') {
       return res.status(400).json({
         success: false,
         message: "Cannot modify approved or rejected booking",
@@ -92,12 +104,28 @@ const deleteBookingLogin = async (req, res) => {
       });
     }
 
-    // Permanent deletion
+    // Get user role from auth middleware
+    const userRole = req.role?.name?.toLowerCase();
+    const isAccountsUser = userRole === 'accounts';
+
+    // 🔒 Role-based access control for deletion
+    if (!isAccountsUser) {
+      // Non-accounts users can only delete draft bookings
+      if (booking.status !== 'draft') {
+        return res.status(403).json({
+          success: false,
+          message: "Only draft bookings can be deleted. Contact accounts team for assistance.",
+        });
+      }
+    }
+
+    // Accounts users can delete any booking (no restrictions)
+    // Proceed with deletion
     const result = await BookingLogin.findByIdAndDelete(id);
 
     return res.status(200).json({
       success: true,
-      message: "Booking login permanently deleted",
+      message: "Booking login deleted successfully",
       data: {
         id: result._id,
         projectName: result.projectName,
