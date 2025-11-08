@@ -6,7 +6,17 @@ import { userAuth } from "../../../../middlewares/auth";
 // ✅ Create a new role (requires WRITE access on "role")
 const createRole = async (req, res) => {
   try {
-  const { name, read, write, delete: deleteItems, isSystemAdmin } = req.body;
+  const { 
+    name, 
+    read, 
+    write, 
+    delete: deleteItems, 
+    isSystemAdmin,
+    showTotalUsers,
+    showTotalVendorsBilling,
+    showCabBookingAnalytics,
+    showScheduleThisWeek
+  } = req.body;
 
     if (!name) {
       return res.status(400).json({
@@ -19,8 +29,12 @@ const createRole = async (req, res) => {
       name,
       read,
       write,
-  delete: deleteItems,
-  isSystemAdmin: !!isSystemAdmin,
+      delete: deleteItems,
+      isSystemAdmin: !!isSystemAdmin,
+      showTotalUsers: !!showTotalUsers,
+      showTotalVendorsBilling: !!showTotalVendorsBilling,
+      showCabBookingAnalytics: !!showCabBookingAnalytics,
+      showScheduleThisWeek: !!showScheduleThisWeek,
     });
 
     await newRole.save();
@@ -55,7 +69,11 @@ const getAllRoles = async (req, res) => {
       : {};
 
     const [roles, totalRoles] = await Promise.all([
-      Role.find(query).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }),
+      Role.find(query)
+        .select('name read write delete isSystemAdmin showTotalUsers showTotalVendorsBilling showCabBookingAnalytics showScheduleThisWeek createdAt updatedAt')
+        .skip(skip)
+        .limit(itemsPerPage)
+        .sort({ createdAt: -1 }),
       Role.countDocuments(query),
     ]);
 

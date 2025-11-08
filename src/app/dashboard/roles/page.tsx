@@ -24,20 +24,23 @@ import Pagination from "@/components/ui/Navigation/Pagination";
 import axios from "axios";
 import { transformToAPIRole } from "@/utils/leadUtils";
 
-const modules = [
-  "User",
-  "Role",
-  "Lead",
-  "Department",
-  "CabBooking",
-  "CabVendor",
-  "Vendor",
-  "Team",
-  "MOU",
-  "Branch",
-];
 
-// Defensive: ensure modules passed to UI are unique to avoid React key collisions
+  // ✅ Step 1: Add Analytics modules here
+  const modules = [
+    "User",
+    "Role",
+    "Lead",
+    "Department",
+    "CabBooking",
+    "CabVendor",
+    "Vendor",
+    "Team",
+    "MOU",
+    "Branch",
+  ];
+
+// Defensive: ensure modules passed to UI are unique to avoid React key collisions.
+
 const uniqueModules = Array.from(new Set(modules));
 
 const initialModulePerms = Object.fromEntries(
@@ -71,8 +74,9 @@ const Roles: React.FC = () => {
   const handleOpenEdit = (idx) => {
     const role = roles[idx];
     if (!role) return;
+    console.log("Role for editing (already in correct format):", role);
     setEditId(role._id);
-    setEditRole(transformToAPIRole(role));
+    setEditRole(role); // Use role directly without transformation
     setAddOpen(true);
   };
 
@@ -86,15 +90,32 @@ const Roles: React.FC = () => {
     modulePerms,
     editId,
     isSystemAdmin,
+    showTotalUsers,
+    showTotalVendorsBilling,
+    showCabBookingAnalytics,
+    showScheduleThisWeek,
   }) => {
     const perms = { read: [], write: [], delete: [] };
+    // Only allow backend modules for API
+    const backendModules = [
+      "employee",
+      "lead",
+      "mou",
+      "team",
+      "role",
+      "department",
+      "cab-booking",
+      "cab-vendor",
+      "vendor",
+      "branch",
+    ];
     Object.entries(modulePerms).forEach(([mod, actions]) => {
       let backendMod;
       if (mod === "User") backendMod = "employee";
       else if (mod === "CabVendor") backendMod = "cab-vendor";
       else if (mod === "CabBooking") backendMod = "cab-booking";
-      else if (mod === "CabVendor") backendMod = "cab-vendor";
       else backendMod = mod.toLowerCase();
+      if (!backendModules.includes(backendMod)) return; // skip analytics modules for backend
       Object.entries(actions).forEach(([action, checked]) => {
         if (checked) perms[action].push(backendMod);
       });
@@ -104,20 +125,36 @@ const Roles: React.FC = () => {
         await axios.patch(`/api/v0/role/${editId}`, {
           ...perms,
           isSystemAdmin: !!isSystemAdmin,
+          showTotalUsers: !!showTotalUsers,
+          showTotalVendorsBilling: !!showTotalVendorsBilling,
+          showCabBookingAnalytics: !!showCabBookingAnalytics,
+          showScheduleThisWeek: !!showScheduleThisWeek,
         });
       } else {
         await axios.post("/api/v0/role", {
           name,
           ...perms,
           isSystemAdmin: !!isSystemAdmin,
+          showTotalUsers: !!showTotalUsers,
+          showTotalVendorsBilling: !!showTotalVendorsBilling,
+          showCabBookingAnalytics: !!showCabBookingAnalytics,
+          showScheduleThisWeek: !!showScheduleThisWeek,
         });
-      }
+      } 
       setAddOpen(false);
       setEditId(null);
       setEditRole(null);
       loadRoles();
     } catch (e) {
-      console.error("Failed to add/edit role", e.response?.data || e);
+      // Log more details for debugging
+      if (axios.isAxiosError(e)) {
+        const serverMsg = e.response?.data?.message || JSON.stringify(e.response?.data) || e.message;
+        console.error("Failed to add/edit role", serverMsg);
+        alert("Failed to add/edit role: " + serverMsg);
+      } else {
+        console.error("Failed to add/edit role", e);
+        alert("Failed to add/edit role: " + (e?.message || e));
+      }
     }
   };
 
@@ -237,10 +274,11 @@ const Roles: React.FC = () => {
         </Fab>
       </PermissionGuard>
 
+      {/* ✅ Step 2: Pass modules to AddRoleDialog. Special access toggles only in dialog, not in main list/cards. */}
       <AddRoleDialog
         open={addOpen}
         role={editRole}
-        modules={uniqueModules}
+        modules={modules}
         permissions={ROLE_PERMISSIONS}
         onSubmit={handleAddOrEditRole}
         onClose={() => {

@@ -63,6 +63,12 @@ interface AuthContextType {
     hasWriteAccess: boolean;
     hasDeleteAccess: boolean;
   };
+  getAnalyticsAccess: () => {
+    showTotalUsers: boolean;
+    showTotalVendorsBilling: boolean;
+    showCabBookingAnalytics: boolean;
+    showScheduleThisWeek: boolean;
+  };
   roleSelected: boolean;
   setRoleSelected: (value: boolean) => void;
 }
@@ -351,6 +357,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return { hasReadAccess, hasWriteAccess, hasDeleteAccess };
   };
 
+  const getAnalyticsAccess = () => {
+    if (!user) {
+      return {
+        showTotalUsers: false,
+        showTotalVendorsBilling: false,
+        showCabBookingAnalytics: false,
+        showScheduleThisWeek: false,
+      };
+    }
+
+    // If currentRole is just an ID (string), find the full role object from user.roles
+    let currentRole = user.currentRole;
+    if (typeof currentRole === "string" && user.roles) {
+      currentRole = user.roles.find((role) => role._id === currentRole);
+    }
+
+    if (!currentRole || typeof currentRole === "string") {
+      return {
+        showTotalUsers: false,
+        showTotalVendorsBilling: false,
+        showCabBookingAnalytics: false,
+        showScheduleThisWeek: false,
+      };
+    }
+
+    // Cast to any to access the special access properties with defaults
+    const role = currentRole as any;
+    
+    return {
+      showTotalUsers: Boolean(role.showTotalUsers || false),
+      showTotalVendorsBilling: Boolean(role.showTotalVendorsBilling || false),
+      showCabBookingAnalytics: Boolean(role.showCabBookingAnalytics || false),
+      showScheduleThisWeek: Boolean(role.showScheduleThisWeek || false),
+    };
+  };
+
   useEffect(() => {
     // Let's have this failing api for now
     checkAuth();
@@ -370,6 +412,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     getAvailableRoleNames,
     setChangeRole,
     getPermissions,
+    getAnalyticsAccess,
     roleSelected,
     setRoleSelected,
     setPostLoginRedirect,

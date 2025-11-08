@@ -26,6 +26,10 @@ interface AddRoleDialogProps {
     modulePerms: Record<string, Record<string, boolean>>;
     editId?: string;
     isSystemAdmin?: boolean;
+    showTotalUsers?: boolean;
+    showTotalVendorsBilling?: boolean;
+    showCabBookingAnalytics?: boolean;
+    showScheduleThisWeek?: boolean;
   }) => void;
   onClose: () => void;
 }
@@ -45,9 +49,15 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
     )
   );
   const [isSystemAdmin, setIsSystemAdmin] = useState(false);
+  const [showTotalUsers, setShowTotalUsers] = useState(false);
+  const [showTotalVendorsBilling, setShowTotalVendorsBilling] = useState(false);
+  const [showCabBookingAnalytics, setShowCabBookingAnalytics] = useState(false);
+  const [showScheduleThisWeek, setShowScheduleThisWeek] = useState(false);
   useEffect(() => {
     if (open) {
       if (role) {
+        console.log("Role data received in AddRoleDialog:", role);
+        console.log("Raw showTotalUsers value:", (role as any).showTotalUsers, "Type:", typeof (role as any).showTotalUsers);
         setRoleName(role.name || "");
         // Coerce boolean or string values correctly ('false' should be false)
         const sysVal = (role as any).isSystemAdmin;
@@ -55,6 +65,30 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           typeof sysVal === "string"
             ? sysVal.toLowerCase() === "true"
             : Boolean(sysVal)
+        );
+        console.log("Setting showTotalUsers to:", (role as any).showTotalUsers);
+        setShowTotalUsers(
+          typeof (role as any).showTotalUsers === "string"
+            ? (role as any).showTotalUsers.toLowerCase() === "true"
+            : Boolean((role as any).showTotalUsers)
+        );
+        console.log("Setting showTotalVendorsBilling to:", (role as any).showTotalVendorsBilling);
+        setShowTotalVendorsBilling(
+          typeof (role as any).showTotalVendorsBilling === "string"
+            ? (role as any).showTotalVendorsBilling.toLowerCase() === "true"
+            : Boolean((role as any).showTotalVendorsBilling)
+        );
+        console.log("Setting showCabBookingAnalytics to:", (role as any).showCabBookingAnalytics);
+        setShowCabBookingAnalytics(
+          typeof (role as any).showCabBookingAnalytics === "string"
+            ? (role as any).showCabBookingAnalytics.toLowerCase() === "true"
+            : Boolean((role as any).showCabBookingAnalytics)
+        );
+        console.log("Setting showScheduleThisWeek to:", (role as any).showScheduleThisWeek);
+        setShowScheduleThisWeek(
+          typeof (role as any).showScheduleThisWeek === "string"
+            ? (role as any).showScheduleThisWeek.toLowerCase() === "true"
+            : Boolean((role as any).showScheduleThisWeek)
         );
         let read = role.read;
         let write = role.write;
@@ -140,6 +174,10 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
       } else {
         setRoleName("");
         setIsSystemAdmin(false);
+        setShowTotalUsers(false);
+        setShowTotalVendorsBilling(false);
+        setShowCabBookingAnalytics(false);
+        setShowScheduleThisWeek(false);
         setModulePerms(
           Object.fromEntries(
             modules.map((m) => [
@@ -176,7 +214,16 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
 
   const handleSubmit = () => {
     if (!roleName.trim()) return;
-    onSubmit({ name: roleName, modulePerms, editId: role?._id, isSystemAdmin });
+    onSubmit({
+      name: roleName,
+      modulePerms,
+      editId: role?._id,
+      isSystemAdmin,
+      showTotalUsers,
+      showTotalVendorsBilling,
+      showCabBookingAnalytics,
+      showScheduleThisWeek,
+    });
   };
 
   return (
@@ -365,15 +412,45 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           <Typography sx={{ fontWeight: 600, mb: 1, color: "#1a237e" }}>
             Special Access
           </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: 'wrap' }}>
             <Checkbox
               checked={isSystemAdmin}
               onChange={(e) => setIsSystemAdmin(e.target.checked)}
               sx={{ color: "#1976d2", "&.Mui-checked": { color: "#1976d2" } }}
             />
-            <Typography>
-              System Admin (grants selected special permissions)
-            </Typography>
+            <Typography>System Admin (grants selected special permissions)</Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: 'wrap', mt: 1 }}>
+            <Checkbox
+              checked={showTotalUsers}
+              onChange={(e) => setShowTotalUsers(e.target.checked)}
+              sx={{ color: "#1976d2", "&.Mui-checked": { color: "#1976d2" } }}
+            />
+            <Typography>Show Total Users</Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: 'wrap', mt: 1 }}>
+            <Checkbox
+              checked={showTotalVendorsBilling}
+              onChange={(e) => setShowTotalVendorsBilling(e.target.checked)}
+              sx={{ color: "#1976d2", "&.Mui-checked": { color: "#1976d2" } }}
+            />
+            <Typography>Total Vendors & Billing amount</Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: 'wrap', mt: 1 }}>
+            <Checkbox
+              checked={showCabBookingAnalytics}
+              onChange={(e) => setShowCabBookingAnalytics(e.target.checked)}
+              sx={{ color: "#1976d2", "&.Mui-checked": { color: "#1976d2" } }}
+            />
+            <Typography>Cab-Booking Analytics</Typography>
+          </Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: 'wrap', mt: 1 }}>
+            <Checkbox
+              checked={showScheduleThisWeek}
+              onChange={(e) => setShowScheduleThisWeek(e.target.checked)}
+              sx={{ color: "#1976d2", "&.Mui-checked": { color: "#1976d2" } }}
+            />
+            <Typography>Schedule In This Week</Typography>
           </Box>
         </Box>
       </DialogContent>

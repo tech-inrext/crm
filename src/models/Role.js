@@ -25,6 +25,22 @@ const roleSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    showTotalUsers: {
+      type: Boolean,
+      default: false,
+    },
+    showTotalVendorsBilling: {
+      type: Boolean,
+      default: false,
+    },
+    showCabBookingAnalytics: {
+      type: Boolean,
+      default: false,
+    },
+    showScheduleThisWeek: {
+      type: Boolean,
+      default: false,
+    },
     read: {
       type: [String],
       enum: modules,
