@@ -60,7 +60,9 @@ export default async function handler(req, res) {
 			vendorAnalytics,
 			cabVendorsFromCollection,
 			vendorBookingStats,
-			cabVendorNames
+			cabVendorNames,
+			allEmployees,
+			  allRoles
 			] = await Promise.all([
 			CabBooking.countDocuments(),
 			CabBooking.countDocuments({ status: /completed/i }),
@@ -148,17 +150,51 @@ export default async function handler(req, res) {
 				{ $sort: { totalBookings: -1 } }
 			]),
 			// distinct cab vendor names
-			CabVendor.distinct('cabOwnerName')
-					,
-					// fetch all employees and roles for AVP lookup
-					Employee.find({}),
-					Role.find({})
-		]);
+			CabVendor.distinct('cabOwnerName'),
+			// fetch all employees and roles for AVP lookup
+			Employee.find({}),
+			Role.find({})
+			]);
 				// Compute AVP users from fetched employees and roles (last two Promise results)
 				let avpUsers = [];
 				try {
 					// allEmployees and allRoles are the last two results returned by Promise.all
-					// (we destructured them below)
+					// (we destructured them above as the last two variables)
+					// Find roles that look like AVP (case-insensitive match)
+					const avpRoles = (allRoles || []).filter(r => {
+						if (!r || !r.name) return false;
+						const n = String(r.name).toLowerCase();
+						return n.includes('avp') || n.includes('assistant vice president');
+					});
+
+					const avpRoleIds = avpRoles.map(r => String(r._id));
+
+					if (avpRoleIds.length > 0) {
+						avpUsers = (allEmployees || []).filter(emp => {
+							if (!emp) return false;
+							if (Array.isArray(emp.roles) && emp.roles.length > 0) {
+								return emp.roles.some(roleId => avpRoleIds.includes(String(roleId)));
+							}
+							return false;
+						}).map(emp => ({
+							id: emp._id || emp.id,
+							_id: emp._id || emp.id,
+							name: emp.name || [emp.firstName, emp.lastName].filter(Boolean).join(' ') || emp.email,
+							email: emp.email,
+							designation: emp.designation
+						}));
+					} else {
+						// Fallback: look for employees with 'avp' in designation
+						avpUsers = (allEmployees || []).filter(emp => {
+							return emp && emp.designation && String(emp.designation).toLowerCase().includes('avp');
+						}).map(emp => ({
+							id: emp._id || emp.id,
+							_id: emp._id || emp.id,
+							name: emp.name || [emp.firstName, emp.lastName].filter(Boolean).join(' ') || emp.email,
+							email: emp.email,
+							designation: emp.designation
+						}));
+					}
 				} catch (e) {
 					console.warn('Failed to compute avpUsers init:', e.message || e);
 				}

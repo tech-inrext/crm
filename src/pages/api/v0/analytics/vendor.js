@@ -7,27 +7,8 @@ import CabBooking from '@/models/CabBooking';
 export default async function handler(req, res) {
   await dbConnect();
   try {
-    // Get query parameters for specific vendor search and filtering
-    const { vendorNames, vendorEmails, month, status, avpId, avpName } = req.query;
-    
-    // Handle month filtering
-    let bookingDateFilter = {};
-    if (month && month !== 'all') {
-      const [filterYear, filterMonth] = month.split('-');
-      const filterMonthNum = parseInt(filterMonth);
-      const filterYearNum = parseInt(filterYear);
-      
-      // Create date range for the selected month
-      const startDate = new Date(filterYearNum, filterMonthNum - 1, 1);
-      const endDate = new Date(filterYearNum, filterMonthNum, 0, 23, 59, 59, 999);
-      
-      bookingDateFilter = {
-        createdAt: {
-          $gte: startDate,
-          $lte: endDate
-        }
-      };
-    }
+    // Get query parameters for specific vendor search
+    const { vendorNames, vendorEmails } = req.query;
     
     // Build match conditions for specific vendors if provided
     let vendorMatchConditions = {};
@@ -56,14 +37,6 @@ export default async function handler(req, res) {
       ? { $and: [{ isCabVendor: true }, vendorMatchConditions] }
       : { isCabVendor: true };
 
-    // Handle status filtering
-    let statusFilter = {};
-    if (status && status !== 'all') {
-      statusFilter = {
-        status: new RegExp(status, 'i')
-      };
-    }
-
     const vendorAnalytics = await Employee.aggregate([
       {
         $match: cabVendorMatch
@@ -71,16 +44,8 @@ export default async function handler(req, res) {
       {
         $lookup: {
           from: "cabbookings",
-          let: { vendorId: "$_id" },
-          pipeline: [
-            {
-              $match: {
-                $expr: { $eq: ["$vendor", "$$vendorId"] },
-                ...bookingDateFilter,
-                ...statusFilter
-              }
-            }
-          ],
+          localField: "_id",
+          foreignField: "vendor",
           as: "bookings"
         }
       },
