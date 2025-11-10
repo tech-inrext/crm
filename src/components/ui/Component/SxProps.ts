@@ -1,3 +1,3 @@
-import type { SxProps as MuiSxProps } from "@mui/material/styles";
+// import type { SxProps as MuiSxProps } from "@mui/material/styles";
 
-export type SxProps = MuiSxProps;
+// export type SxProps = MuiSxProps;
