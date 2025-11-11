@@ -13,7 +13,7 @@ import {
 import { Add } from "@mui/icons-material";
 import RoleCard from "@/components/ui/RoleCard";
 import { useRoles } from "@/hooks/useRoles";
-import { useDebounce } from "@/hooks/useDebounce"; // 👈 Add this
+import { useDebounce } from "@/hooks/useDebounce";
 import { ROLE_PERMISSIONS, GRADIENTS } from "@/constants/leads";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import PermissionGuard from "@/components/PermissionGuard";
@@ -35,6 +35,7 @@ const modules = [
   "Team",
   "MOU",
   "Property",
+  "BookingLogin",
 ];
 
 // Defensive: ensure modules passed to UI are unique to avoid React key collisions

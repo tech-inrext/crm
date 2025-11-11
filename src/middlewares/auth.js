@@ -13,7 +13,8 @@ const MODULES = [
   "cab-booking",
   "cab-vendor",
   "vendor",
-  "property", 
+  "property",
+  "booking-login", 
 ];
 
 // Configure which actions on which modules should be allowed for roles
@@ -147,3 +148,4 @@ export async function userAuth(req, res, next) {
     res.status(400).json({ message: "Auth Error: " + err.message });
   }
 }
+

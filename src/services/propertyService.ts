@@ -171,7 +171,7 @@ export const propertyService = {
     minPrice?: number,
     maxPrice?: number
   ): Promise<PropertyListResponse> => {
-    const params: any = { search, page, limit, parentOnly, includeChildren };
+    const params: any = { search, page, limit, parentOnly, includeChildren, _t: Date.now() };
     if (parentId) params.parentId = parentId;
     if (propertyType) params.propertyType = propertyType;
     if (status) params.status = status;
@@ -193,7 +193,7 @@ export const propertyService = {
     minPrice?: number,
     maxPrice?: number
   ): Promise<HierarchicalPropertyResponse> => {
-    const params: any = { hierarchyView: "true", search };
+    const params: any = { hierarchyView: "true", search, _t: Date.now() };
     if (status) params.status = status;
     if (propertyType) params.propertyType = propertyType;
     if (location) params.location = location;
