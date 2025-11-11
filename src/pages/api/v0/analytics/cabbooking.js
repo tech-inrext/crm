@@ -214,56 +214,81 @@ export default async function handler(req, res) {
 		};
 
 		// Build allVendors array similar to vendor.js
+		// Add paymentDue field for each vendor (sum of fares for bookings with status 'payment-due')
 		const allVendors = [
-			...vendorAnalytics.map(v => ({
-				id: v._id,
-				name: getBestVendorName(v),
-				type: 'cab_vendor',
-				totalBookings: v.totalBookings || 0,
-				completedBookings: v.completedBookings || 0,
-				pendingBookings: v.pendingBookings || 0,
-				totalEarnings: v.totalEarnings || 0,
-				avgFare: v.avgFare || 0,
-				email: v.email,
-				phone: v.phone,
-				vehicleType: v.vehicleType,
-				vehicleNumber: v.vehicleNumber,
-				cabOwnerName: v.cabOwnerName,
-				driverName: v.driverName
-			})),
-			...cabVendorsFromCollection.map(v => ({
-				id: v._id,
-				name: getBestVendorName(v),
-				type: 'cab_vendor_collection',
-				totalBookings: 0,
-				completedBookings: 0,
-				pendingBookings: 0,
-				totalEarnings: 0,
-				avgFare: 0,
-				email: v.email,
-				phone: v.phone || v.contactNumber,
-				vehicleType: v.vehicleType,
-				vehicleNumber: v.vehicleNumber,
-				cabOwnerName: v.cabOwnerName,
-				driverName: v.driverName,
-				location: v.location
-			})),
-			...vendorBookingStats.map(v => ({
-				id: v._id,
-				name: v.name && v.name.trim() ? v.name.trim() : 'Vendor',
-				type: 'general_vendor',
-				totalBookings: v.totalBookings || 0,
-				completedBookings: v.completedBookings || 0,
-				pendingBookings: v.pendingBookings || 0,
-				totalEarnings: v.totalAmount || 0,
-				avgFare: v.avgAmount || 0,
-				contactNumber: v.contactNumber,
-				vehicleType: v.vehicleType,
-				vehicleNumber: v.vehicleNumber,
-				location: v.location,
-				latestBooking: v.latestBooking,
-				email: v.email
-			}))
+			...vendorAnalytics.map(v => {
+				// Calculate paymentDue robustly for cab_vendor
+				let paymentDue = 0;
+				if (Array.isArray(v.bookings)) {
+					paymentDue = v.bookings.filter(b => b.status && b.status.toLowerCase().includes('payment')).reduce((sum, b) => sum + (b.fare || 0), 0);
+				}
+				return {
+					id: v._id,
+					name: getBestVendorName(v),
+					type: 'cab_vendor',
+					totalBookings: v.totalBookings || 0,
+					completedBookings: v.completedBookings || 0,
+					pendingBookings: v.pendingBookings || 0,
+					totalSpendings: v.totalEarnings || 0,
+					avgFare: v.avgFare || 0,
+					email: v.email,
+					phone: v.phone,
+					vehicleType: v.vehicleType,
+					vehicleNumber: v.vehicleNumber,
+					cabOwnerName: v.cabOwnerName,
+					driverName: v.driverName,
+					paymentDue
+				};
+			}),
+			...cabVendorsFromCollection.map(v => {
+				// If cabVendor has bookings, calculate paymentDue
+				let paymentDue = 0;
+				if (Array.isArray(v.bookings)) {
+					paymentDue = v.bookings.filter(b => b.status && b.status.toLowerCase().includes('payment')).reduce((sum, b) => sum + (b.fare || 0), 0);
+				}
+				return {
+					id: v._id,
+					name: getBestVendorName(v),
+					type: 'cab_vendor_collection',
+					totalBookings: 0,
+					completedBookings: 0,
+					pendingBookings: 0,
+					totalEarnings: 0,
+					avgFare: 0,
+					email: v.email,
+					phone: v.phone || v.contactNumber,
+					vehicleType: v.vehicleType,
+					vehicleNumber: v.vehicleNumber,
+					cabOwnerName: v.cabOwnerName,
+					driverName: v.driverName,
+					location: v.location,
+					paymentDue
+				};
+			}),
+			...vendorBookingStats.map(v => {
+				// If vendorBookingStats has payment-due status, calculate paymentDue
+				let paymentDue = 0;
+				if (Array.isArray(v.bookings)) {
+					paymentDue = v.bookings.filter(b => b.status && b.status.toLowerCase().includes('payment')).reduce((sum, b) => sum + (b.amount || 0), 0);
+				}
+				return {
+					id: v._id,
+					name: v.name && v.name.trim() ? v.name.trim() : 'Vendor',
+					type: 'general_vendor',
+					totalBookings: v.totalBookings || 0,
+					completedBookings: v.completedBookings || 0,
+					pendingBookings: v.pendingBookings || 0,
+					totalEarnings: v.totalAmount || 0,
+					avgFare: v.avgAmount || 0,
+					contactNumber: v.contactNumber,
+					vehicleType: v.vehicleType,
+					vehicleNumber: v.vehicleNumber,
+					location: v.location,
+					latestBooking: v.latestBooking,
+					email: v.email,
+					paymentDue
+				};
+			})
 		];
 
 		// Deduplicate by name

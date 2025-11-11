@@ -85,17 +85,23 @@ const StatCard: React.FC<StatCardProps> = ({
   iconBg,
 }) => (
   <div
-    className="flex flex-col justify-between rounded-lg border border-gray-200 bg-white px-6 py-6 min-w-[290px] shadow-sm"
-    style={{ minHeight: 140 }}
+    className="flex flex-col justify-between rounded-lg border border-gray-200 bg-white shadow-sm"
+    style={{
+      minHeight: 100,
+      padding: '0.75rem', // 12px
+      minWidth: '0',
+      width: '100%',
+      boxSizing: 'border-box',
+    }}
   >
     <div className="flex items-center justify-between">
       <div>
-        <div className="text-sm text-gray-700 font-medium">{title}</div>
-        <div className="mt-2 text-2xl font-bold text-gray-900">{value}</div>
+        <div className="text-xs sm:text-sm text-gray-700 font-medium">{title}</div>
+        <div className="mt-1 text-xl sm:text-2xl font-bold text-gray-900">{value}</div>
       </div>
       <div
         className={`flex items-center justify-center rounded-full ${iconBg}`}
-        style={{ width: 40, height: 40 }}
+        style={{ width: 32, height: 32 }}
       >
         {icon}
       </div>
@@ -140,50 +146,73 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = ({
   showVendorBilling = false,
   showTotalUsers = false
 }) => (
-  <div className="flex gap-4 w-full flex-wrap" style={{ marginBottom: 32 }}>
-    {showTotalUsers && (
+  <div
+    className="w-full"
+    style={{
+      marginBottom: 32,
+      display: 'grid',
+      gridTemplateColumns: '1fr',
+      gap: '1rem',
+    }}
+  >
+    {/* Responsive grid for tablet and desktop */}
+    <style>{`
+      @media (min-width: 640px) {
+        .overall-cards-row {
+          grid-template-columns: repeat(2, 1fr) !important;
+        }
+      }
+      @media (min-width: 900px) {
+        .overall-cards-row {
+          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)) !important;
+        }
+      }
+    `}</style>
+    <div className="overall-cards-row" style={{ display: 'grid', gap: '1rem' }}>
+      {showTotalUsers && (
+        <StatCard
+          title="Total Users"
+          value={usersLoading ? 'Loading...' : (totalUsers ?? 0)}
+          icon={<FaHome size={22} className="text-green-500" />}
+          iconBg="bg-green-50"
+        />
+      )}
+
       <StatCard
-        title="Total Users"
-        value={usersLoading ? 'Loading...' : (totalUsers ?? 0)}
-        icon={<FaHome size={22} className="text-green-500" />}
-        iconBg="bg-green-50"
+        title="My Team Members"
+        value={teamsLoading ? 'Loading...' : (totalTeams ?? 0)}
+        icon={<FaUsers size={22} className="text-indigo-500" />}
+        iconBg="bg-indigo-50"
       />
-    )}
 
-    <StatCard
-      title="My Team Members"
-      value={teamsLoading ? 'Loading...' : (totalTeams ?? 0)}
-      icon={<FaUsers size={22} className="text-indigo-500" />}
-      iconBg="bg-indigo-50"
-    />
-
-    <StatCard
-      title="New Leads"
-      value={loadingNewLeads ? 'Loading...' : (newLeads ?? 0)}
-      icon={<FaUsers size={22} className="text-blue-500" />}
-      iconBg="bg-blue-50"
-    />
-
-    <StatCard
-      title="Upcoming Site Visits"
-      value={siteVisitLoading ? 'Loading...' : (siteVisitCount ?? 0)}
-      icon={<FaDollarSign size={22} className="text-purple-500" />}
-      iconBg="bg-purple-50"
-    />
-    <StatCard
-      title="MoUs (Pending / Completed)"
-      value={pendingMouLoading || approvedMouLoading ? 'Loading...' : `${pendingMouTotal ?? 0} / ${approvedMouTotal ?? 0}`}
-      icon={<FaUsers size={22} className="text-indigo-600" />}
-      iconBg="bg-indigo-50"
-    />
-    {showVendorBilling && (
       <StatCard
-        title="Total Vendors & Billing amount"
-        value={`${(typeof vendorCount === 'number' ? vendorCount : 0) || 0} / ${typeof totalBilling === 'number' ? `₹${totalBilling.toLocaleString()}` : (totalBilling ?? '₹0')}`}
-        icon={<FaBuilding size={22} className="text-yellow-500" />}
-        iconBg="bg-yellow-50"
+        title="New Leads"
+        value={loadingNewLeads ? 'Loading...' : (newLeads ?? 0)}
+        icon={<FaUsers size={22} className="text-blue-500" />}
+        iconBg="bg-blue-50"
       />
-    )}
+
+      <StatCard
+        title="Upcoming Site Visits"
+        value={siteVisitLoading ? 'Loading...' : (siteVisitCount ?? 0)}
+        icon={<FaDollarSign size={22} className="text-purple-500" />}
+        iconBg="bg-purple-50"
+      />
+      <StatCard
+        title="MoUs (Pending / Completed)"
+        value={pendingMouLoading || approvedMouLoading ? 'Loading...' : `${pendingMouTotal ?? 0} / ${approvedMouTotal ?? 0}`}
+        icon={<FaUsers size={22} className="text-indigo-600" />}
+        iconBg="bg-indigo-50"
+      />
+      {showVendorBilling && (
+        <StatCard
+          title="Total Vendors & Billing amount"
+          value={`${(typeof vendorCount === 'number' ? vendorCount : 0) || 0} / ${typeof totalBilling === 'number' ? `₹${totalBilling.toLocaleString()}` : (totalBilling ?? '₹0')}`}
+          icon={<FaBuilding size={22} className="text-yellow-500" />}
+          iconBg="bg-yellow-50"
+        />
+      )}
+    </div>
   </div>
 );
 
@@ -199,11 +228,13 @@ function VendorBreakdown() {
   const [tempFilters, setTempFilters] = React.useState({
     status: 'all',
     month: 'all',
+    year: 'all',
     avp: 'all'
   });
   const [appliedFilters, setAppliedFilters] = React.useState({
     status: 'all',
     month: 'all',
+    year: 'all',
     avp: 'all'
   });
   
@@ -221,9 +252,11 @@ function VendorBreakdown() {
       let url = '/api/v0/analytics/cabbooking';
       const params = new URLSearchParams();
       
-      // Add month filter
-      if (filters.month !== 'all') {
-        params.append('month', filters.month);
+      // Add month and year filters
+      if (filters.month !== 'all' || filters.year !== 'all') {
+        const monthValue = filters.month !== 'all' ? filters.month : '01';
+        const yearValue = filters.year !== 'all' ? filters.year : new Date().getFullYear().toString();
+        params.append('month', `${yearValue}-${monthValue}`);
       }
       
       // Add status filter
@@ -298,7 +331,7 @@ function VendorBreakdown() {
 
   // Handle filter reset
   const handleResetFilters = () => {
-    const resetFilters = { status: 'all', month: 'all', avp: 'all' };
+    const resetFilters = { status: 'all', month: 'all', year: 'all', avp: 'all' };
     setTempFilters(resetFilters);
     setAppliedFilters(resetFilters);
     setSelectedVendor('');
@@ -316,23 +349,32 @@ function VendorBreakdown() {
   
   // Filter vendors based on applied filters and selection
   let displayVendors = allVendors;
-  
+  // If 'payment-due' filter is active, only show vendors with paymentDue > 0
+  if (appliedFilters.status === 'payment_due') {
+    displayVendors = allVendors.filter(vendor => Number(vendor.paymentDue) > 0);
+  }
   // If specific vendor is selected, show only that vendor
   if (selectedVendor) {
-    displayVendors = allVendors.filter(vendor => vendor.name === selectedVendor);
+    displayVendors = displayVendors.filter(vendor => vendor.name === selectedVendor);
   }
-  // Generate month options for the last 12 months
+  // Generate year options from 2020 to current year
+  const generateYearOptions = () => {
+    const years = [{ value: 'all', label: 'All Years' }];
+    const currentYear = new Date().getFullYear();
+    for (let year = currentYear; year >= 2020; year--) {
+      years.push({ value: year.toString(), label: year.toString() });
+    }
+    return years;
+  };
+
+  // Generate month options (1-12)
   const generateMonthOptions = () => {
     const months = [{ value: 'all', label: 'All Months' }];
-    const currentDate = new Date();
-    
-    for (let i = 0; i < 12; i++) {
-      const date = new Date(currentDate.getFullYear(), currentDate.getMonth() - i, 1);
-      const monthValue = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthLabel = date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
-      months.push({ value: monthValue, label: monthLabel });
+    for (let i = 1; i <= 12; i++) {
+      const date = new Date(2000, i - 1, 1);
+      const monthLabel = date.toLocaleDateString('en-US', { month: 'long' });
+      months.push({ value: String(i).padStart(2, '0'), label: monthLabel });
     }
-    
     return months;
   };
 
@@ -340,6 +382,7 @@ function VendorBreakdown() {
   const hasUnappliedChanges = React.useMemo(() => {
     return tempFilters.status !== appliedFilters.status ||
            tempFilters.month !== appliedFilters.month ||
+           tempFilters.year !== appliedFilters.year ||
            tempFilters.avp !== appliedFilters.avp;
   }, [tempFilters, appliedFilters]);
 
@@ -384,8 +427,7 @@ function VendorBreakdown() {
             <option value="all">All Status</option>
             <option value="completed">Completed</option>
             <option value="pending">Pending</option>
-            <option value="cancelled">Cancelled</option>
-            <option value="in-progress">In Progress</option>
+            <option value="payment_due">Payment Due</option>
           </select>
         </div>
 
@@ -398,7 +440,7 @@ function VendorBreakdown() {
             color: '#333',
             fontSize: '0.9rem'
           }}>
-            Month Filter:
+            Month:
           </label>
           <select
             value={tempFilters.month}
@@ -415,6 +457,37 @@ function VendorBreakdown() {
             {monthOptions.map(month => (
               <option key={month.value} value={month.value}>
                 {month.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Year Filter */}
+        <div>
+          <label style={{ 
+            display: 'block', 
+            marginBottom: 6, 
+            fontWeight: 600, 
+            color: '#333',
+            fontSize: '0.9rem'
+          }}>
+            Year:
+          </label>
+          <select
+            value={tempFilters.year}
+            onChange={e => setTempFilters({...tempFilters, year: e.target.value})}
+            style={{ 
+              padding: '8px 12px', 
+              borderRadius: 6, 
+              border: '1px solid #ddd', 
+              width: '100%',
+              fontSize: '0.9rem',
+              background: '#fff'
+            }}
+          >
+            {generateYearOptions().map(year => (
+              <option key={year.value} value={year.value}>
+                {year.label}
               </option>
             ))}
           </select>
@@ -462,7 +535,7 @@ function VendorBreakdown() {
             </option>
             {!avpLoading && !avpError && avpUsers.length > 0 && avpUsers.map((avp) => (
               <option key={avp._id || avp.id} value={avp._id || avp.id}>
-                {avp.name} (Role: {avp.designation || avp.role || 'N/A'})
+                {avp.name}
               </option>
             ))}
           </select>
@@ -577,9 +650,14 @@ function VendorBreakdown() {
                 🔍 No vendors found matching your filters
               </div>
               <div style={{ fontSize: '0.9rem', marginBottom: 8 }}>
-                {appliedFilters.month !== 'all' && (
+                {(appliedFilters.month !== 'all' || appliedFilters.year !== 'all') && (
                   <div style={{ marginBottom: 4 }}>
-                    📅 <strong>No cab booking data found for {monthOptions.find(m => m.value === appliedFilters.month)?.label}</strong>
+                    📅 <strong>No cab booking data found for {
+                      [
+                        appliedFilters.month !== 'all' ? monthOptions.find(m => m.value === appliedFilters.month)?.label : null,
+                        appliedFilters.year !== 'all' ? appliedFilters.year : null
+                      ].filter(Boolean).join(' ')
+                    }</strong>
                   </div>
                 )}
                 {appliedFilters.status !== 'all' && (
@@ -613,17 +691,7 @@ function VendorBreakdown() {
             marginBottom: 16,
             border: '1px solid #dee2e6'
           }}>
-            <h3 style={{ color: '#333', margin: '0 0 8px 0', fontSize: '1.2rem' }}>
-              📊 {selectedVendor ? `${selectedVendor} Details` : `Vendor Overview (${displayVendors.length} ${(appliedFilters.status !== 'all' || appliedFilters.month !== 'all' || appliedFilters.avp !== 'all') ? 'filtered' : 'total'} results)`}
-              {(appliedFilters.status !== 'all' || appliedFilters.month !== 'all' || appliedFilters.avp !== 'all') && !selectedVendor && (
-                <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 400 }}>
-                  {appliedFilters.month !== 'all' 
-                    ? ` - Showing ${monthOptions.find(m => m.value === appliedFilters.month)?.label} data only`
-                    : ' - Showing filtered data only'
-                  }
-                </span>
-              )}
-            </h3>
+            {/* Removed Vendor Overview header and filtered data notice as requested */}
             {/* Selection Status */}
             {selectedVendor && (
               <div style={{ 
@@ -695,9 +763,11 @@ function VendorBreakdown() {
               </div>
               <div style={{ background: '#f3e5f5', padding: 12, borderRadius: 6, textAlign: 'center' }}>
                 <div style={{ fontWeight: 700, color: '#7b1fa2', fontSize: '1.1rem' }}>
-                  ₹{displayVendors.reduce((sum, v) => sum + (v.totalEarnings || 0), 0).toLocaleString()}
+                  {appliedFilters.status === 'payment-due'
+                    ? `₹${displayVendors.reduce((sum, v) => sum + (v.paymentDue || 0), 0).toLocaleString()}`
+                    : `₹${displayVendors.reduce((sum, v) => sum + (v.totalSpendings || 0), 0).toLocaleString()}`}
                 </div>
-                <div style={{ fontSize: '0.85rem', color: '#666' }}>Total Earnings</div>
+                <div style={{ fontSize: '0.85rem', color: '#666' }}>{appliedFilters.status === 'payment-due' ? 'Total Payment Due' : 'Total Spendings'}</div>
               </div>
             </div>
           </div>
@@ -706,209 +776,200 @@ function VendorBreakdown() {
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
             {displayVendors
               .filter((vendor) => {
-                // Filter out vendors with 0 bookings for the selected status
                 if (appliedFilters.status === 'completed') {
                   return (vendor.completedBookings || 0) > 0;
                 } else if (appliedFilters.status === 'pending') {
                   return (vendor.pendingBookings || 0) > 0;
-                } else if (appliedFilters.status === 'cancelled') {
-                  return (vendor.cancelledBookings || 0) > 0;
-                } else if (appliedFilters.status === 'in-progress') {
-                  return (vendor.inProgressBookings || 0) > 0;
+                } else if (appliedFilters.status === 'payment_due') {
+                  return vendor.paymentDue && vendor.paymentDue > 0;
                 } else {
-                  // For 'all' status, show all vendors
                   return true;
                 }
               })
               .map((vendor, idx) => {
-              // Create filtered vendor data based on applied status filter
-              const filteredVendor = (() => {
-                if (appliedFilters.status === 'completed') {
-                  return {
-                    ...vendor,
-                    totalBookings: vendor.completedBookings || 0,
-                    pendingBookings: 0,
-                    cancelledBookings: 0,
-                    inProgressBookings: 0,
-                    displayNote: '(completed only)'
-                  };
-                } else if (appliedFilters.status === 'pending') {
-                  return {
-                    ...vendor,
-                    totalBookings: vendor.pendingBookings || 0,
-                    completedBookings: 0,
-                    cancelledBookings: 0,
-                    inProgressBookings: 0,
-                    displayNote: '(pending only)'
-                  };
-                } else if (appliedFilters.status === 'cancelled') {
-                  return {
-                    ...vendor,
-                    totalBookings: vendor.cancelledBookings || 0,
-                    completedBookings: 0,
-                    pendingBookings: 0,
-                    inProgressBookings: 0,
-                    displayNote: '(cancelled only)'
-                  };
-                } else if (appliedFilters.status === 'in-progress') {
-                  return {
-                    ...vendor,
-                    totalBookings: vendor.inProgressBookings || 0,
-                    completedBookings: 0,
-                    pendingBookings: 0,
-                    cancelledBookings: 0,
-                    displayNote: '(in-progress only)'
-                  };
-                } else {
-                  return vendor;
-                }
-              })();
+                // Always derive paymentDue value for payment-due status
+                const paymentDueValue = Number(vendor.paymentDue) || 0;
+                const filteredVendor = (() => {
+                  if (appliedFilters.status === 'completed') {
+                    return {
+                      ...vendor,
+                      totalBookings: vendor.completedBookings || 0,
+                      pendingBookings: 0,
+                      cancelledBookings: 0,
+                      inProgressBookings: 0,
+                      displayNote: '(completed only)'
+                    };
+                  } else if (appliedFilters.status === 'pending') {
+                    return {
+                      ...vendor,
+                      totalBookings: vendor.pendingBookings || 0,
+                      completedBookings: 0,
+                      cancelledBookings: 0,
+                      inProgressBookings: 0,
+                      displayNote: '(pending only)'
+                    };
+                  } else if (appliedFilters.status === 'cancelled') {
+                    return {
+                      ...vendor,
+                      totalBookings: vendor.cancelledBookings || 0,
+                      completedBookings: 0,
+                      pendingBookings: 0,
+                      inProgressBookings: 0,
+                      displayNote: '(cancelled only)'
+                    };
+                  } else if (appliedFilters.status === 'payment_due') {
+                    return {
+                      ...vendor,
+                      totalBookings: paymentDueValue,
+                      displayNote: '(payment due only)'
+                    };
+                  } else {
+                    return vendor;
+                  }
+                })();
 
-              return (
-                <div key={vendor.id || idx} style={{
-                  background: '#fff',
-                  borderRadius: 8,
-                  padding: 16,
-                  border: '1px solid #e0e0e0',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                }}
-                >
-                  <div style={{ 
-                    display: 'flex', 
-                    justifyContent: 'space-between', 
-                    alignItems: 'center', 
-                    marginBottom: 12,
-                    borderBottom: '1px solid #f0f0f0',
-                    paddingBottom: 8
-                  }}>
-                    <h4 style={{ color: '#222', margin: 0, fontSize: '1.1rem' }}>
-                      {vendor.name}
-                      {filteredVendor.displayNote && (
-                        <span style={{ 
-                          fontSize: '0.75rem', 
-                          color: '#666', 
-                          fontWeight: 400,
-                          marginLeft: 6
+                return (
+                  <div key={vendor.id || idx} style={{
+                    background: '#fff',
+                    borderRadius: 8,
+                    padding: 16,
+                    border: '1px solid #e0e0e0',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                  >
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center', 
+                      marginBottom: 12,
+                      borderBottom: '1px solid #f0f0f0',
+                      paddingBottom: 8
+                    }}>
+                      <h4 style={{ color: '#222', margin: 0, fontSize: '1.1rem' }}>
+                        {vendor.name}
+                        {filteredVendor.displayNote && (
+                          <span style={{ 
+                            fontSize: '0.75rem', 
+                            color: '#666', 
+                            fontWeight: 400,
+                            marginLeft: 6
+                          }}>
+                            {filteredVendor.displayNote}
+                          </span>
+                        )}
+                      </h4>
+                    </div>
+                    {/* Dynamic booking display based on filter */}
+                    {appliedFilters.status === 'completed' ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginBottom: 8 }}>
+                        <div style={{ 
+                          background: '#e8f5e9', 
+                          padding: 6, 
+                          borderRadius: 4, 
+                          textAlign: 'center' 
                         }}>
-                          {filteredVendor.displayNote}
-                        </span>
+                          <div style={{ fontWeight: 700, color: '#388e3c', fontSize: '1rem' }}>
+                            {filteredVendor.totalBookings}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#666' }}>Completed Bookings</div>
+                        </div>
+                      </div>
+                    ) : appliedFilters.status === 'pending' ? (
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginBottom: 8 }}>
+                        <div style={{ 
+                          background: '#fff3e0', 
+                          padding: 6, 
+                          borderRadius: 4, 
+                          textAlign: 'center' 
+                        }}>
+                          <div style={{ fontWeight: 700, color: '#f57c00', fontSize: '1rem' }}>
+                            {filteredVendor.totalBookings}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#666' }}>Pending Bookings</div>
+                        </div>
+                      </div>
+                    ) : appliedFilters.status === 'payment_due' ? (
+                      <div style={{ marginBottom: 8 }}>
+                        <div style={{ 
+                          background: '#ffd7d7', 
+                          padding: 12, 
+                          borderRadius: 8, 
+                          textAlign: 'center',
+                          boxShadow: '0 2px 8px rgba(211,47,47,0.08)',
+                          border: '2px solid #d32f2f',
+                          marginTop: 8
+                        }}>
+                          <div style={{ fontWeight: 900, color: '#d32f2f', fontSize: '1.35rem', letterSpacing: 1 }}>
+                            Payment Due: ₹{paymentDueValue.toLocaleString()}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      // Default view showing all booking types
+                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
+                        <div style={{ 
+                          background: '#e3f2fd', 
+                          padding: 6, 
+                          borderRadius: 4, 
+                          textAlign: 'center' 
+                        }}>
+                          <div style={{ fontWeight: 700, color: '#1976d2', fontSize: '1rem' }}>
+                            {vendor.totalBookings || 0}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#666' }}>Total</div>
+                        </div>
+                        <div style={{ 
+                          background: '#e8f5e9', 
+                          padding: 6, 
+                          borderRadius: 4, 
+                          textAlign: 'center' 
+                        }}>
+                          <div style={{ fontWeight: 700, color: '#388e3c', fontSize: '1rem' }}>
+                            {vendor.completedBookings || 0}
+                          </div>
+                          <div style={{ fontSize: '0.7rem', color: '#666' }}>Completed</div>
+                        </div>
+                      </div>
+                    )}
+                    {appliedFilters.status !== 'payment-due' && (
+                      <div style={{ textAlign: 'center', padding: '6px', background: '#f8f9fa', borderRadius: 4 }}>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: 12 }}>
+                          <div style={{ textAlign: 'center', padding: '6px', background: '#f8f9fa', borderRadius: 4, minWidth: 90 }}>
+                            <div style={{ fontSize: '0.9rem', color: '#333' }}>
+                              <strong>₹{vendor.totalSpendings?.toLocaleString() || 0}</strong>
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#666' }}>Total Spendings</div>
+                          </div>
+                          <div style={{ textAlign: 'center', padding: '6px', background: '#ffd7d7', borderRadius: 4, minWidth: 90 }}>
+                            <div style={{ fontSize: '0.9rem', color: '#d32f2f' }}>
+                              <strong>₹{paymentDueValue.toLocaleString()}</strong>
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#d32f2f' }}>Payment Due</div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                    <div style={{ marginTop: 8, fontSize: '0.8rem', color: '#666' }}>
+                      📞 {vendor.phone || vendor.contactNumber || 'N/A'}
+                      {vendor.avp && (
+                        <div style={{ marginTop: 4 }}>
+                          👤 AVP: {typeof vendor.avp === 'object' ? vendor.avp.name : vendor.avp}
+                        </div>
                       )}
-                    </h4>
+                      {vendor.assignedAvp && (
+                        <div style={{ marginTop: 4 }}>
+                          👤 Assigned AVP: {typeof vendor.assignedAvp === 'object' ? vendor.assignedAvp.name : vendor.assignedAvp}
+                        </div>
+                      )}
+                      {vendor.lastBookingDate && (
+                        <div style={{ marginTop: 4 }}>
+                          📅 Last: {new Date(vendor.lastBookingDate).toLocaleDateString()}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  
-                  {/* Dynamic booking display based on filter */}
-                  {appliedFilters.status === 'completed' ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginBottom: 8 }}>
-                      <div style={{ 
-                        background: '#e8f5e9', 
-                        padding: 6, 
-                        borderRadius: 4, 
-                        textAlign: 'center' 
-                      }}>
-                        <div style={{ fontWeight: 700, color: '#388e3c', fontSize: '1rem' }}>
-                          {filteredVendor.totalBookings}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: '#666' }}>Completed Bookings</div>
-                      </div>
-                    </div>
-                  ) : appliedFilters.status === 'pending' ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginBottom: 8 }}>
-                      <div style={{ 
-                        background: '#fff3e0', 
-                        padding: 6, 
-                        borderRadius: 4, 
-                        textAlign: 'center' 
-                      }}>
-                        <div style={{ fontWeight: 700, color: '#f57c00', fontSize: '1rem' }}>
-                          {filteredVendor.totalBookings}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: '#666' }}>Pending Bookings</div>
-                      </div>
-                    </div>
-                  ) : appliedFilters.status === 'cancelled' ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginBottom: 8 }}>
-                      <div style={{ 
-                        background: '#ffebee', 
-                        padding: 6, 
-                        borderRadius: 4, 
-                        textAlign: 'center' 
-                      }}>
-                        <div style={{ fontWeight: 700, color: '#d32f2f', fontSize: '1rem' }}>
-                          {filteredVendor.totalBookings}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: '#666' }}>Cancelled Bookings</div>
-                      </div>
-                    </div>
-                  ) : appliedFilters.status === 'in-progress' ? (
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginBottom: 8 }}>
-                      <div style={{ 
-                        background: '#f3e5f5', 
-                        padding: 6, 
-                        borderRadius: 4, 
-                        textAlign: 'center' 
-                      }}>
-                        <div style={{ fontWeight: 700, color: '#7b1fa2', fontSize: '1rem' }}>
-                          {filteredVendor.totalBookings}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: '#666' }}>In-Progress Bookings</div>
-                      </div>
-                    </div>
-                  ) : (
-                    // Default view showing all booking types
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                      <div style={{ 
-                        background: '#e3f2fd', 
-                        padding: 6, 
-                        borderRadius: 4, 
-                        textAlign: 'center' 
-                      }}>
-                        <div style={{ fontWeight: 700, color: '#1976d2', fontSize: '1rem' }}>
-                          {vendor.totalBookings || 0}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: '#666' }}>Total</div>
-                      </div>
-                      <div style={{ 
-                        background: '#e8f5e9', 
-                        padding: 6, 
-                        borderRadius: 4, 
-                        textAlign: 'center' 
-                      }}>
-                        <div style={{ fontWeight: 700, color: '#388e3c', fontSize: '1rem' }}>
-                          {vendor.completedBookings || 0}
-                        </div>
-                        <div style={{ fontSize: '0.7rem', color: '#666' }}>Completed</div>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div style={{ textAlign: 'center', padding: '6px', background: '#f8f9fa', borderRadius: 4 }}>
-                    <div style={{ fontSize: '0.9rem', color: '#333' }}>
-                      <strong>₹{vendor.totalEarnings?.toLocaleString() || 0}</strong>
-                    </div>
-                    <div style={{ fontSize: '0.7rem', color: '#666' }}>Total Earnings</div>
-                  </div>
-                  
-                  <div style={{ marginTop: 8, fontSize: '0.8rem', color: '#666' }}>
-                    📞 {vendor.phone || vendor.contactNumber || 'N/A'}
-                    {vendor.avp && (
-                      <div style={{ marginTop: 4 }}>
-                        👤 AVP: {typeof vendor.avp === 'object' ? vendor.avp.name : vendor.avp}
-                      </div>
-                    )}
-                    {vendor.assignedAvp && (
-                      <div style={{ marginTop: 4 }}>
-                        👤 Assigned AVP: {typeof vendor.assignedAvp === 'object' ? vendor.assignedAvp.name : vendor.assignedAvp}
-                      </div>
-                    )}
-                    {vendor.lastBookingDate && (
-                      <div style={{ marginTop: 4 }}>
-                        📅 Last: {new Date(vendor.lastBookingDate).toLocaleDateString()}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
+                );
+              })}
           </div>
         </div>
       )}
@@ -1042,11 +1103,33 @@ export default function NewDashboardPage() {
   }, []);
 
   return (
-    <Box sx={{ p: 3 }}>
-      <Typography variant="h4" sx={{ fontWeight: 700, color: '#1a1a1a', mb: 0.5 }}>
+    <Box sx={{ 
+      p: { xs: 1, sm: 2, md: 3 }, // Responsive padding
+      overflow: 'hidden'
+    }}>
+      <Typography variant="h4" sx={{ 
+        fontWeight: 700, 
+        color: '#1a1a1a', 
+        mb: 2,
+        fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' } // Responsive font size
+      }}>
         Dashboard
       </Typography>
-      <BoxMUI sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
+      {/* Add gap between heading and tabs */}
+      <div style={{ height: 12 }} />
+      <BoxMUI sx={{ 
+        borderBottom: 1, 
+        borderColor: 'divider', 
+        mb: 2,
+        '.MuiTabs-root': {
+          minHeight: { xs: '40px', sm: '48px' }
+        },
+        '.MuiTab-root': {
+          fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+          padding: { xs: '6px 12px', sm: '12px 16px' },
+          minHeight: { xs: '40px', sm: '48px' }
+        }
+      }}>
         <Tabs value={tab} onChange={handleTabChange} aria-label="Analytics Tabs">
           <Tab label="Overall" />
           {analyticsAccess.showCabBookingAnalytics && (
@@ -1109,7 +1192,7 @@ export default function NewDashboardPage() {
               gap: 3,
               gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
               alignItems: 'start',
-              width: '80%',
+              width: { xs: '100%', md: '80%' }
             }}
           >
             {/* Bar Chart */}
@@ -1168,8 +1251,8 @@ export default function NewDashboardPage() {
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-start',
-                  width: '175%',
-                  mr: 1
+                  width: { xs: '100%', md: '175%' },
+                  mr: { xs: 0, md: 1 }
                 }}
               >
                 <CardContent>
@@ -1374,7 +1457,11 @@ export default function NewDashboardPage() {
           </Box>
           <div style={{ display: 'flex', gap: '24px', margin: '32px 0', flexWrap: 'wrap', width: '100%', alignItems: 'stretch' }}>
             {/* Leads by Source Pie */}
-            <div style={{ flex: '1 1 0', minWidth: 380, display: 'flex' }}>
+            <div style={{ 
+              flex: '1 1 300px', 
+              minWidth: '380px', 
+              display: 'flex' 
+            }}>
               <Card sx={{ minHeight: 320, height: '100%', borderRadius: 0, boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #eceff1', width: '100%' }}>
                 <CardContent>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
@@ -1418,7 +1505,11 @@ export default function NewDashboardPage() {
               </Card>
             </div>
             {/* SiteVisitConversionChart (kept on the right) */}
-            <div style={{ flex: '1 1 0', minWidth: 380, display: 'flex' }}>
+            <div style={{ 
+              flex: '1 1 300px', 
+              minWidth: '380px', 
+              display: 'flex' 
+            }}>
               <Card sx={{ minHeight: 320, height: '100%', borderRadius: 0, boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #eceff1' }}>
                 <CardContent>
                   <SiteVisitConversionChart />
