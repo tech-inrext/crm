@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/Component";
  import RoleCard from "@/components/ui/card/RoleCard";
 import { useRoles } from "@/hooks/useRoles";
-import { useDebounce } from "@/hooks/useDebounce"; // 👈 Add this
+import { useDebounce } from "@/hooks/useDebounce";
 import { ROLE_PERMISSIONS, GRADIENTS } from "@/constants/leads";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import PermissionGuard from "@/components/PermissionGuard";
@@ -24,20 +24,18 @@ import Pagination from "@/components/ui/Navigation/Pagination";
 import axios from "axios";
 import { transformToAPIRole } from "@/utils/leadUtils";
 
-
-  // ✅ Step 1: Add Analytics modules here
-  const modules = [
-    "User",
-    "Role",
-    "Lead",
-    "Department",
-    "CabBooking",
-    "CabVendor",
-    "Vendor",
-    "Team",
-    "MOU",
-    "Branch",
-  ];
+const modules = [
+  "User",
+  "Role",
+  "Lead",
+  "Department",
+  "CabBooking",
+  "CabVendor",
+  "Vendor",
+  "Team",
+  "MOU",
+  "Branch",
+];
 
 // Defensive: ensure modules passed to UI are unique to avoid React key collisions.
 
@@ -301,3 +299,4 @@ const Roles: React.FC = () => {
 };
 
 export default Roles;
+

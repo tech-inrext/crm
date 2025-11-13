@@ -8,7 +8,11 @@ import {
   getDefaultLeadFormData,
 } from "@/utils/leadUtils";
 import { API_BASE } from "@/constants/leads";
-import type { Lead as APILead, LeadDisplay as Lead, LeadFormData } from "@/types/lead";
+import type {
+  Lead as APILead,
+  LeadDisplay as Lead,
+  LeadFormData,
+} from "@/types/lead";
 
 export function useLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -22,12 +26,19 @@ export function useLeads() {
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [formData, setFormData] = useState<LeadFormData>(getDefaultLeadFormData());
+  const [formData, setFormData] = useState<LeadFormData>(
+    getDefaultLeadFormData()
+  );
 
   const stats = useMemo(() => calculateLeadStats(leads), [leads]);
 
   const loadLeads = useCallback(
-    async (page = 1, limit = 5, search = "", statusParam: string | null = null) => {
+    async (
+      page = 1,
+      limit = 5,
+      search = "",
+      statusParam: string | null = null
+    ) => {
       setLoading(true);
       try {
         const response = await axios.get(`${API_BASE}`, {
@@ -53,7 +64,7 @@ export function useLeads() {
         setLoading(false);
       }
     },
-      []
+    []
   );
 
   const saveLead = useCallback(
@@ -75,7 +86,35 @@ export function useLeads() {
         setSaving(false);
       }
     },
-      [loadLeads, page, rowsPerPage, search, status] // Added status to the dependency array
+    [loadLeads, page, rowsPerPage, search, status] // Added status to the dependency array
+  );
+
+  const updateLeadStatus = useCallback(
+    async (leadId: string, newStatus: string) => {
+      try {
+        await axios.patch(`${API_BASE}/${leadId}`, { status: newStatus });
+
+        // Update local state immediately for better UX
+        setLeads((prevLeads) =>
+          prevLeads.map((lead) =>
+            lead.id === leadId || lead._id === leadId || lead.leadId === leadId
+              ? { ...lead, status: newStatus }
+              : lead
+          )
+        );
+        setApiLeads((prevApiLeads) =>
+          prevApiLeads.map((lead) =>
+            lead.id === leadId || lead._id === leadId || lead.leadId === leadId
+              ? { ...lead, status: newStatus }
+              : lead
+          )
+        );
+      } catch (error) {
+        console.error("Failed to update lead status:", error);
+        throw error;
+      }
+    },
+    []
   );
 
   useEffect(() => {
@@ -103,6 +142,7 @@ export function useLeads() {
     stats,
     loadLeads,
     saveLead,
+    updateLeadStatus,
     status,
     setStatus,
   };

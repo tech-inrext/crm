@@ -88,7 +88,16 @@ export default function TeamsPage() {
 
   return (
     <PermissionGuard module="team" action="read" fallback={<Unauthorized />}>
-      <Box sx={{ p: { xs: 2, md: 4 } }}>
+      <Box
+        sx={{
+          p: { xs: 1, sm: 2, md: 3 },
+          pt: { xs: 2, sm: 3, md: 4 },
+          minHeight: "100vh",
+          bgcolor: "background.default",
+          width: "100%",
+          overflow: "hidden",
+        }}
+      >
         <HierarchyHeader>
           <HierarchyControls
             employees={employees}
@@ -130,12 +139,31 @@ export default function TeamsPage() {
 
 function Unauthorized() {
   return (
-    <Box sx={{ p: 4, textAlign: "center" }}>
-      <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
+    <Box
+      sx={{
+        p: 4,
+        textAlign: "center",
+        minHeight: "50vh",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "center",
+        bgcolor: "background.paper",
+        borderRadius: 2,
+        boxShadow: 1,
+      }}
+    >
+      <Typography
+        variant="h4"
+        sx={{ fontWeight: 700, mb: 2, color: "error.main" }}
+      >
         Access Denied
       </Typography>
-      <Typography variant="body1" sx={{ color: "text.secondary" }}>
+      <Typography variant="h6" sx={{ color: "text.secondary", mb: 2 }}>
         You don't have permission to view the Team Hierarchy.
+      </Typography>
+      <Typography variant="body2" sx={{ color: "text.secondary" }}>
+        Please contact your administrator to request access to the "team" module
+        with "read" permissions.
       </Typography>
     </Box>
   );

@@ -71,6 +71,7 @@ interface AuthContextType {
   };
   roleSelected: boolean;
   setRoleSelected: (value: boolean) => void;
+  hasAccountsRole: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -357,6 +358,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return { hasReadAccess, hasWriteAccess, hasDeleteAccess };
   };
 
+   // ✅ Function: Determine access permissions for analytics visibility
   const getAnalyticsAccess = () => {
     if (!user) {
       return {
@@ -384,13 +386,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     // Cast to any to access the special access properties with defaults
     const role = currentRole as any;
-    
+
     return {
       showTotalUsers: Boolean(role.showTotalUsers || false),
       showTotalVendorsBilling: Boolean(role.showTotalVendorsBilling || false),
       showCabBookingAnalytics: Boolean(role.showCabBookingAnalytics || false),
       showScheduleThisWeek: Boolean(role.showScheduleThisWeek || false),
     };
+  };
+
+  // ✅ Function: Check if current user has the 'Accounts' role
+  const hasAccountsRole = () => {
+    if (!user) return false;
+
+    const currentRoleName = getCurrentRoleName()?.toLowerCase();
+    return currentRoleName === "accounts";
   };
 
   useEffect(() => {
@@ -417,6 +427,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setRoleSelected,
     setPostLoginRedirect,
     postLoginRedirect,
+    hasAccountsRole,
   };
 
   return (
@@ -437,3 +448,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     </AuthContext.Provider>
   );
 };
+
+

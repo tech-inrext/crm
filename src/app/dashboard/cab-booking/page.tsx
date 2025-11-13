@@ -74,7 +74,16 @@ const CabBooking: React.FC<CabBookingProps> = ({
 
   return (
     <PermissionGuard module="cab-booking">
-      <div className="container mx-auto px-4 py-6" style={{ marginTop: 24 }}>
+      <div
+        style={{
+          padding: "16px 24px",
+          paddingTop: "24px",
+          minHeight: "100vh",
+          backgroundColor: "#fafafa",
+          width: "100%",
+          overflow: "hidden",
+        }}
+      >
         <Notification
           error={error}
           success={success}

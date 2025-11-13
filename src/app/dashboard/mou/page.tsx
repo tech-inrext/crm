@@ -51,7 +51,16 @@ const MOUPage: React.FC = () => {
 
   return (
     <PermissionGuard module="mou">
-      <Box style={{ marginTop: 24 }} className="container mx-auto px-4 py-6">
+      <Box
+        sx={{
+          p: { xs: 1, sm: 2, md: 3 },
+          pt: { xs: 2, sm: 3, md: 4 },
+          minHeight: "100vh",
+          bgcolor: "background.default",
+          width: "100%",
+          overflow: "hidden",
+        }}
+      >
         <Paper sx={{ p: 2, mb: 2 }} elevation={2}>
           <Box
             sx={{

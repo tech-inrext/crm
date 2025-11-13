@@ -6,13 +6,13 @@
   "eslint.enable": true,
   "eslint.validate": [
     "javascript",
-    "javascriptreact", 
+    "javascriptreact",
     "typescript",
     "typescriptreact"
   ],
   "editor.formatOnSave": true,
   "editor.codeActionsOnSave": {
-    "source.fixAll.eslint": "never",
+    "source.fixAll.eslint": "never"
   },
   "typescript.disableAutomaticTypeAcquisition": true,
   "js/ts.implicitProjectConfig.checkJs": false,

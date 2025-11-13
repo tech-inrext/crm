@@ -2,13 +2,26 @@ import { memo } from "react";
 import { Chip } from "@/components/ui/Component";
 
 // Constants
+// const STATUS_COLORS = {
+//   new: "#2196F3",
+//   contacted: "#FF9800",
+//   "site visit": "#9C27B0",
+//   closed: "#4CAF50",
+//   dropped: "#F44336",
+//   default: "#757575",
+// } as const;
+
 const STATUS_COLORS = {
-  new: "#2196F3",
-  contacted: "#FF9800",
-  "site visit": "#9C27B0",
-  closed: "#4CAF50",
-  dropped: "#F44336",
-  default: "#757575",
+  new: "#2196F3", // Blue
+  "follow-up": "#FFC107", // Amber
+  "call back": "#00BCD4", // Cyan
+  "not connected": "#9E9E9E", // Grey
+  "details shared": "#3F51B5", // Indigo
+  "site visit done": "#9C27B0", // Purple
+  closed: "#4CAF50", // Green
+  "not interested": "#F44336", // Red
+  "": "#757575", // Default or empty status
+  default: "#757575", // Fallback color
 } as const;
 
 // Utility function

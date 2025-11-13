@@ -3,10 +3,12 @@
 import React, { useState, useMemo, useEffect } from "react";
 import Sidebar from "@/components/ui/Navigation/Sidebar";
 import Navbar from "@/components/ui/Navigation/Navbar";
-import { Box, useMediaQuery, useTheme, HandshakeIcon, GroupIcon } from "@/components/ui/Component";
+import { Box, useMediaQuery, useTheme } from "@/components/ui/Component";
 import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
+import HandshakeIcon from "@mui/icons-material/Handshake";
+import { RealEstateAgent, Group as GroupIcon, Description } from "@mui/icons-material";
 
 const AppIcon = ({
   src,
@@ -82,6 +84,18 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     module: "team",
     icon: <GroupIcon sx={{ color: "#3f51b5" }} />,
   },
+  {
+    label: "Properties",
+    href: "/dashboard/properties",
+    module: "property",
+    icon: <RealEstateAgent sx={{ color: "#3785FF" }} />,
+  },
+  {
+    label: "Booking Login",
+    href: "/dashboard/booking-login",
+    module: "booking-login",
+    icon: <Description sx={{ color: "#3785FF" }} />,
+  },
 ];
 
 export default function DashboardLayout({
@@ -108,6 +122,22 @@ export default function DashboardLayout({
         })
       : [];
   }, [user, pendingRoleSelection, getPermissions]);
+
+  // const sidebarLinks = useMemo(() => {
+  //   const filteredLinks =
+  //     user && !pendingRoleSelection
+  //       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
+  //           if (!link.module) return true;
+  //           // ✅ Property always allow
+  //           if (link.module === "property") return true;
+
+  //           const { hasReadAccess } = getPermissions(link.module);
+  //           return hasReadAccess;
+  //         })
+  //       : [];
+
+  //   return filteredLinks;
+  // }, [user, pendingRoleSelection, getPermissions]);
 
   // Redirect to first accessible module after login or role switch
   useEffect(() => {
@@ -140,6 +170,7 @@ export default function DashboardLayout({
               open={true}
               onClose={() => {}}
               links={sidebarLinks}
+              selected={selectedLink?.href}
             />
           )}
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -165,6 +196,7 @@ export default function DashboardLayout({
               open={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
               links={sidebarLinks}
+              selected={selectedLink?.href}
             />
           )}
         </Box>
@@ -172,3 +204,5 @@ export default function DashboardLayout({
     </>
   );
 }
+
+

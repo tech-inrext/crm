@@ -1,5 +1,5 @@
 import { Service } from "@framework";
-import Lead from "../model/lead.model";
+import Lead from "../../models/Lead";
 
 class LeadService extends Service {
   constructor() {

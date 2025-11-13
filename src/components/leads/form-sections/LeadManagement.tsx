@@ -5,29 +5,34 @@ import {
   Typography,
   MenuItem,
   Autocomplete,
-  LocalizationProvider,
-  DatePicker,
-  AdapterDateFns,
+
 } from "@/components/ui/Component";
+ 
+import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+ 
 import { Field, FieldProps } from "formik";
 
 const statusOptions = [
-  { value: "New", label: "New" },
-  { value: "Contacted", label: "Contacted" },
-  { value: "Site Visit", label: "Site Visit" },
-  { value: "Closed", label: "Closed" },
-  { value: "Dropped", label: "Dropped" },
+  { value: "new", label: "New" },
+  { value: "follow-up", label: "Follow-Up" },
+  { value: "call back", label: "Call Back" },
+  { value: "not connected", label: "Not Connected" },
+  { value: "details shared", label: "Details Shared" },
+  { value: "site visit done", label: "Site Visit Done" },
+  { value: "closed", label: "Closed" },
+  { value: "not interested", label: "Not Interested" },
+  // { value: "", label: "No Status" }, // optional placeholder for empty
 ];
 
 const sourceOptions = [
-  { value: "Web Form", label: "Web Form" },
-  { value: "Phone Call", label: "Phone Call" },
-  { value: "Email", label: "Email" },
-  { value: "Walk-in", label: "Walk-in" },
+  { value: "Website", label: "Website" },
   { value: "Referral", label: "Referral" },
+  { value: "Raw Data", label: "Raw Data" },
   { value: "Social Media", label: "Social Media" },
-  { value: "Advertisement", label: "Advertisement" },
-  { value: "Other", label: "Other" },
+  { value: "Google", label: "Google" },
+  { value: "Activity", label: "Activity" },
+  { value: "Direct Call", label: "Direct Call" },
 ];
 
 interface LeadManagementProps {
@@ -79,6 +84,7 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
           <Autocomplete
             options={users}
             getOptionLabel={(option) => option.name || ""}
+            getOptionKey={(option) => option._id || option.id}
             value={users.find((user) => user._id === values.assignedTo) || null}
             onChange={(_, newValue) => {
               setFieldValue("assignedTo", newValue ? newValue._id : "");
@@ -97,13 +103,17 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
             renderOption={(props, option) => {
               const { key, ...rest } = props;
               return (
-                <Box component="li" key={key} {...rest}>
+                <Box
+                  component="li"
+                  key={option._id || option.id || key}
+                  {...rest}
+                >
                   {option.name}
                 </Box>
               );
             }}
             noOptionsText="No employees found"
-            clearOnBlur
+            clearOnBlur   
             selectOnFocus
           />
         )}
@@ -152,23 +162,21 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
       <Field name="nextFollowUp">
         {({ field, meta }: FieldProps) => (
           <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DatePicker
+            <DateTimePicker
               label="Next Follow-up"
               value={values.nextFollowUp ? new Date(values.nextFollowUp) : null}
               onChange={(date) => {
-                setFieldValue(
-                  "nextFollowUp",
-                  date ? date.toISOString().split("T")[0] : ""
-                );
+                setFieldValue("nextFollowUp", date ? date.toISOString() : "");
               }}
               slotProps={{
                 textField: {
                   error: meta.touched && !!meta.error,
                   helperText: meta.touched && meta.error,
-                  placeholder: "dd/mm/yyyy",
+                  placeholder: "dd/mm/yyyy hh:mm",
                   sx: { bgcolor: "#fff", borderRadius: 1, flex: 1, height: 56 },
                 },
               }}
+              format="dd/MM/yyyy HH:mm"
             />
           </LocalizationProvider>
         )}

@@ -10,7 +10,8 @@ const modules = [
   "cab-booking",
   "cab-vendor",
   "vendor",
-  "branch",
+  "property",
+  "booking-login"
 ];
 
 const roleSchema = new mongoose.Schema(

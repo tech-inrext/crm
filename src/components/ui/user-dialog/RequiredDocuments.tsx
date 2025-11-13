@@ -79,7 +79,6 @@ const UploadBox: React.FC<{
         return (
           <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
             <Typography sx={{ mb: 1, fontWeight: 600 }}>{label}</Typography>
-
             <input
               accept="image/*,application/pdf"
               style={{ display: "none" }}
@@ -88,22 +87,20 @@ const UploadBox: React.FC<{
               onChange={(e) => {
                 const f = e.target.files?.[0] || null;
                 if (!f) return;
-
-                const maxBytes = 1 * 1024 * 1024; // 1MB limit
-
-                // 🔴 File size validation
+                const maxBytes = 50 * 1024 * 1024; // 50 MB
                 if (f.size > maxBytes) {
-                  form?.setFieldValue(fieldName, "");
-                  form?.setFieldError(fieldName, "File must be less than 1 MB");
-                  setLocalError("File must be less than 1 MB");
-                  return;
+                  if (form && typeof form.setFieldError === "function") {
+                    form.setFieldError(fieldName, "File must be less than 50MB");
+                  }
+                  setLocalError("File must be less than 50MB");
+                  e.target.value = '';
+                } else {
+                  // ✅ Valid file
+                  form?.setFieldValue(fieldName, f);
+                  form?.setFieldValue(urlField, "");
+                  form?.setFieldError(fieldName, undefined);
+                  setLocalError(null);
                 }
-
-                // ✅ Valid file
-                form?.setFieldValue(fieldName, f);
-                form?.setFieldValue(urlField, "");
-                form?.setFieldError(fieldName, undefined);
-                setLocalError(null);
               }}
             />
 
@@ -181,6 +178,7 @@ const UploadBox: React.FC<{
                     e.stopPropagation();
                     form?.setFieldValue(fieldName, null);
                     form?.setFieldValue(urlField, "");
+                    form?.setFieldError(fieldName, undefined);
                     setLocalError(null);
                   }}
                   size="small"

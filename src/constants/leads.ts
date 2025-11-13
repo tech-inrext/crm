@@ -10,7 +10,10 @@ export const ROLE_PERMISSIONS = ["read", "write", "delete"];
 
 // Import visual constants from existing styles
 import { VISUAL_CONSTANTS } from "@/styles/moduleStyles";
-import { COMMON_STYLES as LEADS_COMMON_STYLES, GRADIENTS as LEADS_GRADIENTS } from "@/components/leads/styles";
+import {
+  COMMON_STYLES as LEADS_COMMON_STYLES,
+  GRADIENTS as LEADS_GRADIENTS,
+} from "@/components/leads/styles";
 
 export const GRADIENTS = LEADS_GRADIENTS;
 export const COMMON_STYLES = LEADS_COMMON_STYLES;
@@ -18,9 +21,12 @@ export const COMMON_STYLES = LEADS_COMMON_STYLES;
 // Lead status values used across the leads feature
 export const LEAD_STATUSES = [
 	"",
-	"New",
-	"Contacted",
-	"Site Visit",
-	"Closed",
-	"Dropped",
+	"new", 
+	"follow-up", 
+	"call back", 
+	"not connected", 
+	"details shared", 
+	"site visit done", 
+	"closed", 
+	"not interested",
 ];

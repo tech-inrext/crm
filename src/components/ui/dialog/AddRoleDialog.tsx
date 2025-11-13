@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import Dialog from "@/components/ui/Component/Dialog";
 import DialogTitle from "@/components/ui/Component/DialogTitle";
@@ -135,6 +136,10 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             branches: "branch",
             team: "team",
             teams: "team",
+            bookinglogin: "booking-login",
+            "booking-login": "booking-login",
+            // property: "property",
+            // "property": "property",
           };
           // Always map UI-friendly labels for cab vendors to 'cab-vendor' (backend)
           if (
@@ -146,6 +151,13 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           // Map Team UI labels to backend 'team'
           if (mod === "Team" || mod === "Teams" || mod.toLowerCase() === "team")
             return "team";
+          // Map BookingLogin UI labels to backend 'booking-login'
+          if (mod === "BookingLogin" || mod.toLowerCase() === "bookinglogin")
+            return "booking-login";
+          // Map Property UI labels to backend 'property'
+          // if (mod === "Property" || mod.toLowerCase() === "property")
+          //   return "property";
+
           return map[mod.toLowerCase()] || mod.toLowerCase();
         };
         // Normalize all module names to backend format for mapping
