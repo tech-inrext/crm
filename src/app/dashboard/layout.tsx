@@ -31,7 +31,7 @@ const AppIcon = ({
 );
 
 export const DASHBOARD_SIDEBAR_LINKS = [
-  {
+    {
     label: "Analytics",
     href: "/dashboard/analytics",
     icon: <AppIcon src="/analytics.png" alt="Analytics" />,
@@ -115,8 +115,7 @@ export default function DashboardLayout({
   const sidebarLinks = useMemo(() => {
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
-          // Always show links with no module property (e.g., Analytics)
-          if (!('module' in link)) return true;
+          if (!link.module) return true;
           const { hasReadAccess } = getPermissions(link.module);
           return hasReadAccess;
         })
@@ -170,7 +169,7 @@ export default function DashboardLayout({
               open={true}
               onClose={() => {}}
               links={sidebarLinks}
-              selected={selectedLink?.href}
+              // selected={selectedLink?.href}
             />
           )}
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -196,7 +195,7 @@ export default function DashboardLayout({
               open={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
               links={sidebarLinks}
-              selected={selectedLink?.href}
+              // selected={selectedLink?.href}
             />
           )}
         </Box>
@@ -204,5 +203,4 @@ export default function DashboardLayout({
     </>
   );
 }
-
 

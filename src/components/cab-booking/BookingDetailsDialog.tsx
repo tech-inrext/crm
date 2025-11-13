@@ -54,7 +54,7 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
           setManagerName((booking as any).managerName);
           return;
         }
-        const mgrId = booking.managerId || null;
+        const mgrId = booking.managerId || booking.manager || null;
         const bookedById =
           (booking as any).cabBookedBy || (booking as any).cabBookedBy || null;
         if (!mgrId && !bookedById) return;
