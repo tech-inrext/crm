@@ -355,8 +355,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const hasAccountsRole = () => {
     if (!user) return false;
     
-    const currentRoleName = getCurrentRoleName()?.toLowerCase();
-    return currentRoleName === 'accounts';
+    // Get current role name
+    const currentRoleName = getCurrentRoleName();
+    
+    // Check if current role is "accounts" (case-insensitive)
+    return currentRoleName?.toLowerCase() === "accounts";
   };
 
   useEffect(() => {

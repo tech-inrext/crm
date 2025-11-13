@@ -104,6 +104,9 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             teams: "team",
             bookinglogin: "booking-login",
             "booking-login": "booking-login",
+            trainingvideos: "training-videos",
+            "training-videos": "training-videos",
+
             // property: "property",
             // "property": "property",
           };
@@ -120,6 +123,9 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           // Map BookingLogin UI labels to backend 'booking-login'
           if (mod === "BookingLogin" || mod.toLowerCase() === "bookinglogin")
             return "booking-login";
+          // Map TrainingVideos UI labels to backend 'training-videos'
+          if (mod === "TrainingVideos" || mod.toLowerCase() === "trainingvideos")
+            return "training-videos";
           // Map Property UI labels to backend 'property'
           // if (mod === "Property" || mod.toLowerCase() === "property")
           //   return "property";

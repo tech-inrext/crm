@@ -8,7 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import HandshakeIcon from "@mui/icons-material/Handshake";
-import { RealEstateAgent, Group as GroupIcon, Description } from "@mui/icons-material";
+import { RealEstateAgent, Group as GroupIcon, Description, VideoLibrary } from "@mui/icons-material";
 
 const AppIcon = ({
   src,
@@ -91,6 +91,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     module: "booking-login",
     icon: <Description sx={{ color: "#3785FF" }} />,
   },
+  {
+  label: "Training Videos",
+  href: "/dashboard/training-videos",
+  module: "training-videos",
+  icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
+}
 ];
 
 export default function DashboardLayout({

@@ -36,6 +36,7 @@ const modules = [
   "MOU",
   "Property",
   "BookingLogin",
+  "TrainingVideos"
 ];
 
 // Defensive: ensure modules passed to UI are unique to avoid React key collisions

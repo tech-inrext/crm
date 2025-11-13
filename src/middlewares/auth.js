@@ -14,7 +14,8 @@ const MODULES = [
   "cab-vendor",
   "vendor",
   "property",
-  "booking-login", 
+  "booking-login",
+  "training-videos", 
 ];
 
 // Configure which actions on which modules should be allowed for roles
