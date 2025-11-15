@@ -1,6 +1,5 @@
 import React from "react";
-import { Box, Typography } from "@mui/material";
-import { AccountTree as AccountTreeIcon } from "@mui/icons-material";
+import { Box, Typography, AccountTree as AccountTreeIcon } from "@/components/ui/Component";
 
 export const EmptyState: React.FC = () => (
   <Box sx={{ p: 4, textAlign: "center" }}>

@@ -7,7 +7,7 @@ import {
   selectRole,
   createLogin,
 } from "@/service/auth.service";
-import LoginRoleSelector from "@/components/ui/LoginRoleSelector";
+import LoginRoleSelector from "@/components/ui/forms/LoginRoleSelector";
 import { useRouter } from "next/navigation";
 
 // Configure axios to include credentials
@@ -62,6 +62,12 @@ interface AuthContextType {
     hasReadAccess: boolean;
     hasWriteAccess: boolean;
     hasDeleteAccess: boolean;
+  };
+  getAnalyticsAccess: () => {
+    showTotalUsers: boolean;
+    showTotalVendorsBilling: boolean;
+    showCabBookingAnalytics: boolean;
+    showScheduleThisWeek: boolean;
   };
   roleSelected: boolean;
   setRoleSelected: (value: boolean) => void;
@@ -352,11 +358,49 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return { hasReadAccess, hasWriteAccess, hasDeleteAccess };
   };
 
+   // ✅ Function: Determine access permissions for analytics visibility
+  const getAnalyticsAccess = () => {
+    if (!user) {
+      return {
+        showTotalUsers: false,
+        showTotalVendorsBilling: false,
+        showCabBookingAnalytics: false,
+        showScheduleThisWeek: false,
+      };
+    }
+
+    // If currentRole is just an ID (string), find the full role object from user.roles
+    let currentRole = user.currentRole;
+    if (typeof currentRole === "string" && user.roles) {
+      currentRole = user.roles.find((role) => role._id === currentRole);
+    }
+
+    if (!currentRole || typeof currentRole === "string") {
+      return {
+        showTotalUsers: false,
+        showTotalVendorsBilling: false,
+        showCabBookingAnalytics: false,
+        showScheduleThisWeek: false,
+      };
+    }
+
+    // Cast to any to access the special access properties with defaults
+    const role = currentRole as any;
+
+    return {
+      showTotalUsers: Boolean(role.showTotalUsers || false),
+      showTotalVendorsBilling: Boolean(role.showTotalVendorsBilling || false),
+      showCabBookingAnalytics: Boolean(role.showCabBookingAnalytics || false),
+      showScheduleThisWeek: Boolean(role.showScheduleThisWeek || false),
+    };
+  };
+
+  // ✅ Function: Check if current user has the 'Accounts' role
   const hasAccountsRole = () => {
     if (!user) return false;
-    
+
     const currentRoleName = getCurrentRoleName()?.toLowerCase();
-    return currentRoleName === 'accounts';
+    return currentRoleName === "accounts";
   };
 
   useEffect(() => {
@@ -378,6 +422,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     getAvailableRoleNames,
     setChangeRole,
     getPermissions,
+    getAnalyticsAccess,
     roleSelected,
     setRoleSelected,
     setPostLoginRedirect,

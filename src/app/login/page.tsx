@@ -10,14 +10,13 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  Container,
   useTheme,
   IconButton,
-  InputAdornment,
-  Link,
-} from "@mui/material";
-import ForgotPasswordDialog from "../../components/ui/ForgotPasswordDialog";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+  VisibilityIcon,
+  VisibilityOffIcon,
+} from "../../components/ui/Component";
+import { Container, InputAdornment, Link } from "@/components/ui/Component";
+import ForgotPasswordDialog from "../../components/ui/dialog/ForgotPasswordDialog";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
@@ -376,7 +375,7 @@ const LandingPage: React.FC = () => {
                             edge="end"
                             size="small"
                           >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                           </IconButton>
                         </InputAdornment>
                       ),

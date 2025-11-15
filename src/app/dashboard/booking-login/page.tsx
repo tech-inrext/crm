@@ -14,8 +14,8 @@ import {
   TableContainer,
   Snackbar,
   Button,
-} from "@mui/material";
-import Alert from "@mui/material/Alert";
+} from "@/components/ui/Component";
+import Alert from "@/components/ui/Component/Alert";
 import { Add, Delete, Edit, Visibility, Check, Close } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 import { useBookingLogin } from "@/hooks/useBookingLogin";
@@ -36,10 +36,10 @@ import {
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import { useDebounce } from "@/hooks/useDebounce";
 
-const TableMap = dynamic(() => import("@/components/ui/TableMap"), {
+const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
   ssr: false,
 });
-const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
+const Pagination = dynamic(() => import("@/components/ui/Navigation/Pagination"), {
   ssr: false,
 });
 

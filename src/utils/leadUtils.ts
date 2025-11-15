@@ -233,9 +233,9 @@ export const getDefaultLeadFormData = (): LeadFormData => {
 export const transformAPIRole = (apiRole: any): any => {
   const permissions: string[] = [];
   const moduleMap: Record<string, string> = {
-    employee: "User", // Changed from "Users" to "User" to match frontend
-    role: "Role", // Changed from "Roles" to "Role" to match frontend
-    lead: "Lead", // Changed from "Leads" to "Lead" to match frontend
+    employee: "User",  
+    role: "Role",  
+    lead: "Lead",  
     department: "Department",
   };
   apiRole.read?.forEach((module: string) => {
@@ -260,8 +260,14 @@ export const transformAPIRole = (apiRole: any): any => {
     delete: apiRole.delete,
     // preserve system admin flag if present
     isSystemAdmin: Boolean(apiRole.isSystemAdmin),
-  };
+  // Preserve special access fields with proper defaults
+  showTotalUsers: Boolean(apiRole.showTotalUsers || false),
+  showTotalVendorsBilling: Boolean(apiRole.showTotalVendorsBilling || false),
+  showCabBookingAnalytics: Boolean(apiRole.showCabBookingAnalytics || false),
+  showScheduleThisWeek: Boolean(apiRole.showScheduleThisWeek || false),
 };
+};
+
 
 export const transformToAPIRole = (role: any) => {
   // If the role already has read/write/delete arrays, return it as-is
@@ -274,6 +280,12 @@ export const transformToAPIRole = (role: any) => {
       delete: role.delete || [],
       // preserve isSystemAdmin flag when present
       isSystemAdmin: Boolean((role as any).isSystemAdmin),
+      // preserve special access fields with proper defaults
+      showTotalUsers: Boolean((role as any).showTotalUsers || false),
+      showTotalVendorsBilling: Boolean((role as any).showTotalVendorsBilling || false),
+      showCabBookingAnalytics: Boolean((role as any).showCabBookingAnalytics || false),
+      showScheduleThisWeek: Boolean((role as any).showScheduleThisWeek || false),
+ 
     };
   }
 
@@ -314,5 +326,12 @@ export const transformToAPIRole = (role: any) => {
     delete: deletePerms,
     // if original role object had isSystemAdmin, carry it through
     isSystemAdmin: Boolean((role as any).isSystemAdmin),
+  
+    // Preserve special access fields with proper defaults
+    showTotalUsers: Boolean((role as any).showTotalUsers || false),
+    showTotalVendorsBilling: Boolean((role as any).showTotalVendorsBilling || false),
+    showCabBookingAnalytics: Boolean((role as any).showCabBookingAnalytics || false),
+    showScheduleThisWeek: Boolean((role as any).showScheduleThisWeek || false),
+ 
   };
 };

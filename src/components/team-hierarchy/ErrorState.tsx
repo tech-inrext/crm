@@ -1,6 +1,6 @@
 import React from "react";
-import { Box, Typography, Button } from "@mui/material";
-import { Refresh as RefreshIcon } from "@mui/icons-material";
+import { Box, Typography, Button } from "@/components/ui/Component";
+import { RefreshIcon as RefreshIcon } from "@/components/ui/Component";
 
 interface ErrorStateProps {
   error: string;

@@ -5,9 +5,12 @@ import {
   Typography,
   MenuItem,
   Autocomplete,
-} from "@mui/material";
+
+} from "@/components/ui/Component";
+ 
 import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+ 
 import { Field, FieldProps } from "formik";
 
 const statusOptions = [
@@ -110,7 +113,7 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
               );
             }}
             noOptionsText="No employees found"
-            clearOnBlur
+            clearOnBlur   
             selectOnFocus
           />
         )}

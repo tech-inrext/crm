@@ -1,6 +1,6 @@
 import React from "react";
-import { Paper, Box, Stack, Typography } from "@mui/material";
-import { People as PeopleIcon } from "@mui/icons-material";
+import { Paper, Box, Stack, Typography } from "@/components/ui/Component";
+import { People as PeopleIcon } from "@/components/ui/Component";
 
 interface HierarchyHeaderProps {
   children: React.ReactNode;
