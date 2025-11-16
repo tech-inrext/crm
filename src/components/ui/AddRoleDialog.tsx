@@ -106,9 +106,9 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             "booking-login": "booking-login",
             trainingvideos: "training-videos",
             "training-videos": "training-videos",
-
-            // property: "property",
-            // "property": "property",
+            property: "property",
+            properties: "property",
+            "property": "property",
           };
           // Always map UI-friendly labels for cab vendors to 'cab-vendor' (backend)
           if (
@@ -127,8 +127,8 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           if (mod === "TrainingVideos" || mod.toLowerCase() === "trainingvideos")
             return "training-videos";
           // Map Property UI labels to backend 'property'
-          // if (mod === "Property" || mod.toLowerCase() === "property")
-          //   return "property";
+          if (mod === "Property" || mod.toLowerCase() === "property")
+            return "property";
 
           return map[mod.toLowerCase()] || mod.toLowerCase();
         };

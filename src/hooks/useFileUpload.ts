@@ -23,7 +23,7 @@ export function useFileUpload() {
         headers: {
           'Content-Type': file.type,
         },
-        withCredentials: false // ← This is the key change
+        withCredentials: false 
       });
 
       setUploading(false);
