@@ -50,6 +50,7 @@ const updateRoleDetails = async (req, res) => {
     // Handle module name conversions to match backend enum
     if (mod === 'bookinglogin') return 'booking-login';
     if (mod === 'trainingvideos') return 'training-videos';
+    if (mod === 'pillar') return 'pillar';
     return mod;
   });
 };

@@ -13,6 +13,7 @@ const modules = [
   "property",
   "booking-login",
   "training-videos",
+  "pillar",
 ];
 
 const roleSchema = new mongoose.Schema(

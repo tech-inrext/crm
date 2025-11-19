@@ -109,6 +109,8 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             property: "property",
             properties: "property",
             "property": "property",
+            pillar: "pillar",
+            pillars: "pillar",
           };
           // Always map UI-friendly labels for cab vendors to 'cab-vendor' (backend)
           if (
@@ -129,6 +131,9 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           // Map Property UI labels to backend 'property'
           if (mod === "Property" || mod.toLowerCase() === "property")
             return "property";
+          // Map Pillar UI labels to backend 'pillar'
+          if (mod === "Pillar" || mod.toLowerCase() === "pillar")
+            return "pillar";
 
           return map[mod.toLowerCase()] || mod.toLowerCase();
         };

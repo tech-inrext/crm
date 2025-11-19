@@ -8,7 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import HandshakeIcon from "@mui/icons-material/Handshake";
-import { RealEstateAgent, Group as GroupIcon, Description, VideoLibrary } from "@mui/icons-material";
+import { RealEstateAgent, Group as GroupIcon, Description, VideoLibrary, People } from "@mui/icons-material";
 
 const AppIcon = ({
   src,
@@ -96,7 +96,13 @@ export const DASHBOARD_SIDEBAR_LINKS = [
   href: "/dashboard/training-videos",
   module: "training-videos",
   icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
-}
+  },
+  {
+    label: "Pillars",
+    href: "/dashboard/pillars",
+    module: "pillar",
+    icon: <People sx={{ color: "#3785FF" }} />,
+  }
 ];
 
 export default function DashboardLayout({
