@@ -1,3 +1,4 @@
+
 import mongoose from "mongoose";
 
 const pillarSchema = new mongoose.Schema(
@@ -97,3 +98,5 @@ pillarSchema.statics.getActivePillars = function() {
 };
 
 export default mongoose.models.Pillar || mongoose.model("Pillar", pillarSchema);
+
+

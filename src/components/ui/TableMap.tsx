@@ -40,7 +40,7 @@ function TableMap<T>({ data, header, onEdit, onDelete }: TableMapProps<T>) {
           zIndex: 100,
           "& .MuiTableRow-root": {
             background:
-              "linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important",
+              "#1976d2 !important",
           },
         },
         "& .MuiTableBody-root": {

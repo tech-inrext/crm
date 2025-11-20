@@ -65,3 +65,4 @@ export interface PillarsResponse {
   data: Pillar[];
   pagination: PaginationInfo;
 }
+

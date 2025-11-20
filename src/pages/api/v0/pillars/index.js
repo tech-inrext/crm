@@ -2,6 +2,7 @@ import dbConnect from "@/lib/mongodb";
 import Pillar from "@/models/Pillar";
 import * as cookie from "cookie";
 import { userAuth } from "@/middlewares/auth";
+import Property from "@/models/Property";
 
 // GET all pillars with filtering and pagination
 const getAllPillars = async (req, res) => {
@@ -225,3 +226,5 @@ const handler = async (req, res) => {
 };
 
 export default withAuth(handler);
+
+

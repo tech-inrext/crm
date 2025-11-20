@@ -515,7 +515,7 @@ const TrainingVideos: React.FC = () => {
       />
 
       {/* Floating Action Button for Mobile */}
-      <PermissionGuard module="training-videos" action="write" fallback={<></>}>
+      {/* <PermissionGuard module="training-videos" action="write" fallback={<></>}>
         <Fab
           color="primary"
           aria-label="add video"
@@ -533,7 +533,7 @@ const TrainingVideos: React.FC = () => {
         >
           <Add />
         </Fab>
-      </PermissionGuard>
+      </PermissionGuard> */}
 
       {/* Snackbar for notifications */}
       <Snackbar

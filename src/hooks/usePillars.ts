@@ -66,7 +66,7 @@ export function usePillars({
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to update pillar");
       }
-      await loadPillars(); // Refresh the list
+      await loadPillars(); 
       return response.data.data!;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || "Failed to update pillar");
@@ -79,7 +79,7 @@ export function usePillars({
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to delete pillar");
       }
-      await loadPillars(); // Refresh the list
+      await loadPillars(); 
     } catch (err: any) {
       throw new Error(err.response?.data?.message || "Failed to delete pillar");
     }
@@ -100,3 +100,4 @@ export function usePillars({
     refresh: loadPillars,
   };
 }
+
