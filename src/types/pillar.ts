@@ -44,6 +44,7 @@ export interface PillarFormData {
   projects: string[];
   expertise: string[];
   skills: string[];
+  isFeatured?: boolean;
 }
 
 export interface ApiResponse<T> {

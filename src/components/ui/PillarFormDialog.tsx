@@ -20,8 +20,10 @@ import {
   Autocomplete,
   Checkbox,
   ListItemText,
+  FormControlLabel,
+  Switch,
 } from "@mui/material";
-import { Close, CloudUpload } from "@mui/icons-material";
+import { Close, CloudUpload, Star, StarBorder } from "@mui/icons-material";
 import { Pillar, PillarFormData } from "@/types/pillar";
 import { useFileUpload } from "@/hooks/useFileUpload";
 import axios from "axios";
@@ -59,6 +61,7 @@ const DEFAULT_PILLAR_DATA: PillarFormData = {
   projects: [],
   expertise: [],
   skills: [],
+  isFeatured: false, 
 };
 
 const PillarFormDialog: React.FC<PillarFormDialogProps> = ({ 
@@ -89,6 +92,7 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
           projects: pillar.projects.map(p => p._id) || [],
           expertise: pillar.expertise || [],
           skills: pillar.skills || [],
+          isFeatured: pillar.isFeatured || false, 
         });
       } else {
         setFormData(DEFAULT_PILLAR_DATA);
@@ -135,6 +139,17 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: "" }));
     }
+  };
+
+  // Add handler for boolean fields like isFeatured
+  const handleBooleanChange = (field: keyof PillarFormData) => (
+    event: React.ChangeEvent<HTMLInputElement>
+  ): void => {
+    const value = event.target.checked;
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
   };
 
   const handleProjectsChange = (event: SelectChangeEvent<string[]>) => {
@@ -319,6 +334,41 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
             </FormControl>
           </Grid>
 
+          {/* Featured Toggle - Add this section */}
+          <Grid size={{ xs: 12 }}>
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={formData.isFeatured || false}
+                  onChange={handleBooleanChange("isFeatured")}
+                  color="primary"
+                  icon={<StarBorder />}
+                  checkedIcon={<Star />}
+                />
+              }
+              label={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Typography variant="body1">
+                    Featured Pillar
+                  </Typography>
+                  {formData.isFeatured && (
+                    <Chip 
+                      label="Featured" 
+                      size="small" 
+                      color="primary" 
+                      variant="filled"
+                      icon={<Star />}
+                    />
+                  )}
+                </Box>
+              }
+              disabled={isUploading}
+            />
+            <FormHelperText>
+              Featured pillars will be highlighted and appear first in listings
+            </FormHelperText>
+          </Grid>
+
           <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth
@@ -331,6 +381,7 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
             />
           </Grid>
 
+          {/* Rest of the form remains the same */}
           <Grid size={{ xs: 12 }}>
             <TextField
               fullWidth
@@ -611,5 +662,3 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
 };
 
 export default PillarFormDialog;
-
-

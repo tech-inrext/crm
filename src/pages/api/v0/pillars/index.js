@@ -143,6 +143,50 @@ const createPillar = async (req, res) => {
   }
 };
 
+// GET all pillars for public website
+const getPublicPillars = async (req, res) => {
+  try {
+    const { 
+      category = "", 
+      limit = "50",
+      featured = "false"
+    } = req.query;
+
+    const itemsPerPage = Math.min(parseInt(limit), 100);
+    
+    const query = { isActive: true };
+    
+    // Filter by category if provided
+    if (category) {
+      query.category = category;
+    }
+
+    // Filter featured pillars if requested
+    if (featured === "true") {
+      query.isFeatured = true;
+    }
+
+    const pillars = await Pillar.find(query)
+      .select("name category profileImages designation about experience expertise skills projects isFeatured")
+      .populate("projects", "projectName builderName location price images slug propertyType")
+      .sort({ category: 1, createdAt: -1 })
+      .limit(itemsPerPage);
+
+    return res.status(200).json({
+      success: true,
+      data: pillars,
+      total: pillars.length,
+    });
+  } catch (error) {
+    console.error("Error fetching public pillars:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch pillars",
+      error: error.message,
+    });
+  }
+};
+
 // Auth wrapper
 function withAuth(handler) {
   return async (req, res) => {
@@ -205,6 +249,13 @@ const handler = async (req, res) => {
 
   try {
     if (req.method === "GET") {
+      // Check if it's a public request using a different parameter name
+      const { isPublic, featured, category } = req.query;
+      
+      if (isPublic === "true") {
+        return getPublicPillars(req, res);
+      }
+      
       return getAllPillars(req, res);
     }
 
@@ -226,5 +277,4 @@ const handler = async (req, res) => {
 };
 
 export default withAuth(handler);
-
 

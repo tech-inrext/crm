@@ -38,7 +38,7 @@ import {
 } from "@/constants/bookingLogin";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 
-const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
+const Pagination = dynamic(() => import("@/components/ui/Navigation/Pagination"), {
   ssr: false,
 });
 

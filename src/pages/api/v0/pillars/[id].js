@@ -69,6 +69,16 @@ const updatePillar = async (req, res) => {
     });
   } catch (error) {
     console.error("Error updating pillar:", error);
+    
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation Error",
+        errors: errors
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Failed to update pillar",
@@ -205,5 +215,3 @@ const handler = async (req, res) => {
 };
 
 export default withAuth(handler);
-
-
