@@ -14,7 +14,8 @@ const MODULES = [
   "cab-vendor",
   "vendor",
   "property",
-  "booking-login", 
+  "booking-login",
+  "notifications",
 ];
 
 // Configure which actions on which modules should be allowed for roles
@@ -108,6 +109,11 @@ export async function userAuth(req, res, next) {
     // 🛡️ Check permission
     let hasAccess = await checkPermission(roleId, action, moduleName);
 
+    // Special-case: allow all authenticated users to access notifications
+    if (!hasAccess && moduleName === "notifications") {
+      hasAccess = true;
+    }
+
     // Special-case: allow vendor-type roles to perform WRITE on "cab-booking"
     // without requiring READ permission. This enables vendors to update/assign
     // vendor-related fields but still prevents them from listing/reading all
@@ -135,7 +141,6 @@ export async function userAuth(req, res, next) {
       });
     }
 
-
     // Attach analytics booleans from role to req.role.analytics and res.locals.analytics
     req.moduleName = moduleName;
     req.action = action;
@@ -155,4 +160,3 @@ export async function userAuth(req, res, next) {
     res.status(400).json({ message: "Auth Error: " + err.message });
   }
 }
-

@@ -1,5 +1,6 @@
 import { Service } from "@framework";
 import Lead from "../../models/Lead";
+import { NotificationHelper } from "../../lib/notification-helpers";
 
 class LeadService extends Service {
   constructor() {
@@ -43,6 +44,33 @@ class LeadService extends Service {
       });
 
       await newLead.save();
+
+      // Send notification if lead is assigned to someone during creation
+      if (rest.assignedTo) {
+        try {
+          await NotificationHelper.notifyLeadAssigned(
+            newLead._id,
+            rest.assignedTo,
+            loggedInUserId,
+            {
+              leadId: newLead.leadId,
+              company: newLead.company || "Unknown Company",
+              name: newLead.name,
+              phone: newLead.phone,
+              priority: "HIGH",
+            }
+          );
+          console.log(
+            `✅ Notification sent for new lead assignment to: ${rest.assignedTo}`
+          );
+        } catch (notificationError) {
+          console.error(
+            "Failed to send new lead notification:",
+            notificationError
+          );
+          // Don't fail the creation if notification fails
+        }
+      }
 
       return res.status(201).json({ success: true, data: newLead });
     } catch (error) {
@@ -150,6 +178,14 @@ class LeadService extends Service {
     const { phone, ...updateFields } = req.body;
 
     try {
+      // Get the original lead before updating to compare changes
+      const originalLead = await Lead.findById(id);
+      if (!originalLead) {
+        return res
+          .status(404)
+          .json({ success: false, error: "Lead not found" });
+      }
+
       const updatedLead = await Lead.findByIdAndUpdate(
         id,
         { $set: updateFields },
@@ -160,6 +196,64 @@ class LeadService extends Service {
         return res
           .status(404)
           .json({ success: false, error: "Lead not found" });
+      }
+
+      // Check if status changed and send notification
+      if (updateFields.status && originalLead.status !== updateFields.status) {
+        try {
+          await NotificationHelper.notifyLeadStatusUpdate(
+            updatedLead._id,
+            updatedLead.assignedTo || req.employee._id,
+            req.employee._id,
+            {
+              oldStatus: originalLead.status,
+              newStatus: updateFields.status,
+              leadId: updatedLead.leadId,
+              company: updatedLead.company || "Unknown Company",
+              name: updatedLead.name,
+              phone: updatedLead.phone,
+            }
+          );
+          console.log(
+            `✅ Notification sent for lead status change: ${originalLead.status} → ${updateFields.status}`
+          );
+        } catch (notificationError) {
+          console.error(
+            "Failed to send lead status notification:",
+            notificationError
+          );
+          // Don't fail the update if notification fails
+        }
+      }
+
+      // Check if lead was assigned to someone and send notification
+      if (
+        updateFields.assignedTo &&
+        originalLead.assignedTo?.toString() !== updateFields.assignedTo
+      ) {
+        try {
+          await NotificationHelper.notifyLeadAssigned(
+            updatedLead._id,
+            updateFields.assignedTo,
+            req.employee._id,
+            {
+              leadId: updatedLead.leadId,
+              company: updatedLead.company || "Unknown Company",
+              name: updatedLead.name,
+              phone: updatedLead.phone,
+              priority: "HIGH",
+            }
+          );
+          console.log(
+            `✅ Notification sent for lead assignment to user: ${updateFields.assignedTo}`
+          );
+        } catch (notificationError) {
+          console.error(
+            "Failed to send lead assignment notification:",
+            notificationError
+          );
+          // Don't fail the update if notification fails
+        }
       }
 
       return res.status(200).json({ success: true, data: updatedLead });
