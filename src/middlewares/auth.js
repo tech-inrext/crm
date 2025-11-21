@@ -137,11 +137,18 @@ export async function userAuth(req, res, next) {
       });
     }
 
-    // ✅ Store these if needed in handlers
+
+    // Attach analytics booleans from role to req.role.analytics and res.locals.analytics
     req.moduleName = moduleName;
     req.action = action;
     req.employee = employee;
     req.role = role;
+    req.role.analytics = {
+      showTotalVendorsBilling: Boolean(role.showTotalVendorsBilling),
+      showCabBookingAnalytics: Boolean(role.showCabBookingAnalytics),
+      showScheduleThisWeek: Boolean(role.showScheduleThisWeek),
+    };
+    res.locals.analytics = req.role.analytics;
 
     // Ensure we await the next handler so this middleware only returns after
     // the downstream handler completes and sends a response.

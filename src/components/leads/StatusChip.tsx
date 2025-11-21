@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Chip } from "@mui/material";
+import { Chip } from "@/components/ui/Component";
 
 // Constants
 // const STATUS_COLORS = {

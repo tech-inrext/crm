@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, CircularProgress, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@/components/ui/Component";
 
 export const LoadingState: React.FC = () => (
   <Box

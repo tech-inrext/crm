@@ -10,14 +10,17 @@ import {
   IconButton,
   Tooltip,
 } from "@mui/material";
+
 import {
   Email,
   Phone,
   TrendingUp,
   Edit,
   Delete,
-  Schedule,
-} from "@mui/icons-material";
+} from "@/components/ui/Component";
+
+import { Schedule } from "@mui/icons-material";
+
 import type { LeadDisplay as Lead } from "../../types/lead";
 import StatusChip, { getStatusColor } from "./StatusChip";
 import StatusDropdown from "./StatusDropdown";

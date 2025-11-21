@@ -9,7 +9,7 @@ import {
   IconButton,
   Tooltip,
   Chip,
-} from "@mui/material";
+} from "@/components/ui/Component";
 import {
   LocationOn,
   ArrowForward,
@@ -19,9 +19,9 @@ import {
   Info,
   AssignmentInd,
   MonetizationOn,
-} from "@mui/icons-material";
+} from "@/components/ui/Component";
 import MODULE_STYLES from "@/styles/moduleStyles";
-import Avatar from "@/components/ui/Avatar";
+import Avatar from "@/components/ui/Component/Avatar";
 import { Booking } from "@/types/cab-booking";
 import {
   formatDateTime,

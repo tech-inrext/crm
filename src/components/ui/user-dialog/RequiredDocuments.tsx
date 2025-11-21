@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Box, Typography, IconButton } from "@mui/material";
-import UploadFileIcon from "@mui/icons-material/UploadFile";
-import CloseIcon from "@mui/icons-material/Close";
+import { Box, Typography, IconButton } from "@/components/ui/Component";
+import UploadFileIcon from "@/components/ui/Component/UploadFile";
+import CloseIcon from "@/components/ui/Component/CloseIcon";
 import { Field, FieldProps } from "formik";
 import { FIELD_LABELS } from "@/constants/users";
 import ForFreelancer from "./ForFreelancer";

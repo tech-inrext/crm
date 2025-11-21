@@ -32,6 +32,10 @@ const updateRoleDetails = async (req, res) => {
     write: writeItems,
     delete: deleteItems,
     isSystemAdmin,
+    showTotalUsers,
+    showTotalVendorsBilling,
+    showCabBookingAnalytics,
+    showScheduleThisWeek,
   } = req.body;
 
   try {
@@ -70,6 +74,38 @@ const updateRoleDetails = async (req, res) => {
           ? isSystemAdmin.toLowerCase() === "true"
           : Boolean(isSystemAdmin);
       setObj.isSystemAdmin = flag;
+    }
+
+    if (typeof showTotalUsers !== "undefined") {
+      const flag =
+        typeof showTotalUsers === "string"
+          ? showTotalUsers.toLowerCase() === "true"
+          : Boolean(showTotalUsers);
+      setObj.showTotalUsers = flag;
+    }
+
+    if (typeof showTotalVendorsBilling !== "undefined") {
+      const flag =
+        typeof showTotalVendorsBilling === "string"
+          ? showTotalVendorsBilling.toLowerCase() === "true"
+          : Boolean(showTotalVendorsBilling);
+      setObj.showTotalVendorsBilling = flag;
+    }
+
+    if (typeof showCabBookingAnalytics !== "undefined") {
+      const flag =
+        typeof showCabBookingAnalytics === "string"
+          ? showCabBookingAnalytics.toLowerCase() === "true"
+          : Boolean(showCabBookingAnalytics);
+      setObj.showCabBookingAnalytics = flag;
+    }
+
+    if (typeof showScheduleThisWeek !== "undefined") {
+      const flag =
+        typeof showScheduleThisWeek === "string"
+          ? showScheduleThisWeek.toLowerCase() === "true"
+          : Boolean(showScheduleThisWeek);
+      setObj.showScheduleThisWeek = flag;
     }
 
     if (Object.keys(setObj).length === 0) {

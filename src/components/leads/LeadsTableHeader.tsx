@@ -9,7 +9,7 @@ import {
   Tooltip,
   Menu,
   MenuItem,
-} from "@mui/material";
+} from "@/components/ui/Component";
 
 type HeaderCol = {
   label: string;

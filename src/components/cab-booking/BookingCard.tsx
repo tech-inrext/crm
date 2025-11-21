@@ -9,21 +9,21 @@ import {
   Typography,
   TextField,
   Button,
-} from "@mui/material";
-import ShareIcon from "@mui/icons-material/Share";
+  ShareIcon,
+} from "@/components/ui/Component";
 import {
   Visibility,
   LocationOn,
   ArrowForward,
   Event,
   AssignmentInd,
-} from "@mui/icons-material";
+} from "@/components/ui/Component";
 import AssignVendorDialog from "./AssignVendorDialog";
 import BookingStatus from "./BookingStatus";
 import ShareBookingDialog from "./ShareBookingDialog";
 import PermissionGuard from "@/components/PermissionGuard";
-import CardComponent from "@/components/ui/Card";
-import Avatar from "@/components/ui/Avatar";
+import CardComponent from "@/components/ui/card/Card";
+import Avatar from "@/components/ui/Component/Avatar";
 import MODULE_STYLES from "@/styles/moduleStyles";
 import { Booking } from "@/types/cab-booking";
 import {
