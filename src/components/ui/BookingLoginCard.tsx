@@ -21,31 +21,8 @@ interface BookingLoginCardProps {
   onDelete: () => void;
   onApprove?: () => void;
   onReject?: () => void;
+  hasAccountsRole: boolean;
 }
-
-const handleDeleteBooking = async (booking: any) => {
-  // Show appropriate message based on user role and booking status
-  let confirmMessage = `Are you sure you want to delete booking for ${booking.customer1Name}?`;
-  
-  if (!hasAccountsRole() && booking.status !== 'draft') {
-    confirmMessage = `This booking has status "${booking.status}" and cannot be deleted. Only Accounts role can delete non-draft bookings.`;
-    alert(confirmMessage);
-    return;
-  }
-
-  if (window.confirm(confirmMessage)) {
-    try {
-      await deleteBooking(booking._id);
-      setSnackbarMessage("Booking deleted successfully");
-      setSnackbarSeverity("success");
-      setSnackbarOpen(true);
-    } catch (error: any) {
-      setSnackbarMessage(error.message || "Failed to delete booking");
-      setSnackbarSeverity("error");
-      setSnackbarOpen(true);
-    }
-  }
-};
 
 const BookingLoginCard: React.FC<BookingLoginCardProps> = ({
   booking,
@@ -54,6 +31,7 @@ const BookingLoginCard: React.FC<BookingLoginCardProps> = ({
   onDelete,
   onApprove,
   onReject,
+  hasAccountsRole,
 }) => {
   const getStatusColor = (status: string) => {
     const statusOption = STATUS_OPTIONS.find(opt => opt.value === status);
@@ -61,29 +39,44 @@ const BookingLoginCard: React.FC<BookingLoginCardProps> = ({
   };
 
   return (
-    <Card sx={{ width: "100%", mb: 2 }}>
+    <Card 
+      sx={{ 
+        width: "100%", 
+        mb: 2,
+        border: '1px solid',
+        borderColor: 'divider',
+        borderRadius: 2,
+        boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+          transform: 'translateY(-2px)',
+        }
+      }}
+    >
       <CardContent>
         <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
           <Box>
-            <Typography variant="h6" fontWeight="bold">
+            <Typography variant="h6" fontWeight="bold" color="primary.main">
               {booking.projectName}
             </Typography>
-            <Typography variant="body2" color="text.secondary">
+            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
               {booking.customer1Name}
             </Typography>
           </Box>
           <Chip
-            label={booking.status}
+            label={booking.status?.toUpperCase() || 'DRAFT'}
             color={getStatusColor(booking.status) as any}
             size="small"
+            variant="filled"
           />
         </Box>
 
         <Box mb={2}>
-          <Typography variant="body2">
+          <Typography variant="body2" sx={{ mb: 1 }}>
             <strong>Unit:</strong> {booking.unitNo} | <strong>Area:</strong> {booking.area} sq ft
           </Typography>
-          <Typography variant="body2">
+          <Typography variant="body2" sx={{ mb: 1 }}>
             <strong>Phone:</strong> {booking.phoneNo}
           </Typography>
           {booking.email && (
@@ -103,6 +96,7 @@ const BookingLoginCard: React.FC<BookingLoginCardProps> = ({
               startIcon={<Check />}
               onClick={onApprove}
               fullWidth
+              sx={{ py: 0.8 }}
             >
               Approve
             </Button>
@@ -113,6 +107,7 @@ const BookingLoginCard: React.FC<BookingLoginCardProps> = ({
               startIcon={<Close />}
               onClick={onReject}
               fullWidth
+              sx={{ py: 0.8 }}
             >
               Reject
             </Button>
@@ -121,38 +116,74 @@ const BookingLoginCard: React.FC<BookingLoginCardProps> = ({
 
         <Box display="flex" justifyContent="space-between" alignItems="center">
           <Typography variant="caption" color="text.secondary">
-            Created by: {booking.createdBy?.name}
+            {booking.createdBy?.name ? `Created by: ${booking.createdBy.name}` : ''}
           </Typography>
           
-          <Box>
-            <IconButton size="small" onClick={onView} color="primary">
-              <Visibility />
+          <Box display="flex" gap={0.5}>
+            <IconButton 
+              size="small" 
+              onClick={onView} 
+              color="primary"
+              sx={{ 
+                backgroundColor: 'primary.light', 
+                '&:hover': { backgroundColor: 'primary.main' },
+                color: 'white'
+              }}
+            >
+              <Visibility fontSize="small" />
             </IconButton>
             <PermissionGuard module="booking-login" action="write" fallback={null}>
               <IconButton 
                 size="small" 
                 onClick={onEdit} 
                 color="secondary"
-                disabled={booking.status === 'approved' || booking.status === 'rejected'}
+                disabled={!hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected')}
+                sx={{ 
+                  backgroundColor: (!hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected')) 
+                    ? 'grey.300' 
+                    : 'secondary.light', 
+                  '&:hover': { 
+                    backgroundColor: (!hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected')) 
+                      ? 'grey.300' 
+                      : 'secondary.main' 
+                  },
+                  color: 'white'
+                }}
+                title={
+                  (!hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected')) 
+                    ? "Cannot edit approved or rejected bookings" 
+                    : "Edit Booking"
+                }
               >
-                <Edit />
+                <Edit fontSize="small" />
               </IconButton>
             </PermissionGuard>
             <PermissionGuard module="booking-login" action="delete" fallback={null}>
-  <IconButton 
-    size="small" 
-    onClick={onDelete} 
-    color="error"
-    disabled={!hasAccountsRole && booking.status !== 'draft'}
-    title={
-      (!hasAccountsRole && booking.status !== 'draft') 
-        ? "Only draft bookings can be deleted" 
-        : "Delete Booking"
-    }
-  >
-    <Delete />
-  </IconButton>
-</PermissionGuard>
+              <IconButton 
+                size="small" 
+                onClick={onDelete} 
+                color="error"
+                disabled={!hasAccountsRole && booking.status !== 'draft'}
+                sx={{ 
+                  backgroundColor: (!hasAccountsRole && booking.status !== 'draft') 
+                    ? 'grey.300' 
+                    : 'error.light', 
+                  '&:hover': { 
+                    backgroundColor: (!hasAccountsRole && booking.status !== 'draft') 
+                      ? 'grey.300' 
+                      : 'error.main' 
+                  },
+                  color: 'white'
+                }}
+                title={
+                  (!hasAccountsRole && booking.status !== 'draft') 
+                    ? "Only draft bookings can be deleted" 
+                    : "Delete Booking"
+                }
+              >
+                <Delete fontSize="small" />
+              </IconButton>
+            </PermissionGuard>
           </Box>
         </Box>
       </CardContent>

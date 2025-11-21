@@ -299,8 +299,12 @@ const ResidentialForm: React.FC<ResidentialFormProps> = ({
             )}
           >
             {[
-              "Swimming Pool", "Gym", "Park", "Club House", "Security", "Power Backup",
-              "Water Supply", "Car Parking", "Lift", "Play Area", "Garden", "Shopping Center"
+              "24/7 security staff", "CCTV surveillance", "Video door phone and intercom", "Smart lock and smart access control systems", "Gated community and controlled entry", "Fire safety (alarm, extinguisher)",
+              "Swimming pool", "Gymnasium / fitness center", "Jogging track / walking paths", "Clubhouse or community hall", "Landscaped garden and green spaces", "Rooftop lounge or terrace garden", "Playground / children’s play area", 
+              "Pet-friendly zones / dog park", "Party room / multipurpose hall", "Covered parking and garage", "Visitor / guest parking", "Bike parking or storage", "Electric vehicle charging stations", "Proximity to public transport", 
+              "High-speed internet and cable TV provision", "Building Wi-Fi in common areas", "Smart home automation (lighting, climate control)", "Online rent payment and maintenance requests", "Automated package room / lockers for deliveries", 
+              "Spa / wellness center", "Indoor games room (billiards, table tennis)", "Co-working / office space", "Community events and social spaces", "Elder’s sitting area", "Valet trash service", "Storage facilities", "Library / reading lounge", 
+              "Solar power or solar lighting", "Rainwater harvesting", "Waste segregation and recycling"
             ].map(amenity => (
               <MenuItem key={amenity} value={amenity}>
                 {amenity}

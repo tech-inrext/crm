@@ -52,9 +52,9 @@ const BookingLoginActionBar: React.FC<BookingLoginActionBarProps> = ({
           sx={{
             borderRadius: 2,
             minWidth: 120,
-            background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            background: "#1976d2",
             "&:hover": {
-              background: "linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%)",
+              background: "#1976d2",
             },
           }}
         >

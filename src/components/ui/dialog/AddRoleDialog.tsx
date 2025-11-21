@@ -138,8 +138,13 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             teams: "team",
             bookinglogin: "booking-login",
             "booking-login": "booking-login",
-            // property: "property",
-            // "property": "property",
+            trainingvideos: "training-videos",
+            "training-videos": "training-videos",
+            property: "property",
+            properties: "property",
+            "property": "property",
+            pillar: "pillar",
+            pillars: "pillar",
           };
           // Always map UI-friendly labels for cab vendors to 'cab-vendor' (backend)
           if (
@@ -154,9 +159,15 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           // Map BookingLogin UI labels to backend 'booking-login'
           if (mod === "BookingLogin" || mod.toLowerCase() === "bookinglogin")
             return "booking-login";
+          // Map TrainingVideos UI labels to backend 'training-videos'
+          if (mod === "TrainingVideos" || mod.toLowerCase() === "trainingvideos")
+            return "training-videos";
           // Map Property UI labels to backend 'property'
-          // if (mod === "Property" || mod.toLowerCase() === "property")
-          //   return "property";
+          if (mod === "Property" || mod.toLowerCase() === "property")
+            return "property";
+          // Map Pillar UI labels to backend 'pillar'
+          if (mod === "Pillar" || mod.toLowerCase() === "pillar")
+            return "pillar";
 
           return map[mod.toLowerCase()] || mod.toLowerCase();
         };

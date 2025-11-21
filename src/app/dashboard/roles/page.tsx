@@ -11,7 +11,7 @@ import {
   CircularProgress,
   AddIcon
 } from "@/components/ui/Component";
- import RoleCard from "@/components/ui/card/RoleCard";
+import RoleCard from "@/components/ui/card/RoleCard";
 import { useRoles } from "@/hooks/useRoles";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ROLE_PERMISSIONS, GRADIENTS } from "@/constants/leads";
@@ -34,6 +34,10 @@ const modules = [
   "Vendor",
   "Team",
   "MOU",
+  "Property",
+  "BookingLogin",
+  "TrainingVideos",
+  "Pillar",
   "Branch",
 ];
 

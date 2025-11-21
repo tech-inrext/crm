@@ -49,12 +49,15 @@ const updateRoleDetails = async (req, res) => {
 
     // Normalize module names to match backend enum
     const normalizeModuleName = (modules) => {
-      if (!Array.isArray(modules)) return modules;
-      return modules.map(mod => {
-        if (mod === 'bookinglogin') return 'booking-login';
-        return mod;
-      });
-    };
+  if (!Array.isArray(modules)) return modules;
+  return modules.map(mod => {
+    // Handle module name conversions to match backend enum
+    if (mod === 'bookinglogin') return 'booking-login';
+    if (mod === 'trainingvideos') return 'training-videos';
+    if (mod === 'pillar') return 'pillar';
+    return mod;
+  });
+};
 
     const setObj = {};
     // if (Array.isArray(readItems)) setObj.read = readItems;
