@@ -15,6 +15,7 @@ axios.defaults.withCredentials = true;
 
 interface User {
   _id: string;
+  isSystemAdmin?: boolean;
   name: string;
   email: string;
   phone: string;
@@ -45,7 +46,7 @@ interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  pendingRoleSelection: User | null;
+  pendingRoleSelection: boolean;
   login: (email: string, password: string) => Promise<{ userData?: User }>;
   logout: () => Promise<void>;
   checkAuth: () => Promise<void>;
@@ -120,15 +121,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return user.roles.map((role) => role.name);
   };
 
-  const getRoleId = (role: any): string => {
-    return typeof role === "string" ? role : role._id;
-  };
-
   const checkAuth = React.useCallback(async () => {
     try {
       const profileResponse = await getProfileDetails();
       if (profileResponse && profileResponse.data) {
-        setUser(profileResponse.data);
+        // Normalise backend response: some endpoints return `id` instead of
+        // `_id`. Ensure `user._id` is populated so components that expect
+        // `_id` don't receive `undefined` (which becomes the string "undefined").
+        // Also derive `isSystemAdmin` from role objects when available so
+        // UI logic can check this flag.
+        const profile = profileResponse.data || ({} as any);
+
+        // Derive isSystemAdmin from explicit flag or from roles array
+        const rolesArr = Array.isArray(profile.roles) ? profile.roles : [];
+        const isSystemAdminFromRoles = rolesArr.some((r: any) =>
+          Boolean(r && r.isSystemAdmin)
+        );
+
+        const normalized = {
+          ...profile,
+          _id: profile._id || profile.id || undefined,
+          isSystemAdmin:
+            Boolean(profile.isSystemAdmin) || isSystemAdminFromRoles,
+        } as User;
+
+        setUser(normalized);
       } else {
         setUser(null);
         // Preserve the intended path when redirecting to login so we can
@@ -214,7 +231,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           timeout: 5000,
         }
       );
-      console.log("Logout successful");
     } catch (error: unknown) {
       const axiosError = error as {
         response?: { data?: { message?: string } };
@@ -234,9 +250,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   // Method to switch user's current role
   const switchRole = async (roleId: string) => {
     try {
-      console.log("🔄 AuthContext: Switching role to:", roleId);
-      console.log("🔄 AuthContext: Current user:", user);
-
       const response = await axios.post(
         "/api/v0/employee/switch-role",
         {
@@ -247,8 +260,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           timeout: 10000,
         }
       );
-
-      console.log("✅ AuthContext: Switch role API response:", response.data);
 
       if (response.data.success) {
         // Update user's current role with the full role object from backend
@@ -272,8 +283,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Cancel role selection process
   const cancelRoleSelection = () => {
-    console.log("AuthContext: Role selection cancelled");
-    setPendingRoleSelection(null);
+    setPendingRoleSelection(false);
     // Also logout the user since they cancelled role selection
     logout();
   };
@@ -358,7 +368,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     return { hasReadAccess, hasWriteAccess, hasDeleteAccess };
   };
 
-   // ✅ Function: Determine access permissions for analytics visibility
+  // ✅ Function: Determine access permissions for analytics visibility
   const getAnalyticsAccess = () => {
     if (!user) {
       return {
@@ -396,15 +406,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // ✅ Function: Check if current user has the 'Accounts' role
-const hasAccountsRole = () => {
-  if (!user) return false;
-  
-  // Get current role name
-  const currentRoleName = getCurrentRoleName()?.toLowerCase();
-  
-  // Check if current role is "accounts" (case-insensitive)
-  return currentRoleName === "accounts";
-};
+  const hasAccountsRole = () => {
+    if (!user) return false;
+
+    // Get current role name
+    const currentRoleName = getCurrentRoleName()?.toLowerCase();
+
+    // Check if current role is "accounts" (case-insensitive)
+    return currentRoleName === "accounts";
+  };
 
   useEffect(() => {
     // Let's have this failing api for now
@@ -451,5 +461,3 @@ const hasAccountsRole = () => {
     </AuthContext.Provider>
   );
 };
-
-

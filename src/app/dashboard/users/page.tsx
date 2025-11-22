@@ -105,6 +105,9 @@ const Users: React.FC = () => {
       return false;
     }
 
+    // System admin can edit everyone
+    if (currentUser.isSystemAdmin) return true;
+
     // Check if logged-in user's ID matches the employee's managerId
     const currentUserId = currentUser._id;
     const employeeManagerId = employee.managerId;
