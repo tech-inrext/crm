@@ -94,7 +94,7 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
         <PermissionGuard
           module={USERS_PERMISSION_MODULE}
           action="write"
-          fallback={<></>}
+          fallback={null}
         >
           <IconButton
             size="small"
