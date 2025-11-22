@@ -92,6 +92,9 @@ interface NotificationContextType {
   // Real-time
   subscribeToNotifications: () => void;
   unsubscribeFromNotifications: () => void;
+
+  // Force refresh
+  forceRefresh: () => Promise<void>;
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
@@ -394,6 +397,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     console.log("Unsubscribing from real-time notifications");
   }, []);
 
+  // Force refresh function for external triggers
+  const forceRefresh = useCallback(async () => {
+    if (user) {
+      await refreshUnreadCount();
+      await fetchNotifications(1);
+      await refreshStats();
+    }
+  }, [user, refreshUnreadCount, fetchNotifications, refreshStats]);
+
   // Initialize notifications when user changes
   useEffect(() => {
     if (user) {
@@ -419,6 +431,30 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     subscribeToNotifications,
     unsubscribeFromNotifications,
   ]);
+
+  // Auto-refresh unread count every 30 seconds
+  useEffect(() => {
+    if (!user) return;
+
+    const intervalId = setInterval(() => {
+      refreshUnreadCount();
+    }, 30000); // 30 seconds
+
+    return () => clearInterval(intervalId);
+  }, [user, refreshUnreadCount]);
+
+  // Refresh on window focus to catch notifications created in other tabs
+  useEffect(() => {
+    if (!user) return;
+
+    const handleFocus = () => {
+      refreshUnreadCount();
+      fetchNotifications(1);
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [user, refreshUnreadCount, fetchNotifications]);
 
   // Refetch when filters change
   useEffect(() => {
@@ -449,6 +485,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     clearError,
     subscribeToNotifications,
     unsubscribeFromNotifications,
+    forceRefresh,
   };
 
   return (

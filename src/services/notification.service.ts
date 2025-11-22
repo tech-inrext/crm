@@ -133,6 +133,7 @@ class NotificationService {
         toDate,
       } = options;
 
+      // Convert string userId to ObjectId
       const query: any = {
         recipient: userId,
       };
@@ -155,6 +156,8 @@ class NotificationService {
         if (toDate) query.createdAt.$lte = toDate;
       }
 
+      console.log("getUserNotifications query:", JSON.stringify(query));
+
       // Execute query with pagination
       const notifications = await Notification.find(query)
         .populate("sender", "name email")
@@ -164,6 +167,10 @@ class NotificationService {
         .lean();
 
       const total = await Notification.countDocuments(query);
+
+      console.log(
+        `Found ${notifications.length} notifications out of ${total} total for user ${userId}`
+      );
 
       return {
         notifications,
@@ -228,7 +235,10 @@ class NotificationService {
   // Get unread count
   async getUnreadCount(userId: string) {
     try {
-      return await Notification.getUnreadCount(userId);
+      console.log("Getting unread count for user:", userId);
+      const count = await Notification.getUnreadCount(userId);
+      console.log("Unread count result:", count);
+      return count;
     } catch (error) {
       console.error("Error getting unread count:", error);
       throw error;
@@ -277,19 +287,22 @@ class NotificationService {
   // Get notification statistics
   async getNotificationStats(userId: string) {
     try {
+      // Convert string to ObjectId if needed
+      const userObjectId = userId;
+
       const [unreadCount, totalCount, recentCount, typeBreakdown] =
         await Promise.all([
           Notification.countDocuments({
-            recipient: userId,
+            recipient: userObjectId,
             "lifecycle.status": { $in: ["PENDING", "DELIVERED"] },
           }),
-          Notification.countDocuments({ recipient: userId }),
+          Notification.countDocuments({ recipient: userObjectId }),
           Notification.countDocuments({
-            recipient: userId,
+            recipient: userObjectId,
             createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
           }),
           Notification.aggregate([
-            { $match: { recipient: userId } },
+            { $match: { recipient: userObjectId } },
             { $group: { _id: "$type", count: { $sum: 1 } } },
           ]),
         ]);
@@ -325,6 +338,9 @@ class NotificationService {
     if (data.metadata?.cabBookingId) {
       query["metadata.cabBookingId"] = data.metadata.cabBookingId;
     }
+    if (data.metadata?.roleId) {
+      query["metadata.roleId"] = data.metadata.roleId;
+    }
 
     return await Notification.findOne(query);
   }
@@ -332,11 +348,30 @@ class NotificationService {
   // Helper: Schedule email notifications
   private async scheduleEmailNotification(notification: any) {
     try {
-      await leadQueue.add("sendNotificationEmail", {
+      // Check if leadQueue is available
+      if (!leadQueue) {
+        console.warn("Queue not available, skipping email scheduling");
+        return;
+      }
+
+      // Add timeout protection for Redis operations
+      const timeoutPromise = new Promise((_, reject) =>
+        setTimeout(() => reject(new Error("Redis operation timeout")), 5000)
+      );
+
+      const schedulePromise = leadQueue.add("sendNotificationEmail", {
         notificationId: notification._id.toString(),
       });
+
+      await Promise.race([schedulePromise, timeoutPromise]);
+      console.log("Email notification scheduled successfully");
     } catch (error) {
-      console.error("Error scheduling email notification:", error);
+      console.error(
+        "Error scheduling email notification (non-blocking):",
+        error.message
+      );
+      // Don't throw error to prevent notification creation from failing
+      // Email can be sent later via a cleanup job
     }
   }
 

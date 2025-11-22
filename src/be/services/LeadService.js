@@ -204,10 +204,9 @@ class LeadService extends Service {
           await NotificationHelper.notifyLeadStatusUpdate(
             updatedLead._id,
             updatedLead.assignedTo || req.employee._id,
-            req.employee._id,
+            originalLead.status,
+            updateFields.status,
             {
-              oldStatus: originalLead.status,
-              newStatus: updateFields.status,
               leadId: updatedLead.leadId,
               company: updatedLead.company || "Unknown Company",
               name: updatedLead.name,

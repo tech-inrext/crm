@@ -2,6 +2,7 @@ import dbConnect from "../../../../lib/mongodb";
 import Role from "../../../../models/Role";
 import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
+import { NotificationHelper } from "../../../../lib/notification-helpers";
 
 // ✅ GET role by ID (only if has READ permission)
 const getRoleById = async (req, res) => {
@@ -125,6 +126,19 @@ const updateRoleDetails = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Role not found" });
+    }
+
+    // Send notification for role update
+    try {
+      await NotificationHelper.notifyRoleUpdated(
+        updatedRole._id,
+        updatedRole.toObject(),
+        setObj,
+        req.employee?._id
+      );
+      console.log("✅ Role update notification sent");
+    } catch (error) {
+      console.error("❌ Role update notification failed:", error);
     }
 
     return res.status(200).json({ success: true, data: updatedRole });

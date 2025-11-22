@@ -55,10 +55,20 @@ export default async function handler(req, res) {
     }
 
     try {
-      await leadQueue.add("sendOTPJob", { email, otp });
-      return res
-        .status(200)
-        .json({ success: true, message: "OTP is being sent to email" });
+      if (leadQueue) {
+        await leadQueue.add("sendOTPJob", { email, otp });
+        return res
+          .status(200)
+          .json({ success: true, message: "OTP is being sent to email" });
+      } else {
+        console.warn("Queue not available, OTP sending skipped");
+        return res
+          .status(200)
+          .json({
+            success: true,
+            message: "OTP generated but queue unavailable",
+          });
+      }
     } catch (error) {
       console.error("❌ Queueing OTP job failed:", error);
       return res

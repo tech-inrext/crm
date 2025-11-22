@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Badge,
   IconButton,
@@ -35,6 +35,7 @@ import { formatDistanceToNow } from "date-fns";
 
 const NotificationBell: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [isClient, setIsClient] = useState(false);
   const {
     notifications,
     unreadCount,
@@ -43,6 +44,7 @@ const NotificationBell: React.FC = () => {
     loadMoreNotifications,
     hasMore,
     clearError,
+    forceRefresh,
   } = useNotifications();
 
   const {
@@ -65,6 +67,11 @@ const NotificationBell: React.FC = () => {
   });
 
   const open = Boolean(anchorEl);
+
+  // Prevent hydration mismatch by only rendering client-specific content after hydration
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -104,6 +111,11 @@ const NotificationBell: React.FC = () => {
   };
 
   const formatNotificationTime = (dateString: string) => {
+    if (!isClient) {
+      // Return a stable placeholder during SSR
+      return "moments ago";
+    }
+
     try {
       return formatDistanceToNow(new Date(dateString), { addSuffix: true });
     } catch {
@@ -187,6 +199,14 @@ const NotificationBell: React.FC = () => {
                   )}
                 </Button>
               )}
+              <Button
+                size="small"
+                onClick={() => forceRefresh()}
+                disabled={loading}
+                title="Refresh notifications"
+              >
+                Refresh
+              </Button>
               <IconButton size="small" onClick={handleClose}>
                 <Close fontSize="small" />
               </IconButton>
@@ -307,14 +327,9 @@ const NotificationBell: React.FC = () => {
 
                       <ListItemText
                         primary={
-                          <Box
-                            sx={{
-                              display: "flex",
-                              alignItems: "center",
-                              gap: 1,
-                            }}
-                          >
+                          <>
                             <Typography
+                              component="span"
                               variant="body2"
                               fontWeight={
                                 notification.lifecycle.status !== "READ"
@@ -329,7 +344,7 @@ const NotificationBell: React.FC = () => {
                               }}
                             >
                               {notification.title}
-                            </Typography>
+                            </Typography>{" "}
                             <Chip
                               label={notification.metadata.priority}
                               size="small"
@@ -341,11 +356,12 @@ const NotificationBell: React.FC = () => {
                               variant="outlined"
                               sx={{ fontSize: "0.7rem", height: 20 }}
                             />
-                          </Box>
+                          </>
                         }
                         secondary={
-                          <Box>
+                          <>
                             <Typography
+                              component="span"
                               variant="body2"
                               color="text.secondary"
                               sx={{
@@ -359,13 +375,18 @@ const NotificationBell: React.FC = () => {
                             >
                               {notification.message}
                             </Typography>
-                            <Typography variant="caption" color="text.disabled">
+                            <br />
+                            <Typography
+                              component="span"
+                              variant="caption"
+                              color="text.disabled"
+                            >
                               {formatNotificationTime(notification.createdAt)}
                               {notification.sender && (
                                 <> • from {notification.sender.name}</>
                               )}
                             </Typography>
-                          </Box>
+                          </>
                         }
                       />
                     </ListItem>

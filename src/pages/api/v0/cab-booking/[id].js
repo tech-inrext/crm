@@ -6,6 +6,7 @@ import * as cookie from "cookie";
 import { userAuth, isSystemAdminAllowed } from "../../../../middlewares/auth";
 import { sendCabBookingStatusEmail } from "@/lib/emails/cabBookingStatus";
 import { sendCabVendorAssignmentEmail } from "@/lib/emails/cabVendorAssignment"; // <<< added
+import { NotificationHelper } from "../../../../lib/notification-helpers";
 
 async function patchBooking(req, res) {
   if (req.method !== "PATCH") {
@@ -183,6 +184,37 @@ async function patchBooking(req, res) {
       }
     }
     // === /VENDOR ASSIGNMENT EMAIL ===
+
+    // Send notifications for status change
+    if (statusChanged) {
+      try {
+        await NotificationHelper.notifyCabBookingStatusChange(
+          updated._id,
+          updated.toObject(),
+          prevStatus,
+          newStatus,
+          req.employee?._id
+        );
+        console.log("✅ Cab booking status change notification sent");
+      } catch (error) {
+        console.error("❌ Cab booking status notification failed:", error);
+      }
+    }
+
+    // Send notifications for vendor assignment
+    if (vendorChanged) {
+      try {
+        await NotificationHelper.notifyCabBookingVendorAssignment(
+          updated._id,
+          updated.toObject(),
+          newVendorId,
+          req.employee?._id
+        );
+        console.log("✅ Cab booking vendor assignment notification sent");
+      } catch (error) {
+        console.error("❌ Cab booking vendor assignment notification failed:", error);
+      }
+    }
 
     return res.status(200).json({ success: true, data: updated });
   } catch (error) {

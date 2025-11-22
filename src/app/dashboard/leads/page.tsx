@@ -265,36 +265,36 @@ const Leads: React.FC = () => {
             }}
           >
             <TableContainer>
-            <Table
-              stickyHeader
-              size={MODULE_STYLES.common.getResponsiveTableSize()}
-              sx={MODULE_STYLES.leads.table}
-            >
-              <LeadsTableHeader
-                header={leadsTableHeaderWithActions}
-                status={status}
-                onStatusChange={(s) => {
-                  setStatus(s);
-                  setPage(0);
-                }}
-              />
-              <TableBody>
-                {leads.map((row) => (
-                  <LeadsTableRow
-                    key={row.id}
-                    row={row}
-                    header={leadsTableHeaderWithActions}
-                    onEdit={() => {
-                      setEditId(row._id);
-                      setOpen(true);
-                    }}
-                    onDelete={() => {}}
-                    onStatusChange={updateLeadStatus}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+              <Table
+                stickyHeader
+                size={MODULE_STYLES.common.getResponsiveTableSize()}
+                sx={MODULE_STYLES.leads.table}
+              >
+                <LeadsTableHeader
+                  header={leadsTableHeaderWithActions}
+                  status={status}
+                  onStatusChange={(s) => {
+                    setStatus(s);
+                    setPage(0);
+                  }}
+                />
+                <TableBody>
+                  {leads.map((row) => (
+                    <LeadsTableRow
+                      key={row.id}
+                      row={row}
+                      header={leadsTableHeaderWithActions}
+                      onEdit={() => {
+                        setEditId(row._id);
+                        setOpen(true);
+                      }}
+                      onDelete={() => {}}
+                      onStatusChange={updateLeadStatus}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
           </Paper>
 
           {/* Pagination outside the scrollable table */}
@@ -385,25 +385,23 @@ const Leads: React.FC = () => {
       />
 
       {/* Follow-up Dialog */}
-      {typeof window !== "undefined" && (
-        <React.Suspense>
-          {feedbackOpen && selectedLeadForFeedback && (
-            // Lazy-imported component to avoid SSR issues
-            <FollowUpDialog
-              open={feedbackOpen}
-              onClose={() => {
-                setFeedbackOpen(false);
-                setSelectedLeadForFeedback(null);
-              }}
-              leadIdentifier={selectedLeadForFeedback}
-              onSaved={async () => {
-                // refresh leads after saving follow-up
-                await loadLeads(page + 1, rowsPerPage, search);
-              }}
-            />
-          )}
-        </React.Suspense>
-      )}
+      <React.Suspense fallback={<div>Loading...</div>}>
+        {feedbackOpen && selectedLeadForFeedback && (
+          // Lazy-imported component to avoid SSR issues
+          <FollowUpDialog
+            open={feedbackOpen}
+            onClose={() => {
+              setFeedbackOpen(false);
+              setSelectedLeadForFeedback(null);
+            }}
+            leadIdentifier={selectedLeadForFeedback}
+            onSaved={async () => {
+              // refresh leads after saving follow-up
+              await loadLeads(page + 1, rowsPerPage, search);
+            }}
+          />
+        )}
+      </React.Suspense>
 
       {/* Mobile Add Button */}
       <PermissionGuard module="lead" action="write" fallback={<></>}>

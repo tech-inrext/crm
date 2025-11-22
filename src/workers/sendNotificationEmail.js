@@ -4,6 +4,49 @@ import Employee from "../models/Employee.js";
 
 // Job handler for sending notification emails
 export default async function sendNotificationEmail(job) {
+  const timeoutDuration = 30000; // 30 seconds timeout
+
+  try {
+    // Wrap the entire operation in a timeout
+    const result = await Promise.race([
+      sendEmailNotification(job),
+      new Promise((_, reject) =>
+        setTimeout(
+          () => reject(new Error("Email sending timeout")),
+          timeoutDuration
+        )
+      ),
+    ]);
+
+    return result;
+  } catch (error) {
+    console.error("Error sending notification email:", error.message);
+
+    // Update notification with error (but don't throw to avoid job retry loops)
+    if (job.data.notificationId) {
+      try {
+        await Notification.findByIdAndUpdate(job.data.notificationId, {
+          emailError: error.message,
+        });
+      } catch (updateError) {
+        console.error(
+          "Failed to update notification error:",
+          updateError.message
+        );
+      }
+    }
+
+    // Don't throw for timeout errors to prevent job retry loops
+    if (error.message.includes("timeout") || error.code === "ETIMEDOUT") {
+      console.log("Email timeout - marking job as completed to avoid retry");
+      return; // Complete job without throwing
+    }
+
+    throw error; // Throw for other types of errors
+  }
+}
+
+async function sendEmailNotification(job) {
   try {
     const { notificationId } = job.data;
 
@@ -50,16 +93,8 @@ export default async function sendNotificationEmail(job) {
 
     console.log("Email notification sent successfully:", notificationId);
   } catch (error) {
-    console.error("Error sending notification email:", error);
-
-    // Update notification with error
-    if (job.data.notificationId) {
-      await Notification.findByIdAndUpdate(job.data.notificationId, {
-        emailError: error.message,
-      });
-    }
-
-    throw error;
+    console.error("Error in sendEmailNotification:", error);
+    throw error; // Will be caught by the main function
   }
 }
 

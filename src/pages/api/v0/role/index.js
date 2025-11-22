@@ -2,6 +2,7 @@ import dbConnect from "@/lib/mongodb";
 import Role from "@/models/Role";
 import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
+import { NotificationHelper } from "../../../../lib/notification-helpers";
 
 // ✅ Create a new role (requires WRITE access on "role")
 const createRole = async (req, res) => {
@@ -38,6 +39,18 @@ const createRole = async (req, res) => {
     });
 
     await newRole.save();
+
+    // Send notification for role creation
+    try {
+      await NotificationHelper.notifyRoleCreated(
+        newRole._id,
+        newRole.toObject(),
+        req.employee?._id
+      );
+      console.log("✅ Role creation notification sent");
+    } catch (error) {
+      console.error("❌ Role creation notification failed:", error);
+    }
 
     return res.status(201).json({
       success: true,

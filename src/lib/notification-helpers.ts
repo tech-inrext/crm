@@ -53,7 +53,7 @@ export class NotificationHelper {
         type: "LEAD_STATUS_UPDATE",
         title: "Lead Status Updated",
         message: `Lead status changed from "${oldStatus}" to "${newStatus}" for ${
-          leadData.name || leadData.phone
+          leadData?.name || leadData?.phone || "Unknown Lead"
         }`,
         metadata: {
           leadId,
@@ -439,6 +439,368 @@ export class NotificationHelper {
       throw error;
     }
   }
+
+  // Cab Booking notifications
+  static async notifyCabBookingRequest(bookingId, bookingData, requesterId, managerId) {
+    try {
+      if (!managerId) return;
+
+      await notificationService.createNotification({
+        recipient: managerId,
+        sender: requesterId,
+        type: "CAB_BOOKING_REQUESTED",
+        title: "New Cab Booking Request",
+        message: `${bookingData.employeeName || 'A team member'} has requested a cab booking for ${bookingData.clientName} from ${bookingData.pickupPoint} to ${bookingData.dropPoint}.`,
+        metadata: {
+          bookingId,
+          clientName: bookingData.clientName,
+          pickupPoint: bookingData.pickupPoint,
+          dropPoint: bookingData.dropPoint,
+          requestedDateTime: bookingData.requestedDateTime,
+          actionUrl: `/dashboard/cab-booking?bookingId=${bookingId}`,
+          priority: "HIGH",
+        },
+        channels: {
+          inApp: true,
+          email: true,
+        },
+      });
+    } catch (error) {
+      console.error("Error sending cab booking request notification:", error);
+    }
+  }
+
+  static async notifyCabBookingStatusChange(bookingId, bookingData, prevStatus, newStatus, updatedById) {
+    try {
+      const recipients = [];
+      
+      // Notify the requester
+      if (bookingData.cabBookedBy) {
+        recipients.push(bookingData.cabBookedBy);
+      }
+
+      // Notify manager if different from updater
+      if (bookingData.managerId && bookingData.managerId !== updatedById) {
+        recipients.push(bookingData.managerId);
+      }
+
+      const statusMessages = {
+        approved: "Your cab booking has been approved!",
+        rejected: "Your cab booking has been rejected.",
+        active: "Your cab is on the way!",
+        completed: "Your cab booking has been completed.",
+        cancelled: "Your cab booking has been cancelled.",
+      };
+
+      const priorityMap = {
+        approved: "HIGH",
+        rejected: "HIGH", 
+        active: "URGENT",
+        completed: "MEDIUM",
+        cancelled: "HIGH",
+      };
+
+      for (const recipient of recipients) {
+        await notificationService.createNotification({
+          recipient,
+          sender: updatedById,
+          type: `CAB_BOOKING_${newStatus.toUpperCase()}`,
+          title: "Cab Booking Update",
+          message: statusMessages[newStatus] || `Your cab booking status changed to ${newStatus}.`,
+          metadata: {
+            bookingId,
+            previousStatus: prevStatus,
+            newStatus,
+            clientName: bookingData.clientName,
+            pickupPoint: bookingData.pickupPoint,
+            dropPoint: bookingData.dropPoint,
+            actionUrl: `/dashboard/cab-booking?bookingId=${bookingId}`,
+            priority: priorityMap[newStatus] || "MEDIUM",
+          },
+          channels: {
+            inApp: true,
+            email: ["approved", "rejected", "cancelled"].includes(newStatus),
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error sending cab booking status change notification:", error);
+    }
+  }
+
+  static async notifyCabBookingVendorAssignment(bookingId, bookingData, vendorId, assignedById) {
+    try {
+      const recipients = [];
+      
+      // Notify the assigned vendor
+      if (vendorId) {
+        recipients.push(vendorId);
+      }
+      
+      // Notify the requester
+      if (bookingData.cabBookedBy && bookingData.cabBookedBy !== assignedById) {
+        recipients.push(bookingData.cabBookedBy);
+      }
+
+      for (const recipient of recipients) {
+        const isVendor = recipient === vendorId;
+        
+        await notificationService.createNotification({
+          recipient,
+          sender: assignedById,
+          type: "CAB_BOOKING_VENDOR_ASSIGNED",
+          title: isVendor ? "New Cab Booking Assignment" : "Vendor Assigned to Your Booking",
+          message: isVendor 
+            ? `You have been assigned a cab booking for ${bookingData.clientName} from ${bookingData.pickupPoint} to ${bookingData.dropPoint}.`
+            : `A vendor has been assigned to your cab booking for ${bookingData.clientName}.`,
+          metadata: {
+            bookingId,
+            vendorId,
+            clientName: bookingData.clientName,
+            pickupPoint: bookingData.pickupPoint,
+            dropPoint: bookingData.dropPoint,
+            requestedDateTime: bookingData.requestedDateTime,
+            actionUrl: `/dashboard/cab-booking?bookingId=${bookingId}`,
+            priority: "HIGH",
+          },
+          channels: {
+            inApp: true,
+            email: true,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error sending cab booking vendor assignment notification:", error);
+    }
+  }
+
+  // Role notifications
+  static async notifyRoleCreated(roleId, roleData, createdById) {
+    try {
+      // Create notification for the user who created the role
+      await notificationService.createNotification({
+        recipient: createdById,
+        sender: createdById,
+        type: "ROLE_CREATED",
+        title: "Role Created Successfully",
+        message: `You have successfully created the role "${roleData.name}" with specific permissions and access levels.`,
+        metadata: {
+          roleId,
+          roleName: roleData.name,
+          permissions: {
+            read: roleData.read || [],
+            write: roleData.write || [],
+            delete: roleData.delete || []
+          },
+          actionUrl: `/dashboard/roles?roleId=${roleId}`,
+          priority: "MEDIUM",
+        },
+        channels: {
+          inApp: true,
+          email: false,
+        },
+      });
+
+      console.log(`✅ Role creation notification sent for: ${roleData.name}`);
+    } catch (error) {
+      console.error("Error sending role creation notification:", error);
+    }
+  }
+
+  static async notifyRoleUpdated(roleId, roleData, changedFields, updatedById) {
+    try {
+      // Create notification for the user who updated the role
+      const changes = Object.keys(changedFields);
+      const permissionChanges = changes.filter(key => 
+        ['read', 'write', 'delete'].includes(key)
+      ).length > 0;
+
+      if (permissionChanges || changes.length > 0) {
+        await notificationService.createNotification({
+          recipient: updatedById,
+          sender: updatedById,
+          type: "ROLE_UPDATED",
+          title: "Role Permissions Updated",
+          message: `You have successfully updated permissions for role "${roleData.name}". This affects all users with this role.`,
+          metadata: {
+            roleId,
+            roleName: roleData.name,
+            changedFields,
+            actionUrl: `/dashboard/roles?roleId=${roleId}`,
+            priority: permissionChanges ? "HIGH" : "MEDIUM",
+          },
+          channels: {
+            inApp: true,
+            email: permissionChanges,
+          },
+        });
+
+        console.log(`✅ Role update notification sent for: ${roleData.name}`);
+      }
+    } catch (error) {
+      console.error("Error sending role update notification:", error);
+    }
+  }
+
+  // User/Employee notifications
+  static async notifyUserRegistration(userId, userData, managerId, createdById) {
+    try {
+      const recipients = [];
+      
+      // Notify the new user
+      recipients.push(userId);
+      
+      // Notify the manager if exists
+      if (managerId && managerId !== createdById) {
+        recipients.push(managerId);
+      }
+
+      for (const recipient of recipients) {
+        const isNewUser = recipient === userId;
+        
+        await notificationService.createNotification({
+          recipient,
+          sender: createdById,
+          type: isNewUser ? "USER_WELCOME" : "USER_ASSIGNED",
+          title: isNewUser 
+            ? "Welcome to the Team!" 
+            : "New Team Member Assigned",
+          message: isNewUser 
+            ? `Welcome ${userData.name}! Your account has been created successfully.`
+            : `${userData.name} has been assigned to your team as ${userData.designation || 'a new team member'}.`,
+          metadata: {
+            userId,
+            userName: userData.name,
+            userDesignation: userData.designation,
+            actionUrl: isNewUser ? '/dashboard/profile' : '/dashboard/users',
+            priority: isNewUser ? "HIGH" : "MEDIUM",
+          },
+          channels: {
+            inApp: true,
+            email: true,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error sending user registration notification:", error);
+    }
+  }
+
+  static async notifyUserUpdate(userId, userData, changedFields, updatedById) {
+    try {
+      const recipients = [];
+      
+      // Notify the user if someone else updated them
+      if (userId !== updatedById) {
+        recipients.push(userId);
+      }
+      
+      // Notify manager if manager changed
+      if (changedFields.managerId) {
+        recipients.push(changedFields.managerId);
+        
+        // Notify old manager too if different
+        if (userData.managerId && userData.managerId !== changedFields.managerId) {
+          recipients.push(userData.managerId);
+        }
+      }
+
+      // Create update summary
+      const changes = Object.keys(changedFields);
+      const changeDescription = changes.includes('designation') 
+        ? `role updated to ${changedFields.designation || userData.designation}`
+        : changes.includes('managerId')
+        ? 'manager assignment updated'
+        : 'profile information updated';
+
+      for (const recipient of recipients) {
+        const isUser = recipient === userId;
+        
+        await notificationService.createNotification({
+          recipient,
+          sender: updatedById,
+          type: "USER_UPDATED",
+          title: isUser ? "Your Profile Updated" : "Team Member Updated",
+          message: isUser 
+            ? `Your ${changeDescription} by management.`
+            : `${userData.name}'s ${changeDescription}.`,
+          metadata: {
+            userId,
+            userName: userData.name,
+            changes: changedFields,
+            actionUrl: isUser ? '/dashboard/profile' : '/dashboard/users',
+            priority: "MEDIUM",
+          },
+          channels: {
+            inApp: true,
+            email: changes.includes('designation') || changes.includes('managerId'),
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error sending user update notification:", error);
+    }
+  }
+
+  static async notifyRoleChange(userId, userData, addedRoles, removedRoles, changedById) {
+    try {
+      const recipients = [userId];
+      
+      // Notify manager if exists
+      if (userData.managerId && userData.managerId !== changedById) {
+        recipients.push(userData.managerId);
+      }
+
+      const roleChanges = [];
+      if (addedRoles.length > 0) {
+        roleChanges.push(`Added: ${addedRoles.join(', ')}`);
+      }
+      if (removedRoles.length > 0) {
+        roleChanges.push(`Removed: ${removedRoles.join(', ')}`);
+      }
+
+      for (const recipient of recipients) {
+        const isUser = recipient === userId;
+        
+        await notificationService.createNotification({
+          recipient,
+          sender: changedById,
+          type: "USER_ROLE_CHANGED",
+          title: isUser ? "Your Roles Updated" : "Team Member Role Changed",
+          message: isUser 
+            ? `Your system roles have been updated. ${roleChanges.join('. ')}.`
+            : `${userData.name}'s roles updated: ${roleChanges.join('. ')}.`,
+          metadata: {
+            userId,
+            userName: userData.name,
+            addedRoles,
+            removedRoles,
+            actionUrl: isUser ? '/dashboard/profile' : '/dashboard/users',
+            priority: "HIGH",
+          },
+          channels: {
+            inApp: true,
+            email: true,
+          },
+        });
+      }
+    } catch (error) {
+      console.error("Error sending role change notification:", error);
+    }
+  }
 }
 
 export default NotificationHelper;
+
+// Export individual functions for direct import
+export const notifyLeadAssigned = NotificationHelper.notifyLeadAssigned;
+export const notifyLeadStatusUpdate = NotificationHelper.notifyLeadStatusUpdate;
+export const notifyCabBookingRequest = NotificationHelper.notifyCabBookingRequest;
+export const notifyCabBookingStatusChange = NotificationHelper.notifyCabBookingStatusChange;
+export const notifyCabBookingVendorAssignment = NotificationHelper.notifyCabBookingVendorAssignment;
+export const notifyUserRegistration = NotificationHelper.notifyUserRegistration;
+export const notifyUserUpdate = NotificationHelper.notifyUserUpdate;
+export const notifyRoleChange = NotificationHelper.notifyRoleChange;
+export const notifyRoleCreated = NotificationHelper.notifyRoleCreated;
+export const notifyRoleUpdated = NotificationHelper.notifyRoleUpdated;
+export const notifyMOUStatusChange = NotificationHelper.notifyMOUStatusChange;

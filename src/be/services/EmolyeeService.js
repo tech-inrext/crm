@@ -5,6 +5,7 @@ import validator from "validator";
 import { sendNewEmployeeWelcomeEmail } from "@/lib/emails/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "@/lib/emails/managerNewReport";
 import { sendRoleChangeEmail } from "../../lib/emails/sendRoleChangeEmail";
+import { notifyUserRegistration, notifyUserUpdate, notifyRoleChange } from "../../lib/notification-helpers";
 
 class EmployeeService extends Service {
   constructor() {
@@ -174,7 +175,41 @@ class EmployeeService extends Service {
             addedRoles,
             removedRoles,
           });
+
+          // Send notification for role change
+          try {
+            await notifyRoleChange(
+              updated._id,
+              updated.toObject(),
+              addedRoles,
+              removedRoles,
+              req.employee?._id
+            );
+            console.log("✅ Role change notification sent");
+          } catch (error) {
+            console.error("❌ Role change notification failed:", error);
+          }
         }
+      }
+
+      // Send notification for user update (only if significant fields changed)
+      try {
+        const significantFields = ['designation', 'managerId', 'departmentId'];
+        const hasSignificantChanges = significantFields.some(field => 
+          Object.prototype.hasOwnProperty.call(req.body, field)
+        );
+        
+        if (hasSignificantChanges) {
+          await notifyUserUpdate(
+            updated._id,
+            updated.toObject(),
+            updateFields,
+            req.employee?._id
+          );
+          console.log("✅ User update notification sent");
+        }
+      } catch (error) {
+        console.error("❌ User update notification failed:", error);
       }
 
       return res.status(200).json({ success: true, data: updated });
@@ -326,6 +361,18 @@ class EmployeeService extends Service {
         } catch (e) {
           console.error("[employee:create] manager email failed:", e);
         }
+      }
+
+      // 3) Send notification for user registration
+      try {
+        await notifyUserRegistration(
+          newEmployee._id,
+          newEmployee.toObject(),
+          managerId
+        );
+        console.log("✅ User registration notification sent");
+      } catch (error) {
+        console.error("❌ User registration notification failed:", error);
       }
 
       return res.status(201).json({ success: true, data: newEmployee });

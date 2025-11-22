@@ -48,6 +48,8 @@ const Pagination = dynamic(
 
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const [isClient, setIsClient] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(1200);
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
@@ -79,6 +81,17 @@ const Users: React.FC = () => {
   >("success");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
+  // Client-side detection for responsive features
+  useEffect(() => {
+    setIsClient(true);
+    if (typeof window !== "undefined") {
+      setWindowWidth(window.innerWidth);
+      const handleResize = () => setWindowWidth(window.innerWidth);
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
+
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
@@ -105,13 +118,23 @@ const Users: React.FC = () => {
       return false;
     }
 
-    // Check if logged-in user's ID matches the employee's managerId
-    const currentUserId = currentUser._id;
+    // Get current user ID - handle both 'id' and '_id' properties
+    const currentUserId = currentUser.id || currentUser._id;
     const employeeManagerId = employee.managerId;
 
-    // Convert both to string for comparison (in case one is ObjectId)
-    const currentUserIdStr = String(currentUserId);
-    const employeeManagerIdStr = String(employeeManagerId);
+    // If current user ID is still not found
+    if (!currentUserId) {
+      return false;
+    }
+
+    // If no manager ID is set, no one can edit
+    if (!employeeManagerId) {
+      return false;
+    }
+
+    // Convert both to string for comparison (handle ObjectId vs string)
+    const currentUserIdStr = String(currentUserId).trim();
+    const employeeManagerIdStr = String(employeeManagerId).trim();
 
     return currentUserIdStr === employeeManagerIdStr;
   };
@@ -292,11 +315,7 @@ const Users: React.FC = () => {
               header={usersTableHeader}
               onEdit={() => {}}
               onDelete={() => {}}
-              size={
-                typeof window !== "undefined" && window.innerWidth < 600
-                  ? "small"
-                  : "medium"
-              }
+              size={isClient && windowWidth < 600 ? "small" : "medium"}
               stickyHeader
             />
           </TableContainer>

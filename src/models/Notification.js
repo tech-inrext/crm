@@ -295,13 +295,41 @@ notificationSchema.methods.getCleanupRules = function () {
 
 // Static method to get unread count for user
 notificationSchema.statics.getUnreadCount = async function (userId) {
-  return this.countDocuments({
-    recipient: userId,
-    "lifecycle.status": { $in: ["PENDING", "DELIVERED"] },
-  });
-};
+  try {
+    // Ensure userId is properly handled regardless of string or ObjectId input
+    const mongoose = require("mongoose");
+    let recipientId;
 
-// Static method to mark notifications as read
+    if (typeof userId === "string") {
+      recipientId = mongoose.Types.ObjectId.isValid(userId)
+        ? new mongoose.Types.ObjectId(userId)
+        : userId;
+    } else {
+      recipientId = userId;
+    }
+
+    const query = {
+      recipient: recipientId,
+      "lifecycle.status": { $in: ["PENDING", "DELIVERED"] },
+    };
+
+    console.log("Unread count query:", JSON.stringify(query, null, 2));
+    const count = await this.countDocuments(query);
+    console.log("Unread count result:", count);
+
+    // Also log some sample notifications for debugging
+    const sampleNotifications = await this.find({ recipient: recipientId })
+      .limit(5)
+      .select("type lifecycle.status createdAt")
+      .lean();
+    console.log("Sample notifications for user:", sampleNotifications);
+
+    return count;
+  } catch (error) {
+    console.error("Error in getUnreadCount:", error);
+    throw error;
+  }
+}; // Static method to mark notifications as read
 notificationSchema.statics.markAsRead = async function (
   notificationIds,
   userId,
