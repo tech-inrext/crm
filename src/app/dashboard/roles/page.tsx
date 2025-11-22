@@ -9,9 +9,9 @@ import {
   Paper,
   Typography,
   CircularProgress,
-  AddIcon
+  AddIcon,
 } from "@/components/ui/Component";
- import RoleCard from "@/components/ui/card/RoleCard";
+import RoleCard from "@/components/ui/card/RoleCard";
 import { useRoles } from "@/hooks/useRoles";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ROLE_PERMISSIONS, GRADIENTS } from "@/constants/leads";
@@ -21,8 +21,7 @@ import AddRoleDialog from "@/components/ui/dialog/AddRoleDialog";
 import RolePermissionsDialog from "@/components/ui/dialog/RolePermissionsDialog";
 import RolesActionBar from "@/components/ui/action/RolesActionBar";
 import Pagination from "@/components/ui/Navigation/Pagination";
-import axios from "axios";
-import { transformToAPIRole } from "@/utils/leadUtils";
+import { submitRole } from "@/services/role.service";
 
 const modules = [
   "User",
@@ -34,6 +33,10 @@ const modules = [
   "Vendor",
   "Team",
   "MOU",
+  "Property",
+  "BookingLogin",
+  "TrainingVideos",
+  "Pillar",
   "Branch",
 ];
 
@@ -83,76 +86,25 @@ const Roles: React.FC = () => {
     setPermissionsDialogOpen(true);
   };
 
-  const handleAddOrEditRole = async ({
-    name,
-    modulePerms,
-    editId,
-    isSystemAdmin,
-    showTotalUsers,
-    showTotalVendorsBilling,
-    showCabBookingAnalytics,
-    showScheduleThisWeek,
+  const handleAddOrEditRole = async (roleData: {
+    name: string;
+    modulePerms: Record<string, Record<string, boolean>>;
+    editId?: string;
+    isSystemAdmin?: boolean;
+    showTotalUsers?: boolean;
+    showTotalVendorsBilling?: boolean;
+    showCabBookingAnalytics?: boolean;
+    showScheduleThisWeek?: boolean;
   }) => {
-    const perms = { read: [], write: [], delete: [] };
-    // Only allow backend modules for API
-    const backendModules = [
-      "employee",
-      "lead",
-      "mou",
-      "team",
-      "role",
-      "department",
-      "cab-booking",
-      "cab-vendor",
-      "vendor",
-      "branch",
-    ];
-    Object.entries(modulePerms).forEach(([mod, actions]) => {
-      let backendMod;
-      if (mod === "User") backendMod = "employee";
-      else if (mod === "CabVendor") backendMod = "cab-vendor";
-      else if (mod === "CabBooking") backendMod = "cab-booking";
-      else backendMod = mod.toLowerCase();
-      if (!backendModules.includes(backendMod)) return; // skip analytics modules for backend
-      Object.entries(actions).forEach(([action, checked]) => {
-        if (checked) perms[action].push(backendMod);
-      });
-    });
     try {
-      if (editId) {
-        await axios.patch(`/api/v0/role/${editId}`, {
-          ...perms,
-          isSystemAdmin: !!isSystemAdmin,
-          showTotalUsers: !!showTotalUsers,
-          showTotalVendorsBilling: !!showTotalVendorsBilling,
-          showCabBookingAnalytics: !!showCabBookingAnalytics,
-          showScheduleThisWeek: !!showScheduleThisWeek,
-        });
-      } else {
-        await axios.post("/api/v0/role", {
-          name,
-          ...perms,
-          isSystemAdmin: !!isSystemAdmin,
-          showTotalUsers: !!showTotalUsers,
-          showTotalVendorsBilling: !!showTotalVendorsBilling,
-          showCabBookingAnalytics: !!showCabBookingAnalytics,
-          showScheduleThisWeek: !!showScheduleThisWeek,
-        });
-      } 
+      await submitRole(roleData);
       setAddOpen(false);
       setEditId(null);
       setEditRole(null);
       loadRoles();
-    } catch (e) {
-      // Log more details for debugging
-      if (axios.isAxiosError(e)) {
-        const serverMsg = e.response?.data?.message || JSON.stringify(e.response?.data) || e.message;
-        console.error("Failed to add/edit role", serverMsg);
-        alert("Failed to add/edit role: " + serverMsg);
-      } else {
-        console.error("Failed to add/edit role", e);
-        alert("Failed to add/edit role: " + (e?.message || e));
-      }
+    } catch (error) {
+      console.error("Role submission error:", error);
+      alert(error instanceof Error ? error.message : "Failed to save role");
     }
   };
 
@@ -299,4 +251,3 @@ const Roles: React.FC = () => {
 };
 
 export default Roles;
-

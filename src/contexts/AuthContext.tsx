@@ -396,12 +396,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   // ✅ Function: Check if current user has the 'Accounts' role
-  const hasAccountsRole = () => {
-    if (!user) return false;
-
-    const currentRoleName = getCurrentRoleName()?.toLowerCase();
-    return currentRoleName === "accounts";
-  };
+const hasAccountsRole = () => {
+  if (!user) return false;
+  
+  // Get current role name
+  const currentRoleName = getCurrentRoleName()?.toLowerCase();
+  
+  // Check if current role is "accounts" (case-insensitive)
+  return currentRoleName === "accounts";
+};
 
   useEffect(() => {
     // Let's have this failing api for now

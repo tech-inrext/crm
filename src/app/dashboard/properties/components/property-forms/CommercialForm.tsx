@@ -259,8 +259,23 @@ const CommercialForm: React.FC<CommercialFormProps> = ({
             )}
           >
             {[
-              "Parking", "Security", "Power Backup", "Lift", "Fire Safety", "Conference Room",
-              "Reception", "Pantry", "Internet", "AC", "Modular Kitchen", "Restrooms"
+              "City / Locality / Sector / Street Address", "Landmark / Nearby Roads / Connectivity", 
+              "Distance from Metro Station / Bus Stop / Airport / Railway Station", 
+              "Development Authority / Approved By (YEIDA / DDA / HUDA / RERA No.)", 
+              "Road Width in Front (e.g., 24m, 60m, etc.)", 
+              "Parking Availability (Basement / Open / Reserved / Visitor Parking)", 
+              "Building Type: (Standalone / Mall / IT Park / Business Center / Industrial Estate)", 
+              "Power Backup (Full / Partial / None)", "Air Conditioning (Central / Split / Window / VRV System)", 
+              "Lift / Elevator (Passenger / Service)", "Fire Safety Systems (Sprinklers / Smoke Detectors / Extinguishers /Alarm)", 
+              "Earthquake Resistance", "Power Load / Electricity Connection (in kVA or kW)", 
+              "Washrooms (Common / Attached / Separate for Male & Female)", "Pantry / Cafeteria Area", 
+              "Security Cabin or Reception Area", "24x7 Security / CCTV Surveillance", "Intercom Facility", "Access Control / Biometric Entry", 
+              "Wi-Fi Connectivity / Internet Ready", "Maintenance Staff", "Housekeeping Services", "Centralized Air Conditioning (for corporate offices)", 
+              "Escalators (in malls/shopping complexes)", "Backup Generator", "Conference Room / Meeting Room", "Lounge / Waiting Area", 
+              "ATM / Banking Facilities within Premises", "Cafeteria / Food Court", "High-Speed Elevators", "Visitor Management System", "Rainwater Harvesting", 
+              "Waste Disposal System", "Power Backup for Common Areas", "Fire Exit & Emergency Lighting", "Wheelchair / Handicap Access", "Wide Road Access", 
+              "Landscaped Area / Green Zone", "Visibility from Main Road", "Corner Property Advantage", "Signage / Branding Opportunity", "Ample Street Lighting", 
+              "Loading/Unloading Area (for warehouses or showrooms)", "Truck Entry / Dock Facility (for industrial units)", "Nearby Commercial Hubs / Corporate Offices", "Public Transport Accessibility"
             ].map(amenity => (
               <MenuItem key={amenity} value={amenity}>
                 {amenity}

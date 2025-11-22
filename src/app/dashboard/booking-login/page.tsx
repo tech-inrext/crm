@@ -490,7 +490,7 @@ const BookingLogin: React.FC = () => {
         action="write"
         fallback={<></>}
       >
-        <Fab
+        {/* <Fab
           color="primary"
           aria-label="add booking"
           onClick={() => setOpen(true)}
@@ -507,7 +507,7 @@ const BookingLogin: React.FC = () => {
           }}
         >
           {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
-        </Fab>
+        </Fab> */}
         <BookingLoginDialog
           open={open}
           editId={editId}
@@ -567,3 +567,6 @@ const BookingLogin: React.FC = () => {
 };
 
 export default BookingLogin;
+
+
+
