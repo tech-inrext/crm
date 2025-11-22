@@ -50,23 +50,25 @@ const updateRoleDetails = async (req, res) => {
 
     // Normalize module names to match backend enum
     const normalizeModuleName = (modules) => {
-  if (!Array.isArray(modules)) return modules;
-  return modules.map(mod => {
-    // Handle module name conversions to match backend enum
-    if (mod === 'bookinglogin') return 'booking-login';
-    if (mod === 'trainingvideos') return 'training-videos';
-    if (mod === 'pillar') return 'pillar';
-    return mod;
-  });
-};
+      if (!Array.isArray(modules)) return modules;
+      return modules.map((mod) => {
+        // Handle module name conversions to match backend enum
+        if (mod === "bookinglogin") return "booking-login";
+        if (mod === "trainingvideos") return "training-videos";
+        if (mod === "pillar") return "pillar";
+        return mod;
+      });
+    };
 
     const setObj = {};
     // if (Array.isArray(readItems)) setObj.read = readItems;
     // if (Array.isArray(writeItems)) setObj.write = writeItems;
     // if (Array.isArray(deleteItems)) setObj.delete = deleteItems;
     if (Array.isArray(readItems)) setObj.read = normalizeModuleName(readItems);
-    if (Array.isArray(writeItems)) setObj.write = normalizeModuleName(writeItems);
-    if (Array.isArray(deleteItems)) setObj.delete = normalizeModuleName(deleteItems);
+    if (Array.isArray(writeItems))
+      setObj.write = normalizeModuleName(writeItems);
+    if (Array.isArray(deleteItems))
+      setObj.delete = normalizeModuleName(deleteItems);
 
     if (typeof isSystemAdmin !== "undefined") {
       // Coerce string values to boolean too (e.g. 'true'/'false')

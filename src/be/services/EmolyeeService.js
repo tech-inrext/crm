@@ -5,7 +5,11 @@ import validator from "validator";
 import { sendNewEmployeeWelcomeEmail } from "@/lib/emails/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "@/lib/emails/managerNewReport";
 import { sendRoleChangeEmail } from "../../lib/emails/sendRoleChangeEmail";
-import { notifyUserRegistration, notifyUserUpdate, notifyRoleChange } from "../../lib/notification-helpers";
+import {
+  notifyUserRegistration,
+  notifyUserUpdate,
+  notifyRoleChange,
+} from "../../lib/notification-helpers";
 
 class EmployeeService extends Service {
   constructor() {
@@ -194,11 +198,11 @@ class EmployeeService extends Service {
 
       // Send notification for user update (only if significant fields changed)
       try {
-        const significantFields = ['designation', 'managerId', 'departmentId'];
-        const hasSignificantChanges = significantFields.some(field => 
+        const significantFields = ["designation", "managerId", "departmentId"];
+        const hasSignificantChanges = significantFields.some((field) =>
           Object.prototype.hasOwnProperty.call(req.body, field)
         );
-        
+
         if (hasSignificantChanges) {
           await notifyUserUpdate(
             updated._id,

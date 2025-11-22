@@ -441,7 +441,12 @@ export class NotificationHelper {
   }
 
   // Cab Booking notifications
-  static async notifyCabBookingRequest(bookingId, bookingData, requesterId, managerId) {
+  static async notifyCabBookingRequest(
+    bookingId,
+    bookingData,
+    requesterId,
+    managerId
+  ) {
     try {
       if (!managerId) return;
 
@@ -450,7 +455,11 @@ export class NotificationHelper {
         sender: requesterId,
         type: "CAB_BOOKING_REQUESTED",
         title: "New Cab Booking Request",
-        message: `${bookingData.employeeName || 'A team member'} has requested a cab booking for ${bookingData.clientName} from ${bookingData.pickupPoint} to ${bookingData.dropPoint}.`,
+        message: `${
+          bookingData.employeeName || "A team member"
+        } has requested a cab booking for ${bookingData.clientName} from ${
+          bookingData.pickupPoint
+        } to ${bookingData.dropPoint}.`,
         metadata: {
           bookingId,
           clientName: bookingData.clientName,
@@ -470,10 +479,16 @@ export class NotificationHelper {
     }
   }
 
-  static async notifyCabBookingStatusChange(bookingId, bookingData, prevStatus, newStatus, updatedById) {
+  static async notifyCabBookingStatusChange(
+    bookingId,
+    bookingData,
+    prevStatus,
+    newStatus,
+    updatedById
+  ) {
     try {
       const recipients = [];
-      
+
       // Notify the requester
       if (bookingData.cabBookedBy) {
         recipients.push(bookingData.cabBookedBy);
@@ -494,7 +509,7 @@ export class NotificationHelper {
 
       const priorityMap = {
         approved: "HIGH",
-        rejected: "HIGH", 
+        rejected: "HIGH",
         active: "URGENT",
         completed: "MEDIUM",
         cancelled: "HIGH",
@@ -506,7 +521,9 @@ export class NotificationHelper {
           sender: updatedById,
           type: `CAB_BOOKING_${newStatus.toUpperCase()}`,
           title: "Cab Booking Update",
-          message: statusMessages[newStatus] || `Your cab booking status changed to ${newStatus}.`,
+          message:
+            statusMessages[newStatus] ||
+            `Your cab booking status changed to ${newStatus}.`,
           metadata: {
             bookingId,
             previousStatus: prevStatus,
@@ -524,19 +541,27 @@ export class NotificationHelper {
         });
       }
     } catch (error) {
-      console.error("Error sending cab booking status change notification:", error);
+      console.error(
+        "Error sending cab booking status change notification:",
+        error
+      );
     }
   }
 
-  static async notifyCabBookingVendorAssignment(bookingId, bookingData, vendorId, assignedById) {
+  static async notifyCabBookingVendorAssignment(
+    bookingId,
+    bookingData,
+    vendorId,
+    assignedById
+  ) {
     try {
       const recipients = [];
-      
+
       // Notify the assigned vendor
       if (vendorId) {
         recipients.push(vendorId);
       }
-      
+
       // Notify the requester
       if (bookingData.cabBookedBy && bookingData.cabBookedBy !== assignedById) {
         recipients.push(bookingData.cabBookedBy);
@@ -544,13 +569,15 @@ export class NotificationHelper {
 
       for (const recipient of recipients) {
         const isVendor = recipient === vendorId;
-        
+
         await notificationService.createNotification({
           recipient,
           sender: assignedById,
           type: "CAB_BOOKING_VENDOR_ASSIGNED",
-          title: isVendor ? "New Cab Booking Assignment" : "Vendor Assigned to Your Booking",
-          message: isVendor 
+          title: isVendor
+            ? "New Cab Booking Assignment"
+            : "Vendor Assigned to Your Booking",
+          message: isVendor
             ? `You have been assigned a cab booking for ${bookingData.clientName} from ${bookingData.pickupPoint} to ${bookingData.dropPoint}.`
             : `A vendor has been assigned to your cab booking for ${bookingData.clientName}.`,
           metadata: {
@@ -570,7 +597,10 @@ export class NotificationHelper {
         });
       }
     } catch (error) {
-      console.error("Error sending cab booking vendor assignment notification:", error);
+      console.error(
+        "Error sending cab booking vendor assignment notification:",
+        error
+      );
     }
   }
 
@@ -590,7 +620,7 @@ export class NotificationHelper {
           permissions: {
             read: roleData.read || [],
             write: roleData.write || [],
-            delete: roleData.delete || []
+            delete: roleData.delete || [],
           },
           actionUrl: `/dashboard/roles?roleId=${roleId}`,
           priority: "MEDIUM",
@@ -611,9 +641,9 @@ export class NotificationHelper {
     try {
       // Create notification for the user who updated the role
       const changes = Object.keys(changedFields);
-      const permissionChanges = changes.filter(key => 
-        ['read', 'write', 'delete'].includes(key)
-      ).length > 0;
+      const permissionChanges =
+        changes.filter((key) => ["read", "write", "delete"].includes(key))
+          .length > 0;
 
       if (permissionChanges || changes.length > 0) {
         await notificationService.createNotification({
@@ -643,13 +673,18 @@ export class NotificationHelper {
   }
 
   // User/Employee notifications
-  static async notifyUserRegistration(userId, userData, managerId, createdById) {
+  static async notifyUserRegistration(
+    userId,
+    userData,
+    managerId,
+    createdById
+  ) {
     try {
       const recipients = [];
-      
+
       // Notify the new user
       recipients.push(userId);
-      
+
       // Notify the manager if exists
       if (managerId && managerId !== createdById) {
         recipients.push(managerId);
@@ -657,22 +692,24 @@ export class NotificationHelper {
 
       for (const recipient of recipients) {
         const isNewUser = recipient === userId;
-        
+
         await notificationService.createNotification({
           recipient,
           sender: createdById,
           type: isNewUser ? "USER_WELCOME" : "USER_ASSIGNED",
-          title: isNewUser 
-            ? "Welcome to the Team!" 
+          title: isNewUser
+            ? "Welcome to the Team!"
             : "New Team Member Assigned",
-          message: isNewUser 
+          message: isNewUser
             ? `Welcome ${userData.name}! Your account has been created successfully.`
-            : `${userData.name} has been assigned to your team as ${userData.designation || 'a new team member'}.`,
+            : `${userData.name} has been assigned to your team as ${
+                userData.designation || "a new team member"
+              }.`,
           metadata: {
             userId,
             userName: userData.name,
             userDesignation: userData.designation,
-            actionUrl: isNewUser ? '/dashboard/profile' : '/dashboard/users',
+            actionUrl: isNewUser ? "/dashboard/profile" : "/dashboard/users",
             priority: isNewUser ? "HIGH" : "MEDIUM",
           },
           channels: {
@@ -689,51 +726,55 @@ export class NotificationHelper {
   static async notifyUserUpdate(userId, userData, changedFields, updatedById) {
     try {
       const recipients = [];
-      
+
       // Notify the user if someone else updated them
       if (userId !== updatedById) {
         recipients.push(userId);
       }
-      
+
       // Notify manager if manager changed
       if (changedFields.managerId) {
         recipients.push(changedFields.managerId);
-        
+
         // Notify old manager too if different
-        if (userData.managerId && userData.managerId !== changedFields.managerId) {
+        if (
+          userData.managerId &&
+          userData.managerId !== changedFields.managerId
+        ) {
           recipients.push(userData.managerId);
         }
       }
 
       // Create update summary
       const changes = Object.keys(changedFields);
-      const changeDescription = changes.includes('designation') 
+      const changeDescription = changes.includes("designation")
         ? `role updated to ${changedFields.designation || userData.designation}`
-        : changes.includes('managerId')
-        ? 'manager assignment updated'
-        : 'profile information updated';
+        : changes.includes("managerId")
+        ? "manager assignment updated"
+        : "profile information updated";
 
       for (const recipient of recipients) {
         const isUser = recipient === userId;
-        
+
         await notificationService.createNotification({
           recipient,
           sender: updatedById,
           type: "USER_UPDATED",
           title: isUser ? "Your Profile Updated" : "Team Member Updated",
-          message: isUser 
+          message: isUser
             ? `Your ${changeDescription} by management.`
             : `${userData.name}'s ${changeDescription}.`,
           metadata: {
             userId,
             userName: userData.name,
             changes: changedFields,
-            actionUrl: isUser ? '/dashboard/profile' : '/dashboard/users',
+            actionUrl: isUser ? "/dashboard/profile" : "/dashboard/users",
             priority: "MEDIUM",
           },
           channels: {
             inApp: true,
-            email: changes.includes('designation') || changes.includes('managerId'),
+            email:
+              changes.includes("designation") || changes.includes("managerId"),
           },
         });
       }
@@ -742,10 +783,16 @@ export class NotificationHelper {
     }
   }
 
-  static async notifyRoleChange(userId, userData, addedRoles, removedRoles, changedById) {
+  static async notifyRoleChange(
+    userId,
+    userData,
+    addedRoles,
+    removedRoles,
+    changedById
+  ) {
     try {
       const recipients = [userId];
-      
+
       // Notify manager if exists
       if (userData.managerId && userData.managerId !== changedById) {
         recipients.push(userData.managerId);
@@ -753,29 +800,29 @@ export class NotificationHelper {
 
       const roleChanges = [];
       if (addedRoles.length > 0) {
-        roleChanges.push(`Added: ${addedRoles.join(', ')}`);
+        roleChanges.push(`Added: ${addedRoles.join(", ")}`);
       }
       if (removedRoles.length > 0) {
-        roleChanges.push(`Removed: ${removedRoles.join(', ')}`);
+        roleChanges.push(`Removed: ${removedRoles.join(", ")}`);
       }
 
       for (const recipient of recipients) {
         const isUser = recipient === userId;
-        
+
         await notificationService.createNotification({
           recipient,
           sender: changedById,
           type: "USER_ROLE_CHANGED",
           title: isUser ? "Your Roles Updated" : "Team Member Role Changed",
-          message: isUser 
-            ? `Your system roles have been updated. ${roleChanges.join('. ')}.`
-            : `${userData.name}'s roles updated: ${roleChanges.join('. ')}.`,
+          message: isUser
+            ? `Your system roles have been updated. ${roleChanges.join(". ")}.`
+            : `${userData.name}'s roles updated: ${roleChanges.join(". ")}.`,
           metadata: {
             userId,
             userName: userData.name,
             addedRoles,
             removedRoles,
-            actionUrl: isUser ? '/dashboard/profile' : '/dashboard/users',
+            actionUrl: isUser ? "/dashboard/profile" : "/dashboard/users",
             priority: "HIGH",
           },
           channels: {
@@ -795,9 +842,12 @@ export default NotificationHelper;
 // Export individual functions for direct import
 export const notifyLeadAssigned = NotificationHelper.notifyLeadAssigned;
 export const notifyLeadStatusUpdate = NotificationHelper.notifyLeadStatusUpdate;
-export const notifyCabBookingRequest = NotificationHelper.notifyCabBookingRequest;
-export const notifyCabBookingStatusChange = NotificationHelper.notifyCabBookingStatusChange;
-export const notifyCabBookingVendorAssignment = NotificationHelper.notifyCabBookingVendorAssignment;
+export const notifyCabBookingRequest =
+  NotificationHelper.notifyCabBookingRequest;
+export const notifyCabBookingStatusChange =
+  NotificationHelper.notifyCabBookingStatusChange;
+export const notifyCabBookingVendorAssignment =
+  NotificationHelper.notifyCabBookingVendorAssignment;
 export const notifyUserRegistration = NotificationHelper.notifyUserRegistration;
 export const notifyUserUpdate = NotificationHelper.notifyUserUpdate;
 export const notifyRoleChange = NotificationHelper.notifyRoleChange;

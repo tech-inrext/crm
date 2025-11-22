@@ -7,17 +7,17 @@ import { NotificationHelper } from "../../../../lib/notification-helpers";
 // ✅ Create a new role (requires WRITE access on "role")
 const createRole = async (req, res) => {
   try {
-  const { 
-    name, 
-    read, 
-    write, 
-    delete: deleteItems, 
-    isSystemAdmin,
-    showTotalUsers,
-    showTotalVendorsBilling,
-    showCabBookingAnalytics,
-    showScheduleThisWeek
-  } = req.body;
+    const {
+      name,
+      read,
+      write,
+      delete: deleteItems,
+      isSystemAdmin,
+      showTotalUsers,
+      showTotalVendorsBilling,
+      showCabBookingAnalytics,
+      showScheduleThisWeek,
+    } = req.body;
 
     if (!name) {
       return res.status(400).json({
@@ -83,7 +83,9 @@ const getAllRoles = async (req, res) => {
 
     const [roles, totalRoles] = await Promise.all([
       Role.find(query)
-        .select('name read write delete isSystemAdmin showTotalUsers showTotalVendorsBilling showCabBookingAnalytics showScheduleThisWeek createdAt updatedAt')
+        .select(
+          "name read write delete isSystemAdmin showTotalUsers showTotalVendorsBilling showCabBookingAnalytics showScheduleThisWeek createdAt updatedAt"
+        )
         .skip(skip)
         .limit(itemsPerPage)
         .sort({ createdAt: -1 }),

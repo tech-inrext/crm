@@ -212,7 +212,10 @@ async function patchBooking(req, res) {
         );
         console.log("✅ Cab booking vendor assignment notification sent");
       } catch (error) {
-        console.error("❌ Cab booking vendor assignment notification failed:", error);
+        console.error(
+          "❌ Cab booking vendor assignment notification failed:",
+          error
+        );
       }
     }
 

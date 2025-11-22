@@ -94,9 +94,15 @@ export default async function handler(req, res) {
 
     // Send notification for MOU approval
     try {
-      const notificationMod = await import("../../../../../lib/notification-helpers");
-      const NotificationHelper = notificationMod.NotificationHelper || notificationMod.default;
-      if (NotificationHelper && typeof NotificationHelper.notifyMOUStatusChange === "function") {
+      const notificationMod = await import(
+        "../../../../../lib/notification-helpers"
+      );
+      const NotificationHelper =
+        notificationMod.NotificationHelper || notificationMod.default;
+      if (
+        NotificationHelper &&
+        typeof NotificationHelper.notifyMOUStatusChange === "function"
+      ) {
         await NotificationHelper.notifyMOUStatusChange(
           mou._id,
           "APPROVED",
