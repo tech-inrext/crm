@@ -39,16 +39,19 @@ import { useDebounce } from "@/hooks/useDebounce";
 const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
   ssr: false,
 });
-const Pagination = dynamic(() => import("@/components/ui/Navigation/Pagination"), {
-  ssr: false,
-});
+const Pagination = dynamic(
+  () => import("@/components/ui/Navigation/Pagination"),
+  {
+    ssr: false,
+  }
+);
 
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth();
-  
+
   // Add debugging for current user
   React.useEffect(() => {
-    console.log('Current user from AuthContext:', currentUser);
+    console.log("Current user from AuthContext:", currentUser);
   }, [currentUser]);
 
   const [search, setSearch] = useState("");
@@ -74,7 +77,7 @@ const Users: React.FC = () => {
 
   // Add debugging for employees data
   React.useEffect(() => {
-    console.log('Employees data from API:', employees);
+    console.log("Employees data from API:", employees);
   }, [employees]);
 
   const theme = useTheme();
@@ -109,23 +112,26 @@ const Users: React.FC = () => {
   // Helper function to check if current user can edit a specific employee
   const canEditEmployee = (employee: any) => {
     if (!currentUser || !employee) {
-      console.log('canEditEmployee: Missing currentUser or employee', { currentUser: !!currentUser, employee: !!employee });
+      console.log("canEditEmployee: Missing currentUser or employee", {
+        currentUser: !!currentUser,
+        employee: !!employee,
+      });
       return false;
     }
-    
+
     // Log all employee fields to see what's available
-    console.log('Employee object fields:', Object.keys(employee));
-    console.log('Full employee object:', employee);
-    
+    console.log("Employee object fields:", Object.keys(employee));
+    console.log("Full employee object:", employee);
+
     // Check if logged-in user's ID matches the employee's managerId
     const currentUserId = currentUser._id;
     const employeeManagerId = employee.managerId;
-    
+
     // Convert both to string for comparison (in case one is ObjectId)
     const currentUserIdStr = String(currentUserId);
     const employeeManagerIdStr = String(employeeManagerId);
-    
-    console.log('canEditEmployee check:', {
+
+    console.log("canEditEmployee check:", {
       currentUserId,
       currentUserIdStr,
       employeeManagerId,
@@ -133,9 +139,9 @@ const Users: React.FC = () => {
       employeeName: employee.name,
       match: currentUserIdStr === employeeManagerIdStr,
       employeeManagerIdExists: !!employeeManagerId,
-      employeeManagerIdType: typeof employeeManagerId
+      employeeManagerIdType: typeof employeeManagerId,
     });
-    
+
     return currentUserIdStr === employeeManagerIdStr;
   };
 
@@ -148,7 +154,7 @@ const Users: React.FC = () => {
             if (!canEditEmployee(row)) {
               return null;
             }
-            
+
             return (
               <PermissionGuard
                 module={USERS_PERMISSION_MODULE}
@@ -277,11 +283,15 @@ const Users: React.FC = () => {
                   designation: user.designation,
                   avatarUrl: user.avatarUrl,
                 }}
-                onEdit={canEditEmployee(user) ? () => {
-                  setSelectedUser(user);
-                  setEditId(user.id || user._id);
-                  setOpen(true);
-                } : undefined}
+                onEdit={
+                  canEditEmployee(user)
+                    ? () => {
+                        setSelectedUser(user);
+                        setEditId(user.id || user._id);
+                        setOpen(true);
+                      }
+                    : undefined
+                }
               />
             ))}
           </Box>
@@ -355,7 +365,11 @@ const Users: React.FC = () => {
             "&:hover": { background: GRADIENTS.buttonHover },
           }}
         >
-          {saving ? <CircularProgress size={24} color="inherit" /> : <AddIcon />}
+          {saving ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : (
+            <AddIcon />
+          )}
         </Fab>
         <UserDialog
           open={open}
@@ -434,4 +448,3 @@ const Users: React.FC = () => {
 };
 
 export default Users;
-
