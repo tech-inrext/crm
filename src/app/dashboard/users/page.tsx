@@ -49,11 +49,6 @@ const Pagination = dynamic(
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth();
 
-  // Add debugging for current user
-  React.useEffect(() => {
-    console.log("Current user from AuthContext:", currentUser);
-  }, [currentUser]);
-
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
   const {
@@ -74,11 +69,6 @@ const Users: React.FC = () => {
     setForm,
     loadEmployees,
   } = useUsers(debouncedSearch);
-
-  // Add debugging for employees data
-  React.useEffect(() => {
-    console.log("Employees data from API:", employees);
-  }, [employees]);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -112,16 +102,8 @@ const Users: React.FC = () => {
   // Helper function to check if current user can edit a specific employee
   const canEditEmployee = (employee: any) => {
     if (!currentUser || !employee) {
-      console.log("canEditEmployee: Missing currentUser or employee", {
-        currentUser: !!currentUser,
-        employee: !!employee,
-      });
       return false;
     }
-
-    // Log all employee fields to see what's available
-    console.log("Employee object fields:", Object.keys(employee));
-    console.log("Full employee object:", employee);
 
     // Check if logged-in user's ID matches the employee's managerId
     const currentUserId = currentUser._id;
@@ -130,17 +112,6 @@ const Users: React.FC = () => {
     // Convert both to string for comparison (in case one is ObjectId)
     const currentUserIdStr = String(currentUserId);
     const employeeManagerIdStr = String(employeeManagerId);
-
-    console.log("canEditEmployee check:", {
-      currentUserId,
-      currentUserIdStr,
-      employeeManagerId,
-      employeeManagerIdStr,
-      employeeName: employee.name,
-      match: currentUserIdStr === employeeManagerIdStr,
-      employeeManagerIdExists: !!employeeManagerId,
-      employeeManagerIdType: typeof employeeManagerId,
-    });
 
     return currentUserIdStr === employeeManagerIdStr;
   };
