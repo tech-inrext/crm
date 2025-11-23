@@ -45,6 +45,10 @@ const DEFAULT_VIDEO_DATA: TrainingVideoFormData = {
   category: ""
 };
 
+// File size constants
+const MAX_VIDEO_SIZE = 150 * 1024 * 1024; // 150 MB in bytes
+const MAX_THUMBNAIL_SIZE = 1 * 1024 * 1024; // 1 MB in bytes
+
 const TrainingVideoFormDialog: React.FC<TrainingVideoFormDialogProps> = ({ 
   open, 
   video = null, 
@@ -87,12 +91,33 @@ const TrainingVideoFormDialog: React.FC<TrainingVideoFormDialogProps> = ({
     }
   };
 
+  const validateFileSize = (file: File, maxSize: number, fileType: string): boolean => {
+    if (file.size > maxSize) {
+      const maxSizeMB = maxSize / (1024 * 1024);
+      setErrors(prev => ({ 
+        ...prev, 
+        [fileType]: `File size must be less than ${maxSizeMB} MB` 
+      }));
+      return false;
+    }
+    return true;
+  };
+
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>, 
     field: 'videoUrl' | 'thumbnailUrl'
   ): Promise<void> => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Validate file size based on field type
+    if (field === 'videoUrl' && !validateFileSize(file, MAX_VIDEO_SIZE, 'videoUrl')) {
+      return;
+    }
+    
+    if (field === 'thumbnailUrl' && !validateFileSize(file, MAX_THUMBNAIL_SIZE, 'thumbnailUrl')) {
+      return;
+    }
 
     try {
       const fileUrl = await uploadFile(file);
@@ -147,6 +172,14 @@ const TrainingVideoFormDialog: React.FC<TrainingVideoFormDialogProps> = ({
       "company-code-of-conduct-rules-compliances": "Company Code of Conduct, Rules & Compliances (RERA)"
     };
     return categoryLabels[category] || category;
+  };
+
+  const formatFileSize = (bytes: number): string => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
 
   const isUploading = fileUploading || loading;
@@ -241,7 +274,7 @@ const TrainingVideoFormDialog: React.FC<TrainingVideoFormDialogProps> = ({
                 <FormHelperText error>{errors.videoUrl}</FormHelperText>
               )}
               <FormHelperText>
-                Upload MP4, MOV, or other video formats
+                Upload MP4, MOV, or other video formats (Max: {formatFileSize(MAX_VIDEO_SIZE)})
               </FormHelperText>
             </Box>
           </Grid>
@@ -276,7 +309,7 @@ const TrainingVideoFormDialog: React.FC<TrainingVideoFormDialogProps> = ({
                 <FormHelperText error>{errors.thumbnailUrl}</FormHelperText>
               )}
               <FormHelperText>
-                Upload JPG, PNG, or other image formats
+                Upload JPG, PNG, or other image formats (Max: {formatFileSize(MAX_THUMBNAIL_SIZE)})
               </FormHelperText>
             </Box>
           </Grid>

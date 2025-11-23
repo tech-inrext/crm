@@ -1,8 +1,7 @@
 // app/dashboard/booking-login/page.tsx
-
 "use client";
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -47,6 +46,11 @@ const BookingLogin: React.FC = () => {
   const { hasAccountsRole } = useAuth();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
+  const [projectFilter, setProjectFilter] = useState("");
+  const [teamHeadFilter, setTeamHeadFilter] = useState("");
+  const [projectOptions, setProjectOptions] = useState<string[]>([]);
+  const [teamHeadOptions, setTeamHeadOptions] = useState<string[]>([]);
+
   const {
     bookings,
     loading,
@@ -65,7 +69,7 @@ const BookingLogin: React.FC = () => {
     deleteBooking,
     updateBookingStatus,
     loadBookings,
-  } = useBookingLogin(debouncedSearch);
+  } = useBookingLogin(debouncedSearch, projectFilter, teamHeadFilter);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -77,6 +81,22 @@ const BookingLogin: React.FC = () => {
   >("success");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
+  // Extract unique project names and team heads from bookings
+  useEffect(() => {
+    if (bookings.length > 0) {
+      // Extract unique project names
+      const projects = [...new Set(bookings.map(booking => booking.projectName).filter(Boolean))] as string[];
+      setProjectOptions(projects);
+
+      // Extract unique team head names
+      const teamHeads = [...new Set(bookings.map(booking => booking.teamHeadName).filter(Boolean))] as string[];
+      setTeamHeadOptions(teamHeads);
+    } else {
+      setProjectOptions([]);
+      setTeamHeadOptions([]);
+    }
+  }, [bookings]);
+
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
@@ -84,6 +104,22 @@ const BookingLogin: React.FC = () => {
     },
     [setSearch, setPage]
   );
+
+  const handleProjectFilterChange = useCallback((value: string) => {
+    setProjectFilter(value);
+    setPage(1);
+  }, [setPage]);
+
+  const handleTeamHeadFilterChange = useCallback((value: string) => {
+    setTeamHeadFilter(value);
+    setPage(1);
+  }, [setPage]);
+
+  const handleClearFilters = useCallback(() => {
+    setProjectFilter("");
+    setTeamHeadFilter("");
+    setPage(1);
+  }, [setPage]);
 
   const handlePageSizeChange = (newSize: number) => {
     setRowsPerPage(newSize);
@@ -320,41 +356,41 @@ const BookingLogin: React.FC = () => {
               <Edit/>
             </Box>
           </PermissionGuard>
-<PermissionGuard
-  module={BOOKING_LOGIN_PERMISSION_MODULE}
-  action="delete"
-  fallback={null}
->
-  <Box
-    component="button"
-    onClick={() => handleDeleteBooking(row)}
-    disabled={!hasAccountsRole() && row.status !== 'draft'}
-    sx={{
-      border: 'none',
-      background: 'none',
-      cursor: (!hasAccountsRole() && row.status !== 'draft') ? 'not-allowed' : 'pointer',
-      color: (!hasAccountsRole() && row.status !== 'draft') ? 'grey.400' : 'error.main',
-      p: 0.5,
-      borderRadius: 1,
-      '&:hover': { 
-        backgroundColor: (!hasAccountsRole() && row.status !== 'draft') ? 'transparent' : 'error.light', 
-        color: (!hasAccountsRole() && row.status !== 'draft') ? 'grey.400' : 'white' 
-      },
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minWidth: 32,
-      minHeight: 32,
-    }}
-    title={
-      (!hasAccountsRole() && row.status !== 'draft') 
-        ? "Only draft bookings can be deleted" 
-        : "Delete Booking"
-    }
-  >
-    <Delete/>
-  </Box>
-</PermissionGuard>
+          <PermissionGuard
+            module={BOOKING_LOGIN_PERMISSION_MODULE}
+            action="delete"
+            fallback={null}
+          >
+            <Box
+              component="button"
+              onClick={() => handleDeleteBooking(row)}
+              disabled={!hasAccountsRole() && row.status !== 'draft'}
+              sx={{
+                border: 'none',
+                background: 'none',
+                cursor: (!hasAccountsRole() && row.status !== 'draft') ? 'not-allowed' : 'pointer',
+                color: (!hasAccountsRole() && row.status !== 'draft') ? 'grey.400' : 'error.main',
+                p: 0.5,
+                borderRadius: 1,
+                '&:hover': { 
+                  backgroundColor: (!hasAccountsRole() && row.status !== 'draft') ? 'transparent' : 'error.light', 
+                  color: (!hasAccountsRole() && row.status !== 'draft') ? 'grey.400' : 'white' 
+                },
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                minWidth: 32,
+                minHeight: 32,
+              }}
+              title={
+                (!hasAccountsRole() && row.status !== 'draft') 
+                  ? "Only draft bookings can be deleted" 
+                  : "Delete Booking"
+              }
+            >
+              <Delete/>
+            </Box>
+          </PermissionGuard>
         </Box>
       )
     },
@@ -385,12 +421,37 @@ const BookingLogin: React.FC = () => {
         >
           Booking Login
         </Typography>
+        
+        {/* Action Bar with Filters */}
         <BookingLoginActionBar
           search={search}
           onSearchChange={handleSearchChange}
           onAdd={() => setOpen(true)}
           saving={saving}
+          projectFilter={projectFilter}
+          onProjectFilterChange={handleProjectFilterChange}
+          teamHeadFilter={teamHeadFilter}
+          onTeamHeadFilterChange={handleTeamHeadFilterChange}
+          projectOptions={projectOptions}
+          teamHeadOptions={teamHeadOptions}
         />
+
+        {/* Clear Filters Button */}
+        {/* {(projectFilter || teamHeadFilter) && (
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+            <Button 
+              variant="outlined" 
+              size="small" 
+              onClick={handleClearFilters}
+              sx={{ 
+                borderRadius: 2,
+                textTransform: 'none'
+              }}
+            >
+              Clear Filters
+            </Button>
+          </Box>
+        )} */}
       </Paper>
 
       {loading ? (
@@ -403,7 +464,7 @@ const BookingLogin: React.FC = () => {
             No bookings found.
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {search ? "Try adjusting your search criteria" : "Create your first booking to get started"}
+            {search || projectFilter || teamHeadFilter ? "Try adjusting your search or filter criteria" : "Create your first booking to get started"}
           </Typography>
         </Box>
       ) : isMobile ? (
@@ -425,6 +486,7 @@ const BookingLogin: React.FC = () => {
                 onDelete={() => handleDeleteBooking(booking)}
                 onApprove={hasAccountsRole() ? () => handleApproveBooking(booking._id) : undefined}
                 onReject={hasAccountsRole() ? () => handleRejectBooking(booking._id) : undefined}
+                hasAccountsRole={hasAccountsRole()}
               />
             ))}
           </Box>
@@ -490,24 +552,6 @@ const BookingLogin: React.FC = () => {
         action="write"
         fallback={<></>}
       >
-        {/* <Fab
-          color="primary"
-          aria-label="add booking"
-          onClick={() => setOpen(true)}
-          disabled={saving}
-          sx={{
-            position: "fixed",
-            bottom: FAB_POSITION.bottom,
-            right: FAB_POSITION.right,
-            background: GRADIENTS.button,
-            display: { xs: "flex", md: "none" },
-            zIndex: FAB_POSITION.zIndex,
-            boxShadow: 3,
-            "&:hover": { background: GRADIENTS.buttonHover },
-          }}
-        >
-          {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
-        </Fab> */}
         <BookingLoginDialog
           open={open}
           editId={editId}
@@ -567,6 +611,4 @@ const BookingLogin: React.FC = () => {
 };
 
 export default BookingLogin;
-
-
 
