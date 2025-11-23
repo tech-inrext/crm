@@ -118,8 +118,11 @@ const Users: React.FC = () => {
       return false;
     }
 
-    // Get current user ID - handle both 'id' and '_id' properties
-    const currentUserId = currentUser.id || currentUser._id;
+    // System admin can edit everyone
+    if (currentUser.isSystemAdmin) return true;
+
+    // Check if logged-in user's ID matches the employee's managerId
+    const currentUserId = currentUser._id;
     const employeeManagerId = employee.managerId;
 
     // If current user ID is still not found
