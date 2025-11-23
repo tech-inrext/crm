@@ -56,7 +56,11 @@ export interface BookingLogin {
 const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB in bytes
 const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp', 'application/pdf'];
 
-export function useBookingLogin(debouncedSearch: string) {
+export function useBookingLogin(
+  debouncedSearch: string, 
+  projectFilter: string = "", 
+  teamHeadFilter: string = ""
+) {
   const [bookings, setBookings] = useState<BookingLogin[]>([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -69,7 +73,7 @@ export function useBookingLogin(debouncedSearch: string) {
   const [form, setForm] = useState({});
 
   const loadBookings = useCallback(
-    async (page = 1, limit = DEFAULT_PAGE_SIZE, search = "") => {
+    async (page = 1, limit = DEFAULT_PAGE_SIZE, search = "", project = "", teamHead = "") => {
       setLoading(true);
       try {
         const response = await axios.get(BOOKING_LOGIN_API_BASE, {
@@ -77,6 +81,8 @@ export function useBookingLogin(debouncedSearch: string) {
             page,
             limit,
             search: search.trim() || undefined,
+            projectName: project || undefined,
+            teamHeadName: teamHead || undefined,
             _t: Date.now(),
           },
         });
@@ -96,8 +102,8 @@ export function useBookingLogin(debouncedSearch: string) {
   );
 
   useEffect(() => {
-    loadBookings(page, rowsPerPage, debouncedSearch);
-  }, [page, rowsPerPage, debouncedSearch, loadBookings]);
+    loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter);
+  }, [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, loadBookings]);
 
   // Enhanced file upload function with validation
   const uploadFileToS3 = async (file: File): Promise<{ url: string; public_id: string }> => {
@@ -185,7 +191,7 @@ export function useBookingLogin(debouncedSearch: string) {
         });
 
         await axios.post(BOOKING_LOGIN_API_BASE, payload);
-        await loadBookings(page, rowsPerPage, debouncedSearch);
+        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter);
         
       } catch (error) {
         console.error("Failed to add booking:", error);
@@ -201,7 +207,7 @@ export function useBookingLogin(debouncedSearch: string) {
         setSaving(false);
       }
     },
-    [page, rowsPerPage, debouncedSearch, loadBookings]
+    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, loadBookings]
   );
 
   const updateBooking = useCallback(
@@ -251,7 +257,7 @@ export function useBookingLogin(debouncedSearch: string) {
         delete payload.panFile;
 
         await axios.patch(`${BOOKING_LOGIN_API_BASE}/${id}`, payload);
-        await loadBookings(page, rowsPerPage, debouncedSearch);
+        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter);
         
       } catch (error) {
         console.error("Failed to update booking:", error);
@@ -260,7 +266,7 @@ export function useBookingLogin(debouncedSearch: string) {
         setSaving(false);
       }
     },
-    [page, rowsPerPage, debouncedSearch, loadBookings]
+    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, loadBookings]
   );
 
   const updateBookingStatus = useCallback(
@@ -270,33 +276,33 @@ export function useBookingLogin(debouncedSearch: string) {
           status,
           rejectionReason,
         });
-        await loadBookings(page, rowsPerPage, debouncedSearch);
+        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter);
       } catch (error) {
         console.error("Failed to update booking status:", error);
         throw error;
       }
     },
-    [page, rowsPerPage, debouncedSearch, loadBookings]
+    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, loadBookings]
   );
 
   const deleteBooking = useCallback(
-  async (id: string) => {
-    try {
-      await axios.delete(`${BOOKING_LOGIN_API_BASE}/${id}`);
-      await loadBookings(page, rowsPerPage, debouncedSearch);
-    } catch (error: any) {
-      const status = error?.response?.status;
-      const message = error?.response?.data?.message || "Failed to delete booking";
-      
-      // Handle specific error cases
-      if (status === 403) {
-        throw new Error("Access denied: " + message);
+    async (id: string) => {
+      try {
+        await axios.delete(`${BOOKING_LOGIN_API_BASE}/${id}`);
+        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter);
+      } catch (error: any) {
+        const status = error?.response?.status;
+        const message = error?.response?.data?.message || "Failed to delete booking";
+        
+        // Handle specific error cases
+        if (status === 403) {
+          throw new Error("Access denied: " + message);
+        }
+        throw error;
       }
-      throw error;
-    }
-  },
-  [page, rowsPerPage, debouncedSearch, loadBookings]
-);
+    },
+    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, loadBookings]
+  );
 
   return {
     bookings,
@@ -322,4 +328,3 @@ export function useBookingLogin(debouncedSearch: string) {
     loadBookings,
   };
 }
-

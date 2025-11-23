@@ -22,6 +22,7 @@ import {
   ListItemText,
   FormControlLabel,
   Switch,
+  Alert,
 } from "@mui/material";
 import { Close, CloudUpload, Star, StarBorder } from "@mui/icons-material";
 import { Pillar, PillarFormData } from "@/types/pillar";
@@ -64,6 +65,12 @@ const DEFAULT_PILLAR_DATA: PillarFormData = {
   isFeatured: false, 
 };
 
+// Maximum file size in bytes (1MB)
+const MAX_FILE_SIZE = 1 * 1024 * 1024;
+
+// Allowed file types
+const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
+
 const PillarFormDialog: React.FC<PillarFormDialogProps> = ({ 
   open, 
   pillar = null, 
@@ -77,6 +84,7 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
   const [skillsInput, setSkillsInput] = useState("");
   const [projects, setProjects] = useState<Project[]>([]);
   const [projectsLoading, setProjectsLoading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const { uploadFile, uploading: fileUploading } = useFileUpload();
 
   useEffect(() => {
@@ -100,6 +108,7 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
       setErrors({});
       setExpertiseInput("");
       setSkillsInput("");
+      setUploadError(null);
       
       // Load projects when dialog opens
       loadProjects();
@@ -160,12 +169,41 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
     }));
   };
 
+  const validateFile = (file: File): string | null => {
+    // Check file size
+    if (file.size > MAX_FILE_SIZE) {
+      return `File size must be less than 1MB. Your file is ${(file.size / (1024 * 1024)).toFixed(2)}MB.`;
+    }
+
+    // Check file type
+    if (!ALLOWED_FILE_TYPES.includes(file.type)) {
+      return `Only ${ALLOWED_FILE_TYPES.map(type => type.replace('image/', '')).join(', ')} files are allowed.`;
+    }
+
+    return null;
+  };
+
   const handleFileUpload = async (
     event: React.ChangeEvent<HTMLInputElement>, 
     type: "primary" | "secondary"
   ): Promise<void> => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // Reset previous errors
+    setUploadError(null);
+    if (errors.profileImages) {
+      setErrors(prev => ({ ...prev, profileImages: "" }));
+    }
+
+    // Validate file
+    const validationError = validateFile(file);
+    if (validationError) {
+      setUploadError(validationError);
+      // Clear the file input
+      event.target.value = '';
+      return;
+    }
 
     try {
       const fileUrl = await uploadFile(file);
@@ -189,7 +227,12 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
         setErrors(prev => ({ ...prev, profileImages: "" }));
       }
     } catch (err) {
-      setErrors(prev => ({ ...prev, profileImages: 'Failed to upload file' }));
+      const errorMessage = 'Failed to upload file';
+      setErrors(prev => ({ ...prev, profileImages: errorMessage }));
+      setUploadError(errorMessage);
+    } finally {
+      // Clear the file input
+      event.target.value = '';
     }
   };
 
@@ -294,6 +337,13 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
       </DialogTitle>
 
       <DialogContent dividers>
+        {/* Upload Error Alert */}
+        {uploadError && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {uploadError}
+          </Alert>
+        )}
+
         <Grid container spacing={3}>
           {/* Basic Information */}
           <Grid size={{ xs: 12 }}>
@@ -415,6 +465,9 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
             <Typography variant="h6" gutterBottom sx={{ color: "primary.main", mt: 2 }}>
               Profile Images
             </Typography>
+            <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+              Maximum file size: 1MB. Allowed formats: JPEG, JPG, PNG, WEBP
+            </Typography>
             {errors.profileImages && (
               <FormHelperText error>{errors.profileImages}</FormHelperText>
             )}
@@ -437,7 +490,7 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
                 <input
                   type="file"
                   hidden
-                  accept="image/*"
+                  accept="image/jpeg, image/jpg, image/png, image/webp"
                   onChange={(e) => handleFileUpload(e, 'primary')}
                 />
               </Button>
@@ -466,7 +519,7 @@ const PillarFormDialog: React.FC<PillarFormDialogProps> = ({
                 <input
                   type="file"
                   hidden
-                  accept="image/*"
+                  accept="image/jpeg, image/jpg, image/png, image/webp"
                   onChange={(e) => handleFileUpload(e, 'secondary')}
                 />
               </Button>
