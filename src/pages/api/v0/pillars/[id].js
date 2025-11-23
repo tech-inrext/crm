@@ -87,7 +87,7 @@ const updatePillar = async (req, res) => {
   }
 };
 
-// DELETE pillar (soft delete)
+// DELETE pillar
 const deletePillar = async (req, res) => {
   const { id } = req.query;
 
@@ -108,11 +108,7 @@ const deletePillar = async (req, res) => {
       });
     }
 
-    await Pillar.findByIdAndUpdate(
-      id,
-      { isActive: false },
-      { new: true }
-    );
+    await Pillar.findByIdAndDelete(id);
 
     return res.status(200).json({
       success: true,
