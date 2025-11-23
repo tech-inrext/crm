@@ -29,7 +29,12 @@ const notificationSchema = new mongoose.Schema(
         "MOU_REJECTED",
         "MOU_PENDING",
         "USER_ROLE_CHANGED",
+        "USER_UPDATED",
+        "USER_WELCOME",
+        "USER_ASSIGNED",
         "NEW_USER_ADDED",
+        "ROLE_CREATED",
+        "ROLE_UPDATED",
         "PROPERTY_UPLOADED",
         "PROPERTY_STATUS_UPDATE",
         "SYSTEM_ANNOUNCEMENT",
@@ -297,7 +302,7 @@ notificationSchema.methods.getCleanupRules = function () {
 notificationSchema.statics.getUnreadCount = async function (userId) {
   try {
     // Ensure userId is properly handled regardless of string or ObjectId input
-    const mongoose = require("mongoose");
+    // const mongoose = require("mongoose"); // Removed: using imported mongoose
     let recipientId;
 
     if (typeof userId === "string") {
@@ -313,23 +318,15 @@ notificationSchema.statics.getUnreadCount = async function (userId) {
       "lifecycle.status": { $in: ["PENDING", "DELIVERED"] },
     };
 
-    console.log("Unread count query:", JSON.stringify(query, null, 2));
     const count = await this.countDocuments(query);
-    console.log("Unread count result:", count);
-
-    // Also log some sample notifications for debugging
-    const sampleNotifications = await this.find({ recipient: recipientId })
-      .limit(5)
-      .select("type lifecycle.status createdAt")
-      .lean();
-    console.log("Sample notifications for user:", sampleNotifications);
-
     return count;
   } catch (error) {
     console.error("Error in getUnreadCount:", error);
     throw error;
   }
-}; // Static method to mark notifications as read
+};
+
+// Static method to mark notifications as read
 notificationSchema.statics.markAsRead = async function (
   notificationIds,
   userId,

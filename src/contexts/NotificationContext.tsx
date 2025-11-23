@@ -6,6 +6,7 @@ import React, {
   useState,
   useEffect,
   useCallback,
+  useRef,
 } from "react";
 import { useAuth } from "./AuthContext";
 import axios from "axios";
@@ -127,6 +128,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [hasMore, setHasMore] = useState(false);
+
+  // Track previous unread count to detect new notifications
+  const prevUnreadCountRef = useRef(unreadCount);
 
   // Filters
   const [filters, setFiltersState] = useState({
@@ -256,13 +260,13 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             prev.map((notification) =>
               notificationIds.includes(notification._id)
                 ? {
-                    ...notification,
-                    lifecycle: {
-                      ...notification.lifecycle,
-                      status: "READ" as const,
-                      readAt: new Date(),
-                    },
-                  }
+                  ...notification,
+                  lifecycle: {
+                    ...notification.lifecycle,
+                    status: "READ" as const,
+                    readAt: new Date(),
+                  },
+                }
                 : notification
             )
           );
@@ -442,6 +446,15 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     return () => clearInterval(intervalId);
   }, [user, refreshUnreadCount]);
+
+  // Fetch notifications when unread count increases
+  useEffect(() => {
+    if (unreadCount > prevUnreadCountRef.current) {
+      // New unread notifications! Refresh the list.
+      fetchNotifications(1);
+    }
+    prevUnreadCountRef.current = unreadCount;
+  }, [unreadCount, fetchNotifications]);
 
   // Refresh on window focus to catch notifications created in other tabs
   useEffect(() => {

@@ -126,7 +126,7 @@ const NotificationsPage: React.FC = () => {
   const filteredNotifications = notifications.filter((notification) => {
     // Search query filter
     if (searchQuery && !notification.title.toLowerCase().includes(searchQuery.toLowerCase()) &&
-        !notification.message.toLowerCase().includes(searchQuery.toLowerCase())) {
+      !notification.message.toLowerCase().includes(searchQuery.toLowerCase())) {
       return false;
     }
 
@@ -156,15 +156,15 @@ const NotificationsPage: React.FC = () => {
   // Sort notifications
   const sortedNotifications = [...filteredNotifications].sort((a, b) => {
     let comparison = 0;
-    
+
     switch (sortBy) {
       case "date":
         comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
         break;
       case "priority":
         const priorityOrder = { "URGENT": 4, "HIGH": 3, "MEDIUM": 2, "LOW": 1 };
-        comparison = (priorityOrder[a.metadata.priority as keyof typeof priorityOrder] || 0) - 
-                    (priorityOrder[b.metadata.priority as keyof typeof priorityOrder] || 0);
+        comparison = (priorityOrder[a.metadata.priority as keyof typeof priorityOrder] || 0) -
+          (priorityOrder[b.metadata.priority as keyof typeof priorityOrder] || 0);
         break;
       case "type":
         comparison = a.type.localeCompare(b.type);
@@ -203,12 +203,12 @@ const NotificationsPage: React.FC = () => {
 
   const formatNotificationTime = (dateString: string) => {
     if (!isClient) return "moments ago";
-    
+
     try {
       const date = new Date(dateString);
       const now = new Date();
       const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-      
+
       if (diffInHours < 24) {
         return formatDistanceToNow(date, { addSuffix: true });
       } else {
@@ -231,7 +231,7 @@ const NotificationsPage: React.FC = () => {
     setTabValue(newValue);
     clearSelection();
     setPage(1);
-    
+
     // Set filters based on tab
     switch (newValue) {
       case 0: // All
@@ -503,7 +503,7 @@ const NotificationsPage: React.FC = () => {
                 No notifications found
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                {searchQuery || filterType !== "all" || filterPriority !== "all" 
+                {searchQuery || filterType !== "all" || filterPriority !== "all"
                   ? "Try adjusting your filters or search query"
                   : "You're all caught up!"}
               </Typography>
@@ -533,7 +533,7 @@ const NotificationsPage: React.FC = () => {
                           onChange={() => toggleSelection(notification._id)}
                         />
                       </ListItemIcon>
-                      
+
                       <ListItemIcon sx={{ minWidth: 40 }}>
                         {getTypeIcon(notification.type)}
                       </ListItemIcon>
@@ -559,6 +559,7 @@ const NotificationsPage: React.FC = () => {
                             />
                           </Box>
                         }
+                        secondaryTypographyProps={{ component: "div" }}
                         secondary={
                           <>
                             <Typography

@@ -7,6 +7,7 @@ import bulkUploadLeads from "./bulkupload.js";
 import sendOTPJob from "./sendOTPJob.js";
 import sendNotificationEmail from "./sendNotificationEmail.js";
 import notificationCleanupJob from "./notificationCleanup.js";
+import { leadQueue } from "../queue/leadQueue.js";
 
 // 🛠️ Load .env
 const __filename = fileURLToPath(import.meta.url);
@@ -48,14 +49,19 @@ worker.addJobListener("notificationCleanup", notificationCleanupJob);
 
 // Schedule periodic cleanup tasks
 const scheduleCleanupTasks = () => {
+  if (!leadQueue) {
+    console.warn("Queue not available, skipping cleanup scheduling");
+    return;
+  }
+
   // Schedule hourly cleanup for expired notifications
   setInterval(() => {
-    worker.add("notificationCleanup", { action: "expired" });
+    leadQueue.add("notificationCleanup", { action: "expired" });
   }, 60 * 60 * 1000); // Every hour
 
   // Schedule daily cleanup for old notifications
   setInterval(() => {
-    worker.add("notificationCleanup", { action: "all" });
+    leadQueue.add("notificationCleanup", { action: "all" });
   }, 24 * 60 * 60 * 1000); // Every 24 hours
 
   console.log("Notification cleanup tasks scheduled");

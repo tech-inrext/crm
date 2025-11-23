@@ -161,7 +161,9 @@ class NotificationService {
       // Execute query with pagination
       const notifications = await Notification.find(query)
         .populate("sender", "name email")
-        .sort({ "metadata.priority": -1, createdAt: -1 })
+        // Sort by createdAt descending (newest first)
+        // Priority sorting is removed because string comparison (HIGH < LOW) is incorrect
+        .sort({ createdAt: -1 })
         .skip((page - 1) * limit)
         .limit(limit)
         .lean();
