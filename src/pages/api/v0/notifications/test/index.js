@@ -1,6 +1,6 @@
 import { Controller } from "@framework";
-import { NotificationHelper } from "../../../../../lib/notification-helpers.js";
-import dbConnect from "../../../../../lib/mongodb.js";
+import { NotificationHelper } from "@/lib/notification-helpers";
+import dbConnect from "@/lib/mongodb.js";
 
 class NotificationTestController extends Controller {
   constructor() {
@@ -78,7 +78,7 @@ class NotificationTestController extends Controller {
         // Simple test notification
         console.log("Testing simple notification");
         const notificationService = (
-          await import("../../../../../services/notification.service.ts")
+          await import("@/services/notification.service")
         ).default;
         result = await notificationService.createNotification({
           recipient: employee._id,

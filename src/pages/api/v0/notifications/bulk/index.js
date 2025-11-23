@@ -1,6 +1,6 @@
 import { Controller } from "@framework";
-import dbConnect from "../../../../../../lib/mongodb.js";
-import notificationService from "../../../../../../services/notification.service";
+import dbConnect from "@/lib/mongodb.js";
+import notificationService from "@/services/notification.service";
 
 class NotificationBulkController extends Controller {
   constructor() {
