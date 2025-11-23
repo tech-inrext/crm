@@ -7,6 +7,7 @@ import bulkUploadLeads from "./bulkupload.js";
 import sendOTPJob from "./sendOTPJob.js";
 import sendNotificationEmail from "./sendNotificationEmail.js";
 import notificationCleanupJob from "./notificationCleanup.js";
+import sendLeadFollowUpNotification from "./sendLeadFollowUpNotification.js";
 import { leadQueue } from "../queue/leadQueue.js";
 
 // 🛠️ Load .env
@@ -46,6 +47,7 @@ worker.addJobListener("bulkUploadLeads", bulkUploadLeads);
 worker.addJobListener("sendOTPJob", sendOTPJob);
 worker.addJobListener("sendNotificationEmail", sendNotificationEmail);
 worker.addJobListener("notificationCleanup", notificationCleanupJob);
+worker.addJobListener("sendLeadFollowUpNotification", sendLeadFollowUpNotification);
 
 // Schedule periodic cleanup tasks
 const scheduleCleanupTasks = () => {

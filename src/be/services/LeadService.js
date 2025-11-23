@@ -1,6 +1,7 @@
 import { Service } from "@framework";
 import Lead from "../../models/Lead";
 import { NotificationHelper } from "../../lib/notification-helpers";
+import { leadQueue } from "../../queue/leadQueue";
 
 class LeadService extends Service {
   constructor() {
@@ -72,6 +73,43 @@ class LeadService extends Service {
         }
       }
 
+      // Schedule follow-up notifications if nextFollowUp is set
+      if (rest.nextFollowUp) {
+        try {
+          const followUpDate = new Date(rest.nextFollowUp);
+          const now = Date.now();
+
+          // Define reminders: 24h before, 2h before, and Due time
+          const reminders = [
+            { type: "24H_BEFORE", offset: 24 * 60 * 60 * 1000 },
+            { type: "2H_BEFORE", offset: 2 * 60 * 60 * 1000 },
+            { type: "DUE", offset: 0 },
+          ];
+
+          if (leadQueue) {
+            for (const reminder of reminders) {
+              const scheduleTime = followUpDate.getTime() - reminder.offset;
+              const delay = scheduleTime - now;
+
+              if (delay > 0) {
+                await leadQueue.add(
+                  "sendLeadFollowUpNotification",
+                  {
+                    leadId: newLead._id,
+                    scheduledTime: followUpDate.toISOString(),
+                    reminderType: reminder.type,
+                  },
+                  { delay }
+                );
+                console.log(`✅ Scheduled ${reminder.type} follow-up notification for lead ${newLead._id} in ${Math.round(delay / 1000 / 60)} mins`);
+              }
+            }
+          }
+        } catch (queueError) {
+          console.error("Failed to schedule follow-up notification:", queueError);
+        }
+      }
+
       return res.status(201).json({ success: true, data: newLead });
     } catch (error) {
       return res.status(500).json({
@@ -95,12 +133,12 @@ class LeadService extends Service {
       // Optional search filter
       const searchQuery = search
         ? {
-            $or: [
-              { fullName: { $regex: search, $options: "i" } },
-              { email: { $regex: search, $options: "i" } },
-              { phone: { $regex: search, $options: "i" } },
-            ],
-          }
+          $or: [
+            { fullName: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+          ],
+        }
         : {};
 
       // Optional status filter
@@ -111,9 +149,9 @@ class LeadService extends Service {
         const statuses = Array.isArray(status)
           ? status
           : String(status)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
 
         if (statuses.length) {
           // Build case-insensitive match for each status to be safe
@@ -252,6 +290,43 @@ class LeadService extends Service {
             notificationError
           );
           // Don't fail the update if notification fails
+        }
+      }
+
+      // Schedule follow-up notifications if nextFollowUp is updated
+      if (updateFields.nextFollowUp) {
+        try {
+          const followUpDate = new Date(updateFields.nextFollowUp);
+          const now = Date.now();
+
+          // Define reminders: 24h before, 2h before, and Due time
+          const reminders = [
+            { type: "24H_BEFORE", offset: 24 * 60 * 60 * 1000 },
+            { type: "2H_BEFORE", offset: 2 * 60 * 60 * 1000 },
+            { type: "DUE", offset: 0 },
+          ];
+
+          if (leadQueue) {
+            for (const reminder of reminders) {
+              const scheduleTime = followUpDate.getTime() - reminder.offset;
+              const delay = scheduleTime - now;
+
+              if (delay > 0) {
+                await leadQueue.add(
+                  "sendLeadFollowUpNotification",
+                  {
+                    leadId: updatedLead._id,
+                    scheduledTime: followUpDate.toISOString(),
+                    reminderType: reminder.type,
+                  },
+                  { delay }
+                );
+                console.log(`✅ Scheduled ${reminder.type} follow-up notification for lead ${updatedLead._id} in ${Math.round(delay / 1000 / 60)} mins`);
+              }
+            }
+          }
+        } catch (queueError) {
+          console.error("Failed to schedule follow-up notification:", queueError);
         }
       }
 
