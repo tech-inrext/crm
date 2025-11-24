@@ -183,8 +183,8 @@ const LandingPage: React.FC = () => {
         minHeight: "100vh",
         background:
           theme.palette.mode === "dark"
-            ? "linear-gradient(135deg, #0f1419 0%, #1a202c 100%)"
-            : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+            ? "#b9d8f7"
+            : "#b9d8f7",
         display: "flex",
         flexDirection: "column",
         px: { xs: 2, sm: 3 },
@@ -204,15 +204,16 @@ const LandingPage: React.FC = () => {
         }}
       >
         <Image
-          src="/inrext.png"
+          src="/inrext white logo png.png"
           alt="Inrext Logo"
-          width={40}
+          width={200}
           height={40}
           style={{
             objectFit: "contain",
+            filter: "drop-shadow(0px 4px 8px rgba(0,0,0,0.3))",
           }}
         />
-        <Typography
+        {/* <Typography
           variant="h4"
           sx={{
             color: "white",
@@ -221,7 +222,7 @@ const LandingPage: React.FC = () => {
           }}
         >
           Inrext
-        </Typography>
+        </Typography> */}
       </Box>
       {/* Main Content */}
       <Container
@@ -262,20 +263,22 @@ const LandingPage: React.FC = () => {
                   color: "white",
                   fontWeight: 700,
                   mb: 2,
-                  textAlign: { xs: "center", md: "left" },
+                  textAlign: { xs: "center", md: "center" },
                   fontSize: { xs: "1.75rem", sm: "2rem", md: "2.5rem" },
+                  textShadow: "0 20px 40px rgba(0,0,0,0.3)",
                 }}
               >
-                Welcome to Inrext
+                Welcome to Inrext.Com
               </Typography>
               <Typography
                 variant="h6"
                 sx={{
                   color: "rgba(255, 255, 255, 0.9)",
                   mb: 4,
-                  textAlign: { xs: "center", md: "left" },
+                  textAlign: { xs: "center", md: "center" },
                   fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
-                  lineHeight: 1.6,
+                  lineHeight: 1,
+                  textShadow: "0 20px 40px rgba(0,0,0,0.3)",
                 }}
               >
                 Property management made easy!
@@ -293,7 +296,7 @@ const LandingPage: React.FC = () => {
             <Card
               sx={{
                 borderRadius: { xs: 3, sm: 4 },
-                boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+                boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
                 bgcolor: theme.palette.mode === "dark" ? "#1e2328" : "#ffffff",
                 mx: { xs: 0, sm: 1 },
               }}
@@ -306,10 +309,10 @@ const LandingPage: React.FC = () => {
                     sx={{
                       width: { xs: 60, sm: 80 },
                       height: { xs: 60, sm: 80 },
-                      borderRadius: 2,
-                      bgcolor: "white",
-                      border: "5px solid",
-                      borderColor: theme.palette.primary.main,
+                      // borderRadius: 2,
+                      // bgcolor: "white",
+                      // border: "5px solid",
+                      // borderColor: theme.palette.primary.main,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -317,7 +320,7 @@ const LandingPage: React.FC = () => {
                     }}
                   >
                     <Image
-                      src="/inrext.png"
+                      src="/Inrext logo Icon.png"
                       alt="Inrext Logo"
                       width={40}
                       height={40}
@@ -325,6 +328,7 @@ const LandingPage: React.FC = () => {
                         width: "100%",
                         height: "100%",
                         objectFit: "contain",
+                        filter: "drop-shadow(0px 4px 8px rgba(0,0,0,0.3))",
                       }}
                     />
                   </Box>
@@ -394,10 +398,10 @@ const LandingPage: React.FC = () => {
                       textTransform: "none",
                       fontSize: { xs: "1rem", sm: "1.1rem" },
                       background:
-                        "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
+                        "#1976d2",
                       "&:hover": {
                         background:
-                          "linear-gradient(45deg, #5a67d8 30%, #6b46c1 90%)",
+                          "#1976d2",
                       },
                     }}
                   >
@@ -441,11 +445,11 @@ const LandingPage: React.FC = () => {
         <Typography
           variant="body2"
           sx={{
-            color: "rgba(255, 255, 255, 0.6)",
+            color: "white",
             fontSize: { xs: "0.75rem", sm: "0.875rem" },
           }}
         >
-          © 2024 Inrext. All rights reserved.
+          © 2024 Inrext.com. All rights reserved.
         </Typography>
       </Box>
       {/* Forgot Password Dialog (OTP Flow) */}
