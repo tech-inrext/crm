@@ -51,7 +51,6 @@ class NotificationService {
       // Check if similar notification already exists (prevent duplicates)
       const existing = await this.findDuplicateNotification(data);
       if (existing) {
-        console.log("Duplicate notification prevented:", data.type);
         return existing;
       }
 
@@ -162,8 +161,6 @@ class NotificationService {
         if (toDate) query.createdAt.$lte = toDate;
       }
 
-      console.log("getUserNotifications query:", JSON.stringify(query));
-
       // Execute query with pagination
       const notifications = await Notification.find(query)
         .populate("sender", "name email")
@@ -175,10 +172,6 @@ class NotificationService {
         .lean();
 
       const total = await Notification.countDocuments(query);
-
-      console.log(
-        `Found ${notifications.length} notifications out of ${total} total for user ${userId}`
-      );
 
       return {
         notifications,
@@ -243,9 +236,7 @@ class NotificationService {
   // Get unread count
   async getUnreadCount(userId: string) {
     try {
-      console.log("Getting unread count for user:", userId);
       const count = await Notification.getUnreadCount(userId);
-      console.log("Unread count result:", count);
       return count;
     } catch (error) {
       console.error("Error getting unread count:", error);
@@ -372,7 +363,6 @@ class NotificationService {
       });
 
       await Promise.race([schedulePromise, timeoutPromise]);
-      console.log("Email notification scheduled successfully");
     } catch (error) {
       console.error(
         "Error scheduling email notification (non-blocking):",
@@ -386,10 +376,6 @@ class NotificationService {
   // Helper: Deliver real-time notifications (placeholder for WebSocket)
   private async deliverRealtimeNotification(notification: any) {
     // This will be implemented when we add WebSocket support
-    console.log(
-      `Real-time notification delivered to ${notification.recipient}:`,
-      notification.title
-    );
   }
 
   // Helper: Check for superseded notifications
@@ -511,7 +497,6 @@ class NotificationService {
       });
 
       await Promise.all(promises);
-      console.log(`Push notifications sent to ${recipient._id}`);
     } catch (error) {
       console.error("Error sending push notifications:", error);
     }
