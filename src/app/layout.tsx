@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
+import { NotificationProvider } from "../contexts/NotificationContext";
 import MuiRootProvider from "../components/ui/provider/MuiRootProvider";
 import { PermissionsProvider } from "../contexts/AuthContext";
 import LoginWrapper from "../components/ui/wrapper/LoginWrapper";
@@ -18,7 +19,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "CRM - Inrext Private Limited",
-  description: "Boost productivity with Inrext CRM, an all-in-one platform to manage leads, automate sales, track performance, and streamline your business operations.",
+  description:
+    "Boost productivity with Inrext CRM, an all-in-one platform to manage leads, automate sales, track performance, and streamline your business operations.",
   icons: {
     icon: "/Inrext Favicon.png",
   },
@@ -36,7 +38,9 @@ export default function RootLayout({
       >
         <MuiRootProvider>
           <AuthProvider>
-            <LoginWrapper>{children}</LoginWrapper>
+            <NotificationProvider>
+              <LoginWrapper>{children}</LoginWrapper>
+            </NotificationProvider>
           </AuthProvider>
         </MuiRootProvider>
       </body>

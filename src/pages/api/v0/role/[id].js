@@ -2,6 +2,7 @@ import dbConnect from "../../../../lib/mongodb";
 import Role from "../../../../models/Role";
 import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
+import { NotificationHelper } from "../../../../lib/notification-helpers";
 
 // ✅ GET role by ID (only if has READ permission)
 const getRoleById = async (req, res) => {
@@ -49,23 +50,25 @@ const updateRoleDetails = async (req, res) => {
 
     // Normalize module names to match backend enum
     const normalizeModuleName = (modules) => {
-  if (!Array.isArray(modules)) return modules;
-  return modules.map(mod => {
-    // Handle module name conversions to match backend enum
-    if (mod === 'bookinglogin') return 'booking-login';
-    if (mod === 'trainingvideos') return 'training-videos';
-    if (mod === 'pillar') return 'pillar';
-    return mod;
-  });
-};
+      if (!Array.isArray(modules)) return modules;
+      return modules.map((mod) => {
+        // Handle module name conversions to match backend enum
+        if (mod === "bookinglogin") return "booking-login";
+        if (mod === "trainingvideos") return "training-videos";
+        if (mod === "pillar") return "pillar";
+        return mod;
+      });
+    };
 
     const setObj = {};
     // if (Array.isArray(readItems)) setObj.read = readItems;
     // if (Array.isArray(writeItems)) setObj.write = writeItems;
     // if (Array.isArray(deleteItems)) setObj.delete = deleteItems;
     if (Array.isArray(readItems)) setObj.read = normalizeModuleName(readItems);
-    if (Array.isArray(writeItems)) setObj.write = normalizeModuleName(writeItems);
-    if (Array.isArray(deleteItems)) setObj.delete = normalizeModuleName(deleteItems);
+    if (Array.isArray(writeItems))
+      setObj.write = normalizeModuleName(writeItems);
+    if (Array.isArray(deleteItems))
+      setObj.delete = normalizeModuleName(deleteItems);
 
     if (typeof isSystemAdmin !== "undefined") {
       // Coerce string values to boolean too (e.g. 'true'/'false')
@@ -125,6 +128,19 @@ const updateRoleDetails = async (req, res) => {
       return res
         .status(404)
         .json({ success: false, message: "Role not found" });
+    }
+
+    // Send notification for role update
+    try {
+      await NotificationHelper.notifyRoleUpdated(
+        updatedRole._id,
+        updatedRole.toObject(),
+        setObj,
+        req.employee?._id
+      );
+      console.log("✅ Role update notification sent");
+    } catch (error) {
+      console.error("❌ Role update notification failed:", error);
     }
 
     return res.status(200).json({ success: true, data: updatedRole });

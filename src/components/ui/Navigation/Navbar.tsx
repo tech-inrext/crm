@@ -6,6 +6,7 @@ import Typography from "@/components/ui/Component/Typography";
 import { useTheme, useMediaQuery } from "../Component";
 import AvatarComponent from "@/components/ui/Component/Avatar";
 import ProfileMenu from "../profile/ProfileMenu";
+import NotificationBell from "../notifications/NotificationBell";
 
 interface NavbarProps {
   sidebarOpen: boolean;
@@ -97,7 +98,10 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           Inrext
         </Typography>
       </Box>
-      <ProfileMenu />
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        <NotificationBell />
+        <ProfileMenu />
+      </Box>
     </Box>
   );
 };

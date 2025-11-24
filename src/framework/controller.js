@@ -43,9 +43,9 @@ export class Controller {
     }
 
     if (this.skipAuth.includes(method)) {
-      fun(req, res);
+      return fun(req, res);
     } else {
-      userAuth(req, res, fun);
+      return userAuth(req, res, fun);
     }
   }
 }

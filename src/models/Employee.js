@@ -182,6 +182,63 @@ const employeeSchema = new mongoose.Schema(
     // Freelancer fields
     slabPercentage: { type: String, trim: true, default: "" },
     branch: { type: String, trim: true, default: "" },
+
+    // Notification preferences
+    notificationPreferences: {
+      email: {
+        leads: { type: Boolean, default: true },
+        cabBooking: { type: Boolean, default: true },
+        vendor: { type: Boolean, default: true },
+        system: { type: Boolean, default: true },
+      },
+      inApp: {
+        leads: { type: Boolean, default: true },
+        cabBooking: { type: Boolean, default: true },
+        vendor: { type: Boolean, default: true },
+        system: { type: Boolean, default: true },
+      },
+      frequency: {
+        type: String,
+        enum: ["IMMEDIATE", "HOURLY", "DAILY", "WEEKLY"],
+        default: "IMMEDIATE",
+      },
+      retention: {
+        keepReadNotifications: {
+          type: Number,
+          default: 7, // days
+          min: 1,
+          max: 90,
+        },
+        keepUnreadNotifications: {
+          type: Number,
+          default: 30, // days
+          min: 7,
+          max: 365,
+        },
+        autoArchiveAfter: {
+          type: Number,
+          default: 30, // days
+          min: 7,
+          max: 180,
+        },
+        preserveImportant: {
+          type: Boolean,
+          default: true,
+        },
+      },
+    },
+    // Push Notification Subscriptions
+    pushSubscriptions: [
+      {
+        endpoint: { type: String, required: true },
+        keys: {
+          p256dh: { type: String, required: true },
+          auth: { type: String, required: true },
+        },
+        userAgent: String,
+        createdAt: { type: Date, default: Date.now },
+      },
+    ],
   },
   { timestamps: true }
 );
