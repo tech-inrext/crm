@@ -1,6 +1,7 @@
 import Notification from "../models/Notification.js";
 import Employee from "../models/Employee.js";
 import { leadQueue } from "../queue/leadQueue.js";
+import pushService from "./push.service";
 
 export interface NotificationData {
   recipient: string;
@@ -81,6 +82,11 @@ class NotificationService {
       // Handle real-time delivery
       if (notification.channels.inApp && !data.scheduledFor) {
         await this.deliverRealtimeNotification(notification);
+      }
+
+      // Handle push notifications if enabled
+      if (notification.channels.push && !data.scheduledFor) {
+        await this.sendPushNotification(notification);
       }
 
       return notification;
@@ -466,6 +472,48 @@ class NotificationService {
     } catch (error) {
       console.error("Error getting notification recipients:", error);
       return [];
+    }
+  }
+  // Helper: Send push notifications
+  private async sendPushNotification(notification: any) {
+    try {
+      const recipient = await Employee.findById(notification.recipient).select(
+        "pushSubscriptions"
+      );
+
+      if (
+        !recipient ||
+        !recipient.pushSubscriptions ||
+        recipient.pushSubscriptions.length === 0
+      ) {
+        return;
+      }
+
+      const payload = {
+        title: notification.title,
+        message: notification.message,
+        metadata: notification.metadata,
+      };
+
+      const promises = recipient.pushSubscriptions.map(async (subscription) => {
+        const result = await pushService.sendNotification(
+          subscription,
+          payload
+        );
+
+        if (!result.success && result.error === "SUBSCRIPTION_EXPIRED") {
+          // Remove expired subscription
+          await Employee.updateOne(
+            { _id: recipient._id },
+            { $pull: { pushSubscriptions: { endpoint: subscription.endpoint } } }
+          );
+        }
+      });
+
+      await Promise.all(promises);
+      console.log(`Push notifications sent to ${recipient._id}`);
+    } catch (error) {
+      console.error("Error sending push notifications:", error);
     }
   }
 }

@@ -44,11 +44,6 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <AppIcon src="/analytics.png" alt="Analytics" />,
   },
   {
-    label: "Notifications",
-    href: "/dashboard/notifications",
-    icon: <Notifications sx={{ color: "#FF6B6B" }} />,
-  },
-  {
     label: "Leads",
     href: "/dashboard/leads",
     module: "lead",
@@ -120,6 +115,11 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     module: "pillar",
     icon: <People sx={{ color: "#3785FF" }} />,
   },
+  {
+    label: "Notifications",
+    href: "/dashboard/notifications",
+    icon: <Notifications sx={{ color: "#FF6B6B" }} />,
+  },
 ];
 
 export default function DashboardLayout({
@@ -139,10 +139,10 @@ export default function DashboardLayout({
   const sidebarLinks = useMemo(() => {
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
-          if (!link.module) return true;
-          const { hasReadAccess } = getPermissions(link.module);
-          return hasReadAccess;
-        })
+        if (!link.module) return true;
+        const { hasReadAccess } = getPermissions(link.module);
+        return hasReadAccess;
+      })
       : [];
   }, [user, pendingRoleSelection, getPermissions]);
 
@@ -191,9 +191,9 @@ export default function DashboardLayout({
           {!isMobile && !pendingRoleSelection && (
             <Sidebar
               open={true}
-              onClose={() => {}}
+              onClose={() => { }}
               links={sidebarLinks}
-              // selected={selectedLink?.href}
+            // selected={selectedLink?.href}
             />
           )}
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -219,7 +219,7 @@ export default function DashboardLayout({
               open={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
               links={sidebarLinks}
-              // selected={selectedLink?.href}
+            // selected={selectedLink?.href}
             />
           )}
         </Box>
