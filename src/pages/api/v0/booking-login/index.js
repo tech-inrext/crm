@@ -43,6 +43,7 @@ const getAllBookingLogins = async (req, res) => {
       search = "",
       status = "",
       projectName = "",
+      teamHeadName = "",
     } = req.query;
 
     const currentPage = parseInt(page);
@@ -67,6 +68,10 @@ const getAllBookingLogins = async (req, res) => {
 
     if (projectName) {
       query.projectName = { $regex: projectName, $options: "i" };
+    }
+
+    if (teamHeadName) {
+      query.teamHeadName = { $regex: teamHeadName, $options: "i" };
     }
 
     const [bookings, totalBookings] = await Promise.all([
