@@ -6,6 +6,7 @@ import Typography from "@/components/ui/Component/Typography";
 import { useTheme, useMediaQuery } from "../Component";
 import AvatarComponent from "@/components/ui/Component/Avatar";
 import ProfileMenu from "../profile/ProfileMenu";
+import NotificationBell from "../notifications/NotificationBell";
 
 interface NavbarProps {
   sidebarOpen: boolean;
@@ -56,24 +57,8 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
             borderRadius: "0px",
           }}
         />
-        {/* <Typography
-          variant="h6"
-          sx={{
-            fontFamily: '"Montserrat", calibri, sans-serif',
-            fontWeight: 800,
-            fontSize: { xs: 22, sm: 26, md: 32 },
-            color: "#000",
-            letterSpacing: 1,
-            ml: { xs: 0.5, sm: 1, md: 1 }, // slightly increase margin left for xs
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          Inrext
-        </Typography> */}
       </Box>
-      <ProfileMenu />
+      {/* <ProfileMenu /> */}
       <IconButton
         color="inherit"
         edge="start"
@@ -99,6 +84,10 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       >
         <MenuIcon sx={{ fontSize: { xs: 32,  md: 24 } }} />
       </IconButton>
+      <Box sx={{ display: "flex", alignItems: "center" }}>
+        <NotificationBell />
+        <ProfileMenu />
+      </Box>
     </Box>
   );
 };

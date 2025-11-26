@@ -17,6 +17,7 @@ const MODULES = [
   "booking-login",
   "training-videos",
   "pillar",
+  "notifications",
 ];
 
 // Configure which actions on which modules should be allowed for roles
@@ -100,7 +101,10 @@ export async function userAuth(req, res, next) {
     // 🔍 Determine moduleName from URL
     const url = req.url.toLowerCase();
     const moduleName = MODULES.find((mod) => url.includes(mod));
-    if (!moduleName) throw new Error("Unknown moduleName in route");
+    if (!moduleName) {
+      console.error("Unknown moduleName in route:", url);
+      throw new Error("Unknown moduleName in route");
+    }
 
     // ✍️ Determine action from method
     let action = "read";
@@ -109,6 +113,11 @@ export async function userAuth(req, res, next) {
 
     // 🛡️ Check permission
     let hasAccess = await checkPermission(roleId, action, moduleName);
+
+    // Special-case: allow all authenticated users to access notifications
+    if (!hasAccess && moduleName === "notifications") {
+      hasAccess = true;
+    }
 
     // Special-case: allow vendor-type roles to perform WRITE on "cab-booking"
     // without requiring READ permission. This enables vendors to update/assign
@@ -137,7 +146,6 @@ export async function userAuth(req, res, next) {
       });
     }
 
-
     // Attach analytics booleans from role to req.role.analytics and res.locals.analytics
     req.moduleName = moduleName;
     req.action = action;
@@ -152,9 +160,9 @@ export async function userAuth(req, res, next) {
 
     // Ensure we await the next handler so this middleware only returns after
     // the downstream handler completes and sends a response.
-    await next(req, res);
+    return await next(req, res);
   } catch (err) {
-    res.status(400).json({ message: "Auth Error: " + err.message });
+    console.error("Auth Error:", err);
+    return res.status(400).json({ message: "Auth Error: " + err.message });
   }
 }
-

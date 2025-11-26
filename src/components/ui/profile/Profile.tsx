@@ -202,11 +202,13 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
                 Joining Date
               </Typography>
               <Typography variant="body2" color="text.primary">
-                {new Date(user.joiningDate).toLocaleDateString(undefined, {
-                  year: "numeric",
-                  month: "long",
-                  day: "numeric",
-                })}
+                {typeof window !== "undefined"
+                  ? new Date(user.joiningDate).toLocaleDateString(undefined, {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })
+                  : "Recently"}
               </Typography>
             </Box>
           )}

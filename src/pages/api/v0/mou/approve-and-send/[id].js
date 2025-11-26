@@ -92,6 +92,29 @@ export default async function handler(req, res) {
     mou.mouStatus = "Approved";
     await mou.save();
 
+    // Send notification for MOU approval
+    try {
+      const notificationMod = await import(
+        "../../../../../lib/notification-helpers"
+      );
+      const NotificationHelper =
+        notificationMod.NotificationHelper || notificationMod.default;
+      if (
+        NotificationHelper &&
+        typeof NotificationHelper.notifyMOUStatusChange === "function"
+      ) {
+        await NotificationHelper.notifyMOUStatusChange(
+          mou._id,
+          "APPROVED",
+          req.employee?._id,
+          mou.toObject()
+        );
+        console.log("✅ MOU approval notification sent");
+      }
+    } catch (error) {
+      console.error("❌ MOU approval notification failed:", error);
+    }
+
     // send email — dynamic import via alias for serverless compatibility
     try {
       let sendMOUApprovalMail = null;

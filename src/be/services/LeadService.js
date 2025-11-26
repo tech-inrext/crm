@@ -1,5 +1,7 @@
 import { Service } from "@framework";
 import Lead from "../../models/Lead";
+import { NotificationHelper } from "../../lib/notification-helpers";
+import { leadQueue } from "../../queue/leadQueue";
 
 class LeadService extends Service {
   constructor() {
@@ -44,6 +46,70 @@ class LeadService extends Service {
 
       await newLead.save();
 
+      // Send notification if lead is assigned to someone during creation
+      if (rest.assignedTo) {
+        try {
+          await NotificationHelper.notifyLeadAssigned(
+            newLead._id,
+            rest.assignedTo,
+            loggedInUserId,
+            {
+              leadId: newLead.leadId,
+              company: newLead.company || "Unknown Company",
+              name: newLead.name,
+              phone: newLead.phone,
+              priority: "HIGH",
+            }
+          );
+          console.log(
+            `✅ Notification sent for new lead assignment to: ${rest.assignedTo}`
+          );
+        } catch (notificationError) {
+          console.error(
+            "Failed to send new lead notification:",
+            notificationError
+          );
+          // Don't fail the creation if notification fails
+        }
+      }
+
+      // Schedule follow-up notifications if nextFollowUp is set
+      if (rest.nextFollowUp) {
+        try {
+          const followUpDate = new Date(rest.nextFollowUp);
+          const now = Date.now();
+
+          // Define reminders: 24h before, 2h before, and Due time
+          const reminders = [
+            { type: "24H_BEFORE", offset: 24 * 60 * 60 * 1000 },
+            { type: "2H_BEFORE", offset: 2 * 60 * 60 * 1000 },
+            { type: "DUE", offset: 0 },
+          ];
+
+          if (leadQueue) {
+            for (const reminder of reminders) {
+              const scheduleTime = followUpDate.getTime() - reminder.offset;
+              const delay = scheduleTime - now;
+
+              if (delay > 0) {
+                await leadQueue.add(
+                  "sendLeadFollowUpNotification",
+                  {
+                    leadId: newLead._id,
+                    scheduledTime: followUpDate.toISOString(),
+                    reminderType: reminder.type,
+                  },
+                  { delay }
+                );
+                console.log(`✅ Scheduled ${reminder.type} follow-up notification for lead ${newLead._id} in ${Math.round(delay / 1000 / 60)} mins`);
+              }
+            }
+          }
+        } catch (queueError) {
+          console.error("Failed to schedule follow-up notification:", queueError);
+        }
+      }
+
       return res.status(201).json({ success: true, data: newLead });
     } catch (error) {
       return res.status(500).json({
@@ -67,12 +133,12 @@ class LeadService extends Service {
       // Optional search filter
       const searchQuery = search
         ? {
-            $or: [
-              { fullName: { $regex: search, $options: "i" } },
-              { email: { $regex: search, $options: "i" } },
-              { phone: { $regex: search, $options: "i" } },
-            ],
-          }
+          $or: [
+            { fullName: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+          ],
+        }
         : {};
 
       // Optional status filter
@@ -83,9 +149,9 @@ class LeadService extends Service {
         const statuses = Array.isArray(status)
           ? status
           : String(status)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
 
         if (statuses.length) {
           // Build case-insensitive match for each status to be safe
@@ -150,6 +216,14 @@ class LeadService extends Service {
     const { phone, ...updateFields } = req.body;
 
     try {
+      // Get the original lead before updating to compare changes
+      const originalLead = await Lead.findById(id);
+      if (!originalLead) {
+        return res
+          .status(404)
+          .json({ success: false, error: "Lead not found" });
+      }
+
       const updatedLead = await Lead.findByIdAndUpdate(
         id,
         { $set: updateFields },
@@ -160,6 +234,100 @@ class LeadService extends Service {
         return res
           .status(404)
           .json({ success: false, error: "Lead not found" });
+      }
+
+      // Check if status changed and send notification
+      if (updateFields.status && originalLead.status !== updateFields.status) {
+        try {
+          await NotificationHelper.notifyLeadStatusUpdate(
+            updatedLead._id,
+            updatedLead.assignedTo || req.employee._id,
+            originalLead.status,
+            updateFields.status,
+            {
+              leadId: updatedLead.leadId,
+              company: updatedLead.company || "Unknown Company",
+              name: updatedLead.name,
+              phone: updatedLead.phone,
+            }
+          );
+          console.log(
+            `✅ Notification sent for lead status change: ${originalLead.status} → ${updateFields.status}`
+          );
+        } catch (notificationError) {
+          console.error(
+            "Failed to send lead status notification:",
+            notificationError
+          );
+          // Don't fail the update if notification fails
+        }
+      }
+
+      // Check if lead was assigned to someone and send notification
+      if (
+        updateFields.assignedTo &&
+        originalLead.assignedTo?.toString() !== updateFields.assignedTo
+      ) {
+        try {
+          await NotificationHelper.notifyLeadAssigned(
+            updatedLead._id,
+            updateFields.assignedTo,
+            req.employee._id,
+            {
+              leadId: updatedLead.leadId,
+              company: updatedLead.company || "Unknown Company",
+              name: updatedLead.name,
+              phone: updatedLead.phone,
+              priority: "HIGH",
+            }
+          );
+          console.log(
+            `✅ Notification sent for lead assignment to user: ${updateFields.assignedTo}`
+          );
+        } catch (notificationError) {
+          console.error(
+            "Failed to send lead assignment notification:",
+            notificationError
+          );
+          // Don't fail the update if notification fails
+        }
+      }
+
+      // Schedule follow-up notifications if nextFollowUp is updated
+      if (updateFields.nextFollowUp) {
+        try {
+          const followUpDate = new Date(updateFields.nextFollowUp);
+          const now = Date.now();
+
+          // Define reminders: 24h before, 2h before, and Due time
+          const reminders = [
+            { type: "24H_BEFORE", offset: 24 * 60 * 60 * 1000 },
+            { type: "2H_BEFORE", offset: 2 * 60 * 60 * 1000 },
+            { type: "DUE", offset: 0 },
+          ];
+
+          if (leadQueue) {
+            for (const reminder of reminders) {
+              const scheduleTime = followUpDate.getTime() - reminder.offset;
+              const delay = scheduleTime - now;
+
+              if (delay > 0) {
+                await leadQueue.add(
+                  "sendLeadFollowUpNotification",
+                  {
+                    leadId: updatedLead._id,
+                    scheduledTime: followUpDate.toISOString(),
+                    reminderType: reminder.type,
+                  },
+                  { delay }
+                );
+                console.log(`✅ Scheduled ${reminder.type} follow-up notification for lead ${updatedLead._id} in ${Math.round(delay / 1000 / 60)} mins`);
+              }
+            }
+          }
+        } catch (queueError) {
+          console.error("Failed to schedule follow-up notification:", queueError);
+        }
       }
 
       return res.status(200).json({ success: true, data: updatedLead });

@@ -8,7 +8,19 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import HandshakeIcon from "@mui/icons-material/Handshake";
-import { RealEstateAgent, Group as GroupIcon, Description, VideoLibrary, People, LocalTaxi, ManageAccounts, TimeToLeave, ContactPhone, Analytics, Person } from "@mui/icons-material";
+import {
+  RealEstateAgent,
+  Group as GroupIcon,
+  Description,
+  VideoLibrary,
+  People,
+  Notifications,
+  Analytics,
+  ContactPhone,
+  ManageAccounts,
+  Person,
+  LocalTaxi,
+} from "@mui/icons-material";
 
 // const AppIcon = ({
 //   src,
@@ -31,7 +43,7 @@ import { RealEstateAgent, Group as GroupIcon, Description, VideoLibrary, People,
 // );
 
 export const DASHBOARD_SIDEBAR_LINKS = [
-    {
+  {
     label: "Analytics",
     href: "/dashboard/analytics",
     icon: <Analytics sx={{ color: "#3785FF" }} />,
@@ -79,36 +91,22 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <Description sx={{ color: "#3785FF" }} />,
   },
   {
-    label: "MOU",
-    href: "/dashboard/mou",
-    module: "mou",
-    icon: <HandshakeIcon sx={{ color: "#3785FF" }} />,
-  },
-  {
-    label: "Vendor Booking",
-    href: "/dashboard/vendor-booking",
-    module: "cab-vendor",
-    icon: <TimeToLeave sx={{ color: "#3785FF" }} />,
-  },
-  {
-    label: "Properties",
-    href: "/dashboard/properties",
-    module: "property",
-    icon: <RealEstateAgent sx={{ color: "#3785FF" }} />,
-  },
-  
-  {
-  label: "Training Videos",
-  href: "/dashboard/training-videos",
-  module: "training-videos",
-  icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
+    label: "Training Videos",
+    href: "/dashboard/training-videos",
+    module: "training-videos",
+    icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Pillars",
     href: "/dashboard/pillars",
     module: "pillar",
     icon: <People sx={{ color: "#3785FF" }} />,
-  }
+  },
+  {
+    label: "Notifications",
+    href: "/dashboard/notifications",
+    icon: <Notifications sx={{ color: "#3785FF" }} />,
+  },
 ];
 
 export default function DashboardLayout({
@@ -128,10 +126,10 @@ export default function DashboardLayout({
   const sidebarLinks = useMemo(() => {
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
-          if (!link.module) return true;
-          const { hasReadAccess } = getPermissions(link.module);
-          return hasReadAccess;
-        })
+        if (!link.module) return true;
+        const { hasReadAccess } = getPermissions(link.module);
+        return hasReadAccess;
+      })
       : [];
   }, [user, pendingRoleSelection, getPermissions]);
 
@@ -180,9 +178,9 @@ export default function DashboardLayout({
           {!isMobile && !pendingRoleSelection && (
             <Sidebar
               open={true}
-              onClose={() => {}}
+              onClose={() => { }}
               links={sidebarLinks}
-              // selected={selectedLink?.href}
+            // selected={selectedLink?.href}
             />
           )}
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -208,7 +206,7 @@ export default function DashboardLayout({
               open={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
               links={sidebarLinks}
-              // selected={selectedLink?.href}
+            // selected={selectedLink?.href}
             />
           )}
         </Box>
@@ -216,4 +214,3 @@ export default function DashboardLayout({
     </>
   );
 }
-

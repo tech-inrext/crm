@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import Dialog from "@/components/ui/Component/Dialog";
 import DialogTitle from "@/components/ui/Component/DialogTitle";
@@ -54,11 +53,28 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
   const [showTotalVendorsBilling, setShowTotalVendorsBilling] = useState(false);
   const [showCabBookingAnalytics, setShowCabBookingAnalytics] = useState(false);
   const [showScheduleThisWeek, setShowScheduleThisWeek] = useState(false);
+  const [isClient, setIsClient] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(1200); // Default width for SSR
+  useEffect(() => {
+    setIsClient(true);
+    if (typeof window !== "undefined") {
+      setWindowWidth(window.innerWidth);
+      const handleResize = () => setWindowWidth(window.innerWidth);
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
+
   useEffect(() => {
     if (open) {
       if (role) {
         console.log("Role data received in AddRoleDialog:", role);
-        console.log("Raw showTotalUsers value:", (role as any).showTotalUsers, "Type:", typeof (role as any).showTotalUsers);
+        console.log(
+          "Raw showTotalUsers value:",
+          (role as any).showTotalUsers,
+          "Type:",
+          typeof (role as any).showTotalUsers
+        );
         setRoleName(role.name || "");
         // Coerce boolean or string values correctly ('false' should be false)
         const sysVal = (role as any).isSystemAdmin;
@@ -73,19 +89,28 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             ? (role as any).showTotalUsers.toLowerCase() === "true"
             : Boolean((role as any).showTotalUsers)
         );
-        console.log("Setting showTotalVendorsBilling to:", (role as any).showTotalVendorsBilling);
+        console.log(
+          "Setting showTotalVendorsBilling to:",
+          (role as any).showTotalVendorsBilling
+        );
         setShowTotalVendorsBilling(
           typeof (role as any).showTotalVendorsBilling === "string"
             ? (role as any).showTotalVendorsBilling.toLowerCase() === "true"
             : Boolean((role as any).showTotalVendorsBilling)
         );
-        console.log("Setting showCabBookingAnalytics to:", (role as any).showCabBookingAnalytics);
+        console.log(
+          "Setting showCabBookingAnalytics to:",
+          (role as any).showCabBookingAnalytics
+        );
         setShowCabBookingAnalytics(
           typeof (role as any).showCabBookingAnalytics === "string"
             ? (role as any).showCabBookingAnalytics.toLowerCase() === "true"
             : Boolean((role as any).showCabBookingAnalytics)
         );
-        console.log("Setting showScheduleThisWeek to:", (role as any).showScheduleThisWeek);
+        console.log(
+          "Setting showScheduleThisWeek to:",
+          (role as any).showScheduleThisWeek
+        );
         setShowScheduleThisWeek(
           typeof (role as any).showScheduleThisWeek === "string"
             ? (role as any).showScheduleThisWeek.toLowerCase() === "true"
@@ -142,7 +167,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             "training-videos": "training-videos",
             property: "property",
             properties: "property",
-            "property": "property",
+            property: "property",
             pillar: "pillar",
             pillars: "pillar",
           };
@@ -160,7 +185,10 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           if (mod === "BookingLogin" || mod.toLowerCase() === "bookinglogin")
             return "booking-login";
           // Map TrainingVideos UI labels to backend 'training-videos'
-          if (mod === "TrainingVideos" || mod.toLowerCase() === "trainingvideos")
+          if (
+            mod === "TrainingVideos" ||
+            mod.toLowerCase() === "trainingvideos"
+          )
             return "training-videos";
           // Map Property UI labels to backend 'property'
           if (mod === "Property" || mod.toLowerCase() === "property")
@@ -253,7 +281,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
     <Dialog
       open={open}
       onClose={onClose}
-      fullScreen={typeof window !== "undefined" && window.innerWidth < 600}
+      fullScreen={isClient && windowWidth < 600}
       fullWidth
       maxWidth="sm"
       PaperProps={{
@@ -419,11 +447,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
                         "&.Mui-checked": { color: "#1976d2" },
                         p: 0.5,
                       }}
-                      size={
-                        typeof window !== "undefined" && window.innerWidth < 600
-                          ? "small"
-                          : "medium"
-                      }
+                      size={isClient && windowWidth < 600 ? "small" : "medium"}
                     />
                   </Box>
                 ))}
@@ -435,15 +459,32 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           <Typography sx={{ fontWeight: 600, mb: 1, color: "#1a237e" }}>
             Special Access
           </Typography>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: 'wrap' }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
+            }}
+          >
             <Checkbox
               checked={isSystemAdmin}
               onChange={(e) => setIsSystemAdmin(e.target.checked)}
               sx={{ color: "#1976d2", "&.Mui-checked": { color: "#1976d2" } }}
             />
-            <Typography>System Admin (grants selected special permissions)</Typography>
+            <Typography>
+              System Admin (grants selected special permissions)
+            </Typography>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: 'wrap', mt: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
+              mt: 1,
+            }}
+          >
             <Checkbox
               checked={showTotalUsers}
               onChange={(e) => setShowTotalUsers(e.target.checked)}
@@ -451,7 +492,15 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             />
             <Typography>Show Total Users</Typography>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: 'wrap', mt: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
+              mt: 1,
+            }}
+          >
             <Checkbox
               checked={showTotalVendorsBilling}
               onChange={(e) => setShowTotalVendorsBilling(e.target.checked)}
@@ -459,7 +508,15 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             />
             <Typography>Total Vendors & Billing amount</Typography>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: 'wrap', mt: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
+              mt: 1,
+            }}
+          >
             <Checkbox
               checked={showCabBookingAnalytics}
               onChange={(e) => setShowCabBookingAnalytics(e.target.checked)}
@@ -467,7 +524,15 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             />
             <Typography>Cab-Booking Analytics</Typography>
           </Box>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1, flexWrap: 'wrap', mt: 1 }}>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
+              mt: 1,
+            }}
+          >
             <Checkbox
               checked={showScheduleThisWeek}
               onChange={(e) => setShowScheduleThisWeek(e.target.checked)}
