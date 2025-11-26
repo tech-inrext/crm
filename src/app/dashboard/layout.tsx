@@ -15,87 +15,74 @@ import {
   VideoLibrary,
   People,
   Notifications,
+  Analytics,
+  ContactPhone,
+  ManageAccounts,
+  Person,
+  LocalTaxi,
 } from "@mui/icons-material";
 
-const AppIcon = ({
-  src,
-  alt,
-  size = 24,
-}: {
-  src: string;
-  alt: string;
-  size?: number;
-}) => (
-  <Image
-    src={src}
-    alt={alt}
-    width={size}
-    height={size}
-    style={{ display: "block" }}
-    priority={false}
-    unoptimized
-  />
-);
+// const AppIcon = ({
+//   src,
+//   alt,
+//   size = 24,
+// }: {
+//   src: string;
+//   alt: string;
+//   size?: number;
+// }) => (
+//   <Image
+//     src={src}
+//     alt={alt}
+//     width={size}
+//     height={size}
+//     style={{ display: "block" }}
+//     priority={false}
+//     unoptimized
+//   />
+// );
 
 export const DASHBOARD_SIDEBAR_LINKS = [
   {
     label: "Analytics",
     href: "/dashboard/analytics",
-    icon: <AppIcon src="/analytics.png" alt="Analytics" />,
+    icon: <Analytics sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Leads",
     href: "/dashboard/leads",
     module: "lead",
-    icon: <AppIcon src="/leads.png" alt="Leads" />,
+    icon: <ContactPhone sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Users",
     href: "/dashboard/users",
     module: "employee",
-    icon: <AppIcon src="/users.png" alt="Users" />,
-  },
-  {
-    label: "Vendors",
-    href: "/dashboard/vendor",
-    module: "vendor",
-    icon: <AppIcon src="/vendor.png" alt="Vendors" />,
-  },
-  {
-    label: "Vendor Booking",
-    href: "/dashboard/vendor-booking",
-    module: "cab-vendor",
-    icon: <AppIcon src="/cab-vendor.png" alt="Vendor Booking" />,
+    icon: <GroupIcon sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Roles",
     href: "/dashboard/roles",
     module: "role",
-    icon: <AppIcon src="/roles.png" alt="Roles" />,
-  },
-  {
-    label: "Cab Booking",
-    href: "/dashboard/cab-booking",
-    module: "cab-booking",
-    icon: <AppIcon src="/cab-booking.png" alt="Cab Booking" />,
-  },
-  {
-    label: "MOU",
-    href: "/dashboard/mou",
-    module: "mou",
-    icon: <HandshakeIcon sx={{ color: "#4CAF50" }} />,
+    icon: <ManageAccounts sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Teams",
     href: "/dashboard/teams",
     module: "team",
-    icon: <GroupIcon sx={{ color: "#3f51b5" }} />,
+    icon: <GroupIcon sx={{ color: "#3785FF" }} />,
   },
   {
-    label: "Properties",
-    href: "/dashboard/properties",
-    module: "property",
-    icon: <RealEstateAgent sx={{ color: "#3785FF" }} />,
+    label: "Vendors",
+    href: "/dashboard/vendor",
+    module: "vendor",
+    icon: <Person sx={{ color: "#3785FF" }} />,
+  },
+  {
+    label: "Cab Booking",
+    href: "/dashboard/cab-booking",
+    module: "cab-booking",
+    icon: <LocalTaxi sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Booking Login",
@@ -118,7 +105,7 @@ export const DASHBOARD_SIDEBAR_LINKS = [
   {
     label: "Notifications",
     href: "/dashboard/notifications",
-    icon: <Notifications sx={{ color: "#FF6B6B" }} />,
+    icon: <Notifications sx={{ color: "#3785FF" }} />,
   },
 ];
 

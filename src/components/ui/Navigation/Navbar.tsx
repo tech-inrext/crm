@@ -37,6 +37,28 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         overflow: "hidden",
       }}
     >
+      
+      <Box
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          gap: { xs: 0.3, sm: 1, md: 2 }, // reduce gap for xs
+          minWidth: 0,
+          flex: 1,
+        }}
+      >
+        <AvatarComponent
+          src="/Inrext logo.png"
+          alt="Inrext"
+          sx={{
+            color: "#000",
+            width: { xs: 120,  md: 185 },
+            height: { xs: 35,  md: 50 },
+            borderRadius: "0px",
+          }}
+        />
+      </Box>
+      {/* <ProfileMenu /> */}
       <IconButton
         color="inherit"
         edge="start"
@@ -60,44 +82,8 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           },
         }}
       >
-        <MenuIcon sx={{ fontSize: { xs: 18, sm: 20, md: 24 } }} />
+        <MenuIcon sx={{ fontSize: { xs: 32,  md: 24 } }} />
       </IconButton>
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: { xs: 0.3, sm: 1, md: 2 }, // reduce gap for xs
-          minWidth: 0,
-          flex: 1,
-        }}
-      >
-        <AvatarComponent
-          src="/inrext.png"
-          alt="Inrext"
-          sx={{
-            color: "#000",
-            width: { xs: 28, sm: 32, md: 40 },
-            height: { xs: 28, sm: 32, md: 40 },
-            borderRadius: "8px",
-          }}
-        />
-        <Typography
-          variant="h6"
-          sx={{
-            fontFamily: '"Montserrat", calibri, sans-serif',
-            fontWeight: 800,
-            fontSize: { xs: 22, sm: 26, md: 32 },
-            color: "#000",
-            letterSpacing: 1,
-            ml: { xs: 0.5, sm: 1, md: 1 }, // slightly increase margin left for xs
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          }}
-        >
-          Inrext
-        </Typography>
-      </Box>
       <Box sx={{ display: "flex", alignItems: "center" }}>
         <NotificationBell />
         <ProfileMenu />

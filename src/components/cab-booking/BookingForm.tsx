@@ -347,7 +347,7 @@ const BookingForm: React.FC<BookingFormProps> = ({
           <button
             type="submit"
             disabled={isLoading || submitting}
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+            className="px-4 py-2 bg-[#1976d2] text-white rounded-md hover:bg-[#1976d2] disabled:opacity-50"
           >
             {submitting || isLoading ? "Submitting..." : "Create Booking"}
           </button>
