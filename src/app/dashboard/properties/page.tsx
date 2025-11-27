@@ -69,6 +69,7 @@ import {
 } from './components';
 import LeafletMap from "./LeafletMap";
 
+
 // Custom debounce hook
 function useDebounce<T>(value: T, delay: number): T {
   const [debouncedValue, setDebouncedValue] = useState<T>(value);
@@ -1364,7 +1365,6 @@ export default function PropertiesPage() {
         </DialogActions>
       </Dialog>
 
-      {/* ... rest of your existing View Property Dialog and Sub-Property Dialog code remains the same ... */}
       {/* View Property Dialog */}
       <Dialog 
         open={openViewDialog} 
