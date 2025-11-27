@@ -948,6 +948,189 @@ const getSubProperties = async (req, res) => {
   }
 };
 
+// GET all properties for public website
+const getPublicProperties = async (req, res) => {
+  try {
+    const { 
+      page = 1, 
+      limit = 12, 
+      search = "", 
+      propertyType, 
+      location,
+      builderName,
+      minPrice,
+      maxPrice,
+      featured = "false"
+    } = req.query;
+
+    const currentPage = Math.max(parseInt(page), 1);
+    const itemsPerPage = Math.min(parseInt(limit), 50);
+    const skip = (currentPage - 1) * itemsPerPage;
+
+    const query = { 
+      isActive: true,
+      isPublic: true, // Only return public properties
+      parentId: null // Only main projects
+    };
+
+    // Enhanced search across multiple fields
+    if (search) {
+      query.$or = [
+        { projectName: { $regex: search, $options: "i" } },
+        { builderName: { $regex: search, $options: "i" } },
+        { location: { $regex: search, $options: "i" } },
+        { description: { $regex: search, $options: "i" } }
+      ];
+    }
+
+    // Filter by propertyType
+    if (propertyType) {
+      query.propertyType = propertyType;
+    }
+
+    // Filter by location
+    if (location) {
+      query.location = { $regex: location, $options: "i" };
+    }
+
+    // Filter by builderName
+    if (builderName) {
+      query.builderName = { $regex: builderName, $options: "i" };
+    }
+
+    // Filter by price range
+    if (minPrice || maxPrice) {
+      query.$and = [];
+      if (minPrice) {
+        query.$and.push({
+          $or: [
+            { maxPrice: { $gte: parseFloat(minPrice) } },
+            { minPrice: { $gte: parseFloat(minPrice) } }
+          ]
+        });
+      }
+      if (maxPrice) {
+        query.$and.push({
+          $or: [
+            { minPrice: { $lte: parseFloat(maxPrice) } },
+            { maxPrice: { $lte: parseFloat(maxPrice) } }
+          ]
+        });
+      }
+      if (query.$and.length === 0) {
+        delete query.$and;
+      }
+    }
+
+    // Filter featured properties
+    if (featured === "true") {
+      query.isFeatured = true;
+    }
+
+    const [properties, totalProperties] = await Promise.all([
+      Property.find(query)
+        .skip(skip)
+        .limit(itemsPerPage)
+        .select("projectName builderName description location price minPrice maxPrice propertyType images slug status amenities nearby projectHighlights mapLocation isFeatured createdAt")
+        .sort({ isFeatured: -1, createdAt: -1 })
+        .lean(),
+      Property.countDocuments(query)
+    ]);
+
+    // Get sub-properties count for each main project
+    for (let property of properties) {
+      const subPropertyCount = await Property.countDocuments({
+        parentId: property._id,
+        isActive: true,
+        isPublic: true
+      });
+      property.subPropertyCount = subPropertyCount;
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: properties,
+      pagination: {
+        totalItems: totalProperties,
+        currentPage,
+        itemsPerPage,
+        totalPages: Math.ceil(totalProperties / itemsPerPage),
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching public properties:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch properties",
+      error: error.message,
+    });
+  }
+};
+
+// GET single public property by slug or ID
+const getPublicPropertyById = async (req, res) => {
+  const { id } = req.query;
+
+  try {
+    const { withChildren = "false" } = req.query;
+
+    // Find property that is public and active
+    let property;
+    if (mongoose.Types.ObjectId.isValid(id)) {
+      property = await Property.findOne({ 
+        $or: [{ _id: id }, { slug: id }],
+        isActive: true,
+        isPublic: true
+      }).lean();
+    } else {
+      property = await Property.findOne({ 
+        slug: id,
+        isActive: true,
+        isPublic: true 
+      }).lean();
+    }
+
+    if (!property) {
+      return res.status(404).json({
+        success: false,
+        error: "Property not found or not publicly available",
+      });
+    }
+
+    // If requested, include child properties that are also public
+    if (withChildren === "true" && property.parentId === null) {
+      const subProperties = await Property.find({
+        parentId: property._id,
+        isActive: true,
+        isPublic: true
+      })
+        .select("propertyName propertyDescription price propertyType minSize maxSize sizeUnit bedrooms bathrooms carpetArea builtUpArea ownershipType landType propertyImages amenities")
+        .lean();
+
+      property.subProperties = subProperties;
+    }
+
+    return res.status(200).json({
+      success: true,
+      data: property,
+    });
+  } catch (error) {
+    console.error("Error fetching public Property:", error);
+
+    if (error.name === "CastError") {
+      return res.status(400).json({
+        success: false,
+        error: "Invalid property ID or slug",
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      error: "Error: " + error.message,
+    });
+  }
+};
+
 // Middleware wrapper for authentication
 function withAuth(handler) {
   return async (req, res) => {
@@ -987,6 +1170,37 @@ function withAuth(handler) {
   };
 }
 
+// Auth wrapper for public routes
+function withPublicAuth(handler) {
+  return async (req, res) => {
+    try {
+      const parsedCookies = cookie.parse(req.headers.cookie || "");
+      req.cookies = parsedCookies;
+
+      // For public GET requests, allow access without strict authentication
+      if (req.method === "GET") {
+        try {
+          await userAuth(req, res, () => {});
+        } catch (authError) {
+          // Continue without authentication for public GET requests
+          req.employee = null;
+          req.isSystemAdmin = false;
+        }
+      } else {
+        // For other methods, require authentication
+        await userAuth(req, res, () => {});
+      }
+      
+      return handler(req, res);
+    } catch (error) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication failed"
+      });
+    }
+  };
+}
+
 // Main handler
 const handler = async (req, res) => {
   await dbConnect();
@@ -1009,6 +1223,16 @@ const handler = async (req, res) => {
 
   try {
     if (req.method === "GET") {
+       // Public properties listing
+      if (req.query.isPublic === "true") {
+        return getPublicProperties(req, res);
+      }
+      
+      // Public single property
+      if (req.query.publicView === "true") {
+        return getPublicPropertyById(req, res);
+      }
+
       // Check if it's a request for sub-properties
       if (req.query.parentId && req.query.action === 'subproperties') {
         return getSubProperties(req, res);

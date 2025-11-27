@@ -35,6 +35,14 @@ const propertySchema = new mongoose.Schema(
       trim: true,
       sparse: true, // Allows multiple nulls for unique constraint
     },
+    isPublic: {
+      type: Boolean,
+      default: false,
+    },
+    isFeatured: {
+      type: Boolean,
+      default: false,
+    },
     status: { type: [String], default: [] },
     nearby: { type: [String], default: [] },
     projectHighlights: { type: [String], default: [] },
@@ -328,7 +336,9 @@ propertySchema.index({ isActive: 1 });
 propertySchema.index({ createdBy: 1 });
 propertySchema.index({ hierarchyLevel: 1 });
 propertySchema.index({ minPrice: 1 }); 
-propertySchema.index({ maxPrice: 1 }); 
+propertySchema.index({ maxPrice: 1 });
+propertySchema.index({ isPublic: 1, isActive: 1 });
+propertySchema.index({ isFeatured: 1, isPublic: 1, isActive: 1 });
 
 // Virtual for subProperties
 propertySchema.virtual("subProperties", {

@@ -20,6 +20,7 @@ import {
   ManageAccounts,
   Person,
   LocalTaxi,
+  Apartment,
 } from "@mui/icons-material";
 
 // const AppIcon = ({
@@ -83,6 +84,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     href: "/dashboard/cab-booking",
     module: "cab-booking",
     icon: <LocalTaxi sx={{ color: "#3785FF" }} />,
+  },
+  {
+    label: "Properties",
+    href: "/dashboard/properties",
+    module: "property",
+    icon: <Apartment sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Booking Login",

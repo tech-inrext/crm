@@ -31,6 +31,7 @@ import {
   CardContent,
   Tab,
   Tabs,
+  Switch,
 } from "@mui/material";
 import {
   Add,
@@ -53,6 +54,7 @@ import {
   Star,
   CheckCircle,
   CurrencyRupee,
+  Public,
 } from "@mui/icons-material";
 import { Toaster, toast } from 'sonner';
 import { propertyService, type Property } from '@/services/propertyService';
@@ -113,6 +115,7 @@ export default function PropertiesPage() {
     status: "", 
     location: "", 
     builderName: "",
+    visibility: "", // NEW: Public/Private filter
   });
   const [showFilters, setShowFilters] = useState(false);
   const [activeFiltersCount, setActiveFiltersCount] = useState(0);
@@ -157,6 +160,8 @@ export default function PropertiesPage() {
     brochureUrls: [] as any[],
     mapLocation: { lat: 0, lng: 0 },
     isActive: true,
+    isPublic: false, // NEW: Public visibility
+    isFeatured: false, // NEW: Featured status
     parentId: null as string | null,
     residentialProperties: [] as any[],
     commercialProperties: [] as any[],
@@ -169,6 +174,7 @@ export default function PropertiesPage() {
     if (filters.status) count++;
     if (filters.location) count++;
     if (filters.builderName) count++;
+    if (filters.visibility) count++; // NEW: Count visibility filter
     setActiveFiltersCount(count);
   }, [filters]);
 
@@ -221,6 +227,30 @@ export default function PropertiesPage() {
     }
   };
 
+  // NEW: Toggle public visibility
+  const handleTogglePublic = async (id: string, isPublic: boolean) => {
+    try {
+      const toastId = toast.loading(`Making property ${isPublic ? 'public' : 'private'}...`);
+      await propertyService.togglePublicVisibility(id, isPublic);
+      toast.success(`Property is now ${isPublic ? 'public' : 'private'}`, { id: toastId });
+      loadProperties();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update property visibility");
+    }
+  };
+
+  // NEW: Toggle featured status
+  const handleToggleFeatured = async (id: string, isFeatured: boolean) => {
+    try {
+      const toastId = toast.loading(`${isFeatured ? 'Adding to' : 'Removing from'} featured properties...`);
+      await propertyService.toggleFeaturedStatus(id, isFeatured);
+      toast.success(`Property ${isFeatured ? 'added to' : 'removed from'} featured list`, { id: toastId });
+      loadProperties();
+    } catch (error: any) {
+      toast.error(error.message || "Failed to update featured status");
+    }
+  };
+
   const handleFilterChange = (filterType: string, value: any) => {
     setFilters(prev => ({ ...prev, [filterType]: value }));
     setCurrentPage(1);
@@ -232,6 +262,7 @@ export default function PropertiesPage() {
       status: "", 
       location: "", 
       builderName: "",
+      visibility: "", // NEW: Reset visibility filter
     });
     setSearchTerm("");
     setCurrentPage(1);
@@ -294,6 +325,8 @@ export default function PropertiesPage() {
         brochureUrls: property.brochureUrls || [],
         mapLocation: property.mapLocation || { lat: 0, lng: 0 },
         isActive: property.isActive !== undefined ? property.isActive : true,
+        isPublic: property.isPublic || false, // NEW: Set public status
+        isFeatured: property.isFeatured || false, // NEW: Set featured status
         parentId: property.parentId || null,
         residentialProperties: property.propertyType === 'residential' ? [{
           propertyName: property.propertyName,
@@ -349,7 +382,10 @@ export default function PropertiesPage() {
         amenities: [], status: [], nearby: [], projectHighlights: [],
         images: [], propertyImages: [], floorPlans: [], creatives: [], videos: [], brochureUrls: [],
         mapLocation: { lat: 0, lng: 0 },
-        isActive: true, parentId: null,
+        isActive: true, 
+        isPublic: false, // NEW: Default to private
+        isFeatured: false, // NEW: Default to not featured
+        parentId: null,
         residentialProperties: [], commercialProperties: [], plotProperties: [],
       });
     }
@@ -406,324 +442,234 @@ export default function PropertiesPage() {
   };
 
   const handleSubmit = async () => {
-  if (!validateForm()) {
-    toast.error("Please fix the validation errors before submitting");
-    return;
-  }
-
-  try {
-    const toastId = toast.loading(editingProperty ? "Updating property..." : "Creating properties...");
-    
-    // Prepare the data with proper structure
-    const submitData = {
-      // Basic info
-      projectName: formData.projectName,
-      builderName: formData.builderName,
-      location: formData.location,
-      paymentPlan: formData.paymentPlan,
-      propertyType: formData.propertyType,
-      description: formData.description,
-      
-      // Property details
-      propertyName: formData.propertyName,
-      propertyDescription: formData.propertyDescription,
-      price: formData.price,
-      minSize: formData.minSize,
-      maxSize: formData.maxSize,
-      sizeUnit: formData.sizeUnit,
-      bedrooms: formData.bedrooms,
-      bathrooms: formData.bathrooms,
-      toilet: formData.toilet,
-      balcony: formData.balcony,
-      carpetArea: formData.carpetArea,
-      builtUpArea: formData.builtUpArea,
-      ownershipType: formData.ownershipType,
-      landType: formData.landType,
-      approvedBy: formData.approvedBy,
-      boundaryWall: formData.boundaryWall,
-      
-      // Arrays
-      amenities: formData.amenities,
-      status: formData.status,
-      nearby: formData.nearby,
-      projectHighlights: formData.projectHighlights,
-      
-      // Media with proper structure
-      images: formData.images.map(img => ({
-        url: img.url,
-        title: img.title,
-        description: img.description || '',
-        isPrimary: img.isPrimary || false,
-        uploadedAt: img.uploadedAt || new Date().toISOString()
-      })),
-      
-      propertyImages: formData.propertyImages.map(img => ({
-        url: img.url,
-        title: img.title,
-        description: img.description || '',
-        isPrimary: img.isPrimary || false,
-        uploadedAt: img.uploadedAt || new Date().toISOString()
-      })),
-      
-      floorPlans: formData.floorPlans.map(plan => ({
-        url: plan.url,
-        title: plan.title,
-        description: plan.description || '',
-        type: plan.type || '2d',
-        uploadedAt: plan.uploadedAt || new Date().toISOString()
-      })),
-      
-      // Fix: Ensure creatives are properly structured
-      creatives: formData.creatives.map(creative => ({
-        url: creative.url,
-        title: creative.title,
-        description: creative.description || '',
-        type: creative.type || 'image',
-        thumbnail: creative.thumbnail || '',
-        size: creative.size || '',
-        uploadedAt: creative.uploadedAt || new Date().toISOString()
-      })),
-      
-      // Fix: Ensure videos are properly structured
-      videos: formData.videos.map(video => ({
-        url: video.url,
-        title: video.title,
-        description: video.description || '',
-        type: video.type || 'direct',
-        thumbnail: video.thumbnail || '',
-        uploadedAt: video.uploadedAt || new Date().toISOString()
-      })),
-      
-      brochureUrls: formData.brochureUrls.map(brochure => ({
-        url: brochure.url,
-        title: brochure.title,
-        type: brochure.type || 'PDF Document',
-        uploadedAt: brochure.uploadedAt || new Date().toISOString()
-      })),
-      
-      // Location
-      mapLocation: formData.mapLocation,
-      isActive: formData.isActive,
-      parentId: formData.parentId,
-      
-      // Sub-properties
-      residentialProperties: formData.residentialProperties.map(prop => ({
-        propertyName: prop.propertyName,
-        propertyDescription: prop.propertyDescription,
-        price: prop.price,
-        paymentPlan: prop.paymentPlan,
-        bedrooms: prop.bedrooms,
-        bathrooms: prop.bathrooms,
-        toilet: prop.toilet,
-        balcony: prop.balcony,
-        carpetArea: prop.carpetArea,
-        builtUpArea: prop.builtUpArea,
-        minSize: prop.minSize,
-        maxSize: prop.maxSize,
-        sizeUnit: prop.sizeUnit,
-        amenities: prop.amenities,
-        propertyImages: prop.propertyImages?.map((img: any) => ({
-          url: img.url,
-          title: img.title,
-          description: img.description || '',
-          isPrimary: img.isPrimary || false,
-          uploadedAt: img.uploadedAt || new Date().toISOString()
-        })) || [],
-        floorPlans: prop.floorPlans?.map((plan: any) => ({
-          url: plan.url,
-          title: plan.title,
-          description: plan.description || '',
-          type: plan.type || '2d',
-          uploadedAt: plan.uploadedAt || new Date().toISOString()
-        })) || []
-      })),
-      
-      commercialProperties: formData.commercialProperties.map(prop => ({
-        propertyName: prop.propertyName,
-        propertyDescription: prop.propertyDescription,
-        price: prop.price,
-        paymentPlan: prop.paymentPlan,
-        carpetArea: prop.carpetArea,
-        builtUpArea: prop.builtUpArea,
-        minSize: prop.minSize,
-        maxSize: prop.maxSize,
-        sizeUnit: prop.sizeUnit,
-        amenities: prop.amenities,
-        propertyImages: prop.propertyImages?.map((img: any) => ({
-          url: img.url,
-          title: img.title,
-          description: img.description || '',
-          isPrimary: img.isPrimary || false,
-          uploadedAt: img.uploadedAt || new Date().toISOString()
-        })) || [],
-        floorPlans: prop.floorPlans?.map((plan: any) => ({
-          url: plan.url,
-          title: plan.title,
-          description: plan.description || '',
-          type: plan.type || '2d',
-          uploadedAt: plan.uploadedAt || new Date().toISOString()
-        })) || []
-      })),
-      
-      plotProperties: formData.plotProperties.map(prop => ({
-        propertyName: prop.propertyName,
-        propertyDescription: prop.propertyDescription,
-        price: prop.price,
-        paymentPlan: prop.paymentPlan,
-        ownershipType: prop.ownershipType,
-        landType: prop.landType,
-        approvedBy: prop.approvedBy,
-        boundaryWall: prop.boundaryWall,
-        minSize: prop.minSize,
-        maxSize: prop.maxSize,
-        sizeUnit: prop.sizeUnit,
-        amenities: prop.amenities,
-        propertyImages: prop.propertyImages?.map((img: any) => ({
-          url: img.url,
-          title: img.title,
-          description: img.description || '',
-          isPrimary: img.isPrimary || false,
-          uploadedAt: img.uploadedAt || new Date().toISOString()
-        })) || [],
-        floorPlans: prop.floorPlans?.map((plan: any) => ({
-          url: plan.url,
-          title: plan.title,
-          description: plan.description || '',
-          type: plan.type || '2d',
-          uploadedAt: plan.uploadedAt || new Date().toISOString()
-        })) || []
-      }))
-    };
-
-    console.log('Final submit data:', submitData); // Debug log
-
-    let response;
-    
-    if (editingProperty && editingProperty._id) {
-      // For editing, send as single property type
-      const editData = { 
-        ...submitData, 
-        propertyType: Array.isArray(submitData.propertyType) ? submitData.propertyType[0] : submitData.propertyType 
-      };
-      response = await propertyService.updateProperty(editingProperty._id, editData);
-      toast.success("Property updated successfully", { id: toastId });
-    } else {
-      response = await propertyService.createProperty(submitData);
-      
-      if (response.success) {
-        if ('mainProject' in response.data) {
-          const { mainProject, subProperties } = response.data;
-          toast.success(`Main project created with ${subProperties.length} sub-properties`, { id: toastId });
-        } else {
-          toast.success("Property created successfully", { id: toastId });
-        }
-      }
-    }
-    
-    handleCloseDialog();
-    loadProperties();
-    
-  } catch (error: any) {
-    console.error('Submission error:', error);
-    toast.error(error.message || "Failed to save property");
-  }
-};
-
-  const handleDownloadFile = (url: string, filename: string) => {
-    try {
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      toast.success(`Downloading ${filename}`);
-    } catch (error) {
-      console.error('Download failed:', error);
-      toast.error('Download failed. Please try again.');
-    }
-  };
-
-  const handleDownloadImages = (images: any[]) => {
-    images.forEach((image, index) => {
-      setTimeout(() => {
-        handleDownloadFile(
-          image.url, 
-          image.title || `image-${index + 1}.jpg`
-        );
-      }, index * 500);
-    });
-    toast.success(`Starting download of ${images.length} images`);
-  };
-
-  const handleDownloadBrochures = (brochures: any[]) => {
-    brochures.forEach((brochure, index) => {
-      setTimeout(() => {
-        handleDownloadFile(
-          brochure.url, 
-          brochure.title || `brochure-${index + 1}.pdf`
-        );
-      }, index * 500);
-    });
-    toast.success(`Starting download of ${brochures.length} brochures`);
-  };
-
-  const handleDownloadCreatives = (creatives: any[]) => {
-    creatives.forEach((creative, index) => {
-      setTimeout(() => {
-        const extension = creative.type === 'image' ? 'jpg' : 'mp4';
-        handleDownloadFile(
-          creative.url, 
-          creative.title || `creative-${index + 1}.${extension}`
-        );
-      }, index * 500);
-    });
-    toast.success(`Starting download of ${creatives.length} creatives`);
-  };
-
-  const handleDownloadVideos = (videos: any[]) => {
-    videos.forEach((video, index) => {
-      setTimeout(() => {
-        handleDownloadFile(
-          video.url, 
-          video.title || `video-${index + 1}.mp4`
-        );
-      }, index * 500);
-    });
-    toast.success(`Starting download of ${videos.length} videos`);
-  };
-
-  const handleDownloadAllMedia = (property: Property) => {
-    const allMedia = [
-      ...(property.images || []),
-      ...(property.brochureUrls || []),
-      ...(property.creatives || []),
-      ...(property.videos || [])
-    ];
-    
-    if (allMedia.length === 0) {
-      toast.info('No media files available for download');
+    if (!validateForm()) {
+      toast.error("Please fix the validation errors before submitting");
       return;
     }
-    
-    allMedia.forEach((media, index) => {
-      setTimeout(() => {
-        let filename = media.title || `file-${index + 1}`;
-        let extension = 'file';
+
+    try {
+      const toastId = toast.loading(editingProperty ? "Updating property..." : "Creating properties...");
+      
+      // Prepare the data with proper structure
+      const submitData = {
+        // Basic info
+        projectName: formData.projectName,
+        builderName: formData.builderName,
+        location: formData.location,
+        paymentPlan: formData.paymentPlan,
+        propertyType: formData.propertyType,
+        description: formData.description,
         
-        if (media.type === 'image') extension = 'jpg';
-        else if (media.type === 'video') extension = 'mp4';
-        else if (media.url.includes('.pdf')) extension = 'pdf';
-        else if (media.url.includes('.doc')) extension = 'doc';
-        else if (media.url.includes('.docx')) extension = 'docx';
+        // NEW: Public and featured status
+        isPublic: formData.isPublic,
+        isFeatured: formData.isFeatured,
         
-        handleDownloadFile(media.url, `${filename}.${extension}`);
-      }, index * 300);
-    });
-    
-    toast.success(`Starting download of ${allMedia.length} files`);
+        // Property details
+        propertyName: formData.propertyName,
+        propertyDescription: formData.propertyDescription,
+        price: formData.price,
+        minSize: formData.minSize,
+        maxSize: formData.maxSize,
+        sizeUnit: formData.sizeUnit,
+        bedrooms: formData.bedrooms,
+        bathrooms: formData.bathrooms,
+        toilet: formData.toilet,
+        balcony: formData.balcony,
+        carpetArea: formData.carpetArea,
+        builtUpArea: formData.builtUpArea,
+        ownershipType: formData.ownershipType,
+        landType: formData.landType,
+        approvedBy: formData.approvedBy,
+        boundaryWall: formData.boundaryWall,
+        
+        // Arrays
+        amenities: formData.amenities,
+        status: formData.status,
+        nearby: formData.nearby,
+        projectHighlights: formData.projectHighlights,
+        
+        // Media with proper structure
+        images: formData.images.map(img => ({
+          url: img.url,
+          title: img.title,
+          description: img.description || '',
+          isPrimary: img.isPrimary || false,
+          uploadedAt: img.uploadedAt || new Date().toISOString()
+        })),
+        
+        propertyImages: formData.propertyImages.map(img => ({
+          url: img.url,
+          title: img.title,
+          description: img.description || '',
+          isPrimary: img.isPrimary || false,
+          uploadedAt: img.uploadedAt || new Date().toISOString()
+        })),
+        
+        floorPlans: formData.floorPlans.map(plan => ({
+          url: plan.url,
+          title: plan.title,
+          description: plan.description || '',
+          type: plan.type || '2d',
+          uploadedAt: plan.uploadedAt || new Date().toISOString()
+        })),
+        
+        // Fix: Ensure creatives are properly structured
+        creatives: formData.creatives.map(creative => ({
+          url: creative.url,
+          title: creative.title,
+          description: creative.description || '',
+          type: creative.type || 'image',
+          thumbnail: creative.thumbnail || '',
+          size: creative.size || '',
+          uploadedAt: creative.uploadedAt || new Date().toISOString()
+        })),
+        
+        // Fix: Ensure videos are properly structured
+        videos: formData.videos.map(video => ({
+          url: video.url,
+          title: video.title,
+          description: video.description || '',
+          type: video.type || 'direct',
+          thumbnail: video.thumbnail || '',
+          uploadedAt: video.uploadedAt || new Date().toISOString()
+        })),
+        
+        brochureUrls: formData.brochureUrls.map(brochure => ({
+          url: brochure.url,
+          title: brochure.title,
+          type: brochure.type || 'PDF Document',
+          uploadedAt: brochure.uploadedAt || new Date().toISOString()
+        })),
+        
+        // Location
+        mapLocation: formData.mapLocation,
+        isActive: formData.isActive,
+        parentId: formData.parentId,
+        
+        // Sub-properties
+        residentialProperties: formData.residentialProperties.map(prop => ({
+          propertyName: prop.propertyName,
+          propertyDescription: prop.propertyDescription,
+          price: prop.price,
+          paymentPlan: prop.paymentPlan,
+          bedrooms: prop.bedrooms,
+          bathrooms: prop.bathrooms,
+          toilet: prop.toilet,
+          balcony: prop.balcony,
+          carpetArea: prop.carpetArea,
+          builtUpArea: prop.builtUpArea,
+          minSize: prop.minSize,
+          maxSize: prop.maxSize,
+          sizeUnit: prop.sizeUnit,
+          amenities: prop.amenities,
+          propertyImages: prop.propertyImages?.map((img: any) => ({
+            url: img.url,
+            title: img.title,
+            description: img.description || '',
+            isPrimary: img.isPrimary || false,
+            uploadedAt: img.uploadedAt || new Date().toISOString()
+          })) || [],
+          floorPlans: prop.floorPlans?.map((plan: any) => ({
+            url: plan.url,
+            title: plan.title,
+            description: plan.description || '',
+            type: plan.type || '2d',
+            uploadedAt: plan.uploadedAt || new Date().toISOString()
+          })) || []
+        })),
+        
+        commercialProperties: formData.commercialProperties.map(prop => ({
+          propertyName: prop.propertyName,
+          propertyDescription: prop.propertyDescription,
+          price: prop.price,
+          paymentPlan: prop.paymentPlan,
+          carpetArea: prop.carpetArea,
+          builtUpArea: prop.builtUpArea,
+          minSize: prop.minSize,
+          maxSize: prop.maxSize,
+          sizeUnit: prop.sizeUnit,
+          amenities: prop.amenities,
+          propertyImages: prop.propertyImages?.map((img: any) => ({
+            url: img.url,
+            title: img.title,
+            description: img.description || '',
+            isPrimary: img.isPrimary || false,
+            uploadedAt: img.uploadedAt || new Date().toISOString()
+          })) || [],
+          floorPlans: prop.floorPlans?.map((plan: any) => ({
+            url: plan.url,
+            title: plan.title,
+            description: plan.description || '',
+            type: plan.type || '2d',
+            uploadedAt: plan.uploadedAt || new Date().toISOString()
+          })) || []
+        })),
+        
+        plotProperties: formData.plotProperties.map(prop => ({
+          propertyName: prop.propertyName,
+          propertyDescription: prop.propertyDescription,
+          price: prop.price,
+          paymentPlan: prop.paymentPlan,
+          ownershipType: prop.ownershipType,
+          landType: prop.landType,
+          approvedBy: prop.approvedBy,
+          boundaryWall: prop.boundaryWall,
+          minSize: prop.minSize,
+          maxSize: prop.maxSize,
+          sizeUnit: prop.sizeUnit,
+          amenities: prop.amenities,
+          propertyImages: prop.propertyImages?.map((img: any) => ({
+            url: img.url,
+            title: img.title,
+            description: img.description || '',
+            isPrimary: img.isPrimary || false,
+            uploadedAt: img.uploadedAt || new Date().toISOString()
+          })) || [],
+          floorPlans: prop.floorPlans?.map((plan: any) => ({
+            url: plan.url,
+            title: plan.title,
+            description: plan.description || '',
+            type: plan.type || '2d',
+            uploadedAt: plan.uploadedAt || new Date().toISOString()
+          })) || []
+        }))
+      };
+
+      console.log('Final submit data:', submitData); // Debug log
+
+      let response;
+      
+      if (editingProperty && editingProperty._id) {
+        // For editing, send as single property type
+        const editData = { 
+          ...submitData, 
+          propertyType: Array.isArray(submitData.propertyType) ? submitData.propertyType[0] : submitData.propertyType 
+        };
+        response = await propertyService.updateProperty(editingProperty._id, editData);
+        toast.success("Property updated successfully", { id: toastId });
+      } else {
+        response = await propertyService.createProperty(submitData);
+        
+        if (response.success) {
+          if ('mainProject' in response.data) {
+            const { mainProject, subProperties } = response.data;
+            toast.success(`Main project created with ${subProperties.length} sub-properties`, { id: toastId });
+          } else {
+            toast.success("Property created successfully", { id: toastId });
+          }
+        }
+      }
+      
+      handleCloseDialog();
+      loadProperties();
+      
+    } catch (error: any) {
+      console.error('Submission error:', error);
+      toast.error(error.message || "Failed to save property");
+    }
   };
+
+  // ... rest of your existing functions (handleDownloadFile, handleDownloadAllMedia, etc.) ...
 
   if (loading) {
     return (
@@ -941,6 +887,23 @@ export default function PropertiesPage() {
                 placeholder="Builder name"
               />
             </Grid>
+
+            {/* NEW: Visibility Filter */}
+            <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+              <FormControl fullWidth size="small">
+                <InputLabel>Visibility</InputLabel>
+                <Select
+                  value={filters.visibility}
+                  onChange={(e) => handleFilterChange('visibility', e.target.value)}
+                  label="Visibility"
+                >
+                  <MenuItem value="">All Properties</MenuItem>
+                  <MenuItem value="public">Public Only</MenuItem>
+                  <MenuItem value="private">Private Only</MenuItem>
+                  <MenuItem value="featured">Featured Only</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
           </Grid>
 
           {/* Active Filters Display */}
@@ -975,6 +938,13 @@ export default function PropertiesPage() {
                   <Chip
                     label={`Builder: ${filters.builderName}`}
                     onDelete={() => removeFilter('builderName')}
+                    size="small"
+                  />
+                )}
+                {filters.visibility && (
+                  <Chip
+                    label={`Visibility: ${filters.visibility}`}
+                    onDelete={() => removeFilter('visibility')}
                     size="small"
                   />
                 )}
@@ -1016,6 +986,9 @@ export default function PropertiesPage() {
                 onViewSubProperty={handleViewSubProperty}
                 onEditSubProperty={handleOpenDialog}
                 onDeleteSubProperty={handleDeleteProperty}
+                onTogglePublic={handleTogglePublic}
+                onToggleFeatured={handleToggleFeatured}
+                showAdminControls={true}
               />
             ))}
             </Box>
@@ -1049,12 +1022,12 @@ export default function PropertiesPage() {
             </Grid>
             
             <Grid size={{ xs: 12, md: 6 }}>
-              <TextField fullWidth label="Project Name *" value={formData.projectName} onChange={(e) => setFormData((prev: any) => ({ ...prev, projectName: e.target.value }))}
+              <TextField fullWidth label="Project Name " value={formData.projectName} onChange={(e) => setFormData((prev: any) => ({ ...prev, projectName: e.target.value }))}
                 required error={!!validationErrors.projectName} helperText={validationErrors.projectName} sx={{ mb: 2 }} />
             </Grid>
             
             <Grid size={{ xs: 12, md: 6 }}>
-              <TextField fullWidth label="Builder Name *" value={formData.builderName} onChange={(e) => setFormData((prev: any) => ({ ...prev, builderName: e.target.value }))}
+              <TextField fullWidth label="Builder Name " value={formData.builderName} onChange={(e) => setFormData((prev: any) => ({ ...prev, builderName: e.target.value }))}
                 required error={!!validationErrors.builderName} helperText={validationErrors.builderName} sx={{ mb: 2 }} />
             </Grid>
 
@@ -1071,7 +1044,7 @@ export default function PropertiesPage() {
             </Grid>
 
             <Grid size={{ xs: 12, md: 6 }}>
-              <TextField fullWidth label="Payment Plan *" value={formData.paymentPlan} onChange={(e) => setFormData((prev: any) => ({ ...prev, paymentPlan: e.target.value }))}
+              <TextField fullWidth label="Payment Plan " value={formData.paymentPlan} onChange={(e) => setFormData((prev: any) => ({ ...prev, paymentPlan: e.target.value }))}
                 required error={!!validationErrors.paymentPlan} helperText={validationErrors.paymentPlan} sx={{ mb: 2 }} />
             </Grid>
 
@@ -1090,6 +1063,69 @@ export default function PropertiesPage() {
                   ))}
                 </Select>
               </FormControl>
+            </Grid>
+
+            {/* NEW: Public & Featured Controls */}
+            <Grid size={{ xs: 12 }}>
+              <Paper sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0', borderRadius: '15px', backgroundColor: '#f8f9fa' }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Public />
+                  Visibility Settings
+                </Typography>
+                
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData.isPublic}
+                          onChange={(e) => setFormData((prev: any) => ({ ...prev, isPublic: e.target.checked }))}
+                          color="primary"
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="body1" fontWeight={600}>
+                            Make Public
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Show this property on public website
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </Grid>
+                  
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <FormControlLabel
+                      control={
+                        <Switch
+                          checked={formData.isFeatured}
+                          onChange={(e) => setFormData((prev: any) => ({ ...prev, isFeatured: e.target.checked }))}
+                          color="secondary"
+                        />
+                      }
+                      label={
+                        <Box>
+                          <Typography variant="body1" fontWeight={600}>
+                            Featured Property
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            Highlight this property as featured
+                          </Typography>
+                        </Box>
+                      }
+                    />
+                  </Grid>
+                </Grid>
+                
+                <Alert severity="info" sx={{ mt: 2 }}>
+                  <Typography variant="body2">
+                    <strong>Public:</strong> Property will be visible on your public website.<br />
+                    <strong>Featured:</strong> Property will be highlighted as a featured listing.
+                  </Typography>
+                </Alert>
+              </Paper>
             </Grid>
 
             <Grid size={{ xs: 12 }}>
@@ -1328,6 +1364,7 @@ export default function PropertiesPage() {
         </DialogActions>
       </Dialog>
 
+      {/* ... rest of your existing View Property Dialog and Sub-Property Dialog code remains the same ... */}
       {/* View Property Dialog */}
       <Dialog 
         open={openViewDialog} 
@@ -2913,4 +2950,3 @@ export default function PropertiesPage() {
     </Box>
   );
 }
-

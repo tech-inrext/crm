@@ -117,7 +117,7 @@ const AdditionalDetailsSection: React.FC<AdditionalDetailsSectionProps> = ({
           <Box sx={{ position: 'relative' }}>
             <TextField 
               fullWidth 
-              label="Location *" 
+              label="Location " 
               value={formData.location || ''} 
               onChange={handleLocationChange}
               required 
