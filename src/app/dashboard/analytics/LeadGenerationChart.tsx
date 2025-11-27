@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -43,20 +43,52 @@ const options: any = {
   }
 };
 
-const data = {
-  labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-  datasets: [
-    {
-      data: [12, 18, 15, 22, 31, 18, 15],
-      backgroundColor: '#4285f4',
-      borderRadius: 2,
-      barPercentage: 1.5,
-      categoryPercentage: 0.5,
-    },
-  ],
-};
+type Props = {
+  period?: 'week' | 'month'
+}
 
-export default function LeadGenerationChart() {
+export default function LeadGenerationChart({ period = 'month' }: Props) {
+  const [chartData, setChartData] = useState<any>({ labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], datasets: [{ data: [0,0,0,0,0,0,0], backgroundColor: '#4285f4' }] });
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await fetch(`/api/v0/analytics/lead-generation?period=${period}`, { credentials: 'same-origin' });
+        const json = await res.json();
+        if (cancelled) return;
+        if (!json || !json.success) {
+          setError(json?.error || 'Failed to load');
+          return;
+        }
+        setChartData({ labels: json.labels, datasets: [{ data: json.data, backgroundColor: '#4285f4' }] });
+      } catch (err: any) {
+        if (!cancelled) setError(err.message || 'Failed to load');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    }
+    load();
+
+    // refresh on focus/visibility
+    const onFocus = () => { load(); };
+    const onVis = () => { if (!document.hidden) load(); };
+    window.addEventListener('focus', onFocus);
+    document.addEventListener('visibilitychange', onVis);
+    const id = setInterval(() => load(), 20000);
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('focus', onFocus);
+      document.removeEventListener('visibilitychange', onVis);
+      clearInterval(id);
+    };
+  }, [period]);
+
   return (
     <div style={{
       background: "#fff",
@@ -72,11 +104,10 @@ export default function LeadGenerationChart() {
         alignItems: "center",
         marginBottom: "12px"
       }}>
-        
-       
+        <div style={{ fontWeight: 600, color: '#222' }}>{loading ? 'Loading...' : (error ? 'Error loading data' : '')}</div>
       </div>
       <div style={{ height: 350 }}>
-        <Bar data={data} options={options} />
+        <Bar data={chartData} options={options} />
       </div>
     </div>
   );

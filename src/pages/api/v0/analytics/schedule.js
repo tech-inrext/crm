@@ -1,9 +1,14 @@
 import dbConnect from '@/lib/mongodb';
 import Lead from '@/models/Lead';
+import { userAuth } from '@/middlewares/auth';
 
-export default async function handler(req, res) {
+async function handler(req, res) {
 	await dbConnect();
 	try {
+		// logged-in user id for scoping schedule and overdue
+		const loggedInUserId = req.employee?._id;
+		// base filter for scoping queries to the logged-in user (if present)
+		const baseQuery = loggedInUserId ? { uploadedBy: loggedInUserId } : {};
 		// Get start and end of current week (Monday to Sunday)
 		const now = new Date();
 		const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
@@ -15,12 +20,14 @@ export default async function handler(req, res) {
 		sunday.setDate(monday.getDate() + 6);
 		sunday.setHours(23, 59, 59, 999);
 
-		// Fetch leads with follow-ups scheduled for this week
+		// Fetch leads with follow-ups scheduled for this week (exclude Closed/Dropped)
 		const thisWeekFollowUps = await Lead.find({
 			nextFollowUp: {
 				$gte: monday,
 				$lte: sunday
-			}
+			},
+			status: { $nin: [/^Closed$/i, /^Dropped$/i] },
+			...baseQuery
 		})
 		.populate('assignedTo', 'firstName lastName email')
 		.populate('uploadedBy', 'firstName lastName')
@@ -72,10 +79,13 @@ export default async function handler(req, res) {
 		}, {});
 
 		// Get overdue follow-ups (past due but not completed)
-		const overdueFollowUps = await Lead.find({
-			nextFollowUp: { $lt: monday },
-			status: { $nin: ['Closed', 'Dropped'] }
-		}).countDocuments();
+		// Use current time to determine overdue (more accurate than week start)
+		const nowDate = new Date();
+		const overdueFollowUps = await Lead.countDocuments({
+			nextFollowUp: { $lt: nowDate, $exists: true, $ne: null },
+			status: { $nin: [/^Closed$/i, /^Dropped$/i] },
+			...baseQuery
+		});
 
 		res.status(200).json({
 			success: true,
@@ -114,3 +124,6 @@ export default async function handler(req, res) {
 		});
 	}
 }
+
+// Export with auth wrapper so req.employee is populated (scopes to logged-in user)
+export default (req, res) => userAuth(req, res, handler);

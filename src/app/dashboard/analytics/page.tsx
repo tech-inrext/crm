@@ -178,12 +178,6 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = ({
         />
       )}
 
-      <StatCard
-        title="My Team Members"
-        value={teamsLoading ? 'Loading...' : (totalTeams ?? 0)}
-        icon={<FaUsers size={22} className="text-indigo-500" />}
-        iconBg="bg-indigo-50"
-      />
 
       <StatCard
         title="New Leads"
@@ -1065,12 +1059,25 @@ export default function NewDashboardPage() {
   const [scheduleAnalytics, setScheduleAnalytics] = React.useState<any>(null);
   const [scheduleLoading, setScheduleLoading] = React.useState(true);
 
+  // Lead Conversion chart period (week or month)
+  const [leadConversionPeriod, setLeadConversionPeriod] = React.useState<'week' | 'month'>('month');
+
   // --- Leads by Source Metrics (API-based) ---
   const leadsBySourceMetrics = React.useMemo(() => {
     if (!leadsAnalytics) return { map: {}, sourcesOrder: [], slices: [] };
     const palette = ['#08c4a6', '#4285f4', '#ffca28', '#ff7f4e', '#a259e6', '#f06292', '#7cb342'];
     const slices = (leadsAnalytics.slices || []).map((s, idx) => ({ ...s, color: palette[idx % palette.length] }));
     return { ...leadsAnalytics, slices };
+  }, [leadsAnalytics]);
+
+  // --- Property Data Metrics (API-based) ---
+  const propertyMetrics = React.useMemo(() => {
+    if (!leadsAnalytics || !leadsAnalytics.propertyData) return [];
+    const palette = ['#4285f4', '#08c4a6', '#a259e6', '#ff7f4e', '#ffca28'];
+    return (leadsAnalytics.propertyData || []).map((p, idx) => ({
+      ...p,
+      color: palette[idx % palette.length]
+    }));
   }, [leadsAnalytics]);
 
   // Prevent duplicate API calls by using a ref
@@ -1223,8 +1230,8 @@ export default function NewDashboardPage() {
                     Lead Conversion
                   </Typography>
                   <select
-                    value={"month"}
-                    onChange={() => {}}
+                    value={leadConversionPeriod}
+                    onChange={(e) => setLeadConversionPeriod(e.target.value as 'week' | 'month')}
                     style={{
                       padding: '6px 12px',
                       borderRadius: 6,
@@ -1239,15 +1246,15 @@ export default function NewDashboardPage() {
                     <option value="month">Month</option>
                   </select>
                 </div>
-                <LeadGenerationChart />
+                <LeadGenerationChart period={leadConversionPeriod} />
               </CardContent>
             </Card>
             {/* Schedule Card (moved here in place of Action Center) */}
             {analyticsAccess.showScheduleThisWeek && (
               <Card
                 sx={{
-                  minHeight: 320,
-                  height: '95%',
+                  minHeight: 400,
+                  height: '100%',
                   display: 'flex',
                   flexDirection: 'column',
                   justifyContent: 'flex-start',
@@ -1276,7 +1283,7 @@ export default function NewDashboardPage() {
                             fontWeight: 600,
                             color: '#1976d2'
                           }}>
-                            {scheduleAnalytics.totalScheduled} scheduled this week
+                            {scheduleAnalytics.totalScheduled} scheduled this Months 
                           </div>
                           {scheduleAnalytics.overdueCount > 0 && (
                             <div style={{ 
@@ -1455,20 +1462,44 @@ export default function NewDashboardPage() {
               </Card>
             )}
           </Box>
-          <div style={{ display: 'flex', gap: '24px', margin: '32px 0', flexWrap: 'wrap', width: '100%', alignItems: 'stretch' }}>
+          <div
+            style={{
+              display: 'flex',
+              gap: '24px',
+              margin: '32px 0',
+              flexWrap: 'wrap',
+              width: '100%',
+              alignItems: 'stretch',
+            }}
+          >
             {/* Leads by Source Pie */}
-            <div style={{ 
-              flex: '1 1 300px', 
-              minWidth: '380px', 
-              display: 'flex' 
-            }}>
-              <Card sx={{ minHeight: 320, height: '100%', borderRadius: 0, boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #eceff1', width: '100%' }}>
-                <CardContent>
+            <div
+              style={{
+                flex: 1,
+                minWidth: '380px',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Card
+                sx={{
+                  minHeight: 400,
+                  height: '100%',
+                  borderRadius: 0,
+                  boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
+                  border: '1px solid #eceff1',
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                }}
+              >
+                <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                     <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333' }}>Leads by Source</div>
                     <div style={{ fontSize: '0.9rem', color: '#666' }}>{leadsAnalytics?.totalLeads || 0} leads</div>
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%' }}>
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%', flex: 1 }}>
                     <div style={{ width: 350, height: 350, margin: '0 auto' }}>
                       <LeadSourcesPieChart slices={leadsBySourceMetrics.slices} />
                     </div>
@@ -1505,13 +1536,28 @@ export default function NewDashboardPage() {
               </Card>
             </div>
             {/* SiteVisitConversionChart (kept on the right) */}
-            <div style={{ 
-              flex: '1 1 300px', 
-              minWidth: '380px', 
-              display: 'flex' 
-            }}>
-              <Card sx={{ minHeight: 320, height: '100%', borderRadius: 0, boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #eceff1' }}>
-                <CardContent>
+            <div
+              style={{
+                flex: 1,
+                minWidth: '380px',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Card
+                sx={{
+                  minHeight: 400,
+                  height: '100%',
+                  borderRadius: 0,
+                  boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
+                  border: '1px solid #eceff1',
+                  width: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  flex: 1,
+                }}
+              >
+                <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
                   <SiteVisitConversionChart />
                 </CardContent>
               </Card>
@@ -1521,8 +1567,8 @@ export default function NewDashboardPage() {
           <div style={{ width: '100%', margin: '32px 0', display: 'flex', justifyContent: 'center' }}>
             <Card sx={{ width: '100%', maxWidth: '100%', borderRadius: 2, boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #eceff1', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
               <CardContent sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333', marginBottom: 16, width: '100%', textAlign: 'center' }}>Project On Demand</div>
-                <ProjectPieChart />
+                <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333', marginBottom: 16, width: '100%', textAlign: 'center' }}>Property On Demand</div>
+                <PropertyPieChart propertyData={propertyMetrics} />
               </CardContent>
             </Card>
           </div>
@@ -1532,15 +1578,124 @@ export default function NewDashboardPage() {
   );
 }
 
-// --- ProjectPieChart: Pie chart for projects ---
-const PROJECTS = [
-  { name: 'Migsun', value: 35, color: '#4285f4' },
-  { name: 'Dholera', value: 25, color: '#08c4a6' },
-  { name: 'KW-6', value: 20, color: '#ffca28' },
-  { name: 'Eco-village', value: 20, color: '#a259e6' },
-];
+// --- PropertyPieChart: Pie chart for properties ---
+const PropertyPieChart: React.FC<{ propertyData: Array<{ label: string; count: number; color: string }> }> = ({ propertyData = [] }) => {
+  const total = propertyData.reduce((acc, p) => acc + (Number(p.count) || 0), 0) || 1;
+  // Make chart larger
+  const cx = 160, cy = 160, r = 140;
+  let angle = 0;
+  const arcs = propertyData.map((p) => {
+    const portion = ((Number(p.count) || 0) / total) * 360;
+    const startAngle = angle;
+    const endAngle = angle + portion;
+    const path = describeArc(cx, cy, r, startAngle, endAngle);
+    angle += portion;
+    return { path, color: p.color, label: p.label, value: Number(p.count) || 0 };
+  });
 
+  function polarToCartesian(centerX: number, centerY: number, radius: number, angleInDegrees: number) {
+    const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+    return {
+      x: centerX + (radius * Math.cos(angleInRadians)),
+      y: centerY + (radius * Math.sin(angleInRadians))
+    };
+  }
+  function describeArc(x: number, y: number, radius: number, startAngle: number, endAngle: number) {
+    const start = polarToCartesian(x, y, radius, endAngle);
+    const end = polarToCartesian(x, y, radius, startAngle);
+    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
+    return `M ${x} ${y} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y} Z`;
+  }
+
+  if (propertyData.length === 0) {
+    return (
+      <div style={{ textAlign: 'center', padding: '40px 20px', color: '#666' }}>
+        No property data available
+      </div>
+    );
+  }
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'row',
+        alignItems: 'stretch',
+        justifyContent: 'center',
+        width: '100%',
+        gap: 0,
+        flexWrap: 'wrap',
+        minHeight: 320,
+      }}
+    >
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', minWidth: 0 }}>
+        <svg width={320} height={320} viewBox="0 0 320 320" role="img" aria-label="Property demand pie chart">
+          <g>
+            {arcs.map((a, idx) => (
+              <path
+                key={idx}
+                d={a.path}
+                fill={a.color}
+                stroke="#fff"
+                strokeWidth={1}
+              />
+            ))}
+          </g>
+          {/* donut center */}
+          <circle cx={cx} cy={cy} r={85} fill="#fff" />
+          <text x={cx} y={cy - 12} textAnchor="middle" style={{ fontSize: 28, fontWeight: 700, fill: '#222' }}>{total}</text>
+          <text x={cx} y={cy + 24} textAnchor="middle" style={{ fontSize: 18, fill: '#666' }}>leads</text>
+        </svg>
+      </div>
+      <div
+        style={{
+          flex: 1,
+          marginLeft: 0,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 18,
+          minWidth: 0,
+          justifyContent: 'center',
+        }}
+      >
+        {propertyData.length > 0 ? (
+          propertyData.map((p) => (
+            <div
+              key={p.label}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                fontSize: 18,
+                fontWeight: 500,
+                color: '#333',
+                borderRadius: 6,
+                padding: '6px 10px',
+                background: '#f8f9fa',
+              }}
+            >
+              <span style={{ width: 22, height: 22, background: p.color, display: 'inline-block', borderRadius: 4 }} />
+              <span>{p.label}</span>
+              <span style={{ marginLeft: 'auto', color: '#666', fontWeight: 400 }}>{((p.count / total) * 100).toFixed(1)}%</span>
+            </div>
+          ))
+        ) : (
+          <div style={{ color: '#666', fontSize: '0.95rem' }}>No properties available</div>
+        )}
+      </div>
+    </div>
+  );
+};
+
+// --- ProjectPieChart: Pie chart for projects (legacy) ---
 const ProjectPieChart: React.FC = () => {
+  const PROJECTS = [
+    { name: 'Migsun', value: 35, color: '#4285f4' },
+    { name: 'Dholera', value: 25, color: '#08c4a6' },
+    { name: 'KW-6', value: 20, color: '#ffca28' },
+    { name: 'Eco-village', value: 20, color: '#a259e6' },
+  ];
+  
   const total = PROJECTS.reduce((acc, p) => acc + p.value, 0);
   // Make chart larger
   const cx = 160, cy = 160, r = 140;
