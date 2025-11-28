@@ -1,3 +1,4 @@
+// components/PropertyCard.tsx
 import React, { useState, useEffect } from "react";
 import {
   Paper,
@@ -8,6 +9,9 @@ import {
   Card,
   CardContent,
   Grid,
+  Switch,
+  FormControlLabel,
+  Tooltip,
 } from "@mui/material";
 import {
   Visibility as VisibilityIcon,
@@ -15,6 +19,8 @@ import {
   Delete as DeleteIcon,
   Home,
   CurrencyRupee,
+  Public,
+  Star,
 } from "@mui/icons-material";
 import { Property } from "@/services/propertyService";
 
@@ -26,6 +32,9 @@ interface PropertyCardProps {
   onViewSubProperty: (property: Property) => void;
   onEditSubProperty: (property: Property) => void;
   onDeleteSubProperty: (id: string) => void;
+  onTogglePublic?: (id: string, isPublic: boolean) => void;
+  onToggleFeatured?: (id: string, isFeatured: boolean) => void;
+  showAdminControls?: boolean;
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({
@@ -36,12 +45,29 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   onViewSubProperty,
   onEditSubProperty,
   onDeleteSubProperty,
+  onTogglePublic,
+  onToggleFeatured,
+  showAdminControls = false,
 }) => {
   const [expanded, setExpanded] = useState(false);
   const [subProperties, setSubProperties] = useState<Property[]>([]);
   const [loadingSubProperties, setLoadingSubProperties] = useState(false);
 
   const primaryImage = project.images?.find(img => img.isPrimary) || project.images?.[0];
+
+  const handleTogglePublic = (event: React.ChangeEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+    if (onTogglePublic && project._id) {
+      onTogglePublic(project._id, event.target.checked);
+    }
+  };
+
+  const handleToggleFeatured = (event: React.ChangeEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+    if (onToggleFeatured && project._id) {
+      onToggleFeatured(project._id, event.target.checked);
+    }
+  };
 
   return (
     <Paper 
@@ -54,9 +80,60 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         transition: 'all 0.2s ease-in-out',
         '&:hover': {
           boxShadow: 3,
-        }
+        },
+        position: 'relative'
       }}
     >
+      {/* Featured Badge */}
+      {project.isFeatured && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 16,
+            left: 16,
+            zIndex: 2,
+            backgroundColor: 'gold',
+            color: 'black',
+            px: 2,
+            py: 0.5,
+            borderRadius: '20px',
+            fontSize: '0.75rem',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5
+          }}
+        >
+          <Star sx={{ fontSize: '1rem' }} />
+          Featured
+        </Box>
+      )}
+
+      {/* Public Badge */}
+      {project.isPublic && (
+        <Box
+          sx={{
+            position: 'absolute',
+            top: project.isFeatured ? 50 : 16,
+            left: 16,
+            zIndex: 2,
+            backgroundColor: 'primary.main',
+            color: 'white',
+            px: 2,
+            py: 0.5,
+            borderRadius: '20px',
+            fontSize: '0.75rem',
+            fontWeight: 'bold',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.5
+          }}
+        >
+          <Public sx={{ fontSize: '1rem' }} />
+          Public
+        </Box>
+      )}
+
       <Box 
         sx={{ 
           p: 2,
@@ -146,9 +223,60 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           </Box>
         </Box>
       </Box>
+
+      {/* Admin Controls */}
+      {showAdminControls && (
+        <CardContent sx={{ borderTop: '1px solid #e0e0e0' }}>
+          <Grid container spacing={2} alignItems="center">
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Tooltip title={project.isPublic ? "Visible on public website" : "Hidden from public website"}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={project.isPublic || false}
+                      onChange={handleTogglePublic}
+                      color="primary"
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Public fontSize="small" />
+                      <Typography variant="body2">
+                        {project.isPublic ? "Public" : "Private"}
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </Tooltip>
+            </Grid>
+            <Grid size={{ xs: 12, sm: 6 }}>
+              <Tooltip title={project.isFeatured ? "Featured on website" : "Not featured"}>
+                <FormControlLabel
+                  control={
+                    <Switch
+                      checked={project.isFeatured || false}
+                      onChange={handleToggleFeatured}
+                      color="secondary"
+                      size="small"
+                    />
+                  }
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <Star fontSize="small" />
+                      <Typography variant="body2">
+                        {project.isFeatured ? "Featured" : "Standard"}
+                      </Typography>
+                    </Box>
+                  }
+                />
+              </Tooltip>
+            </Grid>
+          </Grid>
+        </CardContent>
+      )}
     </Paper>
   );
 };
 
 export default PropertyCard;
-
