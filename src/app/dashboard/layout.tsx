@@ -21,6 +21,7 @@ import {
   Person,
   LocalTaxi,
   Apartment,
+  Diversity3,
 } from "@mui/icons-material";
 
 // const AppIcon = ({
@@ -113,7 +114,7 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "MOU",
     href: "/dashboard/mou",
     module: "mou",
-    icon: <People sx={{ color: "#3785FF" }} />,
+    icon: <Diversity3 sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Notifications",
