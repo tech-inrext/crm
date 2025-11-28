@@ -1091,14 +1091,20 @@ export default function NewDashboardPage() {
     Promise.all([
       fetch('/api/v0/analytics/overall').then(r => r.json()),
       fetch('/api/v0/analytics/leads').then(r => r.json()),
-      fetch('/api/v0/analytics/schedule').then(r => r.json())
-    ]).then(([overallData, leadsData, scheduleData]) => {
+      fetch('/api/v0/analytics/schedule').then(r => r.json()),
+      fetch('/api/v0/employee/managerMouStats').then(r => r.json()),
+      fetch('/api/v0/analytics/vendor').then(r => r.json())
+    ]).then(([overallData, leadsData, scheduleData, managerMouStats, vendorStats]) => {
       setOverall({
         ...overallData,
-        // Fallbacks for MoU stats if missing or null
-        pendingMouTotal: typeof overallData?.pendingMouTotal === 'number' ? overallData.pendingMouTotal : (overallData?.mouList?.filter(m => m.status === 'Pending').length || 0),
-        approvedMouTotal: typeof overallData?.approvedMouTotal === 'number' ? overallData.approvedMouTotal : (overallData?.mouList?.filter(m => m.status === 'Approved').length || 0),
-        totalVendors: typeof overallData?.totalVendors === 'number' ? overallData.totalVendors : (overallData?.vendorDetails?.length || 0),
+        // Use manager MoU stats for stat card
+        pendingMouTotal: typeof managerMouStats?.pending === 'number' ? managerMouStats.pending : (overallData?.pendingMouTotal ?? (overallData?.mouList?.filter(m => m.status === 'Pending').length || 0)),
+        approvedMouTotal: typeof managerMouStats?.completed === 'number' ? managerMouStats.completed : (overallData?.approvedMouTotal ?? (overallData?.mouList?.filter(m => m.status === 'Approved').length || 0)),
+        // Use vendor stats from backend
+        totalVendors: typeof vendorStats?.totalVendors === 'number' ? vendorStats.totalVendors : (overallData?.totalVendors ?? 0),
+        totalBilling: Array.isArray(vendorStats?.allVendors)
+          ? vendorStats.allVendors.reduce((sum, v) => sum + (v.totalEarnings || 0), 0)
+          : (overallData?.totalBilling ?? 0),
       });
       setLeadsAnalytics(leadsData);
       setScheduleAnalytics(scheduleData);
