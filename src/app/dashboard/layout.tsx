@@ -75,6 +75,18 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <GroupIcon sx={{ color: "#3785FF" }} />,
   },
   {
+    label: "Pillars",
+    href: "/dashboard/pillars",
+    module: "pillar",
+    icon: <People sx={{ color: "#3785FF" }} />,
+  },
+  {
+    label: "MOU",
+    href: "/dashboard/mou",
+    module: "mou",
+    icon: <Diversity3 sx={{ color: "#3785FF" }} />,
+  },
+  {
     label: "Vendors",
     href: "/dashboard/vendor",
     module: "vendor",
@@ -103,18 +115,6 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     href: "/dashboard/training-videos",
     module: "training-videos",
     icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
-  },
-  {
-    label: "Pillars",
-    href: "/dashboard/pillars",
-    module: "pillar",
-    icon: <People sx={{ color: "#3785FF" }} />,
-  },
-  {
-    label: "MOU",
-    href: "/dashboard/mou",
-    module: "mou",
-    icon: <Diversity3 sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Notifications",
