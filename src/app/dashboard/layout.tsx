@@ -110,6 +110,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <People sx={{ color: "#3785FF" }} />,
   },
   {
+    label: "MOU",
+    href: "/dashboard/mou",
+    module: "mou",
+    icon: <People sx={{ color: "#3785FF" }} />,
+  },
+  {
     label: "Notifications",
     href: "/dashboard/notifications",
     icon: <Notifications sx={{ color: "#3785FF" }} />,
