@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   Paper,
   Typography,
@@ -37,8 +37,8 @@ const AdditionalDetailsSection: React.FC<AdditionalDetailsSectionProps> = ({
 }) => {
   const [geocoding, setGeocoding] = useState(false);
 
-  const geocodeAddress = async (address: string) => {
-    // Ensure address is a string and has minimum length
+  const geocodeAddress = useCallback(async (address: string) => {
+    
     if (!address || typeof address !== 'string' || address.trim().length < 3) return;
     
     setGeocoding(true);
@@ -72,19 +72,23 @@ const AdditionalDetailsSection: React.FC<AdditionalDetailsSectionProps> = ({
     } finally {
       setGeocoding(false);
     }
-  };
+  }, [setFormData]);
 
-  // Use debounce with proper typing
-  const debouncedGeocode = useDebounce<string>(geocodeAddress, 1000);
+  // debounce the geocode function
+  const [addressInput, setAddressInput] = useState(formData.location || '');
+  const debouncedAddress = useDebounce(addressInput, 1000);
+
+  // Effect to trigger geocoding when debounced address changes
+  React.useEffect(() => {
+    if (debouncedAddress && debouncedAddress.trim().length > 5) {
+      geocodeAddress(debouncedAddress);
+    }
+  }, [debouncedAddress, geocodeAddress]);
 
   const handleLocationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const address = e.target.value;
+    setAddressInput(address);
     setFormData((prev: any) => ({ ...prev, location: address }));
-    
-    // Ensure address is a string before calling trim
-    if (address && typeof address === 'string' && address.trim().length > 5) {
-      debouncedGeocode(address);
-    }
   };
 
   const handleManualGeocode = () => {
@@ -263,4 +267,5 @@ const AdditionalDetailsSection: React.FC<AdditionalDetailsSectionProps> = ({
 };
 
 export default AdditionalDetailsSection;
+
 

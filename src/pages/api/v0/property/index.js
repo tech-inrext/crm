@@ -3,6 +3,7 @@ import dbConnect from "@/lib/mongodb";
 import Property from "@/models/Property";
 import * as cookie from "cookie";
 import { userAuth } from "@/middlewares/auth";
+import mongoose from "mongoose";
 
 const mapFileType = (fileType) => {
   if (!fileType) return '2d';
@@ -83,6 +84,9 @@ const formatPriceRange = (minPrice, maxPrice) => {
 // Create a new property with automatic hierarchy management
 const createProperty = async (req, res) => {
   try {
+    console.log('=== CREATE PROPERTY REQUEST START ===');
+    console.log('Request body:', JSON.stringify(req.body, null, 2));
+    
     if (!req.isSystemAdmin) {
       return res.status(403).json({
         success: false,
@@ -92,11 +96,28 @@ const createProperty = async (req, res) => {
 
     const { propertyType, projectName, builderName, location, description } = req.body;
     
-    // If creating multiple property types at once
-    if (Array.isArray(propertyType) && propertyType.length > 1) {
-      return await createMultipleProperties(req, res);
+    // Convert propertyType to array if it's a string
+    let propertyTypes = [];
+    if (Array.isArray(propertyType)) {
+      propertyTypes = propertyType;
+    } else if (typeof propertyType === 'string') {
+      propertyTypes = [propertyType];
     } else {
-      return await createSingleProperty(req, res);
+      propertyTypes = [propertyType];
+    }
+
+    console.log('Property types to create:', propertyTypes);
+    console.log('Residential properties data:', req.body.residentialProperties);
+    console.log('Commercial properties data:', req.body.commercialProperties);
+    console.log('Plot properties data:', req.body.plotProperties);
+
+    // ✅ FIX: Always check if creating multiple property types
+    if (propertyTypes.length > 1 || propertyTypes.includes('project') && propertyTypes.length > 1) {
+      console.log('Creating multiple property types...');
+      return await createMultiplePropertiesFromSingle(req, res, propertyTypes);
+    } else {
+      console.log('Creating single property type...');
+      return await createSingleProperty(req, res, propertyTypes[0]);
     }
   } catch (error) {
     console.error("Property Creation Error:", error.message);
@@ -126,19 +147,16 @@ const createProperty = async (req, res) => {
 };
 
 // Create single property
-const createSingleProperty = async (req, res) => {
-  const { propertyType, projectName, builderName, location, description, ...otherData } = req.body;
-  let finalData = { ...req.body };
+const createSingleProperty = async (req, res, propertyType) => {
+  const { projectName, builderName, location, description, ...otherData } = req.body;
+  let finalData = { ...req.body, propertyType };
 
   try {
-    // Convert propertyType to string if it's an array with one element
-    if (Array.isArray(propertyType)) {
-      finalData.propertyType = propertyType[0];
-    }
+    console.log(`Creating single property of type: ${propertyType}`);
 
     // ✅ Extract and map nested properties data to main fields
-    if (finalData.propertyType === 'residential' && finalData.residentialProperties && finalData.residentialProperties.length > 0) {
-      const residentialData = finalData.residentialProperties[0];
+    if (propertyType === 'residential' && otherData.residentialProperties && otherData.residentialProperties.length > 0) {
+      const residentialData = otherData.residentialProperties[0];
       finalData = {
         ...finalData,
         propertyName: residentialData.propertyName,
@@ -174,8 +192,8 @@ const createSingleProperty = async (req, res) => {
       delete finalData.boundaryWall;
       delete finalData.residentialProperties;
     }
-    else if (finalData.propertyType === 'commercial' && finalData.commercialProperties && finalData.commercialProperties.length > 0) {
-      const commercialData = finalData.commercialProperties[0];
+    else if (propertyType === 'commercial' && otherData.commercialProperties && otherData.commercialProperties.length > 0) {
+      const commercialData = otherData.commercialProperties[0];
       finalData = {
         ...finalData,
         propertyName: commercialData.propertyName,
@@ -211,8 +229,8 @@ const createSingleProperty = async (req, res) => {
       delete finalData.boundaryWall;
       delete finalData.commercialProperties;
     }
-    else if (finalData.propertyType === 'plot' && finalData.plotProperties && finalData.plotProperties.length > 0) {
-      const plotData = finalData.plotProperties[0];
+    else if (propertyType === 'plot' && otherData.plotProperties && otherData.plotProperties.length > 0) {
+      const plotData = otherData.plotProperties[0];
       finalData = {
         ...finalData,
         propertyName: plotData.propertyName,
@@ -248,7 +266,7 @@ const createSingleProperty = async (req, res) => {
       delete finalData.builtUpArea;
       delete finalData.plotProperties;
     }
-    else if (finalData.propertyType === 'project') {
+    else if (propertyType === 'project') {
       // ✅ For project type, remove all property-specific fields
       delete finalData.propertyImages;
       delete finalData.floorPlans;
@@ -272,14 +290,13 @@ const createSingleProperty = async (req, res) => {
     }
 
     // ✅ If creating residential, commercial, or plot WITHOUT parentId, auto-create main project
-    if (finalData.propertyType !== 'project' && !finalData.parentId) {
+    if (propertyType !== 'project' && !finalData.parentId) {
       // Check if a main project already exists with same details
       const existingMainProject = await Property.findOne({
         projectName: projectName.trim(),
         builderName: builderName.trim(),
         location: location.trim(),
         propertyType: 'project',
-        isActive: true,
         parentId: null
       });
 
@@ -344,13 +361,12 @@ const createSingleProperty = async (req, res) => {
     if (finalData.parentId) {
       const parentProperty = await Property.findOne({
         _id: finalData.parentId,
-        isActive: true
       });
       
       if (!parentProperty) {
         return res.status(400).json({
           success: false,
-          message: "Parent property not found or inactive"
+          message: "Parent property not found"
         });
       }
 
@@ -406,7 +422,7 @@ const createSingleProperty = async (req, res) => {
       success: true,
       data: newProperty,
       message: finalData.parentId 
-        ? `${finalData.propertyType} property created successfully under main project` 
+        ? `${propertyType} property created successfully under main project` 
         : "Main project created successfully"
     });
 
@@ -442,12 +458,316 @@ const createSingleProperty = async (req, res) => {
   }
 };
 
-// Function to update main project price range based on sub-properties
+// Create multiple properties from single request (FIXED VERSION)
+const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
+  const { projectName, builderName, location, description, ...otherData } = req.body;
+  
+  try {
+    console.log(`Creating main project with multiple property types: ${propertyTypes.join(', ')}`);
+
+    // ✅ FIX: Calculate price range from all sub-properties
+    const priceRange = findPriceRangeFromSubProperties(otherData);
+    const mainProjectPrice = formatPriceRange(priceRange.minPrice, priceRange.maxPrice);
+
+    console.log(`Calculated price range: ${priceRange.minPrice} - ${priceRange.maxPrice}`);
+    console.log('Main project price:', mainProjectPrice);
+
+    // Generate unique slug for main project
+    const slug = await Property.generateUniqueSlug(projectName.trim(), builderName.trim());
+
+    // Create main project first with price range from sub-properties
+    const mainProjectData = {
+      projectName: projectName.trim(),
+      builderName: builderName.trim(),
+      location: location.trim(),
+      description: description || `Main project for ${projectName}`,
+      propertyType: 'project',
+      propertyName: `${projectName.trim()} Project`,
+      price: mainProjectPrice,
+      minPrice: priceRange.minPrice,
+      maxPrice: priceRange.maxPrice,
+      paymentPlan: otherData.paymentPlan || 'Flexible',
+      status: otherData.status || ['Under Construction'],
+      amenities: otherData.amenities || [],
+      nearby: otherData.nearby || [],
+      projectHighlights: otherData.projectHighlights || [],
+      mapLocation: otherData.mapLocation || { lat: 0, lng: 0 },
+      images: otherData.images || [],
+      brochureUrls: otherData.brochureUrls || [],
+      creatives: otherData.creatives || [],
+      videos: otherData.videos || [],
+      createdBy: req.employee._id,
+      parentId: null,
+      hierarchyLevel: 0,
+      slug: slug
+    };
+
+    const mainProject = new Property(mainProjectData);
+    await mainProject.save();
+
+    console.log(`Main project created: ${mainProject._id}`);
+
+    // Create sub-properties for each selected type
+    const createdSubProperties = [];
+    const filteredTypes = propertyTypes.filter(type => type !== 'project');
+
+    console.log('Creating sub-properties for types:', filteredTypes);
+
+    // ✅ FIX: Create properties for EACH selected type
+    for (const subType of filteredTypes) {
+      console.log(`\n=== Creating ${subType} property ===`);
+      
+      // Get the specific property data for this type
+      let subPropertyData = {};
+      let subPropertyPrice = 'Contact for price';
+
+      // ✅ FIX: Check if data exists for this property type
+      if (subType === 'residential') {
+        if (otherData.residentialProperties && otherData.residentialProperties.length > 0) {
+          // Take first residential property from array
+          const residentialData = otherData.residentialProperties[0];
+          subPropertyData = {
+            propertyName: residentialData.propertyName || `${projectName} - Residential`,
+            propertyDescription: residentialData.propertyDescription || `${projectName} Residential Property`,
+            price: residentialData.price || mainProjectPrice,
+            paymentPlan: residentialData.paymentPlan || otherData.paymentPlan,
+            bedrooms: residentialData.bedrooms || 2,
+            bathrooms: residentialData.bathrooms || 2,
+            toilet: residentialData.toilet || 1,
+            balcony: residentialData.balcony || 1,
+            carpetArea: residentialData.carpetArea || '1000',
+            builtUpArea: residentialData.builtUpArea || '1200',
+            minSize: residentialData.minSize || '1000',
+            maxSize: residentialData.maxSize || '2000',
+            sizeUnit: residentialData.sizeUnit || 'sq.ft.',
+            amenities: residentialData.amenities || otherData.amenities || [],
+            propertyImages: residentialData.propertyImages || [],
+            floorPlans: residentialData.floorPlans || []
+          };
+          console.log('Using provided residential data');
+        } else {
+          // Create default residential property
+          subPropertyData = {
+            propertyName: `${projectName} - Residential`,
+            propertyDescription: `${projectName} Residential Property`,
+            price: mainProjectPrice,
+            paymentPlan: otherData.paymentPlan || 'Flexible',
+            bedrooms: 2,
+            bathrooms: 2,
+            toilet: 1,
+            balcony: 1,
+            carpetArea: '1000',
+            builtUpArea: '1200',
+            minSize: '1000',
+            maxSize: '2000',
+            sizeUnit: 'sq.ft.',
+            amenities: otherData.amenities || [],
+            propertyImages: [],
+            floorPlans: []
+          };
+          console.log('Creating default residential property');
+        }
+      } 
+      else if (subType === 'commercial') {
+        if (otherData.commercialProperties && otherData.commercialProperties.length > 0) {
+          // Take first commercial property from array
+          const commercialData = otherData.commercialProperties[0];
+          subPropertyData = {
+            propertyName: commercialData.propertyName || `${projectName} - Commercial`,
+            propertyDescription: commercialData.propertyDescription || `${projectName} Commercial Property`,
+            price: commercialData.price || mainProjectPrice,
+            paymentPlan: commercialData.paymentPlan || otherData.paymentPlan,
+            carpetArea: commercialData.carpetArea || '2000',
+            builtUpArea: commercialData.builtUpArea || '2500',
+            minSize: commercialData.minSize || '1000',
+            maxSize: commercialData.maxSize || '5000',
+            sizeUnit: commercialData.sizeUnit || 'sq.ft.',
+            amenities: commercialData.amenities || otherData.amenities || [],
+            propertyImages: commercialData.propertyImages || [],
+            floorPlans: commercialData.floorPlans || []
+          };
+          console.log('Using provided commercial data');
+        } else {
+          // Create default commercial property
+          subPropertyData = {
+            propertyName: `${projectName} - Commercial`,
+            propertyDescription: `${projectName} Commercial Property`,
+            price: mainProjectPrice,
+            paymentPlan: otherData.paymentPlan || 'Flexible',
+            carpetArea: '2000',
+            builtUpArea: '2500',
+            minSize: '1000',
+            maxSize: '5000',
+            sizeUnit: 'sq.ft.',
+            amenities: otherData.amenities || [],
+            propertyImages: [],
+            floorPlans: []
+          };
+          console.log('Creating default commercial property');
+        }
+      } 
+      else if (subType === 'plot') {
+        if (otherData.plotProperties && otherData.plotProperties.length > 0) {
+          // Take first plot from array
+          const plotData = otherData.plotProperties[0];
+          subPropertyData = {
+            propertyName: plotData.propertyName || `${projectName} - Plot`,
+            propertyDescription: plotData.propertyDescription || `${projectName} Plot Property`,
+            price: plotData.price || mainProjectPrice,
+            paymentPlan: plotData.paymentPlan || otherData.paymentPlan,
+            ownershipType: plotData.ownershipType || 'Freehold',
+            landType: plotData.landType || 'Residential Plot',
+            approvedBy: plotData.approvedBy || '',
+            boundaryWall: plotData.boundaryWall || false,
+            minSize: plotData.minSize || '1000',
+            maxSize: plotData.maxSize || '5000',
+            sizeUnit: plotData.sizeUnit || 'sq.ft.',
+            amenities: plotData.amenities || otherData.amenities || [],
+            propertyImages: plotData.propertyImages || [],
+            floorPlans: plotData.floorPlans || []
+          };
+          console.log('Using provided plot data');
+        } else {
+          // Create default plot
+          subPropertyData = {
+            propertyName: `${projectName} - Plot`,
+            propertyDescription: `${projectName} Plot Property`,
+            price: mainProjectPrice,
+            paymentPlan: otherData.paymentPlan || 'Flexible',
+            ownershipType: 'Freehold',
+            landType: 'Residential Plot',
+            approvedBy: '',
+            boundaryWall: false,
+            minSize: '1000',
+            maxSize: '5000',
+            sizeUnit: 'sq.ft.',
+            amenities: otherData.amenities || [],
+            propertyImages: [],
+            floorPlans: []
+          };
+          console.log('Creating default plot property');
+        }
+      }
+
+      const numericPrice = extractNumericPrice(subPropertyData.price);
+
+      const propertyData = {
+        projectName: projectName.trim(),
+        builderName: builderName.trim(),
+        location: location.trim(),
+        description: description || `${subType} property in ${projectName}`,
+        propertyType: subType,
+        propertyName: subPropertyData.propertyName,
+        price: subPropertyData.price,
+        minPrice: numericPrice,
+        maxPrice: numericPrice,
+        paymentPlan: subPropertyData.paymentPlan,
+        status: otherData.status || ['Under Construction'],
+        amenities: subPropertyData.amenities,
+        nearby: otherData.nearby || [],
+        projectHighlights: otherData.projectHighlights || [],
+        mapLocation: otherData.mapLocation || { lat: 0, lng: 0 },
+        images: otherData.images || [],
+        brochureUrls: otherData.brochureUrls || [],
+        createdBy: req.employee._id,
+        parentId: mainProject._id,
+        hierarchyLevel: 1,
+        // Add type-specific fields
+        ...(subType === 'residential' && {
+          bedrooms: subPropertyData.bedrooms,
+          bathrooms: subPropertyData.bathrooms,
+          toilet: subPropertyData.toilet,
+          balcony: subPropertyData.balcony,
+          carpetArea: subPropertyData.carpetArea,
+          builtUpArea: subPropertyData.builtUpArea,
+          minSize: subPropertyData.minSize,
+          maxSize: subPropertyData.maxSize,
+          sizeUnit: subPropertyData.sizeUnit,
+          propertyImages: subPropertyData.propertyImages,
+          floorPlans: subPropertyData.floorPlans ? subPropertyData.floorPlans.map(plan => ({
+            ...plan,
+            type: mapFileType(plan.type)
+          })) : []
+        }),
+        ...(subType === 'commercial' && {
+          carpetArea: subPropertyData.carpetArea,
+          builtUpArea: subPropertyData.builtUpArea,
+          minSize: subPropertyData.minSize,
+          maxSize: subPropertyData.maxSize,
+          sizeUnit: subPropertyData.sizeUnit,
+          propertyImages: subPropertyData.propertyImages,
+          floorPlans: subPropertyData.floorPlans ? subPropertyData.floorPlans.map(plan => ({
+            ...plan,
+            type: mapFileType(plan.type)
+          })) : []
+        }),
+        ...(subType === 'plot' && {
+          ownershipType: subPropertyData.ownershipType,
+          landType: subPropertyData.landType,
+          approvedBy: subPropertyData.approvedBy,
+          boundaryWall: subPropertyData.boundaryWall,
+          minSize: subPropertyData.minSize,
+          maxSize: subPropertyData.maxSize,
+          sizeUnit: subPropertyData.sizeUnit,
+          propertyImages: subPropertyData.propertyImages,
+          floorPlans: subPropertyData.floorPlans ? subPropertyData.floorPlans.map(plan => ({
+            ...plan,
+            type: mapFileType(plan.type)
+          })) : []
+        })
+      };
+
+      const subProperty = new Property(propertyData);
+      await subProperty.save();
+      await subProperty.populate("parentId", "projectName builderName location price minPrice maxPrice");
+      createdSubProperties.push(subProperty);
+      
+      console.log(`✅ Successfully created ${subType} property: ${subProperty.propertyName}`);
+    }
+
+    // Populate main project for response
+    await mainProject.populate("createdBy", "name email");
+
+    return res.status(201).json({
+      success: true,
+      data: {
+        mainProject,
+        subProperties: createdSubProperties
+      },
+      message: `Main project created with ${createdSubProperties.length} sub-properties: ${filteredTypes.join(', ')}`
+    });
+
+  } catch (error) {
+    console.error("Error in createMultiplePropertiesFromSingle:", error);
+    
+    if (error.name === 'ValidationError') {
+      const errors = Object.values(error.errors).map(err => err.message);
+      return res.status(400).json({
+        success: false,
+        message: "Validation Error",
+        errors: errors
+      });
+    }
+    
+    if (error.code === 11000) {
+      return res.status(400).json({
+        success: false,
+        message: "Property with similar details already exists"
+      });
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Error creating properties: " + error.message
+    });
+  }
+};
+
+// update main project based on sub-properties
 const updateMainProjectPriceRange = async (mainProjectId) => {
   try {
     const subProperties = await Property.find({
       parentId: mainProjectId,
-      isActive: true
     });
     
     const validPrices = subProperties
@@ -470,146 +790,6 @@ const updateMainProjectPriceRange = async (mainProjectId) => {
   } catch (error) {
     console.error("Error updating main project price range:", error);
   }
-};
-
-// Create multiple properties (main project + sub-properties)
-const createMultipleProperties = async (req, res) => {
-  const { propertyType, projectName, builderName, location, description, ...otherData } = req.body;
-  
-  // ✅ NEW: Calculate price range from all sub-properties before creating main project
-  const priceRange = findPriceRangeFromSubProperties(otherData);
-  const mainProjectPrice = formatPriceRange(priceRange.minPrice, priceRange.maxPrice);
-
-  console.log(`Calculated price range from sub-properties: ${priceRange.minPrice} - ${priceRange.maxPrice}`);
-  console.log(`Main project price will be: ${mainProjectPrice}`);
-
-  // Generate unique slug for main project
-  const slug = await Property.generateUniqueSlug(projectName.trim(), builderName.trim());
-
-  // Create main project first with price range from sub-properties
-  const mainProjectData = {
-    projectName: projectName.trim(),
-    builderName: builderName.trim(),
-    location: location.trim(),
-    description: description || `Main project for ${projectName}`,
-    propertyType: 'project',
-    propertyName: `${projectName.trim()} Project`,
-    price: mainProjectPrice, // ✅ Set to price range from sub-properties
-    minPrice: priceRange.minPrice, // ✅ Store min price
-    maxPrice: priceRange.maxPrice, // ✅ Store max price
-    paymentPlan: otherData.paymentPlan || 'Flexible',
-    status: otherData.status || ['Under Construction'],
-    amenities: otherData.amenities || [],
-    nearby: otherData.nearby || [],
-    projectHighlights: otherData.projectHighlights || [],
-    mapLocation: otherData.mapLocation || { lat: 0, lng: 0 },
-    images: otherData.images || [],
-    brochureUrls: otherData.brochureUrls || [],
-    createdBy: req.employee._id,
-    parentId: null,
-    hierarchyLevel: 0,
-    slug: slug
-  };
-
-  const mainProject = new Property(mainProjectData);
-  await mainProject.save();
-
-  // Create sub-properties for each non-project type
-  const subPropertyTypes = propertyType.filter(type => type !== 'project');
-  const createdSubProperties = [];
-
-  for (const subType of subPropertyTypes) {
-    // Get the specific property data for this type
-    let subPropertySpecificData = {};
-    let subPropertyPrice = 'Contact for price';
-
-    if (subType === 'residential' && otherData.residentialProperties && otherData.residentialProperties.length > 0) {
-      subPropertySpecificData = otherData.residentialProperties[0] || {};
-      subPropertyPrice = subPropertySpecificData.price || mainProjectPrice;
-    } else if (subType === 'commercial' && otherData.commercialProperties && otherData.commercialProperties.length > 0) {
-      subPropertySpecificData = otherData.commercialProperties[0] || {};
-      subPropertyPrice = subPropertySpecificData.price || mainProjectPrice;
-    } else if (subType === 'plot' && otherData.plotProperties && otherData.plotProperties.length > 0) {
-      subPropertySpecificData = otherData.plotProperties[0] || {};
-      subPropertyPrice = subPropertySpecificData.price || mainProjectPrice;
-    }
-
-    const numericPrice = extractNumericPrice(subPropertyPrice);
-
-    const subPropertyData = {
-      projectName: projectName.trim(),
-      builderName: builderName.trim(),
-      location: location.trim(),
-      description: description || `${subType} property in ${projectName}`,
-      propertyType: subType,
-      propertyName: subPropertySpecificData.propertyName || `${subType} Unit`,
-      // ✅ Use specific price if provided, otherwise use main project price
-      price: subPropertyPrice,
-      minPrice: numericPrice,
-      maxPrice: numericPrice,
-      paymentPlan: subPropertySpecificData.paymentPlan || otherData.paymentPlan || 'Flexible',
-      status: otherData.status || ['Under Construction'],
-      amenities: subPropertySpecificData.amenities || otherData.amenities || [],
-      nearby: otherData.nearby || [],
-      projectHighlights: otherData.projectHighlights || [],
-      mapLocation: otherData.mapLocation || { lat: 0, lng: 0 },
-      images: otherData.images || [],
-      brochureUrls: otherData.brochureUrls || [],
-      createdBy: req.employee._id,
-      parentId: mainProject._id,
-      hierarchyLevel: 1
-    };
-
-    // Add type-specific fields
-    if (subType === 'residential') {
-      subPropertyData.minSize = subPropertySpecificData.minSize;
-      subPropertyData.maxSize = subPropertySpecificData.maxSize;
-      subPropertyData.sizeUnit = subPropertySpecificData.sizeUnit;
-      subPropertyData.bedrooms = subPropertySpecificData.bedrooms;
-      subPropertyData.bathrooms = subPropertySpecificData.bathrooms;
-      subPropertyData.toilet = subPropertySpecificData.toilet;
-      subPropertyData.balcony = subPropertySpecificData.balcony;
-      subPropertyData.carpetArea = subPropertySpecificData.carpetArea;
-      subPropertyData.builtUpArea = subPropertySpecificData.builtUpArea;
-      subPropertyData.propertyImages = subPropertySpecificData.propertyImages || [];
-      subPropertyData.floorPlans = subPropertySpecificData.floorPlans || [];
-    } else if (subType === 'commercial') {
-      subPropertyData.minSize = subPropertySpecificData.minSize;
-      subPropertyData.maxSize = subPropertySpecificData.maxSize;
-      subPropertyData.sizeUnit = subPropertySpecificData.sizeUnit;
-      subPropertyData.carpetArea = subPropertySpecificData.carpetArea;
-      subPropertyData.builtUpArea = subPropertySpecificData.builtUpArea;
-      subPropertyData.propertyImages = subPropertySpecificData.propertyImages || [];
-      subPropertyData.floorPlans = subPropertySpecificData.floorPlans || [];
-    } else if (subType === 'plot') {
-      subPropertyData.minSize = subPropertySpecificData.minSize;
-      subPropertyData.maxSize = subPropertySpecificData.maxSize;
-      subPropertyData.sizeUnit = subPropertySpecificData.sizeUnit;
-      subPropertyData.ownershipType = subPropertySpecificData.ownershipType;
-      subPropertyData.landType = subPropertySpecificData.landType;
-      subPropertyData.approvedBy = subPropertySpecificData.approvedBy;
-      subPropertyData.boundaryWall = subPropertySpecificData.boundaryWall;
-      subPropertyData.propertyImages = subPropertySpecificData.propertyImages || [];
-      subPropertyData.floorPlans = subPropertySpecificData.floorPlans || [];
-    }
-
-    const subProperty = new Property(subPropertyData);
-    await subProperty.save();
-    await subProperty.populate("parentId", "projectName builderName location price minPrice maxPrice");
-    createdSubProperties.push(subProperty);
-  }
-
-  // Populate main project for response
-  await mainProject.populate("createdBy", "name email");
-
-  return res.status(201).json({
-    success: true,
-    data: {
-      mainProject,
-      subProperties: createdSubProperties
-    },
-    message: `Main project created with ${createdSubProperties.length} sub-properties. Main project price range: ${mainProjectPrice}`
-  });
 };
 
 // Get all properties (with pagination, search and hierarchy support)
@@ -635,7 +815,7 @@ const getAllProperties = async (req, res) => {
     const itemsPerPage = Math.min(parseInt(limit), 100);
     const skip = (currentPage - 1) * itemsPerPage;
 
-    const query = { isActive: true };
+    const query = {};
     
     // Filter by parentId (for getting sub-properties)
     if (parentId) {
@@ -736,7 +916,6 @@ const getAllProperties = async (req, res) => {
       for (let property of properties) {
         const subPropertyCount = await Property.countDocuments({
           parentId: property._id,
-          isActive: true
         });
         property.subPropertyCount = subPropertyCount;
       }
@@ -748,7 +927,6 @@ const getAllProperties = async (req, res) => {
         if (property.parentId === null) {
           const children = await Property.find({
             parentId: property._id,
-            isActive: true
           })
           .populate("createdBy", "name email")
           .lean();
@@ -783,7 +961,6 @@ const getAllProperties = async (req, res) => {
 // Update getHierarchicalProperties function
 const getHierarchicalProperties = async (search = "", status, propertyType, location, builderName, minPrice, maxPrice) => {
   const query = { 
-    isActive: true,
     parentId: null 
   };
 
@@ -858,7 +1035,6 @@ const getHierarchicalProperties = async (search = "", status, propertyType, loca
   for (let project of mainProjects) {
     const subProperties = await Property.find({
       parentId: project._id,
-      isActive: true
     })
     .populate("createdBy", "name email")
     .lean();
@@ -896,7 +1072,6 @@ const getSubProperties = async (req, res) => {
 
     const query = { 
       parentId: parentId,
-      isActive: true 
     };
 
     // Add search filter
@@ -968,7 +1143,6 @@ const getPublicProperties = async (req, res) => {
     const skip = (currentPage - 1) * itemsPerPage;
 
     const query = { 
-      isActive: true,
       isPublic: true, // Only return public properties
       parentId: null // Only main projects
     };
@@ -1041,7 +1215,6 @@ const getPublicProperties = async (req, res) => {
     for (let property of properties) {
       const subPropertyCount = await Property.countDocuments({
         parentId: property._id,
-        isActive: true,
         isPublic: true
       });
       property.subPropertyCount = subPropertyCount;
@@ -1074,19 +1247,17 @@ const getPublicPropertyById = async (req, res) => {
   try {
     const { withChildren = "false" } = req.query;
 
-    // Find property that is public and active
+    // Find property that is public
     let property;
     if (mongoose.Types.ObjectId.isValid(id)) {
       property = await Property.findOne({ 
         $or: [{ _id: id }, { slug: id }],
-        isActive: true,
         isPublic: true
       }).lean();
     } else {
       property = await Property.findOne({ 
         slug: id,
-        isActive: true,
-        isPublic: true 
+        isPublic: true
       }).lean();
     }
 
@@ -1101,7 +1272,6 @@ const getPublicPropertyById = async (req, res) => {
     if (withChildren === "true" && property.parentId === null) {
       const subProperties = await Property.find({
         parentId: property._id,
-        isActive: true,
         isPublic: true
       })
         .select("propertyName propertyDescription price propertyType minSize maxSize sizeUnit bedrooms bathrooms carpetArea builtUpArea ownershipType landType propertyImages amenities")
@@ -1258,4 +1428,3 @@ const handler = async (req, res) => {
 };
 
 export default withAuth(handler);
-

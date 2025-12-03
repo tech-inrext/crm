@@ -10,7 +10,6 @@ const getPropertyById = async (req, res) => {
   const { id } = req.query;
 
   try {
-    // Option to get with sub-properties
     const { withChildren = "false" } = req.query;
 
     const property = await Property.findByIdOrSlug(id).lean();
@@ -26,7 +25,6 @@ const getPropertyById = async (req, res) => {
     if (withChildren === "true" && property.parentId === null) {
       const subProperties = await Property.find({
         parentId: property._id,
-        isActive: true,
       })
         .populate("createdBy", "name email")
         .lean();
@@ -75,23 +73,53 @@ const updateProperty = async (req, res) => {
       });
     }
 
+    // Create a copy of request body to modify
+    const updateData = { ...req.body };
+
+    console.log('Update request data:', JSON.stringify(updateData, null, 2));
+    console.log('Existing property type:', existingProperty.propertyType);
+
+    // ✅ FIX: Handle propertyType - convert array to string if needed
+    if (updateData.propertyType) {
+      if (Array.isArray(updateData.propertyType)) {
+        // Take the first item if it's an array
+        if (updateData.propertyType.length > 0) {
+          updateData.propertyType = updateData.propertyType[0];
+          console.log('Converted propertyType from array to string:', updateData.propertyType);
+        } else {
+          // If array is empty, keep existing value
+          delete updateData.propertyType;
+          console.log('Keeping existing property type:', existingProperty.propertyType);
+        }
+      }
+      // Ensure it's a valid enum value
+      const validTypes = ["project", "residential", "commercial", "plot"];
+      if (!validTypes.includes(updateData.propertyType)) {
+        return res.status(400).json({
+          success: false,
+          message: `Invalid property type. Must be one of: ${validTypes.join(', ')}`
+        });
+      }
+    }
+
     // If projectName or builderName is being updated and it's a main project, regenerate slug
-    if ((req.body.projectName || req.body.builderName) && existingProperty.parentId === null) {
-      const newProjectName = req.body.projectName || existingProperty.projectName;
-      const newBuilderName = req.body.builderName || existingProperty.builderName;
+    if ((updateData.projectName || updateData.builderName) && existingProperty.parentId === null) {
+      const newProjectName = updateData.projectName || existingProperty.projectName;
+      const newBuilderName = updateData.builderName || existingProperty.builderName;
       
-      req.body.slug = await Property.generateUniqueSlug(
+      updateData.slug = await Property.generateUniqueSlug(
         newProjectName, 
         newBuilderName, 
         existingProperty._id
       );
+      console.log('Regenerated slug:', updateData.slug);
     } else if (existingProperty.parentId) {
       // Sub-properties shouldn't have slugs
-      req.body.slug = undefined;
+      updateData.slug = undefined;
     }
 
     // Prevent changing parentId for main projects with children
-    if (req.body.parentId) {
+    if (updateData.parentId !== undefined) {
       if (existingProperty && existingProperty.parentId === null) {
         const childCount = await Property.countDocuments({ parentId: existingProperty._id });
         if (childCount > 0) {
@@ -103,9 +131,60 @@ const updateProperty = async (req, res) => {
       }
     }
 
+    // ✅ FIX: Remove nested property arrays if they exist (these should only be used during creation)
+    // During updates, we should only update the main property fields
+    delete updateData.residentialProperties;
+    delete updateData.commercialProperties;
+    delete updateData.plotProperties;
+
+    // Also need to handle propertyImages, floorPlans, etc. appropriately
+    // Convert arrays to proper format if they exist
+    if (updateData.propertyImages && Array.isArray(updateData.propertyImages)) {
+      updateData.propertyImages = updateData.propertyImages.map(img => {
+        // Handle both string URLs and object formats
+        const imageData = {
+          url: img.url || (typeof img === 'string' ? img : ''),
+          title: img.title || '',
+          description: img.description || '',
+          isPrimary: img.isPrimary || false,
+          uploadedAt: img.uploadedAt || new Date().toISOString()
+        };
+        // Only include if URL exists
+        return imageData.url ? imageData : null;
+      }).filter(img => img !== null);
+    }
+
+    if (updateData.floorPlans && Array.isArray(updateData.floorPlans)) {
+      updateData.floorPlans = updateData.floorPlans.map(plan => {
+        const planData = {
+          url: plan.url || (typeof plan === 'string' ? plan : ''),
+          title: plan.title || '',
+          description: plan.description || '',
+          type: plan.type || '2d',
+          uploadedAt: plan.uploadedAt || new Date().toISOString()
+        };
+        return planData.url ? planData : null;
+      }).filter(plan => plan !== null);
+    }
+
+    if (updateData.images && Array.isArray(updateData.images)) {
+      updateData.images = updateData.images.map(img => {
+        const imageData = {
+          url: img.url || (typeof img === 'string' ? img : ''),
+          title: img.title || '',
+          description: img.description || '',
+          isPrimary: img.isPrimary || false,
+          uploadedAt: img.uploadedAt || new Date().toISOString()
+        };
+        return imageData.url ? imageData : null;
+      }).filter(img => img !== null);
+    }
+
+    console.log('Final update data:', JSON.stringify(updateData, null, 2));
+
     const updatedProperty = await Property.findByIdAndUpdate(
       existingProperty._id,
-      { $set: req.body },
+      { $set: updateData },
       {
         new: true,
         runValidators: true,
@@ -118,6 +197,22 @@ const updateProperty = async (req, res) => {
         success: false,
         message: "Property not found after update",
       });
+    }
+
+    // ✅ If this is a main project and its price changed, update sub-properties' price
+    if (updateData.price && existingProperty.parentId === null) {
+      const subProperties = await Property.find({ parentId: existingProperty._id });
+      if (subProperties.length > 0) {
+        // Update all sub-properties that don't have their own price set
+        for (const subProp of subProperties) {
+          if (!subProp.price || subProp.price === 'Contact for price') {
+            await Property.findByIdAndUpdate(subProp._id, {
+              $set: { price: updateData.price }
+            });
+          }
+        }
+        console.log(`Updated price for ${subProperties.length} sub-properties`);
+      }
     }
 
     return res.status(200).json({
@@ -137,9 +232,10 @@ const updateProperty = async (req, res) => {
     }
 
     if (error.name === "CastError") {
+      console.error('CastError details:', error);
       return res.status(400).json({
         success: false,
-        message: "Invalid property ID or slug",
+        message: `Invalid data format: ${error.message}`,
       });
     }
 
@@ -157,7 +253,7 @@ const updateProperty = async (req, res) => {
   }
 };
 
-// Delete property (Admin only - soft delete with hierarchy support)
+// Delete property (Admin only - HARD DELETE)
 const deleteProperty = async (req, res) => {
   const { id } = req.query;
 
@@ -178,23 +274,22 @@ const deleteProperty = async (req, res) => {
       });
     }
 
-    // If main project, also deactivate all sub-properties
+    // If main project, also delete all sub-properties
     if (property.parentId === null) {
-      await Property.updateMany({ parentId: property._id }, { isActive: false });
+      await Property.deleteMany({ parentId: property._id });
+      console.log(`Deleted ${property._id} and all its sub-properties`);
     }
 
-    const deletedProperty = await Property.findByIdAndUpdate(
-      property._id,
-      { isActive: false },
-      { new: true }
-    );
+    // HARD DELETE - permanently remove the property
+    await Property.deleteOne({ _id: property._id });
+    console.log(`Permanently deleted property: ${property._id}`);
 
     return res.status(200).json({
       success: true,
       message:
         property.parentId === null
-          ? "Project and all sub-properties deleted successfully"
-          : "Property deleted successfully",
+          ? "Project and all sub-properties permanently deleted"
+          : "Property permanently deleted",
     });
   } catch (error) {
     console.error("Error deleting property:", error);
