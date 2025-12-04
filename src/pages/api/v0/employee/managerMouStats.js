@@ -20,11 +20,11 @@ const getManagerMouStats = async (req, res) => {
     }
     // Only employees whose managerId is loggedInId
     const pendingCount = await Employee.countDocuments({ managerId: loggedInId, mouStatus: { $regex: "^Pending$", $options: "i" } });
-    const completedCount = await Employee.countDocuments({ managerId: loggedInId, mouStatus: { $regex: "^Completed$", $options: "i" } });
+    const approvedCount = await Employee.countDocuments({ managerId: loggedInId, mouStatus: { $regex: "^Approved$", $options: "i" } });
     return res.status(200).json({
       success: true,
       pending: pendingCount,
-      completed: completedCount,
+      approved: approvedCount,
     });
   } catch (error) {
     return res.status(500).json({
