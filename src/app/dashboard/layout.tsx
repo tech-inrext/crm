@@ -22,6 +22,8 @@ import {
   LocalTaxi,
   Apartment,
   Diversity3,
+  Groups,
+  GroupAdd,
 } from "@mui/icons-material";
 
 // const AppIcon = ({
@@ -60,7 +62,7 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "Users",
     href: "/dashboard/users",
     module: "employee",
-    icon: <GroupIcon sx={{ color: "#3785FF" }} />,
+    icon: <Groups sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Roles",
@@ -72,7 +74,7 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "Teams",
     href: "/dashboard/teams",
     module: "team",
-    icon: <GroupIcon sx={{ color: "#3785FF" }} />,
+    icon: <GroupAdd sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Pillars",

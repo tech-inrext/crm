@@ -391,3 +391,6 @@ propertySchema.methods.getParentProperty = function() {
 };
 
 export default mongoose.models.Property || mongoose.model("Property", propertySchema);
+
+
+

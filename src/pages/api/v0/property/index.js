@@ -458,14 +458,14 @@ const createSingleProperty = async (req, res, propertyType) => {
   }
 };
 
-// Create multiple properties from single request (FIXED VERSION)
+// Create multiple properties from single request
 const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
   const { projectName, builderName, location, description, ...otherData } = req.body;
   
   try {
     console.log(`Creating main project with multiple property types: ${propertyTypes.join(', ')}`);
 
-    // ✅ FIX: Calculate price range from all sub-properties
+    // Calculate price range from all sub-properties
     const priceRange = findPriceRangeFromSubProperties(otherData);
     const mainProjectPrice = formatPriceRange(priceRange.minPrice, priceRange.maxPrice);
 
@@ -513,7 +513,7 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
 
     console.log('Creating sub-properties for types:', filteredTypes);
 
-    // ✅ FIX: Create properties for EACH selected type
+    // Create properties for EACH selected type
     for (const subType of filteredTypes) {
       console.log(`\n=== Creating ${subType} property ===`);
       
@@ -521,7 +521,7 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
       let subPropertyData = {};
       let subPropertyPrice = 'Contact for price';
 
-      // ✅ FIX: Check if data exists for this property type
+      // Check if data exists for this property type
       if (subType === 'residential') {
         if (otherData.residentialProperties && otherData.residentialProperties.length > 0) {
           // Take first residential property from array
@@ -722,7 +722,7 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
       await subProperty.populate("parentId", "projectName builderName location price minPrice maxPrice");
       createdSubProperties.push(subProperty);
       
-      console.log(`✅ Successfully created ${subType} property: ${subProperty.propertyName}`);
+      console.log(`Successfully created ${subType} property: ${subProperty.propertyName}`);
     }
 
     // Populate main project for response
@@ -1000,7 +1000,7 @@ const getHierarchicalProperties = async (search = "", status, propertyType, loca
     query.builderName = { $regex: builderName, $options: "i" };
   }
 
-  // NEW: Filter by price range
+  // Filter by price range
   if (minPrice || maxPrice) {
     query.$and = [];
     if (minPrice) {

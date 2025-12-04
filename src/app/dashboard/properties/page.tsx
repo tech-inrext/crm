@@ -228,7 +228,6 @@ export default function PropertiesPage() {
     commercialProperties: [] as any[],
     plotProperties: [] as any[],
   });
-  
 
   // Calculate active filters count
   useEffect(() => {
@@ -788,260 +787,220 @@ export default function PropertiesPage() {
 
   // Submit form
   const handleSubmit = async () => {
-    if (!validateForm()) {
-      toast.error("Please fix the validation errors before submitting");
+  if (!validateForm()) {
+    toast.error("Please fix the validation errors before submitting");
+    return;
+  }
+
+  try {
+    const selectedTypes = Array.isArray(formData.propertyType) 
+      ? formData.propertyType 
+      : [formData.propertyType];
+
+    let processedData;
+
+    // ✅ EDITING MODE - Extract data from nested arrays
+    if (editingProperty && editingProperty._id) {
+
+      // Start with base data
+      processedData = {
+        projectName: formData.projectName,
+        builderName: formData.builderName,
+        location: formData.location,
+        description: formData.description,
+        paymentPlan: formData.paymentPlan,
+        status: formData.status,
+        nearby: formData.nearby,
+        projectHighlights: formData.projectHighlights,
+        amenities: formData.amenities,
+        mapLocation: formData.mapLocation,
+        isActive: formData.isActive,
+        isPublic: formData.isPublic,
+        isFeatured: formData.isFeatured,
+        parentId: formData.parentId,
+      };
+
+      // ✅ Extract property-specific data from nested arrays
+      const currentType = selectedTypes[0] || editingProperty.propertyType;
+      processedData.propertyType = currentType;
+
+      if (currentType === 'residential' && formData.residentialProperties?.[0]) {
+        const resData = formData.residentialProperties[0];
+        Object.assign(processedData, {
+          propertyName: resData.propertyName,
+          propertyDescription: resData.propertyDescription,
+          price: resData.price,
+          paymentPlan: resData.paymentPlan || formData.paymentPlan,
+          bedrooms: resData.bedrooms,
+          bathrooms: resData.bathrooms,
+          toilet: resData.toilet,
+          balcony: resData.balcony,
+          carpetArea: resData.carpetArea,
+          builtUpArea: resData.builtUpArea,
+          minSize: resData.minSize,
+          maxSize: resData.maxSize,
+          sizeUnit: resData.sizeUnit,
+          propertyImages: resData.propertyImages?.map((img: any) => ({
+            url: img.url,
+            title: img.title || '',
+            description: img.description || '',
+            isPrimary: img.isPrimary || false,
+            uploadedAt: img.uploadedAt || new Date().toISOString()
+          })) || [],
+          floorPlans: resData.floorPlans?.map((plan: any) => ({
+            url: plan.url,
+            title: plan.title || '',
+            description: plan.description || '',
+            type: plan.type || '2d',
+            uploadedAt: plan.uploadedAt || new Date().toISOString()
+          })) || [],
+        });
+      } else if (currentType === 'commercial' && formData.commercialProperties?.[0]) {
+        const comData = formData.commercialProperties[0];
+        Object.assign(processedData, {
+          propertyName: comData.propertyName,
+          propertyDescription: comData.propertyDescription,
+          price: comData.price,
+          paymentPlan: comData.paymentPlan || formData.paymentPlan,
+          carpetArea: comData.carpetArea,
+          builtUpArea: comData.builtUpArea,
+          minSize: comData.minSize,
+          maxSize: comData.maxSize,
+          sizeUnit: comData.sizeUnit,
+          propertyImages: comData.propertyImages?.map((img: any) => ({
+            url: img.url,
+            title: img.title || '',
+            description: img.description || '',
+            isPrimary: img.isPrimary || false,
+            uploadedAt: img.uploadedAt || new Date().toISOString()
+          })) || [],
+          floorPlans: comData.floorPlans?.map((plan: any) => ({
+            url: plan.url,
+            title: plan.title || '',
+            description: plan.description || '',
+            type: plan.type || '2d',
+            uploadedAt: plan.uploadedAt || new Date().toISOString()
+          })) || [],
+        });
+      } else if (currentType === 'plot' && formData.plotProperties?.[0]) {
+        const plotData = formData.plotProperties[0];
+        Object.assign(processedData, {
+          propertyName: plotData.propertyName,
+          propertyDescription: plotData.propertyDescription,
+          price: plotData.price,
+          paymentPlan: plotData.paymentPlan || formData.paymentPlan,
+          ownershipType: plotData.ownershipType,
+          landType: plotData.landType,
+          approvedBy: plotData.approvedBy,
+          boundaryWall: plotData.boundaryWall,
+          minSize: plotData.minSize,
+          maxSize: plotData.maxSize,
+          sizeUnit: plotData.sizeUnit,
+          propertyImages: plotData.propertyImages?.map((img: any) => ({
+            url: img.url,
+            title: img.title || '',
+            description: img.description || '',
+            isPrimary: img.isPrimary || false,
+            uploadedAt: img.uploadedAt || new Date().toISOString()
+          })) || [],
+          floorPlans: plotData.floorPlans?.map((plan: any) => ({
+            url: plan.url,
+            title: plan.title || '',
+            description: plan.description || '',
+            type: plan.type || '2d',
+            uploadedAt: plan.uploadedAt || new Date().toISOString()
+          })) || [],
+        });
+      } else {
+        // Project type or fallback to flat data
+        Object.assign(processedData, {
+          propertyName: formData.propertyName,
+          propertyDescription: formData.propertyDescription,
+          price: formData.price,
+        });
+      }
+
+      // Add main project images/videos/brochures
+      processedData.images = formData.images?.map((img: any) => ({
+        url: img.url,
+        title: img.title || '',
+        description: img.description || '',
+        isPrimary: img.isPrimary || false,
+        uploadedAt: img.uploadedAt || new Date().toISOString()
+      })) || [];
+
+      processedData.creatives = formData.creatives?.map((creative: any) => ({
+        type: creative.type || 'image',
+        url: creative.url,
+        title: creative.title || '',
+        description: creative.description || '',
+        thumbnail: creative.thumbnail || '',
+        uploadedAt: creative.uploadedAt || new Date().toISOString()
+      })) || [];
+
+      processedData.videos = formData.videos?.map((video: any) => ({
+        url: video.url,
+        title: video.title || '',
+        description: video.description || '',
+        thumbnail: video.thumbnail || '',
+        type: video.type || 'direct',
+        uploadedAt: video.uploadedAt || new Date().toISOString()
+      })) || [];
+
+      processedData.brochureUrls = formData.brochureUrls?.map((brochure: any) => ({
+        title: brochure.title || '',
+        url: brochure.url,
+        type: brochure.type || 'PDF Document'
+      })) || [];
+
+      console.log('Processed update data:', processedData);
+
+    } else {
+      // ✅ CREATE MODE
+      processedData = {
+        ...formData,
+        propertyType: selectedTypes,
+      };
+    }
+
+    const cleanedData = cleanFormData(processedData);
+    const sizeCheck = checkDataSize(cleanedData);
+    
+    if (!sizeCheck.isValid) {
+      toast.error(`Data too large (${sizeCheck.sizeMB.toFixed(2)}MB). Please reduce the number of files or descriptions.`);
       return;
     }
 
-    try {
-      const selectedTypes = Array.isArray(formData.propertyType) 
-        ? formData.propertyType 
-        : [formData.propertyType];
-
-      let processedData;
-
-      if (editingProperty && editingProperty._id) {
-        processedData = {
-          ...formData,
-          propertyType: selectedTypes.length > 0 ? selectedTypes[0] : editingProperty.propertyType,
-          residentialProperties: undefined,
-          commercialProperties: undefined,
-          plotProperties: undefined,
-          images: formData.images?.map((img: any) => ({
-            url: img.url,
-            title: img.title || '',
-            description: img.description || '',
-            isPrimary: img.isPrimary || false,
-            uploadedAt: img.uploadedAt || new Date().toISOString()
-          })) || [],
-          propertyImages: formData.propertyImages?.map((img: any) => ({
-            url: img.url,
-            title: img.title || '',
-            description: img.description || '',
-            isPrimary: img.isPrimary || false,
-            uploadedAt: img.uploadedAt || new Date().toISOString()
-          })) || [],
-          floorPlans: formData.floorPlans?.map((plan: any) => ({
-            url: plan.url,
-            title: plan.title || '',
-            description: plan.description || '',
-            type: plan.type || '2d',
-            uploadedAt: plan.uploadedAt || new Date().toISOString()
-          })) || [],
-          creatives: formData.creatives?.map((creative: any) => ({
-            type: creative.type || 'image',
-            url: creative.url,
-            title: creative.title || '',
-            description: creative.description || '',
-            thumbnail: creative.thumbnail || '',
-            uploadedAt: creative.uploadedAt || new Date().toISOString()
-          })) || [],
-          videos: formData.videos?.map((video: any) => ({
-            url: video.url,
-            title: video.title || '',
-            description: video.description || '',
-            thumbnail: video.thumbnail || '',
-            type: video.type || 'direct',
-            uploadedAt: video.uploadedAt || new Date().toISOString()
-          })) || [],
-          brochureUrls: formData.brochureUrls?.map((brochure: any) => ({
-            title: brochure.title || '',
-            url: brochure.url,
-            type: brochure.type || 'PDF Document'
-          })) || [],
-          parentId: formData.parentId || null
-        };
-      } else {
-        processedData = {
-          ...formData,
-          propertyType: selectedTypes,
-          residentialProperties: selectedTypes.includes('residential') 
-            ? (formData.residentialProperties && formData.residentialProperties.length > 0 
-                ? formData.residentialProperties.map((prop: any) => ({
-                    propertyName: prop.propertyName || `${formData.projectName} - Residential`,
-                    propertyDescription: prop.propertyDescription || formData.description || 'Residential property',
-                    price: prop.price || formData.price || 'Contact for price',
-                    paymentPlan: prop.paymentPlan || formData.paymentPlan,
-                    bedrooms: prop.bedrooms || 0,
-                    bathrooms: prop.bathrooms || 0,
-                    toilet: prop.toilet || 0,
-                    balcony: prop.balcony || 0,
-                    carpetArea: prop.carpetArea || '',
-                    builtUpArea: prop.builtUpArea || '',
-                    minSize: prop.minSize || '',
-                    maxSize: prop.maxSize || '',
-                    sizeUnit: prop.sizeUnit || 'sq.ft.',
-                    amenities: prop.amenities || formData.amenities || [],
-                    propertyImages: prop.propertyImages || [],
-                    floorPlans: prop.floorPlans || []
-                  }))
-                : [{
-                    propertyName: `${formData.projectName} - Residential`,
-                    propertyDescription: formData.description || 'Residential property',
-                    price: formData.price || 'Contact for price',
-                    paymentPlan: formData.paymentPlan,
-                    bedrooms: 0,
-                    bathrooms: 0,
-                    toilet: 0,
-                    balcony: 0,
-                    carpetArea: '',
-                    builtUpArea: '',
-                    minSize: '',
-                    maxSize: '',
-                    sizeUnit: 'sq.ft.',
-                    amenities: formData.amenities || [],
-                    propertyImages: [],
-                    floorPlans: []
-                  }])
-            : [],
-          commercialProperties: selectedTypes.includes('commercial')
-            ? (formData.commercialProperties && formData.commercialProperties.length > 0
-                ? formData.commercialProperties.map((prop: any) => ({
-                    propertyName: prop.propertyName || `${formData.projectName} - Commercial`,
-                    propertyDescription: prop.propertyDescription || formData.description || 'Commercial property',
-                    price: prop.price || formData.price || 'Contact for price',
-                    paymentPlan: prop.paymentPlan || formData.paymentPlan,
-                    carpetArea: prop.carpetArea || '',
-                    builtUpArea: prop.builtUpArea || '',
-                    minSize: prop.minSize || '',
-                    maxSize: prop.maxSize || '',
-                    sizeUnit: prop.sizeUnit || 'sq.ft.',
-                    amenities: prop.amenities || formData.amenities || [],
-                    propertyImages: prop.propertyImages || [],
-                    floorPlans: prop.floorPlans || []
-                  }))
-                : [{
-                    propertyName: `${formData.projectName} - Commercial`,
-                    propertyDescription: formData.description || 'Commercial property',
-                    price: formData.price || 'Contact for price',
-                    paymentPlan: formData.paymentPlan,
-                    carpetArea: '',
-                    builtUpArea: '',
-                    minSize: '',
-                    maxSize: '',
-                    sizeUnit: 'sq.ft.',
-                    amenities: formData.amenities || [],
-                    propertyImages: [],
-                    floorPlans: []
-                  }])
-            : [],
-          plotProperties: selectedTypes.includes('plot')
-            ? (formData.plotProperties && formData.plotProperties.length > 0
-                ? formData.plotProperties.map((prop: any) => ({
-                    propertyName: prop.propertyName || `${formData.projectName} - Plot`,
-                    propertyDescription: prop.propertyDescription || formData.description || 'Plot property',
-                    price: prop.price || formData.price || 'Contact for price',
-                    paymentPlan: prop.paymentPlan || formData.paymentPlan,
-                    ownershipType: prop.ownershipType || 'Freehold',
-                    landType: prop.landType || 'Residential Plot',
-                    approvedBy: prop.approvedBy || '',
-                    boundaryWall: prop.boundaryWall || false,
-                    minSize: prop.minSize || '',
-                    maxSize: prop.maxSize || '',
-                    sizeUnit: prop.sizeUnit || 'sq.ft.',
-                    amenities: prop.amenities || formData.amenities || [],
-                    propertyImages: prop.propertyImages || [],
-                    floorPlans: prop.floorPlans || []
-                  }))
-                : [{
-                    propertyName: `${formData.projectName} - Plot`,
-                    propertyDescription: formData.description || 'Plot property',
-                    price: formData.price || 'Contact for price',
-                    paymentPlan: formData.paymentPlan,
-                    ownershipType: 'Freehold',
-                    landType: 'Residential Plot',
-                    approvedBy: '',
-                    boundaryWall: false,
-                    minSize: '',
-                    maxSize: '',
-                    sizeUnit: 'sq.ft.',
-                    amenities: formData.amenities || [],
-                    propertyImages: [],
-                    floorPlans: []
-                  }])
-            : [],
-          images: formData.images?.map((img: any) => ({
-            url: img.url,
-            title: img.title || '',
-            description: img.description || '',
-            isPrimary: img.isPrimary || false,
-            uploadedAt: img.uploadedAt || new Date().toISOString()
-          })) || [],
-          propertyImages: formData.propertyImages?.map((img: any) => ({
-            url: img.url,
-            title: img.title || '',
-            description: img.description || '',
-            isPrimary: img.isPrimary || false,
-            uploadedAt: img.uploadedAt || new Date().toISOString()
-          })) || [],
-          floorPlans: formData.floorPlans?.map((plan: any) => ({
-            url: plan.url,
-            title: plan.title || '',
-            description: plan.description || '',
-            type: plan.type || '2d',
-            uploadedAt: plan.uploadedAt || new Date().toISOString()
-          })) || [],
-          creatives: formData.creatives?.map((creative: any) => ({
-            type: creative.type || 'image',
-            url: creative.url,
-            title: creative.title || '',
-            description: creative.description || '',
-            thumbnail: creative.thumbnail || '',
-            uploadedAt: creative.uploadedAt || new Date().toISOString()
-          })) || [],
-          videos: formData.videos?.map((video: any) => ({
-            url: video.url,
-            title: video.title || '',
-            description: video.description || '',
-            thumbnail: video.thumbnail || '',
-            type: video.type || 'direct',
-            uploadedAt: video.uploadedAt || new Date().toISOString()
-          })) || [],
-          brochureUrls: formData.brochureUrls?.map((brochure: any) => ({
-            title: brochure.title || '',
-            url: brochure.url,
-            type: brochure.type || 'PDF Document'
-          })) || [],
-        };
-      }
-
-      const cleanedData = cleanFormData(processedData);
-      const sizeCheck = checkDataSize(cleanedData);
+    const toastId = toast.loading(editingProperty ? "Updating property..." : "Creating properties...");
+    
+    let response;
+    
+    if (editingProperty && editingProperty._id) {
+      console.log('Sending update request...');
+      response = await propertyService.updateProperty(editingProperty._id, cleanedData);
+      toast.success("Property updated successfully", { id: toastId });
+    } else {
+      response = await propertyService.createProperty(cleanedData);
       
-      if (!sizeCheck.isValid) {
-        toast.error(`Data too large (${sizeCheck.sizeMB.toFixed(2)}MB). Please reduce the number of files or descriptions.`);
-        return;
-      }
-
-      const toastId = toast.loading(editingProperty ? "Updating property..." : "Creating properties...");
-      
-      let response;
-      
-      if (editingProperty && editingProperty._id) {
-        response = await propertyService.updateProperty(editingProperty._id, cleanedData);
-        toast.success("Property updated successfully", { id: toastId });
-      } else {
-        response = await propertyService.createProperty(cleanedData);
-        
-        if (response.success) {
-          if ('mainProject' in response.data) {
-            const { mainProject, subProperties } = response.data;
-            const propertyTypes = subProperties.map(sp => sp.propertyType).join(', ');
-            toast.success(`Main project created with ${subProperties.length} sub-properties (${propertyTypes})`, { id: toastId });
-          } else {
-            toast.success("Property created successfully", { id: toastId });
-          }
+      if (response.success) {
+        if ('mainProject' in response.data) {
+          const { mainProject, subProperties } = response.data;
+          const propertyTypes = subProperties.map(sp => sp.propertyType).join(', ');
+          toast.success(`Main project created with ${subProperties.length} sub-properties (${propertyTypes})`, { id: toastId });
+        } else {
+          toast.success("Property created successfully", { id: toastId });
         }
       }
-      
-      handleCloseDialog();
-      loadProperties();
-      
-    } catch (error: any) {
-      console.error('Submission error:', error);
-      toast.error(error.message || "Failed to save property");
     }
-  };
+    
+    handleCloseDialog();
+    loadProperties();
+    
+  } catch (error: any) {
+    console.error('Submission error:', error);
+    toast.error(error.message || "Failed to save property");
+  }
+};
 
   // Progress display component
   const UploadProgress = () => {

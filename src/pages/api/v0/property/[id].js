@@ -79,7 +79,7 @@ const updateProperty = async (req, res) => {
     console.log('Update request data:', JSON.stringify(updateData, null, 2));
     console.log('Existing property type:', existingProperty.propertyType);
 
-    // ✅ FIX: Handle propertyType - convert array to string if needed
+    // Handle propertyType - convert array to string if needed
     if (updateData.propertyType) {
       if (Array.isArray(updateData.propertyType)) {
         // Take the first item if it's an array
@@ -131,7 +131,7 @@ const updateProperty = async (req, res) => {
       }
     }
 
-    // ✅ FIX: Remove nested property arrays if they exist (these should only be used during creation)
+    // Remove nested property arrays if they exist (these should only be used during creation)
     // During updates, we should only update the main property fields
     delete updateData.residentialProperties;
     delete updateData.commercialProperties;
@@ -406,3 +406,5 @@ const handler = async (req, res) => {
 };
 
 export default withAuth(handler);
+
+

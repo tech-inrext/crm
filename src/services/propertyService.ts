@@ -288,7 +288,7 @@ export const propertyService = {
     hierarchyView: "true", 
     search, 
     _t: Date.now(),
-    parentOnly: "true"  // Add this to get only main projects
+    parentOnly: "true" 
   };
   
   if (status) params.status = status;
