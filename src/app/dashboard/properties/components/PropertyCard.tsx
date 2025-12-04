@@ -84,7 +84,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         position: 'relative'
       }}
     >
-      {/* Featured Badge */}
+      {/* Featured */}
       {project.isFeatured && (
         <Box
           sx={{
@@ -109,7 +109,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         </Box>
       )}
 
-      {/* Public Badge */}
+      {/* Public */}
       {project.isPublic && (
         <Box
           sx={{

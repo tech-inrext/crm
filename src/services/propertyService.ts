@@ -105,7 +105,6 @@ export interface Property {
     type?: string;
   }[];
 
-  isActive?: boolean;
   createdBy?: string;
   parentId?: string | null;
   parentDetails?: {
@@ -277,24 +276,60 @@ export const propertyService = {
   },
 
   getHierarchicalProperties: async (
-    search = '', 
-    status?: string, 
-    propertyType?: string,
-    location?: string,
-    builderName?: string,
-    minPrice?: number,
-    maxPrice?: number
-  ): Promise<HierarchicalPropertyResponse> => {
-    const params: any = { hierarchyView: "true", search, _t: Date.now() };
-    if (status) params.status = status;
-    if (propertyType) params.propertyType = propertyType;
-    if (location) params.location = location;
-    if (builderName) params.builderName = builderName;
-    if (minPrice) params.minPrice = minPrice;
-    if (maxPrice) params.maxPrice = maxPrice;
-    
-    const response = await api.get('/property', { params });
-    return response.data;
+  search = '', 
+  status?: string, 
+  propertyType?: string,
+  location?: string,
+  builderName?: string,
+  minPrice?: number,
+  maxPrice?: number
+): Promise<HierarchicalPropertyResponse> => {
+  const params: any = { 
+    hierarchyView: "true", 
+    search, 
+    _t: Date.now(),
+    parentOnly: "true" 
+  };
+  
+  if (status) params.status = status;
+  if (propertyType) params.propertyType = propertyType;
+  if (location) params.location = location;
+  if (builderName) params.builderName = builderName;
+  if (minPrice) params.minPrice = minPrice;
+  if (maxPrice) params.maxPrice = maxPrice;
+  
+  const response = await api.get('/property', { params });
+  return response.data;
+},
+
+  getPaginatedHierarchicalProperties: async (
+  search = '', 
+  page = 1, 
+  limit = 6,
+  status?: string, 
+  propertyType?: string,
+  location?: string,
+  builderName?: string,
+  minPrice?: number,
+  maxPrice?: number
+): Promise<PropertyListResponse> => {
+  const params: any = { 
+    search, 
+    page, 
+    limit,
+    parentOnly: "true",
+    _t: Date.now()
+  };
+  
+  if (status) params.status = status;
+  if (propertyType) params.propertyType = propertyType;
+  if (location) params.location = location;
+  if (builderName) params.builderName = builderName;
+  if (minPrice) params.minPrice = minPrice;
+  if (maxPrice) params.maxPrice = maxPrice;
+  
+  const response = await api.get('/property', { params });
+  return response.data;
   },
 
   getPropertyById: async (idOrSlug: string, withChildren = "false"): Promise<SinglePropertyResponse> => {
@@ -513,4 +548,3 @@ export const propertyService = {
     return response.data;
   },
 };
-
