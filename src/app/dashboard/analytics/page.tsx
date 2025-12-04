@@ -198,6 +198,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = ({
         icon={<FaUsers size={22} className="text-indigo-600" />}
         iconBg="bg-indigo-50"
       />
+     
       {showVendorBilling && (
         <StatCard
           title="Total Vendors & Billing amount"
@@ -209,8 +210,6 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = ({
     </div>
   </div>
 );
-
-
 // --- Vendor Breakdown with Filter ---
 function VendorBreakdown() {
   // Filter state
@@ -1099,7 +1098,7 @@ export default function NewDashboardPage() {
         ...overallData,
         // Use manager MoU stats for stat card
         pendingMouTotal: typeof managerMouStats?.pending === 'number' ? managerMouStats.pending : (overallData?.pendingMouTotal ?? (overallData?.mouList?.filter(m => m.status === 'Pending').length || 0)),
-        approvedMouTotal: typeof managerMouStats?.completed === 'number' ? managerMouStats.completed : (overallData?.approvedMouTotal ?? (overallData?.mouList?.filter(m => m.status === 'Approved').length || 0)),
+        approvedMouTotal: typeof managerMouStats?.approved === 'number' ? managerMouStats.approved : (overallData?.approvedMouTotal ?? (overallData?.mouList?.filter(m => m.status === 'Approved').length || 0)),
         // Use vendor stats from backend
         totalVendors: typeof vendorStats?.totalVendors === 'number' ? vendorStats.totalVendors : (overallData?.totalVendors ?? 0),
         totalBilling: Array.isArray(vendorStats?.allVendors)
