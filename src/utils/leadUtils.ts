@@ -11,7 +11,9 @@ export interface LeadFormData {
   budgetRange: string;
   status: string;
   source: string;
-  assignedTo?: string;
+  manager?: string; // UI-only field for manager autocomplete
+  managerId?: string; // ObjectId reference to Employee (lead manager)
+  assignedTo?: string; // ObjectId reference to Employee (assigned team member)
   nextFollowUp?: string;
   followUpNotes: Array<{ note: string; date: string }>;
 }
@@ -117,6 +119,8 @@ export const transformAPILeadToForm = (apiLead: Lead): LeadFormData => {
     budgetRange: apiLead.budgetRange || "",
     status: apiLead.status || "new",
     source: apiLead.source || "",
+    manager: apiLead.managerId ? String(apiLead.managerId) : "",
+    managerId: apiLead.managerId ? String(apiLead.managerId) : "",
     assignedTo: apiLead.assignedTo ? String(apiLead.assignedTo) : "",
     nextFollowUp: apiLead.nextFollowUp
       ? new Date(apiLead.nextFollowUp).toISOString()
@@ -178,6 +182,9 @@ export const transformFormToAPI = (
     payload.source = formData.source.trim();
   if (formData.assignedTo && formData.assignedTo !== "")
     payload.assignedTo = formData.assignedTo;
+  // include managerId if present in form (frontend uses manager/managerId fields)
+  if ((formData as any).managerId && (formData as any).managerId !== "")
+    (payload as any).managerId = (formData as any).managerId;
   if (formData.nextFollowUp && formData.nextFollowUp !== "")
     payload.nextFollowUp = new Date(formData.nextFollowUp);
   // followUpNotes: backend expects array of strings, so map to string array
@@ -224,6 +231,8 @@ export const getDefaultLeadFormData = (): LeadFormData => {
     budgetRange: "",
     status: "new",
     source: "",
+    manager: "",
+    managerId: "",
     assignedTo: "",
     nextFollowUp: "",
     followUpNotes: [],
