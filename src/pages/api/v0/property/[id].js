@@ -73,6 +73,10 @@ const updateProperty = async (req, res) => {
       });
     }
 
+    // Check if price is being updated
+    const isPriceChanging = req.body.price !== undefined && 
+                           req.body.price !== existingProperty.price;
+
     // Create a copy of request body to modify
     const updateData = { ...req.body };
 
@@ -215,6 +219,17 @@ const updateProperty = async (req, res) => {
       }
     }
 
+    // If this is a sub-property AND its price changed, update parent's price range
+    if (isPriceChanging && updatedProperty.parentId) {
+      try {
+        await Property.updateParentPriceRange(updatedProperty.parentId);
+        console.log(`Parent price range updated for property ${updatedProperty._id}`);
+      } catch (parentUpdateError) {
+        console.error("Failed to update parent price range:", parentUpdateError);
+        // Don't fail the main request if parent update fails
+      }
+    }
+
     return res.status(200).json({
       success: true,
       data: updatedProperty,
@@ -274,6 +289,9 @@ const deleteProperty = async (req, res) => {
       });
     }
 
+    // Store parent ID before deletion
+    const parentId = property.parentId;
+
     // If main project, also delete all sub-properties
     if (property.parentId === null) {
       await Property.deleteMany({ parentId: property._id });
@@ -283,6 +301,16 @@ const deleteProperty = async (req, res) => {
     // HARD DELETE - permanently remove the property
     await Property.deleteOne({ _id: property._id });
     console.log(`Permanently deleted property: ${property._id}`);
+
+    // ✅ Update parent price range if sub-property was deleted
+    if (parentId) {
+      try {
+        await Property.updateParentPriceRange(parentId);
+        console.log(`Updated parent price range after deleting sub-property`);
+      } catch (parentUpdateError) {
+        console.error("Failed to update parent price range after deletion:", parentUpdateError);
+      }
+    }
 
     return res.status(200).json({
       success: true,

@@ -111,7 +111,7 @@ const createProperty = async (req, res) => {
     console.log('Commercial properties data:', req.body.commercialProperties);
     console.log('Plot properties data:', req.body.plotProperties);
 
-    // ✅ FIX: Always check if creating multiple property types
+    // Always check if creating multiple property types
     if (propertyTypes.length > 1 || propertyTypes.includes('project') && propertyTypes.length > 1) {
       console.log('Creating multiple property types...');
       return await createMultiplePropertiesFromSingle(req, res, propertyTypes);
@@ -409,7 +409,12 @@ const createSingleProperty = async (req, res, propertyType) => {
     
     // ✅ If this is a sub-property, update the main project's price range
     if (finalData.parentId) {
-      await updateMainProjectPriceRange(finalData.parentId);
+      try {
+        await Property.updateParentPriceRange(finalData.parentId);
+        console.log(`Updated parent price range after creating sub-property`);
+      } catch (parentUpdateError) {
+        console.error("Failed to update parent price range:", parentUpdateError);
+      }
     }
     
     // ✅ Populate createdBy and parent details for response

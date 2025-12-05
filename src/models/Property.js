@@ -1,4 +1,4 @@
-// // models/Property.js
+// models/Property.js
 import mongoose from "mongoose";
 import slugify from "slugify";
 
@@ -372,6 +372,73 @@ propertySchema.statics.findSubProperties = function(parentId) {
 // Static method to find by project name with hierarchy
 propertySchema.statics.findByProjectName = function(projectName) {
   return this.find({ projectName: new RegExp(projectName, 'i') });
+};
+
+// static method to your Property model
+propertySchema.statics.updateParentPriceRange = async function(parentId) {
+  try {
+    // Find all sub-properties for this parent
+    const subProperties = await this.find({
+      parentId: parentId,
+    });
+
+    // Extract numeric prices from all sub-properties
+    const validPrices = subProperties
+      .map(prop => {
+        if (!prop.price || prop.price === 'Contact for price') return null;
+        
+        // Remove currency symbols, commas, and non-numeric characters
+        const numericString = prop.price.toString().replace(/[^\d.]/g, '');
+        const price = parseFloat(numericString);
+        
+        return isNaN(price) ? null : price;
+      })
+      .filter(price => price !== null);
+
+    // If we have valid prices, update the parent
+    if (validPrices.length > 0) {
+      const minPrice = Math.min(...validPrices);
+      const maxPrice = Math.max(...validPrices);
+      
+      // Format price for display
+      const formatPrice = (price) => {
+        return `₹${price.toLocaleString('en-IN')}`;
+      };
+      
+      let priceDisplay;
+      if (minPrice === maxPrice) {
+        priceDisplay = formatPrice(minPrice);
+      } else {
+        priceDisplay = `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`;
+      }
+
+      // Update the parent property
+      await this.findByIdAndUpdate(parentId, {
+        $set: {
+          price: priceDisplay,
+          minPrice: minPrice,
+          maxPrice: maxPrice
+        }
+      });
+
+      console.log(`Updated parent ${parentId} price range: ${minPrice} - ${maxPrice}`);
+      return true;
+    }
+    
+    // If no valid prices, set default
+    await this.findByIdAndUpdate(parentId, {
+      $set: {
+        price: 'Contact for price',
+        minPrice: null,
+        maxPrice: null
+      }
+    });
+    
+    return true;
+  } catch (error) {
+    console.error("Error updating parent price range:", error);
+    throw error;
+  }
 };
 
 // Instance method to check if property has sub-properties

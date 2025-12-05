@@ -1,5 +1,5 @@
 /* eslint-disable react/no-unescaped-entities */
-// components/PropertyTypeSelector.tsx में complete fix
+// components/PropertyTypeSelector.tsx 
 import React, { useState } from "react";
 import {
   Paper,
