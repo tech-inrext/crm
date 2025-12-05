@@ -38,6 +38,7 @@ const modules = [
   "TrainingVideos",
   "Pillar",
   "Branch",
+  "Analytics"
 ];
 
 // Defensive: ensure modules passed to UI are unique to avoid React key collisions.

@@ -1,4 +1,8 @@
+
 "use client";
+import PermissionGuard from '@/components/PermissionGuard';
+//  import { useAuth } from '@/contexts/AuthContext';
+
 
 import React from 'react';
 import Tabs from '@mui/material/Tabs';
@@ -1047,8 +1051,7 @@ export default function NewDashboardPage() {
     }
   }, [tab, availableTabs.length]);
 
-  // --- Analytics API Integration ---
-  // Overall analytics state
+  // overall analytics 
   const [overall, setOverall] = React.useState<any>(null);
   const [overallLoading, setOverallLoading] = React.useState(true);
   // Leads analytics state
@@ -1702,7 +1705,6 @@ const ProjectPieChart: React.FC = () => {
   ];
   
   const total = PROJECTS.reduce((acc, p) => acc + p.value, 0);
-  // Make chart larger
   const cx = 160, cy = 160, r = 140;
   let angle = 0;
   const arcs = PROJECTS.map((p) => {
