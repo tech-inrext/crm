@@ -12,16 +12,16 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
-} from "@mui/material";
+} from "@/components/ui/Component";
 import {
   Add,
   PersonAdd,
   ViewList,
   ViewModule,
   History,
-} from "@mui/icons-material";
-import FilterAltIcon from "@mui/icons-material/FilterAlt";
-import SearchBar from "@/components/ui/SearchBar";
+  FilterAltIcon,
+} from "@/components/ui/Component";
+import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import dynamic from "next/dynamic";
 import { LEAD_STATUSES } from "@/constants/leads";

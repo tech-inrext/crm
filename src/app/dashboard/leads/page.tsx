@@ -16,25 +16,25 @@ import {
   Snackbar,
   useTheme,
   useMediaQuery,
-} from "@mui/material";
-import Alert from "@mui/material/Alert";
+} from "@/components/ui/Component";
+import Alert from "@/components/ui/Component/Alert";
 import {
   Add,
   Edit as EditIcon,
   Feedback as FeedbackIcon,
-} from "@mui/icons-material";
-import Badge from "@mui/material/Badge";
+  Badge,
+  PermissionGuard,
+} from "@/components/ui/Component";
 import { useDebounce } from "@/hooks/useDebounce";
 import dynamic from "next/dynamic";
 import { useLeads } from "@/hooks/useLeads";
 import { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
-import PermissionGuard from "@/components/PermissionGuard";
 import {
   getDefaultLeadFormData,
   transformAPILeadToForm,
 } from "@/utils/leadUtils";
-import Pagination from "@/components/ui/Pagination";
+import Pagination from "@/components/ui/Navigation/Pagination";
 import { leadsTableHeader } from "@/components/leads/LeadsTableHeaderConfig";
 
 // Lazy Load Components
@@ -257,44 +257,45 @@ const Leads: React.FC = () => {
         </Box>
       ) : (
         <Box sx={MODULE_STYLES.leads.tableWrapper}>
-          <TableContainer
-            component={Paper}
+          <Paper
             elevation={8}
             sx={{
               ...COMMON_STYLES.roundedPaper,
               ...MODULE_STYLES.leads.tableContainer,
             }}
           >
-            <Table
-              stickyHeader
-              size={MODULE_STYLES.common.getResponsiveTableSize()}
-              sx={MODULE_STYLES.leads.table}
-            >
-              <LeadsTableHeader
-                header={leadsTableHeaderWithActions}
-                status={status}
-                onStatusChange={(s) => {
-                  setStatus(s);
-                  setPage(0);
-                }}
-              />
-              <TableBody>
-                {leads.map((row) => (
-                  <LeadsTableRow
-                    key={row.id}
-                    row={row}
-                    header={leadsTableHeaderWithActions}
-                    onEdit={() => {
-                      setEditId(row._id);
-                      setOpen(true);
-                    }}
-                    onDelete={() => {}}
-                    onStatusChange={updateLeadStatus}
-                  />
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
+            <TableContainer>
+              <Table
+                stickyHeader
+                size={MODULE_STYLES.common.getResponsiveTableSize()}
+                sx={MODULE_STYLES.leads.table}
+              >
+                <LeadsTableHeader
+                  header={leadsTableHeaderWithActions}
+                  status={status}
+                  onStatusChange={(s) => {
+                    setStatus(s);
+                    setPage(0);
+                  }}
+                />
+                <TableBody>
+                  {leads.map((row) => (
+                    <LeadsTableRow
+                      key={row.id}
+                      row={row}
+                      header={leadsTableHeaderWithActions}
+                      onEdit={() => {
+                        setEditId(row._id);
+                        setOpen(true);
+                      }}
+                      onDelete={() => {}}
+                      onStatusChange={updateLeadStatus}
+                    />
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Paper>
 
           {/* Pagination outside the scrollable table */}
           <Box sx={MODULE_STYLES.leads.paginationWrapper}>
@@ -384,25 +385,23 @@ const Leads: React.FC = () => {
       />
 
       {/* Follow-up Dialog */}
-      {typeof window !== "undefined" && (
-        <React.Suspense>
-          {feedbackOpen && selectedLeadForFeedback && (
-            // Lazy-imported component to avoid SSR issues
-            <FollowUpDialog
-              open={feedbackOpen}
-              onClose={() => {
-                setFeedbackOpen(false);
-                setSelectedLeadForFeedback(null);
-              }}
-              leadIdentifier={selectedLeadForFeedback}
-              onSaved={async () => {
-                // refresh leads after saving follow-up
-                await loadLeads(page + 1, rowsPerPage, search);
-              }}
-            />
-          )}
-        </React.Suspense>
-      )}
+      <React.Suspense fallback={<div>Loading...</div>}>
+        {feedbackOpen && selectedLeadForFeedback && (
+          // Lazy-imported component to avoid SSR issues
+          <FollowUpDialog
+            open={feedbackOpen}
+            onClose={() => {
+              setFeedbackOpen(false);
+              setSelectedLeadForFeedback(null);
+            }}
+            leadIdentifier={selectedLeadForFeedback}
+            onSaved={async () => {
+              // refresh leads after saving follow-up
+              await loadLeads(page + 1, rowsPerPage, search);
+            }}
+          />
+        )}
+      </React.Suspense>
 
       {/* Mobile Add Button */}
       <PermissionGuard module="lead" action="write" fallback={<></>}>

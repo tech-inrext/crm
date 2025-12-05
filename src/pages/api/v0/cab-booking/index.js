@@ -9,6 +9,7 @@ import "@/models/Vehicle";
 import mongoose from "mongoose";
 
 import { sendCabBookingApprovalEmail } from "@/lib/cabBookingApproval";
+import { NotificationHelper } from "../../../../lib/notification-helpers";
 
 // ✅ Create Booking
 const createBooking = async (req, res) => {
@@ -111,6 +112,19 @@ const createBooking = async (req, res) => {
     } catch (err) {
       // Optionally log; don't block the request
       // console.error("Email send failed:", err);
+    }
+
+    // Send notification for cab booking request
+    try {
+      await NotificationHelper.notifyCabBookingRequest(
+        doc._id,
+        doc.toObject(),
+        loggedInUserId,
+        employee.managerId
+      );
+      console.log("✅ Cab booking request notification sent");
+    } catch (error) {
+      console.error("❌ Cab booking request notification failed:", error);
     }
 
     return res.status(201).json({ success: true, data: doc });

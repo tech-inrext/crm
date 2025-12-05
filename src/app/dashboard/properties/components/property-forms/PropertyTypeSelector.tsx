@@ -1,3 +1,5 @@
+/* eslint-disable react/no-unescaped-entities */
+// components/PropertyTypeSelector.tsx में complete fix
 import React, { useState } from "react";
 import {
   Paper,
@@ -42,13 +44,35 @@ const PropertyTypeSelector: React.FC<PropertyTypeSelectorProps> = ({
   const [activeTab, setActiveTab] = useState(0);
 
   const handlePropertyTypeChange = (selectedTypes: string[]) => {
-    setFormData((prev: any) => ({ 
-      ...prev, 
-      propertyType: selectedTypes,
-      residentialProperties: selectedTypes.includes('residential') ? (prev.residentialProperties || [{}]) : [],
-      commercialProperties: selectedTypes.includes('commercial') ? (prev.commercialProperties || [{}]) : [],
-      plotProperties: selectedTypes.includes('plot') ? (prev.plotProperties || [{}]) : [],
-    }));
+    console.log('Selected property types:', selectedTypes);
+    
+    const updatedFormData = { ...formData, propertyType: selectedTypes };
+    
+    // Initialize arrays for each selected type if they don't exist
+    if (selectedTypes.includes('residential')) {
+      updatedFormData.residentialProperties = updatedFormData.residentialProperties || [{}];
+    } else {
+      updatedFormData.residentialProperties = [];
+    }
+    
+    if (selectedTypes.includes('commercial')) {
+      updatedFormData.commercialProperties = updatedFormData.commercialProperties || [{}];
+    } else {
+      updatedFormData.commercialProperties = [];
+    }
+    
+    if (selectedTypes.includes('plot')) {
+      updatedFormData.plotProperties = updatedFormData.plotProperties || [{}];
+    } else {
+      updatedFormData.plotProperties = [];
+    }
+    
+    setFormData(updatedFormData);
+    
+    // Set active tab to first selected type
+    if (selectedTypes.length > 0) {
+      setActiveTab(0);
+    }
   };
 
   const addPropertyOfType = (type: string) => {
@@ -56,29 +80,29 @@ const PropertyTypeSelector: React.FC<PropertyTypeSelectorProps> = ({
     const currentProperties = formData[key] || [];
     
     const defaultProperty = {
-      propertyName: '',
-      propertyDescription: '',
-      price: '',
+      propertyName: `${formData.projectName || 'New'} ${type.charAt(0).toUpperCase() + type.slice(1)}`,
+      propertyDescription: formData.description || '',
+      price: formData.price || 'Contact for price',
       paymentPlan: formData.paymentPlan || '',
-      amenities: [],
+      amenities: formData.amenities || [],
       propertyImages: [], 
       floorPlans: [],
       ...(type === 'residential' && {
-        bedrooms: 0,
-        bathrooms: 0,
-        toilet: 0,
-        balcony: 0,
-        carpetArea: '',
-        builtUpArea: '',
-        minSize: '',
-        maxSize: '',
+        bedrooms: 2,
+        bathrooms: 2,
+        toilet: 1,
+        balcony: 1,
+        carpetArea: '1000',
+        builtUpArea: '1200',
+        minSize: '1000',
+        maxSize: '2000',
         sizeUnit: 'sq.ft.'
       }),
       ...(type === 'commercial' && {
-        carpetArea: '',
-        builtUpArea: '',
-        minSize: '',
-        maxSize: '',
+        carpetArea: '2000',
+        builtUpArea: '2500',
+        minSize: '1000',
+        maxSize: '5000',
         sizeUnit: 'sq.ft.'
       }),
       ...(type === 'plot' && {
@@ -86,8 +110,8 @@ const PropertyTypeSelector: React.FC<PropertyTypeSelectorProps> = ({
         landType: 'Residential Plot',
         approvedBy: '',
         boundaryWall: false,
-        minSize: '',
-        maxSize: '',
+        minSize: '1000',
+        maxSize: '5000',
         sizeUnit: 'sq.ft.'
       })
     };
@@ -97,12 +121,23 @@ const PropertyTypeSelector: React.FC<PropertyTypeSelectorProps> = ({
       [key]: [...currentProperties, defaultProperty] 
     }));
     
-    setActiveTab(formData.propertyType.indexOf(type));
+    // Set active tab to the type we just added to
+    const typeIndex = formData.propertyType.indexOf(type);
+    if (typeIndex !== -1) {
+      setActiveTab(typeIndex);
+    }
   };
 
   const removePropertyOfType = (type: string, index: number) => {
     const key = `${type}Properties`;
     const currentProperties = formData[key] || [];
+    
+    // Don't remove if it's the last property of this type
+    if (currentProperties.length <= 1) {
+      alert(`You must have at least one ${type} property when ${type} type is selected.`);
+      return;
+    }
+    
     const newProperties = currentProperties.filter((_: any, i: number) => i !== index);
     setFormData((prev: any) => ({ 
       ...prev, 
@@ -130,12 +165,19 @@ const PropertyTypeSelector: React.FC<PropertyTypeSelectorProps> = ({
               renderValue={(selected) => (
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
                   {(selected as string[]).map((value) => (
-                    <Chip key={value} label={value} size="small" 
-                      color={value === 'residential' ? 'secondary' : value === 'commercial' ? 'warning' : 'info'} />
+                    <Chip 
+                      key={value} 
+                      label={value} 
+                      size="small" 
+                      color={value === 'residential' ? 'secondary' : value === 'commercial' ? 'warning' : 'info'} 
+                    />
                   ))}
                 </Box>
               )}
             >
+              <MenuItem value="project">
+                <Box sx={{ display: 'flex', alignItems: 'center' }}><Home sx={{ mr: 1 }} />Project Only (No Sub-properties)</Box>
+              </MenuItem>
               <MenuItem value="residential">
                 <Box sx={{ display: 'flex', alignItems: 'center' }}><Home sx={{ mr: 1 }} />Residential</Box>
               </MenuItem>
@@ -154,9 +196,32 @@ const PropertyTypeSelector: React.FC<PropertyTypeSelectorProps> = ({
       {selectedTypes.length > 0 && (
         <Box sx={{ width: '100%' }}>
           <Box sx={{ borderBottom: 1, borderColor: 'divider', mb: 2 }}>
-            <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} variant="scrollable">
+            <Tabs 
+              value={activeTab} 
+              onChange={(e, newValue) => setActiveTab(newValue)} 
+              variant="scrollable"
+              scrollButtons="auto"
+            >
               {selectedTypes.map((type, index) => (
-                <Tab key={type} label={type.charAt(0).toUpperCase() + type.slice(1)} />
+                <Tab 
+                  key={type} 
+                  label={
+                    <Box sx={{ display: 'flex', alignItems: 'center' }}>
+                      {type === 'residential' && <Home sx={{ mr: 1, fontSize: 16 }} />}
+                      {type === 'commercial' && <Business sx={{ mr: 1, fontSize: 16 }} />}
+                      {type === 'plot' && <Landscape sx={{ mr: 1, fontSize: 16 }} />}
+                      {type === 'project' && <Home sx={{ mr: 1, fontSize: 16 }} />}
+                      {type.charAt(0).toUpperCase() + type.slice(1)}
+                      {formData[`${type}Properties`] && (
+                        <Chip 
+                          label={formData[`${type}Properties`].length} 
+                          size="small" 
+                          sx={{ ml: 1, height: 20, fontSize: '0.7rem' }} 
+                        />
+                      )}
+                    </Box>
+                  } 
+                />
               ))}
             </Tabs>
           </Box>
@@ -168,35 +233,72 @@ const PropertyTypeSelector: React.FC<PropertyTypeSelectorProps> = ({
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
                     <Typography variant="h6">
                       {type === 'residential' ? 'Residential Properties' : 
-                      type === 'commercial' ? 'Commercial Properties' : 'Plots'}
+                      type === 'commercial' ? 'Commercial Properties' : 
+                      type === 'plot' ? 'Plot Properties' : 'Project Details'}
                     </Typography>
-                    <Button variant="outlined" startIcon={<Add />} onClick={() => addPropertyOfType(type)}>
-                      Add {type.charAt(0).toUpperCase() + type.slice(1)}
-                    </Button>
+                    {type !== 'project' && (
+                      <Button 
+                        variant="outlined" 
+                        startIcon={<Add />} 
+                        onClick={() => addPropertyOfType(type)}
+                      >
+                        Add {type.charAt(0).toUpperCase() + type.slice(1)}
+                      </Button>
+                    )}
                   </Box>
 
-                  {(formData[`${type}Properties`] || []).map((_: any, index: number) => (
-                    <Paper key={index} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0' }}>
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                        <Typography variant="subtitle1">
-                          {type.charAt(0).toUpperCase() + type.slice(1)} Property #{index + 1}
-                        </Typography>
-                        <IconButton onClick={() => removePropertyOfType(type, index)} color="error">
-                          <Delete />
-                        </IconButton>
-                      </Box>
+                  {type === 'project' ? (
+                    <Alert severity="info" sx={{ mb: 3 }}>
+                      <Typography variant="body2">
+                        When creating only a project (no sub-properties), all property details will be stored at the project level.
+                        You can add residential, commercial, or plot properties later if needed.
+                      </Typography>
+                    </Alert>
+                  ) : (
+                    (formData[`${type}Properties`] || []).map((_: any, index: number) => (
+                      <Paper key={index} sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0' }}>
+                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                          <Typography variant="subtitle1">
+                            {type.charAt(0).toUpperCase() + type.slice(1)} Property #{index + 1}
+                          </Typography>
+                          {(formData[`${type}Properties`] || []).length > 1 && (
+                            <IconButton 
+                              onClick={() => removePropertyOfType(type, index)} 
+                              color="error"
+                              size="small"
+                            >
+                              <Delete />
+                            </IconButton>
+                          )}
+                        </Box>
 
-                      {type === 'residential' && (
-                        <ResidentialForm formData={formData} setFormData={setFormData} validationErrors={validationErrors} index={index} />
-                      )}
-                      {type === 'commercial' && (
-                        <CommercialForm formData={formData} setFormData={setFormData} validationErrors={validationErrors} index={index} />
-                      )}
-                      {type === 'plot' && (
-                        <PlotForm formData={formData} setFormData={setFormData} validationErrors={validationErrors} index={index} />
-                      )}
-                    </Paper>
-                  ))}
+                        {type === 'residential' && (
+                          <ResidentialForm 
+                            formData={formData} 
+                            setFormData={setFormData} 
+                            validationErrors={validationErrors} 
+                            index={index} 
+                          />
+                        )}
+                        {type === 'commercial' && (
+                          <CommercialForm 
+                            formData={formData} 
+                            setFormData={setFormData} 
+                            validationErrors={validationErrors} 
+                            index={index} 
+                          />
+                        )}
+                        {type === 'plot' && (
+                          <PlotForm 
+                            formData={formData} 
+                            setFormData={setFormData} 
+                            validationErrors={validationErrors} 
+                            index={index} 
+                          />
+                        )}
+                      </Paper>
+                    ))
+                  )}
                 </Box>
               )}
             </div>
@@ -204,11 +306,11 @@ const PropertyTypeSelector: React.FC<PropertyTypeSelectorProps> = ({
         </Box>
       )}
 
-      {selectedTypes.length > 1 && (
-        <Alert severity="info" sx={{ mt: 2 }}>
+      {selectedTypes.length > 1 && selectedTypes.includes('project') && (
+        <Alert severity="warning" sx={{ mt: 2 }}>
           <Typography variant="body2">
-            <strong>Note:</strong> A main project will be created automatically with all selected property types.
-            Each property type will have its own section and can be managed independently.
+            <strong>Note:</strong> When 'Project' is selected with other property types, a main project will be created 
+            with all selected property types as sub-properties. Each property type will have its own section.
           </Typography>
         </Alert>
       )}
@@ -217,5 +319,4 @@ const PropertyTypeSelector: React.FC<PropertyTypeSelectorProps> = ({
 };
 
 export default PropertyTypeSelector;
-
 

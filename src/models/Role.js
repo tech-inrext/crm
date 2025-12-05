@@ -11,6 +11,9 @@ const modules = [
   "cab-vendor",
   "vendor",
   "property",
+  "booking-login",
+  "training-videos",
+  "pillar",
 ];
 
 const roleSchema = new mongoose.Schema(
@@ -22,6 +25,22 @@ const roleSchema = new mongoose.Schema(
       trim: true,
     },
     isSystemAdmin: {
+      type: Boolean,
+      default: false,
+    },
+    showTotalUsers: {
+      type: Boolean,
+      default: false,
+    },
+    showTotalVendorsBilling: {
+      type: Boolean,
+      default: false,
+    },
+    showCabBookingAnalytics: {
+      type: Boolean,
+      default: false,
+    },
+    showScheduleThisWeek: {
       type: Boolean,
       default: false,
     },

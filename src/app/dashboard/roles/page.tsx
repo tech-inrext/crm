@@ -9,20 +9,19 @@ import {
   Paper,
   Typography,
   CircularProgress,
-} from "@mui/material";
-import { Add } from "@mui/icons-material";
-import RoleCard from "@/components/ui/RoleCard";
+  AddIcon,
+} from "@/components/ui/Component";
+import RoleCard from "@/components/ui/card/RoleCard";
 import { useRoles } from "@/hooks/useRoles";
-import { useDebounce } from "@/hooks/useDebounce"; // 👈 Add this
+import { useDebounce } from "@/hooks/useDebounce";
 import { ROLE_PERMISSIONS, GRADIENTS } from "@/constants/leads";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import PermissionGuard from "@/components/PermissionGuard";
-import AddRoleDialog from "@/components/ui/AddRoleDialog";
-import RolePermissionsDialog from "@/components/ui/RolePermissionsDialog";
-import RolesActionBar from "@/components/ui/RolesActionBar";
-import Pagination from "@/components/ui/Pagination";
-import axios from "axios";
-import { transformToAPIRole } from "@/utils/leadUtils";
+import AddRoleDialog from "@/components/ui/dialog/AddRoleDialog";
+import RolePermissionsDialog from "@/components/ui/dialog/RolePermissionsDialog";
+import RolesActionBar from "@/components/ui/action/RolesActionBar";
+import Pagination from "@/components/ui/Navigation/Pagination";
+import { submitRole } from "@/services/role.service";
 
 const modules = [
   "User",
@@ -35,9 +34,14 @@ const modules = [
   "Team",
   "MOU",
   "Property",
+  "BookingLogin",
+  "TrainingVideos",
+  "Pillar",
+  "Branch",
 ];
 
-// Defensive: ensure modules passed to UI are unique to avoid React key collisions
+// Defensive: ensure modules passed to UI are unique to avoid React key collisions.
+
 const uniqueModules = Array.from(new Set(modules));
 
 const initialModulePerms = Object.fromEntries(
@@ -71,8 +75,9 @@ const Roles: React.FC = () => {
   const handleOpenEdit = (idx) => {
     const role = roles[idx];
     if (!role) return;
+    console.log("Role for editing (already in correct format):", role);
     setEditId(role._id);
-    setEditRole(transformToAPIRole(role));
+    setEditRole(role); // Use role directly without transformation
     setAddOpen(true);
   };
 
@@ -81,43 +86,25 @@ const Roles: React.FC = () => {
     setPermissionsDialogOpen(true);
   };
 
-  const handleAddOrEditRole = async ({
-    name,
-    modulePerms,
-    editId,
-    isSystemAdmin,
+  const handleAddOrEditRole = async (roleData: {
+    name: string;
+    modulePerms: Record<string, Record<string, boolean>>;
+    editId?: string;
+    isSystemAdmin?: boolean;
+    showTotalUsers?: boolean;
+    showTotalVendorsBilling?: boolean;
+    showCabBookingAnalytics?: boolean;
+    showScheduleThisWeek?: boolean;
   }) => {
-    const perms = { read: [], write: [], delete: [] };
-    Object.entries(modulePerms).forEach(([mod, actions]) => {
-      let backendMod;
-      if (mod === "User") backendMod = "employee";
-      else if (mod === "CabVendor") backendMod = "cab-vendor";
-      else if (mod === "CabBooking") backendMod = "cab-booking";
-      else if (mod === "CabVendor") backendMod = "cab-vendor";
-      else backendMod = mod.toLowerCase();
-      Object.entries(actions).forEach(([action, checked]) => {
-        if (checked) perms[action].push(backendMod);
-      });
-    });
     try {
-      if (editId) {
-        await axios.patch(`/api/v0/role/${editId}`, {
-          ...perms,
-          isSystemAdmin: !!isSystemAdmin,
-        });
-      } else {
-        await axios.post("/api/v0/role", {
-          name,
-          ...perms,
-          isSystemAdmin: !!isSystemAdmin,
-        });
-      }
+      await submitRole(roleData);
       setAddOpen(false);
       setEditId(null);
       setEditRole(null);
       loadRoles();
-    } catch (e) {
-      console.error("Failed to add/edit role", e.response?.data || e);
+    } catch (error) {
+      console.error("Role submission error:", error);
+      alert(error instanceof Error ? error.message : "Failed to save role");
     }
   };
 
@@ -233,14 +220,15 @@ const Roles: React.FC = () => {
             "&:hover": { background: GRADIENTS.buttonHover },
           }}
         >
-          <Add />
+          <AddIcon />
         </Fab>
       </PermissionGuard>
 
+      {/* ✅ Step 2: Pass modules to AddRoleDialog. Special access toggles only in dialog, not in main list/cards. */}
       <AddRoleDialog
         open={addOpen}
         role={editRole}
-        modules={uniqueModules}
+        modules={modules}
         permissions={ROLE_PERMISSIONS}
         onSubmit={handleAddOrEditRole}
         onClose={() => {
@@ -263,4 +251,3 @@ const Roles: React.FC = () => {
 };
 
 export default Roles;
-

@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, TextField, Typography, MenuItem } from "@mui/material";
+import { Box, TextField, Typography, MenuItem } from "@/components/ui/Component";
 import { Field, FieldProps } from "formik";
 
 const propertyTypeOptions = [
@@ -9,6 +9,13 @@ const propertyTypeOptions = [
   { value: "residential", label: "Residential" },
   { value: "commercial", label: "Commercial" },
   { value: "plot", label: "Plot" },
+];
+
+const propertyNameOptions = [
+  { value: "dholera", label: "Dholera" },
+  { value: "migsun-rohini-center", label: "Migsun Rohini Center" },
+  { value: "eco-village", label: "Eco-Village" },
+  { value: "corbett-country", label: "Corbett Country" },
 ];
 
 const budgetRangeOptions = [
@@ -47,13 +54,21 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
           <TextField
             {...field}
             label="Property Name"
+            select
             value={values.propertyName}
             onChange={(e) => setFieldValue("propertyName", e.target.value)}
             error={meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
             inputProps={{ "aria-label": "Property name" }}
             sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-          />
+          >
+            <MenuItem value="">Select property name...</MenuItem>
+            {propertyNameOptions.map((option) => (
+              <MenuItem key={option.value} value={option.value}>
+                {option.label}
+              </MenuItem>
+            ))}
+          </TextField>
         )}
       </Field>
 

@@ -1,5 +1,5 @@
 import { Controller } from "@framework";
-import EmployeeService from "../../../../be/services/EmolyeeService";
+import EmployeeService from "../../../../be/services/EmployeeService";
 
 class EmployeeController extends Controller {
   constructor() {

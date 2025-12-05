@@ -10,14 +10,13 @@ import {
   Typography,
   Alert,
   CircularProgress,
-  Container,
   useTheme,
   IconButton,
-  InputAdornment,
-  Link,
-} from "@mui/material";
-import ForgotPasswordDialog from "../../components/ui/ForgotPasswordDialog";
-import { Visibility, VisibilityOff } from "@mui/icons-material";
+  VisibilityIcon,
+  VisibilityOffIcon,
+} from "../../components/ui/Component";
+import { Container, InputAdornment, Link } from "@/components/ui/Component";
+import ForgotPasswordDialog from "../../components/ui/dialog/ForgotPasswordDialog";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import axios from "axios";
@@ -142,6 +141,7 @@ const LandingPage: React.FC = () => {
     setResetError(null);
     setResetSuccess(false);
   };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.email || !form.password) {
@@ -182,51 +182,21 @@ const LandingPage: React.FC = () => {
     <Box
       sx={{
         minHeight: "100vh",
-        background:
-          theme.palette.mode === "dark"
-            ? "linear-gradient(135deg, #0f1419 0%, #1a202c 100%)"
-            : "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+        backgroundImage: `linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('/Inrext.jpeg')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
+        backgroundColor: theme.palette.mode === "dark" ? "#b9d8f7" : "#b9d8f7", // fallback color
         display: "flex",
         flexDirection: "column",
         px: { xs: 2, sm: 3 },
         py: { xs: 2, sm: 4 },
-      }}
+        }}
     >
       {" "}
-      {/* Header */}
-      <Box
-        sx={{
-          mb: { xs: 3, sm: 4 },
-          textAlign: "center",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 2,
-        }}
-      >
-        <Image
-          src="/inrext.png"
-          alt="Inrext Logo"
-          width={40}
-          height={40}
-          style={{
-            objectFit: "contain",
-          }}
-        />
-        <Typography
-          variant="h4"
-          sx={{
-            color: "white",
-            fontWeight: 700,
-            fontSize: { xs: "1.75rem", sm: "2.125rem" },
-          }}
-        >
-          Inrext
-        </Typography>
-      </Box>
       {/* Main Content */}
       <Container
-        maxWidth="lg"
+        maxWidth="xl"
         sx={{
           flex: 1,
           display: "flex",
@@ -242,47 +212,49 @@ const LandingPage: React.FC = () => {
             flexDirection: { xs: "column", md: "row" },
             gap: { xs: 3, md: 6 },
             alignItems: "center",
-            justifyContent: "center",
+            justifyContent: "space-between",
             minHeight: { md: "70vh" },
           }}
         >
-          {" "}
-          {/* Features Section - Mobile First */}
+          
+          {/* Features Section */}
           <Box
-            sx={{
-              flex: { md: 1 },
-              mb: { xs: 4, md: 0 },
-              maxWidth: { xs: "100%", md: "500px" },
-              width: "100%",
-            }}
-          >
-            <Box>
-              <Typography
-                variant="h3"
-                sx={{
-                  color: "white",
-                  fontWeight: 700,
-                  mb: 2,
-                  textAlign: { xs: "center", md: "left" },
-                  fontSize: { xs: "1.75rem", sm: "2rem", md: "2.5rem" },
-                }}
-              >
-                Welcome to Inrext
-              </Typography>
-              <Typography
-                variant="h6"
-                sx={{
-                  color: "rgba(255, 255, 255, 0.9)",
-                  mb: 4,
-                  textAlign: { xs: "center", md: "left" },
-                  fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
-                  lineHeight: 1.6,
-                }}
-              >
-                Property management made easy!
-              </Typography>
-            </Box>
-          </Box>
+  sx={{
+    flex: { md: 1 },
+    mb: { xs: 4, md: 0 },
+    maxWidth: { xs: "100%", md: "500px" },
+    width: "100%",
+    textAlign: "center",
+  }}
+>
+
+  <Typography
+    variant="h3"
+    sx={{
+      color: "white",
+      fontWeight: 700,
+      mb: 2,
+      fontSize: { xs: "1.75rem", sm: "2rem", md: "2.5rem" },
+      textShadow: "0 20px 40px rgba(0,0,0,0.3)",
+    }}
+  >
+    Built for Teams, <br /> Designed for Growth.
+  </Typography>
+
+  <Typography
+    variant="h6"
+    sx={{
+      color: "rgba(255, 255, 255, 0.9)",
+      mb: 4,
+      fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
+      lineHeight: 1,
+      textShadow: "0 20px 40px rgba(0,0,0,0.3)",
+    }}
+  >
+    Welcome to the Inrext CRM
+  </Typography>
+</Box>
+
           {/* Login Section */}
           <Box
             sx={{
@@ -294,7 +266,7 @@ const LandingPage: React.FC = () => {
             <Card
               sx={{
                 borderRadius: { xs: 3, sm: 4 },
-                boxShadow: "0 20px 40px rgba(0,0,0,0.3)",
+                boxShadow: "0 20px 40px rgba(0,0,0,0.6)",
                 bgcolor: theme.palette.mode === "dark" ? "#1e2328" : "#ffffff",
                 mx: { xs: 0, sm: 1 },
               }}
@@ -305,12 +277,8 @@ const LandingPage: React.FC = () => {
                   {" "}
                   <Box
                     sx={{
-                      width: { xs: 60, sm: 80 },
+                      width: { xs: 60, sm: 200 },
                       height: { xs: 60, sm: 80 },
-                      borderRadius: 2,
-                      bgcolor: "white",
-                      border: "5px solid",
-                      borderColor: theme.palette.primary.main,
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
@@ -318,9 +286,9 @@ const LandingPage: React.FC = () => {
                     }}
                   >
                     <Image
-                      src="/inrext.png"
+                      src="/Inrext logo.png"
                       alt="Inrext Logo"
-                      width={40}
+                      width={150}
                       height={40}
                       style={{
                         width: "100%",
@@ -376,7 +344,7 @@ const LandingPage: React.FC = () => {
                             edge="end"
                             size="small"
                           >
-                            {showPassword ? <VisibilityOff /> : <Visibility />}
+                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
                           </IconButton>
                         </InputAdornment>
                       ),
@@ -395,10 +363,10 @@ const LandingPage: React.FC = () => {
                       textTransform: "none",
                       fontSize: { xs: "1rem", sm: "1.1rem" },
                       background:
-                        "linear-gradient(45deg, #667eea 30%, #764ba2 90%)",
+                        "#1976d2",
                       "&:hover": {
                         background:
-                          "linear-gradient(45deg, #5a67d8 30%, #6b46c1 90%)",
+                          "#1976d2",
                       },
                     }}
                   >
@@ -442,11 +410,11 @@ const LandingPage: React.FC = () => {
         <Typography
           variant="body2"
           sx={{
-            color: "rgba(255, 255, 255, 0.6)",
+            color: "white",
             fontSize: { xs: "0.75rem", sm: "0.875rem" },
           }}
         >
-          © 2024 Inrext. All rights reserved.
+          © 2025 Inrext.com. All rights reserved.
         </Typography>
       </Box>
       {/* Forgot Password Dialog (OTP Flow) */}

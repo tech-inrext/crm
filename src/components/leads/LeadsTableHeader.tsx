@@ -9,7 +9,7 @@ import {
   Tooltip,
   Menu,
   MenuItem,
-} from "@mui/material";
+} from "@/components/ui/Component";
 
 type HeaderCol = {
   label: string;
@@ -127,13 +127,18 @@ const LeadsTableHeader: React.FC<LeadsTableHeaderProps> = ({
   return (
     <TableHead>
       <TableRow
-        sx={{
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          "& .MuiTableCell-head": { borderBottom: "none" },
-        }}
-      >
-        {renderedHeader}
-      </TableRow>
+  sx={{
+    "& .MuiTableCell-head": {
+      backgroundColor: "#1976d2",
+      color: "white",
+      fontWeight: "bold",
+      borderBottom: "none",
+    }
+  }}
+>
+  {renderedHeader}
+</TableRow>
+
     </TableHead>
   );
 };

@@ -8,6 +8,11 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Public API instance 
+const publicApi = axios.create({
+  baseURL: API_BASE_URL,
+});
+
 export interface Property {
   _id?: string;
   slug?: string;
@@ -15,6 +20,9 @@ export interface Property {
   builderName: string;
   description: string;
   location: string;
+
+  isPublic?: boolean;
+  isFeatured?: boolean;
   
   propertyType: 'project' | 'residential' | 'commercial' | 'plot';
   propertyName: string;
@@ -97,7 +105,6 @@ export interface Property {
     type?: string;
   }[];
 
-  isActive?: boolean;
   createdBy?: string;
   parentId?: string | null;
   parentDetails?: {
@@ -156,6 +163,24 @@ export interface HierarchicalPropertyResponse {
 
 export type PropertyResponse = SinglePropertyResponse | MultiplePropertiesResponse | PropertyListResponse | HierarchicalPropertyResponse;
 
+export interface PublicPropertyResponse {
+  success: boolean;
+  data: Property[];
+  message?: string;
+  pagination?: {
+    totalItems: number;
+    currentPage: number;
+    itemsPerPage: number;
+    totalPages: number;
+  };
+}
+
+export interface SinglePublicPropertyResponse {
+  success: boolean;
+  data: Property;
+  message?: string;
+}
+
 export const propertyService = {
   getAllProperties: async (
     search = '', 
@@ -171,7 +196,7 @@ export const propertyService = {
     minPrice?: number,
     maxPrice?: number
   ): Promise<PropertyListResponse> => {
-    const params: any = { search, page, limit, parentOnly, includeChildren };
+    const params: any = { search, page, limit, parentOnly, includeChildren, _t: Date.now() };
     if (parentId) params.parentId = parentId;
     if (propertyType) params.propertyType = propertyType;
     if (status) params.status = status;
@@ -184,25 +209,127 @@ export const propertyService = {
     return response.data;
   },
 
-  getHierarchicalProperties: async (
+  getPublicProperties: async (
     search = '', 
-    status?: string, 
+    page = 1, 
+    limit = 12, 
     propertyType?: string,
     location?: string,
     builderName?: string,
     minPrice?: number,
-    maxPrice?: number
-  ): Promise<HierarchicalPropertyResponse> => {
-    const params: any = { hierarchyView: "true", search };
-    if (status) params.status = status;
+    maxPrice?: number,
+    featured = "false"
+  ): Promise<PublicPropertyResponse> => {
+    const params: any = { 
+      isPublic: "true", 
+      search, 
+      page, 
+      limit, 
+      featured,
+      _t: Date.now() 
+    };
+    
     if (propertyType) params.propertyType = propertyType;
     if (location) params.location = location;
     if (builderName) params.builderName = builderName;
     if (minPrice) params.minPrice = minPrice;
     if (maxPrice) params.maxPrice = maxPrice;
     
-    const response = await api.get('/property', { params });
+    const response = await publicApi.get('/property', { params });
     return response.data;
+  },
+
+  // Get single public property
+  getPublicPropertyById: async (idOrSlug: string, withChildren = "false"): Promise<SinglePublicPropertyResponse> => {
+    const response = await publicApi.get(`/property/${idOrSlug}`, {
+      params: { 
+        publicView: "true",
+        withChildren 
+      }
+    });
+    return response.data;
+  },
+
+  // Get featured properties
+  getFeaturedProperties: async (limit = 6): Promise<PublicPropertyResponse> => {
+    const response = await publicApi.get('/property', {
+      params: { 
+        isPublic: "true",
+        featured: "true",
+        limit,
+        _t: Date.now()
+      }
+    });
+    return response.data;
+  },
+
+  // Toggle public visibility (admin only)
+  togglePublicVisibility: async (id: string, isPublic: boolean): Promise<SinglePropertyResponse> => {
+    const response = await api.patch(`/property/${id}`, { isPublic });
+    return response.data;
+  },
+
+  // Toggle featured status (admin only)
+  toggleFeaturedStatus: async (id: string, isFeatured: boolean): Promise<SinglePropertyResponse> => {
+    const response = await api.patch(`/property/${id}`, { isFeatured });
+    return response.data;
+  },
+
+  getHierarchicalProperties: async (
+  search = '', 
+  status?: string, 
+  propertyType?: string,
+  location?: string,
+  builderName?: string,
+  minPrice?: number,
+  maxPrice?: number
+): Promise<HierarchicalPropertyResponse> => {
+  const params: any = { 
+    hierarchyView: "true", 
+    search, 
+    _t: Date.now(),
+    parentOnly: "true" 
+  };
+  
+  if (status) params.status = status;
+  if (propertyType) params.propertyType = propertyType;
+  if (location) params.location = location;
+  if (builderName) params.builderName = builderName;
+  if (minPrice) params.minPrice = minPrice;
+  if (maxPrice) params.maxPrice = maxPrice;
+  
+  const response = await api.get('/property', { params });
+  return response.data;
+},
+
+  getPaginatedHierarchicalProperties: async (
+  search = '', 
+  page = 1, 
+  limit = 6,
+  status?: string, 
+  propertyType?: string,
+  location?: string,
+  builderName?: string,
+  minPrice?: number,
+  maxPrice?: number
+): Promise<PropertyListResponse> => {
+  const params: any = { 
+    search, 
+    page, 
+    limit,
+    parentOnly: "true",
+    _t: Date.now()
+  };
+  
+  if (status) params.status = status;
+  if (propertyType) params.propertyType = propertyType;
+  if (location) params.location = location;
+  if (builderName) params.builderName = builderName;
+  if (minPrice) params.minPrice = minPrice;
+  if (maxPrice) params.maxPrice = maxPrice;
+  
+  const response = await api.get('/property', { params });
+  return response.data;
   },
 
   getPropertyById: async (idOrSlug: string, withChildren = "false"): Promise<SinglePropertyResponse> => {
@@ -421,4 +548,3 @@ export const propertyService = {
     return response.data;
   },
 };
-

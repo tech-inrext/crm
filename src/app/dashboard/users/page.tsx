@@ -12,15 +12,17 @@ import {
   Button,
   TableContainer,
   Snackbar,
-} from "@mui/material";
-import Alert from "@mui/material/Alert";
-import { Add, Edit } from "@mui/icons-material";
+  Alert,
+  AddIcon,
+  EditIcon,
+} from "../../../components/ui/Component";
 import dynamic from "next/dynamic";
 import { useUsers } from "@/hooks/useUsers";
 import PermissionGuard from "@/components/PermissionGuard";
-import UserDialog from "@/components/ui/UserDialog";
-import UsersActionBar from "@/components/ui/UsersActionBar";
-import UserCard from "@/components/ui/UserCard";
+import UserDialog from "@/components/ui/dialog/UserDialog";
+import { useAuth } from "@/contexts/AuthContext";
+import UsersActionBar from "@/components/ui/action/UsersActionBar";
+import UserCard from "@/components/ui/card/UserCard";
 import {
   GRADIENTS,
   COMMON_STYLES,
@@ -34,14 +36,21 @@ import {
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import { useDebounce } from "@/hooks/useDebounce";
 
-const TableMap = dynamic(() => import("@/components/ui/TableMap"), {
+const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
   ssr: false,
 });
-const Pagination = dynamic(() => import("@/components/ui/Pagination"), {
-  ssr: false,
-});
+const Pagination = dynamic(
+  () => import("@/components/ui/Navigation/Pagination"),
+  {
+    ssr: false,
+  }
+);
 
 const Users: React.FC = () => {
+  const { user: currentUser } = useAuth();
+  const [isClient, setIsClient] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(1200);
+
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
   const {
@@ -72,6 +81,17 @@ const Users: React.FC = () => {
   >("success");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
+  // Client-side detection for responsive features
+  useEffect(() => {
+    setIsClient(true);
+    if (typeof window !== "undefined") {
+      setWindowWidth(window.innerWidth);
+      const handleResize = () => setWindowWidth(window.innerWidth);
+      window.addEventListener("resize", handleResize);
+      return () => window.removeEventListener("resize", handleResize);
+    }
+  }, []);
+
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
@@ -92,36 +112,73 @@ const Users: React.FC = () => {
     setForm(DEFAULT_USER_FORM);
   };
 
+  // Helper function to check if current user can edit a specific employee
+  const canEditEmployee = (employee: any) => {
+    if (!currentUser || !employee) {
+      return false;
+    }
+
+    // System admin can edit everyone
+    if (currentUser.isSystemAdmin) return true;
+
+    // Check if logged-in user's ID matches the employee's managerId
+    const currentUserId = currentUser._id;
+    const employeeManagerId = employee.managerId;
+
+    // If current user ID is still not found
+    if (!currentUserId) {
+      return false;
+    }
+
+    // If no manager ID is set, no one can edit
+    if (!employeeManagerId) {
+      return false;
+    }
+
+    // Convert both to string for comparison (handle ObjectId vs string)
+    const currentUserIdStr = String(currentUserId).trim();
+    const employeeManagerIdStr = String(employeeManagerId).trim();
+
+    return currentUserIdStr === employeeManagerIdStr;
+  };
+
   const usersTableHeader = USERS_TABLE_HEADER.map((header) =>
     header.label === "Actions"
       ? {
           ...header,
-          component: (row) => (
-            <PermissionGuard
-              module={USERS_PERMISSION_MODULE}
-              action="write"
-              fallback={null}
-            >
-              <Button
-                variant="outlined"
-                size="small"
-                onClick={() => {
-                  setSelectedUser(row);
-                  setEditId(row.id || row._id);
-                  setOpen(true);
-                }}
-                sx={{
-                  minWidth: 0,
-                  px: 1,
-                  py: 0.5,
-                  minHeight: 0,
-                  lineHeight: 1,
-                }}
+          component: (row) => {
+            // Only show edit button if current user is the manager of this employee
+            if (!canEditEmployee(row)) {
+              return null;
+            }
+
+            return (
+              <PermissionGuard
+                module={USERS_PERMISSION_MODULE}
+                action="write"
+                fallback={null}
               >
-                <Edit fontSize="small" />
-              </Button>
-            </PermissionGuard>
-          ),
+                <Button
+                  variant="outlined"
+                  size="small"
+                  onClick={() => {
+                    setSelectedUser(row);
+                    setEditId(row.id || row._id);
+                    setOpen(true);
+                  }}
+                  sx={{
+                    minWidth: 0,
+                    px: 1,
+                    py: 0.5,
+                    minHeight: 0,
+                    lineHeight: 1,
+                  }}
+                >
+                  <EditIcon fontSize="small" />
+                </Button>
+              </PermissionGuard>
+            );
+          },
         }
       : header
   );
@@ -135,7 +192,7 @@ const Users: React.FC = () => {
 
     let joiningDate = safeForm.joiningDate || "";
     if (joiningDate) {
-      const dateObj = new Date(joiningDate);
+      const dateObj = new Date(joiningDate as string);
       if (!isNaN(dateObj.getTime())) {
         joiningDate = dateObj.toISOString().slice(0, 10);
       }
@@ -223,11 +280,15 @@ const Users: React.FC = () => {
                   designation: user.designation,
                   avatarUrl: user.avatarUrl,
                 }}
-                onEdit={() => {
-                  setSelectedUser(user);
-                  setEditId(user.id || user._id);
-                  setOpen(true);
-                }}
+                onEdit={
+                  canEditEmployee(user)
+                    ? () => {
+                        setSelectedUser(user);
+                        setEditId(user.id || user._id);
+                        setOpen(true);
+                      }
+                    : undefined
+                }
               />
             ))}
           </Box>
@@ -246,8 +307,7 @@ const Users: React.FC = () => {
       ) : (
         <Box sx={MODULE_STYLES.leads.tableWrapper}>
           <TableContainer
-            component={Paper}
-            elevation={8}
+            component={(props) => <Paper elevation={8} {...props} />}
             sx={{
               ...COMMON_STYLES.roundedPaper,
               ...MODULE_STYLES.leads.tableContainer,
@@ -258,11 +318,7 @@ const Users: React.FC = () => {
               header={usersTableHeader}
               onEdit={() => {}}
               onDelete={() => {}}
-              size={
-                typeof window !== "undefined" && window.innerWidth < 600
-                  ? "small"
-                  : "medium"
-              }
+              size={isClient && windowWidth < 600 ? "small" : "medium"}
               stickyHeader
             />
           </TableContainer>
@@ -302,7 +358,11 @@ const Users: React.FC = () => {
             "&:hover": { background: GRADIENTS.buttonHover },
           }}
         >
-          {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
+          {saving ? (
+            <CircularProgress size={24} color="inherit" />
+          ) : (
+            <AddIcon />
+          )}
         </Fab>
         <UserDialog
           open={open}
@@ -381,4 +441,3 @@ const Users: React.FC = () => {
 };
 
 export default Users;
-

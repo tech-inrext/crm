@@ -1,5 +1,5 @@
 import React from "react";
-import { Select, MenuItem, Chip } from "@mui/material";
+import { Select, MenuItem, Chip } from "@/components/ui/Component";
 import { Booking } from "@/types/cab-booking";
 import { getStatusColor, statusOptions } from "@/constants/cab-booking";
 

@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { Card, Typography } from "@mui/material";
+import { Card, Typography } from "@/components/ui/Component";
 
 interface StatsCardProps {
   value: string | number;
