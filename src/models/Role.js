@@ -14,6 +14,7 @@ const modules = [
   "booking-login",
   "training-videos",
   "pillar",
+  "analytics",
 ];
 
 const roleSchema = new mongoose.Schema(

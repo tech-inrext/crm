@@ -9,6 +9,7 @@ import { Box, Typography, Card, CardContent } from '@/components/ui/Component';
 import { FaUsers, FaHome, FaDollarSign, FaBuilding } from "react-icons/fa";
 import LeadGenerationChart from '../analytics/LeadGenerationChart';
 import SiteVisitConversionChart from './SiteVisitConversionChart';
+import PermissionGuard from "@/components/PermissionGuard";
 
 // Simple in-memory request coalescing for cabbooking endpoint to avoid duplicate network calls
 const cabbookingRequests: Map<string, Promise<any>> = new Map();
@@ -128,20 +129,20 @@ type StatsCardsRowProps = {
   showTotalUsers?: boolean;
 }
 
-export const StatsCardsRow: React.FC<StatsCardsRowProps> = ({ 
-  newLeads = 0, 
-  loadingNewLeads = false, 
-  siteVisitCount = 0, 
-  siteVisitLoading = false, 
-  totalUsers = 0, 
-  usersLoading = false, 
+export const StatsCardsRow: React.FC<StatsCardsRowProps> = ({
+  newLeads = 0,
+  loadingNewLeads = false,
+  siteVisitCount = 0,
+  siteVisitLoading = false,
+  totalUsers = 0,
+  usersLoading = false,
   totalTeams = 0,
   teamsLoading = false,
-  vendorCount = 0, 
-  totalBilling = '₹0', 
-  pendingMouTotal = 0, 
-  pendingMouLoading = false, 
-  approvedMouTotal = 0, 
+  vendorCount = 0,
+  totalBilling = '₹0',
+  pendingMouTotal = 0,
+  pendingMouLoading = false,
+  approvedMouTotal = 0,
   approvedMouLoading = false,
   showVendorBilling = false,
   showTotalUsers = false
@@ -198,7 +199,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = ({
         icon={<FaUsers size={22} className="text-indigo-600" />}
         iconBg="bg-indigo-50"
       />
-     
+
       {showVendorBilling && (
         <StatCard
           title="Total Vendors & Billing amount"
@@ -216,7 +217,7 @@ function VendorBreakdown() {
   const [selectedVendor, setSelectedVendor] = React.useState('');
   const [vendorData, setVendorData] = React.useState(null);
   const [loading, setLoading] = React.useState(false);
-  
+
   // Filter states - separate temp states for form and applied states for API
   const [tempFilters, setTempFilters] = React.useState({
     status: 'all',
@@ -230,7 +231,7 @@ function VendorBreakdown() {
     year: 'all',
     avp: 'all'
   });
-  
+
   // AVP users state
   const [avpUsers, setAvpUsers] = React.useState([]);
   const [avpLoading, setAvpLoading] = React.useState(false);
@@ -244,19 +245,19 @@ function VendorBreakdown() {
       // Build API URL with filters (use combined cab analytics endpoint)
       let url = '/api/v0/analytics/cabbooking';
       const params = new URLSearchParams();
-      
+
       // Add month and year filters
       if (filters.month !== 'all' || filters.year !== 'all') {
         const monthValue = filters.month !== 'all' ? filters.month : '01';
         const yearValue = filters.year !== 'all' ? filters.year : new Date().getFullYear().toString();
         params.append('month', `${yearValue}-${monthValue}`);
       }
-      
+
       // Add status filter
       if (filters.status !== 'all') {
         params.append('status', filters.status);
       }
-      
+
       // Add AVP filter
       if (filters.avp !== 'all') {
         if (filters.avp.startsWith('manual_avp_')) {
@@ -268,11 +269,11 @@ function VendorBreakdown() {
           params.append('avpId', filters.avp);
         }
       }
-      
+
       if (params.toString()) {
         url += '?' + params.toString();
       }
-      
+
       // Coalesce identical requests: if same URL is already being fetched, await that promise
       const key = url;
       let data;
@@ -283,7 +284,7 @@ function VendorBreakdown() {
         cabbookingRequests.set(key, p);
         data = await p;
       }
-      
+
       if (data.success) {
         // If server returned AVP users, set them (so we don't call employee/role endpoints separately)
         if (data.avpUsers && Array.isArray(data.avpUsers) && data.avpUsers.length > 0) {
@@ -291,14 +292,14 @@ function VendorBreakdown() {
         }
         // Filter out vendors with no bookings if month filter is applied
         let filteredVendors = data.allVendors;
-        
+
         if (filters.month !== 'all') {
           // Only show vendors that have bookings in the selected month
-          filteredVendors = data.allVendors.filter(vendor => 
+          filteredVendors = data.allVendors.filter(vendor =>
             (vendor.totalBookings || 0) > 0
           );
-         }
-        
+        }
+
         setVendorData({
           ...data,
           allVendors: filteredVendors,
@@ -339,7 +340,7 @@ function VendorBreakdown() {
   }, []);
 
   const allVendors = vendorData?.allVendors || [];
-  
+
   // Filter vendors based on applied filters and selection
   let displayVendors = allVendors;
   // If 'payment-due' filter is active, only show vendors with paymentDue > 0
@@ -374,9 +375,9 @@ function VendorBreakdown() {
   // Check if there are pending filter changes
   const hasUnappliedChanges = React.useMemo(() => {
     return tempFilters.status !== appliedFilters.status ||
-           tempFilters.month !== appliedFilters.month ||
-           tempFilters.year !== appliedFilters.year ||
-           tempFilters.avp !== appliedFilters.avp;
+      tempFilters.month !== appliedFilters.month ||
+      tempFilters.year !== appliedFilters.year ||
+      tempFilters.avp !== appliedFilters.avp;
   }, [tempFilters, appliedFilters]);
 
   const monthOptions = generateMonthOptions();
@@ -384,10 +385,10 @@ function VendorBreakdown() {
   return (
     <div>
       {/* Filter Controls */}
-      <div style={{ 
-        display: 'grid', 
-        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
-        gap: 16, 
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: 16,
         marginBottom: 20,
         padding: 16,
         background: '#f8f9fa',
@@ -396,10 +397,10 @@ function VendorBreakdown() {
       }}>
         {/* Status Filter */}
         <div>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: 6, 
-            fontWeight: 600, 
+          <label style={{
+            display: 'block',
+            marginBottom: 6,
+            fontWeight: 600,
             color: '#333',
             fontSize: '0.9rem'
           }}>
@@ -408,10 +409,10 @@ function VendorBreakdown() {
           <select
             value={tempFilters.status}
             onChange={e => setTempFilters({...tempFilters, status: e.target.value})}
-            style={{ 
-              padding: '8px 12px', 
-              borderRadius: 6, 
-              border: '1px solid #ddd', 
+            style={{
+              padding: '8px 12px',
+              borderRadius: 6,
+              border: '1px solid #ddd',
               width: '100%',
               fontSize: '0.9rem',
               background: '#fff'
@@ -426,10 +427,10 @@ function VendorBreakdown() {
 
         {/* Month Filter */}
         <div>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: 6, 
-            fontWeight: 600, 
+          <label style={{
+            display: 'block',
+            marginBottom: 6,
+            fontWeight: 600,
             color: '#333',
             fontSize: '0.9rem'
           }}>
@@ -438,10 +439,10 @@ function VendorBreakdown() {
           <select
             value={tempFilters.month}
             onChange={e => setTempFilters({...tempFilters, month: e.target.value})}
-            style={{ 
-              padding: '8px 12px', 
-              borderRadius: 6, 
-              border: '1px solid #ddd', 
+            style={{
+              padding: '8px 12px',
+              borderRadius: 6,
+              border: '1px solid #ddd',
               width: '100%',
               fontSize: '0.9rem',
               background: '#fff'
@@ -457,10 +458,10 @@ function VendorBreakdown() {
 
         {/* Year Filter */}
         <div>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: 6, 
-            fontWeight: 600, 
+          <label style={{
+            display: 'block',
+            marginBottom: 6,
+            fontWeight: 600,
             color: '#333',
             fontSize: '0.9rem'
           }}>
@@ -469,10 +470,10 @@ function VendorBreakdown() {
           <select
             value={tempFilters.year}
             onChange={e => setTempFilters({...tempFilters, year: e.target.value})}
-            style={{ 
-              padding: '8px 12px', 
-              borderRadius: 6, 
-              border: '1px solid #ddd', 
+            style={{
+              padding: '8px 12px',
+              borderRadius: 6,
+              border: '1px solid #ddd',
               width: '100%',
               fontSize: '0.9rem',
               background: '#fff'
@@ -488,33 +489,33 @@ function VendorBreakdown() {
 
         {/* AVP Filter */}
         <div>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: 6, 
-            fontWeight: 600, 
+          <label style={{
+            display: 'block',
+            marginBottom: 6,
+            fontWeight: 600,
             color: '#333',
             fontSize: '0.9rem'
           }}>
             Filter by AVP:
             {avpLoading && (
-              <span style={{ 
-                marginLeft: 8, 
-                fontSize: '0.8rem', 
+              <span style={{
+                marginLeft: 8,
+                fontSize: '0.8rem',
                 color: '#666',
                 fontWeight: 400
               }}>
                 Loading...
               </span>
             )}
-           
+
           </label>
           <select
             value={tempFilters.avp}
             onChange={e => setTempFilters({...tempFilters, avp: e.target.value})}
-            style={{ 
-              padding: '8px 12px', 
-              borderRadius: 6, 
-              border: '1px solid #ddd', 
+            style={{
+              padding: '8px 12px',
+              borderRadius: 6,
+              border: '1px solid #ddd',
               width: '100%',
               fontSize: '0.9rem',
               background: '#fff'
@@ -522,9 +523,9 @@ function VendorBreakdown() {
             disabled={avpLoading}
           >
             <option value="all">
-              {avpLoading ? 'Loading AVP Members...' : 
-               avpError ? 'Error loading AVP Members' :
-               avpUsers.length > 0 ? `All AVP Members (${avpUsers.length} available)` : 'No AVP Members Found'}
+              {avpLoading ? 'Loading AVP Members...' :
+                avpError ? 'Error loading AVP Members' :
+                  avpUsers.length > 0 ? `All AVP Members (${avpUsers.length} available)` : 'No AVP Members Found'}
             </option>
             {!avpLoading && !avpError && avpUsers.length > 0 && avpUsers.map((avp) => (
               <option key={avp._id || avp.id} value={avp._id || avp.id}>
@@ -536,10 +537,10 @@ function VendorBreakdown() {
 
         {/* Action Buttons */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'end', justifyContent: 'flex-start' }}>
-          <label style={{ 
-            display: 'block', 
-            marginBottom: 6, 
-            fontWeight: 600, 
+          <label style={{
+            display: 'block',
+            marginBottom: 6,
+            fontWeight: 600,
             color: '#333',
             fontSize: '0.9rem',
             opacity: 0
@@ -589,9 +590,9 @@ function VendorBreakdown() {
       {vendorData && allVendors.length > 0 && (
         <div style={{ marginBottom: 16 }}>
           {(appliedFilters.status !== 'all' || appliedFilters.month !== 'all' || appliedFilters.avp !== 'all') && (
-            <div style={{ 
-              fontSize: '0.85rem', 
-              color: '#666', 
+            <div style={{
+              fontSize: '0.85rem',
+              color: '#666',
               marginBottom: 6,
               fontStyle: 'italic'
             }}>
@@ -603,18 +604,18 @@ function VendorBreakdown() {
             onChange={e => {
               setSelectedVendor(e.target.value);
             }}
-            style={{ 
-              padding: '10px 14px', 
-              borderRadius: 6, 
-              border: '1px solid #ddd', 
+            style={{
+              padding: '10px 14px',
+              borderRadius: 6,
+              border: '1px solid #ddd',
               minWidth: 300,
               fontSize: '1rem',
               cursor: 'pointer'
             }}
           >
             <option value="">
-              {(appliedFilters.status !== 'all' || appliedFilters.month !== 'all' || appliedFilters.avp !== 'all') 
-                ? `All Filtered Vendors (${allVendors.length})` 
+              {(appliedFilters.status !== 'all' || appliedFilters.month !== 'all' || appliedFilters.avp !== 'all')
+                ? `All Filtered Vendors (${allVendors.length})`
                 : 'All Vendors'
               }
             </option>
@@ -629,9 +630,9 @@ function VendorBreakdown() {
 
       {/* No results message */}
       {vendorData && allVendors.length === 0 && !loading && (
-        <div style={{ 
-          background: '#fff3cd', 
-          border: '1px solid #ffeaa7', 
+        <div style={{
+          background: '#fff3cd',
+          border: '1px solid #ffeaa7',
           borderRadius: 6,
           padding: 16,
           color: '#856404',
@@ -677,20 +678,20 @@ function VendorBreakdown() {
       {/* Vendors display - shows all vendors or specific selected vendor */}
       {vendorData && displayVendors.length > 0 && (
         <div style={{ marginTop: 16 }}>
-          <div style={{ 
-            background: '#f8f9fa', 
-            borderRadius: 8, 
-            padding: 16, 
+          <div style={{
+            background: '#f8f9fa',
+            borderRadius: 8,
+            padding: 16,
             marginBottom: 16,
             border: '1px solid #dee2e6'
           }}>
             {/* Removed Vendor Overview header and filtered data notice as requested */}
             {/* Selection Status */}
             {selectedVendor && (
-              <div style={{ 
-                background: '#e8f5e9', 
-                padding: 8, 
-                borderRadius: 4, 
+              <div style={{
+                background: '#e8f5e9',
+                padding: 8,
+                borderRadius: 4,
                 marginBottom: 12,
                 fontSize: '0.85rem',
                 color: '#2e7d32',
@@ -698,17 +699,17 @@ function VendorBreakdown() {
                 alignItems: 'center',
                 gap: 6
               }}>
-                ✅ <strong>Selected Vendor:</strong> {selectedVendor} 
-                <button 
+                ✅ <strong>Selected Vendor:</strong> {selectedVendor}
+                <button
                   onClick={() => {
                     setSelectedVendor('');
                   }}
-                  style={{ 
-                    marginLeft: 10, 
-                    padding: '2px 8px', 
-                    background: '#fff', 
-                    border: '1px solid #2e7d32', 
-                    borderRadius: 4, 
+                  style={{
+                    marginLeft: 10,
+                    padding: '2px 8px',
+                    background: '#fff',
+                    border: '1px solid #2e7d32',
+                    borderRadius: 4,
                     color: '#2e7d32',
                     cursor: 'pointer',
                     fontSize: '0.8rem'
@@ -720,10 +721,10 @@ function VendorBreakdown() {
             )}
             {/* Month-specific notice */}
             {appliedFilters.month !== 'all' && (
-              <div style={{ 
-                background: '#e3f2fd', 
-                padding: 8, 
-                borderRadius: 4, 
+              <div style={{
+                background: '#e3f2fd',
+                padding: 8,
+                borderRadius: 4,
                 marginBottom: 12,
                 fontSize: '0.85rem',
                 color: '#1976d2',
@@ -731,7 +732,7 @@ function VendorBreakdown() {
                 alignItems: 'center',
                 gap: 6
               }}>
-                📅 <strong>Month Filter Active:</strong> Only showing cab booking data from {monthOptions.find(m => m.value === appliedFilters.month)?.label}. 
+                📅 <strong>Month Filter Active:</strong> Only showing cab booking data from {monthOptions.find(m => m.value === appliedFilters.month)?.label}.
                 Vendors without bookings in this month are hidden.
               </div>
             )}
@@ -764,7 +765,7 @@ function VendorBreakdown() {
               </div>
             </div>
           </div>
-          
+
           {/* Individual vendor cards */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: 16 }}>
             {displayVendors
@@ -830,10 +831,10 @@ function VendorBreakdown() {
                     boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
                   }}
                   >
-                    <div style={{ 
-                      display: 'flex', 
-                      justifyContent: 'space-between', 
-                      alignItems: 'center', 
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
                       marginBottom: 12,
                       borderBottom: '1px solid #f0f0f0',
                       paddingBottom: 8
@@ -841,9 +842,9 @@ function VendorBreakdown() {
                       <h4 style={{ color: '#222', margin: 0, fontSize: '1.1rem' }}>
                         {vendor.name}
                         {filteredVendor.displayNote && (
-                          <span style={{ 
-                            fontSize: '0.75rem', 
-                            color: '#666', 
+                          <span style={{
+                            fontSize: '0.75rem',
+                            color: '#666',
                             fontWeight: 400,
                             marginLeft: 6
                           }}>
@@ -855,11 +856,11 @@ function VendorBreakdown() {
                     {/* Dynamic booking display based on filter */}
                     {appliedFilters.status === 'completed' ? (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginBottom: 8 }}>
-                        <div style={{ 
-                          background: '#e8f5e9', 
-                          padding: 6, 
-                          borderRadius: 4, 
-                          textAlign: 'center' 
+                        <div style={{
+                          background: '#e8f5e9',
+                          padding: 6,
+                          borderRadius: 4,
+                          textAlign: 'center'
                         }}>
                           <div style={{ fontWeight: 700, color: '#388e3c', fontSize: '1rem' }}>
                             {filteredVendor.totalBookings}
@@ -869,11 +870,11 @@ function VendorBreakdown() {
                       </div>
                     ) : appliedFilters.status === 'pending' ? (
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 8, marginBottom: 8 }}>
-                        <div style={{ 
-                          background: '#fff3e0', 
-                          padding: 6, 
-                          borderRadius: 4, 
-                          textAlign: 'center' 
+                        <div style={{
+                          background: '#fff3e0',
+                          padding: 6,
+                          borderRadius: 4,
+                          textAlign: 'center'
                         }}>
                           <div style={{ fontWeight: 700, color: '#f57c00', fontSize: '1rem' }}>
                             {filteredVendor.totalBookings}
@@ -883,10 +884,10 @@ function VendorBreakdown() {
                       </div>
                     ) : appliedFilters.status === 'payment_due' ? (
                       <div style={{ marginBottom: 8 }}>
-                        <div style={{ 
-                          background: '#ffd7d7', 
-                          padding: 12, 
-                          borderRadius: 8, 
+                        <div style={{
+                          background: '#ffd7d7',
+                          padding: 12,
+                          borderRadius: 8,
                           textAlign: 'center',
                           boxShadow: '0 2px 8px rgba(211,47,47,0.08)',
                           border: '2px solid #d32f2f',
@@ -900,22 +901,22 @@ function VendorBreakdown() {
                     ) : (
                       // Default view showing all booking types
                       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 8 }}>
-                        <div style={{ 
-                          background: '#e3f2fd', 
-                          padding: 6, 
-                          borderRadius: 4, 
-                          textAlign: 'center' 
+                        <div style={{
+                          background: '#e3f2fd',
+                          padding: 6,
+                          borderRadius: 4,
+                          textAlign: 'center'
                         }}>
                           <div style={{ fontWeight: 700, color: '#1976d2', fontSize: '1rem' }}>
                             {vendor.totalBookings || 0}
                           </div>
                           <div style={{ fontSize: '0.7rem', color: '#666' }}>Total</div>
                         </div>
-                        <div style={{ 
-                          background: '#e8f5e9', 
-                          padding: 6, 
-                          borderRadius: 4, 
-                          textAlign: 'center' 
+                        <div style={{
+                          background: '#e8f5e9',
+                          padding: 6,
+                          borderRadius: 4,
+                          textAlign: 'center'
                         }}>
                           <div style={{ fontWeight: 700, color: '#388e3c', fontSize: '1rem' }}>
                             {vendor.completedBookings || 0}
@@ -969,7 +970,7 @@ function VendorBreakdown() {
 
       {/* Loading state */}
       {loading && (
-        <div style={{ 
+        <div style={{
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
@@ -979,10 +980,10 @@ function VendorBreakdown() {
           border: '1px solid #dee2e6'
         }}>
           <div style={{ textAlign: 'center' }}>
-            <div style={{ 
-              width: 40, 
-              height: 40, 
-              border: '3px solid #e3f2fd', 
+            <div style={{
+              width: 40,
+              height: 40,
+              border: '3px solid #e3f2fd',
               borderTop: '3px solid #1976d2',
               borderRadius: '50%',
               animation: 'spin 1s linear infinite',
@@ -997,10 +998,10 @@ function VendorBreakdown() {
 
       {/* Initial state message */}
       {!vendorData && !loading && (
-        <div style={{ 
-          background: '#f8f9fa', 
-          borderRadius: 8, 
-          padding: 24, 
+        <div style={{
+          background: '#f8f9fa',
+          borderRadius: 8,
+          padding: 24,
           marginTop: 16,
           border: '1px solid #dee2e6',
           textAlign: 'center'
@@ -1025,7 +1026,7 @@ export default function NewDashboardPage() {
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
     setTab(newValue);
   };
-  
+
   // Get analytics access from AuthContext
   const { getAnalyticsAccess } = useAuth();
   const analyticsAccess = getAnalyticsAccess();
@@ -1115,471 +1116,473 @@ export default function NewDashboardPage() {
   }, []);
 
   return (
-    <Box sx={{ 
-      p: { xs: 1, sm: 2, md: 3 }, // Responsive padding
-      overflow: 'hidden'
-    }}>
-      <Typography variant="h4" sx={{ 
-        fontWeight: 700, 
-        color: '#1a1a1a', 
-        mb: 2,
-        fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' } // Responsive font size
+    <PermissionGuard module="analytics" action="read">
+      <Box sx={{
+        p: { xs: 1, sm: 2, md: 3 }, // Responsive padding
+        overflow: 'hidden'
       }}>
-        Dashboard
-      </Typography>
-      {/* Add gap between heading and tabs */}
-      <div style={{ height: 12 }} />
-      <BoxMUI sx={{ 
-        borderBottom: 1, 
-        borderColor: 'divider', 
-        mb: 2,
-        '.MuiTabs-root': {
-          minHeight: { xs: '40px', sm: '48px' }
-        },
-        '.MuiTab-root': {
-          fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
-          padding: { xs: '6px 12px', sm: '12px 16px' },
-          minHeight: { xs: '40px', sm: '48px' }
-        }
-      }}>
-        <Tabs value={tab} onChange={handleTabChange} aria-label="Analytics Tabs">
-          <Tab label="Overall" />
-          {analyticsAccess.showCabBookingAnalytics && (
-            <Tab label="Cab Booking Analytics" />
-          )}
-          <Tab label="Leads, Schedule & Projects" />
-        </Tabs>
-      </BoxMUI>
-      {/* Tab Panels */}
-      {tab === 0 && (
-        <div>
-          {/* Overall Section: Stat Cards Row */}
-          <StatsCardsRow
-            newLeads={overall?.newLeads}
-            loadingNewLeads={overallLoading}
-            siteVisitCount={overall?.siteVisitCount}
-            siteVisitLoading={overallLoading}
-            totalUsers={overall?.totalUsers}
-            usersLoading={overallLoading}
-            totalTeams={overall?.totalTeams}
-            teamsLoading={overallLoading}
-            vendorCount={overall?.totalVendors || overall?.totalCabVendors}
-            totalBilling={overall?.totalBilling}
-            pendingMouTotal={
-              (overall?.pendingMouTotal && overall?.pendingMouTotal > 0)
-                ? overall.pendingMouTotal
-                : (overall?.mouList ? overall.mouList.filter(m => m.status === 'Pending').length : 0)
-            }
-            pendingMouLoading={overallLoading}
-            approvedMouTotal={
-              (overall?.approvedMouTotal && overall?.approvedMouTotal > 0)
-                ? overall.approvedMouTotal
-                : (overall?.mouList ? overall.mouList.filter(m => m.status === 'Approved').length : 0)
-            }
-            approvedMouLoading={overallLoading}
-            showVendorBilling={analyticsAccess.showTotalVendorsBilling}
-            showTotalUsers={analyticsAccess.showTotalUsers}
-          />
-        </div>
-      )}
-      {analyticsAccess.showCabBookingAnalytics && tab === 1 && (
-        <div>
-          {/* Vendor filter and list on top */}
-          <div style={{ marginBottom: 24 }}>
-            <div style={{ fontWeight: 600, fontSize: '1.08rem', color: '#222', marginBottom: 10 }}>
-              Vendor Filter & List
-            </div>
-            <VendorBreakdown />
+        <Typography variant="h4" sx={{
+          fontWeight: 700,
+          color: '#1a1a1a',
+          mb: 2,
+          fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' } // Responsive font size
+        }}>
+          Dashboard
+        </Typography>
+        {/* Add gap between heading and tabs */}
+        <div style={{ height: 12 }} />
+        <BoxMUI sx={{
+          borderBottom: 1,
+          borderColor: 'divider',
+          mb: 2,
+          '.MuiTabs-root': {
+            minHeight: { xs: '40px', sm: '48px' }
+          },
+          '.MuiTab-root': {
+            fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
+            padding: { xs: '6px 12px', sm: '12px 16px' },
+            minHeight: { xs: '40px', sm: '48px' }
+          }
+        }}>
+          <Tabs value={tab} onChange={handleTabChange} aria-label="Analytics Tabs">
+            <Tab label="Overall" />
+            {analyticsAccess.showCabBookingAnalytics && (
+              <Tab label="Cab Booking Analytics" />
+            )}
+            <Tab label="Leads, Schedule & Projects" />
+          </Tabs>
+        </BoxMUI>
+        {/* Tab Panels */}
+        {tab === 0 && (
+          <div>
+            {/* Overall Section: Stat Cards Row */}
+            <StatsCardsRow
+              newLeads={overall?.newLeads}
+              loadingNewLeads={overallLoading}
+              siteVisitCount={overall?.siteVisitCount}
+              siteVisitLoading={overallLoading}
+              totalUsers={overall?.totalUsers}
+              usersLoading={overallLoading}
+              totalTeams={overall?.totalTeams}
+              teamsLoading={overallLoading}
+              vendorCount={overall?.totalVendors || overall?.totalCabVendors}
+              totalBilling={overall?.totalBilling}
+              pendingMouTotal={
+                (overall?.pendingMouTotal && overall?.pendingMouTotal > 0)
+                  ? overall.pendingMouTotal
+                  : (overall?.mouList ? overall.mouList.filter(m => m.status === 'Pending').length : 0)
+              }
+              pendingMouLoading={overallLoading}
+              approvedMouTotal={
+                (overall?.approvedMouTotal && overall?.approvedMouTotal > 0)
+                  ? overall.approvedMouTotal
+                  : (overall?.mouList ? overall.mouList.filter(m => m.status === 'Approved').length : 0)
+              }
+              approvedMouLoading={overallLoading}
+              showVendorBilling={analyticsAccess.showTotalVendorsBilling}
+              showTotalUsers={analyticsAccess.showTotalUsers}
+            />
           </div>
-          
-          
-        </div>
-      )}
-      {((analyticsAccess.showCabBookingAnalytics && tab === 2) || (!analyticsAccess.showCabBookingAnalytics && tab === 1)) && (
-        <div>
-          {/* Leads Details, Schedule This Week, and Projects Section */}
-          <Box
-            sx={{
-              display: 'grid',
-              gap: 3,
-              gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
-              alignItems: 'start',
-              width: { xs: '100%', md: '80%' }
-            }}
-          >
-            {/* Bar Chart */}
-            <Card
+        )}
+        {analyticsAccess.showCabBookingAnalytics && tab === 1 && (
+          <div>
+            {/* Vendor filter and list on top */}
+            <div style={{ marginBottom: 24 }}>
+              <div style={{ fontWeight: 600, fontSize: '1.08rem', color: '#222', marginBottom: 10 }}>
+                Vendor Filter & List
+              </div>
+              <VendorBreakdown />
+            </div>
+
+
+          </div>
+        )}
+        {((analyticsAccess.showCabBookingAnalytics && tab === 2) || (!analyticsAccess.showCabBookingAnalytics && tab === 1)) && (
+          <div>
+            {/* Leads Details, Schedule This Week, and Projects Section */}
+            <Box
               sx={{
-                bgcolor: '#fff',
-                borderRadius: 2,
-                boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                minHeight: 400,
-                height: '95%',
-                display: 'flex',
-                flexDirection: 'column',
-                justifyContent: 'flex-start',
+                display: 'grid',
+                gap: 3,
+                gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
+                alignItems: 'start',
+                width: { xs: '100%', md: '80%' }
               }}
             >
-              <CardContent sx={{ p: 0 }}>
-                {/* --- Lead Generation Chart Header with Week/Month Dropdown --- */}
-                <div style={{
-                  display: 'flex',
-                  justifyContent: 'space-between',
-                  alignItems: 'center',
-                  padding: '18px 18px 0 0'
-                }}>
-                  <Typography
-                    variant="h5"
-                    sx={{ fontWeight: 600, color: '#222', ml: 2 }}
-                  >
-                    Lead Conversion
-                  </Typography>
-                  <select
-                    value={leadConversionPeriod}
-                    onChange={(e) => setLeadConversionPeriod(e.target.value as 'week' | 'month')}
-                    style={{
-                      padding: '6px 12px',
-                      borderRadius: 6,
-                      border: '1px solid #ccc',
-                      fontWeight: 500,
-                      fontSize: '1rem',
-                      color: '#222',
-                      background: '#f7f9fa'
-                    }}
-                  >
-                    <option value="week">Week</option>
-                    <option value="month">Month</option>
-                  </select>
-                </div>
-                <LeadGenerationChart period={leadConversionPeriod} />
-              </CardContent>
-            </Card>
-            {/* Schedule Card (moved here in place of Action Center) */}
-            {analyticsAccess.showScheduleThisWeek && (
+              {/* Bar Chart */}
               <Card
                 sx={{
+                  bgcolor: '#fff',
+                  borderRadius: 2,
+                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
                   minHeight: 400,
-                  height: '100%',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  justifyContent: 'flex-start',
-                  width: { xs: '100%', md: '175%' },
-                  mr: { xs: 0, md: 1 }
-                }}
-              >
-                <CardContent>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
-                    <span style={{ fontSize: '1.35rem', fontWeight: 600, color: '#222' }}>Schedule In this Week</span>
-                    <a href="/dashboard/leads" style={{ color: '#0792fa', fontWeight: 500, fontSize: '1rem', textDecoration: 'none' }}>View All</a>
-                  </div>
-                  <div>
-                    {scheduleLoading && (
-                      <div style={{ color: '#666', textAlign: 'center', padding: '20px' }}>Loading schedule...</div>
-                    )}
-                    {!scheduleLoading && scheduleAnalytics && scheduleAnalytics.success && (
-                      <div>
-                        {/* Schedule Summary */}
-                        <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
-                          <div style={{ 
-                            background: '#e3f2fd', 
-                            padding: '8px 12px', 
-                            borderRadius: '6px', 
-                            fontSize: '0.85rem',
-                            fontWeight: 600,
-                            color: '#1976d2'
-                          }}>
-                            {scheduleAnalytics.totalScheduled} scheduled this Months 
-                          </div>
-                          {scheduleAnalytics.overdueCount > 0 && (
-                            <div style={{ 
-                              background: '#ffebee', 
-                              padding: '8px 12px', 
-                              borderRadius: '6px', 
-                              fontSize: '0.85rem',
-                              fontWeight: 600,
-                              color: '#d32f2f'
-                            }}>
-                              {scheduleAnalytics.overdueCount} overdue
-                            </div>
-                          )}
-                        </div>
-                        
-                        {/* Schedule Items */}
-                        <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
-                          {scheduleAnalytics.leads && scheduleAnalytics.leads.length > 0 ? (
-                            scheduleAnalytics.leads.slice(0, 8).map((lead: any, index: number) => {
-                              const followUpDate = new Date(lead.nextFollowUp);
-                              const isToday = followUpDate.toDateString() === new Date().toDateString();
-                              const isTomorrow = followUpDate.toDateString() === new Date(Date.now() + 24*60*60*1000).toDateString();
-                              
-                              let dateLabel = followUpDate.toLocaleDateString('en-US', { 
-                                weekday: 'short', 
-                                month: 'short', 
-                                day: 'numeric' 
-                              });
-                              if (isToday) dateLabel = 'Today';
-                              else if (isTomorrow) dateLabel = 'Tomorrow';
-                              
-                              return (
-                                <div key={lead.id} style={{
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  padding: '12px',
-                                  marginBottom: '8px',
-                                  background: isToday ? '#fff3e0' : '#f8f9fa',
-                                  borderRadius: '8px',
-                                  border: isToday ? '1px solid #ffcc02' : '1px solid #e9ecef',
-                                  cursor: 'pointer'
-                                }}>
-                                  <div style={{ flex: 1 }}>
-                                    <div style={{ 
-                                      fontWeight: 600, 
-                                      color: '#222', 
-                                      fontSize: '0.95rem',
-                                      marginBottom: '2px'
-                                    }}>
-                                      {lead.fullName || 'Unknown'}
-                                    </div>
-                                    <div style={{ 
-                                      fontSize: '0.8rem', 
-                                      color: '#666',
-                                      marginBottom: '4px'
-                                    }}>
-                                      {lead.phone} • {lead.source || 'No source'}
-                                    </div>
-                                    <div style={{ 
-                                      fontSize: '0.75rem', 
-                                      color: '#888'
-                                    }}>
-                                      {lead.assignedTo ? `Assigned to: ${lead.assignedTo.name}` : 'Unassigned'}
-                                    </div>
-                                  </div>
-                                  <div style={{ 
-                                    textAlign: 'right',
-                                    minWidth: '80px'
-                                  }}>
-                                    <div style={{ 
-                                      fontSize: '0.8rem', 
-                                      fontWeight: 600,
-                                      color: isToday ? '#f57c00' : '#666',
-                                      marginBottom: '2px'
-                                    }}>
-                                      {dateLabel}
-                                    </div>
-                                    <div style={{ 
-                                      fontSize: '0.75rem', 
-                                      color: '#888'
-                                    }}>
-                                      {followUpDate.toLocaleTimeString('en-US', { 
-                                        hour: '2-digit', 
-                                        minute: '2-digit',
-                                        hour12: true 
-                                      })}
-                                    </div>
-                                    <div style={{
-                                      fontSize: '0.7rem',
-                                      padding: '2px 6px',
-                                      borderRadius: '4px',
-                                      background: lead.status === 'New' ? '#e3f2fd' : 
-                                                lead.status === 'Contacted' ? '#e8f5e9' :
-                                                lead.status === 'Site Visit' ? '#fff3e0' : '#f3e5f5',
-                                      color: lead.status === 'New' ? '#1976d2' : 
-                                            lead.status === 'Contacted' ? '#388e3c' :
-                                            lead.status === 'Site Visit' ? '#f57c00' : '#7b1fa2',
-                                      marginTop: '4px'
-                                    }}>
-                                      {lead.status}
-                                    </div>
-                                  </div>
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <div style={{ 
-                              color: '#666', 
-                              textAlign: 'center', 
-                              padding: '40px 20px',
-                              background: '#f8f9fa',
-                              borderRadius: '8px',
-                              border: '1px solid #e9ecef'
-                            }}>
-                              📅 No follow-ups scheduled for this week
-                            </div>
-                          )}
-                          
-                          {/* Show more indicator */}
-                          {scheduleAnalytics.leads && scheduleAnalytics.leads.length > 8 && (
-                            <div style={{ 
-                              textAlign: 'center', 
-                              padding: '8px',
-                              color: '#666',
-                              fontSize: '0.85rem'
-                            }}>
-                              +{scheduleAnalytics.leads.length - 8} more follow-ups this week
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {!scheduleLoading && (!scheduleAnalytics || !scheduleAnalytics.success) && (
-                      <div style={{ 
-                        color: '#d32f2f', 
-                        textAlign: 'center', 
-                        padding: '20px',
-                        background: '#ffebee',
-                        borderRadius: '8px',
-                        border: '1px solid #ffcdd2'
-                      }}>
-                        Failed to load schedule data
-                      </div>
-                    )}
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-            
-            {!analyticsAccess.showScheduleThisWeek && (
-              <Card
-                sx={{
-                  minHeight: 320,
                   height: '95%',
                   display: 'flex',
                   flexDirection: 'column',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  width: '175%',
-                  mr: 1,
-                  background: '#f8f9fa',
-                  border: '1px solid #dee2e6'
+                  justifyContent: 'flex-start',
                 }}
               >
-                <CardContent sx={{ textAlign: 'center' }}>
-                  <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#6c757d', marginBottom: 8 }}>
-                    🔒 Access Restricted
+                <CardContent sx={{ p: 0 }}>
+                  {/* --- Lead Generation Chart Header with Week/Month Dropdown --- */}
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    padding: '18px 18px 0 0'
+                  }}>
+                    <Typography
+                      variant="h5"
+                      sx={{ fontWeight: 600, color: '#222', ml: 2 }}
+                    >
+                      Lead Conversion
+                    </Typography>
+                    <select
+                      value={leadConversionPeriod}
+                      onChange={(e) => setLeadConversionPeriod(e.target.value as 'week' | 'month')}
+                      style={{
+                        padding: '6px 12px',
+                        borderRadius: 6,
+                        border: '1px solid #ccc',
+                        fontWeight: 500,
+                        fontSize: '1rem',
+                        color: '#222',
+                        background: '#f7f9fa'
+                      }}
+                    >
+                      <option value="week">Week</option>
+                      <option value="month">Month</option>
+                    </select>
                   </div>
-                  <div style={{ color: '#6c757d', marginBottom: 16 }}>
-                    You don't have permission to view Schedule This Week.
-                  </div>
-                  <div style={{ fontSize: '0.9rem', color: '#868e96' }}>
-                    Contact your administrator to enable this access.
-                  </div>
+                  <LeadGenerationChart period={leadConversionPeriod} />
                 </CardContent>
               </Card>
-            )}
-          </Box>
-          <div
-            style={{
-              display: 'flex',
-              gap: '24px',
-              margin: '32px 0',
-              flexWrap: 'wrap',
-              width: '100%',
-              alignItems: 'stretch',
-            }}
-          >
-            {/* Leads by Source Pie */}
+              {/* Schedule Card (moved here in place of Action Center) */}
+              {analyticsAccess.showScheduleThisWeek && (
+                <Card
+                  sx={{
+                    minHeight: 400,
+                    height: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-start',
+                    width: { xs: '100%', md: '175%' },
+                    mr: { xs: 0, md: 1 }
+                  }}
+                >
+                  <CardContent>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 18 }}>
+                      <span style={{ fontSize: '1.35rem', fontWeight: 600, color: '#222' }}>Schedule In this Week</span>
+                      <a href="/dashboard/leads" style={{ color: '#0792fa', fontWeight: 500, fontSize: '1rem', textDecoration: 'none' }}>View All</a>
+                    </div>
+                    <div>
+                      {scheduleLoading && (
+                        <div style={{ color: '#666', textAlign: 'center', padding: '20px' }}>Loading schedule...</div>
+                      )}
+                      {!scheduleLoading && scheduleAnalytics && scheduleAnalytics.success && (
+                        <div>
+                          {/* Schedule Summary */}
+                          <div style={{ display: 'flex', gap: '12px', marginBottom: '16px', flexWrap: 'wrap' }}>
+                            <div style={{
+                              background: '#e3f2fd',
+                              padding: '8px 12px',
+                              borderRadius: '6px',
+                              fontSize: '0.85rem',
+                              fontWeight: 600,
+                              color: '#1976d2'
+                            }}>
+                              {scheduleAnalytics.totalScheduled} scheduled this Months
+                            </div>
+                            {scheduleAnalytics.overdueCount > 0 && (
+                              <div style={{
+                                background: '#ffebee',
+                                padding: '8px 12px',
+                                borderRadius: '6px',
+                                fontSize: '0.85rem',
+                                fontWeight: 600,
+                                color: '#d32f2f'
+                              }}>
+                                {scheduleAnalytics.overdueCount} overdue
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Schedule Items */}
+                          <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
+                            {scheduleAnalytics.leads && scheduleAnalytics.leads.length > 0 ? (
+                              scheduleAnalytics.leads.slice(0, 8).map((lead: any, index: number) => {
+                                const followUpDate = new Date(lead.nextFollowUp);
+                                const isToday = followUpDate.toDateString() === new Date().toDateString();
+                                const isTomorrow = followUpDate.toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString();
+
+                                let dateLabel = followUpDate.toLocaleDateString('en-US', {
+                                  weekday: 'short',
+                                  month: 'short',
+                                  day: 'numeric'
+                                });
+                                if (isToday) dateLabel = 'Today';
+                                else if (isTomorrow) dateLabel = 'Tomorrow';
+
+                                return (
+                                  <div key={lead.id} style={{
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    padding: '12px',
+                                    marginBottom: '8px',
+                                    background: isToday ? '#fff3e0' : '#f8f9fa',
+                                    borderRadius: '8px',
+                                    border: isToday ? '1px solid #ffcc02' : '1px solid #e9ecef',
+                                    cursor: 'pointer'
+                                  }}>
+                                    <div style={{ flex: 1 }}>
+                                      <div style={{
+                                        fontWeight: 600,
+                                        color: '#222',
+                                        fontSize: '0.95rem',
+                                        marginBottom: '2px'
+                                      }}>
+                                        {lead.fullName || 'Unknown'}
+                                      </div>
+                                      <div style={{
+                                        fontSize: '0.8rem',
+                                        color: '#666',
+                                        marginBottom: '4px'
+                                      }}>
+                                        {lead.phone} • {lead.source || 'No source'}
+                                      </div>
+                                      <div style={{
+                                        fontSize: '0.75rem',
+                                        color: '#888'
+                                      }}>
+                                        {lead.assignedTo ? `Assigned to: ${lead.assignedTo.name}` : 'Unassigned'}
+                                      </div>
+                                    </div>
+                                    <div style={{
+                                      textAlign: 'right',
+                                      minWidth: '80px'
+                                    }}>
+                                      <div style={{
+                                        fontSize: '0.8rem',
+                                        fontWeight: 600,
+                                        color: isToday ? '#f57c00' : '#666',
+                                        marginBottom: '2px'
+                                      }}>
+                                        {dateLabel}
+                                      </div>
+                                      <div style={{
+                                        fontSize: '0.75rem',
+                                        color: '#888'
+                                      }}>
+                                        {followUpDate.toLocaleTimeString('en-US', {
+                                          hour: '2-digit',
+                                          minute: '2-digit',
+                                          hour12: true
+                                        })}
+                                      </div>
+                                      <div style={{
+                                        fontSize: '0.7rem',
+                                        padding: '2px 6px',
+                                        borderRadius: '4px',
+                                        background: lead.status === 'New' ? '#e3f2fd' :
+                                          lead.status === 'Contacted' ? '#e8f5e9' :
+                                            lead.status === 'Site Visit' ? '#fff3e0' : '#f3e5f5',
+                                        color: lead.status === 'New' ? '#1976d2' :
+                                          lead.status === 'Contacted' ? '#388e3c' :
+                                            lead.status === 'Site Visit' ? '#f57c00' : '#7b1fa2',
+                                        marginTop: '4px'
+                                      }}>
+                                        {lead.status}
+                                      </div>
+                                    </div>
+                                  </div>
+                                );
+                              })
+                            ) : (
+                              <div style={{
+                                color: '#666',
+                                textAlign: 'center',
+                                padding: '40px 20px',
+                                background: '#f8f9fa',
+                                borderRadius: '8px',
+                                border: '1px solid #e9ecef'
+                              }}>
+                                📅 No follow-ups scheduled for this week
+                              </div>
+                            )}
+
+                            {/* Show more indicator */}
+                            {scheduleAnalytics.leads && scheduleAnalytics.leads.length > 8 && (
+                              <div style={{
+                                textAlign: 'center',
+                                padding: '8px',
+                                color: '#666',
+                                fontSize: '0.85rem'
+                              }}>
+                                +{scheduleAnalytics.leads.length - 8} more follow-ups this week
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                      {!scheduleLoading && (!scheduleAnalytics || !scheduleAnalytics.success) && (
+                        <div style={{
+                          color: '#d32f2f',
+                          textAlign: 'center',
+                          padding: '20px',
+                          background: '#ffebee',
+                          borderRadius: '8px',
+                          border: '1px solid #ffcdd2'
+                        }}>
+                          Failed to load schedule data
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {!analyticsAccess.showScheduleThisWeek && (
+                <Card
+                  sx={{
+                    minHeight: 320,
+                    height: '95%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    width: '175%',
+                    mr: 1,
+                    background: '#f8f9fa',
+                    border: '1px solid #dee2e6'
+                  }}
+                >
+                  <CardContent sx={{ textAlign: 'center' }}>
+                    <div style={{ fontSize: '1.2rem', fontWeight: 600, color: '#6c757d', marginBottom: 8 }}>
+                      🔒 Access Restricted
+                    </div>
+                    <div style={{ color: '#6c757d', marginBottom: 16 }}>
+                      You don't have permission to view Schedule This Week.
+                    </div>
+                    <div style={{ fontSize: '0.9rem', color: '#868e96' }}>
+                      Contact your administrator to enable this access.
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </Box>
             <div
               style={{
-                flex: 1,
-                minWidth: '380px',
                 display: 'flex',
-                flexDirection: 'column',
+                gap: '24px',
+                margin: '32px 0',
+                flexWrap: 'wrap',
+                width: '100%',
+                alignItems: 'stretch',
               }}
             >
-              <Card
-                sx={{
-                  minHeight: 400,
-                  height: '100%',
-                  borderRadius: 0,
-                  boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
-                  border: '1px solid #eceff1',
-                  width: '100%',
+              {/* Leads by Source Pie */}
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: '380px',
                   display: 'flex',
                   flexDirection: 'column',
-                  flex: 1,
                 }}
               >
-                <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                    <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333' }}>Leads by Source</div>
-                    <div style={{ fontSize: '0.9rem', color: '#666' }}>{leadsAnalytics?.totalLeads || 0} leads</div>
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%', flex: 1 }}>
-                    <div style={{ width: 350, height: 350, margin: '0 auto' }}>
-                      <LeadSourcesPieChart slices={leadsBySourceMetrics.slices} />
+                <Card
+                  sx={{
+                    minHeight: 400,
+                    height: '100%',
+                    borderRadius: 0,
+                    boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
+                    border: '1px solid #eceff1',
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1,
+                  }}
+                >
+                  <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                      <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333' }}>Leads by Source</div>
+                      <div style={{ fontSize: '0.9rem', color: '#666' }}>{leadsAnalytics?.totalLeads || 0} leads</div>
                     </div>
-                    <div style={{ width: '100%', maxWidth: 400 }}>
-                      <div style={{ fontSize: '0.95rem', color: '#666', marginBottom: 8, textAlign: 'left' }}>Cost per lead & conversion by source</div>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                        {leadsBySourceMetrics.sourcesOrder.length === 0 && (
-                          <div style={{ color: '#666' }}>No leads available</div>
-                        )}
-                        {leadsBySourceMetrics.sourcesOrder.map((src) => {
-                          const m = leadsBySourceMetrics.map[src];
-                          const count = m?.count || 0;
-                          const converted = m?.converted || 0;
-                          const conversion = count > 0 ? Math.round((converted / count) * 100) : 0;
-                          const avgCost = count > 0 ? Math.round((m.totalCost || 0) / Math.max(1, count)) : 0;
-                          return (
-                            <div key={src} style={{ display: 'flex', justifyContent: 'space-between', gap: 4, alignItems: 'center', padding: '8px 10px', borderRadius: 6, background: '#fff', border: '1px solid #f3f3f3' }}>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                                <div style={{ width: 12, height: 12, background: (leadsBySourceMetrics.slices.find(s=>s.label===src)?.color) || '#ddd', borderRadius: 3 }} />
-                                <div style={{ fontWeight: 600 }}>{src}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%', flex: 1 }}>
+                      <div style={{ width: 350, height: 350, margin: '0 auto' }}>
+                        <LeadSourcesPieChart slices={leadsBySourceMetrics.slices} />
+                      </div>
+                      <div style={{ width: '100%', maxWidth: 400 }}>
+                        <div style={{ fontSize: '0.95rem', color: '#666', marginBottom: 8, textAlign: 'left' }}>Cost per lead & conversion by source</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                          {leadsBySourceMetrics.sourcesOrder.length === 0 && (
+                            <div style={{ color: '#666' }}>No leads available</div>
+                          )}
+                          {leadsBySourceMetrics.sourcesOrder.map((src) => {
+                            const m = leadsBySourceMetrics.map[src];
+                            const count = m?.count || 0;
+                            const converted = m?.converted || 0;
+                            const conversion = count > 0 ? Math.round((converted / count) * 100) : 0;
+                            const avgCost = count > 0 ? Math.round((m.totalCost || 0) / Math.max(1, count)) : 0;
+                            return (
+                              <div key={src} style={{ display: 'flex', justifyContent: 'space-between', gap: 4, alignItems: 'center', padding: '8px 10px', borderRadius: 6, background: '#fff', border: '1px solid #f3f3f3' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                  <div style={{ width: 12, height: 12, background: (leadsBySourceMetrics.slices.find(s => s.label === src)?.color) || '#ddd', borderRadius: 3 }} />
+                                  <div style={{ fontWeight: 600 }}>{src}</div>
+                                </div>
+                                <div style={{ display: 'flex', gap: 10, minWidth: 160, justifyContent: 'flex-end', alignItems: 'center' }}>
+                                  <div style={{ fontSize: '0.95rem', color: '#222' }}>{count}</div>
+                                  <div style={{ fontSize: '0.9rem', color: '#666' }}>{avgCost > 0 ? `₹${avgCost}` : '—'}</div>
+                                  <div style={{ fontSize: '0.9rem', color: '#08c4a6' }}>{conversion}%</div>
+                                </div>
                               </div>
-                              <div style={{ display: 'flex', gap: 10, minWidth: 160, justifyContent: 'flex-end', alignItems: 'center' }}>
-                                <div style={{ fontSize: '0.95rem', color: '#222' }}>{count}</div>
-                                <div style={{ fontSize: '0.9rem', color: '#666' }}>{avgCost > 0 ? `₹${avgCost}` : '—'}</div>
-                                <div style={{ fontSize: '0.9rem', color: '#08c4a6' }}>{conversion}%</div>
-                              </div>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            {/* SiteVisitConversionChart (kept on the right) */}
-            <div
-              style={{
-                flex: 1,
-                minWidth: '380px',
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
-              <Card
-                sx={{
-                  minHeight: 400,
-                  height: '100%',
-                  borderRadius: 0,
-                  boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
-                  border: '1px solid #eceff1',
-                  width: '100%',
+                  </CardContent>
+                </Card>
+              </div>
+              {/* SiteVisitConversionChart (kept on the right) */}
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: '380px',
                   display: 'flex',
                   flexDirection: 'column',
-                  flex: 1,
                 }}
               >
-                <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-                  <SiteVisitConversionChart />
+                <Card
+                  sx={{
+                    minHeight: 400,
+                    height: '100%',
+                    borderRadius: 0,
+                    boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
+                    border: '1px solid #eceff1',
+                    width: '100%',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    flex: 1,
+                  }}
+                >
+                  <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                    <SiteVisitConversionChart />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+            {/* Project On Demand (top-most/project request section) */}
+            <div style={{ width: '100%', margin: '32px 0', display: 'flex', justifyContent: 'center' }}>
+              <Card sx={{ width: '100%', maxWidth: '100%', borderRadius: 2, boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #eceff1', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                <CardContent sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333', marginBottom: 16, width: '100%', textAlign: 'center' }}>Property On Demand</div>
+                  <PropertyPieChart propertyData={propertyMetrics} />
                 </CardContent>
               </Card>
             </div>
           </div>
-          {/* Project On Demand (top-most/project request section) */}
-          <div style={{ width: '100%', margin: '32px 0', display: 'flex', justifyContent: 'center' }}>
-            <Card sx={{ width: '100%', maxWidth: '100%', borderRadius: 2, boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #eceff1', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-              <CardContent sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333', marginBottom: 16, width: '100%', textAlign: 'center' }}>Property On Demand</div>
-                <PropertyPieChart propertyData={propertyMetrics} />
-              </CardContent>
-            </Card>
-          </div>
-        </div>
-      )}
-    </Box>
+        )}
+      </Box>
+    </PermissionGuard>
   );
 }
 
@@ -1700,7 +1703,7 @@ const ProjectPieChart: React.FC = () => {
     { name: 'KW-6', value: 20, color: '#ffca28' },
     { name: 'Eco-village', value: 20, color: '#a259e6' },
   ];
-  
+
   const total = PROJECTS.reduce((acc, p) => acc + p.value, 0);
   // Make chart larger
   const cx = 160, cy = 160, r = 140;
