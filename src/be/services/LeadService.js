@@ -37,6 +37,7 @@ class LeadService extends Service {
 
       const newLead = new Lead({
         uploadedBy: loggedInUserId,
+        managerId: rest.managerId || loggedInUserId, // Default to logged-in user if not provided
         leadId,
         phone,
         ...rest,
@@ -62,7 +63,14 @@ class LeadService extends Service {
       const skip = (currentPage - 1) * itemsPerPage;
 
       const loggedInUserId = req.employee?._id;
-      const baseQuery = { uploadedBy: loggedInUserId };
+      // Show leads where user is: creator (uploadedBy) OR manager (managerId) OR assigned (assignedTo)
+      const baseQuery = {
+        $or: [
+          { uploadedBy: loggedInUserId },
+          { managerId: loggedInUserId },
+          { assignedTo: loggedInUserId },
+        ],
+      };
 
       // Optional search filter
       const searchQuery = search
@@ -127,6 +135,7 @@ class LeadService extends Service {
 
   async getLeadById(req, res) {
     const { id } = req.query;
+    const loggedInUserId = req.employee?._id;
 
     try {
       const lead = await Lead.findById(id); // Fetch lead
@@ -134,6 +143,16 @@ class LeadService extends Service {
         return res
           .status(404)
           .json({ success: false, error: "Lead not found" });
+      }
+
+      // Check if user has access: is creator OR manager OR assigned
+      const hasAccess =
+        String(lead.uploadedBy) === String(loggedInUserId) ||
+        String(lead.managerId) === String(loggedInUserId) ||
+        String(lead.assignedTo) === String(loggedInUserId);
+
+      if (!hasAccess) {
+        return res.status(403).json({ success: false, error: "Access denied" });
       }
 
       return res.status(200).json({ success: true, data: lead });
@@ -148,11 +167,12 @@ class LeadService extends Service {
   async updateLeadDetails(req, res) {
     const { id } = req.query;
     const { phone, ...updateFields } = req.body;
+    const loggedInUserId = req.employee?._id;
 
     try {
       const updatedLead = await Lead.findByIdAndUpdate(
         id,
-        { $set: updateFields },
+        { $set: { ...updateFields, updatedBy: loggedInUserId } },
         { new: true }
       );
 

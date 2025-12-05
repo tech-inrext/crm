@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   TextField,
@@ -9,6 +9,8 @@ import {
 import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { Field, FieldProps } from "formik";
+import { useAuth } from "@/contexts/AuthContext";
+import { teamHierarchyService } from "@/services/team-hierarchy.service";
 
 const statusOptions = [
   { value: "new", label: "New" },
@@ -42,144 +44,267 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
   values,
   setFieldValue,
   users,
-}) => (
-  <>
-    <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
-      Lead Management
-    </Typography>
+}) => {
+  const { user } = useAuth();
 
-    <Box
-      sx={{
-        display: "flex",
-        gap: 2,
-        flexDirection: { xs: "column", sm: "row" },
-      }}
-    >
-      <Field name="status">
-        {({ field, meta }: FieldProps) => (
-          <TextField
-            {...field}
-            label="Status"
-            select
-            value={values.status}
-            onChange={(e) => setFieldValue("status", e.target.value)}
-            inputProps={{ "aria-label": "Lead status" }}
-            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-          >
-            <MenuItem value="">Select status...</MenuItem>
-            {statusOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
-      </Field>
+  // Auto-select logged in user as manager when adding a new lead
+  useEffect(() => {
+    // Only set manager if there's a logged-in user and no manager already in form
+    if (user && !values.manager && !values.managerId) {
+      // keep the form field name as 'manager' (UI-only). Do not override when editing.
+      setFieldValue("manager", user._id);
+      // also set managerId so it gets included when submitting to backend
+      setFieldValue("managerId", user._id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
-      <Field name="assignedTo">
-        {({ field, meta }: FieldProps) => (
-          <Autocomplete
-            options={users}
-            getOptionLabel={(option) => option.name || ""}
-            getOptionKey={(option) => option._id || option.id}
-            value={users.find((user) => user._id === values.assignedTo) || null}
-            onChange={(_, newValue) => {
-              setFieldValue("assignedTo", newValue ? newValue._id : "");
-            }}
-            sx={{ flex: 1 }}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Assigned To"
-                error={meta.touched && !!meta.error}
-                helperText={meta.touched && meta.error}
-                placeholder="Search and select employee"
-                sx={{ bgcolor: "#fff", borderRadius: 1 }}
-              />
-            )}
-            renderOption={(props, option) => {
-              const { key, ...rest } = props;
-              return (
-                <Box
-                  component="li"
-                  key={option._id || option.id || key}
-                  {...rest}
-                >
-                  {option.name}
-                </Box>
-              );
-            }}
-            noOptionsText="No employees found"
-            clearOnBlur
-            selectOnFocus
-          />
-        )}
-      </Field>
-    </Box>
+  // memoize filtered assignedTo options based on selected manager
+  const selectedManagerId =
+    values.manager || values.managerId || user?._id || "";
 
-    <Box
-      sx={{
-        display: "flex",
-        gap: 2,
-        flexDirection: { xs: "column", sm: "row" },
-      }}
-    >
-      <Field name="source">
-        {({ field, meta }: FieldProps) => (
-          <TextField
-            {...field}
-            label="Source"
-            select
-            value={values.source}
-            onChange={(e) => setFieldValue("source", e.target.value)}
-            error={meta.touched && !!meta.error}
-            helperText={meta.touched && meta.error}
-            inputProps={{ "aria-label": "Lead source" }}
-            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1, height: 56 }}
-            SelectProps={{
-              MenuProps: {
-                PaperProps: {
-                  style: {
-                    maxHeight: 300,
+  const assignedToOptions = useMemo(() => {
+    if (!users || users.length === 0) return [];
+    // show only users whose managerId matches the selected manager
+    return users.filter(
+      (u: any) => String(u.managerId || "") === String(selectedManagerId)
+    );
+  }, [users, selectedManagerId]);
+
+  // For larger orgs prefer fetching the manager's direct reports from the server
+  const [teamMembers, setTeamMembers] = useState<any[] | null>(null);
+  useEffect(() => {
+    let mounted = true;
+    const fetchTeam = async () => {
+      if (!selectedManagerId) {
+        setTeamMembers(null);
+        return;
+      }
+      try {
+        const res = await teamHierarchyService.fetchHierarchy(
+          String(selectedManagerId)
+        );
+        // The API returns an object with nested employees; if it returns array use it directly
+        const members =
+          res?.employees || res?.team || (Array.isArray(res) ? res : []);
+        if (mounted) setTeamMembers(members || []);
+      } catch (err) {
+        // on error fallback to client-side filtering
+        if (mounted) setTeamMembers([]);
+      }
+    };
+    fetchTeam();
+    return () => {
+      mounted = false;
+    };
+  }, [selectedManagerId]);
+
+  return (
+    <>
+      <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+        Lead Management
+      </Typography>
+
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          flexDirection: { xs: "column", sm: "row" },
+        }}
+      >
+        <Field name="status">
+          {({ field, meta }: FieldProps) => (
+            <TextField
+              {...field}
+              label="Status"
+              select
+              value={values.status}
+              onChange={(e) => setFieldValue("status", e.target.value)}
+              inputProps={{ "aria-label": "Lead status" }}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+            >
+              <MenuItem value="">Select status...</MenuItem>
+              {statusOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+        </Field>
+
+        <Field name="manager">
+          {({ field, meta }: FieldProps) => (
+            <Autocomplete
+              options={users}
+              getOptionLabel={(option) => option.name || ""}
+              getOptionKey={(option) => option._id || option.id}
+              value={
+                users.find((u) => u._id === (values.manager || user?._id)) ||
+                null
+              }
+              onChange={(_, newValue) => {
+                // Set selected manager id in form and clear assignedTo (team will change)
+                const id = newValue ? newValue._id : "";
+                setFieldValue("manager", id);
+                setFieldValue("managerId", id);
+                setFieldValue("assignedTo", "");
+              }}
+              sx={{ flex: 1 }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Manager"
+                  error={meta.touched && !!meta.error}
+                  helperText={meta.touched && meta.error}
+                  placeholder="Search and select employee"
+                  sx={{ bgcolor: "#fff", borderRadius: 1 }}
+                />
+              )}
+              renderOption={(props, option) => {
+                const { key, ...rest } = props;
+                return (
+                  <Box
+                    component="li"
+                    key={option._id || option.id || key}
+                    {...rest}
+                  >
+                    {option.name}
+                  </Box>
+                );
+              }}
+              noOptionsText="No employees found"
+              clearOnBlur
+              selectOnFocus
+            />
+          )}
+        </Field>
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          flexDirection: { xs: "column", sm: "row" },
+        }}
+      >
+        <Field name="source">
+          {({ field, meta }: FieldProps) => (
+            <TextField
+              {...field}
+              label="Source"
+              select
+              value={values.source}
+              onChange={(e) => setFieldValue("source", e.target.value)}
+              error={meta.touched && !!meta.error}
+              helperText={meta.touched && meta.error}
+              inputProps={{ "aria-label": "Lead source" }}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1, height: 56 }}
+              SelectProps={{
+                MenuProps: {
+                  PaperProps: {
+                    style: {
+                      maxHeight: 300,
+                    },
                   },
                 },
-              },
-            }}
-          >
-            <MenuItem value="">Select source...</MenuItem>
-            {sourceOptions.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
-                {option.label}
-              </MenuItem>
-            ))}
-          </TextField>
-        )}
-      </Field>
+              }}
+            >
+              <MenuItem value="">Select source...</MenuItem>
+              {sourceOptions.map((option) => (
+                <MenuItem key={option.value} value={option.value}>
+                  {option.label}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+        </Field>
 
-      <Field name="nextFollowUp">
-        {({ field, meta }: FieldProps) => (
-          <LocalizationProvider dateAdapter={AdapterDateFns}>
-            <DateTimePicker
-              label="Next Follow-up"
-              value={values.nextFollowUp ? new Date(values.nextFollowUp) : null}
-              onChange={(date) => {
-                setFieldValue("nextFollowUp", date ? date.toISOString() : "");
+        <Field name="nextFollowUp">
+          {({ field, meta }: FieldProps) => (
+            <LocalizationProvider dateAdapter={AdapterDateFns}>
+              <DateTimePicker
+                label="Next Follow-up"
+                value={
+                  values.nextFollowUp ? new Date(values.nextFollowUp) : null
+                }
+                onChange={(date) => {
+                  setFieldValue("nextFollowUp", date ? date.toISOString() : "");
+                }}
+                slotProps={{
+                  textField: {
+                    error: meta.touched && !!meta.error,
+                    helperText: meta.touched && meta.error,
+                    placeholder: "dd/mm/yyyy hh:mm",
+                    sx: {
+                      bgcolor: "#fff",
+                      borderRadius: 1,
+                      flex: 1,
+                      height: 56,
+                    },
+                  },
+                }}
+                format="dd/MM/yyyy HH:mm"
+              />
+            </LocalizationProvider>
+          )}
+        </Field>
+      </Box>
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          flexDirection: { xs: "column", sm: "row" },
+        }}
+      >
+        <Field name="assignedTo">
+          {({ field, meta }: FieldProps) => (
+            <Autocomplete
+              options={
+                teamMembers && teamMembers.length > 0
+                  ? teamMembers
+                  : assignedToOptions
+              }
+              getOptionLabel={(option) => option.name || ""}
+              getOptionKey={(option) => option._id || option.id}
+              value={
+                users.find((user) => user._id === values.assignedTo) || null
+              }
+              onChange={(_, newValue) => {
+                setFieldValue("assignedTo", newValue ? newValue._id : "");
               }}
-              slotProps={{
-                textField: {
-                  error: meta.touched && !!meta.error,
-                  helperText: meta.touched && meta.error,
-                  placeholder: "dd/mm/yyyy hh:mm",
-                  sx: { bgcolor: "#fff", borderRadius: 1, flex: 1, height: 56 },
-                },
+              sx={{ flex: 1 }}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Assigned To"
+                  error={meta.touched && !!meta.error}
+                  helperText={meta.touched && meta.error}
+                  placeholder="Search and select employee"
+                  sx={{ bgcolor: "#fff", borderRadius: 1 }}
+                />
+              )}
+              renderOption={(props, option) => {
+                const { key, ...rest } = props;
+                return (
+                  <Box
+                    component="li"
+                    key={option._id || option.id || key}
+                    {...rest}
+                  >
+                    {option.name}
+                  </Box>
+                );
               }}
-              format="dd/MM/yyyy HH:mm"
+              noOptionsText="No employees found"
+              clearOnBlur
+              selectOnFocus
             />
-          </LocalizationProvider>
-        )}
-      </Field>
-    </Box>
-  </>
-);
+          )}
+        </Field>
+      </Box>
+    </>
+  );
+};
 
 export default LeadManagement;

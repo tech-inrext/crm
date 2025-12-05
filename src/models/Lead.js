@@ -16,7 +16,17 @@ const budgetRanges = [
 const propertyTypes = ["residential", "commercial", "plot", ""];
 
 // const status = ["New", "Contacted", "Site Visit", "Closed", "Dropped", ""];
-const leadStatuses = ["new", "follow-up", "call back", "not connected", "details shared", "site visit done", "closed", "not interested", ""];
+const leadStatuses = [
+  "new",
+  "follow-up",
+  "call back",
+  "not connected",
+  "details shared",
+  "site visit done",
+  "closed",
+  "not interested",
+  "",
+];
 
 const leadSchema = new mongoose.Schema(
   {
@@ -29,6 +39,15 @@ const leadSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
     },
+    managerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+    },
+    updatedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+    },
+
     fullName: {
       type: String,
       trim: true,
@@ -90,5 +109,3 @@ const leadSchema = new mongoose.Schema(
 );
 
 export default mongoose.models.Lead || mongoose.model("Lead", leadSchema);
-
-
