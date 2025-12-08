@@ -84,9 +84,6 @@ const formatPriceRange = (minPrice, maxPrice) => {
 // Create a new property with automatic hierarchy management
 const createProperty = async (req, res) => {
   try {
-    console.log('=== CREATE PROPERTY REQUEST START ===');
-    console.log('Request body:', JSON.stringify(req.body, null, 2));
-    
     if (!req.isSystemAdmin) {
       return res.status(403).json({
         success: false,
@@ -106,17 +103,10 @@ const createProperty = async (req, res) => {
       propertyTypes = [propertyType];
     }
 
-    console.log('Property types to create:', propertyTypes);
-    console.log('Residential properties data:', req.body.residentialProperties);
-    console.log('Commercial properties data:', req.body.commercialProperties);
-    console.log('Plot properties data:', req.body.plotProperties);
-
     // Always check if creating multiple property types
     if (propertyTypes.length > 1 || propertyTypes.includes('project') && propertyTypes.length > 1) {
-      console.log('Creating multiple property types...');
       return await createMultiplePropertiesFromSingle(req, res, propertyTypes);
     } else {
-      console.log('Creating single property type...');
       return await createSingleProperty(req, res, propertyTypes[0]);
     }
   } catch (error) {
@@ -152,8 +142,6 @@ const createSingleProperty = async (req, res, propertyType) => {
   let finalData = { ...req.body, propertyType };
 
   try {
-    console.log(`Creating single property of type: ${propertyType}`);
-
     // ✅ Extract and map nested properties data to main fields
     if (propertyType === 'residential' && otherData.residentialProperties && otherData.residentialProperties.length > 0) {
       const residentialData = otherData.residentialProperties[0];
@@ -307,7 +295,6 @@ const createSingleProperty = async (req, res, propertyType) => {
         // Auto-inherit price from existing parent project for sub-properties
         if ((!finalData.price || finalData.price === 'Contact for price') && existingMainProject.price && existingMainProject.price !== 'Contact for price') {
           finalData.price = existingMainProject.price;
-          console.log(`Auto-inherited price from existing parent: ${existingMainProject.price}`);
         }
         
         // ✅ Update existing main project's price range
@@ -352,8 +339,6 @@ const createSingleProperty = async (req, res, propertyType) => {
         
         // Use the new main project as parent
         finalData.parentId = mainProject._id;
-        
-        console.log(`Auto-created main project: ${mainProject._id} with slug: ${slug}`);
       }
     }
 
@@ -381,7 +366,6 @@ const createSingleProperty = async (req, res, propertyType) => {
       // Auto-inherit price from parent project if not explicitly set
       if ((!finalData.price || finalData.price === 'Contact for price') && parentProperty.price && parentProperty.price !== 'Contact for price') {
         finalData.price = parentProperty.price;
-        console.log(`Auto-inherited price from parent project: ${parentProperty.price}`);
       }
     }
 
@@ -411,7 +395,6 @@ const createSingleProperty = async (req, res, propertyType) => {
     if (finalData.parentId) {
       try {
         await Property.updateParentPriceRange(finalData.parentId);
-        console.log(`Updated parent price range after creating sub-property`);
       } catch (parentUpdateError) {
         console.error("Failed to update parent price range:", parentUpdateError);
       }
@@ -468,14 +451,9 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
   const { projectName, builderName, location, description, ...otherData } = req.body;
   
   try {
-    console.log(`Creating main project with multiple property types: ${propertyTypes.join(', ')}`);
-
     // Calculate price range from all sub-properties
     const priceRange = findPriceRangeFromSubProperties(otherData);
     const mainProjectPrice = formatPriceRange(priceRange.minPrice, priceRange.maxPrice);
-
-    console.log(`Calculated price range: ${priceRange.minPrice} - ${priceRange.maxPrice}`);
-    console.log('Main project price:', mainProjectPrice);
 
     // Generate unique slug for main project
     const slug = await Property.generateUniqueSlug(projectName.trim(), builderName.trim());
@@ -510,18 +488,12 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
     const mainProject = new Property(mainProjectData);
     await mainProject.save();
 
-    console.log(`Main project created: ${mainProject._id}`);
-
     // Create sub-properties for each selected type
     const createdSubProperties = [];
     const filteredTypes = propertyTypes.filter(type => type !== 'project');
 
-    console.log('Creating sub-properties for types:', filteredTypes);
-
     // Create properties for EACH selected type
     for (const subType of filteredTypes) {
-      console.log(`\n=== Creating ${subType} property ===`);
-      
       // Get the specific property data for this type
       let subPropertyData = {};
       let subPropertyPrice = 'Contact for price';
@@ -549,7 +521,6 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
             propertyImages: residentialData.propertyImages || [],
             floorPlans: residentialData.floorPlans || []
           };
-          console.log('Using provided residential data');
         } else {
           // Create default residential property
           subPropertyData = {
@@ -570,7 +541,6 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
             propertyImages: [],
             floorPlans: []
           };
-          console.log('Creating default residential property');
         }
       } 
       else if (subType === 'commercial') {
@@ -591,7 +561,6 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
             propertyImages: commercialData.propertyImages || [],
             floorPlans: commercialData.floorPlans || []
           };
-          console.log('Using provided commercial data');
         } else {
           // Create default commercial property
           subPropertyData = {
@@ -608,7 +577,6 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
             propertyImages: [],
             floorPlans: []
           };
-          console.log('Creating default commercial property');
         }
       } 
       else if (subType === 'plot') {
@@ -631,7 +599,6 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
             propertyImages: plotData.propertyImages || [],
             floorPlans: plotData.floorPlans || []
           };
-          console.log('Using provided plot data');
         } else {
           // Create default plot
           subPropertyData = {
@@ -650,7 +617,6 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
             propertyImages: [],
             floorPlans: []
           };
-          console.log('Creating default plot property');
         }
       }
 
@@ -726,8 +692,6 @@ const createMultiplePropertiesFromSingle = async (req, res, propertyTypes) => {
       await subProperty.save();
       await subProperty.populate("parentId", "projectName builderName location price minPrice maxPrice");
       createdSubProperties.push(subProperty);
-      
-      console.log(`Successfully created ${subType} property: ${subProperty.propertyName}`);
     }
 
     // Populate main project for response
@@ -789,8 +753,6 @@ const updateMainProjectPriceRange = async (mainProjectId) => {
         minPrice: minPrice,
         maxPrice: maxPrice
       });
-      
-      console.log(`Updated main project ${mainProjectId} price range: ${minPrice} - ${maxPrice}`);
     }
   } catch (error) {
     console.error("Error updating main project price range:", error);

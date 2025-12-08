@@ -44,8 +44,6 @@ const PropertyTypeSelector: React.FC<PropertyTypeSelectorProps> = ({
   const [activeTab, setActiveTab] = useState(0);
 
   const handlePropertyTypeChange = (selectedTypes: string[]) => {
-    console.log('Selected property types:', selectedTypes);
-    
     const updatedFormData = { ...formData, propertyType: selectedTypes };
     
     // Initialize arrays for each selected type if they don't exist

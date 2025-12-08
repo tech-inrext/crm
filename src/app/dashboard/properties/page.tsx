@@ -953,8 +953,6 @@ export default function PropertiesPage() {
         type: brochure.type || 'PDF Document'
       })) || [];
 
-      console.log('Processed update data:', processedData);
-
     } else {
       // ✅ CREATE MODE
       processedData = {
@@ -976,7 +974,6 @@ export default function PropertiesPage() {
     let response;
     
     if (editingProperty && editingProperty._id) {
-      console.log('Sending update request...');
       response = await propertyService.updateProperty(editingProperty._id, cleanedData);
       toast.success("Property updated successfully", { id: toastId });
     } else {

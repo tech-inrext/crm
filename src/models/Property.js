@@ -421,7 +421,6 @@ propertySchema.statics.updateParentPriceRange = async function(parentId) {
         }
       });
 
-      console.log(`Updated parent ${parentId} price range: ${minPrice} - ${maxPrice}`);
       return true;
     }
     

@@ -80,20 +80,15 @@ const updateProperty = async (req, res) => {
     // Create a copy of request body to modify
     const updateData = { ...req.body };
 
-    console.log('Update request data:', JSON.stringify(updateData, null, 2));
-    console.log('Existing property type:', existingProperty.propertyType);
-
     // Handle propertyType - convert array to string if needed
     if (updateData.propertyType) {
       if (Array.isArray(updateData.propertyType)) {
         // Take the first item if it's an array
         if (updateData.propertyType.length > 0) {
           updateData.propertyType = updateData.propertyType[0];
-          console.log('Converted propertyType from array to string:', updateData.propertyType);
         } else {
           // If array is empty, keep existing value
           delete updateData.propertyType;
-          console.log('Keeping existing property type:', existingProperty.propertyType);
         }
       }
       // Ensure it's a valid enum value
@@ -116,7 +111,6 @@ const updateProperty = async (req, res) => {
         newBuilderName, 
         existingProperty._id
       );
-      console.log('Regenerated slug:', updateData.slug);
     } else if (existingProperty.parentId) {
       // Sub-properties shouldn't have slugs
       updateData.slug = undefined;
@@ -184,8 +178,6 @@ const updateProperty = async (req, res) => {
       }).filter(img => img !== null);
     }
 
-    console.log('Final update data:', JSON.stringify(updateData, null, 2));
-
     const updatedProperty = await Property.findByIdAndUpdate(
       existingProperty._id,
       { $set: updateData },
@@ -215,7 +207,6 @@ const updateProperty = async (req, res) => {
             });
           }
         }
-        console.log(`Updated price for ${subProperties.length} sub-properties`);
       }
     }
 
@@ -223,7 +214,6 @@ const updateProperty = async (req, res) => {
     if (isPriceChanging && updatedProperty.parentId) {
       try {
         await Property.updateParentPriceRange(updatedProperty.parentId);
-        console.log(`Parent price range updated for property ${updatedProperty._id}`);
       } catch (parentUpdateError) {
         console.error("Failed to update parent price range:", parentUpdateError);
         // Don't fail the main request if parent update fails
@@ -295,18 +285,15 @@ const deleteProperty = async (req, res) => {
     // If main project, also delete all sub-properties
     if (property.parentId === null) {
       await Property.deleteMany({ parentId: property._id });
-      console.log(`Deleted ${property._id} and all its sub-properties`);
     }
 
     // HARD DELETE - permanently remove the property
     await Property.deleteOne({ _id: property._id });
-    console.log(`Permanently deleted property: ${property._id}`);
 
     // ✅ Update parent price range if sub-property was deleted
     if (parentId) {
       try {
         await Property.updateParentPriceRange(parentId);
-        console.log(`Updated parent price range after deleting sub-property`);
       } catch (parentUpdateError) {
         console.error("Failed to update parent price range after deletion:", parentUpdateError);
       }
