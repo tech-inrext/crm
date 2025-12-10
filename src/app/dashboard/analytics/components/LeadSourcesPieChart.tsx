@@ -1,5 +1,7 @@
-import { totalmem } from 'os';
 import React from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
 
 interface Slice {
   label: string;
@@ -9,7 +11,11 @@ interface Slice {
 
 const LeadSourcesPieChart: React.FC<{ slices?: Slice[] }> = ({ slices = [] }) => {
   if (!slices || slices.length === 0) {
-    return <div style={{ padding: 12, color: '#666' }}>No overview data</div>;
+    return (
+      <Paper sx={{ p: 2, color: '#666', textAlign: 'center' }}>
+        <Typography>No overview data</Typography>
+      </Paper>
+    );
   }
 
   const total = slices.reduce((acc, s) => acc + (Number(s.value) || 0), 0) || 1;
@@ -45,18 +51,20 @@ const LeadSourcesPieChart: React.FC<{ slices?: Slice[] }> = ({ slices = [] }) =>
   });
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-      <svg width={280} height={280} viewBox="0 0 280 280" role="img" aria-label="Leads by source pie chart">
-        <g>
-          {arcs.map((a, idx) => (
-            <path key={idx} d={a.path} fill={a.color} stroke="#fff" strokeWidth={0.5} />
-          ))}
-        </g>
-        <circle cx={cx} cy={cy} r={70} fill="#fff" />
-        <text x={cx} y={cy - 10} textAnchor="middle" style={{ fontSize: 20, fontWeight: 700, fill: '#222' }}>{total}</text>
-        <text x={cx} y={cy + 22} textAnchor="middle" style={{ fontSize: 14, fill: '#666' }}>leads</text>
-      </svg>
-    </div>
+    <Paper sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center', p: 2 }}>
+      <Box>
+        <svg width={280} height={280} viewBox="0 0 280 280" role="img" aria-label="Leads by source pie chart">
+          <g>
+            {arcs.map((a, idx) => (
+              <path key={idx} d={a.path} fill={a.color} stroke="#fff" strokeWidth={0.5} />
+            ))}
+          </g>
+          <circle cx={cx} cy={cy} r={70} fill="#fff" />
+          <text x={cx} y={cy - 10} textAnchor="middle" style={{ fontSize: 20, fontWeight: 700, fill: '#222' }}>{total}</text>
+          <text x={cx} y={cy + 22} textAnchor="middle" style={{ fontSize: 14, fill: '#666' }}>leads</text>
+        </svg>
+      </Box>
+    </Paper>
   );
 };
 

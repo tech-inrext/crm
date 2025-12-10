@@ -1,4 +1,7 @@
 import React from 'react';
+import Box from '@mui/material/Box';
+import Typography from '@mui/material/Typography';
+import Paper from '@mui/material/Paper';
 
 interface LeadsBySourceMetrics {
   map: Record<string, any>;
@@ -8,11 +11,13 @@ interface LeadsBySourceMetrics {
 
 const LeadsBySourceList: React.FC<{ leadsBySourceMetrics: LeadsBySourceMetrics }> = ({ leadsBySourceMetrics }) => {
   return (
-    <div style={{ width: '100%', maxWidth: 400 }}>
-      <div style={{ fontSize: '0.95rem', color: '#666', marginBottom: 8, textAlign: 'left' }}>Cost per lead & conversion by source</div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+    <Box width="100%" maxWidth={400}>
+      <Typography sx={{ fontSize: '0.95rem', color: '#666', mb: 1, textAlign: 'left' }}>
+        Cost per lead & conversion by source
+      </Typography>
+      <Box display="flex" flexDirection="column" gap={1}>
         {leadsBySourceMetrics.sourcesOrder.length === 0 && (
-          <div style={{ color: '#666' }}>No leads available</div>
+          <Typography sx={{ color: '#666' }}>No leads available</Typography>
         )}
         {leadsBySourceMetrics.sourcesOrder.map((src) => {
           const m = leadsBySourceMetrics.map[src];
@@ -21,21 +26,21 @@ const LeadsBySourceList: React.FC<{ leadsBySourceMetrics: LeadsBySourceMetrics }
           const conversion = count > 0 ? Math.round((converted / count) * 100) : 0;
           const avgCost = count > 0 ? Math.round((m.totalCost || 0) / Math.max(1, count)) : 0;
           return (
-            <div key={src} style={{ display: 'flex', justifyContent: 'space-between', gap: 4, alignItems: 'center', padding: '8px 10px', borderRadius: 6, background: '#fff', border: '1px solid #f3f3f3' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <div style={{ width: 12, height: 12, background: (leadsBySourceMetrics.slices.find(s => s.label === src)?.color) || '#ddd', borderRadius: 3 }} />
-                <div style={{ fontWeight: 600 }}>{src}</div>
-              </div>
-              <div style={{ display: 'flex', gap: 10, minWidth: 160, justifyContent: 'flex-end', alignItems: 'center' }}>
-                <div style={{ fontSize: '0.95rem', color: '#222' }}>{count}</div>
-                <div style={{ fontSize: '0.9rem', color: '#666' }}>{avgCost > 0 ? `₹${avgCost}` : '—'}</div>
-                <div style={{ fontSize: '0.9rem', color: '#08c4a6' }}>{conversion}%</div>
-              </div>
-            </div>
+            <Paper key={src} sx={{ display: 'flex', justifyContent: 'space-between', gap: 0.5, alignItems: 'center', p: '8px 10px', borderRadius: 1.5, background: '#fff', border: '1px solid #f3f3f3', boxShadow: 'none' }}>
+              <Box display="flex" alignItems="center" gap={0.5}>
+                <Box sx={{ width: 12, height: 12, background: (leadsBySourceMetrics.slices.find(s => s.label === src)?.color) || '#ddd', borderRadius: 1 }} />
+                <Typography sx={{ fontWeight: 600 }}>{src}</Typography>
+              </Box>
+              <Box display="flex" gap={1.25} minWidth={160} justifyContent="flex-end" alignItems="center">
+                <Typography sx={{ fontSize: '0.95rem', color: '#222' }}>{count}</Typography>
+                <Typography sx={{ fontSize: '0.9rem', color: '#666' }}>{avgCost > 0 ? `₹${avgCost}` : '—'}</Typography>
+                <Typography sx={{ fontSize: '0.9rem', color: '#08c4a6' }}>{conversion}%</Typography>
+              </Box>
+            </Paper>
           );
         })}
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 };
 

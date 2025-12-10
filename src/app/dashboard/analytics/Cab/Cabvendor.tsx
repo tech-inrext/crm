@@ -1,7 +1,9 @@
 "use client";
 import React from 'react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Box, Typography, Card, CardContent } from '@/components/ui/Component';
+import Box from '@/components/ui/Component/Box';
+import Typography from '@/components/ui/Component/Typography';
+import Paper from '@/components/ui/Component/Paper';
 import { VendorFilterControls } from './VendorFilterControls';
 import { VendorDropdown } from './VendorDropdown';
 import { VendorStatsCards } from './VendorStatsCards';
@@ -160,7 +162,7 @@ export function VendorBreakdown() {
   }, [tempFilters, appliedFilters]);
 
   return (
-    <div>
+    <Box>
       <VendorFilterControls
         tempFilters={tempFilters}
         setTempFilters={setTempFilters}
@@ -186,7 +188,7 @@ export function VendorBreakdown() {
         <VendorEmpty appliedFilters={appliedFilters} monthOptions={monthOptions} />
       )}
       {vendorData && displayVendors.length > 0 && (
-        <div style={{ marginTop: 16 }}>
+        <Box mt={2}>
           <VendorStatsCards displayVendors={displayVendors} appliedFilters={appliedFilters} />
           <VendorCardsGrid
             displayVendors={displayVendors}
@@ -195,19 +197,19 @@ export function VendorBreakdown() {
             setSelectedVendor={setSelectedVendor}
             monthOptions={monthOptions}
           />
-        </div>
+        </Box>
       )}
       {loading && <VendorLoading />}
       {!vendorData && !loading && (
-        <div style={{ background: '#f8f9fa', borderRadius: 8, padding: 24, marginTop: 16, border: '1px solid #dee2e6', textAlign: 'center' }}>
-          <div style={{ fontSize: '1.1rem', fontWeight: 600, color: '#495057', marginBottom: 12 }}>
+        <Paper sx={{ background: '#f8f9fa', borderRadius: 2, p: 3, mt: 2, border: '1px solid #dee2e6', textAlign: 'center' }} elevation={0}>
+          <Typography sx={{ fontSize: '1.1rem', fontWeight: 600, color: '#495057', mb: 1.5 }}>
             🚗 Cab Driver Analytics
-          </div>
-          <div style={{ color: '#666', marginBottom: 12 }}>
+          </Typography>
+          <Typography sx={{ color: '#666', mb: 1.5 }}>
             Loading vendor data...
-          </div>
-        </div>
+          </Typography>
+        </Paper>
       )}
-    </div>
+    </Box>
   );
 };

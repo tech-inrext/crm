@@ -1,60 +1,110 @@
 import React from 'react';
+import Box from '@/components/ui/Component/Box';
+import Typography from '@/components/ui/Component/Typography';
+import FormControl from '@/components/ui/Component/FormControl';
+import InputLabel from '@/components/ui/Component/InputLabel';
+import Select from '@/components/ui/Component/Select';
+import MenuItem from '@/components/ui/Component/MenuItem';
+import Button from '@/components/ui/Component/Button';
 
 export function VendorFilterControls({ tempFilters, setTempFilters, appliedFilters, avpUsers, avpLoading, avpError, handleSubmitFilters, handleResetFilters, monthOptions, generateYearOptions, hasUnappliedChanges }) {
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-      gap: 16,
-      marginBottom: 20,
-      padding: 16,
-      background: '#f8f9fa',
-      borderRadius: 8,
-      border: '1px solid #dee2e6'
-    }}>
+    <Box
+      display="grid"
+      gridTemplateColumns="repeat(auto-fit, minmax(200px, 1fr))"
+      gap={2}
+      mb={2.5}
+      p={2}
+      sx={{ background: '#f8f9fa', borderRadius: 2, border: '1px solid #dee2e6' }}
+    >
       {/* Status Filter */}
-      <div>
-        <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, color: '#333', fontSize: '0.9rem' }}>Status Filter:</label>
-        <select value={tempFilters.status} onChange={e => setTempFilters({...tempFilters, status: e.target.value})} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', width: '100%', fontSize: '0.9rem', background: '#fff' }}>
-          <option value="all">All Status</option>
-          <option value="completed">Completed</option>
-          <option value="pending">Pending</option>
-          <option value="payment_due">Payment Due</option>
-        </select>
-      </div>
+      <FormControl fullWidth size="small">
+        <InputLabel id="status-filter-label">Status Filter</InputLabel>
+        <Select
+          labelId="status-filter-label"
+          value={tempFilters.status}
+          label="Status Filter"
+          onChange={e => setTempFilters({ ...tempFilters, status: e.target.value })}
+        >
+          <MenuItem value="all">All Status</MenuItem>
+          <MenuItem value="completed">Completed</MenuItem>
+          <MenuItem value="pending">Pending</MenuItem>
+          <MenuItem value="payment_due">Payment Due</MenuItem>
+        </Select>
+      </FormControl>
       {/* Month Filter */}
-      <div>
-        <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, color: '#333', fontSize: '0.9rem' }}>Month:</label>
-        <select value={tempFilters.month} onChange={e => setTempFilters({...tempFilters, month: e.target.value})} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', width: '100%', fontSize: '0.9rem', background: '#fff' }}>
+      <FormControl fullWidth size="small">
+        <InputLabel id="month-filter-label">Month</InputLabel>
+        <Select
+          labelId="month-filter-label"
+          value={tempFilters.month}
+          label="Month"
+          onChange={e => setTempFilters({ ...tempFilters, month: e.target.value })}
+        >
           {monthOptions.map(month => (
-            <option key={month.value} value={month.value}>{month.label}</option>
+            <MenuItem key={month.value} value={month.value}>{month.label}</MenuItem>
           ))}
-        </select>
-      </div>
+        </Select>
+      </FormControl>
       {/* Year Filter */}
-      <div>
-        <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, color: '#333', fontSize: '0.9rem' }}>Year:</label>
-        <select value={tempFilters.year} onChange={e => setTempFilters({...tempFilters, year: e.target.value})} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', width: '100%', fontSize: '0.9rem', background: '#fff' }}>
+      <FormControl fullWidth size="small">
+        <InputLabel id="year-filter-label">Year</InputLabel>
+        <Select
+          labelId="year-filter-label"
+          value={tempFilters.year}
+          label="Year"
+          onChange={e => setTempFilters({ ...tempFilters, year: e.target.value })}
+        >
           {generateYearOptions().map(year => (
-            <option key={year.value} value={year.value}>{year.label}</option>
+            <MenuItem key={year.value} value={year.value}>{year.label}</MenuItem>
           ))}
-        </select>
-      </div>
+        </Select>
+      </FormControl>
       {/* AVP Filter */}
-      <div>
-        <label style={{ display: 'block', marginBottom: 6, fontWeight: 600, color: '#333', fontSize: '0.9rem' }}>Filter by AVP:{avpLoading && (<span style={{ marginLeft: 8, fontSize: '0.8rem', color: '#666', fontWeight: 400 }}>Loading...</span>)}</label>
-        <select value={tempFilters.avp} onChange={e => setTempFilters({...tempFilters, avp: e.target.value})} style={{ padding: '8px 12px', borderRadius: 6, border: '1px solid #ddd', width: '100%', fontSize: '0.9rem', background: '#fff' }} disabled={avpLoading}>
-          <option value="all">{avpLoading ? 'Loading AVP Members...' : avpError ? 'Error loading AVP Members' : avpUsers.length > 0 ? `All AVP Members (${avpUsers.length} available)` : 'No AVP Members Found'}</option>
+      <FormControl fullWidth size="small" disabled={avpLoading} error={!!avpError}>
+        <InputLabel id="avp-filter-label">
+          Filter by AVP{avpLoading ? ' (Loading...)' : ''}
+        </InputLabel>
+        <Select
+          labelId="avp-filter-label"
+          value={tempFilters.avp}
+          label={`Filter by AVP${avpLoading ? ' (Loading...)' : ''}`}
+          onChange={e => setTempFilters({ ...tempFilters, avp: e.target.value })}
+        >
+          <MenuItem value="all">
+            {avpLoading
+              ? 'Loading AVP Members...'
+              : avpError
+              ? 'Error loading AVP Members'
+              : avpUsers.length > 0
+              ? `All AVP Members (${avpUsers.length} available)`
+              : 'No AVP Members Found'}
+          </MenuItem>
           {!avpLoading && !avpError && avpUsers.length > 0 && avpUsers.map((avp) => (
-            <option key={avp._id || avp.id} value={avp._id || avp.id}>{avp.name}</option>
+            <MenuItem key={avp._id || avp.id} value={avp._id || avp.id}>{avp.name}</MenuItem>
           ))}
-        </select>
-      </div>
+        </Select>
+      </FormControl>
       {/* Action Buttons */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-        <button onClick={handleSubmitFilters} disabled={!hasUnappliedChanges} style={{ padding: '8px 16px', borderRadius: 6, background: '#1976d2', color: '#fff', border: 'none', fontWeight: 600, cursor: hasUnappliedChanges ? 'pointer' : 'not-allowed' }}>Apply</button>
-        <button onClick={handleResetFilters} style={{ padding: '8px 16px', borderRadius: 6, background: '#eee', color: '#333', border: '1px solid #ccc', fontWeight: 600, cursor: 'pointer' }}>Reset</button>
-      </div>
-    </div>
+      <Box display="flex" alignItems="center" gap={1}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={handleSubmitFilters}
+          disabled={!hasUnappliedChanges}
+          sx={{ fontWeight: 600 }}
+        >
+          Apply
+        </Button>
+        <Button
+          variant="outlined"
+          color="inherit"
+          onClick={handleResetFilters}
+          sx={{ fontWeight: 600 }}
+        >
+          Reset
+        </Button>
+      </Box>
+    </Box>
   );
 }

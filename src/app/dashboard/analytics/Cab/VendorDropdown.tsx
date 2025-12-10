@@ -1,20 +1,37 @@
 import React from 'react';
+import Box from '@/components/ui/Component/Box';
+import Typography from '@/components/ui/Component/Typography';
+import FormControl from '@/components/ui/Component/FormControl';
+import InputLabel from '@/components/ui/Component/InputLabel';
+import Select from '@/components/ui/Component/Select';
+import MenuItem from '@/components/ui/Component/MenuItem';
 
 export function VendorDropdown({ vendorData, allVendors, appliedFilters, selectedVendor, setSelectedVendor, monthOptions }) {
   if (!vendorData || allVendors.length === 0) return null;
+  const showFiltered = (appliedFilters.status !== 'all' || appliedFilters.month !== 'all' || appliedFilters.avp !== 'all');
   return (
-    <div style={{ marginBottom: 16 }}>
-      {(appliedFilters.status !== 'all' || appliedFilters.month !== 'all' || appliedFilters.avp !== 'all') && (
-        <div style={{ fontSize: '0.85rem', color: '#666', marginBottom: 6, fontStyle: 'italic' }}>
+    <Box mb={2}>
+      {showFiltered && (
+        <Typography sx={{ fontSize: '0.85rem', color: '#666', mb: 0.75, fontStyle: 'italic' }}>
           📌 Dropdown shows only vendors matching your applied filters
-        </div>
+        </Typography>
       )}
-      <select value={selectedVendor} onChange={e => setSelectedVendor(e.target.value)} style={{ padding: '10px 14px', borderRadius: 6, border: '1px solid #ddd', minWidth: 300, fontSize: '1rem', cursor: 'pointer' }}>
-        <option value="">{(appliedFilters.status !== 'all' || appliedFilters.month !== 'all' || appliedFilters.avp !== 'all') ? `All Filtered Vendors (${allVendors.length})` : 'All Vendors'}</option>
-        {allVendors.map((vendor, idx) => (
-          <option key={vendor.id || idx} value={vendor.name}>{vendor.name} - {vendor.totalBookings} bookings</option>
-        ))}
-      </select>
-    </div>
+      <FormControl fullWidth sx={{ minWidth: 300 }} size="medium">
+        <InputLabel id="vendor-dropdown-label">{showFiltered ? `All Filtered Vendors (${allVendors.length})` : 'All Vendors'}</InputLabel>
+        <Select
+          labelId="vendor-dropdown-label"
+          value={selectedVendor}
+          label={showFiltered ? `All Filtered Vendors (${allVendors.length})` : 'All Vendors'}
+          onChange={e => setSelectedVendor(e.target.value)}
+        >
+          <MenuItem value="">{showFiltered ? `All Filtered Vendors (${allVendors.length})` : 'All Vendors'}</MenuItem>
+          {allVendors.map((vendor, idx) => (
+            <MenuItem key={vendor.id || idx} value={vendor.name}>
+              {vendor.name} - {vendor.totalBookings} bookings
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
+    </Box>
   );
 }
