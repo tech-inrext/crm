@@ -24,12 +24,14 @@ export interface Lead {
   company?: string;
   status: string;
   source?: string;
-  assignedTo?: string;
+  managerId?: string; // ObjectId reference to Employee (lead manager)
+  assignedTo?: string; // ObjectId reference to Employee (assigned team member)
   value?: number;
   notes?: string;
   followUpNotes?: string[];
   nextFollowUp?: string | Date;
-  uploadedBy?: string;
+  uploadedBy?: string; // ObjectId reference to Employee (who uploaded the lead)
+  updatedBy?: string; // ObjectId reference to Employee (who last updated the lead)
   createdAt?: string;
   updatedAt?: string;
 }

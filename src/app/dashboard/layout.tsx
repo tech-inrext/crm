@@ -24,6 +24,7 @@ import {
   Diversity3,
   Groups,
   GroupAdd,
+  Assignment,
 } from "@mui/icons-material";
 
 // const AppIcon = ({
@@ -50,6 +51,7 @@ export const DASHBOARD_SIDEBAR_LINKS = [
   {
     label: "Analytics",
     href: "/dashboard/analytics",
+    module: "analytics",
     icon: <Analytics sx={{ color: "#3785FF" }} />,
   },
   {
@@ -99,6 +101,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     href: "/dashboard/cab-booking",
     module: "cab-booking",
     icon: <LocalTaxi sx={{ color: "#3785FF" }} />,
+  },
+  {
+    label: "Vendor Booking",
+    href: "/dashboard/vendor-booking",
+    module: "cab-vendor",
+    icon: <Assignment sx={{ color: "#3785FF" }} />,
   },
   {
     label: "Properties",
