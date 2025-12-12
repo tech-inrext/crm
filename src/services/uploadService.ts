@@ -113,10 +113,8 @@ export const uploadService = {
     
     try {
       if (file.size > MAX_BASE64_SIZE) {
-        console.log(`Using direct upload for large file: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
         return await uploadService.uploadFileDirect(file);
       } else {
-        console.log(`Using base64 upload for small file: ${file.name} (${(file.size / 1024).toFixed(2)}KB)`);
         return await uploadService.uploadFileBase64(file);
       }
     } catch (error: any) {

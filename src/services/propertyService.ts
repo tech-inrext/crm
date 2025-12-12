@@ -197,16 +197,16 @@ export const propertyService = {
     maxPrice?: number
   ): Promise<PropertyListResponse> => {
     const params: any = { search, page, limit, parentOnly, includeChildren, _t: Date.now() };
-    if (parentId) params.parentId = parentId;
     if (propertyType) params.propertyType = propertyType;
-    if (status) params.status = status;
-    if (location) params.location = location;
-    if (builderName) params.builderName = builderName;
-    if (minPrice) params.minPrice = minPrice;
-    if (maxPrice) params.maxPrice = maxPrice;
-    
-    const response = await api.get('/property', { params });
-    return response.data;
+  if (status) params.status = status;
+  if (location) params.location = location;
+  if (builderName) params.builderName = builderName;
+  if (parentId) params.parentId = parentId;
+  if (minPrice) params.minPrice = minPrice;
+  if (maxPrice) params.maxPrice = maxPrice;
+  
+  const response = await api.get('/property', { params });
+  return response.data;
   },
 
   getPublicProperties: async (
