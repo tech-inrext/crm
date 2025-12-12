@@ -2,7 +2,7 @@
 import React from 'react';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import BoxMUI from '@mui/material/Box';
+import BoxMUI from '@/components/ui/Component/Box';
 import { useAuth } from '@/contexts/AuthContext';
 import { Box, Typography, Card, CardContent } from '@/components/ui/Component';
 import PermissionGuard from "@/components/PermissionGuard";
@@ -165,6 +165,9 @@ export default function NewDashboardPage() {
               approvedMouLoading={overallLoading}
               showVendorBilling={analyticsAccess.showTotalVendorsBilling}
               showTotalUsers={analyticsAccess.showTotalUsers}
+              scheduleLoading={scheduleLoading}
+              scheduleAnalytics={scheduleAnalytics}
+              analyticsAccess={analyticsAccess}
             />
           </div>
         )}
@@ -180,66 +183,89 @@ export default function NewDashboardPage() {
         )}
         {((analyticsAccess.showCabBookingAnalytics && tab === 2) || (!analyticsAccess.showCabBookingAnalytics && tab === 1)) && (
           <div>
-            <Box
-              sx={{
-                display: 'grid',
-                gap: 3,
-                gridTemplateColumns: { xs: '1fr', md: '2fr 1fr' },
-                alignItems: 'start',
-                width: { xs: '100%', md: '80%' }
+            <div
+              style={{
+                display: 'flex',
+                gap: '24px',
+                margin: '32px 0',
+                flexWrap: 'wrap',
+                width: '100%',
+                alignItems: 'stretch',
               }}
             >
-              <Card
-                sx={{
-                  bgcolor: '#fff',
-                  borderRadius: 2,
-                  boxShadow: '0 1px 4px rgba(0,0,0,0.06)',
-                  minHeight: 400,
-                  height: '95%',
+              {/* Lead Conversion Card */}
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: '380px',
                   display: 'flex',
                   flexDirection: 'column',
-                  justifyContent: 'flex-start',
                 }}
               >
-                <CardContent sx={{ p: 0 }}>
-                  <div style={{
+                <Card
+                  sx={{
+                    minHeight: 400,
+                    height: '100%',
+                    borderRadius: 0,
+                    boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
+                    border: '1px solid #eceff1',
+                    width: '100%',
                     display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
-                    padding: '18px 18px 0 0'
-                  }}>
-                    <Typography
-                      variant="h5"
-                      sx={{ fontWeight: 600, color: '#222', ml: 2 }}
-                    >
-                      Lead Conversion
-                    </Typography>
-                    <select
-                      value={leadConversionPeriod}
-                      onChange={(e) => setLeadConversionPeriod(e.target.value as 'week' | 'month')}
-                      style={{
-                        padding: '6px 12px',
-                        borderRadius: 6,
-                        border: '1px solid #ccc',
-                        fontWeight: 500,
-                        fontSize: '1rem',
-                        color: '#222',
-                        background: '#f7f9fa'
-                      }}
-                    >
-                      <option value="week">Week</option>
-                      <option value="month">Month</option>
-                    </select>
-                  </div>
-                  <LeadGenerationChart period={leadConversionPeriod} />
-                </CardContent>
-              </Card>
-              <ScheduleCard
-                analyticsAccess={analyticsAccess}
-                scheduleLoading={scheduleLoading}
-                scheduleAnalytics={scheduleAnalytics}
-              />
-            </Box>
+                    flexDirection: 'column',
+                    flex: 1,
+                  }}
+                >
+                  <CardContent sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                    <div style={{
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      padding: '18px 18px 0 0'
+                    }}>
+                      <Typography
+                        variant="h5"
+                        sx={{ fontWeight: 600, color: '#222', ml: 2 }}
+                      >
+                        Lead Conversion
+                      </Typography>
+                      <select
+                        value={leadConversionPeriod}
+                        onChange={(e) => setLeadConversionPeriod(e.target.value as 'week' | 'month')}
+                        style={{
+                          padding: '6px 12px',
+                          borderRadius: 6,
+                          border: '1px solid #ccc',
+                          fontWeight: 500,
+                          fontSize: '1rem',
+                          color: '#222',
+                          background: '#f7f9fa'
+                        }}
+                      >
+                        <option value="week">Week</option>
+                        <option value="month">Month</option>
+                      </select>
+                    </div>
+                    <LeadGenerationChart period={leadConversionPeriod} />
+                  </CardContent>
+                </Card>
+              </div>
+              {/* Property On Demand Card */}
+              <div
+                style={{
+                  flex: 1,
+                  minWidth: '380px',
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <Card sx={{ minHeight: 400, height: '100%', borderRadius: 0, boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #eceff1', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+                  <CardContent sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333', marginBottom: 16, width: '100%', textAlign: 'center' }}>Property On Demand</div>
+                    <PropertyPieChart propertyData={propertyMetrics} />
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
             <div
               style={{
                 display: 'flex',
@@ -271,7 +297,7 @@ export default function NewDashboardPage() {
                     flex: 1,
                   }}
                 >
-                  <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+                  <CardContent sx={{ height: '100%', display: ' ', flexDirection: 'column', justifyContent: 'flex-start' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                       <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333' }}>Leads by Source</div>
                       <div style={{ fontSize: '0.9rem', color: '#666' }}>{leadsAnalytics?.totalLeads || 0} leads</div>
@@ -311,14 +337,6 @@ export default function NewDashboardPage() {
                   </CardContent>
                 </Card>
               </div>
-            </div>
-            <div style={{ width: '100%', margin: '32px 0', display: 'flex', justifyContent: 'center' }}>
-              <Card sx={{ width: '100%', maxWidth: '100%', borderRadius: 2, boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #eceff1', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <CardContent sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333', marginBottom: 16, width: '100%', textAlign: 'center' }}>Property On Demand</div>
-                  <PropertyPieChart propertyData={propertyMetrics} />
-                </CardContent>
-              </Card>
             </div>
           </div>
         )}
