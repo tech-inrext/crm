@@ -48,6 +48,7 @@ const BookingLogin: React.FC = () => {
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
   const [projectFilter, setProjectFilter] = useState("");
   const [teamHeadFilter, setTeamHeadFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState(""); 
   const [projectOptions, setProjectOptions] = useState<string[]>([]);
   const [teamHeadOptions, setTeamHeadOptions] = useState<string[]>([]);
 
@@ -69,7 +70,7 @@ const BookingLogin: React.FC = () => {
     deleteBooking,
     updateBookingStatus,
     loadBookings,
-  } = useBookingLogin(debouncedSearch, projectFilter, teamHeadFilter);
+  } = useBookingLogin(debouncedSearch, projectFilter, teamHeadFilter, statusFilter); // Updated
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -115,9 +116,16 @@ const BookingLogin: React.FC = () => {
     setPage(1);
   }, [setPage]);
 
+  // Handle status filter change
+  const handleStatusFilterChange = useCallback((value: string) => {
+    setStatusFilter(value);
+    setPage(1);
+  }, [setPage]);
+
   const handleClearFilters = useCallback(() => {
     setProjectFilter("");
     setTeamHeadFilter("");
+    setStatusFilter("");
     setPage(1);
   }, [setPage]);
 
@@ -432,12 +440,14 @@ const BookingLogin: React.FC = () => {
           onProjectFilterChange={handleProjectFilterChange}
           teamHeadFilter={teamHeadFilter}
           onTeamHeadFilterChange={handleTeamHeadFilterChange}
+          statusFilter={statusFilter} 
+          onStatusFilterChange={handleStatusFilterChange} 
           projectOptions={projectOptions}
           teamHeadOptions={teamHeadOptions}
         />
 
-        {/* Clear Filters Button */}
-        {/* {(projectFilter || teamHeadFilter) && (
+        {/* Clear Filters Button when any filter is active */}
+        {(projectFilter || teamHeadFilter || statusFilter) && (
           <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
             <Button 
               variant="outlined" 
@@ -445,13 +455,19 @@ const BookingLogin: React.FC = () => {
               onClick={handleClearFilters}
               sx={{ 
                 borderRadius: 2,
-                textTransform: 'none'
+                textTransform: 'none',
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                '&:hover': {
+                  borderColor: 'primary.dark',
+                  backgroundColor: 'primary.light',
+                }
               }}
             >
-              Clear Filters
+              Clear All Filters
             </Button>
           </Box>
-        )} */}
+        )}
       </Paper>
 
       {loading ? (
@@ -464,7 +480,7 @@ const BookingLogin: React.FC = () => {
             No bookings found.
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {search || projectFilter || teamHeadFilter ? "Try adjusting your search or filter criteria" : "Create your first booking to get started"}
+            {search || projectFilter || teamHeadFilter || statusFilter ? "Try adjusting your search or filter criteria" : "Create your first booking to get started"}
           </Typography>
         </Box>
       ) : isMobile ? (
@@ -611,4 +627,3 @@ const BookingLogin: React.FC = () => {
 };
 
 export default BookingLogin;
-

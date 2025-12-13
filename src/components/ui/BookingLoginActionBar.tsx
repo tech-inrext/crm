@@ -4,6 +4,7 @@ import { Box, TextField, Button, FormControl, InputLabel, Select, MenuItem } fro
 import { Add, Search } from "@mui/icons-material";
 import PermissionGuard from "@/components/PermissionGuard";
 import { SEARCH_PLACEHOLDER } from "@/constants/bookingLogin";
+import { STATUS_OPTIONS } from "@/constants/bookingLogin";
 
 interface BookingLoginActionBarProps {
   search: string;
@@ -14,6 +15,8 @@ interface BookingLoginActionBarProps {
   onProjectFilterChange: (value: string) => void;
   teamHeadFilter: string;
   onTeamHeadFilterChange: (value: string) => void;
+  statusFilter: string; 
+  onStatusFilterChange: (value: string) => void; 
   projectOptions: string[];
   teamHeadOptions: string[];
 }
@@ -27,6 +30,8 @@ const BookingLoginActionBar: React.FC<BookingLoginActionBarProps> = ({
   onProjectFilterChange,
   teamHeadFilter,
   onTeamHeadFilterChange,
+  statusFilter, 
+  onStatusFilterChange, 
   projectOptions,
   teamHeadOptions,
 }) => {
@@ -93,6 +98,23 @@ const BookingLoginActionBar: React.FC<BookingLoginActionBarProps> = ({
             {teamHeadOptions.map((teamHead) => (
               <MenuItem key={teamHead} value={teamHead}>
                 {teamHead}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+
+      {/* Status Filter */}
+        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 180 } }}>
+          <InputLabel>Status</InputLabel>
+          <Select
+            value={statusFilter}
+            label="Status"
+            onChange={(e) => onStatusFilterChange(e.target.value)}
+          >
+            <MenuItem value="">All Status</MenuItem>
+            {STATUS_OPTIONS.map((status) => (
+              <MenuItem key={status.value} value={status.value}>
+                {status.label}
               </MenuItem>
             ))}
           </Select>

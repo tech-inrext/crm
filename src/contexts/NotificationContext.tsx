@@ -133,7 +133,7 @@ export const useNotifications = () => {
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
-  const { user } = useAuth();
+  const { user, pendingRoleSelection } = useAuth();
 
   // State
   const [notifications, setNotifications] = useState<Notification[]>([]);
@@ -173,7 +173,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   // Fetch notifications with pagination and filters
   const fetchNotifications = useCallback(
     async (page = 1, customFilters = {}) => {
-      if (!user) return;
+      if (!user || pendingRoleSelection) return;
 
       try {
         setLoading(true);
@@ -220,7 +220,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         setLoading(false);
       }
     },
-    [user, filters]
+    [user, pendingRoleSelection, filters]
   );
 
   // Load more notifications
@@ -232,7 +232,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Refresh unread count
   const refreshUnreadCount = useCallback(async () => {
-    if (!user) return;
+    if (!user || pendingRoleSelection) return;
 
     try {
       const response = await axios.get("/api/v0/notifications/unread-count");
@@ -242,11 +242,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error("Error fetching unread count:", error);
     }
-  }, [user]);
+  }, [user, pendingRoleSelection]);
 
   // Refresh stats
   const refreshStats = useCallback(async () => {
-    if (!user) return;
+    if (!user || pendingRoleSelection) return;
 
     try {
       const response = await axios.get("/api/v0/notifications/stats");
@@ -256,7 +256,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error("Error fetching notification stats:", error);
     }
-  }, [user]);
+  }, [user, pendingRoleSelection]);
 
   // Mark notifications as read
   const markAsRead = useCallback(
@@ -430,7 +430,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Subscribe to Push Notifications
   const subscribeToPushNotifications = useCallback(async () => {
-    if (!user || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    if (!user || pendingRoleSelection || !("serviceWorker" in navigator) || !("PushManager" in window)) {
       return;
     }
 
@@ -468,11 +468,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (error) {
       console.error("Error subscribing to push notifications:", error);
     }
-  }, [user]);
+  }, [user, pendingRoleSelection]);
 
   // Initialize notifications when user changes
   useEffect(() => {
-    if (user) {
+    if (user && !pendingRoleSelection) {
       fetchNotifications(1);
       refreshUnreadCount();
       refreshStats();
@@ -489,6 +489,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [
     user,
+    pendingRoleSelection,
     fetchNotifications,
     refreshUnreadCount,
     refreshStats,
@@ -498,14 +499,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Auto-refresh unread count every 30 seconds
   useEffect(() => {
-    if (!user) return;
+    if (!user || pendingRoleSelection) return;
 
     const intervalId = setInterval(() => {
       refreshUnreadCount();
     }, 30000); // 30 seconds
 
     return () => clearInterval(intervalId);
-  }, [user, refreshUnreadCount]);
+  }, [user, pendingRoleSelection, refreshUnreadCount]);
 
   // Fetch notifications when unread count increases
   useEffect(() => {
@@ -518,7 +519,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Refresh on window focus to catch notifications created in other tabs
   useEffect(() => {
-    if (!user) return;
+    if (!user || pendingRoleSelection) return;
 
     const handleFocus = () => {
       refreshUnreadCount();
@@ -527,14 +528,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, [user, refreshUnreadCount, fetchNotifications]);
+  }, [user, pendingRoleSelection, refreshUnreadCount, fetchNotifications]);
 
   // Refetch when filters change
   useEffect(() => {
-    if (user) {
+    if (user && !pendingRoleSelection) {
       fetchNotifications(1);
     }
-  }, [filters, fetchNotifications, user]);
+  }, [filters, fetchNotifications, user, pendingRoleSelection]);
 
   const value: NotificationContextType = {
     notifications,

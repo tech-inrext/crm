@@ -59,7 +59,8 @@ const ALLOWED_FILE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'
 export function useBookingLogin(
   debouncedSearch: string, 
   projectFilter: string = "", 
-  teamHeadFilter: string = ""
+  teamHeadFilter: string = "",
+  statusFilter: string = "" 
 ) {
   const [bookings, setBookings] = useState<BookingLogin[]>([]);
   const [loading, setLoading] = useState(false);
@@ -73,7 +74,7 @@ export function useBookingLogin(
   const [form, setForm] = useState({});
 
   const loadBookings = useCallback(
-    async (page = 1, limit = DEFAULT_PAGE_SIZE, search = "", project = "", teamHead = "") => {
+    async (page = 1, limit = DEFAULT_PAGE_SIZE, search = "", project = "", teamHead = "", status = "") => {
       setLoading(true);
       try {
         const response = await axios.get(BOOKING_LOGIN_API_BASE, {
@@ -83,6 +84,7 @@ export function useBookingLogin(
             search: search.trim() || undefined,
             projectName: project || undefined,
             teamHeadName: teamHead || undefined,
+            status: status || undefined,
             _t: Date.now(),
           },
         });
@@ -102,8 +104,8 @@ export function useBookingLogin(
   );
 
   useEffect(() => {
-    loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter);
-  }, [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, loadBookings]);
+    loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, statusFilter);
+  }, [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, statusFilter, loadBookings]);
 
   // Enhanced file upload function with validation
   const uploadFileToS3 = async (file: File): Promise<{ url: string; public_id: string }> => {
@@ -191,7 +193,7 @@ export function useBookingLogin(
         });
 
         await axios.post(BOOKING_LOGIN_API_BASE, payload);
-        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter);
+        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, statusFilter);
         
       } catch (error) {
         console.error("Failed to add booking:", error);
@@ -207,7 +209,7 @@ export function useBookingLogin(
         setSaving(false);
       }
     },
-    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, loadBookings]
+    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, statusFilter, loadBookings]
   );
 
   const updateBooking = useCallback(
@@ -257,7 +259,7 @@ export function useBookingLogin(
         delete payload.panFile;
 
         await axios.patch(`${BOOKING_LOGIN_API_BASE}/${id}`, payload);
-        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter);
+        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, statusFilter);
         
       } catch (error) {
         console.error("Failed to update booking:", error);
@@ -266,7 +268,7 @@ export function useBookingLogin(
         setSaving(false);
       }
     },
-    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, loadBookings]
+    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, statusFilter, loadBookings]
   );
 
   const updateBookingStatus = useCallback(
@@ -276,20 +278,20 @@ export function useBookingLogin(
           status,
           rejectionReason,
         });
-        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter);
+        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, statusFilter);
       } catch (error) {
         console.error("Failed to update booking status:", error);
         throw error;
       }
     },
-    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, loadBookings]
+    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, statusFilter, loadBookings]
   );
 
   const deleteBooking = useCallback(
     async (id: string) => {
       try {
         await axios.delete(`${BOOKING_LOGIN_API_BASE}/${id}`);
-        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter);
+        await loadBookings(page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, statusFilter);
       } catch (error: any) {
         const status = error?.response?.status;
         const message = error?.response?.data?.message || "Failed to delete booking";
@@ -301,7 +303,7 @@ export function useBookingLogin(
         throw error;
       }
     },
-    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, loadBookings]
+    [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, statusFilter, loadBookings]
   );
 
   return {

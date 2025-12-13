@@ -62,6 +62,7 @@ const transformModulePermissions = (
     "booking-login",
     "training-videos",
     "pillar",
+    "analytics",
   ];
 
   const permissions: RolePermissions = { read: [], write: [], delete: [] };
@@ -116,8 +117,7 @@ export const createRole = async (
       throw new Error(`Failed to create role: ${serverMsg}`);
     }
     throw new Error(
-      `Failed to create role: ${
-        error instanceof Error ? error.message : "Unknown error"
+      `Failed to create role: ${error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }
@@ -155,8 +155,7 @@ export const updateRole = async (
       throw new Error(`Failed to update role: ${serverMsg}`);
     }
     throw new Error(
-      `Failed to update role: ${
-        error instanceof Error ? error.message : "Unknown error"
+      `Failed to update role: ${error instanceof Error ? error.message : "Unknown error"
       }`
     );
   }
