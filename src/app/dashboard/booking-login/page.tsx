@@ -147,18 +147,27 @@ const BookingLogin: React.FC = () => {
   return roleName === 'accounts' || roleName === 'admin' || isSystemAdmin;
 };
 
-  const handleEditBooking = (booking: any) => {
-    // Prevent editing of approved/rejected bookings for non-accounts users
-    if (!hasAccountsRole() && (booking.status === 'approved' || booking.status === 'rejected')) {
-      setSnackbarMessage("Cannot edit approved or rejected bookings");
-      setSnackbarSeverity("warning");
-      setSnackbarOpen(true);
-      return;
-    }
-    setSelectedBooking(booking);
-    setEditId(booking._id);
-    setOpen(true);
-  };
+const handleEditBooking = (booking: any) => {
+  // Prevent editing of submitted/approved/rejected bookings for non-accounts users
+  if (!hasAccountsRole() && booking.status !== 'draft') {
+    setSnackbarMessage("Cannot edit submitted booking. Only draft bookings can be edited.");
+    setSnackbarSeverity("warning");
+    setSnackbarOpen(true);
+    return;
+  }
+  
+  // Prevent editing of approved/rejected bookings for accounts users
+  if (hasAccountsRole() && (booking.status === 'approved' || booking.status === 'rejected')) {
+    setSnackbarMessage("Cannot edit approved or rejected bookings");
+    setSnackbarSeverity("warning");
+    setSnackbarOpen(true);
+    return;
+  }
+  
+  setSelectedBooking(booking);
+  setEditId(booking._id);
+  setOpen(true);
+};
 
   const handleViewBooking = (booking: any) => {
     setSelectedBooking(booking);
@@ -340,23 +349,42 @@ const BookingLogin: React.FC = () => {
             <Box
               component="button"
               onClick={() => handleEditBooking(row)}
+              disabled={(!hasAccountsRole() && row.status !== 'draft') || 
+              (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))}
               sx={{
                 border: 'none',
                 background: 'none',
-                cursor: 'pointer',
-                color: 'secondary.main',
+                cursor: ((!hasAccountsRole() && row.status !== 'draft') || 
+               (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))) 
+                ? 'not-allowed' : 'pointer',
+                color: ((!hasAccountsRole() && row.status !== 'draft') || 
+              (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))) 
+               ? 'grey.400' : 'secondary.main',
                 p: 0.5,
                 borderRadius: 1,
-                '&:hover': { backgroundColor: 'secondary.light', color: 'white' },
+                '&:hover': { 
+        backgroundColor: ((!hasAccountsRole() && row.status !== 'draft') || 
+                         (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))) 
+                          ? 'transparent' : 'secondary.light', 
+        color: ((!hasAccountsRole() && row.status !== 'draft') || 
+                (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))) 
+                 ? 'grey.400' : 'white' 
+      },
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 minWidth: 32,
                 minHeight: 32,
               }}
-              title="Edit Booking"
+              title={
+      (!hasAccountsRole() && row.status !== 'draft') 
+        ? "Cannot edit submitted booking. Only draft bookings can be edited." 
+        : (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))
+          ? "Cannot edit approved or rejected bookings"
+          : "Edit Booking"
+    }
             >
-              <Edit/>
+              <Edit fontSize="small" />
             </Box>
           </PermissionGuard>
           <PermissionGuard

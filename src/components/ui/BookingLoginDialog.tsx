@@ -816,40 +816,45 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
           </Grid>
 
           {/* Status - updated for role base access */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={form.status || 'draft'}
-                label="Status"
-                onChange={handleChange("status")}
-                disabled={
-                  // Disable status field for non-accounts users when editing approved/rejected bookings
-                  editId && !hasAccountsRole() && 
-                  (form.status === 'approved' || form.status === 'rejected')
-                }
-              >
-                {getStatusOptions().map((option) => (
-                  <MenuItem 
-                    key={option.value} 
-                    value={option.value}
-                    disabled={
-                      // Disable approved/rejected for non-accounts users
-                      !hasAccountsRole() && 
-                      (option.value === 'approved' || option.value === 'rejected')
-                    }
-                  >
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-              {!hasAccountsRole() && (
-                <FormHelperText>
-                  Only Accounts role can set status to Approved or Rejected
-                </FormHelperText>
-              )}
-            </FormControl>
-          </Grid>
+<Grid size={{ xs: 12, md: 6 }}>
+  <FormControl fullWidth>
+    <InputLabel>Status</InputLabel>
+    <Select
+      value={form.status || 'draft'}
+      label="Status"
+      onChange={handleChange("status")}
+      disabled={
+        editId && 
+        ((!hasAccountsRole() && form.status !== 'draft') ||
+        (form.status === 'approved' || form.status === 'rejected'))
+      }
+    >
+      {getStatusOptions().map((option) => (
+        <MenuItem 
+          key={option.value} 
+          value={option.value}
+          disabled={
+            // Disable approved/rejected for non-accounts users
+            !hasAccountsRole() && 
+            (option.value === 'approved' || option.value === 'rejected')
+          }
+        >
+          {option.label}
+        </MenuItem>
+      ))}
+    </Select>
+    {editId && !hasAccountsRole() && form.status !== 'draft' && (
+      <FormHelperText error>
+        Cannot edit submitted booking. Only draft bookings can be edited.
+      </FormHelperText>
+    )}
+    {!hasAccountsRole() && (
+      <FormHelperText>
+        Only Accounts role can set status to Approved or Rejected
+      </FormHelperText>
+    )}
+  </FormControl>
+</Grid>
 
           {/* File Uploads */}
           <Grid size={{ xs: 12 }}>
