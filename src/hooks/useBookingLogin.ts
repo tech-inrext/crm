@@ -89,7 +89,7 @@ export function useBookingLogin(
           },
         });
 
-        const { data, pagination } = response.data;
+        const { data, pagination, userInfo } = response.data;
         setBookings(data || []);
         setTotalItems(pagination?.totalItems || 0);
       } catch (error) {

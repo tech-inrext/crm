@@ -43,7 +43,7 @@ const Pagination = dynamic(() => import("@/components/ui/Navigation/Pagination")
 });
 
 const BookingLogin: React.FC = () => {
-  const { hasAccountsRole } = useAuth();
+  const { hasAccountsRole, user } = useAuth();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
   const [projectFilter, setProjectFilter] = useState("");
@@ -139,6 +139,13 @@ const BookingLogin: React.FC = () => {
     setSelectedBooking(null);
     setEditId(null);
   };
+
+  const hasAdminAccess = () => {
+  const roleName = user?.currentRole?.name?.toLowerCase();
+  const isSystemAdmin = user?.isSystemAdmin;
+  
+  return roleName === 'accounts' || roleName === 'admin' || isSystemAdmin;
+};
 
   const handleEditBooking = (booking: any) => {
     // Prevent editing of approved/rejected bookings for non-accounts users
@@ -277,31 +284,19 @@ const BookingLogin: React.FC = () => {
           >
             {row.status}
           </Box>
-          
-          {/* Show approve/reject buttons only for Accounts role and submitted status */}
-          {hasAccountsRole() && row.status === 'submitted' && (
-            <>
-              <Button
-                size="small"
-                variant="contained"
-                color="success"
-                startIcon={<Check />}
-                onClick={() => handleApproveBooking(row._id)}
-                sx={{ minWidth: 'auto', px: 1 }}
-              >
-                Approve
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                startIcon={<Close />}
-                onClick={() => handleRejectBooking(row._id)}
-                sx={{ minWidth: 'auto', px: 1 }}
-              >
-                Reject
-              </Button>
-            </>
+        </Box>
+      )
+    },
+    { 
+      label: "Created By", 
+      dataKey: "createdBy.name",
+      component: (row: any) => (
+        <Box>
+          {row.createdBy?.name || "N/A"}
+          {row.createdBy?.employeeProfileId && (
+            <Typography variant="caption" display="block" color="text.secondary">
+              ID: {row.createdBy.employeeProfileId}
+            </Typography>
           )}
         </Box>
       )
@@ -417,18 +412,37 @@ const BookingLogin: React.FC = () => {
           overflow: "hidden",
         }}
       >
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            color: "text.primary",
-            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
-            mb: { xs: 2, md: 3 },
-            textAlign: { xs: "center", sm: "left" },
-          }}
-        >
-          Booking Login
-        </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Box>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                color: "text.primary",
+                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
+                mb: 0.5,
+              }}
+            >
+              Booking Login
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {hasAccountsRole() 
+                ? "All bookings (Admin/Accounts View)" 
+                : "Your bookings (Personal View)"}
+            </Typography>
+          </Box>
+          
+          {!hasAccountsRole() && (
+            <Box sx={{ textAlign: 'right' }}>
+              <Typography variant="body2" color="primary.main" fontWeight="bold">
+                Note:
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                You can only see bookings created by you
+              </Typography>
+            </Box>
+          )}
+        </Box>
         
         {/* Action Bar with Filters */}
         <BookingLoginActionBar
@@ -475,13 +489,42 @@ const BookingLogin: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : bookings.length === 0 ? (
-        <Box sx={{ textAlign: "center", mt: 4 }}>
-          <Typography variant="h6" color="text.secondary">
-            No bookings found.
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {search || projectFilter || teamHeadFilter || statusFilter ? "Try adjusting your search or filter criteria" : "Create your first booking to get started"}
-          </Typography>
+        <Box sx={{ textAlign: "center", mt: 4, p: 3 }}>
+          <Box sx={{ maxWidth: 400, margin: '0 auto' }}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              {hasAccountsRole() 
+                ? "No bookings found" 
+                : "No bookings created yet"}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {hasAccountsRole() 
+                ? (search || projectFilter || teamHeadFilter || statusFilter 
+                    ? "Try adjusting your search or filter criteria" 
+                    : "No bookings have been created by any user yet")
+                : (search || projectFilter || teamHeadFilter || statusFilter 
+                    ? "Try adjusting your search or filter criteria" 
+                    : "You haven't created any bookings yet")}
+            </Typography>
+            
+            {!hasAccountsRole() && (
+              <PermissionGuard module="booking-login" action="write" fallback={null}>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={() => setOpen(true)}
+                  sx={{ 
+                    borderRadius: 2,
+                    background: "#1976d2",
+                    "&:hover": {
+                      background: "#1976d2",
+                    },
+                  }}
+                >
+                  Create Your First Booking
+                </Button>
+              </PermissionGuard>
+            )}
+          </Box>
         </Box>
       ) : isMobile ? (
         <Box>
@@ -627,3 +670,4 @@ const BookingLogin: React.FC = () => {
 };
 
 export default BookingLogin;
+

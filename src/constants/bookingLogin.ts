@@ -134,3 +134,4 @@ export const BUTTON_LABELS = {
 
 // Import shared constants from leads for consistency
 export { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
+

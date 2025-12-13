@@ -328,15 +328,22 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
       sx={{ '& .MuiDialog-paper': { maxHeight: '90vh' } }}
     >
       <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6" fontWeight="bold">
-            {editId ? BUTTON_LABELS.EDIT_BOOKING : BUTTON_LABELS.ADD_BOOKING}
-          </Typography>
-          <IconButton onClick={onClose} disabled={saving}>
-            <Close />
-          </IconButton>
-        </Box>
-      </DialogTitle>
+  <Box display="flex" justifyContent="space-between" alignItems="center">
+    <Box>
+      <Typography variant="h6" fontWeight="bold">
+        {editId ? BUTTON_LABELS.EDIT_BOOKING : BUTTON_LABELS.ADD_BOOKING}
+      </Typography>
+      {!hasAccountsRole() && !editId && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Note: You will only be able to see bookings created by you
+        </Typography>
+      )}
+    </Box>
+    <IconButton onClick={onClose} disabled={saving}>
+      <Close />
+    </IconButton>
+  </Box>
+</DialogTitle>
 
       <DialogContent dividers>
         <Grid container spacing={3}>
@@ -944,3 +951,4 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
 };
 
 export default BookingLoginDialog;
+

@@ -50,8 +50,19 @@ const getAllBookingLogins = async (req, res) => {
     const itemsPerPage = parseInt(limit);
     const skip = (currentPage - 1) * itemsPerPage;
 
-    // Build query
+    // Get user role from auth middleware
+    const userRole = req.role?.name?.toLowerCase();
+    const isAccountsUser = userRole === 'accounts' || userRole === 'admin';
+    const isSystemAdmin = req.isSystemAdmin;
+    const currentUserId = req.employee?._id;
+
+    // Build query - role-based filtering
     const query = {};
+
+     // Regular users can only see their own bookings
+    if (!isAccountsUser && !isSystemAdmin && currentUserId) {
+      query.createdBy = currentUserId;
+    }
     
     if (search) {
       query.$or = [
@@ -93,6 +104,12 @@ const getAllBookingLogins = async (req, res) => {
         itemsPerPage,
         totalPages: Math.ceil(totalBookings / itemsPerPage),
       },
+      // Return user role info for frontend
+      userInfo: {
+        isAccountsUser,
+        isSystemAdmin,
+        userId: currentUserId,
+      }
     });
   } catch (error) {
     return res.status(500).json({
@@ -129,3 +146,4 @@ const handler = async (req, res) => {
 };
 
 export default withAuth(handler);
+

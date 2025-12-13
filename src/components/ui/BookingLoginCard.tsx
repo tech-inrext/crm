@@ -157,6 +157,7 @@ const BookingLoginCard: React.FC<BookingLoginCardProps> = ({
               >
                 <Edit fontSize="small" />
               </IconButton>
+              
             </PermissionGuard>
             <PermissionGuard module="booking-login" action="delete" fallback={null}>
               <IconButton 
@@ -192,3 +193,4 @@ const BookingLoginCard: React.FC<BookingLoginCardProps> = ({
 };
 
 export default BookingLoginCard;
+

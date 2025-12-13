@@ -19,6 +19,19 @@ const getBookingLoginById = async (req, res) => {
       });
     }
 
+    // Check if user is admin/accounts or the creator of the booking
+    const userRole = req.role?.name?.toLowerCase();
+    const isAccountsUser = userRole === 'accounts' || userRole === 'admin';
+    const isSystemAdmin = req.isSystemAdmin;
+    const isCreator = String(booking.createdBy._id) === String(req.employee._id);
+
+    if (!isAccountsUser && !isSystemAdmin && !isCreator) {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. You can only view your own bookings.",
+      });
+    }
+
     return res.status(200).json({
       success: true,
       data: booking,
@@ -48,17 +61,20 @@ const updateBookingLogin = async (req, res) => {
     // Check if non-accounts user is trying to change status to approved/rejected
     if (req.body.status && ['approved', 'rejected'].includes(req.body.status)) {
       const userRole = req.role?.name?.toLowerCase();
-      if (userRole !== 'accounts') {
+      const isSystemAdmin = req.isSystemAdmin;
+
+      if (userRole !== 'accounts' && userRole !== 'admin' && !isSystemAdmin) {
         return res.status(403).json({
           success: false,
-          message: "Only Accounts role can approve or reject bookings",
+          message: "Only Accounts/Admin role can approve or reject bookings",
         });
       }
     }
 
     // Prevent updates if already approved/rejected for non-accounts users
     if ((booking.status === 'approved' || booking.status === 'rejected') && 
-        req.role?.name?.toLowerCase() !== 'accounts') {
+        !['accounts', 'admin'].includes(req.role?.name?.toLowerCase()) && 
+        !req.isSystemAdmin) {
       return res.status(400).json({
         success: false,
         message: "Cannot modify approved or rejected booking",
