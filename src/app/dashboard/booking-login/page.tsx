@@ -15,7 +15,7 @@ import {
   Button,
 } from "@/components/ui/Component";
 import Alert from "@/components/ui/Component/Alert";
-import { Add, Delete, Edit, Visibility, Check, Close } from "@mui/icons-material";
+import { Add, Delete, Edit, Visibility, Check, Close, Download } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 import { useBookingLogin } from "@/hooks/useBookingLogin";
 import { useAuth } from "@/contexts/AuthContext";
@@ -49,6 +49,9 @@ const BookingLogin: React.FC = () => {
   const [projectFilter, setProjectFilter] = useState("");
   const [teamHeadFilter, setTeamHeadFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState(""); 
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
+  const [exportLoading, setExportLoading] = useState(false);
   const [projectOptions, setProjectOptions] = useState<string[]>([]);
   const [teamHeadOptions, setTeamHeadOptions] = useState<string[]>([]);
 
@@ -70,7 +73,8 @@ const BookingLogin: React.FC = () => {
     deleteBooking,
     updateBookingStatus,
     loadBookings,
-  } = useBookingLogin(debouncedSearch, projectFilter, teamHeadFilter, statusFilter); // Updated
+    exportBookings,
+  } = useBookingLogin(debouncedSearch, projectFilter, teamHeadFilter, statusFilter);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -97,6 +101,35 @@ const BookingLogin: React.FC = () => {
       setTeamHeadOptions([]);
     }
   }, [bookings]);
+
+  // Handle Export
+  const handleExport = async () => {
+    try {
+      setExportLoading(true);
+      
+      // Prepare filters for export
+      const exportFilters = {
+        startDate: startDateFilter,
+        endDate: endDateFilter,
+        projectFilter,
+        teamHeadFilter,
+        statusFilter
+      };
+
+      await exportBookings(exportFilters);
+      
+      setSnackbarMessage("Export completed successfully!");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error("Export failed:", error);
+      setSnackbarMessage("Failed to export bookings");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,8 +159,30 @@ const BookingLogin: React.FC = () => {
     setProjectFilter("");
     setTeamHeadFilter("");
     setStatusFilter("");
+    setStartDateFilter("");
+    setEndDateFilter("");
     setPage(1);
   }, [setPage]);
+
+  // Calculate filter summary
+  const getFilterSummary = () => {
+    const summary = [];
+    
+    if (projectFilter) summary.push(`Project: ${projectFilter}`);
+    if (teamHeadFilter) summary.push(`Team Head: ${teamHeadFilter}`);
+    if (statusFilter) {
+      const statusLabel = STATUS_OPTIONS.find(opt => opt.value === statusFilter)?.label || statusFilter;
+      summary.push(`Status: ${statusLabel}`);
+    }
+    if (startDateFilter || endDateFilter) {
+      const dateRange = [];
+      if (startDateFilter) dateRange.push(`From: ${new Date(startDateFilter).toLocaleDateString()}`);
+      if (endDateFilter) dateRange.push(`To: ${new Date(endDateFilter).toLocaleDateString()}`);
+      summary.push(dateRange.join(' '));
+    }
+    
+    return summary;
+  };
 
   const handlePageSizeChange = (newSize: number) => {
     setRowsPerPage(newSize);
@@ -483,10 +538,46 @@ const handleEditBooking = (booking: any) => {
           teamHeadFilter={teamHeadFilter}
           onTeamHeadFilterChange={handleTeamHeadFilterChange}
           statusFilter={statusFilter} 
-          onStatusFilterChange={handleStatusFilterChange} 
+          onStatusFilterChange={handleStatusFilterChange}
+          endDateFilter={endDateFilter}
+          onEndDateFilterChange={setEndDateFilter}
+          onExport={handleExport}
+          exportLoading={exportLoading} 
           projectOptions={projectOptions}
           teamHeadOptions={teamHeadOptions}
         />
+
+        {/* Filter Summary */}
+        {getFilterSummary().length > 0 && (
+          <Box sx={{ mt: 2, p: 1, bgcolor: 'info.light', borderRadius: 1 }}>
+            <Typography variant="body2" color="info.dark">
+              Active Filters: {getFilterSummary().join(' | ')}
+            </Typography>
+          </Box>
+        )}
+
+        {/* Clear Filters Button */}
+        {getFilterSummary().length > 0 && (
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+            <Button 
+              variant="outlined" 
+              size="small" 
+              onClick={handleClearFilters}
+              sx={{ 
+                borderRadius: 2,
+                textTransform: 'none',
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                '&:hover': {
+                  borderColor: 'primary.dark',
+                  backgroundColor: 'primary.light',
+                }
+              }}
+            >
+              Clear All Filters
+            </Button>
+          </Box>
+        )}
 
         {/* Clear Filters Button when any filter is active */}
         {(projectFilter || teamHeadFilter || statusFilter) && (

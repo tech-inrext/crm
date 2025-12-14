@@ -135,3 +135,5 @@ export const BUTTON_LABELS = {
 // Import shared constants from leads for consistency
 export { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
 
+export const DATE_FORMAT = "YYYY-MM-DD";
+export const EXPORT_FILENAME_PREFIX = "booking_snapshot_";
