@@ -1,8 +1,8 @@
 import React from 'react';
-import Card from '@mui/material/Card';
-import CardContent from '@mui/material/CardContent';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
+import Card from '@/components/ui/Component/Card';
+import CardContent from '@/components/ui/Component/CardContent';
+import Box from '@/components/ui/Component/Box';
+import Typography from '@/components/ui/Component/Typography';
 
 interface AnalyticsAccess {
   showScheduleThisWeek: boolean;
@@ -23,6 +23,31 @@ interface ScheduleCardProps {
 
 const ScheduleCard: React.FC<ScheduleCardProps> = ({ analyticsAccess, scheduleLoading, scheduleAnalytics }) => {
   if (analyticsAccess.showScheduleThisWeek) {
+    const [filter, setFilter] = React.useState<'day' | 'week'>('week');
+    // Filter leads based on filter selection
+    let filteredLeads: any[] = [];
+    if (scheduleAnalytics && scheduleAnalytics.leads) {
+      if (filter === 'day') {
+        const today = new Date();
+        filteredLeads = scheduleAnalytics.leads.filter((lead: any) => {
+          const followUpDate = new Date(lead.nextFollowUp);
+          return followUpDate.toDateString() === today.toDateString();
+        });
+      } else {
+        // Week: leads with nextFollowUp in this week (Mon-Sun)
+        const now = new Date();
+        const startOfWeek = new Date(now);
+        startOfWeek.setDate(now.getDate() - now.getDay());
+        startOfWeek.setHours(0,0,0,0);
+        const endOfWeek = new Date(startOfWeek);
+        endOfWeek.setDate(startOfWeek.getDate() + 6);
+        endOfWeek.setHours(23,59,59,999);
+        filteredLeads = scheduleAnalytics.leads.filter((lead: any) => {
+          const followUpDate = new Date(lead.nextFollowUp);
+          return followUpDate >= startOfWeek && followUpDate <= endOfWeek;
+        });
+      }
+    }
     return (
       <Card
         sx={{
@@ -37,8 +62,27 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ analyticsAccess, scheduleLo
       >
         <CardContent>
           <Box display="flex" justifyContent="space-between" alignItems="center" mb={2.25}>
-            <Typography sx={{ fontSize: '1.35rem', fontWeight: 600, color: '#222' }}>Schedule In this Week</Typography>
-            <a href="/dashboard/leads" style={{ color: '#0792fa', fontWeight: 500, fontSize: '1rem', textDecoration: 'none' }}>View All</a>
+            <Typography sx={{ fontSize: '1.35rem', fontWeight: 600, color: '#222' }}>Schedule In this </Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              <select
+                value={filter}
+                onChange={e => setFilter(e.target.value as 'day' | 'week')}
+                style={{
+                  padding: '6px 12px',
+                  borderRadius: 6,
+                  border: '1px solid #ccc',
+                  fontWeight: 500,
+                  fontSize: '1rem',
+                  color: '#222',
+                  background: '#f7f9fa',
+                  marginRight: 118
+                }}
+              >
+                <option value="day">Day Wise</option>
+                <option value="week">Week Wise</option>
+              </select>
+              <a href="/dashboard/leads" style={{ color: '#0792fa', fontWeight: 500, fontSize: '1rem', textDecoration: 'none' }}>View All</a>
+            </Box>
           </Box>
           <Box>
             {scheduleLoading && (
@@ -73,8 +117,8 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ analyticsAccess, scheduleLo
                   )}
                 </Box>
                 <Box sx={{ maxHeight: 280, overflowY: 'auto' }}>
-                  {scheduleAnalytics.leads && scheduleAnalytics.leads.length > 0 ? (
-                    scheduleAnalytics.leads.slice(0, 8).map((lead: any, index: number) => {
+                  {filteredLeads && filteredLeads.length > 0 ? (
+                    filteredLeads.slice(0, 8).map((lead: any, index: number) => {
                       const followUpDate = new Date(lead.nextFollowUp);
                       const isToday = followUpDate.toDateString() === new Date().toDateString();
                       const isTomorrow = followUpDate.toDateString() === new Date(Date.now() + 24 * 60 * 60 * 1000).toDateString();
@@ -114,12 +158,12 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ analyticsAccess, scheduleLo
                     })
                   ) : (
                     <Box sx={{ color: '#666', textAlign: 'center', py: 5, background: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
-                      📅 No follow-ups scheduled for this week
+                      📅 No follow-ups scheduled for this {filter === 'day' ? 'day' : 'week'}
                     </Box>
                   )}
-                  {scheduleAnalytics.leads && scheduleAnalytics.leads.length > 8 && (
+                  {filteredLeads && filteredLeads.length > 8 && (
                     <Typography sx={{ textAlign: 'center', py: 1, color: '#666', fontSize: '0.85rem' }}>
-                      +{scheduleAnalytics.leads.length - 8} more follow-ups this week
+                      +{filteredLeads.length - 8} more follow-ups this {filter === 'day' ? 'day' : 'week'}
                     </Typography>
                   )}
                 </Box>

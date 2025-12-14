@@ -1,124 +1,206 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
+  Box,
+  Card,
+  Typography,
+  CircularProgress,
+  Button,
+  Divider,
+} from "@/components/ui/Component";
+ import {
+  ToggleButton,
+  ToggleButtonGroup
+ }
+ from "@mui/material";
+import {
+  ResponsiveContainer,
   LineChart,
   Line,
   XAxis,
   YAxis,
-  CartesianGrid,
   Tooltip,
-  ResponsiveContainer,
+  CartesianGrid,
 } from "recharts";
 
 type DataPoint = {
-  month: string;
-  siteVisits: number;
-  conversions: number;
+  label: string;
+  siteVisitDone: number;
 };
 
-const data: DataPoint[] = [
-  { month: "Jan", siteVisits: 32, conversions: 9 },
-  { month: "Feb", siteVisits: 38, conversions: 12 },
-  { month: "Mar", siteVisits: 42, conversions: 15 },
-  { month: "Apr", siteVisits: 36, conversions: 11 },
-  { month: "May", siteVisits: 41, conversions: 14 },
-  { month: "Jun", siteVisits: 48, conversions: 16 },
+const fetchSiteVisitData = async (period: "week" | "month") => {
+  try {
+    const res = await fetch(
+      `/api/v0/analytics/leads?period=${period}`,
+      { credentials: "same-origin" }
+    );
+    if (!res.ok) throw new Error("Failed to fetch data");
+    const json = await res.json();
+    // Use the new array format from backend
+    return json.siteVisitDoneData || [];
+  } catch (err) {
+    return [];
+  }
+};
+// Month and Weekday arrays
+const months = [
+  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+];
+const weekdays = [
+  "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
 ];
 
-const totalSiteVisits = data.reduce((sum, d) => sum + d.siteVisits, 0);
-const totalConversions = data.reduce((sum, d) => sum + d.conversions, 0);
-const averageConversionRate = ((totalConversions / totalSiteVisits) * 100).toFixed(1);
+export default function SiteVisitConversionChart() {
+  const [period, setPeriod] = useState<"week" | "month">("month");
+  const [data, setData] = useState<DataPoint[]>([]);
 
-const chartStyles: React.CSSProperties = {
-  background: "#fff",
-  borderRadius: "12px",
-  boxShadow: "0 1px 2px rgba(0,0,0,0.05)",
-  border: "1px solid #ececec",
-  padding: "16px 16px 8px 16px",
-};
+  // Fill data for all months or weekdays, even if missing
+  const getFullData = () => {
+    if (period === "month") {
+      return months.map((month) => {
+        const found = data.find((d) => d.label === month);
+        return found || { label: month, siteVisitDone: 0 };
+      });
+    } else {
+      // Only keep the latest 7 days (assuming data is ordered oldest to newest)
+      const last7 = data.slice(-7);
+      // Map to weekdays, filling missing days with 0
+      return weekdays.map((day) => {
+        const found = last7.find((d) => d.label === day);
+        return found || { label: day, siteVisitDone: 0 };
+      });
+    }
+  };
+  const [loading, setLoading] = useState(false);
 
-const controlButtonStyle: React.CSSProperties = {
-  padding: "5px 12px",
-  background: "#fff",
-  border: "1px solid #d9d9d9",
-  borderRadius: "8px",
-  cursor: "pointer",
-  fontWeight: 500,
-  fontSize: "15px",
-  marginLeft: "8px",
-  color: "#222",
-  transition: "box-shadow .1s",
-};
+  useEffect(() => {
+    let mounted = true;
+    setLoading(true);
+    fetchSiteVisitData(period).then((res) => {
+      if (mounted) {
+        setData(res);
+        setLoading(false);
+      }
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [period]);
 
-const SiteVisitConversionChart: React.FC = () => (
-  <div style={{ ...chartStyles }}>
-    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-      <h2 style={{ fontWeight: 600, fontSize: "20px", marginBottom: "0" }}>
-        Site Visit to Conversion
-      </h2>
-      <div>
-        <button style={controlButtonStyle}>Filter</button>
-        <button style={controlButtonStyle}>Export</button>
-      </div>
-    </div>
-    <div style={{ width: "100%", height: "340px", marginTop: "12px" }}>
-      <ResponsiveContainer width="100%" height="100%">
-        <LineChart data={data} margin={{ top: 24, right: 30, left: 0, bottom: 0 }}>
-          <CartesianGrid strokeDasharray="3 3" vertical={false} />
-          <XAxis
-            dataKey="month"
-            tick={{ fontSize: 16, fill: "#222", fontWeight: 500 }}
-            axisLine={{ stroke: "#d9d9d9" }}
-          />
-          <YAxis
-            domain={[0, 60]}
-            tick={{ fontSize: 16, fill: "#222" }}
-            axisLine={{ stroke: "#d9d9d9" }}
-            ticks={[0, 15, 30, 45, 60]}
-          />
-          <Tooltip
-            labelStyle={{ color: "#222", fontWeight: 600 }}
-            contentStyle={{ borderRadius: "8px", border: "none", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
-          />
-          <Line
-            type="monotone"
-            dataKey="siteVisits"
-            stroke="#5b6ee7"
-            strokeWidth={2}
-            dot={{ r: 4, stroke: "#5b6ee7", fill: "#fff", strokeWidth: 2 }}
-            activeDot={{ r: 6 }}
-            name="Site Visits"
-          />
-          <Line
-            type="monotone"
-            dataKey="conversions"
-            stroke="#7fd8b6"
-            strokeWidth={2}
-            dot={{ r: 4, stroke: "#7fd8b6", fill: "#fff", strokeWidth: 2 }}
-            activeDot={{ r: 6 }}
-            name="Conversions"
-          />
-        </LineChart>
-      </ResponsiveContainer>
-    </div>
-    <div style={{
-      display: "flex",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginTop: "12px",
-      fontSize: "14px", // reduced font size
-      gap: "32px" // add gap between items
-    }}>
-      <span style={{ color: "#1a237e" }}>
-        Average Conversion Rate: <b>{averageConversionRate}%</b>
-      </span>
-      <span>
-        <span style={{ color: "#1a237e", fontWeight: 400 }}>Total Site Visits: {totalSiteVisits}</span>
-      </span>
-      <span>
-        <span style={{ color: "#1a237e", fontWeight: 400 }}>Total Conversions: {totalConversions}</span>
-      </span>
-    </div>
-  </div>
-);
 
-export default SiteVisitConversionChart;
+  const totalSiteVisitDone = data.reduce((sum, d) => sum + d.siteVisitDone, 0);
+
+  return (
+    <Card
+      sx={{
+        p: 3,
+        borderRadius: 3,
+        boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+        border: "1px solid #ececec",
+      }}
+    >
+      {/* Header */}
+      <Box
+        display="flex"
+        justifyContent="space-between"
+        alignItems="center"
+        mb={2}
+      >
+        <Typography variant="h6" fontWeight={600}>
+          Site Visit to Conversion
+        </Typography>
+
+        <Box display="flex" alignItems="center" gap={2}>
+          <ToggleButtonGroup
+            value={period}
+            exclusive
+            onChange={(e, val) => val && setPeriod(val)}
+            size="small"
+          >
+            <ToggleButton value="week">Week</ToggleButton>
+            <ToggleButton value="month">Month</ToggleButton>
+          </ToggleButtonGroup>
+          <Button variant="outlined" size="small">
+            Export
+          </Button>
+        </Box>
+      </Box>
+
+      {/* Chart */}
+      <Box sx={{ width: "100%", height: 340 }}>
+        {loading ? (
+          <Box textAlign="center" pt={10}>
+            <CircularProgress size={32} />
+          </Box>
+        ) : data.length === 0 ? (
+          <Box textAlign="center" pt={10} color="text.secondary">
+            No data available
+          </Box>
+        ) : (
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={getFullData()} margin={{ top: 12, right: 20, left: 0 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} />
+              <XAxis
+                dataKey="label"
+                tick={{ fontSize: 14, fill: "#333" }}
+                axisLine={{ stroke: "#ccc" }}
+                type="category"
+                interval={0}
+                ticks={period === "month" ? months : weekdays}
+              />
+              <YAxis
+                tick={{ fontSize: 14, fill: "#333" }}
+                axisLine={{ stroke: "#ccc" }}
+                domain={[0, "dataMax + 50"]}
+              />
+              <Tooltip
+                labelStyle={{ fontWeight: 600 }}
+                contentStyle={{
+                  borderRadius: 8,
+                  border: "none",
+                  boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                }}
+              />
+              <Line
+                type="monotone"
+                dataKey="siteVisitDone"
+                stroke="#ff9800"
+                strokeWidth={2}
+                dot={{ r: 3 }}
+                name="Site Visit Done"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        )}
+      </Box>
+
+      <Divider sx={{ mt: 2, mb: 2 }} />
+
+      {/* Stats Footer */}
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        fontSize={14}
+      >
+        <Typography color="primary">
+          Total Site Visit Done: <b>{totalSiteVisitDone}</b>
+        </Typography>
+      </Box>
+    </Card>
+  );
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+

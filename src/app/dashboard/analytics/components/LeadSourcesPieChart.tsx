@@ -1,7 +1,7 @@
 import React from 'react';
-import Box from '@mui/material/Box';
-import Typography from '@mui/material/Typography';
-import Paper from '@mui/material/Paper';
+import Box from '@/components/ui/Component/Box';
+import Typography from '@/components/ui/Component/Typography';
+import Paper from '@/components/ui/Component/Paper';
 
 interface Slice {
   label: string;
