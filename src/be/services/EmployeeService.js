@@ -1,6 +1,6 @@
 import { Service } from "@framework";
 import Employee from "../../models/Employee";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import validator from "validator";
 import { sendNewEmployeeWelcomeEmail } from "@/lib/emails/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "@/lib/emails/managerNewReport";

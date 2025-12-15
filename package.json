@@ -21,7 +21,7 @@
     "@mui/system": "^7.1.1",
     "@mui/x-date-pickers": "^8.9.0",
     "axios": "^1.9.0",
-    "bcrypt": "^6.0.0",
+    "bcryptjs": "^2.4.3",
     "bullmq": "^5.56.0",
     "chart.js": "^4.5.1",
     "cookie": "^1.0.2",
@@ -63,6 +63,6 @@
     "eslint": "^9",
     "eslint-config-next": "15.3.2",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "5.9.3"
   }
 }

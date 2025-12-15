@@ -1,6 +1,6 @@
 import dbConnect from "../../../../lib/mongodb";
 import Employee from "../../../../models/Employee";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 export default async function handler(req, res) {
   await dbConnect();
