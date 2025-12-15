@@ -15,7 +15,7 @@ import {
   Button,
 } from "@/components/ui/Component";
 import Alert from "@/components/ui/Component/Alert";
-import { Add, Delete, Edit, Visibility, Check, Close } from "@mui/icons-material";
+import { Add, Delete, Edit, Visibility, Check, Close, Download } from "@mui/icons-material";
 import dynamic from "next/dynamic";
 import { useBookingLogin } from "@/hooks/useBookingLogin";
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,12 +43,15 @@ const Pagination = dynamic(() => import("@/components/ui/Navigation/Pagination")
 });
 
 const BookingLogin: React.FC = () => {
-  const { hasAccountsRole } = useAuth();
+  const { hasAccountsRole, user } = useAuth();
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
   const [projectFilter, setProjectFilter] = useState("");
   const [teamHeadFilter, setTeamHeadFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState(""); 
+  const [startDateFilter, setStartDateFilter] = useState("");
+  const [endDateFilter, setEndDateFilter] = useState("");
+  const [exportLoading, setExportLoading] = useState(false);
   const [projectOptions, setProjectOptions] = useState<string[]>([]);
   const [teamHeadOptions, setTeamHeadOptions] = useState<string[]>([]);
 
@@ -70,7 +73,8 @@ const BookingLogin: React.FC = () => {
     deleteBooking,
     updateBookingStatus,
     loadBookings,
-  } = useBookingLogin(debouncedSearch, projectFilter, teamHeadFilter, statusFilter); // Updated
+    exportBookings,
+  } = useBookingLogin(debouncedSearch, projectFilter, teamHeadFilter, statusFilter);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
@@ -97,6 +101,35 @@ const BookingLogin: React.FC = () => {
       setTeamHeadOptions([]);
     }
   }, [bookings]);
+
+  // Handle Export
+  const handleExport = async () => {
+    try {
+      setExportLoading(true);
+      
+      // Prepare filters for export
+      const exportFilters = {
+        startDate: startDateFilter,
+        endDate: endDateFilter,
+        projectFilter,
+        teamHeadFilter,
+        statusFilter
+      };
+
+      await exportBookings(exportFilters);
+      
+      setSnackbarMessage("Export completed successfully!");
+      setSnackbarSeverity("success");
+      setSnackbarOpen(true);
+    } catch (error) {
+      console.error("Export failed:", error);
+      setSnackbarMessage("Failed to export bookings");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    } finally {
+      setExportLoading(false);
+    }
+  };
 
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -126,8 +159,30 @@ const BookingLogin: React.FC = () => {
     setProjectFilter("");
     setTeamHeadFilter("");
     setStatusFilter("");
+    setStartDateFilter("");
+    setEndDateFilter("");
     setPage(1);
   }, [setPage]);
+
+  // Calculate filter summary
+  const getFilterSummary = () => {
+    const summary = [];
+    
+    if (projectFilter) summary.push(`Project: ${projectFilter}`);
+    if (teamHeadFilter) summary.push(`Team Head: ${teamHeadFilter}`);
+    if (statusFilter) {
+      const statusLabel = STATUS_OPTIONS.find(opt => opt.value === statusFilter)?.label || statusFilter;
+      summary.push(`Status: ${statusLabel}`);
+    }
+    if (startDateFilter || endDateFilter) {
+      const dateRange = [];
+      if (startDateFilter) dateRange.push(`From: ${new Date(startDateFilter).toLocaleDateString()}`);
+      if (endDateFilter) dateRange.push(`To: ${new Date(endDateFilter).toLocaleDateString()}`);
+      summary.push(dateRange.join(' '));
+    }
+    
+    return summary;
+  };
 
   const handlePageSizeChange = (newSize: number) => {
     setRowsPerPage(newSize);
@@ -140,18 +195,34 @@ const BookingLogin: React.FC = () => {
     setEditId(null);
   };
 
-  const handleEditBooking = (booking: any) => {
-    // Prevent editing of approved/rejected bookings for non-accounts users
-    if (!hasAccountsRole() && (booking.status === 'approved' || booking.status === 'rejected')) {
-      setSnackbarMessage("Cannot edit approved or rejected bookings");
-      setSnackbarSeverity("warning");
-      setSnackbarOpen(true);
-      return;
-    }
-    setSelectedBooking(booking);
-    setEditId(booking._id);
-    setOpen(true);
-  };
+  const hasAdminAccess = () => {
+  const roleName = user?.currentRole?.name?.toLowerCase();
+  const isSystemAdmin = user?.isSystemAdmin;
+  
+  return roleName === 'accounts' || roleName === 'admin' || isSystemAdmin;
+};
+
+const handleEditBooking = (booking: any) => {
+  // Prevent editing of submitted/approved/rejected bookings for non-accounts users
+  if (!hasAccountsRole() && booking.status !== 'draft') {
+    setSnackbarMessage("Cannot edit submitted booking. Only draft bookings can be edited.");
+    setSnackbarSeverity("warning");
+    setSnackbarOpen(true);
+    return;
+  }
+  
+  // Prevent editing of approved/rejected bookings for accounts users
+  if (hasAccountsRole() && (booking.status === 'approved' || booking.status === 'rejected')) {
+    setSnackbarMessage("Cannot edit approved or rejected bookings");
+    setSnackbarSeverity("warning");
+    setSnackbarOpen(true);
+    return;
+  }
+  
+  setSelectedBooking(booking);
+  setEditId(booking._id);
+  setOpen(true);
+};
 
   const handleViewBooking = (booking: any) => {
     setSelectedBooking(booking);
@@ -277,31 +348,19 @@ const BookingLogin: React.FC = () => {
           >
             {row.status}
           </Box>
-          
-          {/* Show approve/reject buttons only for Accounts role and submitted status */}
-          {hasAccountsRole() && row.status === 'submitted' && (
-            <>
-              <Button
-                size="small"
-                variant="contained"
-                color="success"
-                startIcon={<Check />}
-                onClick={() => handleApproveBooking(row._id)}
-                sx={{ minWidth: 'auto', px: 1 }}
-              >
-                Approve
-              </Button>
-              <Button
-                size="small"
-                variant="contained"
-                color="error"
-                startIcon={<Close />}
-                onClick={() => handleRejectBooking(row._id)}
-                sx={{ minWidth: 'auto', px: 1 }}
-              >
-                Reject
-              </Button>
-            </>
+        </Box>
+      )
+    },
+    { 
+      label: "Created By", 
+      dataKey: "createdBy.name",
+      component: (row: any) => (
+        <Box>
+          {row.createdBy?.name || "N/A"}
+          {row.createdBy?.employeeProfileId && (
+            <Typography variant="caption" display="block" color="text.secondary">
+              ID: {row.createdBy.employeeProfileId}
+            </Typography>
           )}
         </Box>
       )
@@ -345,23 +404,42 @@ const BookingLogin: React.FC = () => {
             <Box
               component="button"
               onClick={() => handleEditBooking(row)}
+              disabled={(!hasAccountsRole() && row.status !== 'draft') || 
+              (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))}
               sx={{
                 border: 'none',
                 background: 'none',
-                cursor: 'pointer',
-                color: 'secondary.main',
+                cursor: ((!hasAccountsRole() && row.status !== 'draft') || 
+               (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))) 
+                ? 'not-allowed' : 'pointer',
+                color: ((!hasAccountsRole() && row.status !== 'draft') || 
+              (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))) 
+               ? 'grey.400' : 'secondary.main',
                 p: 0.5,
                 borderRadius: 1,
-                '&:hover': { backgroundColor: 'secondary.light', color: 'white' },
+                '&:hover': { 
+        backgroundColor: ((!hasAccountsRole() && row.status !== 'draft') || 
+                         (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))) 
+                          ? 'transparent' : 'secondary.light', 
+        color: ((!hasAccountsRole() && row.status !== 'draft') || 
+                (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))) 
+                 ? 'grey.400' : 'white' 
+      },
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 minWidth: 32,
                 minHeight: 32,
               }}
-              title="Edit Booking"
+              title={
+      (!hasAccountsRole() && row.status !== 'draft') 
+        ? "Cannot edit submitted booking. Only draft bookings can be edited." 
+        : (hasAccountsRole() && (row.status === 'approved' || row.status === 'rejected'))
+          ? "Cannot edit approved or rejected bookings"
+          : "Edit Booking"
+    }
             >
-              <Edit/>
+              <Edit fontSize="small" />
             </Box>
           </PermissionGuard>
           <PermissionGuard
@@ -417,18 +495,37 @@ const BookingLogin: React.FC = () => {
           overflow: "hidden",
         }}
       >
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            color: "text.primary",
-            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
-            mb: { xs: 2, md: 3 },
-            textAlign: { xs: "center", sm: "left" },
-          }}
-        >
-          Booking Login
-        </Typography>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Box>
+            <Typography
+              variant="h4"
+              sx={{
+                fontWeight: 700,
+                color: "text.primary",
+                fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
+                mb: 0.5,
+              }}
+            >
+              Booking Login
+            </Typography>
+            <Typography variant="body2" color="text.secondary">
+              {hasAccountsRole() 
+                ? "All bookings (Admin/Accounts View)" 
+                : "Your bookings (Personal View)"}
+            </Typography>
+          </Box>
+          
+          {!hasAccountsRole() && (
+            <Box sx={{ textAlign: 'right' }}>
+              <Typography variant="body2" color="primary.main" fontWeight="bold">
+                Note:
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                You can only see bookings created by you
+              </Typography>
+            </Box>
+          )}
+        </Box>
         
         {/* Action Bar with Filters */}
         <BookingLoginActionBar
@@ -441,10 +538,46 @@ const BookingLogin: React.FC = () => {
           teamHeadFilter={teamHeadFilter}
           onTeamHeadFilterChange={handleTeamHeadFilterChange}
           statusFilter={statusFilter} 
-          onStatusFilterChange={handleStatusFilterChange} 
+          onStatusFilterChange={handleStatusFilterChange}
+          endDateFilter={endDateFilter}
+          onEndDateFilterChange={setEndDateFilter}
+          onExport={handleExport}
+          exportLoading={exportLoading} 
           projectOptions={projectOptions}
           teamHeadOptions={teamHeadOptions}
         />
+
+        {/* Filter Summary */}
+        {getFilterSummary().length > 0 && (
+          <Box sx={{ mt: 2, p: 1, bgcolor: 'info.light', borderRadius: 1 }}>
+            <Typography variant="body2" color="info.dark">
+              Active Filters: {getFilterSummary().join(' | ')}
+            </Typography>
+          </Box>
+        )}
+
+        {/* Clear Filters Button */}
+        {getFilterSummary().length > 0 && (
+          <Box sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+            <Button 
+              variant="outlined" 
+              size="small" 
+              onClick={handleClearFilters}
+              sx={{ 
+                borderRadius: 2,
+                textTransform: 'none',
+                borderColor: 'primary.main',
+                color: 'primary.main',
+                '&:hover': {
+                  borderColor: 'primary.dark',
+                  backgroundColor: 'primary.light',
+                }
+              }}
+            >
+              Clear All Filters
+            </Button>
+          </Box>
+        )}
 
         {/* Clear Filters Button when any filter is active */}
         {(projectFilter || teamHeadFilter || statusFilter) && (
@@ -475,13 +608,42 @@ const BookingLogin: React.FC = () => {
           <CircularProgress />
         </Box>
       ) : bookings.length === 0 ? (
-        <Box sx={{ textAlign: "center", mt: 4 }}>
-          <Typography variant="h6" color="text.secondary">
-            No bookings found.
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-            {search || projectFilter || teamHeadFilter || statusFilter ? "Try adjusting your search or filter criteria" : "Create your first booking to get started"}
-          </Typography>
+        <Box sx={{ textAlign: "center", mt: 4, p: 3 }}>
+          <Box sx={{ maxWidth: 400, margin: '0 auto' }}>
+            <Typography variant="h6" color="text.secondary" gutterBottom>
+              {hasAccountsRole() 
+                ? "No bookings found" 
+                : "No bookings created yet"}
+            </Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              {hasAccountsRole() 
+                ? (search || projectFilter || teamHeadFilter || statusFilter 
+                    ? "Try adjusting your search or filter criteria" 
+                    : "No bookings have been created by any user yet")
+                : (search || projectFilter || teamHeadFilter || statusFilter 
+                    ? "Try adjusting your search or filter criteria" 
+                    : "You haven't created any bookings yet")}
+            </Typography>
+            
+            {!hasAccountsRole() && (
+              <PermissionGuard module="booking-login" action="write" fallback={null}>
+                <Button
+                  variant="contained"
+                  startIcon={<Add />}
+                  onClick={() => setOpen(true)}
+                  sx={{ 
+                    borderRadius: 2,
+                    background: "#1976d2",
+                    "&:hover": {
+                      background: "#1976d2",
+                    },
+                  }}
+                >
+                  Create Your First Booking
+                </Button>
+              </PermissionGuard>
+            )}
+          </Box>
         </Box>
       ) : isMobile ? (
         <Box>
@@ -627,3 +789,4 @@ const BookingLogin: React.FC = () => {
 };
 
 export default BookingLogin;
+

@@ -89,7 +89,7 @@ export function useBookingLogin(
           },
         });
 
-        const { data, pagination } = response.data;
+        const { data, pagination, userInfo } = response.data;
         setBookings(data || []);
         setTotalItems(pagination?.totalItems || 0);
       } catch (error) {
@@ -306,6 +306,44 @@ export function useBookingLogin(
     [page, rowsPerPage, debouncedSearch, projectFilter, teamHeadFilter, statusFilter, loadBookings]
   );
 
+  const exportBookings = useCallback(
+  async (filters: {
+    startDate?: string;
+    endDate?: string;
+    projectFilter?: string;
+    teamHeadFilter?: string;
+    statusFilter?: string;
+  }) => {
+    try {
+      const params = new URLSearchParams();
+      if (filters.startDate) params.append('startDate', filters.startDate);
+      if (filters.endDate) params.append('endDate', filters.endDate);
+      if (filters.projectFilter) params.append('projectName', filters.projectFilter);
+      if (filters.teamHeadFilter) params.append('teamHeadName', filters.teamHeadFilter);
+      if (filters.statusFilter) params.append('status', filters.statusFilter);
+
+      const response = await axios.get(`/api/v0/booking-login/export?${params.toString()}`, {
+        responseType: 'blob'
+      });
+
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `booking_snapshot_${new Date().toISOString().split('T')[0]}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      return true;
+    } catch (error) {
+      console.error('Export failed:', error);
+      throw error;
+    }
+  },
+  []
+);
+
   return {
     bookings,
     loading,
@@ -328,5 +366,6 @@ export function useBookingLogin(
     updateBookingStatus,
     deleteBooking,
     loadBookings,
+    exportBookings,
   };
 }

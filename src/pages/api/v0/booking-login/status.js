@@ -32,6 +32,17 @@ const updateBookingStatus = async (req, res) => {
       });
     }
 
+    // Check if user has permission to approve/reject
+    const userRole = req.role?.name?.toLowerCase();
+    const isSystemAdmin = req.isSystemAdmin;
+
+    if (!['accounts', 'admin'].includes(userRole) && !isSystemAdmin) {
+      return res.status(403).json({
+        success: false,
+        message: "Only Accounts/Admin role can approve or reject bookings",
+      });
+    }
+
     booking.status = status;
     booking.approvedBy = status === "approved" ? req.employee._id : null;
     booking.rejectionReason = status === "rejected" ? rejectionReason : "";

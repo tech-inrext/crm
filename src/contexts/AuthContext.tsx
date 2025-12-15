@@ -404,6 +404,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       showScheduleThisWeek: Boolean(role.showScheduleThisWeek || false),
     };
   };
+  
+  const hasAdminRole = () => {
+  if (!user) return false;
+  
+  const currentRoleName = getCurrentRoleName()?.toLowerCase();
+  const isSystemAdmin = user.isSystemAdmin;
+  
+  return currentRoleName === 'accounts' || currentRoleName === 'admin' || isSystemAdmin;
+  };
 
   // ✅ Function: Check if current user has the 'Accounts' role
   const hasAccountsRole = () => {
@@ -413,8 +422,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const currentRoleName = getCurrentRoleName()?.toLowerCase();
 
     // Check if current role is "accounts" (case-insensitive)
-    return currentRoleName === "accounts";
+    return currentRoleName === "accounts" || currentRoleName === "admin";
   };
+  
 
   useEffect(() => {
     // Let's have this failing api for now

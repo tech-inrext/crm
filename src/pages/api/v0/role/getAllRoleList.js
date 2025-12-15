@@ -35,3 +35,5 @@ const getAllRoleList = async (req, res) => {
 
 // ✅ Exported handler with authentication
 export default withAuth(getAllRoleList);
+
+

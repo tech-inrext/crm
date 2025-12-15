@@ -133,31 +133,40 @@ const BookingLoginCard: React.FC<BookingLoginCardProps> = ({
               <Visibility fontSize="small" />
             </IconButton>
             <PermissionGuard module="booking-login" action="write" fallback={null}>
-              <IconButton 
-                size="small" 
-                onClick={onEdit} 
-                color="secondary"
-                disabled={!hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected')}
-                sx={{ 
-                  backgroundColor: (!hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected')) 
-                    ? 'grey.300' 
-                    : 'secondary.light', 
-                  '&:hover': { 
-                    backgroundColor: (!hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected')) 
-                      ? 'grey.300' 
-                      : 'secondary.main' 
-                  },
-                  color: 'white'
-                }}
-                title={
-                  (!hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected')) 
-                    ? "Cannot edit approved or rejected bookings" 
-                    : "Edit Booking"
-                }
-              >
-                <Edit fontSize="small" />
-              </IconButton>
-            </PermissionGuard>
+  <IconButton 
+    size="small" 
+    onClick={onEdit} 
+    color="secondary"
+    disabled={
+      (!hasAccountsRole && booking.status !== 'draft') ||
+      (hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected'))
+    }
+    sx={{ 
+      backgroundColor: 
+        ((!hasAccountsRole && booking.status !== 'draft') || 
+         (hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected'))) 
+          ? 'grey.300' 
+          : 'secondary.light', 
+      '&:hover': { 
+        backgroundColor: 
+          ((!hasAccountsRole && booking.status !== 'draft') || 
+           (hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected'))) 
+            ? 'grey.300' 
+            : 'secondary.main' 
+      },
+      color: 'white'
+    }}
+    title={
+      (!hasAccountsRole && booking.status !== 'draft') 
+        ? "Cannot edit submitted booking. Only draft bookings can be edited." 
+        : (hasAccountsRole && (booking.status === 'approved' || booking.status === 'rejected'))
+          ? "Cannot edit approved or rejected bookings"
+          : "Edit Booking"
+    }
+  >
+    <Edit fontSize="small" />
+  </IconButton>
+</PermissionGuard>
             <PermissionGuard module="booking-login" action="delete" fallback={null}>
               <IconButton 
                 size="small" 
@@ -192,3 +201,4 @@ const BookingLoginCard: React.FC<BookingLoginCardProps> = ({
 };
 
 export default BookingLoginCard;
+
