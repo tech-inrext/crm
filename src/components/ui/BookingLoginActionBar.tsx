@@ -1,7 +1,17 @@
 // components/ui/BookingLoginActionBar.tsx
 import React from "react";
-import { Box, TextField, Button, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
-import { Add, Search } from "@mui/icons-material";
+import { 
+  Box, 
+  TextField, 
+  Button, 
+  FormControl, 
+  InputLabel, 
+  Select, 
+  MenuItem,
+  IconButton,
+  Tooltip
+} from "@mui/material";
+import { Add, Search, Download, FilterList } from "@mui/icons-material";
 import PermissionGuard from "@/components/PermissionGuard";
 import { SEARCH_PLACEHOLDER } from "@/constants/bookingLogin";
 import { STATUS_OPTIONS } from "@/constants/bookingLogin";
@@ -15,8 +25,14 @@ interface BookingLoginActionBarProps {
   onProjectFilterChange: (value: string) => void;
   teamHeadFilter: string;
   onTeamHeadFilterChange: (value: string) => void;
-  statusFilter: string; 
-  onStatusFilterChange: (value: string) => void; 
+  statusFilter: string;
+  onStatusFilterChange: (value: string) => void;
+  startDateFilter: string;
+  onStartDateFilterChange: (value: string) => void;
+  endDateFilter: string;
+  onEndDateFilterChange: (value: string) => void;
+  onExport: () => void; 
+  exportLoading: boolean;
   projectOptions: string[];
   teamHeadOptions: string[];
 }
@@ -30,8 +46,14 @@ const BookingLoginActionBar: React.FC<BookingLoginActionBarProps> = ({
   onProjectFilterChange,
   teamHeadFilter,
   onTeamHeadFilterChange,
-  statusFilter, 
-  onStatusFilterChange, 
+  statusFilter,
+  onStatusFilterChange,
+  startDateFilter,
+  onStartDateFilterChange,
+  endDateFilter,
+  onEndDateFilterChange,
+  onExport,
+  exportLoading,
   projectOptions,
   teamHeadOptions,
 }) => {
@@ -46,7 +68,8 @@ const BookingLoginActionBar: React.FC<BookingLoginActionBarProps> = ({
       }}
     >
       <Box sx={{ 
-        display: "flex", 
+        display: "flex",
+        flexWrap: "wrap", 
         flexDirection: { xs: "column", sm: "row" },
         gap: 2,
         flex: 1,
@@ -61,7 +84,7 @@ const BookingLoginActionBar: React.FC<BookingLoginActionBarProps> = ({
             startAdornment: <Search sx={{ color: "text.secondary", mr: 1 }} />,
           }}
           sx={{
-            minWidth: { xs: "100%", sm: 250 },
+            minWidth: { xs: "100%", sm: 281 },
             "& .MuiOutlinedInput-root": {
               borderRadius: 2,
             },
@@ -70,7 +93,7 @@ const BookingLoginActionBar: React.FC<BookingLoginActionBarProps> = ({
         />
         
         {/* Project Filter */}
-        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 180 } }}>
+        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 265 } }}>
           <InputLabel>Project</InputLabel>
           <Select
             value={projectFilter}
@@ -87,7 +110,7 @@ const BookingLoginActionBar: React.FC<BookingLoginActionBarProps> = ({
         </FormControl>
 
         {/* Team Head Filter */}
-        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 180 } }}>
+        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 265 } }}>
           <InputLabel>Team Head</InputLabel>
           <Select
             value={teamHeadFilter}
@@ -103,8 +126,8 @@ const BookingLoginActionBar: React.FC<BookingLoginActionBarProps> = ({
           </Select>
         </FormControl>
 
-      {/* Status Filter */}
-        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 180 } }}>
+        {/* Status Filter */}
+        <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 265 } }}>
           <InputLabel>Status</InputLabel>
           <Select
             value={statusFilter}
@@ -119,29 +142,70 @@ const BookingLoginActionBar: React.FC<BookingLoginActionBarProps> = ({
             ))}
           </Select>
         </FormControl>
-      </Box>
-      
-      <PermissionGuard module="booking-login" action="write" fallback={<></>}>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={onAdd}
-          disabled={saving}
-          sx={{
-            borderRadius: 2,
-            minWidth: 120,
-            background: "#1976d2",
-            "&:hover": {
+
+        {/* Date Filters */}
+          <TextField
+            label="From Date"
+            type="date"
+            size="small"
+            value={startDateFilter}
+            onChange={(e) => onStartDateFilterChange(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ flex: 1, minWidth: { xs: "100%", sm: 100 }, }}
+          />
+          <TextField
+            label="To Date"
+            type="date"
+            size="small"
+            value={endDateFilter}
+            onChange={(e) => onEndDateFilterChange(e.target.value)}
+            InputLabelProps={{ shrink: true }}
+            sx={{ flex: 1, minWidth: { xs: "100%", sm: 100 }, }}
+          />
+          {/* Download Button */}
+        <Tooltip title="Download Snapshot">
+          <Button
+            variant="outlined"
+            startIcon={<Download />}
+            onClick={onExport}
+            disabled={exportLoading}
+            sx={{
+              borderRadius: 2,
+              minWidth: { xs: "100%", sm: 200 },
+              borderColor: "success.main",
+              color: "success.main",
+              "&:hover": {
+                color: "white",
+                backgroundColor: "success.light",
+              },
+            }}
+          >
+            {exportLoading ? "Exporting..." : "Export"}
+          </Button>
+        </Tooltip>
+        
+        {/* Add Booking Button */}
+        <PermissionGuard module="booking-login" action="write" fallback={<></>}>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={onAdd}
+            disabled={saving}
+            sx={{
+              borderRadius: 2,
+              minWidth: { xs: "100%", sm: 200 },
               background: "#1976d2",
-            },
-          }}
-        >
-          Add Booking
-        </Button>
-      </PermissionGuard>
+              "&:hover": {
+                background: "#1976d2",
+              },
+            }}
+          >
+            Add Booking
+          </Button>
+        </PermissionGuard>
+      </Box>
     </Box>
   );
 };
 
 export default BookingLoginActionBar;
-

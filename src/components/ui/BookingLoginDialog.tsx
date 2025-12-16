@@ -328,15 +328,22 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
       sx={{ '& .MuiDialog-paper': { maxHeight: '90vh' } }}
     >
       <DialogTitle>
-        <Box display="flex" justifyContent="space-between" alignItems="center">
-          <Typography variant="h6" fontWeight="bold">
-            {editId ? BUTTON_LABELS.EDIT_BOOKING : BUTTON_LABELS.ADD_BOOKING}
-          </Typography>
-          <IconButton onClick={onClose} disabled={saving}>
-            <Close />
-          </IconButton>
-        </Box>
-      </DialogTitle>
+  <Box display="flex" justifyContent="space-between" alignItems="center">
+    <Box>
+      <Typography variant="h6" fontWeight="bold">
+        {editId ? BUTTON_LABELS.EDIT_BOOKING : BUTTON_LABELS.ADD_BOOKING}
+      </Typography>
+      {!hasAccountsRole() && !editId && (
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+          Note: You will only be able to see bookings created by you
+        </Typography>
+      )}
+    </Box>
+    <IconButton onClick={onClose} disabled={saving}>
+      <Close />
+    </IconButton>
+  </Box>
+</DialogTitle>
 
       <DialogContent dividers>
         <Grid container spacing={3}>
@@ -809,40 +816,45 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
           </Grid>
 
           {/* Status - updated for role base access */}
-          <Grid size={{ xs: 12, md: 6 }}>
-            <FormControl fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select
-                value={form.status || 'draft'}
-                label="Status"
-                onChange={handleChange("status")}
-                disabled={
-                  // Disable status field for non-accounts users when editing approved/rejected bookings
-                  editId && !hasAccountsRole() && 
-                  (form.status === 'approved' || form.status === 'rejected')
-                }
-              >
-                {getStatusOptions().map((option) => (
-                  <MenuItem 
-                    key={option.value} 
-                    value={option.value}
-                    disabled={
-                      // Disable approved/rejected for non-accounts users
-                      !hasAccountsRole() && 
-                      (option.value === 'approved' || option.value === 'rejected')
-                    }
-                  >
-                    {option.label}
-                  </MenuItem>
-                ))}
-              </Select>
-              {!hasAccountsRole() && (
-                <FormHelperText>
-                  Only Accounts role can set status to Approved or Rejected
-                </FormHelperText>
-              )}
-            </FormControl>
-          </Grid>
+<Grid size={{ xs: 12, md: 6 }}>
+  <FormControl fullWidth>
+    <InputLabel>Status</InputLabel>
+    <Select
+      value={form.status || 'draft'}
+      label="Status"
+      onChange={handleChange("status")}
+      disabled={
+        editId && 
+        ((!hasAccountsRole() && form.status !== 'draft') ||
+        (form.status === 'approved' || form.status === 'rejected'))
+      }
+    >
+      {getStatusOptions().map((option) => (
+        <MenuItem 
+          key={option.value} 
+          value={option.value}
+          disabled={
+            // Disable approved/rejected for non-accounts users
+            !hasAccountsRole() && 
+            (option.value === 'approved' || option.value === 'rejected')
+          }
+        >
+          {option.label}
+        </MenuItem>
+      ))}
+    </Select>
+    {editId && !hasAccountsRole() && form.status !== 'draft' && (
+      <FormHelperText error>
+        Cannot edit submitted booking. Only draft bookings can be edited.
+      </FormHelperText>
+    )}
+    {!hasAccountsRole() && (
+      <FormHelperText>
+        Only Accounts role can set status to Approved or Rejected
+      </FormHelperText>
+    )}
+  </FormControl>
+</Grid>
 
           {/* File Uploads */}
           <Grid size={{ xs: 12 }}>
@@ -944,3 +956,4 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
 };
 
 export default BookingLoginDialog;
+

@@ -10,8 +10,56 @@ async function handler(req, res) {
 		const loggedInUserId = req.employee?._id;
 		const baseQuery = loggedInUserId ? { uploadedBy: loggedInUserId } : {};
 
-		// Total leads (scoped to logged-in user when available)
-		const totalLeads = await Lead.countDocuments(baseQuery);
+
+		   // Total leads (scoped to logged-in user when available)
+		   const totalLeads = await Lead.countDocuments(baseQuery);
+
+		   // Helper: get site visit done counts by month or weekday
+		   const { period = "month" } = req.query;
+		   let siteVisitDoneData = [];
+		   if (period === "month") {
+			   // Group by month (0=Jan, 11=Dec)
+			   const byMonth = await Lead.aggregate([
+				   ...(loggedInUserId ? [{ $match: baseQuery }] : []),
+				   { $match: { status: { $regex: /^site visit done$/i } } },
+				   { $group: {
+					   _id: { $month: "$createdAt" },
+					   count: { $sum: 1 }
+				   } }
+			   ]);
+			   // Map to month labels
+			   const months = [
+				   "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+				   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+			   ];
+			   const monthMap = {};
+			   byMonth.forEach(m => { monthMap[m._id] = m.count; });
+			   siteVisitDoneData = months.map((label, idx) => ({
+				   label,
+				   siteVisitDone: monthMap[idx + 1] || 0
+			   }));
+		   } else if (period === "week") {
+			   // Group by weekday (1=Sun, 7=Sat in Mongo $dayOfWeek)
+			   const byWeekday = await Lead.aggregate([
+				   ...(loggedInUserId ? [{ $match: baseQuery }] : []),
+				   { $match: { status: { $regex: /^site visit done$/i } } },
+				   { $group: {
+					   _id: { $dayOfWeek: "$createdAt" },
+					   count: { $sum: 1 }
+				   } }
+			   ]);
+			   // Map to weekday labels (Mongo: 1=Sun, 7=Sat)
+			   const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+			   const weekdayMap = {};
+			   byWeekday.forEach(w => { weekdayMap[w._id] = w.count; });
+			   siteVisitDoneData = weekdays.map((label, idx) => ({
+				   label,
+				   siteVisitDone: weekdayMap[idx + 1] || 0
+			   }));
+		   }
+
+		   // Count of conversions where status is 'site visit done' (case-insensitive) (for backward compatibility, sum all)
+		   const siteVisitConversions = siteVisitDoneData.reduce((sum, d) => sum + d.siteVisitDone, 0);
 
 		// Define which statuses count as a conversion (case-insensitive)
 		const CONVERTED_STATUSES = [
@@ -69,13 +117,15 @@ async function handler(req, res) {
 			converted: p.converted
 		}));
 		
-		res.status(200).json({
-			totalLeads,
-			map,
-			sourcesOrder,
-			slices,
-			propertyData
-		});
+		   res.status(200).json({
+			   totalLeads,
+			   siteVisitConversions,
+			   siteVisitDoneData, // <-- new array for chart
+			   map,
+			   sourcesOrder,
+			   slices,
+			   propertyData
+		   });
 	} catch (err) {
 		res.status(500).json({ error: err.message });
 	}

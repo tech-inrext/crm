@@ -26,6 +26,7 @@
     "chart.js": "^4.5.1",
     "cookie": "^1.0.2",
     "date-fns": "^4.1.0",
+    "exceljs": "^4.4.0",
     "formik": "^2.4.6",
     "framer-motion": "^12.23.24",
     "ioredis": "^5.6.1",

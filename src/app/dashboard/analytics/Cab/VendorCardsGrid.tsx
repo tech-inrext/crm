@@ -6,80 +6,84 @@ import Typography from '@/components/ui/Component/Typography';
 
 export function VendorCardsGrid({ displayVendors }) {
   return (
-    <Box
-      display="grid"
-      gridTemplateColumns="repeat(2, 1fr)"  // 👈 FIXED 2 cards per row
-      gap={2}
-    >
+    <Box className="grid grid-cols-2 gap-4">
       {displayVendors.map((vendor, idx) => {
         const paymentDueValue = Number(vendor.paymentDue) || 0;
 
         return (
           <Card
             key={vendor.id || idx}
-            sx={{
-              background: '#fff',
-              borderRadius: 2,
-              p: 2,
-              border: '1px solid #e0e0e0',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
-            }}
+            className="bg-white rounded-xl border border-gray-200 shadow-md"
           >
-            <Box
-              display="flex"
-              justifyContent="space-between"
-              alignItems="center"
-              mb={1.5}
-              borderBottom="1px solid #f0f0f0"
-              pb={1}
-            >
-              <Typography variant="h6" sx={{ color: '#222', fontSize: '1.1rem', m: 0 }}>
-                {vendor.name}
-              </Typography>
-            </Box>
-
-            {/* Stats */}
-            <Box display="flex" gap={1.5} mb={1.25} justifyContent="space-between">
-              <Box sx={{ background: '#e8f5e9', px: 4, py: 1.75, borderRadius: 1, textAlign: 'center', minWidth: 90 }}>
-                <Typography sx={{ fontWeight: 700, color: '', fontSize: '1rem' }}>{vendor.completedBookings || 0}</Typography>
-                <Typography sx={{ fontSize: '0.8rem', color: '#666' }}>Completed</Typography>
-              </Box>
-
-              <Box sx={{ background: '#fff3e0', px: 5, py: 1.75, borderRadius: 1, textAlign: 'center', minWidth: 80 }}>
-                <Typography sx={{ fontWeight: 700, color: '', fontSize: '1rem' }}>{vendor.pendingBookings || 0}</Typography>
-                <Typography sx={{ fontSize: '0.8rem', color: '#666' }}>Pending</Typography>
-              </Box>
-
-              <Box sx={{ background: '#ffd7d7', px: 3, py: 1.75, borderRadius: 1, textAlign: 'center', minWidth: 80 }}>
-                <Typography sx={{ fontWeight: 700, color: '', fontSize: '1rem' }}>
-                  ₹{paymentDueValue.toLocaleString()}
+            <CardContent className="p-4">
+              {/* Header */}
+              <Box className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
+                <Typography className="text-lg font-semibold text-gray-800">
+                  {vendor.name}
                 </Typography>
-                <Typography sx={{ fontSize: '0.8rem', color: '#d32f2f' }}>Payment Due</Typography>
               </Box>
 
-              <Box sx={{ background: '#e3f2fd', px: 2, py: 1.75, borderRadius: 1, textAlign: 'center', minWidth: 80 }}>
-                <Typography sx={{ fontWeight: 700, color: '', fontSize: '1rem' }}>
-                  ₹{(vendor.totalSpendings || 0).toLocaleString()}
-                </Typography>
-                <Typography sx={{ fontSize: '0.8rem', color: '#1976d2' }}>Total Spendings</Typography>
+              {/* Stats Row */}
+              <Box className="flex justify-between gap-2 mb-3">
+
+                {/* Completed */}
+                <Box className="bg-green-50 px-4 py-3 rounded-md text-center min-w-[90px]">
+                  <Typography className="font-bold text-base">
+                    {vendor.completedBookings || 0}
+                  </Typography>
+                  <Typography className="text-xs text-gray-600">
+                    Completed
+                  </Typography>
+                </Box>
+
+                {/* Pending */}
+                <Box className="bg-orange-50 px-4 py-3 rounded-md text-center min-w-[80px]">
+                  <Typography className="font-bold text-base">
+                    {vendor.pendingBookings || 0}
+                  </Typography>
+                  <Typography className="text-xs text-gray-600">
+                    Pending
+                  </Typography>
+                </Box>
+
+                {/* Payment Due */}
+                <Box className="bg-red-100 px-3 py-3 rounded-md text-center min-w-[80px]">
+                  <Typography className="font-bold text-base">
+                    ₹{paymentDueValue.toLocaleString()}
+                  </Typography>
+                  <Typography className="text-xs text-red-600">
+                    Payment Due
+                  </Typography>
+                </Box>
+
+                {/* Total Spendings */}
+                <Box className="bg-blue-50 px-3 py-3 rounded-md text-center min-w-[80px]">
+                  <Typography className="font-bold text-base">
+                    ₹{(vendor.totalSpendings || 0).toLocaleString()}
+                  </Typography>
+                  <Typography className="text-xs text-blue-600">
+                    Total Spendings
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
 
-            <Box mt={1} sx={{ fontSize: '0.8rem', color: '#666' }}>
-              📞 {vendor.phone || vendor.contactNumber || 'N/A'}
+              {/* Footer Info */}
+              <Box className="text-xs text-gray-600 space-y-1 mt-2">
+                <Typography>📞 {vendor.phone || vendor.contactNumber || "N/A"}</Typography>
 
-              {vendor.avp && (
-                <Box mt={0.5} component="span" display="block">
-                  👤 AVP: {typeof vendor.avp === 'object' ? vendor.avp.name : vendor.avp}
-                </Box>
-              )}
+                {vendor.avp && (
+                  <Typography>
+                    👤 AVP: {typeof vendor.avp === "object" ? vendor.avp.name : vendor.avp}
+                  </Typography>
+                )}
 
-              {vendor.lastBookingDate && (
-                <Box mt={0.5} component="span" display="block">
-                  📅 Last: {new Date(vendor.lastBookingDate).toLocaleDateString()}
-                </Box>
-              )}
-            </Box>
+                {vendor.lastBookingDate && (
+                  <Typography>
+                    📅 Last: {new Date(vendor.lastBookingDate).toLocaleDateString()}
+                  </Typography>
+                )}
+              </Box>
+            </CardContent>
           </Card>
         );
       })}

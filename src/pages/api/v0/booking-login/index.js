@@ -44,14 +44,28 @@ const getAllBookingLogins = async (req, res) => {
       status = "",
       projectName = "",
       teamHeadName = "",
+      startDate = "",
+      endDate = "", 
+      download = false 
     } = req.query;
 
     const currentPage = parseInt(page);
     const itemsPerPage = parseInt(limit);
     const skip = (currentPage - 1) * itemsPerPage;
 
-    // Build query
+    // Get user role from auth middleware
+    const userRole = req.role?.name?.toLowerCase();
+    const isAccountsUser = userRole === 'accounts' || userRole === 'admin';
+    const isSystemAdmin = req.isSystemAdmin;
+    const currentUserId = req.employee?._id;
+
+    // Build query - role-based filtering
     const query = {};
+
+    // Regular users can only see their own bookings
+    if (!isAccountsUser && !isSystemAdmin && currentUserId) {
+      query.createdBy = currentUserId;
+    }
     
     if (search) {
       query.$or = [
@@ -74,15 +88,45 @@ const getAllBookingLogins = async (req, res) => {
       query.teamHeadName = { $regex: teamHeadName, $options: "i" };
     }
 
-    const [bookings, totalBookings] = await Promise.all([
-      BookingLogin.find(query)
+    // date filtering
+    if (startDate || endDate) {
+      query.createdAt = {};
+      if (startDate) {
+        query.createdAt.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        query.createdAt.$lte = new Date(endDate);
+      }
+    }
+
+    let bookings, totalBookings;
+
+    // If download flag is true, return all data without pagination
+    if (download === 'true') {
+      bookings = await BookingLogin.find(query)
         .populate("createdBy", "name email employeeProfileId")
         .populate("approvedBy", "name email employeeProfileId")
-        .sort({ createdAt: -1 })
-        .skip(skip)
-        .limit(itemsPerPage),
-      BookingLogin.countDocuments(query),
-    ]);
+        .sort({ createdAt: -1 });
+
+      // Return all data for download
+      return res.status(200).json({
+        success: true,
+        data: bookings,
+        totalItems: bookings.length,
+        isDownload: true
+      });
+    } else {
+      // Normal paginated query
+      [bookings, totalBookings] = await Promise.all([
+        BookingLogin.find(query)
+          .populate("createdBy", "name email employeeProfileId")
+          .populate("approvedBy", "name email employeeProfileId")
+          .sort({ createdAt: -1 })
+          .skip(skip)
+          .limit(itemsPerPage),
+        BookingLogin.countDocuments(query),
+      ]);
+    }
 
     return res.status(200).json({
       success: true,
@@ -93,6 +137,12 @@ const getAllBookingLogins = async (req, res) => {
         itemsPerPage,
         totalPages: Math.ceil(totalBookings / itemsPerPage),
       },
+      // Return user role info for frontend
+      userInfo: {
+        isAccountsUser,
+        isSystemAdmin,
+        userId: currentUserId,
+      }
     });
   } catch (error) {
     return res.status(500).json({
@@ -129,3 +179,4 @@ const handler = async (req, res) => {
 };
 
 export default withAuth(handler);
+

@@ -140,6 +140,19 @@ export async function userAuth(req, res, next) {
       hasAccess = true;
     }
 
+    // Special-case: allow admin/accounts role to READ all booking-logins
+    if (
+      !hasAccess &&
+      action === "read" &&
+      moduleName === "booking-login" &&
+      role &&
+      typeof role.name === "string" &&
+      (role.name.toLowerCase() === "accounts" ||
+        role.name.toLowerCase() === "admin")
+    ) {
+      hasAccess = true;
+    }
+
     // Allow configured special permissions for system-admin roles
     if (!hasAccess && isSystemAdminAllowed(role, action, moduleName)) {
       hasAccess = true;
