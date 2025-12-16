@@ -2,7 +2,7 @@
 import dbConnect from "../../../../lib/mongodb";
 import Employee from "../../../../models/Employee";
 import Role from "../../../../models/Role";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
 

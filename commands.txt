@@ -1,0 +1,5 @@
+cd /home/ubuntu/crm
+
+echo "Restarting app..."
+pm2 restart all --update-env
+pm2 reload ecosystem.config.js --env production

@@ -150,10 +150,10 @@ export default function DashboardLayout({
   const sidebarLinks = useMemo(() => {
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
-        if (!link.module) return true;
-        const { hasReadAccess } = getPermissions(link.module);
-        return hasReadAccess;
-      })
+          if (!link.module) return true;
+          const { hasReadAccess } = getPermissions(link.module);
+          return hasReadAccess;
+        })
       : [];
   }, [user, pendingRoleSelection, getPermissions]);
 
@@ -186,15 +186,6 @@ export default function DashboardLayout({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, pendingRoleSelection, sidebarLinks, pathname]);
 
-  // Determine selected sidebar link
-  const selectedLink = useMemo(() => {
-    if (!sidebarLinks.length) return null;
-    return (
-      sidebarLinks.find((link) => pathname.startsWith(link.href)) ||
-      sidebarLinks[0]
-    );
-  }, [sidebarLinks, pathname]);
-
   return (
     <>
       {user && (
@@ -202,9 +193,9 @@ export default function DashboardLayout({
           {!isMobile && !pendingRoleSelection && (
             <Sidebar
               open={true}
-              onClose={() => { }}
+              onClose={() => {}}
               links={sidebarLinks}
-            // selected={selectedLink?.href}
+              // selected={selectedLink?.href}
             />
           )}
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
@@ -230,7 +221,7 @@ export default function DashboardLayout({
               open={sidebarOpen}
               onClose={() => setSidebarOpen(false)}
               links={sidebarLinks}
-            // selected={selectedLink?.href}
+              // selected={selectedLink?.href}
             />
           )}
         </Box>

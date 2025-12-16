@@ -1,6 +1,6 @@
 import dbConnect from "../../../../lib/mongodb";
 import Employee from "../../../../models/Employee";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 function isPasswordStrong(password) {
   return /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/.test(password); // at least 8 chars, mix of letters & numbers
