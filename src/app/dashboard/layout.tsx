@@ -186,15 +186,6 @@ export default function DashboardLayout({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, pendingRoleSelection, sidebarLinks, pathname]);
 
-  // Determine selected sidebar link
-  const selectedLink = useMemo(() => {
-    if (!sidebarLinks.length) return null;
-    return (
-      sidebarLinks.find((link) => pathname.startsWith(link.href)) ||
-      sidebarLinks[0]
-    );
-  }, [sidebarLinks, pathname]);
-
   return (
     <>
       {user && (
