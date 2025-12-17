@@ -89,7 +89,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
       <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' }, gap: 3 }}>
         {/* Left: Stat Cards - 2 in a row, 50% width */}
         <Box sx={{ width: '100%' }}>
-          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', sm: '1fr 1fr' }, gap: 2 }}>
+          <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr 1fr', sm: '1fr 1fr' }, gap: 2 }}>
             <StatCard
               title="Total Users"
               value={usersLoading ? 'Loading...' : (totalUsers ?? 0)}

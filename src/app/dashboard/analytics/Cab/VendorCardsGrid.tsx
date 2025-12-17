@@ -6,29 +6,32 @@ import Typography from '@/components/ui/Component/Typography';
 
 export function VendorCardsGrid({ displayVendors }) {
   return (
-    <Box className="grid grid-cols-2 gap-4">
+    <Box
+      className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 xl:grid-cols-2 gap-4"
+    >
       {displayVendors.map((vendor, idx) => {
         const paymentDueValue = Number(vendor.paymentDue) || 0;
 
         return (
           <Card
             key={vendor.id || idx}
-            className="bg-white rounded-xl border border-gray-200 shadow-md"
+            className="bg-white rounded-xl border border-gray-200 shadow-md h-full flex flex-col"
           >
-            <CardContent className="p-4">
+            <CardContent className="p-4 flex flex-col h-full">
               {/* Header */}
               <Box className="flex items-center justify-between mb-3 pb-2 border-b border-gray-100">
-                <Typography className="text-lg font-semibold text-gray-800">
+                <Typography className="text-base sm:text-lg font-semibold text-gray-800 truncate max-w-[80%]">
                   {vendor.name}
                 </Typography>
               </Box>
 
               {/* Stats Row */}
-              <Box className="flex justify-between gap-2 mb-3">
-
+              <Box
+                className="flex flex-wrap sm:flex-nowrap justify-between gap-2 mb-3"
+              >
                 {/* Completed */}
-                <Box className="bg-green-50 px-4 py-3 rounded-md text-center min-w-[90px]">
-                  <Typography className="font-bold text-base">
+                <Box className="bg-green-50 px-3 py-2 sm:px-4 sm:py-3 rounded-md text-center flex-1 min-w-[45%] sm:min-w-[90px] mb-2 sm:mb-0">
+                  <Typography className="font-bold text-sm sm:text-base">
                     {vendor.completedBookings || 0}
                   </Typography>
                   <Typography className="text-xs text-gray-600">
@@ -37,8 +40,8 @@ export function VendorCardsGrid({ displayVendors }) {
                 </Box>
 
                 {/* Pending */}
-                <Box className="bg-orange-50 px-4 py-3 rounded-md text-center min-w-[80px]">
-                  <Typography className="font-bold text-base">
+                <Box className="bg-orange-50 px-3 py-2 sm:px-4 sm:py-3 rounded-md text-center flex-1 min-w-[45%] sm:min-w-[80px] mb-2 sm:mb-0">
+                  <Typography className="font-bold text-sm sm:text-base">
                     {vendor.pendingBookings || 0}
                   </Typography>
                   <Typography className="text-xs text-gray-600">
@@ -47,18 +50,18 @@ export function VendorCardsGrid({ displayVendors }) {
                 </Box>
 
                 {/* Payment Due */}
-                <Box className="bg-red-100 px-3 py-3 rounded-md text-center min-w-[80px]">
-                  <Typography className="font-bold text-base">
+                <Box className="bg-red-100 px-2 py-2 sm:px-3 sm:py-3 rounded-md text-center flex-1 min-w-[45%] sm:min-w-[80px] mb-2 sm:mb-0">
+                  <Typography className="font-bold text-sm sm:text-base">
                     ₹{paymentDueValue.toLocaleString()}
                   </Typography>
-                  <Typography className="text-xs text-red-600">
+                  <Typography className="text-xs text-pink-600">
                     Payment Due
                   </Typography>
                 </Box>
 
                 {/* Total Spendings */}
-                <Box className="bg-blue-50 px-3 py-3 rounded-md text-center min-w-[80px]">
-                  <Typography className="font-bold text-base">
+                <Box className="bg-blue-50 px-2 py-2 sm:px-3 sm:py-3 rounded-md text-center flex-1 min-w-[45%] sm:min-w-[80px]">
+                  <Typography className="font-bold text-sm sm:text-base">
                     ₹{(vendor.totalSpendings || 0).toLocaleString()}
                   </Typography>
                   <Typography className="text-xs text-blue-600">
@@ -68,8 +71,10 @@ export function VendorCardsGrid({ displayVendors }) {
               </Box>
 
               {/* Footer Info */}
-              <Box className="text-xs text-gray-600 space-y-1 mt-2">
-                <Typography>📞 {vendor.phone || vendor.contactNumber || "N/A"}</Typography>
+              <Box className="text-xs text-gray-600 space-y-1 mt-auto pt-2">
+                <Typography>
+                  📞 {vendor.phone || vendor.contactNumber || "N/A"}
+                </Typography>
 
                 {vendor.avp && (
                   <Typography>
