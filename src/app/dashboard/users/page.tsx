@@ -373,9 +373,7 @@ const Users: React.FC = () => {
           onSave={async (values) => {
             try {
               if (editId) {
-                // Remove fields that cannot be updated for existing users
-                const { email, phone, joiningDate, ...updateData } = values;
-                await updateUser(editId, updateData);
+                await updateUser(editId, values);
                 // show success toast for update
                 setSnackbarMessage("User updated successfully");
               } else {

@@ -35,12 +35,15 @@ class EmployeeService extends Service {
     console.debug("[employee:patch] incoming body:", req.body);
     const {
       name,
+      email,
+      phone,
       altPhone,
       address,
       fatherName,
       gender,
       age,
       designation,
+      joiningDate,
       managerId,
       departmentId,
       roles,
@@ -57,20 +60,6 @@ class EmployeeService extends Service {
       slabPercentage,
       branch
     );
-
-    const notAllowedFields = ["phone", "email", "joiningDate"];
-    const requestFields = Object.keys(req.body || {});
-    const invalidFields = requestFields.filter((f) =>
-      notAllowedFields.includes(f)
-    );
-    if (invalidFields.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `You are not allowed to update these field(s): ${invalidFields.join(
-          ", "
-        )}`,
-      });
-    }
 
     // Build updateFields by checking property presence so empty strings/nulls
     // in the request can be used to clear existing values.
@@ -92,6 +81,60 @@ class EmployeeService extends Service {
         });
       }
     }
+
+    // Allow email update with validation
+    if (Object.prototype.hasOwnProperty.call(req.body, "email")) {
+      if (email) {
+        if (!validator.isEmail(String(email))) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid email format",
+          });
+        }
+        // Check if email already exists for another user
+        const existingEmailUser = await Employee.findOne({
+          email,
+          _id: { $ne: id },
+        });
+        if (existingEmailUser) {
+          return res.status(409).json({
+            success: false,
+            message: "Email already exists for another employee",
+          });
+        }
+        updateFields.email = email;
+      }
+    }
+
+    // Allow phone update with validation
+    if (Object.prototype.hasOwnProperty.call(req.body, "phone")) {
+      if (phone) {
+        if (!validator.isMobilePhone(String(phone), "any")) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid phone number",
+          });
+        }
+        // Check if phone already exists for another user
+        const existingPhoneUser = await Employee.findOne({
+          phone,
+          _id: { $ne: id },
+        });
+        if (existingPhoneUser) {
+          return res.status(409).json({
+            success: false,
+            message: "Phone number already exists for another employee",
+          });
+        }
+        updateFields.phone = phone;
+      }
+    }
+
+    // Allow joiningDate update
+    if (Object.prototype.hasOwnProperty.call(req.body, "joiningDate")) {
+      updateFields.joiningDate = joiningDate;
+    }
+
     setIfPresent("altPhone", altPhone);
     // validate altPhone if provided
     if (Object.prototype.hasOwnProperty.call(req.body, "altPhone")) {
