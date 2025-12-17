@@ -32,7 +32,6 @@ class EmployeeService extends Service {
 
   async updateEmployeeDetails(req, res) {
     const { id } = req.query;
-    console.debug("[employee:patch] incoming body:", req.body);
     const {
       name,
       email,
@@ -55,11 +54,6 @@ class EmployeeService extends Service {
       slabPercentage,
       branch,
     } = req.body;
-    console.debug(
-      "[employee:patch] slabPercentage, branch:",
-      slabPercentage,
-      branch
-    );
 
     // Build updateFields by checking property presence so empty strings/nulls
     // in the request can be used to clear existing values.

@@ -68,13 +68,6 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
   useEffect(() => {
     if (open) {
       if (role) {
-        console.log("Role data received in AddRoleDialog:", role);
-        console.log(
-          "Raw showTotalUsers value:",
-          (role as any).showTotalUsers,
-          "Type:",
-          typeof (role as any).showTotalUsers
-        );
         setRoleName(role.name || "");
         // Coerce boolean or string values correctly ('false' should be false)
         const sysVal = (role as any).isSystemAdmin;
@@ -83,33 +76,20 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
             ? sysVal.toLowerCase() === "true"
             : Boolean(sysVal)
         );
-        console.log("Setting showTotalUsers to:", (role as any).showTotalUsers);
         setShowTotalUsers(
           typeof (role as any).showTotalUsers === "string"
             ? (role as any).showTotalUsers.toLowerCase() === "true"
             : Boolean((role as any).showTotalUsers)
-        );
-        console.log(
-          "Setting showTotalVendorsBilling to:",
-          (role as any).showTotalVendorsBilling
         );
         setShowTotalVendorsBilling(
           typeof (role as any).showTotalVendorsBilling === "string"
             ? (role as any).showTotalVendorsBilling.toLowerCase() === "true"
             : Boolean((role as any).showTotalVendorsBilling)
         );
-        console.log(
-          "Setting showCabBookingAnalytics to:",
-          (role as any).showCabBookingAnalytics
-        );
         setShowCabBookingAnalytics(
           typeof (role as any).showCabBookingAnalytics === "string"
             ? (role as any).showCabBookingAnalytics.toLowerCase() === "true"
             : Boolean((role as any).showCabBookingAnalytics)
-        );
-        console.log(
-          "Setting showScheduleThisWeek to:",
-          (role as any).showScheduleThisWeek
         );
         setShowScheduleThisWeek(
           typeof (role as any).showScheduleThisWeek === "string"
