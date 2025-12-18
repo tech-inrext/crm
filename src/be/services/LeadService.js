@@ -35,7 +35,6 @@ class LeadService extends Service {
       )}`;
 
       const loggedInUserId = req.employee?._id;
-      console.log(loggedInUserId);
 
       const newLead = new Lead({
         uploadedBy: loggedInUserId,
@@ -61,9 +60,6 @@ class LeadService extends Service {
               phone: newLead.phone,
               priority: "HIGH",
             }
-          );
-          console.log(
-            `✅ Notification sent for new lead assignment to: ${rest.assignedTo}`
           );
         } catch (notificationError) {
           console.error(
@@ -102,12 +98,14 @@ class LeadService extends Service {
                   },
                   { delay }
                 );
-                console.log(`✅ Scheduled ${reminder.type} follow-up notification for lead ${newLead._id} in ${Math.round(delay / 1000 / 60)} mins`);
               }
             }
           }
         } catch (queueError) {
-          console.error("Failed to schedule follow-up notification:", queueError);
+          console.error(
+            "Failed to schedule follow-up notification:",
+            queueError
+          );
         }
       }
 
@@ -141,12 +139,12 @@ class LeadService extends Service {
       // Optional search filter
       const searchQuery = search
         ? {
-          $or: [
-            { fullName: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } },
-            { phone: { $regex: search, $options: "i" } },
-          ],
-        }
+            $or: [
+              { fullName: { $regex: search, $options: "i" } },
+              { email: { $regex: search, $options: "i" } },
+              { phone: { $regex: search, $options: "i" } },
+            ],
+          }
         : {};
 
       // Optional status filter
@@ -157,9 +155,9 @@ class LeadService extends Service {
         const statuses = Array.isArray(status)
           ? status
           : String(status)
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
 
         if (statuses.length) {
           // Build case-insensitive match for each status to be safe
@@ -271,9 +269,6 @@ class LeadService extends Service {
               phone: updatedLead.phone,
             }
           );
-          console.log(
-            `✅ Notification sent for lead status change: ${originalLead.status} → ${updateFields.status}`
-          );
         } catch (notificationError) {
           console.error(
             "Failed to send lead status notification:",
@@ -300,9 +295,6 @@ class LeadService extends Service {
               phone: updatedLead.phone,
               priority: "HIGH",
             }
-          );
-          console.log(
-            `✅ Notification sent for lead assignment to user: ${updateFields.assignedTo}`
           );
         } catch (notificationError) {
           console.error(
@@ -341,12 +333,14 @@ class LeadService extends Service {
                   },
                   { delay }
                 );
-                console.log(`✅ Scheduled ${reminder.type} follow-up notification for lead ${updatedLead._id} in ${Math.round(delay / 1000 / 60)} mins`);
               }
             }
           }
         } catch (queueError) {
-          console.error("Failed to schedule follow-up notification:", queueError);
+          console.error(
+            "Failed to schedule follow-up notification:",
+            queueError
+          );
         }
       }
 

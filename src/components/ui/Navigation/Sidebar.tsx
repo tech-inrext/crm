@@ -41,7 +41,6 @@ const SidebarContent = ({ links, onClose }) => {
 
   const handleClick = (e, link) => {
     e.preventDefault();
-    console.log("link", link.href);
     router.push(link.href);
 
     if (isMobile || isTablet) {

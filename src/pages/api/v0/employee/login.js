@@ -82,7 +82,6 @@ export default async function handler(req, res) {
     const employeeData = employee.toObject();
     employeeData.managerName = managerName;
     delete employeeData.password;
-    console.log("Employee logged in:", employeeData);
 
     res.status(200).json({
       success: true,
