@@ -30,7 +30,7 @@ export default function NewDashboardPage() {
     if (analyticsAccess.showCabBookingAnalytics) {
       tabs.push('Cab Booking Analytics');
     }
-    tabs.push('Leads, Schedule & Projects');
+    tabs.push('Leads & Projects');
     return tabs;
   }, [analyticsAccess.showCabBookingAnalytics]);
   // Reset tab if current tab is no longer available
@@ -134,7 +134,7 @@ export default function NewDashboardPage() {
             {analyticsAccess.showCabBookingAnalytics && (
               <Tab label="Cab Booking Analytics" />
             )}
-            <Tab label="Leads, Schedule & Projects" />
+            <Tab label="Leads & Projects" />
           </Tabs>
         </BoxMUI>
         {/* Tab Panels */}

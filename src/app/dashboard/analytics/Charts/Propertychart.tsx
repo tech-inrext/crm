@@ -99,7 +99,7 @@ export const PropertyPieChart: React.FC<{
         display="flex"
         flexDirection="column"
         justifyContent="center"
-        gap={2}
+        gap={1}
         sx={{ p: 1 }}
       >
         {propertyData.map((p) => (
@@ -107,10 +107,10 @@ export const PropertyPieChart: React.FC<{
             key={p.label}
             display="flex"
             alignItems="center"
-            gap={1.5}
+            gap={1}
             sx={{
               background: "#f8f9fa",
-              px: 1.5,
+              px: 1,
               py: 1,
               borderRadius: 2,
             }}
