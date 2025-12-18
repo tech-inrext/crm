@@ -27,6 +27,7 @@ class InrextWorker extends Worker {
   constructor() {
     super("leadQueue", async (job) => this.jobsMapper(job), { connection });
     this.jobMethods = [];
+    this.retryIntervals = {};
   }
   jobsMapper(job) {
     const jobName = job.name;
@@ -40,6 +41,52 @@ class InrextWorker extends Worker {
     }
     this[jobName] = cb;
   }
+  _calculateInterval(intervalStr) {
+    const match = intervalStr.match(/^(\d+)([smhd])$/);
+    if (!match) {
+      throw new Error(
+        "Invalid interval format. Use formats like '10s', '5m', '2h', '1d'."
+      );
+    }
+
+    const value = parseInt(match[1], 10);
+    const unit = match[2];
+
+    const unitMap = {
+      s: 1000, // seconds to milliseconds
+      m: 60 * 1000, // minutes to milliseconds
+      h: 60 * 60 * 1000, // hours to milliseconds
+      d: 24 * 60 * 60 * 1000, // days to milliseconds
+    };
+
+    if (!unitMap[unit]) {
+      throw new Error(
+        `Invalid time unit '${unit}'. Use 's' (seconds), 'm' (minutes), 'h' (hours), or 'd' (days).`
+      );
+    }
+
+    return value * unitMap[unit];
+  }
+  registerAsRecurringJob(jobName, timeInterval, params) {
+    if (leadQueue === undefined) {
+      this.retryIntervals[jobName] = { timeInterval, params };
+      console.warn(
+        `⚠️ Queue not available. Will retry registering job: ${jobName} later.`
+      );
+      return;
+    }
+    // Calculate interval in milliseconds
+    const intervalMs = this._calculateInterval(timeInterval);
+
+    // Schedule the recurring job
+    setInterval(() => {
+      leadQueue.add(jobName, params);
+    }, intervalMs);
+
+    console.log(
+      `✅ Registered recurring job: ${jobName} (interval: ${timeInterval})`
+    );
+  }
 }
 
 const worker = new InrextWorker();
@@ -47,7 +94,10 @@ worker.addJobListener("bulkUploadLeads", bulkUploadLeads);
 worker.addJobListener("sendOTPJob", sendOTPJob);
 worker.addJobListener("sendNotificationEmail", sendNotificationEmail);
 worker.addJobListener("notificationCleanup", notificationCleanupJob);
-worker.addJobListener("sendLeadFollowUpNotification", sendLeadFollowUpNotification);
+worker.addJobListener(
+  "sendLeadFollowUpNotification",
+  sendLeadFollowUpNotification
+);
 
 // Schedule periodic cleanup tasks
 const scheduleCleanupTasks = () => {
@@ -57,19 +107,17 @@ const scheduleCleanupTasks = () => {
   }
 
   // Schedule hourly cleanup for expired notifications
-  setInterval(() => {
-    leadQueue.add("notificationCleanup", { action: "expired" });
-  }, 60 * 60 * 1000); // Every hour
+  worker.registerAsRecurringJob("notificationCleanup", "1h", {
+    action: "expired",
+  });
 
-  // Schedule daily cleanup for old notifications
-  setInterval(() => {
-    leadQueue.add("notificationCleanup", { action: "all" });
-  }, 24 * 60 * 60 * 1000); // Every 24 hours
+  // Schedule daily cleanup for all notifications
+  worker.registerAsRecurringJob("notificationCleanup", "1d", {
+    action: "all",
+  });
 
-  console.log("Notification cleanup tasks scheduled");
+  console.log("📅 Cleanup tasks scheduled");
 };
 
 // Start cleanup scheduling
 scheduleCleanupTasks();
-
-export default worker;
