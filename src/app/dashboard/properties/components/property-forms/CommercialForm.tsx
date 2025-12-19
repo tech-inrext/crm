@@ -151,7 +151,7 @@ const CommercialForm: React.FC<CommercialFormProps> = ({
       </Grid>
 
       <Grid size={{ xs: 12, md: 6 }}>
-        <TextField fullWidth label="Property Name" value={currentProperty.propertyName || ''}
+        <TextField fullWidth label="Property Type" value={currentProperty.propertyName || ''}
           onChange={(e) => {
             const newCommercial = [...(formData.commercialProperties || [])];
             if (!newCommercial[index]) newCommercial[index] = {};
@@ -186,22 +186,12 @@ const CommercialForm: React.FC<CommercialFormProps> = ({
           multiline rows={2}
         />
       </Grid>
-      <Grid size={{ xs: 12, md: 6 }}>
-        <TextField fullWidth label="Carpet Area" value={currentProperty.carpetArea || ''}
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Size Unit" value={currentProperty.sizeUnit || 'sq.ft.'}
           onChange={(e) => {
             const newCommercial = [...(formData.commercialProperties || [])];
             if (!newCommercial[index]) newCommercial[index] = {};
-            newCommercial[index].carpetArea = e.target.value;
-            setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
-          }}
-        />
-      </Grid>
-      <Grid size={{ xs: 12, md: 6 }}>
-        <TextField fullWidth label="Built-up Area" value={currentProperty.builtUpArea || ''}
-          onChange={(e) => {
-            const newCommercial = [...(formData.commercialProperties || [])];
-            if (!newCommercial[index]) newCommercial[index] = {};
-            newCommercial[index].builtUpArea = e.target.value;
+            newCommercial[index].sizeUnit = e.target.value;
             setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
           }}
         />
@@ -226,16 +216,28 @@ const CommercialForm: React.FC<CommercialFormProps> = ({
           }}
         />
       </Grid>
-      <Grid size={{ xs: 12, md: 4 }}>
-        <TextField fullWidth label="Size Unit" value={currentProperty.sizeUnit || 'sq.ft.'}
+      
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Carpet Area" value={currentProperty.carpetArea || ''}
           onChange={(e) => {
             const newCommercial = [...(formData.commercialProperties || [])];
             if (!newCommercial[index]) newCommercial[index] = {};
-            newCommercial[index].sizeUnit = e.target.value;
+            newCommercial[index].carpetArea = e.target.value;
             setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
           }}
         />
       </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Built-up Area" value={currentProperty.builtUpArea || ''}
+          onChange={(e) => {
+            const newCommercial = [...(formData.commercialProperties || [])];
+            if (!newCommercial[index]) newCommercial[index] = {};
+            newCommercial[index].builtUpArea = e.target.value;
+            setFormData((prev: any) => ({ ...prev, commercialProperties: newCommercial }));
+          }}
+        />
+      </Grid>
+      
 
       <Grid size={{ xs: 12 }}>
         <FormControl fullWidth sx={{ mb: 2 }}>
