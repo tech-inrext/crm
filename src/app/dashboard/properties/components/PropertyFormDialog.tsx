@@ -280,9 +280,6 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
             <Paper sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0', borderRadius: '15px' }}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                 Project Media Uploads
-                <Typography variant="caption" display="block" color="text.secondary">
-                  Supports files up to 200MB. Large files will be uploaded directly to cloud storage.
-                </Typography>
               </Typography>
 
               {/* Upload Progress */}
