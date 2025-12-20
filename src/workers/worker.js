@@ -9,6 +9,8 @@ import sendNotificationEmail from "./sendNotificationEmail.js";
 import notificationCleanupJob from "./notificationCleanup.js";
 import sendLeadFollowUpNotification from "./sendLeadFollowUpNotification.js";
 import { leadQueue } from "../queue/leadQueue.js";
+import bulkAssignLeads from "./bulkAssignLeads.js";
+import revertBulkAssign from "./revertBulkAssign.js";
 
 // 🛠️ Load .env
 const __filename = fileURLToPath(import.meta.url);
@@ -48,6 +50,8 @@ worker.addJobListener("sendOTPJob", sendOTPJob);
 worker.addJobListener("sendNotificationEmail", sendNotificationEmail);
 worker.addJobListener("notificationCleanup", notificationCleanupJob);
 worker.addJobListener("sendLeadFollowUpNotification", sendLeadFollowUpNotification);
+worker.addJobListener("bulkAssignLeads", bulkAssignLeads);
+worker.addJobListener("revertBulkAssign", revertBulkAssign);
 
 // Schedule periodic cleanup tasks
 const scheduleCleanupTasks = () => {

@@ -29,6 +29,9 @@ import { LEAD_STATUSES } from "@/constants/leads";
 const BulkUpload = dynamic(() => import("@/components/leads/bulkUpload"), {
   ssr: false,
 });
+const BulkAssign = dynamic(() => import("@/components/leads/BulkAssign"), {
+  ssr: false,
+});
 const CheckUploadStatusDialog = dynamic(
   () => import("@/components/leads/CheckUploadStatusDialog"),
   {
@@ -234,6 +237,10 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
         >
           <PermissionGuard module="lead" action="write" fallback={<></>}>
             <BulkUpload loadLeads={loadLeads} />
+          </PermissionGuard>
+
+          <PermissionGuard module="lead" action="write" fallback={<></>}>
+            <BulkAssign onSuccess={loadLeads} />
           </PermissionGuard>
 
           <PermissionGuard module="lead" action="write" fallback={<></>}>
