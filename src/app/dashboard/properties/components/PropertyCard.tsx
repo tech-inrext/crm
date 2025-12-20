@@ -21,6 +21,8 @@ import {
   CurrencyRupee,
   Public,
   Star,
+  Business,
+  Landscape,
 } from "@mui/icons-material";
 import { Property } from "@/services/propertyService";
 
@@ -69,6 +71,28 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     }
   };
 
+  // Get property type icon
+  const getPropertyTypeIcon = (type: string) => {
+    switch(type) {
+      case 'residential': return <Home sx={{ fontSize: 16 }} />;
+      case 'commercial': return <Business sx={{ fontSize: 16 }} />;
+      case 'plot': return <Landscape sx={{ fontSize: 16 }} />;
+      case 'project': return <Home sx={{ fontSize: 16 }} />;
+      default: return <Home sx={{ fontSize: 16 }} />;
+    }
+  };
+
+  // Get property type color
+  const getPropertyTypeColor = (type: string) => {
+    switch(type) {
+      case 'residential': return 'primary';
+      case 'commercial': return 'warning';
+      case 'plot': return 'info';
+      case 'project': return 'secondary';
+      default: return 'default';
+    }
+  };
+
   return (
     <Paper 
       sx={{ 
@@ -84,56 +108,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         position: 'relative'
       }}
     >
-      {/* Featured */}
-      {project.isFeatured && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 16,
-            left: 16,
-            zIndex: 2,
-            backgroundColor: 'gold',
-            color: 'black',
-            px: 2,
-            py: 0.5,
-            borderRadius: '20px',
-            fontSize: '0.75rem',
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5
-          }}
-        >
-          <Star sx={{ fontSize: '1rem' }} />
-          Featured
-        </Box>
-      )}
 
-      {/* Public */}
-      {project.isPublic && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: project.isFeatured ? 50 : 16,
-            left: 16,
-            zIndex: 2,
-            backgroundColor: 'primary.main',
-            color: 'white',
-            px: 2,
-            py: 0.5,
-            borderRadius: '20px',
-            fontSize: '0.75rem',
-            fontWeight: 'bold',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 0.5
-          }}
-        >
-          <Public sx={{ fontSize: '1rem' }} />
-          Public
-        </Box>
-      )}
-
+      {/* Property Image Section */}
       <Box 
         sx={{ 
           p: 2,
@@ -158,6 +134,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           justifyContent: 'space-between',
         }}
       >
+        {/* Action Buttons */}
         <Box display="flex" justifyContent="flex-end" alignItems="flex-start">
           <Box>
             <IconButton 
@@ -193,6 +170,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           </Box>
         </Box>
 
+        {/* Property Info Overlay */}
         <Box position="absolute" zIndex={1} sx={{ 
           color: 'white', 
           textAlign: 'center', 
@@ -200,9 +178,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           flexDirection: 'column', 
           justifyContent: 'center', 
           alignItems: 'center', 
-          bottom: '10px', 
+          top: 50, 
+          bottom: 0, 
           left: 0, 
-          right: 0 
+          right: 0, 
         }}>
           <Typography variant="h5" fontWeight={600}>{project.projectName}</Typography>
           <Typography variant="body1" sx={{ color: 'rgba(255, 255, 255, 0.8)' }} gutterBottom>
@@ -211,16 +190,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           <Typography variant="h6" sx={{ color: 'rgba(255, 255, 255, 0.9)' }}>
             {project.price || 'Contact for Price'}
           </Typography>
-          <Box display="flex" alignItems="center" gap={1} sx={{ mt: 1 }}>
-            <Chip 
-              label={`${project.subPropertyCount || 0} Properties`}
-              sx={{ 
-                backgroundColor: 'rgba(255, 255, 255, 0.9)', 
-                color: 'black', 
-                fontWeight: 600 
-              }}
-            />
-          </Box>
         </Box>
       </Box>
 

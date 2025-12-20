@@ -23,14 +23,6 @@ async function patchBooking(req, res) {
       .json({ success: false, message: "Missing booking id" });
 
   try {
-    console.log(
-      "[cab-booking PATCH] id",
-      id,
-      "body keys",
-      Object.keys(req.body)
-    );
-    console.log("[cab-booking PATCH] full body", req.body);
-
     const booking = await CabBooking.findById(id);
     if (!booking)
       return res
@@ -85,15 +77,6 @@ async function patchBooking(req, res) {
         ? isSystemAdminAllowed(req.role, "write", "cab-booking")
         : false;
 
-      // Debug: log computed flags to help diagnose permission failures
-      console.log("[cab-booking PATCH] admin-check", {
-        rawFlag,
-        roleBased,
-        roleId: req.role ? req.role._id || req.role.id : null,
-        roleName: req.role ? req.role.name : null,
-        roleIsSystemAdminFlag: req.role ? req.role.isSystemAdmin : null,
-      });
-
       if (!rawFlag && !roleBased) {
         return res.status(403).json({
           success: false,
@@ -103,18 +86,9 @@ async function patchBooking(req, res) {
       }
     }
 
-    console.log("[cab-booking PATCH] computed update:", update);
     const updated = await CabBooking.findByIdAndUpdate(id, update, {
       new: true,
     });
-    console.log("[cab-booking PATCH] updated", updated && updated._id);
-    if (updated) {
-      console.log("[cab-booking PATCH] updated fields snapshot:", {
-        odometerStartImageUrl: updated.odometerStartImageUrl,
-        odometerEndImageUrl: updated.odometerEndImageUrl,
-        fare: updated.fare,
-      });
-    }
 
     // === STATUS EMAIL (employee) ===
     const newStatus = updated?.status;

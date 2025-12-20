@@ -1,5 +1,10 @@
 import React from "react";
-import { TextField, Box, MenuItem, Typography } from "@/components/ui/Component";
+import {
+  TextField,
+  Box,
+  MenuItem,
+  Typography,
+} from "@/components/ui/Component";
 import { Field, FieldProps, useFormikContext } from "formik";
 import { GENDER_OPTIONS, FIELD_LABELS } from "@/constants/users";
 import NomineeSection from "./NomineeSection";
@@ -73,7 +78,6 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-              InputProps={{ readOnly: !!editId }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
@@ -92,7 +96,6 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-              InputProps={{ readOnly: !!editId }}
               inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
@@ -240,59 +243,43 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
         }}
       >
         <Field name="joiningDate">
-          {({ field, meta }: FieldProps) => {
-            const displayValue = editId
-              ? toDateInputString(field.value)
-              : undefined;
-
-            return editId ? (
-              <TextField
-                label={FIELD_LABELS.JOINING_DATE}
-                value={displayValue}
-                fullWidth
-                margin="normal"
-                InputLabelProps={{ shrink: true }}
-                InputProps={{ readOnly: true }}
-                sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1, height: 56 }}
-              />
-            ) : (
-              <TextField
-                {...field}
-                label={FIELD_LABELS.JOINING_DATE}
-                type="date"
-                fullWidth
-                margin="normal"
-                // Always shrink label for native date inputs to avoid overlap
-                InputLabelProps={{ shrink: true }}
-                error={!!meta.touched && !!meta.error}
-                helperText={meta.touched && meta.error}
-                sx={{
-                  bgcolor: "#fff",
-                  borderRadius: 1,
-                  flex: 1,
-                  height: 56,
-                  '& input[type="date"]': {
-                    height: "56px",
-                    fontSize: "16px",
-                    WebkitAppearance: "none",
-                    MozAppearance: "textfield",
-                    appearance: "none",
-                    lineHeight: "normal",
-                    padding: "0 14px",
-                  },
-                }}
-                onChange={(e) => {
-                  const v = e.target.value || "";
-                  if (field.name) setFieldTouched(field.name, true, true);
-                  if (field.name && (field as any).onChange) {
-                    (field as any).onChange({
-                      target: { name: field.name, value: v },
-                    });
-                  }
-                }}
-              />
-            );
-          }}
+          {({ field, meta }: FieldProps) => (
+            <TextField
+              {...field}
+              value={toDateInputString(field.value)}
+              label={FIELD_LABELS.JOINING_DATE}
+              type="date"
+              fullWidth
+              margin="normal"
+              InputLabelProps={{ shrink: true }}
+              error={!!meta.touched && !!meta.error}
+              helperText={meta.touched && meta.error}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                flex: 1,
+                height: 56,
+                '& input[type="date"]': {
+                  height: "56px",
+                  fontSize: "16px",
+                  WebkitAppearance: "none",
+                  MozAppearance: "textfield",
+                  appearance: "none",
+                  lineHeight: "normal",
+                  padding: "0 14px",
+                },
+              }}
+              onChange={(e) => {
+                const v = e.target.value || "";
+                if (field.name) setFieldTouched(field.name, true, true);
+                if (field.name && (field as any).onChange) {
+                  (field as any).onChange({
+                    target: { name: field.name, value: v },
+                  });
+                }
+              }}
+            />
+          )}
         </Field>
         <Field name="designation">
           {({ field, meta }: FieldProps) => (

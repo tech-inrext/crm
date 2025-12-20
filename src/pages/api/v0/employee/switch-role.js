@@ -35,7 +35,6 @@ export default async function handler(req, res) {
           .json({ success: false, message: "Employee not found" });
       }
 
-      console.log(employee.roles[1]);
       // ✅ Check if roleId exists in employee's roles
       const roleExists = employee.roles.some(
         (role) => role._id.toString() === roleId

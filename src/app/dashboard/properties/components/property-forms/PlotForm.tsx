@@ -151,7 +151,7 @@ const PlotForm: React.FC<PlotFormProps> = ({
       </Grid>
 
       <Grid size={{ xs: 12, md: 6 }}>
-        <TextField fullWidth label="Property Name" value={currentProperty.propertyName || ''}
+        <TextField fullWidth label="Property Type" value={currentProperty.propertyName || ''}
           onChange={(e) => {
             const newPlot = [...(formData.plotProperties || [])];
             if (!newPlot[index]) newPlot[index] = {};
@@ -253,6 +253,16 @@ const PlotForm: React.FC<PlotFormProps> = ({
         </FormControl>
       </Grid>
       <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Size Unit" value={currentProperty.sizeUnit || 'sq.ft.'}
+          onChange={(e) => {
+            const newPlot = [...(formData.plotProperties || [])];
+            if (!newPlot[index]) newPlot[index] = {};
+            newPlot[index].sizeUnit = e.target.value;
+            setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
         <TextField fullWidth label="Minimum Size" value={currentProperty.minSize || ''}
           onChange={(e) => {
             const newPlot = [...(formData.plotProperties || [])];
@@ -268,16 +278,6 @@ const PlotForm: React.FC<PlotFormProps> = ({
             const newPlot = [...(formData.plotProperties || [])];
             if (!newPlot[index]) newPlot[index] = {};
             newPlot[index].maxSize = e.target.value;
-            setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
-          }}
-        />
-      </Grid>
-      <Grid size={{ xs: 12, md: 4 }}>
-        <TextField fullWidth label="Size Unit" value={currentProperty.sizeUnit || 'sq.ft.'}
-          onChange={(e) => {
-            const newPlot = [...(formData.plotProperties || [])];
-            if (!newPlot[index]) newPlot[index] = {};
-            newPlot[index].sizeUnit = e.target.value;
             setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
           }}
         />

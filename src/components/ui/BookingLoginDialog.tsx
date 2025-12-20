@@ -18,7 +18,7 @@ import {
   IconButton,
   FormHelperText,
 } from "@mui/material";
-import { Close, Delete, CloudUpload } from "@mui/icons-material";
+import { Close, Delete, CloudUpload, Refresh, Info } from "@mui/icons-material";
 import { styled } from "@mui/material/styles";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -51,7 +51,7 @@ interface BookingLoginDialogProps {
   onSave: (values: any) => Promise<void>;
 }
 
-// Helper function to ensure all fields have safe default values - MOVED OUTSIDE COMPONENT
+// Helper function to ensure all fields have safe default values
 const getSafeFormData = (initialData: any) => {
   const defaultForm = { ...DEFAULT_BOOKING_LOGIN_FORM };
   
@@ -59,10 +59,8 @@ const getSafeFormData = (initialData: any) => {
     return defaultForm;
   }
 
-  // Create a safe form data object with fallbacks for all fields
   const safeFormData = { ...defaultForm };
   
-  // Override with initialData, ensuring no undefined values
   Object.keys(defaultForm).forEach(key => {
     const value = initialData[key];
     
@@ -71,7 +69,6 @@ const getSafeFormData = (initialData: any) => {
     }
   });
 
-  // Handle special cases
   safeFormData.slabPercentage = initialData.slabPercentage || '';
   safeFormData.status = initialData.status || 'draft';
   safeFormData.aadharImages = Array.isArray(initialData.aadharImages) 
@@ -84,6 +81,50 @@ const getSafeFormData = (initialData: any) => {
   safeFormData.cashReceiptNumber = initialData.cashReceiptNumber || '';
 
   return safeFormData;
+};
+
+const calculateNetSoldCopAmount = (
+  area: string | number,
+  projectRate: string | number,
+  otherCharges1: string | number,
+  companyDiscount: string | number,
+  plcType: string,
+  plcValue: string | number
+): string => {
+  const numArea = typeof area === 'string' ? parseFloat(area) || 0 : area;
+  const numRate = typeof projectRate === 'string' ? parseFloat(projectRate) || 0 : projectRate;
+  const numCharges = typeof otherCharges1 === 'string' ? parseFloat(otherCharges1) || 0 : otherCharges1;
+  const numDiscount = typeof companyDiscount === 'string' ? parseFloat(companyDiscount) || 0 : companyDiscount;
+  const numPlcValue = typeof plcValue === 'string' ? parseFloat(plcValue) || 0 : plcValue;
+  
+  let effectiveRatePerSqFt = numRate;
+  
+  if (plcType && numPlcValue > 0) {
+    switch (plcType) {
+      case "percentage":
+        effectiveRatePerSqFt = numRate + (numRate * numPlcValue / 100);
+        break;
+      case "per_sq_ft":
+        effectiveRatePerSqFt = numRate + numPlcValue;
+        break;
+      case "per_sq_yard":
+        // effectiveRatePerSqFt = numRate + (numPlcValue / 9);
+        effectiveRatePerSqFt = numRate + numPlcValue;
+        break;
+      case "unit":
+        // effectiveRatePerSqFt = numRate + (numPlcValue / numArea);
+        effectiveRatePerSqFt = numRate + numPlcValue;
+        break;
+    }
+  }
+  
+  let totalAmount = effectiveRatePerSqFt * numArea;
+  
+  totalAmount += numCharges;
+  
+  totalAmount -= numDiscount;
+  
+  return Math.max(0, totalAmount).toFixed(2);
 };
 
 const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
@@ -101,65 +142,63 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
   // Get status options based on user role
   const getStatusOptions = () => {
     if (hasAccountsRole()) {
-      // Accounts role can see all status options
       return STATUS_OPTIONS;
     } else {
-      // Non-accounts role can only see draft and submitted
       return STATUS_OPTIONS.filter(option => 
         option.value === 'draft' || option.value === 'submitted'
       );
     }
   };
 
+  // Initialize form and calculate netSoldCopAmount
   useEffect(() => {
     if (open) {
       const safeFormData = getSafeFormData(initialData);
-      setForm(safeFormData);
+      
+      const calculatedAmount = calculateNetSoldCopAmount(
+        safeFormData.area,
+        safeFormData.projectRate,
+        safeFormData.otherCharges1,
+        safeFormData.companyDiscount,
+        safeFormData.plcType,
+        safeFormData.plcValue
+      );
+      
+      setForm({
+        ...safeFormData,
+        netSoldCopAmount: calculatedAmount
+      });
       setErrors({});
     }
   }, [open, initialData]);
 
-  // Auto-calculate netSoldCopAmount when relevant fields change
   useEffect(() => {
-    if (open && (form.area || form.projectRate || form.otherCharges1 || form.companyDiscount || form.plcValue)) {
-      calculateNetSoldCopAmount();
-    }
-  }, [form.area, form.projectRate, form.otherCharges1, form.companyDiscount, form.plcType, form.plcValue, open]);
-
-  const calculateNetSoldCopAmount = () => {
-    const area = parseFloat(form.area) || 0;
-    const projectRate = parseFloat(form.projectRate) || 0;
-    const otherCharges1 = parseFloat(form.otherCharges1) || 0;
-    const companyDiscount = parseFloat(form.companyDiscount) || 0;
-    const plcValue = parseFloat(form.plcValue) || 0;
-    
-    let baseAmount = area * projectRate;
-    baseAmount += otherCharges1;
-    baseAmount -= companyDiscount;
-    
-    if (form.plcType && plcValue > 0) {
-      switch (form.plcType) {
-        case "percentage":
-          baseAmount -= (baseAmount * plcValue) / 100;
-          break;
-        case "per_sq_ft":
-          baseAmount -= (plcValue * area);
-          break;
-        case "per_sq_yard":
-          baseAmount -= (plcValue * area * 0.111111);
-          break;
-        case "unit":
-          baseAmount -= plcValue;
-          break;
+    if (open) {
+      const calculatedAmount = calculateNetSoldCopAmount(
+        form.area,
+        form.projectRate,
+        form.otherCharges1,
+        form.companyDiscount,
+        form.plcType,
+        form.plcValue
+      );
+      
+      if (calculatedAmount !== form.netSoldCopAmount) {
+        setForm(prev => ({
+          ...prev,
+          netSoldCopAmount: calculatedAmount
+        }));
       }
     }
-    
-    const netAmount = Math.max(0, baseAmount);
-    setForm(prev => ({
-      ...prev,
-      netSoldCopAmount: netAmount.toString()
-    }));
-  };
+  }, [
+    form.area,
+    form.projectRate,
+    form.otherCharges1,
+    form.companyDiscount,
+    form.plcType,
+    form.plcValue,
+    open
+  ]);
 
   const handleChange = (field: string) => (event: any) => {
     const value = event.target.value;
@@ -318,6 +357,22 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
     }
   };
 
+  const recalculateNetAmount = () => {
+    const calculatedAmount = calculateNetSoldCopAmount(
+      form.area,
+      form.projectRate,
+      form.otherCharges1,
+      form.companyDiscount,
+      form.plcType,
+      form.plcValue
+    );
+    
+    setForm(prev => ({
+      ...prev,
+      netSoldCopAmount: calculatedAmount
+    }));
+  };
+
   return (
     <Dialog
       open={open}
@@ -328,22 +383,22 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
       sx={{ '& .MuiDialog-paper': { maxHeight: '90vh' } }}
     >
       <DialogTitle>
-  <Box display="flex" justifyContent="space-between" alignItems="center">
-    <Box>
-      <Typography variant="h6" fontWeight="bold">
-        {editId ? BUTTON_LABELS.EDIT_BOOKING : BUTTON_LABELS.ADD_BOOKING}
-      </Typography>
-      {!hasAccountsRole() && !editId && (
-        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-          Note: You will only be able to see bookings created by you
-        </Typography>
-      )}
-    </Box>
-    <IconButton onClick={onClose} disabled={saving}>
-      <Close />
-    </IconButton>
-  </Box>
-</DialogTitle>
+        <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box>
+            <Typography variant="h6" fontWeight="bold">
+              {editId ? BUTTON_LABELS.EDIT_BOOKING : BUTTON_LABELS.ADD_BOOKING}
+            </Typography>
+            {!hasAccountsRole() && !editId && (
+              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                Note: You will only be able to see bookings created by you
+              </Typography>
+            )}
+          </Box>
+          <IconButton onClick={onClose} disabled={saving}>
+            <Close />
+          </IconButton>
+        </Box>
+      </DialogTitle>
 
       <DialogContent dividers>
         <Grid container spacing={3}>
@@ -547,6 +602,16 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
               value={form.netSoldCopAmount || ''}
               InputProps={{
                 readOnly: true,
+                endAdornment: (
+                  <IconButton 
+                    onClick={recalculateNetAmount}
+                    size="small"
+                    title="Recalculate"
+                    sx={{ mr: -1 }}
+                  >
+                    <Refresh fontSize="small" />
+                  </IconButton>
+                )
               }}
               sx={{
                 '& .MuiInputBase-input': {
@@ -736,7 +801,7 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
 
           <Grid size={{ xs: 12, md: 6 }}>
             <FormControl fullWidth>
-              <InputLabel>Slab Percentage</InputLabel>
+              <InputLabel>Slab Percentage * </InputLabel>
               <Select
                 value={form.slabPercentage || ''}
                 label="Slab Percentage"
@@ -816,45 +881,44 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
           </Grid>
 
           {/* Status - updated for role base access */}
-<Grid size={{ xs: 12, md: 6 }}>
-  <FormControl fullWidth>
-    <InputLabel>Status</InputLabel>
-    <Select
-      value={form.status || 'draft'}
-      label="Status"
-      onChange={handleChange("status")}
-      disabled={
-        editId && 
-        ((!hasAccountsRole() && form.status !== 'draft') ||
-        (form.status === 'approved' || form.status === 'rejected'))
-      }
-    >
-      {getStatusOptions().map((option) => (
-        <MenuItem 
-          key={option.value} 
-          value={option.value}
-          disabled={
-            // Disable approved/rejected for non-accounts users
-            !hasAccountsRole() && 
-            (option.value === 'approved' || option.value === 'rejected')
-          }
-        >
-          {option.label}
-        </MenuItem>
-      ))}
-    </Select>
-    {editId && !hasAccountsRole() && form.status !== 'draft' && (
-      <FormHelperText error>
-        Cannot edit submitted booking. Only draft bookings can be edited.
-      </FormHelperText>
-    )}
-    {!hasAccountsRole() && (
-      <FormHelperText>
-        Only Accounts role can set status to Approved or Rejected
-      </FormHelperText>
-    )}
-  </FormControl>
-</Grid>
+          <Grid size={{ xs: 12, md: 6 }}>
+            <FormControl fullWidth>
+              <InputLabel>Status</InputLabel>
+              <Select
+                value={form.status || 'draft'}
+                label="Status"
+                onChange={handleChange("status")}
+                disabled={
+                  editId && 
+                  ((!hasAccountsRole() && form.status !== 'draft') ||
+                  (form.status === 'approved' || form.status === 'rejected'))
+                }
+              >
+                {getStatusOptions().map((option) => (
+                  <MenuItem 
+                    key={option.value} 
+                    value={option.value}
+                    disabled={
+                      !hasAccountsRole() && 
+                      (option.value === 'approved' || option.value === 'rejected')
+                    }
+                  >
+                    {option.label}
+                  </MenuItem>
+                ))}
+              </Select>
+              {editId && !hasAccountsRole() && form.status !== 'draft' && (
+                <FormHelperText error>
+                  Cannot edit submitted booking. Only draft bookings can be edited.
+                </FormHelperText>
+              )}
+              {!hasAccountsRole() && (
+                <FormHelperText>
+                  Only Accounts role can set status to Approved or Rejected
+                </FormHelperText>
+              )}
+            </FormControl>
+          </Grid>
 
           {/* File Uploads */}
           <Grid size={{ xs: 12 }}>
@@ -954,6 +1018,4 @@ const BookingLoginDialog: React.FC<BookingLoginDialogProps> = ({
     </Dialog>
   );
 };
-
 export default BookingLoginDialog;
-

@@ -150,8 +150,8 @@ const ResidentialForm: React.FC<ResidentialFormProps> = ({
         </Typography>
       </Grid>
 
-      <Grid size={{ xs: 12, md: 6 }}>
-        <TextField fullWidth label="Property Name" value={currentProperty.propertyName || ''}
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Property Type" value={currentProperty.propertyName || ''}
           onChange={(e) => {
             const newResidential = [...(formData.residentialProperties || [])];
             if (!newResidential[index]) newResidential[index] = {};
@@ -160,7 +160,7 @@ const ResidentialForm: React.FC<ResidentialFormProps> = ({
           }}
         />
       </Grid>
-      <Grid size={{ xs: 12, md: 6 }}>
+      <Grid size={{ xs: 12, md: 4 }}>
         <TextField 
           fullWidth 
           label="Price" 
@@ -175,6 +175,29 @@ const ResidentialForm: React.FC<ResidentialFormProps> = ({
           helperText={formData.parentId ? "Leave empty to automatically use main project price" : "Enter price for this residential property"}
         />
       </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+  <TextField 
+    fullWidth 
+    label="Floor" 
+    type="number"
+    value={currentProperty.floors || ''}
+    onChange={(e) => {
+      const newResidential = [...(formData.residentialProperties || [])];
+      if (!newResidential[index]) newResidential[index] = {};
+      const value = e.target.value;
+      // Handle empty value as undefined
+      newResidential[index].floors = value === '' ? undefined : parseInt(value);
+      setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+    }}
+    InputProps={{
+      inputProps: { 
+        min: 0,
+        step: 1
+      }
+    }}
+    helperText="Optional - Number of floor"
+  />
+</Grid>
       <Grid size={{ xs: 12 }}>
         <TextField fullWidth label="Property Description" value={currentProperty.propertyDescription || ''}
           onChange={(e) => {
@@ -226,22 +249,12 @@ const ResidentialForm: React.FC<ResidentialFormProps> = ({
           }}
         />
       </Grid>
-      <Grid size={{ xs: 12, md: 6 }}>
-        <TextField fullWidth label="Carpet Area" value={currentProperty.carpetArea || ''}
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Size Unit" value={currentProperty.sizeUnit || 'sq.ft.'}
           onChange={(e) => {
             const newResidential = [...(formData.residentialProperties || [])];
             if (!newResidential[index]) newResidential[index] = {};
-            newResidential[index].carpetArea = e.target.value;
-            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
-          }}
-        />
-      </Grid>
-      <Grid size={{ xs: 12, md: 6 }}>
-        <TextField fullWidth label="Built-up Area" value={currentProperty.builtUpArea || ''}
-          onChange={(e) => {
-            const newResidential = [...(formData.residentialProperties || [])];
-            if (!newResidential[index]) newResidential[index] = {};
-            newResidential[index].builtUpArea = e.target.value;
+            newResidential[index].sizeUnit = e.target.value;
             setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
           }}
         />
@@ -266,16 +279,27 @@ const ResidentialForm: React.FC<ResidentialFormProps> = ({
           }}
         />
       </Grid>
-      <Grid size={{ xs: 12, md: 4 }}>
-        <TextField fullWidth label="Size Unit" value={currentProperty.sizeUnit || 'sq.ft.'}
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Carpet Area" value={currentProperty.carpetArea || ''}
           onChange={(e) => {
             const newResidential = [...(formData.residentialProperties || [])];
             if (!newResidential[index]) newResidential[index] = {};
-            newResidential[index].sizeUnit = e.target.value;
+            newResidential[index].carpetArea = e.target.value;
             setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
           }}
         />
       </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Built-up Area" value={currentProperty.builtUpArea || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].builtUpArea = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      
 
       <Grid size={{ xs: 12 }}>
         <FormControl fullWidth sx={{ mb: 2 }}>
