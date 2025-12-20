@@ -447,7 +447,10 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
                         color={property?.parentId === null ? "primary" : "secondary"}
                       />
                     </Box>
-                    
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                      <Typography variant="body2" color="text.secondary">Payment Plan</Typography>
+                      {property?.paymentPlan}
+                    </Box>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
                       <Typography variant="body2" color="text.secondary">Total Media</Typography>
                       <Typography variant="body2" fontWeight={600}>

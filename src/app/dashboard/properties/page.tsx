@@ -767,13 +767,13 @@ export default function PropertiesPage() {
   };
 
   // Check data size before submission
-  const checkDataSize = (data: any): { isValid: boolean; sizeMB: number } => {
-    const jsonString = JSON.stringify(data);
-    const sizeMB = jsonString.length / (1024 * 1024);
-    const isValid = sizeMB <= 1; // 1MB limit
+  // const checkDataSize = (data: any): { isValid: boolean; sizeMB: number } => {
+  //   const jsonString = JSON.stringify(data);
+  //   const sizeMB = jsonString.length / (1024 * 1024);
+  //   const isValid = sizeMB <= 1; // 1MB limit
     
-    return { isValid, sizeMB };
-  };
+  //   return { isValid, sizeMB };
+  // };
 
   // Submit form
   const handleSubmit = async (data: any) => {
@@ -814,6 +814,7 @@ export default function PropertiesPage() {
           propertyName: resData.propertyName,
           propertyDescription: resData.propertyDescription,
           price: resData.price,
+          floors: resData.floors,
           paymentPlan: resData.paymentPlan || data.paymentPlan,
           bedrooms: resData.bedrooms,
           bathrooms: resData.bathrooms,
@@ -845,6 +846,7 @@ export default function PropertiesPage() {
           propertyName: comData.propertyName,
           propertyDescription: comData.propertyDescription,
           price: comData.price,
+          floors: comData.floors,
           paymentPlan: comData.paymentPlan || data.paymentPlan,
           carpetArea: comData.carpetArea,
           builtUpArea: comData.builtUpArea,
@@ -946,12 +948,12 @@ export default function PropertiesPage() {
     }
 
     const cleanedData = cleanFormData(processedData);
-    const sizeCheck = checkDataSize(cleanedData);
+    // const sizeCheck = checkDataSize(cleanedData);
     
-    if (!sizeCheck.isValid) {
-      toast.error(`Data too large (${sizeCheck.sizeMB.toFixed(2)}MB). Please reduce the number of files or descriptions.`);
-      return;
-    }
+    // if (!sizeCheck.isValid) {
+    //   toast.error(`Data too large (${sizeCheck.sizeMB.toFixed(2)}MB). Please reduce the number of files or descriptions.`);
+    //   return;
+    // }
 
     const toastId = toast.loading(editingProperty ? "Updating property..." : "Creating properties...");
     

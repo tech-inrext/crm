@@ -111,7 +111,7 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField 
               fullWidth 
-              label="Project Name *" 
+              label="Project Name" 
               value={formData.projectName} 
               onChange={(e) => setFormData((prev: any) => ({ ...prev, projectName: e.target.value }))}
               required 
@@ -124,7 +124,7 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField 
               fullWidth 
-              label="Builder Name *" 
+              label="Builder Name" 
               value={formData.builderName} 
               onChange={(e) => setFormData((prev: any) => ({ ...prev, builderName: e.target.value }))}
               required 
@@ -160,7 +160,7 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
           <Grid size={{ xs: 12, md: 6 }}>
             <TextField 
               fullWidth 
-              label="Payment Plan *" 
+              label="Payment Plan" 
               value={formData.paymentPlan} 
               onChange={(e) => setFormData((prev: any) => ({ ...prev, paymentPlan: e.target.value }))}
               required 
@@ -280,9 +280,6 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
             <Paper sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0', borderRadius: '15px' }}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
                 Project Media Uploads
-                <Typography variant="caption" display="block" color="text.secondary">
-                  Supports files up to 200MB. Large files will be uploaded directly to cloud storage.
-                </Typography>
               </Typography>
 
               {/* Upload Progress */}
