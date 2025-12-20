@@ -25,6 +25,8 @@ import {
   Landscape,
 } from "@mui/icons-material";
 import { Property } from "@/services/propertyService";
+import { useAuth } from "@/contexts/AuthContext"; 
+import PermissionGuard from "@/components/PermissionGuard"; 
 
 interface PropertyCardProps {
   project: Property;
@@ -51,6 +53,18 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   onToggleFeatured,
   showAdminControls = false,
 }) => {
+  const { user, getPermissions } = useAuth(); 
+  
+  // Check permissions for property module
+  const permissions = getPermissions("property");
+  const canEditProperty = permissions.hasWriteAccess;
+  const canDeleteProperty = permissions.hasDeleteAccess;
+  
+  // Check if user is admin (for additional controls)
+  const isAdmin = user?.isSystemAdmin || 
+                 (user?.currentRole && typeof user.currentRole !== 'string' ? 
+                 user.currentRole.name?.toLowerCase() === 'admin' : false);
+
   const [expanded, setExpanded] = useState(false);
   const [subProperties, setSubProperties] = useState<Property[]>([]);
   const [loadingSubProperties, setLoadingSubProperties] = useState(false);
@@ -147,26 +161,33 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             >
               <VisibilityIcon />
             </IconButton>
-            <IconButton 
-              size="small" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onEdit(project);
-              }} 
-              sx={{ color: 'white' }}
-            >
-              <EditIcon />
-            </IconButton>
-            <IconButton 
-              size="small" 
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete(project._id!);
-              }} 
-              sx={{ color: 'white' }}
-            >
-              <DeleteIcon />
-            </IconButton>
+            {/* Edit button - only with write permission */}
+            {canEditProperty && (
+              <IconButton 
+                size="small" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit(project);
+                }} 
+                sx={{ color: 'white' }}
+              >
+                <EditIcon />
+              </IconButton>
+            )}
+            
+            {/* Delete button - only with delete permission */}
+            {canDeleteProperty && (
+              <IconButton 
+                size="small" 
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete(project._id!);
+                }} 
+                sx={{ color: 'white' }}
+              >
+                <DeleteIcon />
+              </IconButton>
+            )}
           </Box>
         </Box>
 
@@ -194,7 +215,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       </Box>
 
       {/* Admin Controls */}
-      {showAdminControls && (
+      {showAdminControls && canEditProperty && (
         <CardContent sx={{ borderTop: '1px solid #e0e0e0' }}>
           <Grid container spacing={2} alignItems="center">
             <Grid size={{ xs: 12, sm: 6 }}>
