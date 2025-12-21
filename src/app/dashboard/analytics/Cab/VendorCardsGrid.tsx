@@ -73,7 +73,15 @@ export function VendorCardsGrid({ displayVendors }) {
               {/* Footer Info */}
               <Box className="text-xs text-gray-600 space-y-1 mt-auto pt-2">
                 <Typography>
-                  📞 {vendor.phone || vendor.contactNumber || "N/A"}
+                  📞 {vendor.phone || vendor.contactNumber ? (
+                    <a
+                      href={`tel:${vendor.phone || vendor.contactNumber}`}
+                      style={{ color: '#1976d2', textDecoration: 'underline' }}
+                      onClick={e => e.stopPropagation()}
+                    >
+                      {vendor.phone || vendor.contactNumber}
+                    </a>
+                  ) : 'N/A'}
                 </Typography>
 
                 {vendor.avp && (

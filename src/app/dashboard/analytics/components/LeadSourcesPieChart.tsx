@@ -40,13 +40,25 @@ const LeadSourcesPieChart: React.FC<{ slices?: Slice[] }> = ({ slices = [] }) =>
 
  
   let angle = 0;
-  const arcs = slices.map((s) => {
+  const arcs = slices.map((s, idx) => {
     const value = Number(s.value) || 0;
-    const portion = (value / total) * 360;
-    const startAngle = angle;
-    const endAngle = angle + portion;
-    const path = describeArc(cx, cy, r, startAngle, endAngle);
-    angle += portion;
+    let path = '';
+    if (slices.length === 1 && value > 0) {
+      // Draw a full circle using two arcs (SVG limitation)
+      path = [
+        `M ${cx} ${cy}`,
+        `L ${cx + r} ${cy}`,
+        `A ${r} ${r} 0 1 0 ${cx - r} ${cy}`,
+        `A ${r} ${r} 0 1 0 ${cx + r} ${cy}`,
+        'Z'
+      ].join(' ');
+    } else {
+      const portion = (value / total) * 360;
+      const startAngle = angle;
+      const endAngle = angle + portion;
+      path = describeArc(cx, cy, r, startAngle, endAngle);
+      angle += portion;
+    }
     return { path, color: s.color || '#ddd', label: s.label, value };
   });
 
