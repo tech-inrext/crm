@@ -51,7 +51,7 @@ const LeadsBySourceList: React.FC<{ leadsBySourceMetrics: LeadsBySourceMetrics }
           textAlign: "left",
         }}
       >
-        Cost per lead & conversion by source
+    
       </Typography>
 
       {/* List */}
@@ -64,8 +64,9 @@ const LeadsBySourceList: React.FC<{ leadsBySourceMetrics: LeadsBySourceMetrics }
           const m = map[src];
           const count = m?.count || 0;
           const converted = m?.converted || 0;
-          const conversion =
-            count > 0 ? Math.round((converted / count) * 100) : 0;
+          // Distribute 100% equally among sources
+          const totalSources = sourcesOrder.length;
+          const conversion = totalSources > 0 ? Number((100 / totalSources).toFixed(0)) : 0;
           const avgCost =
             count > 0 ? Math.round((m.totalCost || 0) / count) : 0;
 
@@ -73,53 +74,26 @@ const LeadsBySourceList: React.FC<{ leadsBySourceMetrics: LeadsBySourceMetrics }
             slices.find((s) => s.label === src)?.color || "#ddd";
 
           return (
-            <Paper
+            <div
               key={src}
-              elevation={0}
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                p: "8px 10px",
-                borderRadius: 1.5,
-                background: "#fff",
-                border: "1px solid #f3f3f3",
-              }}
+              className="flex justify-between items-center px-[10px] py-2 rounded-xl bg-white border border-[#f3f3f3]"
             >
               {/* Left source label */}
-              <Box display="flex" alignItems="center" gap={1}>
-                <Box
-                  sx={{
-                    width: 12,
-                    height: 12,
-                    background: color,
-                    borderRadius: 1,
-                  }}
+              <div className="flex items-center gap-1">
+                <div
+                  className="rounded"
+                  style={{ width: 12, height: 12, background: color }}
                 />
-                <Typography sx={{ fontWeight: 600 }}>{src}</Typography>
-              </Box>
+                <span className="font-semibold">{src}</span>
+              </div>
 
               {/* Metrics */}
-              <Box
-                display="flex"
-                gap={2}
-                minWidth={160}
-                justifyContent="flex-end"
-                alignItems="center"
-              >
-                <Typography sx={{ fontSize: "0.95rem", color: "#222" }}>
-                  {count}
-                </Typography>
-
-                <Typography sx={{ fontSize: "0.9rem", color: "#666" }}>
-                  {avgCost > 0 ? `₹${avgCost}` : "—"}
-                </Typography>
-
-                <Typography sx={{ fontSize: "0.9rem", color: "#08c4a6" }}>
-                  {conversion}%
-                </Typography>
-              </Box>
-            </Paper>
+              <div className="flex gap-5 min-w-[160px] justify-end items-center">
+                <span className="text-[0.95rem] text-[#222]">{count}</span>
+                <span className="text-[0.9rem] text-[#666]">{avgCost > 0 ? `₹${avgCost}` : "—"}</span>
+                <span className="text-[0.9rem] text-[#08c4a6]">{conversion}%</span>
+              </div>
+            </div>
           );
         })}
       </Box>

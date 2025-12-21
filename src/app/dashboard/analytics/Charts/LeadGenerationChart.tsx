@@ -90,23 +90,11 @@ export default function LeadGenerationChart({ period = 'month' }: Props) {
   }, [period]);
 
   return (
-    <div style={{
-      background: "#fff",
-      borderRadius: "16px",
-      boxShadow: "0 1px 4px 0 rgba(0,0,0,0.04)",
-      border: "1px solid #eceff1",
-      padding: "32px 28px 18px 28px",
-      maxWidth: "850px"
-    }}>
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "center",
-        marginBottom: "12px"
-      }}>
-        <div style={{ fontWeight: 600, color: '#222' }}>{loading ? 'Loading...' : (error ? 'Error loading data' : '')}</div>
+    <div className="bg-white rounded-2xl shadow-sm border border-[#eceff1] px-7 pt-8 pb-4 max-w-[850px]">
+      <div className="flex justify-between items-center mb-3">
+        <div className="font-semibold text-[#222]">{loading ? 'Loading...' : (error ? 'Error loading data' : '')}</div>
       </div>
-      <div style={{ height: 350 }}>
+      <div className="h-[350px]">
         <Bar data={chartData} options={options} />
       </div>
     </div>

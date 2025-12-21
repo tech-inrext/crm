@@ -1,8 +1,9 @@
 "use client";
 import React from 'react';
+// Removed MUI Tabs and Tab
+import BoxMUI from '@/components/ui/Component/Box';
 import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
-import BoxMUI from '@/components/ui/Component/Box';
 import { useAuth } from '@/contexts/AuthContext';
 import { Box, Typography, Card, CardContent } from '@/components/ui/Component';
 import PermissionGuard from "@/components/PermissionGuard";
@@ -14,31 +15,23 @@ import {PropertyPieChart} from './Charts/Propertychart'
 import LeadSourcesPieChart from './components/LeadSourcesPieChart';
 import ScheduleCard from './components/ScheduleCard';
 import LeadsBySourceList from './components/LeadsBySourceList';
-
 export default function NewDashboardPage() {
-  // Tabs state
-  const [tab, setTab] = React.useState(0);
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
-    setTab(newValue);
-  };
-  // Get analytics access from AuthContext
-  const { getAnalyticsAccess } = useAuth();
+   const [section, setSection] = React.useState(0);
+   const { getAnalyticsAccess } = useAuth();
   const analyticsAccess = getAnalyticsAccess();
-  // Calculate available tabs based on permissions
-  const availableTabs = React.useMemo(() => {
-    const tabs = ['Overall'];
+   const availableSections = React.useMemo(() => {
+    const sections = ['Overview'];
     if (analyticsAccess.showCabBookingAnalytics) {
-      tabs.push('Cab Booking Analytics');
+      sections.push('Cab Booking Analytics');
     }
-    tabs.push('Leads & Projects');
-    return tabs;
+    sections.push('Leads & Projects');
+    return sections;
   }, [analyticsAccess.showCabBookingAnalytics]);
-  // Reset tab if current tab is no longer available
-  React.useEffect(() => {
-    if (tab >= availableTabs.length) {
-      setTab(0);
+      React.useEffect(() => {
+    if (section >= availableSections.length) {
+      setSection(0);
     }
-  }, [tab, availableTabs.length]);
+  }, [section, availableSections.length]);
   // --- Analytics API Integration ---
   // Overall analytics state
   const [overall, setOverall] = React.useState<any>(null);
@@ -103,46 +96,35 @@ export default function NewDashboardPage() {
   }, []);
   return (
     <PermissionGuard module="analytics" action="read">
-      <Box sx={{
-        p: { xs: 1, sm: 2, md: 3 },
-        overflow: 'hidden'
-      }}>
-        <Typography variant="h4" sx={{
-          fontWeight: 700,
-          color: '#1a1a1a',
-          mb: 2,
-          fontSize: { xs: '1.5rem', sm: '2rem', md: '2.25rem' }
-        }}>
+      <Box className="p-3 sm:p-6 md:p-8 overflow-hidden">
+        <Typography variant="h4" className="font-bold text-[#1a1a1a] mb-4 text-2xl sm:text-3xl md:text-4xl">
           Dashboard
         </Typography>
-        <div style={{ height: 12 }} />
-        <BoxMUI sx={{
-          borderBottom: 1,
-          borderColor: 'divider',
-          mb: 2,
-          '.MuiTabs-root': {
-            minHeight: { xs: '40px', sm: '48px' }
-          },
-          '.MuiTab-root': {
-            fontSize: { xs: '0.75rem', sm: '0.875rem', md: '1rem' },
-            padding: { xs: '6px 12px', sm: '12px 16px' },
-            minHeight: { xs: '40px', sm: '48px' }
-          }
-        }}>
-          <Tabs value={tab} onChange={handleTabChange} aria-label="Analytics Tabs">
-            <Tab label="Overall" />
-            {analyticsAccess.showCabBookingAnalytics && (
-              <Tab label="Cab Booking Analytics" />
-            )}
-            <Tab label="Leads & Projects" />
+        {/* <div className="h-3" /> */}
+        <BoxMUI className="border-b border-gray-200 mb-4">
+          <Tabs
+            value={section}
+            onChange={(_, newValue) => setSection(newValue)}
+            aria-label="Analytics Tabs"
+            indicatorColor="primary"
+            textColor="primary"
+            variant="scrollable"
+            scrollButtons="auto"
+          >
+            {availableSections.map((label, idx) => (
+              <Tab key={label} label={label} />
+            ))}
           </Tabs>
         </BoxMUI>
-        {/* Tab Panels */}
-        {tab === 0 && (
+        {/* Section Panels */}
+        {section === 0 && (
           <div>
             <StatsCardsRow
-              newLeads={overall?.newLeads}
-              loadingNewLeads={overallLoading}
+              newLeads={leadsAnalytics?.newLeads}
+              callBackLeads={leadsAnalytics?.callBackLeads}
+              followUpLeads={leadsAnalytics?.followUpLeads}
+              detailsSharedLeads={leadsAnalytics?.detailsSharedLeads}
+              loadingNewLeads={leadsLoading}
               siteVisitCount={overall?.siteVisitCount}
               siteVisitLoading={overallLoading}
               totalUsers={overall?.totalUsers}
@@ -168,10 +150,36 @@ export default function NewDashboardPage() {
               scheduleLoading={scheduleLoading}
               scheduleAnalytics={scheduleAnalytics}
               analyticsAccess={analyticsAccess}
+              trend={overall?.trend}
+              trendLeads={{
+                newLeads: leadsAnalytics?.trend?.newLeads,
+                callBackLeads: leadsAnalytics?.trend?.callBackLeads,
+                followUpLeads: leadsAnalytics?.trend?.followUpLeads,
+                detailsSharedLeads: leadsAnalytics?.trend?.detailsSharedLeads,
+                activeLeads: leadsAnalytics?.trend
+                  ? {
+                      today:
+                        (leadsAnalytics?.trend?.newLeads?.today ?? 0) +
+                        (leadsAnalytics?.trend?.callBackLeads?.today ?? 0) +
+                        (leadsAnalytics?.trend?.followUpLeads?.today ?? 0) +
+                        (leadsAnalytics?.trend?.detailsSharedLeads?.today ?? 0),
+                      yesterday:
+                        (leadsAnalytics?.trend?.newLeads?.yesterday ?? 0) +
+                        (leadsAnalytics?.trend?.callBackLeads?.yesterday ?? 0) +
+                        (leadsAnalytics?.trend?.followUpLeads?.yesterday ?? 0) +
+                        (leadsAnalytics?.trend?.detailsSharedLeads?.yesterday ?? 0),
+                      beforeYesterday:
+                        (leadsAnalytics?.trend?.newLeads?.beforeYesterday ?? 0) +
+                        (leadsAnalytics?.trend?.callBackLeads?.beforeYesterday ?? 0) +
+                        (leadsAnalytics?.trend?.followUpLeads?.beforeYesterday ?? 0) +
+                        (leadsAnalytics?.trend?.detailsSharedLeads?.beforeYesterday ?? 0),
+                    }
+                  : undefined,
+              }}
             />
           </div>
         )}
-        {analyticsAccess.showCabBookingAnalytics && tab === 1 && (
+        {analyticsAccess.showCabBookingAnalytics && section === 1 && (
           <div>
             <div style={{ marginBottom: 24 }}>
               <div style={{ fontWeight: 600, fontSize: '1.08rem', color: '#222', marginBottom: 10 }}>
@@ -181,65 +189,19 @@ export default function NewDashboardPage() {
             </div>
           </div>
         )}
-        {((analyticsAccess.showCabBookingAnalytics && tab === 2) || (!analyticsAccess.showCabBookingAnalytics && tab === 1)) && (
+        {((analyticsAccess.showCabBookingAnalytics && section === 2) || (!analyticsAccess.showCabBookingAnalytics && section === 1)) && (
           <div>
-            <div
-              style={{
-                display: 'flex',
-                gap: '24px',
-                margin: '32px 0',
-                flexWrap: 'wrap',
-                width: '100%',
-                alignItems: 'stretch',
-              }}
-            >
+            <div className="flex flex-wrap gap-6 my-8 w-full items-stretch">
               {/* Lead Conversion Card */}
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: '380px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                <Card
-                  sx={{
-                    minHeight: 400,
-                    height: '100%',
-                    borderRadius: 0,
-                    boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
-                    border: '1px solid #eceff1',
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    flex: 1,
-                  }}
-                >
-                  <CardContent sx={{ p: 0, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      padding: '18px 18px 0 0'
-                    }}>
-                      <Typography
-                        variant="h5"
-                        sx={{ fontWeight: 600, color: '#222', ml: 2 }}
-                      >
-                        Lead Conversion
-                      </Typography>
+              <div className="flex flex-col min-w-[380px] flex-1">
+                <Card className="min-h-[400px] h-full rounded-none shadow-sm border border-gray-200 w-full flex flex-col flex-1">
+                  <CardContent className="p-0 h-full flex flex-col justify-start">
+                    <div className="flex justify-between items-center px-0 pt-4 pb-0">
+                      <Typography variant="h5" className="font-semibold text-[#222] ml-2">Lead Conversion</Typography>
                       <select
                         value={leadConversionPeriod}
                         onChange={(e) => setLeadConversionPeriod(e.target.value as 'week' | 'month')}
-                        style={{
-                          padding: '6px 12px',
-                          borderRadius: 6,
-                          border: '1px solid #ccc',
-                          fontWeight: 500,
-                          fontSize: '1rem',
-                          color: '#222',
-                          background: '#f7f9fa'
-                        }}
+                        className="px-3 py-1 rounded border border-gray-300 font-medium text-base text-[#222] bg-[#f7f9fa]"
                       >
                         <option value="week">Week</option>
                         <option value="month">Month</option>
@@ -250,60 +212,25 @@ export default function NewDashboardPage() {
                 </Card>
               </div>
               {/* Property On Demand Card */}
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: '380px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                <Card sx={{ minHeight: 400, height: '100%', borderRadius: 0, boxShadow: '0 1px 6px rgba(0,0,0,0.04)', border: '1px solid #eceff1', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
-                  <CardContent sx={{ width: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333', marginBottom: 16, width: '100%', textAlign: 'center' }}>Property On Demand</div>
+              <div className="flex flex-col min-w-[380px] flex-1">
+                <Card className="min-h-[400px] h-full rounded-none shadow-sm border border-gray-200 w-full flex justify-center items-center flex-1">
+                  <CardContent className="w-full flex flex-col items-center justify-center">
+                    <div className="text-[1.3rem] font-bold text-[#333] mb-4 w-full text-center">Property On Demand</div>
                     <PropertyPieChart propertyData={propertyMetrics} />
                   </CardContent>
                 </Card>
               </div>
             </div>
-            <div
-              style={{
-                display: 'flex',
-                gap: '24px',
-                margin: '32px 0',
-                flexWrap: 'wrap',
-                width: '100%',
-                alignItems: 'stretch',
-              }}
-            >
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: '380px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                <Card
-                  sx={{
-                    minHeight: 400,
-                    height: '100%',
-                    borderRadius: 0,
-                    boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
-                    border: '1px solid #eceff1',
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    flex: 1,
-                  }}
-                >
-                  <CardContent sx={{ height: '100%', display: ' ', flexDirection: 'column', justifyContent: 'flex-start' }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                      <div style={{ fontSize: '1.3rem', fontWeight: 700, color: '#333' }}>Leads by Source</div>
-                      <div style={{ fontSize: '0.9rem', color: '#666' }}>{leadsAnalytics?.totalLeads || 0} leads</div>
+            <div className="flex flex-wrap gap-6 my-8 w-full items-stretch">
+              <div className="flex flex-col min-w-[380px] flex-1">
+                <Card className="min-h-[400px] h-full rounded-none shadow-sm border border-gray-200 w-full flex flex-col flex-1">
+                  <CardContent className="h-full flex flex-col justify-start">
+                    <div className="flex justify-between items-center mb-3">
+                      <div className="text-[1.3rem] font-bold text-[#333] text-center">Leads by Source</div>
+                      <div className="text-sm text-[#666]">{leadsAnalytics?.totalLeads || 0} leads</div>
                     </div>
-                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%', flex: 1 }}>
-                      <div style={{ width: 350, height: 350, margin: '0 auto' }}>
+                    <div className="flex flex-col items-center gap-4 w-full flex-1">
+                      <div className="w-[350px] h-[350px] mx-auto">
                         <LeadSourcesPieChart slices={leadsBySourceMetrics.slices} />
                       </div>
                       <LeadsBySourceList leadsBySourceMetrics={leadsBySourceMetrics} />
@@ -311,28 +238,9 @@ export default function NewDashboardPage() {
                   </CardContent>
                 </Card>
               </div>
-              <div
-                style={{
-                  flex: 1,
-                  minWidth: '380px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                }}
-              >
-                <Card
-                  sx={{
-                    minHeight: 400,
-                    height: '100%',
-                    borderRadius: 0,
-                    boxShadow: '0 1px 6px rgba(0,0,0,0.04)',
-                    border: '1px solid #eceff1',
-                    width: '100%',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    flex: 1,
-                  }}
-                >
-                  <CardContent sx={{ height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-start' }}>
+              <div className="flex flex-col min-w-[380px] flex-1">
+                <Card className="min-h-[400px] h-full rounded-none shadow-sm border border-gray-200 w-full flex flex-col flex-1">
+                  <CardContent className="h-full flex flex-col justify-start">
                     <SiteVisitConversionChart />
                   </CardContent>
                 </Card>

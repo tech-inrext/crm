@@ -11,8 +11,64 @@ async function handler(req, res) {
 		const baseQuery = loggedInUserId ? { uploadedBy: loggedInUserId } : {};
 
 
-		   // Total leads (scoped to logged-in user when available)
-		   const totalLeads = await Lead.countDocuments(baseQuery);
+					 // Total leads (scoped to logged-in user when available)
+					 const totalLeads = await Lead.countDocuments(baseQuery);
+
+					   // Helper to get start/end of day
+					   function getDayRange(offset = 0) {
+						   const now = new Date();
+						   now.setHours(0, 0, 0, 0);
+						   const start = new Date(now);
+						   start.setDate(start.getDate() - offset);
+						   const end = new Date(start);
+						   end.setHours(23, 59, 59, 999);
+						   return { start, end };
+					   }
+
+					   const { start: todayStart, end: todayEnd } = getDayRange(0);
+					   const { start: yestStart, end: yestEnd } = getDayRange(1);
+					   const { start: beforeYestStart, end: beforeYestEnd } = getDayRange(2);
+
+					   // Count leads by status (case-insensitive, using $toLower)
+					   const leadStatuses = [
+						   "new",
+						   "follow-up",
+						   "call back",
+						   "details shared"
+					   ];
+					   const statusCounts = await Lead.aggregate([
+						   ...(loggedInUserId ? [{ $match: baseQuery }] : []),
+						   { $addFields: { statusLower: { $toLower: "$status" } } },
+						   { $match: { statusLower: { $in: leadStatuses } } },
+						   { $group: { _id: "$statusLower", count: { $sum: 1 } } }
+					   ]);
+					   let newLeads = 0, callBackLeads = 0, followUpLeads = 0, detailsSharedLeads = 0;
+					   statusCounts.forEach(s => {
+						   if (s._id === "new") newLeads = s.count;
+						   else if (s._id === "call back") callBackLeads = s.count;
+						   else if (s._id === "follow-up") followUpLeads = s.count;
+						   else if (s._id === "details shared") detailsSharedLeads = s.count;
+					   });
+
+					   // Trend counts for each status
+					   async function getStatusTrend(status) {
+						   const today = await Lead.countDocuments({ ...baseQuery, status: new RegExp(`^${status}$`, 'i'), createdAt: { $gte: todayStart, $lte: todayEnd } });
+						   const yesterday = await Lead.countDocuments({ ...baseQuery, status: new RegExp(`^${status}$`, 'i'), createdAt: { $gte: yestStart, $lte: yestEnd } });
+						   const beforeYesterday = await Lead.countDocuments({ ...baseQuery, status: new RegExp(`^${status}$`, 'i'), createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } });
+						   return { today, yesterday, beforeYesterday };
+					   }
+
+					   const [
+						   newLeadsTrend,
+						   callBackLeadsTrend,
+						   followUpLeadsTrend,
+						   detailsSharedLeadsTrend
+					   ] = await Promise.all([
+						   getStatusTrend('new'),
+						   getStatusTrend('call back'),
+						   getStatusTrend('follow-up'),
+						   getStatusTrend('details shared')
+					   ]);
 
 		   // Helper: get site visit done counts by month or weekday
 		   const { period = "month" } = req.query;
@@ -119,12 +175,22 @@ async function handler(req, res) {
 		
 		   res.status(200).json({
 			   totalLeads,
+			   newLeads,
+			   callBackLeads,
+			   followUpLeads,
+			   detailsSharedLeads,
 			   siteVisitConversions,
 			   siteVisitDoneData, // <-- new array for chart
 			   map,
 			   sourcesOrder,
 			   slices,
-			   propertyData
+			   propertyData,
+			   trend: {
+				   newLeads: newLeadsTrend,
+				   callBackLeads: callBackLeadsTrend,
+				   followUpLeads: followUpLeadsTrend,
+				   detailsSharedLeads: detailsSharedLeadsTrend
+			   }
 		   });
 	} catch (err) {
 		res.status(500).json({ error: err.message });

@@ -35,12 +35,24 @@ export const PropertyPieChart: React.FC<{
     r = 140;
   let angle = 0;
 
-  const arcs = propertyData.map((p) => {
-    const portion = ((p.count || 0) / total) * 360;
-    const arc = describeArc(cx, cy, r, angle, angle + portion);
-    angle += portion;
-
-    return { ...p, path: arc };
+  const arcs = propertyData.map((p, idx) => {
+    const value = p.count || 0;
+    let path = '';
+    if (propertyData.length === 1 && value > 0) {
+      // Draw a full circle using two arcs (SVG limitation)
+      path = [
+        `M ${cx} ${cy}`,
+        `L ${cx + r} ${cy}`,
+        `A ${r} ${r} 0 1 0 ${cx - r} ${cy}`,
+        `A ${r} ${r} 0 1 0 ${cx + r} ${cy}`,
+        'Z'
+      ].join(' ');
+    } else {
+      const portion = (value / total) * 360;
+      path = describeArc(cx, cy, r, angle, angle + portion);
+      angle += portion;
+    }
+    return { ...p, path };
   });
 
   if (!propertyData.length) {

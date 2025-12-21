@@ -81,27 +81,26 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ analyticsAccess, scheduleLo
         }}
       >
         <CardContent>
-          <Box display="flex"  gap={1} alignItems="center" mb={2.25}>
-            <Typography sx={{ fontSize: '1.35rem', fontWeight: 600, color: '#222' }}>Schedule In this </Typography>
-            <Box display="flex" alignItems="center" gap={1}>
-              <select
+          <Box display="flex" gap={1} alignItems="center" mb={2.25} flexWrap={{ xs: 'wrap', sm: 'wrap', md: 'nowrap' }}>
+            <Typography sx={{ fontSize: '1.35rem', fontWeight: 600, color: '#222', mb: { xs: 1, sm: 1, md: 0 } }}>Schedule In this </Typography>
+            <Box display="flex" alignItems="center" gap={1} flex={1} minWidth={0} sx={{ flexWrap: { xs: 'wrap', sm: 'wrap', md: 'nowrap' } }}>
+              <Select
                 value={filter}
                 onChange={e => setFilter(e.target.value as 'day' | 'week')}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: 6,
-                  border: '1px solid #ccc',
-                  fontWeight: 500,
-                  fontSize: '1rem',
-                  color: '#222',
-                  background: '#f7f9fa',
-                  marginRight: 118
-                }}
+                size="small"
+                sx={{ minWidth: 140, width: 'auto', maxWidth: '100%' }}
+                displayEmpty
               >
-                <option value="day">Day Wise</option>
-                <option value="week">Week Wise</option>
-              </select>
-              <a href="/dashboard/leads" style={{ color: '#0792fa', fontWeight: 500, fontSize: '1rem',  textDecoration: 'none' }}>View All</a>
+                <MenuItem value="day">Day Wise</MenuItem>
+                <MenuItem value="week">Week Wise</MenuItem>
+              </Select>
+              <a
+                href="/dashboard/leads"
+                className="text-[#0792fa] font-medium text-base no-underline hover:underline"
+                style={{ marginLeft: 0, whiteSpace: 'nowrap', ...(typeof window !== 'undefined' && window.innerWidth >= 900 ? { marginLeft: '10rem' } : {}) }}
+              >
+                View All
+              </a>
             </Box>
           </Box>
           <Box>
@@ -110,34 +109,16 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ analyticsAccess, scheduleLo
             )}
             {!scheduleLoading && scheduleAnalytics && scheduleAnalytics.success && (
               <Box>
-                <Box display="flex" gap={1.5} mb={2} flexWrap="wrap">
-                  <Box sx={{
-                    background: '#e3f2fd',
-                    px: 1.5,
-                    py: 1,
-                    borderRadius: 1.5,
-                    fontSize: '0.85rem',
-                    fontWeight: 600,
-                    color: '#1976d2'
-                  }}>
+                <Box display="flex" gap={2} mb={2} flexWrap="wrap">
+                  <Box sx={{ background: '#e3f2fd', px: 3, py: 2, borderRadius: 2, fontSize: '0.85rem', fontWeight: 600, color: '#1976d2' }}>
                     {scheduleAnalytics.totalScheduled} scheduled this Months
                   </Box>
-                  {scheduleAnalytics.overdueCount && scheduleAnalytics.overdueCount > 0 && (
-                    <Box sx={{
-                      background: '#ffebee',
-                      px: 1.5,
-                      py: 1,
-                      borderRadius: 1.5,
-                      fontSize: '0.85rem',
-                      fontWeight: 600,
-                      color: '#d32f2f'
-                    }}>
-                      {scheduleAnalytics.overdueCount} overdue
-                    </Box>
-                  )}
+                  <Box sx={{ background: '#ffebee', px: 3, py: 2, borderRadius: 2, fontSize: '0.85rem', fontWeight: 600, color: '#d32f2f' }}>
+                    {scheduleAnalytics.overdueCount || 0} overdue
+                  </Box>
                 </Box>
                 <Box sx={{ position: 'relative', height: 280, maxHeight: 280, overflowY: 'auto', pb: 7 }}>
-                  {filteredLeads && filteredLeads.length > 0 ? (
+                  {filteredLeads && filteredLeads.length > 0 && (
                     <>
                       {paginatedLeads.map((lead: any, index: number) => {
                         const followUpDate = new Date(lead.nextFollowUp);
@@ -160,93 +141,53 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ analyticsAccess, scheduleLo
                             <Box textAlign="right" minWidth={80}>
                               <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: isToday ? '#f57c00' : '#666', mb: 0.25 }}>{dateLabel}</Typography>
                               <Typography sx={{ fontSize: '0.75rem', color: '#888' }}>{followUpDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true })}</Typography>
-                              <Box sx={{
-                                fontSize: '0.7rem',
-                                px: 0.75,
-                                py: 0.25,
-                                borderRadius: 1,
-                                background: lead.status === 'New' ? '#e3f2fd' :
-                                  lead.status === 'Contacted' ? '#e8f5e9' :
-                                    lead.status === 'Site Visit' ? '#fff3e0' : '#f3e5f5',
-                                color: lead.status === 'New' ? '#1976d2' :
-                                  lead.status === 'Contacted' ? '#388e3c' :
-                                    lead.status === 'Site Visit' ? '#f57c00' : '#7b1fa2',
-                                mt: 0.5
-                              }}>{lead.status}</Box>
+                              <div
+                                className="text-[0.7rem] px-2 py-1 rounded mt-2"
+                                style={{
+                                  background: lead.status === 'New' ? '#e3f2fd'
+                                    : lead.status === 'Contacted' ? '#e8f5e9'
+                                    : lead.status === 'Site Visit' ? '#fff3e0'
+                                    : '#f3e5f5',
+                                  color: lead.status === 'New' ? '#1976d2'
+                                    : lead.status === 'Contacted' ? '#388e3c'
+                                    : lead.status === 'Site Visit' ? '#f57c00'
+                                    : '#7b1fa2',
+                                }}
+                              >
+                                {lead.status}
+                              </div>
                             </Box>
                           </Box>
                         );
                       })}
-                      {/* MUI Pagination Controls - fixed at bottom */}
-                      <Box display="flex" alignItems="center" justifyContent="center" gap={2}
-                        sx={{
-                          position: 'absolute',
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          background: '#fff',
-                          borderTop: '1px solid #eee',
-                          py: 1.5,
-                          zIndex: 2
-                        }}
-                      >
-                        <Typography sx={{ color: '#666', fontSize: '0.95rem' }}>Page</Typography>
-                        <Pagination
-                          count={totalPages}
-                          page={page}
-                          onChange={handleChangePage}
-                          color="primary"
-                          size="small"
-                          sx={{
-                            '& .Mui-selected': {
-                              backgroundColor: '#181c20',
-                              color: '#fff',
-                              borderRadius: '8px',
-                            },
-                            '& .MuiPaginationItem-root': {
-                              minWidth: '32px',
-                              height: '32px',
-                              fontWeight: 600,
-                            },
-                          }}
-                        />
-                        <Typography sx={{ color: '#666', fontSize: '0.95rem' }}>Rows:</Typography>
-                        <Select
-                          value={leadsPerPage}
-                          onChange={handleChangeRowsPerPage}
-                          size="small"
-                          sx={{
-                            background: '#181c20',
-                            color: '#fff',
-                            borderRadius: '8px',
-                            fontWeight: 600,
-                            fontSize: '1rem',
-                            '& .MuiSelect-icon': { color: '#fff' },
-                            '& .MuiOutlinedInput-notchedOutline': { border: 0 },
-                            height: '32px',
-                            pl: 1,
-                            pr: 2,
-                          }}
-                          MenuProps={{
-                            PaperProps: {
-                              sx: {
-                                background: '#181c20',
-                                color: '#fff',
-                                borderRadius: '8px',
-                              },
-                            },
-                          }}
-                        >
-                          <MenuItem value={2}>2</MenuItem>
-                        
-                        </Select>
-                      </Box>
                     </>
-                  ) : (
+                  )}
+                  {filteredLeads && filteredLeads.length === 0 && (
                     <Box sx={{ color: '#666', textAlign: 'center', py: 5, background: '#f8f9fa', borderRadius: 2, border: '1px solid #e9ecef' }}>
                       📅 No follow-ups scheduled for this {filter === 'day' ? 'day' : 'week'}
                     </Box>
                   )}
+                  {/* MUI Pagination Controls - fixed at bottom, always visible */}
+                  <Box
+                    className="flex items-center justify-center gap-5 absolute left-0 right-0 bottom-0 bg-white border-t border-[#eee] py-3 z-[2]"
+                  >
+                    <Typography className="text-[#666] text-[0.95rem]">Page</Typography>
+                    <Pagination
+                      count={totalPages}
+                      page={page}
+                      onChange={handleChangePage}
+                      color="primary"
+                      size="small"
+                    />
+                    <Typography className="text-[#666] text-[0.95rem]">Rows:</Typography>
+                    <Select
+                      value={leadsPerPage}
+                      onChange={handleChangeRowsPerPage}
+                      size="small"
+                    >
+                      <MenuItem value={2}>2</MenuItem>
+                    </Select>
+                  </Box>
                 </Box>
               </Box>
             )}
