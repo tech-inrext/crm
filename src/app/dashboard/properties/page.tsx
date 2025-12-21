@@ -2,6 +2,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext"; 
 import {
   Box,
   Paper,
@@ -56,6 +57,7 @@ function useDebounce<T>(value: T, delay: number): T {
 }
 
 export default function PropertiesPage() {
+  const { getPermissions } = useAuth();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
@@ -89,6 +91,9 @@ export default function PropertiesPage() {
   
   const [validationErrors, setValidationErrors] = useState<any>({});
   const [isFormValid, setIsFormValid] = useState(false);
+
+  // Check if user has write permission for property module
+  const canCreateProperty = getPermissions("property").hasWriteAccess;
   
   const [formData, setFormData] = useState({
     projectName: "",
@@ -1072,19 +1077,21 @@ export default function PropertiesPage() {
                 Filters {activeFiltersCount > 0 && `(${activeFiltersCount})`}
               </Button>
 
-              <Button
-                variant="contained"
-                startIcon={<Add />}
-                onClick={() => handleOpenDialog()}
-                sx={{
-                  backgroundColor: "#1976d2",
-                  "&:hover": { backgroundColor: "#115293" },
-                  flexGrow: { xs: 1, sm: 0 },
-                  width: { xs: "100%", sm: "auto" },
-                }}
-              >
-                Add Property
-              </Button>
+              {canCreateProperty && (
+        <Button
+          variant="contained"
+          startIcon={<Add />}
+          onClick={() => handleOpenDialog()}
+          sx={{
+            backgroundColor: "#1976d2",
+            "&:hover": { backgroundColor: "#115293" },
+            flexGrow: { xs: 1, sm: 0 },
+            width: { xs: "100%", sm: "auto" },
+          }}
+        >
+          Add Property
+        </Button>
+      )}
             </Grid>
           </Grid>
         </Grid>

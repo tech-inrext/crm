@@ -33,6 +33,7 @@ import {
 import { Property } from '@/services/propertyService';
 import LeafletMap from "../LeafletMap";
 import SubPropertiesViewer from "./SubPropertiesViewer";
+import { useAuth } from "@/contexts/AuthContext";
 
 interface PropertyViewDialogProps {
   open: boolean;
@@ -61,6 +62,11 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
   onDownloadFile,
   onViewSubProperty,
 }) => {
+  const { getPermissions } = useAuth();
+  
+  // Check if user has write permission for property module
+  const canEditProperty = getPermissions("property").hasWriteAccess;
+
   if (!property) return null;
 
   return (
@@ -973,29 +979,32 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
         >
           Close
         </Button>
-        <Button 
-          onClick={() => { 
-            onClose(); 
-            onEdit(property); 
-          }} 
-          variant="contained" 
-          startIcon={<Edit />}
-          sx={{ 
-            borderRadius: 3, 
-            fontWeight: 600,
-            px: {xs: 1, md: 4},        
-            py: 1,
-            background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-            boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
-            '&:hover': {
-              boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-              transform: 'translateY(-1px)'
-            },
-            transition: 'all 0.2s ease'
-          }}
-        >
-          Edit Property
-        </Button>
+        {/* Only show Edit button if user has write permission */}
+        {canEditProperty && (
+          <Button 
+            onClick={() => { 
+              onClose(); 
+              onEdit(property); 
+            }} 
+            variant="contained" 
+            startIcon={<Edit />}
+            sx={{ 
+              borderRadius: 3, 
+              fontWeight: 600,
+              px: {xs: 1, md: 4},        
+              py: 1,
+              background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+              boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
+              '&:hover': {
+                boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+                transform: 'translateY(-1px)'
+              },
+              transition: 'all 0.2s ease'
+            }}
+          >
+            Edit Property
+          </Button>
+        )}
       </DialogActions>
     </Dialog>
   );
