@@ -67,6 +67,7 @@ const SidebarContent = ({ links, onClose }) => {
           height: "100%",
           overflowY: "auto",
           overflowX: "hidden",
+          pb: { xs: 16, sm: 20, md: 8 }, // Extra large bottom padding to ensure last item is visible
         }}
       >
         {links.map((link, idx) => {
