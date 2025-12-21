@@ -37,7 +37,6 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         overflow: "hidden",
       }}
     >
-      
       <Box
         sx={{
           display: "flex",
@@ -45,6 +44,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           gap: { xs: 0.3, sm: 1, md: 2 }, // reduce gap for xs
           minWidth: 0,
           flex: 1,
+          pl: { xs: 6, sm: 0 },
         }}
       >
         <AvatarComponent
@@ -52,8 +52,8 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           alt="Inrext"
           sx={{
             color: "#000",
-            width: { xs: 120,  md: 185 },
-            height: { xs: 35,  md: 50 },
+            width: { xs: 120, md: 185 },
+            height: { xs: 35, md: 50 },
             borderRadius: "0px",
           }}
         />
@@ -70,6 +70,11 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           p: { xs: 0.5, sm: 1, md: 1.5 },
           minWidth: { xs: 44, sm: 64, md: 80 },
           minHeight: { xs: 40, sm: 44 },
+          position: { xs: "absolute", sm: "relative" },
+          left: { xs: 8, sm: "auto" },
+          top: { xs: "50%", sm: "auto" },
+          transform: { xs: "translateY(-50%)", sm: "none" },
+          zIndex: 1400,
           outline: "none",
           boxShadow: "none",
           background: "none",
@@ -82,7 +87,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           },
         }}
       >
-        <MenuIcon sx={{ fontSize: { xs: 32,  md: 24 } }} />
+        <MenuIcon sx={{ fontSize: { xs: 32, md: 24 } }} />
       </IconButton>
       <Box sx={{ display: "flex", alignItems: "center" }}>
         <NotificationBell />
