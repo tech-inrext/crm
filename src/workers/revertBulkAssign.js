@@ -1,18 +1,25 @@
 import Lead from "../models/Lead.js";
 import LeadAssignmentHistory from "../models/LeadAssignmentHistory.js";
 import dbConnect from "../lib/mongodb.js";
+import mongoose from "mongoose";
 
 async function revertBulkAssign(job) {
   const { batchId, revertedBy } = job.data;
   console.log(`\nStart Revert Job for Batch: ${batchId}`);
 
-  await dbConnect();
-
   try {
+    // 🛠️ Ensure DB Connection
+    await dbConnect();
+
+    // Safety Check
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error("Database connection is not active. State: " + mongoose.connection.readyState);
+    }
+
     // Fetch original assignment history for this batch
     // We only want to revert 'ASSIGN' actions.
     const historyParams = { batchId, actionType: "ASSIGN" };
-    const historyRecords = await LeadAssignmentHistory.find(historyParams);
+    const historyRecords = await LeadAssignmentHistory.find(historyParams).lean();
 
     if (!historyRecords || historyRecords.length === 0) {
       console.log("No history records found for this batch.");
@@ -68,7 +75,9 @@ async function revertBulkAssign(job) {
     return { success: true, count: revertOps.length };
 
   } catch (error) {
-    console.error("❌ Error in revertBulkAssign:", error);
+    console.error("❌ Error in revertBulkAssign execution context:");
+    console.error(`- Error Name: ${error.name}`);
+    console.error(`- Message: ${error.message}`);
     throw error;
   }
 }
