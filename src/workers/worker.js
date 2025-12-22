@@ -18,12 +18,19 @@ const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
 // 🔗 Redis Connection
-const connection = new IORedis(
-  process.env.REDIS_URL || "redis://localhost:6379",
-  {
-    maxRetriesPerRequest: null,
-  }
-);
+const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
+const connection = new IORedis(redisUrl, {
+  maxRetriesPerRequest: null, // Required for BullMQ workers
+  tls: redisUrl.startsWith("rediss://") ? { rejectUnauthorized: false } : undefined,
+});
+
+connection.on("error", (err) => {
+  console.error("❌ Worker Redis Connection Error:", err.message);
+});
+
+connection.on("connect", () => {
+  console.log("✅ Worker connected to Redis");
+});
 
 class InrextWorker extends Worker {
   constructor() {
@@ -52,6 +59,19 @@ worker.addJobListener("notificationCleanup", notificationCleanupJob);
 worker.addJobListener("sendLeadFollowUpNotification", sendLeadFollowUpNotification);
 worker.addJobListener("bulkAssignLeads", bulkAssignLeads);
 worker.addJobListener("revertBulkAssign", revertBulkAssign);
+
+// Event Listeners for Debugging
+worker.on("failed", (job, err) => {
+  console.error(`❌ Job ${job.name} failed (ID: ${job.id}):`, err);
+});
+
+worker.on("error", (err) => {
+  console.error("❌ Worker Error:", err);
+});
+
+worker.on("completed", (job) => {
+  console.log(`✅ Job ${job.name} completed (ID: ${job.id})`);
+});
 
 // Schedule periodic cleanup tasks
 const scheduleCleanupTasks = () => {
