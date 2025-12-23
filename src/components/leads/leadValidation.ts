@@ -3,10 +3,12 @@ import * as Yup from "yup";
 export const leadValidationSchema = Yup.object({
   phone: Yup.string()
     .required("Phone number is required")
-    .matches(/^[0-9]{10,15}$/, "Phone number must be 10-15 digits only")
+    .matches(/^[0-9]{10}$/, "Phone must contain only digits and 10 digits long")
     .trim(),
   fullName: Yup.string()
-    .max(100, "Name must be less than 100 characters")
+    .min(3, "name must be at least 3 characters")
+    .max(50, "name must be at most 50 characters")
+    .required("Full Name is required")
     .trim(),
   email: Yup.string()
     .email("Invalid email format")
