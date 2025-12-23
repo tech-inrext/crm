@@ -7,6 +7,26 @@ import CabBooking from '@/models/CabBooking';
 export default async function handler(req, res) {
   await dbConnect();
   try {
+    // Helper to get start/end of day
+    function getDayRange(offset = 0) {
+      const now = new Date();
+      now.setHours(0, 0, 0, 0);
+      const start = new Date(now);
+      start.setDate(start.getDate() - offset);
+      const end = new Date(start);
+      end.setHours(23, 59, 59, 999);
+      return { start, end };
+    }
+
+    // Calculate vendor trends for today, yesterday, beforeYesterday
+    const { start: todayStart, end: todayEnd } = getDayRange(0);
+    const { start: yestStart, end: yestEnd } = getDayRange(1);
+    const { start: beforeYestStart, end: beforeYestEnd } = getDayRange(2);
+
+    // Count vendors created on each day
+    const todayVendors = await Employee.countDocuments({ isCabVendor: true, createdAt: { $gte: todayStart, $lte: todayEnd } });
+    const yesterdayVendors = await Employee.countDocuments({ isCabVendor: true, createdAt: { $gte: yestStart, $lte: yestEnd } });
+    const beforeYesterdayVendors = await Employee.countDocuments({ isCabVendor: true, createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } });
     // Get query parameters for specific vendor search
     const { vendorNames, vendorEmails } = req.query;
     
@@ -285,7 +305,15 @@ export default async function handler(req, res) {
       generalVendors: vendorBookingStats,
       cabVendorCollection: cabVendorsFromCollection,
       cabVendorNames,
-      searchCriteria: { vendorNames, vendorEmails }
+      searchCriteria: { vendorNames, vendorEmails },
+      // Add trend for total vendors (for stat card)
+      trend: {
+        totalVendors: {
+          today: todayVendors,
+          yesterday: yesterdayVendors,
+          beforeYesterday: beforeYesterdayVendors
+        }
+      }
     });
   } catch (err) {
     console.error('Vendor API Error:', err);

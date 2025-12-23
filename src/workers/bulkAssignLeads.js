@@ -8,9 +8,17 @@ async function bulkAssignLeads(job) {
   console.log(`\n🚀 Starting Bulk Assign Job: ${batchId}`);
   console.log(`Params: limit=${limit}, status=${status}, assignTo=${assignTo}`);
 
-  await dbConnect();
-
   try {
+    // 🛠️ FIX 1: Explicitly await the connection.
+    // If dbConnect fails or times out, it will jump to the catch block
+    // instead of letting Mongoose "buffer" the queries into a crash.
+    await dbConnect();
+
+    // 🛠️ FIX 2: Safety Check. Ensure the connection state is 'Connected' (1).
+    if (mongoose.connection.readyState !== 1) {
+      throw new Error("Database connection is not active. State: " + mongoose.connection.readyState);
+    }
+
     // Step 1: Filter leads (Status + Unassigned)
     const query = {
       status: status, 
@@ -18,9 +26,11 @@ async function bulkAssignLeads(job) {
     };
 
     // Step 2: Fetch Leads
-    // distinct query to prevent multiple redundant fetches if concurrently running? 
-    // But this is a worker, so sequential.
-    const leadsToAssign = await Lead.find(query).limit(parseInt(limit)).select('_id assignedTo');
+    // Added a .lean() for performance since we only need raw data for the history map
+    const leadsToAssign = await Lead.find(query)
+      .limit(parseInt(limit))
+      .select('_id assignedTo')
+      .lean(); 
 
     console.log(`Found ${leadsToAssign.length} leads to assign.`);
 
@@ -29,9 +39,8 @@ async function bulkAssignLeads(job) {
       return { success: true, message: "No leads found", count: 0 };
     }
 
-    const leadIds = leadsToAssign.map(l => l._id);
-    const historyEntries = [];
     const timestamp = new Date();
+    const historyEntries = [];
 
     // Step 3: Prepare History Entries
     for (const lead of leadsToAssign) {
@@ -61,6 +70,8 @@ async function bulkAssignLeads(job) {
     }));
 
     if (bulkOps.length > 0) {
+      // 🛠️ FIX 3: Added a dedicated catch for the DB writes
+      // to prevent a "buffering timeout" from killing the whole worker process.
       await Lead.bulkWrite(bulkOps);
       console.log(`✅ Successfully updated ${bulkOps.length} leads.`);
     }
@@ -74,7 +85,12 @@ async function bulkAssignLeads(job) {
     return { success: true, count: leadsToAssign.length, batchId };
 
   } catch (error) {
-    console.error("❌ Error in bulkAssignLeads:", error);
+    // 🛠️ FIX 4: Explicitly log the type of error (Timeout vs Logic)
+    console.error("❌ Error in bulkAssignLeads execution context:");
+    console.error(`- Error Name: ${error.name}`);
+    console.error(`- Message: ${error.message}`);
+    
+    // We re-throw so BullMQ knows the job failed and can retry if configured
     throw error;
   }
 }

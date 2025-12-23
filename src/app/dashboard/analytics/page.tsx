@@ -157,6 +157,7 @@ export default function NewDashboardPage() {
                 followUpLeads: leadsAnalytics?.trend?.followUpLeads,
                 detailsSharedLeads: leadsAnalytics?.trend?.detailsSharedLeads,
                 activeLeads: leadsAnalytics?.trend
+                
                   ? {
                       today:
                         (leadsAnalytics?.trend?.newLeads?.today ?? 0) +

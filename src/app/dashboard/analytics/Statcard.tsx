@@ -7,63 +7,66 @@ import Card from '@mui/material/Card';
 import CardContent from '@mui/material/CardContent';
 import ScheduleCard from './components/ScheduleCard';
 import { FaUsers, FaHome, FaDollarSign, FaBuilding } from "react-icons/fa";
+type TrendItem = {
+  date: string; // ISO date string
+  value: number;
+};
 
 type StatCardProps = {
   title: string;
   value: string | number;
   icon: React.ReactNode;
   iconBg: string;
-  trend?: {
-    today: number;
-    yesterday: number;
-    beforeYesterday?: number;
-  };
+  trend?: TrendItem[]; // Array of trend items for last N days (sorted desc)
 };
+
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, icon, iconBg, trend }) => {
   let trendDisplay: React.ReactNode = null;
-  if (trend && typeof trend.today === 'number' && typeof trend.yesterday === 'number') {
-    const diff = trend.today - trend.yesterday;
-    const isActiveLeads = title === 'Active Leads';
-    const isUpcomingSiteVisits = title === 'Upcoming Site Visits';
-    if ((isActiveLeads || isUpcomingSiteVisits) && diff === 1) {
-      trendDisplay = (
-        <Typography sx={{ color: 'success.main', fontSize: 13, display: 'flex', alignItems: 'center', mt: 0.5 }}>
-          <span style={{ fontWeight: 600 }}>1 new</span>
-          <span style={{ marginLeft: 4, color: '#888' }}>today</span>
-        </Typography>
-      );
-    } else if ((isActiveLeads || isUpcomingSiteVisits) && diff === -1) {
-      trendDisplay = (
-        <Typography sx={{ color: 'error.main', fontSize: 13, display: 'flex', alignItems: 'center', mt: 0.5 }}>
-          <span style={{ fontWeight: 600 }}>1 less</span>
-          <span style={{ marginLeft: 4, color: '#888' }}>today</span>
-        </Typography>
-      );
-    } else if (diff > 0) {
-      trendDisplay = (
-        <Typography sx={{ color: 'success.main', fontSize: 13, display: 'flex', alignItems: 'center', mt: 0.5 }}>
-          <span style={{ fontSize: '1rem', marginRight: 2 }}>↑</span>
-          <span style={{ fontWeight: 600 }}>{diff} new</span>
-          <span style={{ marginLeft: 4, color: '#888' }}>today</span>
-        </Typography>
-      );
-    } else if (diff < 0) {
-      trendDisplay = (
-        <Typography sx={{ color: 'error.main', fontSize: 13, display: 'flex', alignItems: 'center', mt: 0.5 }}>
-          <span style={{ fontSize: '1rem', marginRight: 2 }}>↓</span>
-          <span style={{ fontWeight: 600 }}>{Math.abs(diff)} less</span>
-          <span style={{ marginLeft: 4, color: '#888' }}>today</span>
-        </Typography>
-      );
-    } else {
-      trendDisplay = (
-        <Typography sx={{ color: '#888', fontSize: 13, display: 'flex', alignItems: 'center', mt: 0.5 }}>
-          — No change today
-        </Typography>
-      );
-    }
+
+  // Helper to get date label (Today, Yesterday, X days ago)
+  function getDateLabel(date: Date) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const dateCopy = new Date(date);
+    dateCopy.setHours(0, 0, 0, 0);
+    const diffTime = today.getTime() - dateCopy.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+    if (dateCopy.toDateString() === today.toDateString()) return 'Today';
+    if (diffDays === 1) return 'Yesterday';
+    if (diffDays > 1 && diffDays <= 7) return `${diffDays} days ago`;
+    return dateCopy.toLocaleDateString();
   }
+
+  // Show each day's count (today, yesterday, day ago) as a separate line if > 0
+  if (trend && Array.isArray(trend) && trend.length > 0) {
+    // Sort trend by date descending (latest first)
+    const sortedTrend = [...trend].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    const isActiveLeads = title === 'Active Leads';
+    trendDisplay = (
+      <>
+        {sortedTrend.slice(0, 3).map((item, idx) => {
+          const label = getDateLabel(new Date(item.date));
+          if (item.value > 0) {
+            return (
+              <Typography key={item.date} sx={{ color: isActiveLeads ? 'success.main' : '#888', fontSize: 13, display: 'flex', alignItems: 'center', mt: idx === 0 ? 0.5 : 0 }}>
+                <span style={{ fontWeight: 600 }}>{item.value} new</span>
+                <span style={{ marginLeft: 4, color: '#888' }}>{label}</span>
+              </Typography>
+            );
+          }
+          return null;
+        })}
+        {/* If all are zero, show no change for today */}
+        {sortedTrend.slice(0, 3).every(item => item.value === 0) && (
+          <Typography sx={{ color: '#888', fontSize: 13, display: 'flex', alignItems: 'center', mt: 0.5 }}>
+            — No change today
+          </Typography>
+        )}
+      </>
+    );
+  }
+
   return (
     <Card
       elevation={0}
@@ -142,6 +145,8 @@ type StatsCardsRowProps = {
   trendLeads?: any;
 }
 
+
+
 export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
   const {
     newLeads = 0,
@@ -166,18 +171,68 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
     scheduleLoading = false,
     scheduleAnalytics = null,
     analyticsAccess = null,
-    // New trend props
     trend = {},
     trendLeads = {},
   } = props;
 
   // Only count leads with these statuses for Active Leads
-  // leadStatuses = ["new", "follow-up", "call back", "details shared"]
   const activeLeads =
     (newLeads ?? 0) +
     (followUpLeads ?? 0) +
     (callBackLeads ?? 0) +
     (detailsSharedLeads ?? 0);
+
+  // Helper to convert old trend object to array format
+  function trendObjToArray(trendObj: any, dateMap?: Record<string, string>): TrendItem[] | undefined {
+    if (!trendObj) return undefined;
+    // If already array, return as is
+    if (Array.isArray(trendObj)) return trendObj;
+    // Otherwise, convert { today, yesterday, beforeYesterday } to array
+    const arr: TrendItem[] = [];
+    if (trendObj.today !== undefined) {
+      arr.push({ date: dateMap?.today || getDateNDaysAgo(0), value: trendObj.today });
+    }
+    if (trendObj.yesterday !== undefined) {
+      arr.push({ date: dateMap?.yesterday || getDateNDaysAgo(1), value: trendObj.yesterday });
+    }
+    if (trendObj.beforeYesterday !== undefined) {
+      arr.push({ date: dateMap?.beforeYesterday || getDateNDaysAgo(2), value: trendObj.beforeYesterday });
+    }
+    return arr.length > 0 ? arr : undefined;
+  }
+
+  // Helper to get ISO date string for N days ago
+  function getDateNDaysAgo(n: number) {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    d.setDate(d.getDate() - n);
+    return d.toISOString();
+  }
+
+  // Prepare trend arrays for each stat
+  const totalUsersTrend = trendObjToArray(trend?.totalUsers);
+  const siteVisitTrend = trendObjToArray(trend?.siteVisitCount);
+  const pendingMouTrend = trendObjToArray(trend?.pendingMouTotal);
+  const totalVendorsTrend = trendObjToArray(trend?.totalVendors);
+  // For activeLeads, sum up trends for each status if available
+  let activeLeadsTrend: TrendItem[] | undefined = undefined;
+  if (trendLeads?.activeLeads) {
+    // If already array, use as is
+    if (Array.isArray(trendLeads.activeLeads)) {
+      activeLeadsTrend = trendLeads.activeLeads;
+    } else {
+      // Otherwise, try to sum up trends for each day
+      const days = ['today', 'yesterday', 'beforeYesterday'];
+      activeLeadsTrend = days.map((day, idx) => {
+        const value =
+          (trendLeads?.newLeads?.[day] ?? 0) +
+          (trendLeads?.callBackLeads?.[day] ?? 0) +
+          (trendLeads?.followUpLeads?.[day] ?? 0) +
+          (trendLeads?.detailsSharedLeads?.[day] ?? 0);
+        return { date: getDateNDaysAgo(idx), value };
+      });
+    }
+  }
 
   return (
     <Box sx={{ width: '100%', mb: 4 }}>
@@ -203,28 +258,28 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             value={usersLoading ? 'Loading...' : (totalUsers ?? 0)}
             icon={<FaHome size={24} style={{ color: '#4caf50' }} />}
             iconBg="#e8f5e9"
-            trend={trend?.totalUsers}
+            trend={totalUsersTrend}
           />
           <StatCard
             title="Active Leads"
             value={loadingNewLeads ? 'Loading...' : activeLeads}
             icon={<FaUsers size={24} style={{ color: '#2196f3' }} />}
             iconBg="#e3f2fd"
-            trend={trendLeads?.activeLeads}
+            trend={activeLeadsTrend}
           />
           <StatCard
             title="Upcoming Site Visits"
             value={siteVisitLoading ? 'Loading...' : (siteVisitCount ?? 0)}
             icon={<FaDollarSign size={24} style={{ color: '#8e24aa' }} />}
             iconBg="#f3e5f5"
-            trend={trend?.siteVisitCount}
+            trend={siteVisitTrend}
           />
           <StatCard
             title="MoUs (Pending / Completed)"
             value={pendingMouLoading || approvedMouLoading ? 'Loading...' : `${pendingMouTotal ?? 0} / ${approvedMouTotal ?? 0}`}
             icon={<FaUsers size={24} style={{ color: '#3949ab' }} />}
             iconBg="#e8eaf6"
-            trend={trend?.pendingMouTotal}
+            trend={pendingMouTrend}
           />
           {showVendorBilling && (
             <StatCard
@@ -232,7 +287,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
               value={`${(typeof vendorCount === 'number' ? vendorCount : 0) || 0} / ${typeof totalBilling === 'number' ? `₹${totalBilling.toLocaleString()}` : (totalBilling ?? '₹0')}`}
               icon={<FaBuilding size={24} style={{ color: '#ffb300' }} />}
               iconBg="#fffde7"
-              trend={trend?.totalVendors}
+              trend={totalVendorsTrend}
             />
           )}
         </Box>

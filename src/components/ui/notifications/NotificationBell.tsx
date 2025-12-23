@@ -123,17 +123,76 @@ const NotificationBell: React.FC = () => {
     }
   };
 
+  // Map notification types to module routes
+  const getModuleRoute = (notification: any): string => {
+    const type = notification.type;
+
+    // Map notification types to their respective module pages
+    switch (type) {
+      // Lead notifications
+      case "LEAD_ASSIGNED":
+      case "LEAD_STATUS_UPDATE":
+      case "LEAD_FOLLOWUP_DUE":
+        return "/dashboard/leads";
+
+      // Cab booking notifications
+      case "CAB_BOOKING_APPROVED":
+      case "CAB_BOOKING_REJECTED":
+      case "CAB_BOOKING_ASSIGNED":
+      case "CAB_BOOKING_REQUEST":
+        return "/dashboard/cab-booking";
+
+      // Vendor notifications
+      case "VENDOR_BOOKING_UPDATE":
+      case "VENDOR_ASSIGNED":
+        return "/dashboard/vendors";
+
+      // MOU notifications
+      case "MOU_APPROVED":
+      case "MOU_REJECTED":
+      case "MOU_PENDING":
+        return "/dashboard/mou";
+
+      // User/Role notifications
+      case "USER_ROLE_CHANGED":
+      case "USER_UPDATED":
+      case "USER_WELCOME":
+      case "USER_ASSIGNED":
+      case "NEW_USER_ADDED":
+      case "ROLE_CREATED":
+      case "ROLE_UPDATED":
+        return "/dashboard/users";
+
+      // Property notifications
+      case "PROPERTY_UPLOADED":
+      case "PROPERTY_STATUS_UPDATE":
+        return "/dashboard/properties";
+
+      // System notifications
+      case "SYSTEM_ANNOUNCEMENT":
+      case "REMINDER":
+      case "BULK_UPLOAD_COMPLETE":
+      case "EMAIL_SENT":
+        return "/dashboard/notifications";
+
+      // Default fallback
+      default:
+        return "/dashboard/notifications";
+    }
+  };
+
   const handleNotificationClick = async (notification: any) => {
     // Mark as read if unread
     if (notification.lifecycle.status !== "READ") {
       await markSelectedAsRead();
     }
 
-    // Navigate to action URL if present
-    if (notification.metadata.actionUrl) {
-      handleClose();
-      window.location.href = notification.metadata.actionUrl;
-    }
+    // Get the module route for this notification type
+    const moduleRoute = getModuleRoute(notification);
+
+    // Navigate to the module
+    handleClose();
+    window.location.href = moduleRoute;
   };
 
   return (
