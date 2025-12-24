@@ -38,33 +38,29 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, icon, iconBg, trend }
     return dateCopy.toLocaleDateString();
   }
 
-  // Show each day's count (today, yesterday, day ago) as a separate line if > 0
+  // Show only the most recent non-zero trend value, or 'No change today' if all are zero
   if (trend && Array.isArray(trend) && trend.length > 0) {
     // Sort trend by date descending (latest first)
     const sortedTrend = [...trend].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
     const isActiveLeads = title === 'Active Leads';
-    trendDisplay = (
-      <>
-        {sortedTrend.slice(0, 3).map((item, idx) => {
-          const label = getDateLabel(new Date(item.date));
-          if (item.value > 0) {
-            return (
-              <Typography key={item.date} sx={{ color: isActiveLeads ? 'success.main' : '#888', fontSize: 13, display: 'flex', alignItems: 'center', mt: idx === 0 ? 0.5 : 0 }}>
-                <span style={{ fontWeight: 600 }}>{item.value} new</span>
-                <span style={{ marginLeft: 4, color: '#888' }}>{label}</span>
-              </Typography>
-            );
-          }
-          return null;
-        })}
-        {/* If all are zero, show no change for today */}
-        {sortedTrend.slice(0, 3).every(item => item.value === 0) && (
-          <Typography sx={{ color: '#888', fontSize: 13, display: 'flex', alignItems: 'center', mt: 0.5 }}>
-            — No change today
-          </Typography>
-        )}
-      </>
-    );
+    // Find the most recent non-zero value
+    const mostRecent = sortedTrend.slice(0, 3).find(item => item.value > 0);
+    if (mostRecent) {
+      const label = getDateLabel(new Date(mostRecent.date));
+      trendDisplay = (
+        <Typography sx={{ color: isActiveLeads ? 'success.main' : '#888', fontSize: 13, display: 'flex', alignItems: 'center', mt: 0.5 }}>
+          <span style={{ fontWeight: 600 }}>{mostRecent.value} new</span>
+          <span style={{ marginLeft: 4, color: '#888' }}>{label}</span>
+        </Typography>
+      );
+    } else {
+      // If all are zero, show no change for today
+      trendDisplay = (
+        <Typography sx={{ color: '#888', fontSize: 13, display: 'flex', alignItems: 'center', mt: 0.5 }}>
+          — No change today
+        </Typography>
+      );
+    }
   }
 
   return (
@@ -213,7 +209,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
   const totalUsersTrend = trendObjToArray(trend?.totalUsers);
   const siteVisitTrend = trendObjToArray(trend?.siteVisitCount);
   const pendingMouTrend = trendObjToArray(trend?.pendingMouTotal);
-  const totalVendorsTrend = trendObjToArray(trend?.totalVendors);
+  const totalVendorsTrend = trendObjToArray(trend?.totalBilling);
   // For activeLeads, sum up trends for each status if available
   let activeLeadsTrend: TrendItem[] | undefined = undefined;
   if (trendLeads?.activeLeads) {
