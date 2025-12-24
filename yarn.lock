@@ -4011,6 +4011,11 @@ inherits@2, inherits@^2.0.1, inherits@^2.0.3, inherits@^2.0.4, inherits@~2.0.0, 
   resolved "https://registry.yarnpkg.com/inherits/-/inherits-2.0.4.tgz#0fa2c64f932917c3433a0ded55363aae37416b7c"
   integrity sha512-k/vGaX4/Yla3WzyMCvTQOXYeIHvqOKtnqBduzTHpzpQZzAskKMhZ2K+EnBiSM9zGSoIFeMpXKxa4dYeZIQqewQ==
 
+inrext-framework@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/inrext-framework/-/inrext-framework-1.0.0.tgz#ea81b584936a784f160aab4ee95eb61dfd34dfa2"
+  integrity sha512-YjaItLumfJkLomyJVlodxjbdPvoaRgG6+oCFDPrtCSYiDeHumrjmeBYdnzOGsXnEBJE/ZNSj83d/TeswASPScw==
+
 internal-slot@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/internal-slot/-/internal-slot-1.1.0.tgz#1eac91762947d2f7056bc838d93e13b2e9604961"
