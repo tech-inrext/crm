@@ -9,9 +9,6 @@ async function handler(req, res) {
     const loggedInUserId = req.employee?._id;
     const baseQuery = loggedInUserId ? { uploadedBy: loggedInUserId } : {};
 
-    // Total leads (scoped to logged-in user when available)
-    const totalLeads = await Lead.countDocuments(baseQuery);
-
     // Helper to get start/end of day
     function getDayRange(offset = 0) {
       const now = new Date();
@@ -27,14 +24,132 @@ async function handler(req, res) {
     const { start: yestStart, end: yestEnd } = getDayRange(1);
     const { start: beforeYestStart, end: beforeYestEnd } = getDayRange(2);
 
+    // Define which statuses count as a conversion (case-insensitive)
+    const CONVERTED_STATUSES = [
+      "site visit done",
+      "call back",
+      "follow up",
+      "details shared",
+    ];
+
+    // Helper: include match stage only when baseQuery has uploadedBy
+    const matchStage = loggedInUserId ? [{ $match: baseQuery }] : [];
+
     // Count leads by status (case-insensitive, using $toLower)
     const leadStatuses = ["new", "follow-up", "call back", "details shared"];
-    const statusCounts = await Lead.aggregate([
-      ...(loggedInUserId ? [{ $match: baseQuery }] : []),
-      { $addFields: { statusLower: { $toLower: "$status" } } },
-      { $match: { statusLower: { $in: leadStatuses } } },
-      { $group: { _id: "$statusLower", count: { $sum: 1 } } },
+
+    // Helper: get site visit done counts by month or weekday
+    const { period = "month" } = req.query;
+
+    // Trend counts for each status
+    function getStatusTrend(status) {
+      return Promise.all([
+        Lead.countDocuments({
+          ...baseQuery,
+          status: new RegExp(`^${status}$`, "i"),
+          createdAt: { $gte: todayStart, $lte: todayEnd },
+        }),
+        Lead.countDocuments({
+          ...baseQuery,
+          status: new RegExp(`^${status}$`, "i"),
+          createdAt: { $gte: yestStart, $lte: yestEnd },
+        }),
+        Lead.countDocuments({
+          ...baseQuery,
+          status: new RegExp(`^${status}$`, "i"),
+          createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd },
+        }),
+      ]).then(([today, yesterday, beforeYesterday]) => ({ today, yesterday, beforeYesterday }));
+    }
+
+    // Run all independent DB queries in parallel
+    const [
+      totalLeads,
+      statusCounts,
+      newLeadsTrend,
+      callBackLeadsTrend,
+      followUpLeadsTrend,
+      detailsSharedLeadsTrend,
+      byMonth,
+      byWeekday,
+      bySource,
+      byProperty,
+    ] = await Promise.all([
+      Lead.countDocuments(baseQuery),
+      Lead.aggregate([
+        ...(loggedInUserId ? [{ $match: baseQuery }] : []),
+        { $addFields: { statusLower: { $toLower: "$status" } } },
+        { $match: { statusLower: { $in: leadStatuses } } },
+        { $group: { _id: "$statusLower", count: { $sum: 1 } } },
+      ]),
+      getStatusTrend("new"),
+      getStatusTrend("call back"),
+      getStatusTrend("follow-up"),
+      getStatusTrend("details shared"),
+      period === "month"
+        ? Lead.aggregate([
+            ...(loggedInUserId ? [{ $match: baseQuery }] : []),
+            { $match: { status: { $regex: /^site visit done$/i } } },
+            {
+              $group: {
+                _id: { $month: "$createdAt" },
+                count: { $sum: 1 },
+              },
+            },
+          ])
+        : Promise.resolve([]),
+      period === "week"
+        ? Lead.aggregate([
+            ...(loggedInUserId ? [{ $match: baseQuery }] : []),
+            { $match: { status: { $regex: /^site visit done$/i } } },
+            {
+              $group: {
+                _id: { $dayOfWeek: "$createdAt" },
+                count: { $sum: 1 },
+              },
+            },
+          ])
+        : Promise.resolve([]),
+      Lead.aggregate([
+        ...matchStage,
+        {
+          $group: {
+            _id: "$source",
+            count: { $sum: 1 },
+            converted: {
+              $sum: {
+                $cond: [
+                  { $in: [{ $toLower: "$status" }, CONVERTED_STATUSES] },
+                  1,
+                  0,
+                ],
+              },
+            },
+            totalCost: { $sum: 0 }, // Placeholder for cost - not implemented in Lead model yet
+          },
+        },
+      ]),
+      Lead.aggregate([
+        ...matchStage,
+        {
+          $group: {
+            _id: "$propertyName",
+            count: { $sum: 1 },
+            converted: {
+              $sum: {
+                $cond: [
+                  { $in: [{ $toLower: "$status" }, CONVERTED_STATUSES] },
+                  1,
+                  0,
+                ],
+              },
+            },
+          },
+        },
+      ]),
     ]);
+
+    // Parse status counts
     let newLeads = 0,
       callBackLeads = 0,
       followUpLeads = 0,
@@ -46,54 +161,9 @@ async function handler(req, res) {
       else if (s._id === "details shared") detailsSharedLeads = s.count;
     });
 
-    // Trend counts for each status
-    async function getStatusTrend(status) {
-      const today = await Lead.countDocuments({
-        ...baseQuery,
-        status: new RegExp(`^${status}$`, "i"),
-        createdAt: { $gte: todayStart, $lte: todayEnd },
-      });
-      const yesterday = await Lead.countDocuments({
-        ...baseQuery,
-        status: new RegExp(`^${status}$`, "i"),
-        createdAt: { $gte: yestStart, $lte: yestEnd },
-      });
-      const beforeYesterday = await Lead.countDocuments({
-        ...baseQuery,
-        status: new RegExp(`^${status}$`, "i"),
-        createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd },
-      });
-      return { today, yesterday, beforeYesterday };
-    }
-
-    const [
-      newLeadsTrend,
-      callBackLeadsTrend,
-      followUpLeadsTrend,
-      detailsSharedLeadsTrend,
-    ] = await Promise.all([
-      getStatusTrend("new"),
-      getStatusTrend("call back"),
-      getStatusTrend("follow-up"),
-      getStatusTrend("details shared"),
-    ]);
-
-    // Helper: get site visit done counts by month or weekday
-    const { period = "month" } = req.query;
+    // Build siteVisitDoneData
     let siteVisitDoneData = [];
     if (period === "month") {
-      // Group by month (0=Jan, 11=Dec)
-      const byMonth = await Lead.aggregate([
-        ...(loggedInUserId ? [{ $match: baseQuery }] : []),
-        { $match: { status: { $regex: /^site visit done$/i } } },
-        {
-          $group: {
-            _id: { $month: "$createdAt" },
-            count: { $sum: 1 },
-          },
-        },
-      ]);
-      // Map to month labels
       const months = [
         "Jan",
         "Feb",
@@ -117,18 +187,6 @@ async function handler(req, res) {
         siteVisitDone: monthMap[idx + 1] || 0,
       }));
     } else if (period === "week") {
-      // Group by weekday (1=Sun, 7=Sat in Mongo $dayOfWeek)
-      const byWeekday = await Lead.aggregate([
-        ...(loggedInUserId ? [{ $match: baseQuery }] : []),
-        { $match: { status: { $regex: /^site visit done$/i } } },
-        {
-          $group: {
-            _id: { $dayOfWeek: "$createdAt" },
-            count: { $sum: 1 },
-          },
-        },
-      ]);
-      // Map to weekday labels (Mongo: 1=Sun, 7=Sat)
       const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
       const weekdayMap = {};
       byWeekday.forEach((w) => {
@@ -146,37 +204,6 @@ async function handler(req, res) {
       0
     );
 
-    // Define which statuses count as a conversion (case-insensitive)
-    const CONVERTED_STATUSES = [
-      "site visit done",
-      "call back",
-      "follow up",
-      "details shared",
-    ];
-
-    // Helper: include match stage only when baseQuery has uploadedBy
-    const matchStage = loggedInUserId ? [{ $match: baseQuery }] : [];
-
-    // Group by source (scoped)
-    const bySource = await Lead.aggregate([
-      ...matchStage,
-      {
-        $group: {
-          _id: "$source",
-          count: { $sum: 1 },
-          converted: {
-            $sum: {
-              $cond: [
-                { $in: [{ $toLower: "$status" }, CONVERTED_STATUSES] },
-                1,
-                0,
-              ],
-            },
-          },
-          totalCost: { $sum: 0 }, // Placeholder for cost - not implemented in Lead model yet
-        },
-      },
-    ]);
     // Build map and order
     const map = {};
     const sourcesOrder = [];
@@ -186,26 +213,6 @@ async function handler(req, res) {
       sourcesOrder.push(s._id || "Unknown");
       slices.push({ label: s._id || "Unknown", value: s.count });
     });
-
-    // Group by property name
-    const byProperty = await Lead.aggregate([
-      ...matchStage,
-      {
-        $group: {
-          _id: "$propertyName",
-          count: { $sum: 1 },
-          converted: {
-            $sum: {
-              $cond: [
-                { $in: [{ $toLower: "$status" }, CONVERTED_STATUSES] },
-                1,
-                0,
-              ],
-            },
-          },
-        },
-      },
-    ]);
 
     // Build property map with labels
     const propertyLabels = {

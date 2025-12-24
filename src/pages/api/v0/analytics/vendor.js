@@ -23,19 +23,6 @@ export default async function handler(req, res) {
     const { start: yestStart, end: yestEnd } = getDayRange(1);
     const { start: beforeYestStart, end: beforeYestEnd } = getDayRange(2);
 
-    // Count vendors created on each day
-    const todayVendors = await Employee.countDocuments({
-      isCabVendor: true,
-      createdAt: { $gte: todayStart, $lte: todayEnd },
-    });
-    const yesterdayVendors = await Employee.countDocuments({
-      isCabVendor: true,
-      createdAt: { $gte: yestStart, $lte: yestEnd },
-    });
-    const beforeYesterdayVendors = await Employee.countDocuments({
-      isCabVendor: true,
-      createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd },
-    });
     // Get query parameters for specific vendor search
     const { vendorNames, vendorEmails } = req.query;
 
@@ -83,102 +70,68 @@ export default async function handler(req, res) {
         ? { $and: [{ isCabVendor: true }, vendorMatchConditions] }
         : { isCabVendor: true };
 
-    const vendorAnalytics = await Employee.aggregate([
-      {
-        $match: cabVendorMatch,
-      },
-      {
-        $lookup: {
-          from: "cabbookings",
-          localField: "_id",
-          foreignField: "vendor",
-          as: "bookings",
-        },
-      },
-      {
-        $addFields: {
-          totalBookings: { $size: "$bookings" },
-          completedBookings: {
-            $size: {
-              $filter: {
-                input: "$bookings",
-                cond: {
-                  $regexMatch: { input: "$$this.status", regex: /completed/i },
+    // Prepare all independent DB queries
+    const [
+      todayVendors,
+      yesterdayVendors,
+      beforeYesterdayVendors,
+      vendorAnalytics,
+      cabVendorsFromCollection,
+      vendorBookingStats,
+      cabVendorNames,
+    ] = await Promise.all([
+      Employee.countDocuments({ isCabVendor: true, createdAt: { $gte: todayStart, $lte: todayEnd } }),
+      Employee.countDocuments({ isCabVendor: true, createdAt: { $gte: yestStart, $lte: yestEnd } }),
+      Employee.countDocuments({ isCabVendor: true, createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
+      Employee.aggregate([
+        { $match: cabVendorMatch },
+        { $lookup: { from: "cabbookings", localField: "_id", foreignField: "vendor", as: "bookings" } },
+        { $addFields: {
+            totalBookings: { $size: "$bookings" },
+            completedBookings: {
+              $size: {
+                $filter: {
+                  input: "$bookings",
+                  cond: { $regexMatch: { input: "$$this.status", regex: /completed/i } },
                 },
               },
             },
-          },
-          pendingBookings: {
-            $size: {
-              $filter: {
-                input: "$bookings",
-                cond: {
-                  $regexMatch: { input: "$$this.status", regex: /pending/i },
+            pendingBookings: {
+              $size: {
+                $filter: {
+                  input: "$bookings",
+                  cond: { $regexMatch: { input: "$$this.status", regex: /pending/i } },
                 },
               },
             },
+            totalEarnings: { $sum: "$bookings.fare" },
+            avgFare: { $avg: "$bookings.fare" },
           },
-          totalEarnings: { $sum: "$bookings.fare" },
-          avgFare: { $avg: "$bookings.fare" },
         },
-      },
-      {
-        $project: {
-          _id: 1,
-          name: {
-            $cond: {
-              if: {
-                $and: [
-                  { $ne: ["$cabOwnerName", null] },
-                  { $ne: ["$cabOwnerName", ""] },
-                ],
-              },
-              then: "$cabOwnerName",
-              else: {
-                $cond: {
-                  if: {
-                    $and: [
-                      { $ne: ["$driverName", null] },
-                      { $ne: ["$driverName", ""] },
-                    ],
-                  },
-                  then: "$driverName",
-                  else: {
-                    $cond: {
-                      if: {
-                        $and: [
-                          { $ne: ["$name", null] },
-                          { $ne: ["$name", ""] },
-                        ],
-                      },
-                      then: "$name",
-                      else: {
-                        $cond: {
-                          if: {
-                            $and: [
-                              { $ne: ["$firstName", null] },
-                              { $ne: ["$firstName", ""] },
-                            ],
-                          },
-                          then: {
-                            $concat: [
-                              "$firstName",
-                              " ",
-                              { $ifNull: ["$lastName", ""] },
-                            ],
-                          },
-                          else: {
-                            $cond: {
-                              if: {
-                                $and: [
-                                  { $ne: ["$email", null] },
-                                  { $ne: ["$email", ""] },
-                                ],
+        { $project: {
+            _id: 1,
+            name: {
+              $cond: {
+                if: { $and: [ { $ne: ["$cabOwnerName", null] }, { $ne: ["$cabOwnerName", ""] } ] },
+                then: "$cabOwnerName",
+                else: {
+                  $cond: {
+                    if: { $and: [ { $ne: ["$driverName", null] }, { $ne: ["$driverName", ""] } ] },
+                    then: "$driverName",
+                    else: {
+                      $cond: {
+                        if: { $and: [ { $ne: ["$name", null] }, { $ne: ["$name", ""] } ] },
+                        then: "$name",
+                        else: {
+                          $cond: {
+                            if: { $and: [ { $ne: ["$firstName", null] }, { $ne: ["$firstName", ""] } ] },
+                            then: { $concat: ["$firstName", " ", { $ifNull: ["$lastName", ""] }] },
+                            else: {
+                              $cond: {
+                                if: { $and: [ { $ne: ["$email", null] }, { $ne: ["$email", ""] } ] },
+                                then: { $arrayElemAt: [{ $split: ["$email", "@"] }, 0] },
+                                else: "Driver",
                               },
-                              then: {
-                                $arrayElemAt: [{ $split: ["$email", "@"] }, 0],
-                              },
-                              else: "Driver",
                             },
                           },
                         },
@@ -188,131 +141,108 @@ export default async function handler(req, res) {
                 },
               },
             },
+            cabOwnerName: 1,
+            driverName: 1,
+            name: 1,
+            firstName: 1,
+            lastName: 1,
+            email: 1,
+            phone: 1,
+            vehicleType: 1,
+            vehicleNumber: 1,
+            totalBookings: 1,
+            completedBookings: 1,
+            pendingBookings: 1,
+            totalEarnings: { $round: ["$totalEarnings", 2] },
+            avgFare: { $round: ["$avgFare", 2] },
+            bookings: 1,
           },
-          cabOwnerName: 1,
-          driverName: 1,
-          name: 1,
-          firstName: 1,
-          lastName: 1,
-          email: 1,
-          phone: 1,
-          vehicleType: 1,
-          vehicleNumber: 1,
-          totalBookings: 1,
-          completedBookings: 1,
-          pendingBookings: 1,
-          totalEarnings: { $round: ["$totalEarnings", 2] },
-          avgFare: { $round: ["$avgFare", 2] },
-          bookings: 1,
         },
-      },
-      {
-        $sort: { totalBookings: -1, name: 1 },
-      },
-    ]);
-
-    // Search for vendors in CabVendor collection as well
-    const cabVendorSearchConditions = {};
-    if (vendorNames || vendorEmails) {
-      const conditions = [];
-      if (vendorNames) {
-        const names = Array.isArray(vendorNames)
-          ? vendorNames
-          : vendorNames.split(",");
-        conditions.push({
-          cabOwnerName: {
-            $in: names.map((name) => new RegExp(name.trim(), "i")),
-          },
-        });
-        conditions.push({
-          driverName: {
-            $in: names.map((name) => new RegExp(name.trim(), "i")),
-          },
-        });
-      }
-      if (vendorEmails) {
-        const emails = Array.isArray(vendorEmails)
-          ? vendorEmails
-          : vendorEmails.split(",");
-        conditions.push({
-          email: { $in: emails.map((email) => new RegExp(email.trim(), "i")) },
-        });
-      }
-      if (conditions.length > 0) {
-        cabVendorSearchConditions.$or = conditions;
-      }
-    }
-
-    const cabVendorsFromCollection = await CabVendor.find(
-      cabVendorSearchConditions
-    );
-
-    // Get vendor booking stats from VendorBooking collection
-    const vendorBookingMatch = vendorMatchConditions.ownerName
-      ? { ownerName: vendorMatchConditions.ownerName }
-      : {};
-
-    const vendorBookingStats = await VendorBooking.aggregate([
-      {
-        $match: vendorBookingMatch,
-      },
-      {
-        $group: {
-          _id: "$ownerName",
-          totalBookings: { $sum: 1 },
-          completedBookings: {
-            $sum: {
-              $cond: [
-                {
-                  $regexMatch: {
-                    input: "$status",
-                    regex: /completed|done|finished/i,
-                  },
+        { $sort: { totalBookings: -1, name: 1 } },
+      ]),
+      (() => {
+        const cabVendorSearchConditions = {};
+        if (vendorNames || vendorEmails) {
+          const conditions = [];
+          if (vendorNames) {
+            const names = Array.isArray(vendorNames)
+              ? vendorNames
+              : vendorNames.split(",");
+            conditions.push({
+              cabOwnerName: {
+                $in: names.map((name) => new RegExp(name.trim(), "i")),
+              },
+            });
+            conditions.push({
+              driverName: {
+                $in: names.map((name) => new RegExp(name.trim(), "i")),
+              },
+            });
+          }
+          if (vendorEmails) {
+            const emails = Array.isArray(vendorEmails)
+              ? vendorEmails
+              : vendorEmails.split(",");
+            conditions.push({
+              email: { $in: emails.map((email) => new RegExp(email.trim(), "i")) },
+            });
+          }
+          if (conditions.length > 0) {
+            cabVendorSearchConditions.$or = conditions;
+          }
+        }
+        return CabVendor.find(cabVendorSearchConditions);
+      })(),
+      (() => {
+        const vendorBookingMatch = vendorMatchConditions.ownerName
+          ? { ownerName: vendorMatchConditions.ownerName }
+          : {};
+        return VendorBooking.aggregate([
+          { $match: vendorBookingMatch },
+          { $group: {
+              _id: "$ownerName",
+              totalBookings: { $sum: 1 },
+              completedBookings: {
+                $sum: {
+                  $cond: [
+                    { $regexMatch: { input: "$status", regex: /completed|done|finished/i } },
+                    1, 0,
+                  ],
                 },
-                1,
-                0,
-              ],
+              },
+              pendingBookings: {
+                $sum: {
+                  $cond: [
+                    { $regexMatch: { input: "$status", regex: /pending|waiting|scheduled/i } },
+                    1, 0,
+                  ],
+                },
+              },
+              totalAmount: { $sum: "$amount" },
+              avgAmount: { $avg: "$amount" },
+              latestBooking: { $max: "$createdAt" },
+              vendorInfo: { $first: "$$ROOT" },
             },
           },
-          pendingBookings: {
-            $sum: {
-              $cond: [
-                {
-                  $regexMatch: {
-                    input: "$status",
-                    regex: /pending|waiting|scheduled/i,
-                  },
-                },
-                1,
-                0,
-              ],
+          { $project: {
+              name: "$_id",
+              totalBookings: 1,
+              completedBookings: 1,
+              pendingBookings: 1,
+              totalAmount: { $round: ["$totalAmount", 2] },
+              avgAmount: { $round: ["$avgAmount", 2] },
+              latestBooking: 1,
+              contactNumber: "$vendorInfo.contactNumber",
+              vehicleType: "$vendorInfo.vehicleType",
+              vehicleNumber: "$vendorInfo.vehicleNumber",
+              location: "$vendorInfo.location",
+              email: "$vendorInfo.email",
             },
           },
-          totalAmount: { $sum: "$amount" },
-          avgAmount: { $avg: "$amount" },
-          latestBooking: { $max: "$createdAt" },
-          vendorInfo: { $first: "$$ROOT" },
-        },
-      },
-      {
-        $project: {
-          name: "$_id",
-          totalBookings: 1,
-          completedBookings: 1,
-          pendingBookings: 1,
-          totalAmount: { $round: ["$totalAmount", 2] },
-          avgAmount: { $round: ["$avgAmount", 2] },
-          latestBooking: 1,
-          contactNumber: "$vendorInfo.contactNumber",
-          vehicleType: "$vendorInfo.vehicleType",
-          vehicleNumber: "$vendorInfo.vehicleNumber",
-          location: "$vendorInfo.location",
-          email: "$vendorInfo.email",
-        },
-      },
-      {
-        $sort: { totalBookings: -1 },
-      },
+          { $sort: { totalBookings: -1 } },
+        ]);
+      })(),
+      CabVendor.distinct("cabOwnerName"),
     ]);
 
     // Helper function to get the best available name
@@ -399,9 +329,6 @@ export default async function handler(req, res) {
           )
       )
       .sort((a, b) => (b.totalBookings || 0) - (a.totalBookings || 0));
-
-    // Get unique cab vendor names from CabVendor collection for additional reference
-    const cabVendorNames = await CabVendor.distinct("cabOwnerName");
 
     res.status(200).json({
       success: true,

@@ -1,6 +1,6 @@
 import React from "react";
 import { Box, TextField, Typography } from "@/components/ui/Component";
-import { Field, FieldProps } from "formik";
+import { Field, FieldProps, useFormikContext } from "formik";
 
 interface BasicInformationProps {
   values: any;
@@ -12,7 +12,10 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
   values,
   setFieldValue,
   editId,
-}) => (
+}) => {
+  const { setFieldTouched } = useFormikContext();
+
+  return (
   <>
     <Typography variant="h6" sx={{ mt: 1, fontWeight: 600 }}>
       Basic Information
@@ -23,8 +26,12 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
         <TextField
           {...field}
           label="Full Name"
+          required
           value={values.fullName}
-          onChange={(e) => setFieldValue("fullName", e.target.value)}
+          onChange={(e) => {
+            setFieldValue("fullName", e.target.value);
+            setFieldTouched("fullName", true, false);
+          }}
           autoFocus
           error={meta.touched && !!meta.error}
           helperText={meta.touched && meta.error}
@@ -48,7 +55,10 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
             label="Email"
             type="email"
             value={values.email}
-            onChange={(e) => setFieldValue("email", e.target.value)}
+            onChange={(e) => {
+              setFieldValue("email", e.target.value);
+              setFieldTouched("email", true, false);
+            }}
             error={meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
             inputProps={{ "aria-label": "Lead email" }}
@@ -64,15 +74,16 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
             label="Phone"
             value={values.phone}
             onChange={(e) => {
-              const cleanPhone = e.target.value.replace(/\D/g, "").slice(0, 15);
+              const cleanPhone = e.target.value.replace(/\D/g, "").slice(0, 10);
               setFieldValue("phone", cleanPhone);
+              setFieldTouched("phone", true, false);
             }}
             required
             error={meta.touched && !!meta.error}
             helperText={
               meta.touched && meta.error
                 ? meta.error
-                : "Enter digits only (10-15 characters)"
+                : ""
             }
             placeholder="1234567890"
             inputProps={{
@@ -87,6 +98,6 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
       </Field>
     </Box>
   </>
-);
+)};
 
 export default BasicInformation;

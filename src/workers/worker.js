@@ -37,10 +37,20 @@ class InrextWorker extends Worker {
     super("leadQueue", async (job) => this.jobsMapper(job), { connection });
     this.jobMethods = [];
   }
-  jobsMapper(job) {
+  async jobsMapper(job) {
     const jobName = job.name;
+    // Fix: We MUST check for the function and AWAIT its completion
     if (typeof this[jobName] === "function") {
-      this[jobName](job);
+      try {
+        console.log(`🚀 Executing ${jobName}...`);
+        await this[jobName](job); // <--- THE CRITICAL FIX: Add 'await'
+        console.log(`✅ ${jobName} finished successfully.`);
+      } catch (error) {
+        console.error(`❌ ${jobName} failed:`, error.message);
+        throw error; // Let BullMQ know it failed so it can retry
+      }
+    } else {
+      console.error(`🚨 No handler found for job: ${jobName}`);
     }
   }
   addJobListener(jobName, cb) {
