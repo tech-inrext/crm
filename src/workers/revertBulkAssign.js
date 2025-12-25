@@ -28,19 +28,31 @@ async function revertBulkAssign(job) {
 
     console.log(`Found ${historyRecords.length} records to revert.`);
 
+    const revertByObjectId = new mongoose.Types.ObjectId(revertedBy);
     const revertOps = [];
     const newHistoryEntries = [];
     const timestamp = new Date();
 
     for (const record of historyRecords) {
+      // 🛠️ FIX: Normalize previousAssignedTo. If it's an empty string or null, use null.
+      // Also ensure it is cast to an ObjectId if it exists.
+      let targetAssignedTo = record.previousAssignedTo;
+      if (targetAssignedTo === "" || !targetAssignedTo) {
+        targetAssignedTo = null;
+      } else {
+        targetAssignedTo = new mongoose.Types.ObjectId(targetAssignedTo);
+      }
+
+      console.log(`Reverting Lead ${record.leadId}: ${record.newAssignedTo} -> ${targetAssignedTo}`);
+
       // Revert Lead to previousAssignedTo
       revertOps.push({
         updateOne: {
           filter: { _id: record.leadId },
           update: {
             $set: {
-                assignedTo: record.previousAssignedTo,
-                updatedBy: revertedBy,
+                assignedTo: targetAssignedTo,
+                updatedBy: revertByObjectId,
                 updatedAt: timestamp
             }
           }
@@ -49,12 +61,11 @@ async function revertBulkAssign(job) {
 
       // Log the revert action
       newHistoryEntries.push({
-        batchId, // Maintain same batchId or create new one? User says "Store the revert operation...". 
-                 // Keeping same batchId helps track the lifecycle of this batch.
+        batchId, 
         leadId: record.leadId,
-        previousAssignedTo: record.newAssignedTo, // The one we are removing
-        newAssignedTo: record.previousAssignedTo, // The one we are restoring
-        updatedBy: revertedBy,
+        previousAssignedTo: record.newAssignedTo, 
+        newAssignedTo: targetAssignedTo, 
+        updatedBy: revertByObjectId,
         actionType: "REVERT",
         timestamp
       });

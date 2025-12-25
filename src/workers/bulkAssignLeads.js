@@ -4,31 +4,39 @@ import dbConnect from "../lib/mongodb.js";
 import mongoose from "mongoose";
 
 async function bulkAssignLeads(job) {
-  const { batchId, assignTo, status, limit, updatedBy } = job.data;
+  const { batchId, assignTo, status, limit, updatedBy, availableCount } = job.data;
   console.log(`\n🚀 Starting Bulk Assign Job: ${batchId}`);
-  console.log(`Params: limit=${limit}, status=${status}, assignTo=${assignTo}`);
+  console.log(`Params: limit=${limit}, status=${status}, assignTo=${assignTo}, availableCount=${availableCount}`);
 
   try {
     // 🛠️ FIX 1: Explicitly await the connection.
-    // If dbConnect fails or times out, it will jump to the catch block
-    // instead of letting Mongoose "buffer" the queries into a crash.
     await dbConnect();
 
-    // 🛠️ FIX 2: Safety Check. Ensure the connection state is 'Connected' (1).
+    // 🛠️ FIX 2: Safety Check.
     if (mongoose.connection.readyState !== 1) {
       throw new Error("Database connection is not active. State: " + mongoose.connection.readyState);
     }
 
-    // Step 1: Filter leads (Status + Unassigned)
+    // Step 1: Filter leads (Status + Unassigned + Uploaded by Me)
     const query = {
       status: status, 
+      uploadedBy: updatedBy, // CRITICAL FIX: Only select leads uploaded by the user performing the assignment
       $or: [{ assignedTo: null }, { assignedTo: { $exists: false } }]
     };
 
+    // 🛠️ FIX 3: Cast IDs
+    const assignToId = new mongoose.Types.ObjectId(assignTo);
+    const updatedById = new mongoose.Types.ObjectId(updatedBy);
+
+    // Use the minimum of requested limit and known availability to keep things consistent
+    // If availableCount is missing (legacy jobs), fallback to limit
+    const finalLimit = availableCount ? Math.min(parseInt(limit, 10), parseInt(availableCount, 10)) : parseInt(limit, 10);
+
     // Step 2: Fetch Leads
-    // Added a .lean() for performance since we only need raw data for the history map
+    // Added sort({ createdAt: 1 }) for FIFO assignment (oldest leads first)
     const leadsToAssign = await Lead.find(query)
-      .limit(parseInt(limit))
+      .sort({ createdAt: 1 }) 
+      .limit(finalLimit)
       .select('_id assignedTo')
       .lean(); 
 
@@ -48,8 +56,8 @@ async function bulkAssignLeads(job) {
         batchId,
         leadId: lead._id,
         previousAssignedTo: lead.assignedTo || null,
-        newAssignedTo: assignTo,
-        updatedBy,
+        newAssignedTo: assignToId, // Start storing ObjectId
+        updatedBy: updatedById,
         actionType: "ASSIGN",
         timestamp
       });
@@ -61,8 +69,8 @@ async function bulkAssignLeads(job) {
         filter: { _id: lead._id },
         update: {
           $set: {
-            assignedTo: assignTo,
-            updatedBy: updatedBy,
+            assignedTo: assignToId, // Ensure ObjectId is stored
+            updatedBy: updatedById,
             updatedAt: timestamp
           }
         }

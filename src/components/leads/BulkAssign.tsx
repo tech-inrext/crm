@@ -239,9 +239,18 @@ const BulkAssign: React.FC<BulkAssignProps> = ({ onSuccess }) => {
         }}
       >
         <DialogTitle>
-          <Box display="flex" justifyContent="space-between" alignItems="center">
+          <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems="center" gap={{ xs: 2, sm: 0 }}>
             <Typography variant="h6" fontWeight="bold">Bulk Lead Assignment</Typography>
-            <Tabs value={tabIndex} onChange={(e, v) => setTabIndex(v)} textColor="primary" indicatorColor="primary">
+            <Tabs 
+              value={tabIndex} 
+              onChange={(e, v) => setTabIndex(v)} 
+              textColor="primary" 
+              indicatorColor="primary"
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
+              sx={{ maxWidth: "100%" }}
+            >
               <Tab label="Assign" icon={<Assignment fontSize="small"/>} iconPosition="start" />
               <Tab label="History & Revert" icon={<HistoryIcon fontSize="small"/>} iconPosition="start" />
             </Tabs>
@@ -398,12 +407,21 @@ const BulkAssign: React.FC<BulkAssignProps> = ({ onSuccess }) => {
           )}
         </DialogContent>
 
-        <DialogActions sx={{ px: 3, py: 1, display: "flex", alignItems: "center", borderTop: "1px solid rgba(0,0,0,0.12)", position: "relative" }}>
+        <DialogActions sx={{ 
+          px: 3, 
+          py: 2, 
+          display: "flex", 
+          flexDirection: { xs: "column", md: "row" }, 
+          alignItems: "center", 
+          borderTop: "1px solid rgba(0,0,0,0.12)", 
+          position: "relative",
+          gap: 2
+        }}>
           {/* Left Spacer to keep center balanced */}
           <Box sx={{ flex: 1, display: { xs: "none", md: "block" } }} />
           
           {/* Centered Pagination */}
-          <Box sx={{ flex: 2, display: "flex", justifyContent: "center" }}>
+          <Box sx={{ flex: 2, display: "flex", justifyContent: "center", width: "100%", order: { xs: 2, md: 1 } }}>
             {tabIndex === 1 && (
               <TablePagination
                 rowsPerPageOptions={[5, 10, 25]}
@@ -426,8 +444,21 @@ const BulkAssign: React.FC<BulkAssignProps> = ({ onSuccess }) => {
           </Box>
 
           {/* Right Aligned Buttons */}
-          <Box sx={{ flex: 1, display: "flex", justifyContent: "flex-end", gap: 2 }}>
-            <Button onClick={() => setOpen(false)} color="inherit" sx={{ fontWeight: 600 }}>Close</Button>
+          <Box sx={{ 
+            flex: 1, 
+            display: "flex", 
+            justifyContent: "flex-end", 
+            gap: 2, 
+            width: "100%", 
+            order: { xs: 1, md: 2 } 
+          }}>
+            <Button 
+              onClick={() => setOpen(false)} 
+              color="inherit" 
+              sx={{ fontWeight: 600, flex: { xs: 1, md: "initial" } }}
+            >
+              Close
+            </Button>
             {tabIndex === 0 && (
               <Button 
                   onClick={handleAssign} 
@@ -442,7 +473,9 @@ const BulkAssign: React.FC<BulkAssignProps> = ({ onSuccess }) => {
                     textTransform: "none",
                     fontSize: "0.95rem",
                     whiteSpace: "nowrap",
-                    minWidth: "max-content",
+                    minWidth: { xs: "auto", md: "max-content" },
+                    width: { xs: "100%", md: "auto" },
+                    flex: { xs: 2, md: "initial" },
                     boxShadow: "0 4px 14px 0 rgba(25, 118, 210, 0.39)",
                     "&:hover": {
                       boxShadow: "0 6px 20px rgba(25, 118, 210, 0.23)",

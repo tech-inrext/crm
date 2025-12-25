@@ -84,7 +84,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
         initialValues={{
           ...initialData,
           propertyName: initialData.propertyName ?? "",
-          status: initialData.status?.trim() || "New",
+          status: initialData.status?.trim() || "new",
         }}
         validationSchema={leadValidationSchema}
         enableReinitialize={true}
