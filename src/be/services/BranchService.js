@@ -12,7 +12,7 @@ class BranchService extends Service {
       const { name, address } = req.body;
 
       if (!name || !address) {
-        return res.status(400).json({
+        return HttpStatus.badRequest(res, {
           success: false,
           message: "Branch name and address are required",
         });
@@ -25,17 +25,10 @@ class BranchService extends Service {
 
       await newBranch.save();
 
-      return res.status(201).json({
-        success: true,
-        data: newBranch,
-      });
+      return HttpStatus.created(res, { data: newBranch });
     } catch (error) {
       console.error("Branch Creation Error:", error.message);
-      return res.status(500).json({
-        success: false,
-        message: "Internal Server Error",
-        error: error.message,
-      });
+      return HttpStatus.badRequest(res, { message: "Internal Server Error" });
     }
   }
 
@@ -63,8 +56,7 @@ class BranchService extends Service {
         Branch.countDocuments(query),
       ]);
 
-      return res.status(200).json({
-        success: true,
+      return HttpStatus.success(res, {
         data: branches,
         pagination: {
           totalItems: totalBranches,
@@ -74,10 +66,8 @@ class BranchService extends Service {
         },
       });
     } catch (error) {
-      return res.status(500).json({
-        success: false,
+      return HttpStatus.badRequest(res, {
         message: "Failed to fetch branches",
-        error: error.message,
       });
     }
   }
