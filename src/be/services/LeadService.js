@@ -242,6 +242,12 @@ class LeadService extends Service {
           .json({ success: false, error: "Lead not found" });
       }
 
+      // Normalize assignedTo: if it's an empty string, set it to null
+      // This prevents CastErrors on queries and keeps "unassigned" state consistent
+      if (updateFields.assignedTo === "") {
+        updateFields.assignedTo = null;
+      }
+
       const updatedLead = await Lead.findByIdAndUpdate(
         id,
         { $set: { ...updateFields, updatedBy: loggedInUserId } },
