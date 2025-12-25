@@ -90,8 +90,8 @@ const Leads: React.FC = () => {
     loadLeads,
     saveLead,
     updateLeadStatus,
-    status,
-    setStatus,
+    selectedStatuses,
+    setSelectedStatuses,
   } = useLeads();
 
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
@@ -125,43 +125,43 @@ const Leads: React.FC = () => {
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
       ? {
-          ...col,
-          component: (row, { onEdit }) => (
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "flex-start",
-                gap: 0.5,
-                pl: 0.5,
+        ...col,
+        component: (row, { onEdit }) => (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: 0.5,
+              pl: 0.5,
+            }}
+          >
+            <PermissionGuard module="lead" action="write" fallback={null}>
+              <IconButton onClick={() => onEdit(row)} size="small">
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </PermissionGuard>
+
+            {/* Feedback button - available to any authenticated user */}
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedLeadForFeedback(row.leadId || row._id || row.id);
+                setFeedbackOpen(true);
               }}
             >
-              <PermissionGuard module="lead" action="write" fallback={null}>
-                <IconButton onClick={() => onEdit(row)} size="small">
-                  <EditIcon fontSize="small" />
-                </IconButton>
-              </PermissionGuard>
-
-              {/* Feedback button - available to any authenticated user */}
-              <IconButton
-                size="small"
-                onClick={() => {
-                  setSelectedLeadForFeedback(row.leadId || row._id || row.id);
-                  setFeedbackOpen(true);
-                }}
+              <Badge
+                badgeContent={
+                  (row.followUpNotes && row.followUpNotes.length) || 0
+                }
+                color="primary"
               >
-                <Badge
-                  badgeContent={
-                    (row.followUpNotes && row.followUpNotes.length) || 0
-                  }
-                  color="primary"
-                >
-                  <FeedbackIcon fontSize="small" />
-                </Badge>
-              </IconButton>
-            </Box>
-          ),
-        }
+                <FeedbackIcon fontSize="small" />
+              </Badge>
+            </IconButton>
+          </Box>
+        ),
+      }
       : col
   );
 
@@ -213,9 +213,10 @@ const Leads: React.FC = () => {
           onAdd={() => setOpen(true)}
           saving={saving}
           loadLeads={loadLeads}
-          status={status}
-          onStatusChange={(s) => {
-            setStatus(s);
+          loadLeads={loadLeads}
+          selectedStatuses={selectedStatuses}
+          onStatusesChange={(s) => {
+            setSelectedStatuses(s);
             setPage(0);
           }}
         />
@@ -235,7 +236,7 @@ const Leads: React.FC = () => {
                   setEditId(lead._id);
                   setOpen(true);
                 }}
-                onDelete={() => {}}
+                onDelete={() => { }}
                 onStatusChange={updateLeadStatus}
               />
             ))}
@@ -272,9 +273,9 @@ const Leads: React.FC = () => {
               >
                 <LeadsTableHeader
                   header={leadsTableHeaderWithActions}
-                  status={status}
-                  onStatusChange={(s) => {
-                    setStatus(s);
+                  selectedStatuses={selectedStatuses}
+                  onStatusesChange={(s) => {
+                    setSelectedStatuses(s);
                     setPage(0);
                   }}
                 />
@@ -288,7 +289,7 @@ const Leads: React.FC = () => {
                         setEditId(row._id);
                         setOpen(true);
                       }}
-                      onDelete={() => {}}
+                      onDelete={() => { }}
                       onStatusChange={updateLeadStatus}
                     />
                   ))}
