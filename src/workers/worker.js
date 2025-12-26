@@ -11,6 +11,8 @@ import sendLeadFollowUpNotification from "./sendLeadFollowUpNotification.js";
 import { leadQueue } from "../queue/leadQueue.js";
 import bulkAssignLeads from "./bulkAssignLeads.js";
 import revertBulkAssign from "./revertBulkAssign.js";
+// Cab Booking Analytics Worker
+import '../workers/cabBookingAnalyticsWorker.js';
 
 // 🛠️ Load .env
 const __filename = fileURLToPath(import.meta.url);

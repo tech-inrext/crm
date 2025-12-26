@@ -182,7 +182,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ analyticsAccess, scheduleLo
                     <Typography className="text-[#666] text-[0.95rem]">Rows:</Typography>
                     <Select
                       value={leadsPerPage}
-                      onChange={handleChangeRowsPerPage}
+                      onChange ={handleChangeRowsPerPage}
                       size="small"
                     >
                       <MenuItem value={2}>2</MenuItem>
