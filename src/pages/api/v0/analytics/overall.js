@@ -11,9 +11,25 @@ async function handler(req, res) {
   try {
     await dbConnect();
 
-    // Get logged-in user ID from auth middleware
+    // Get userId from query (for team analytics), fallback to logged-in user
     const loggedInUserId = req.employee?._id;
-    const baseQuery = { uploadedBy: loggedInUserId };
+    const userId = req.query.userId || loggedInUserId;
+    // For leads, use assignedTo or uploadedBy strictly for the selected user
+    const leadUserQuery = { $or: [ { assignedTo: userId }, { uploadedBy: userId } ] };
+    // For Employee/MoU, use only _id: userId (not managerId)
+    const employeeUserQuery = { _id: userId };
+
+    // Define active lead statuses (adjust as needed)
+    // Use exact status values as in your DB, case-insensitive
+    const activeLeadStatuses = [
+      "followup",
+      "follow up",
+      "callback",
+      "call back",
+      "details shared",
+      "site visit",
+      "site visit done"
+    ];
 
     // Helper to get start/end of day
     function getDayRange(offset = 0) {
@@ -32,8 +48,30 @@ async function handler(req, res) {
     const { start: beforeYestStart, end: beforeYestEnd } = getDayRange(2);
 
     // Run all independent DB queries in parallel
+    // Fetch active leads for user (status in activeLeadStatuses, case-insensitive)
+    const activeLeadsCount = await Lead.countDocuments({
+      ...leadUserQuery,
+      status: { $in: activeLeadStatuses.map(s => new RegExp(`^${s}$`, 'i')) }
+    });
+
+    // Fetch new leads for user
+    const newLeadsList = await Lead.find({ ...leadUserQuery, status: { $regex: "^new$", $options: "i" } }).sort({ createdAt: -1 }).limit(10);
+    const newLeadsCount = await Lead.countDocuments({ ...leadUserQuery, status: { $regex: "^new$", $options: "i" } });
+
+    // Fetch site visit leads for user
+    const siteVisitCount = await Lead.countDocuments({ ...leadUserQuery, status: { $regex: /site visit/i } });
+
+    // Fetch total leads for user
+    const totalLeads = await Lead.countDocuments(leadUserQuery);
+
+    // ...existing code for trends and other stats...
     const [
-      totalLeads,
+      todayNewLeads,
+      yesterdayNewLeads,
+      beforeYesterdayNewLeads,
+      todaySiteVisits,
+      yesterdaySiteVisits,
+      beforeYesterdaySiteVisits,
       todayUsers,
       yesterdayUsers,
       beforeYesterdayUsers,
@@ -43,43 +81,24 @@ async function handler(req, res) {
       todayApprovedMou,
       yesterdayApprovedMou,
       beforeYesterdayApprovedMou,
-      todayVendors,
-      yesterdayVendors,
-      beforeYesterdayVendors,
-      newLeadsList,
-      newLeadsCount,
-      todayNewLeads,
-      yesterdayNewLeads,
-      beforeYesterdayNewLeads,
-      siteVisitCount,
-      todaySiteVisits,
-      yesterdaySiteVisits,
-      beforeYesterdaySiteVisits,
       employeeResults,
       mouResults,
     ] = await Promise.all([
-      Lead.countDocuments(baseQuery),
-      Employee.countDocuments({ createdAt: { $gte: todayStart, $lte: todayEnd } }),
-      Employee.countDocuments({ createdAt: { $gte: yestStart, $lte: yestEnd } }),
-      Employee.countDocuments({ createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
-      Employee.countDocuments({ mouStatus: "Pending", createdAt: { $gte: todayStart, $lte: todayEnd } }),
-      Employee.countDocuments({ mouStatus: "Pending", createdAt: { $gte: yestStart, $lte: yestEnd } }),
-      Employee.countDocuments({ mouStatus: "Pending", createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
-      Employee.countDocuments({ mouStatus: "Approved", createdAt: { $gte: todayStart, $lte: todayEnd } }),
-      Employee.countDocuments({ mouStatus: "Approved", createdAt: { $gte: yestStart, $lte: yestEnd } }),
-      Employee.countDocuments({ mouStatus: "Approved", createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
-      Employee.countDocuments({ isCabVendor: true, createdAt: { $gte: todayStart, $lte: todayEnd } }),
-      Employee.countDocuments({ isCabVendor: true, createdAt: { $gte: yestStart, $lte: yestEnd } }),
-      Employee.countDocuments({ isCabVendor: true, createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
-      Lead.find({ ...baseQuery, status: { $regex: "^new$", $options: "i" } }).sort({ createdAt: -1 }).limit(10),
-      Lead.countDocuments({ ...baseQuery, status: { $regex: "^new$", $options: "i" } }),
-      Lead.countDocuments({ ...baseQuery, status: { $regex: "^new$", $options: "i" }, createdAt: { $gte: todayStart, $lte: todayEnd } }),
-      Lead.countDocuments({ ...baseQuery, status: { $regex: "^new$", $options: "i" }, createdAt: { $gte: yestStart, $lte: yestEnd } }),
-      Lead.countDocuments({ ...baseQuery, status: { $regex: "^new$", $options: "i" }, createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
-      Lead.countDocuments({ ...baseQuery, status: { $regex: "site visit", $options: "i" } }),
-      Lead.countDocuments({ ...baseQuery, status: { $regex: "site visit", $options: "i" }, createdAt: { $gte: todayStart, $lte: todayEnd } }),
-      Lead.countDocuments({ ...baseQuery, status: { $regex: "site visit", $options: "i" }, createdAt: { $gte: yestStart, $lte: yestEnd } }),
-      Lead.countDocuments({ ...baseQuery, status: { $regex: "site visit", $options: "i" }, createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
+      Lead.countDocuments({ ...leadUserQuery, status: { $regex: "^new$", $options: "i" }, createdAt: { $gte: todayStart, $lte: todayEnd } }),
+      Lead.countDocuments({ ...leadUserQuery, status: { $regex: "^new$", $options: "i" }, createdAt: { $gte: yestStart, $lte: yestEnd } }),
+      Lead.countDocuments({ ...leadUserQuery, status: { $regex: "^new$", $options: "i" }, createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
+      Lead.countDocuments({ ...leadUserQuery, status: { $regex: /site visit/i }, createdAt: { $gte: todayStart, $lte: todayEnd } }),
+      Lead.countDocuments({ ...leadUserQuery, status: { $regex: /site visit/i }, createdAt: { $gte: yestStart, $lte: yestEnd } }),
+      Lead.countDocuments({ ...leadUserQuery, status: { $regex: /site visit/i }, createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
+      Employee.countDocuments({ ...employeeUserQuery, createdAt: { $gte: todayStart, $lte: todayEnd } }),
+      Employee.countDocuments({ ...employeeUserQuery, createdAt: { $gte: yestStart, $lte: yestEnd } }),
+      Employee.countDocuments({ ...employeeUserQuery, createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
+      Employee.countDocuments({ ...employeeUserQuery, mouStatus: "Pending", createdAt: { $gte: todayStart, $lte: todayEnd } }),
+      Employee.countDocuments({ ...employeeUserQuery, mouStatus: "Pending", createdAt: { $gte: yestStart, $lte: yestEnd } }),
+      Employee.countDocuments({ ...employeeUserQuery, mouStatus: "Pending", createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
+      Employee.countDocuments({ ...employeeUserQuery, mouStatus: "Approved", createdAt: { $gte: todayStart, $lte: todayEnd } }),
+      Employee.countDocuments({ ...employeeUserQuery, mouStatus: "Approved", createdAt: { $gte: yestStart, $lte: yestEnd } }),
+      Employee.countDocuments({ ...employeeUserQuery, mouStatus: "Approved", createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
       Employee.aggregate([
         {
           $facet: {
@@ -92,16 +111,11 @@ async function handler(req, res) {
               { $match: { isCabVendor: true } },
               { $count: "count" },
             ],
-            ...(loggedInUserId
+            ...(userId
               ? {
                   teamMembers: [
                     {
-                      $match: {
-                        $or: [
-                          { _id: loggedInUserId },
-                          { managerId: loggedInUserId },
-                        ],
-                      },
+                      $match: employeeUserQuery,
                     },
                     {
                       $project: {
@@ -123,7 +137,7 @@ async function handler(req, res) {
       ]),
       Employee.aggregate([
         {
-          $match: { _id: loggedInUserId },
+          $match: employeeUserQuery,
         },
         {
           $facet: {
@@ -195,7 +209,7 @@ async function handler(req, res) {
     res.status(200).json({
       loggedInUserId,
       totalLeads,
-      totalUsers,
+      activeLeads: activeLeadsCount,
       newLeads: newLeadsCount,
       newLeadSection: newLeadsList.map((lead) => ({
         _id: lead._id,
@@ -204,7 +218,6 @@ async function handler(req, res) {
         createdAt: lead.createdAt,
       })),
       siteVisitCount,
-      totalMou,
       pendingMouTotal,
       approvedMouTotal,
       // Trend data for cards
@@ -233,11 +246,6 @@ async function handler(req, res) {
           today: todayApprovedMou,
           yesterday: yesterdayApprovedMou,
           beforeYesterday: beforeYesterdayApprovedMou,
-        },
-        totalVendors: {
-          today: todayVendors,
-          yesterday: yesterdayVendors,
-          beforeYesterday: beforeYesterdayVendors,
         },
       },
       success: true,
