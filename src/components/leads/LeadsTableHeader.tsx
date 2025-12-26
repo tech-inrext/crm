@@ -19,8 +19,8 @@ type HeaderCol = {
 
 interface LeadsTableHeaderProps {
   header: HeaderCol[];
-  status?: string | null;
-  onStatusChange?: (status: string | null) => void;
+  selectedStatuses: string[];
+  onStatusesChange: (statuses: string[]) => void;
 }
 
 const headerRowStyles = {
@@ -37,8 +37,8 @@ const headerRowStyles = {
 
 const LeadsTableHeader: React.FC<LeadsTableHeaderProps> = ({
   header,
-  status = null,
-  onStatusChange,
+  selectedStatuses = [],
+  onStatusesChange,
 }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
@@ -52,10 +52,19 @@ const LeadsTableHeader: React.FC<LeadsTableHeaderProps> = ({
 
   const handleSelect = useCallback(
     (value: string) => {
-      onStatusChange?.(value || null);
-      handleCloseMenu();
+      if (!value) {
+        onStatusesChange([]);
+        handleCloseMenu();
+        return;
+      }
+
+      const newStatuses = selectedStatuses.includes(value)
+        ? selectedStatuses.filter((s) => s !== value)
+        : [...selectedStatuses, value];
+
+      onStatusesChange(newStatuses);
     },
-    [onStatusChange, handleCloseMenu]
+    [selectedStatuses, onStatusesChange, handleCloseMenu]
   );
 
   const renderedHeader = useMemo(
@@ -105,13 +114,65 @@ const LeadsTableHeader: React.FC<LeadsTableHeaderProps> = ({
                     anchorEl={anchorEl}
                     open={open}
                     onClose={handleCloseMenu}
-                    MenuListProps={{ sx: { minWidth: 160 } }}
+                    MenuListProps={{ sx: { minWidth: 200, py: 0.5 } }}
                   >
-                    {LEAD_STATUSES.map((opt) => (
-                      <MenuItem key={opt} onClick={() => handleSelect(opt)}>
-                        {opt || "All Statuses"}
+                    <MenuItem
+                      onClick={() => handleSelect("")}
+                      sx={{ fontWeight: "bold", borderBottom: "1px solid rgba(0,0,0,0.08)" }}
+                    >
+                      All Statuses
+                    </MenuItem>
+                    {LEAD_STATUSES.filter(Boolean).map((opt) => (
+                      <MenuItem
+                        key={opt}
+                        onClick={() => handleSelect(opt)}
+                        sx={{
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "space-between",
+                          gap: 1,
+                        }}
+                      >
+                        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                          <input
+                            type="checkbox"
+                            checked={selectedStatuses.includes(opt)}
+                            readOnly
+                            style={{ cursor: "pointer" }}
+                          />
+                          <Box component="span" sx={{ textTransform: "capitalize" }}>
+                            {opt}
+                          </Box>
+                        </Box>
+                        {selectedStatuses.includes(opt) && (
+                          <Box
+                            sx={{
+                              width: 8,
+                              height: 8,
+                              borderRadius: "50%",
+                              bgcolor: "primary.main",
+                            }}
+                          />
+                        )}
                       </MenuItem>
                     ))}
+                    {selectedStatuses.length > 0 && (
+                      <MenuItem
+                        onClick={() => {
+                          onStatusesChange([]);
+                          handleCloseMenu();
+                        }}
+                        sx={{
+                          color: "error.main",
+                          fontSize: "0.8rem",
+                          justifyContent: "center",
+                          borderTop: "1px solid rgba(0,0,0,0.08)",
+                          mt: 0.5,
+                        }}
+                      >
+                        Clear All
+                      </MenuItem>
+                    )}
                   </Menu>
                 </>
               ) : (
@@ -127,17 +188,17 @@ const LeadsTableHeader: React.FC<LeadsTableHeaderProps> = ({
   return (
     <TableHead>
       <TableRow
-  sx={{
-    "& .MuiTableCell-head": {
-      backgroundColor: "#1976d2",
-      color: "white",
-      fontWeight: "bold",
-      borderBottom: "none",
-    }
-  }}
->
-  {renderedHeader}
-</TableRow>
+        sx={{
+          "& .MuiTableCell-head": {
+            backgroundColor: "#1976d2",
+            color: "white",
+            fontWeight: "bold",
+            borderBottom: "none",
+          }
+        }}
+      >
+        {renderedHeader}
+      </TableRow>
 
     </TableHead>
   );

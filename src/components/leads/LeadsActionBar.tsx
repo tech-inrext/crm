@@ -47,8 +47,8 @@ interface LeadsActionBarProps {
   onAdd: () => void;
   saving: boolean;
   loadLeads: () => void;
-  status?: string | null;
-  onStatusChange?: (status: string | null) => void;
+  selectedStatuses: string[];
+  onStatusesChange: (statuses: string[]) => void;
 }
 
 const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
@@ -59,8 +59,8 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   onAdd,
   saving,
   loadLeads,
-  status = null,
-  onStatusChange,
+  selectedStatuses = [],
+  onStatusesChange,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -163,20 +163,59 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               anchorEl={mobileAnchor}
               open={mobileMenuOpen}
               onClose={closeMobileMenu}
-              MenuListProps={{ sx: { minWidth: 160 } }}
+              MenuListProps={{ sx: { minWidth: 200 } }}
             >
-              {LEAD_STATUSES.map((s) => (
+              <MenuItem
+                onClick={() => {
+                  onStatusesChange([]);
+                  closeMobileMenu();
+                }}
+                sx={{ fontWeight: "bold", borderBottom: "1px solid rgba(0,0,0,0.08)" }}
+              >
+                All Statuses
+              </MenuItem>
+              {LEAD_STATUSES.filter(Boolean).map((s) => (
                 <MenuItem
                   key={s}
                   onClick={() => {
-                    const val = s || null;
-                    onStatusChange?.(val);
-                    closeMobileMenu();
+                    const newStatuses = selectedStatuses.includes(s)
+                      ? selectedStatuses.filter((st) => st !== s)
+                      : [...selectedStatuses, s];
+                    onStatusesChange(newStatuses);
+                  }}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 1.5,
                   }}
                 >
-                  {s || "All Statuses"}
+                  <input
+                    type="checkbox"
+                    checked={selectedStatuses.includes(s)}
+                    readOnly
+                    style={{ cursor: "pointer" }}
+                  />
+                  <Box component="span" sx={{ textTransform: "capitalize" }}>
+                    {s}
+                  </Box>
                 </MenuItem>
               ))}
+              {selectedStatuses.length > 0 && (
+                <MenuItem
+                  onClick={() => {
+                    onStatusesChange([]);
+                    closeMobileMenu();
+                  }}
+                  sx={{
+                    color: "error.main",
+                    justifyContent: "center",
+                    borderTop: "1px solid rgba(0,0,0,0.08)",
+                    mt: 0.5,
+                  }}
+                >
+                  Clear All
+                </MenuItem>
+              )}
             </Menu>
           </Box>
         )}
