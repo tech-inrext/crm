@@ -220,7 +220,7 @@ const Leads: React.FC = () => {
             setPage(0);
           }}
         />
-      </Paper>
+      </Paper>    
 
       {/* Body View */}
       {loading ? (

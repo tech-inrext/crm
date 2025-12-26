@@ -607,15 +607,13 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           />
           <StatCard
             title="MoUs (Pending / Completed)"
-              value={
-                userLoading
-                  ? "Loading..."
-                  : selectedUser
-                  ? `${userAnalytics?.pendingMouTotal ?? 0} / ${
-                      userAnalytics?.approvedMouTotal ?? 0
-                    }`
-                  : `Teams MoUs` // Custom value for MoUs (Pending / Completed)
-              }
+            value={
+              userLoading
+                ? "Loading..."
+                : selectedUser && userAnalytics?.mouStats && userAnalytics?.userId === selectedUser._id
+                ? `${userAnalytics.mouStats.pending ?? 0} / ${userAnalytics.mouStats.approved ?? 0}`
+                : "-- / --"
+            }
             icon={<FaUsers size={24} style={{ color: "#3949ab" }} />}
             iconBg="#e8eaf6"
             trend={selectedUser ? userPendingMouTrend : pendingMouTrend}

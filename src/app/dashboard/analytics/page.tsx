@@ -131,17 +131,9 @@ export default function NewDashboardPage() {
               teamsLoading={overallLoading}
               vendorCount={overall?.totalVendors || overall?.totalCabVendors}
               totalBilling={overall?.totalBilling}
-              pendingMouTotal={
-                (overall?.pendingMouTotal && overall?.pendingMouTotal > 0)
-                  ? overall.pendingMouTotal
-                  : (overall?.mouList ? overall.mouList.filter(m => m.status === 'Pending').length : 0)
-              }
+              pendingMouTotal={overall?.mouStats?.pending ?? 0}
               pendingMouLoading={overallLoading}
-              approvedMouTotal={
-                (overall?.approvedMouTotal && overall?.approvedMouTotal > 0)
-                  ? overall.approvedMouTotal
-                  : (overall?.mouList ? overall.mouList.filter(m => m.status === 'Approved').length : 0)
-              }
+              approvedMouTotal={overall?.mouStats?.approved ?? 0}
               approvedMouLoading={overallLoading}
               showVendorBilling={analyticsAccess.showTotalVendorsBilling}
               showTotalUsers={analyticsAccess.showTotalUsers}
