@@ -125,43 +125,43 @@ const Leads: React.FC = () => {
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
       ? {
-        ...col,
-        component: (row, { onEdit }) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              gap: 0.5,
-              pl: 0.5,
-            }}
-          >
-            <PermissionGuard module="lead" action="write" fallback={null}>
-              <IconButton onClick={() => onEdit(row)} size="small">
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </PermissionGuard>
-
-            {/* Feedback button - available to any authenticated user */}
-            <IconButton
-              size="small"
-              onClick={() => {
-                setSelectedLeadForFeedback(row.leadId || row._id || row.id);
-                setFeedbackOpen(true);
+          ...col,
+          component: (row, { onEdit }) => (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                gap: 0.5,
+                pl: 0.5,
               }}
             >
-              <Badge
-                badgeContent={
-                  (row.followUpNotes && row.followUpNotes.length) || 0
-                }
-                color="primary"
+              <PermissionGuard module="lead" action="write" fallback={null}>
+                <IconButton onClick={() => onEdit(row)} size="small">
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </PermissionGuard>
+
+              {/* Feedback button - available to any authenticated user */}
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setSelectedLeadForFeedback(row.leadId || row._id || row.id);
+                  setFeedbackOpen(true);
+                }}
               >
-                <FeedbackIcon fontSize="small" />
-              </Badge>
-            </IconButton>
-          </Box>
-        ),
-      }
+                <Badge
+                  badgeContent={
+                    (row.followUpNotes && row.followUpNotes.length) || 0
+                  }
+                  color="primary"
+                >
+                  <FeedbackIcon fontSize="small" />
+                </Badge>
+              </IconButton>
+            </Box>
+          ),
+        }
       : col
   );
 
@@ -223,9 +223,8 @@ const Leads: React.FC = () => {
       </Paper>
 
       {/* Body View */}
-      {loading ? (
-        <LoadingSkeleton />
-      ) : isMobile || viewMode === "cards" ? (
+      {loading && <LoadingSkeleton />}
+      {!loading && (
         <Box>
           <Box sx={MODULE_STYLES.leads.cardsGrid}>
             {leads.map((lead) => (
@@ -236,7 +235,7 @@ const Leads: React.FC = () => {
                   setEditId(lead._id);
                   setOpen(true);
                 }}
-                onDelete={() => { }}
+                onDelete={() => {}}
                 onStatusChange={updateLeadStatus}
               />
             ))}
@@ -253,63 +252,6 @@ const Leads: React.FC = () => {
                 setPage(0);
               }}
               pageSizeOptions={[5, 10, 15, 25]}
-            />
-          </Box>
-        </Box>
-      ) : (
-        <Box sx={MODULE_STYLES.leads.tableWrapper}>
-          <Paper
-            elevation={8}
-            sx={{
-              ...COMMON_STYLES.roundedPaper,
-              ...MODULE_STYLES.leads.tableContainer,
-            }}
-          >
-            <TableContainer>
-              <Table
-                stickyHeader
-                size={MODULE_STYLES.common.getResponsiveTableSize()}
-                sx={MODULE_STYLES.leads.table}
-              >
-                <LeadsTableHeader
-                  header={leadsTableHeaderWithActions}
-                  selectedStatuses={selectedStatuses}
-                  onStatusesChange={(s) => {
-                    setSelectedStatuses(s);
-                    setPage(0);
-                  }}
-                />
-                <TableBody>
-                  {leads.map((row) => (
-                    <LeadsTableRow
-                      key={row.id}
-                      row={row}
-                      header={leadsTableHeaderWithActions}
-                      onEdit={() => {
-                        setEditId(row._id);
-                        setOpen(true);
-                      }}
-                      onDelete={() => { }}
-                      onStatusChange={updateLeadStatus}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-
-          {/* Pagination outside the scrollable table */}
-          <Box sx={MODULE_STYLES.leads.paginationWrapper}>
-            <Pagination
-              total={total}
-              page={page + 1}
-              onPageChange={(p) => setPage(p - 1)}
-              pageSize={rowsPerPage}
-              onPageSizeChange={(size) => {
-                setRowsPerPage(size);
-                setPage(0);
-              }}
-              pageSizeOptions={[5, 10, 15, 25, 50]}
             />
           </Box>
         </Box>

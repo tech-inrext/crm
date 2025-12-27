@@ -170,7 +170,10 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                   onStatusesChange([]);
                   closeMobileMenu();
                 }}
-                sx={{ fontWeight: "bold", borderBottom: "1px solid rgba(0,0,0,0.08)" }}
+                sx={{
+                  fontWeight: "bold",
+                  borderBottom: "1px solid rgba(0,0,0,0.08)",
+                }}
               >
                 All Statuses
               </MenuItem>
@@ -218,46 +221,6 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               )}
             </Menu>
           </Box>
-        )}
-
-        {/* View Toggle */}
-        {!isTablet && (
-          <Stack
-            direction="row"
-            spacing={{ xs: 0.5, sm: 1 }}
-            sx={{
-              justifyContent: { xs: "center", sm: "flex-start" },
-              order: { xs: 2, sm: 2 },
-            }}
-          >
-            {[
-              { mode: "table", icon: ViewList, title: "Table View" },
-              { mode: "cards", icon: ViewModule, title: "Card View" },
-            ].map(({ mode, icon: Icon, title }) => (
-              <Tooltip key={mode} title={title}>
-                <IconButton
-                  onClick={() => setViewMode(mode as "table" | "cards")}
-                  size="small"
-                  sx={{
-                    backgroundColor:
-                      viewMode === mode ? "primary.main" : "action.hover",
-                    color: viewMode === mode ? "white" : "text.primary",
-                    "&:hover": { backgroundColor: "primary.dark" },
-                    minWidth: 40,
-                    height: 40,
-                    outline: "none",
-                    boxShadow: "none",
-                    "&:focus": {
-                      outline: "none",
-                      boxShadow: "none",
-                    },
-                  }}
-                >
-                  <Icon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            ))}
-          </Stack>
         )}
 
         {/* Action Buttons */}
