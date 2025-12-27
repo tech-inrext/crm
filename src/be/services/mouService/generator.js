@@ -466,23 +466,6 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
     );
   doc.moveDown();
 
-  // doc
-  //   .font("Times-Roman")
-  //   .font("Times-Bold")
-  //   .fontSize(12)
-  //   .text("Consideration: -");
-  // doc.moveDown();
-
-  // const considerationPoints = [
-  //   "It is agreed that the Facilitator/First Party shall pay brokerage/commission to Associate/Freelancer on Basic Price.",
-  //   "Eligibility of promotion will be considered according to Freelancer growth matrix.",
-  //   "Commission on Food Kiosk per Sale Rs.500/- PSF Comm.",
-  //   "Commission on Retail Shop per Sale Rs.1,000/- PSF Comm. (Applicable on All Floors).",
-  //   "Commission on Studio per Sale 50K Comm.",
-  //   "Commission on Eco Village Cottage & Resort (Dehradun) per Sale 3% Comm. On BSP.",
-  // ];
-  // considerationPoints.forEach((p) => addWrappedText(doc, p));
-
   // Projects list
   doc
     .font("Times-Bold")
