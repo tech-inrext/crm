@@ -17,6 +17,9 @@ import {
   TrendingUp,
   Edit,
   Delete,
+  PersonAdd,
+  HomeIcon,
+  PinIcon,
 } from "@/components/ui/Component";
 
 import { Schedule } from "@mui/icons-material";
@@ -46,14 +49,21 @@ interface LeadCardProps {
   onStatusChange: (leadId: string, newStatus: string) => Promise<void>;
 }
 
+// Helper to darken a hex color
+const darkenColor = (hex: string, percent: number = 20): string => {
+  const num = parseInt(hex.replace("#", ""), 16);
+  const amt = Math.round(2.55 * percent);
+  const R = Math.max((num >> 16) - amt, 0);
+  const G = Math.max(((num >> 8) & 0x00ff) - amt, 0);
+  const B = Math.max((num & 0x0000ff) - amt, 0);
+  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
+};
+
 const LeadCard = memo(
   ({ lead, onEdit, onDelete, onStatusChange }: LeadCardProps) => {
-    const avatar = useMemo(() => {
-      if (lead?.fullName) {
-        return lead?.fullName?.substring(0, 2).toUpperCase();
-      }
-      return "N/A";
-    }, [lead]);
+    // Get status color and its darker shade for the fold
+    const statusColor = getStatusColor(lead.status || "");
+    const statusFoldColor = darkenColor(statusColor, 25);
 
     return (
       <Card
@@ -69,9 +79,113 @@ const LeadCard = memo(
           border: "1px solid",
           borderColor: "divider",
           background: GRADIENTS.paper,
+          position: "relative",
+          overflow: "visible",
+          mt: 1.5, // margin top to accommodate the floating badges
+          mb: 2, // margin bottom to accommodate the floating edit pill
         }}
       >
-        <CardContent sx={{ p: 3 }}>
+        {/* Ribbon clip hanging over card edge - TOP LEFT */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: -8,
+            left: -6,
+            backgroundColor: "#22c55e",
+            color: "white",
+            px: 1.5,
+            py: 0.5,
+            fontSize: "0.7rem",
+            fontWeight: 700,
+            letterSpacing: "0.5px",
+            whiteSpace: "nowrap",
+            borderRadius: "4px 4px 4px 0",
+            boxShadow: "0 2px 8px rgba(34, 197, 94, 0.4)",
+            // Folded corner effect on left side
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              bottom: -6,
+              left: 0,
+              width: 0,
+              height: 0,
+              borderStyle: "solid",
+              borderWidth: "0 6px 6px 0",
+              borderColor: "transparent #16a34a transparent transparent",
+            },
+          }}
+        >
+          Warm Lead
+        </Box>
+
+        {/* Top-Right Status Pin - same style as Warm Lead */}
+        <Box
+          sx={{
+            position: "absolute",
+            right: -6,
+            top: -8,
+            zIndex: 1,
+            borderRadius: "4px 4px 0 4px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            overflow: "visible",
+            // Folded corner effect on right side
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              bottom: -6,
+              right: 0,
+              width: 0,
+              height: 0,
+              borderStyle: "solid",
+              borderWidth: "6px 6px 0 0",
+              borderColor: "#1565c0 transparent transparent transparent",
+            },
+          }}
+        >
+          <StatusDropdown
+            leadId={lead._id || lead.id || lead.leadId || ""}
+            currentStatus={lead.status}
+            onStatusChange={onStatusChange}
+            variant="chip"
+            size="small"
+          />
+        </Box>
+
+        {/* Bottom Center Edit Pill */}
+        <PermissionGuard module="lead" action="write" fallback={<></>}>
+          <Tooltip title="Edit Lead">
+            <IconButton
+              onClick={() => onEdit(lead)}
+              size="small"
+              sx={{
+                position: "absolute",
+                bottom: 0,
+                left: "50%",
+                transform: "translate(-50%, 50%)",
+                backgroundColor: "primary.main",
+                color: "white",
+                px: 2,
+                py: 0.5,
+                borderRadius: "20px",
+                boxShadow: "0 4px 12px rgba(25, 118, 210, 0.4)",
+                "&:hover": {
+                  backgroundColor: "primary.dark",
+                  transform: "translate(-50%, 50%) scale(1.05)",
+                },
+                transition: "all 0.2s ease",
+              }}
+            >
+              <Edit sx={{ fontSize: 16, mr: 0.5 }} />
+              <Typography
+                component="span"
+                sx={{ fontSize: "0.75rem", fontWeight: 600 }}
+              >
+                Edit
+              </Typography>
+            </IconButton>
+          </Tooltip>
+        </PermissionGuard>
+        <CardContent sx={{ p: 1.5 }}>
           <Stack spacing={2}>
             <Box
               sx={{
@@ -81,17 +195,6 @@ const LeadCard = memo(
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar
-                  sx={{
-                    bgcolor: getStatusColor(lead.status),
-                    width: 48,
-                    height: 48,
-                    fontSize: "1.2rem",
-                    fontWeight: 700,
-                  }}
-                >
-                  {avatar}
-                </Avatar>
                 <Box>
                   <Typography
                     variant="h6"
@@ -100,18 +203,35 @@ const LeadCard = memo(
                   >
                     {lead?.fullName}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    ID: {lead.id}
-                  </Typography>
+
+                  <Box sx={{ display: "flex" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <HomeIcon
+                        sx={{ color: "text.secondary", fontSize: 18 }}
+                      />
+                      <Typography
+                        fontSize={12}
+                        variant="body2"
+                        color="text.secondary"
+                      >
+                        {lead.propertyName}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: "flex" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <PinIcon sx={{ color: "text.secondary", fontSize: 18 }} />
+                      <Typography
+                        fontSize={12}
+                        variant="body2"
+                        color="text.secondary"
+                      >
+                        {lead.location}
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Box>
               </Box>
-              <StatusDropdown
-                leadId={lead._id || lead.id || lead.leadId || ""}
-                currentStatus={lead.status}
-                onStatusChange={onStatusChange}
-                variant="chip"
-                size="small"
-              />
             </Box>
 
             <Divider />
@@ -157,6 +277,16 @@ const LeadCard = memo(
                   {lead.budgetRange}
                 </Typography>
               </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <PersonAdd sx={{ color: "text.secondary", fontSize: 18 }} />
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  fontWeight={600}
+                >
+                  {lead.assignedTo}
+                </Typography>
+              </Box>
               {lead.nextFollowUp && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Schedule sx={{ color: "text.secondary", fontSize: 18 }} />
@@ -177,30 +307,6 @@ const LeadCard = memo(
                 </Box>
               )}
             </Stack>
-
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 1,
-                mt: 2,
-              }}
-            >
-              <PermissionGuard module="lead" action="write" fallback={<></>}>
-                <Tooltip title="Edit Lead">
-                  <IconButton
-                    onClick={() => onEdit(lead)}
-                    size="small"
-                    sx={COMMON_STYLES.iconButton(
-                      "primary.main",
-                      "primary.dark"
-                    )}
-                  >
-                    <Edit fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </PermissionGuard>
-            </Box>
           </Stack>
         </CardContent>
       </Card>
