@@ -26,21 +26,7 @@ import {
   StarBorder,
 } from "@mui/icons-material";
 import { toast } from "sonner";
-
-// File upload service
-const uploadService = {
-  uploadFile: async (file: File): Promise<{ success: boolean; data?: { url: string; fileName: string }; message?: string }> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        resolve({ success: true, data: { url: base64, fileName: file.name } });
-      };
-      reader.onerror = () => resolve({ success: false, message: 'Failed to read file' });
-      reader.readAsDataURL(file);
-    });
-  },
-};
+import { uploadService } from "@/services/uploadService";
 
 interface PlotFormProps {
   formData: any;
@@ -56,6 +42,7 @@ const PlotForm: React.FC<PlotFormProps> = ({
   index,
 }) => {
   const [uploading, setUploading] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<{[key: string]: number}>({});
 
   const mapFloorPlanType = (fileType: string) => {
     if (!fileType) return '2d';
@@ -68,45 +55,98 @@ const PlotForm: React.FC<PlotFormProps> = ({
     setUploading(type);
     try {
       const fileArray = Array.from(files);
-      const uploadedFiles = [];
+      if (fileArray.length === 0) return;
 
-      for (const file of fileArray) {
-        const uploadResponse = await uploadService.uploadFile(file);
-        if (uploadResponse.success && uploadResponse.data) {
-          const newFile = {
-            url: uploadResponse.data.url,
-            title: file.name.replace(/\.[^/.]+$/, ""),
-            description: "",
-            isPrimary: false,
-            uploadedAt: new Date().toISOString(),
-            ...(type === 'floorPlans' && { 
-              type: mapFloorPlanType(file.type)
-            })
-          };
-          uploadedFiles.push(newFile);
+      const uploadPromises = fileArray.map(async (file, fileIndex) => {
+        const fileId = `${type}-${index}-${fileIndex}-${Date.now()}`;
+        
+        try {
+          // Validate file size (200MB max)
+          uploadService.validateFileSize(file, 200);
+          
+          // Update progress
+          setUploadProgress(prev => ({ ...prev, [fileId]: 10 }));
+          
+          // Upload to S3
+          const uploadResponse = await uploadService.uploadFile(file);
+          
+          // Update progress to 100%
+          setUploadProgress(prev => ({ ...prev, [fileId]: 100 }));
+          
+          if (uploadResponse.success && uploadResponse.data) {
+            const newFile = {
+              url: uploadResponse.data.url, // S3 URL
+              title: uploadResponse.data.originalName?.replace(/\.[^/.]+$/, "") || `Image ${fileIndex + 1}`,
+              description: "",
+              isPrimary: false,
+              uploadedAt: new Date().toISOString(),
+              fileSize: uploadResponse.data.fileSize,
+              fileType: uploadResponse.data.fileType,
+              originalName: uploadResponse.data.originalName,
+              ...(type === 'floorPlans' && { 
+                type: mapFloorPlanType(file.type)
+              })
+            };
+            
+            return { success: true, file: newFile };
+          } else {
+            return { success: false, error: uploadResponse.message };
+          }
+        } catch (error: any) {
+          console.error(`Upload failed for ${file.name}:`, error);
+          return { success: false, error: error.message };
+        } finally {
+          // Remove progress after 1 second
+          setTimeout(() => {
+            setUploadProgress(prev => {
+              const newProgress = { ...prev };
+              delete newProgress[fileId];
+              return newProgress;
+            });
+          }, 1000);
+        }
+      });
+
+      const results = await Promise.all(uploadPromises);
+      const successfulUploads = results.filter(result => result.success);
+      const failedUploads = results.filter(result => !result.success);
+
+      if (successfulUploads.length > 0) {
+        const newFiles = successfulUploads.map(result => result.file);
+        
+        const newPlot = [...(formData.plotProperties || [])];
+        if (!newPlot[index]) newPlot[index] = {};
+        
+        if (type === 'propertyImages') {
+          newPlot[index].propertyImages = [
+            ...(newPlot[index].propertyImages || []),
+            ...newFiles
+          ];
+        } else {
+          newPlot[index].floorPlans = [
+            ...(newPlot[index].floorPlans || []),
+            ...newFiles
+          ];
+        }
+
+        setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
+        
+        // Show success message
+        if (successfulUploads.length > 0) {
+          toast.success(`Successfully uploaded ${successfulUploads.length} file(s) to S3`);
         }
       }
 
-      const newPlot = [...(formData.plotProperties || [])];
-      if (!newPlot[index]) newPlot[index] = {};
-      
-      if (type === 'propertyImages') {
-        newPlot[index].propertyImages = [
-          ...(newPlot[index].propertyImages || []),
-          ...uploadedFiles
-        ];
-      } else {
-        newPlot[index].floorPlans = [
-          ...(newPlot[index].floorPlans || []),
-          ...uploadedFiles
-        ];
+      // Show error messages for failed uploads
+      if (failedUploads.length > 0) {
+        failedUploads.forEach(result => {
+          toast.error(`Upload failed: ${result.error}`);
+        });
       }
 
-      setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
-      toast.success(`Successfully uploaded ${uploadedFiles.length} file(s)`);
-      
-    } catch (error) {
-      toast.error('Failed to upload files');
+    } catch (error: any) {
+      console.error('File upload error:', error);
+      toast.error(`Upload failed: ${error.message}`);
     } finally {
       setUploading(null);
     }
@@ -137,6 +177,37 @@ const PlotForm: React.FC<PlotFormProps> = ({
 
     setFormData((prev: any) => ({ ...prev, plotProperties: newPlot }));
     toast.success('Primary image updated');
+  };
+
+  // Display upload progress
+  const renderUploadProgress = () => {
+    const entries = Object.entries(uploadProgress);
+    if (entries.length === 0) return null;
+
+    return (
+      <Box sx={{ mt: 2, p: 2, border: '1px solid', borderColor: 'info.main', borderRadius: 1 }}>
+        <Typography variant="subtitle2" gutterBottom>
+          Upload Progress:
+        </Typography>
+        {entries.map(([fileId, progress]) => (
+          <Box key={fileId} sx={{ mb: 1 }}>
+            <Typography variant="caption" display="block">
+              {fileId.split('-')[1]} - {progress}%
+            </Typography>
+            <Box sx={{ height: 8, bgcolor: 'grey.200', borderRadius: 4, overflow: 'hidden' }}>
+              <Box 
+                sx={{ 
+                  height: '100%', 
+                  bgcolor: 'info.main', 
+                  width: `${progress}%`,
+                  transition: 'width 0.3s ease'
+                }} 
+              />
+            </Box>
+          </Box>
+        ))}
+      </Box>
+    );
   };
 
   const currentProperty = formData.plotProperties?.[index] || {};
@@ -320,7 +391,7 @@ const PlotForm: React.FC<PlotFormProps> = ({
         <Paper sx={{ p: 3, mt: 2, border: '1px solid #e0e0e0', borderRadius: '12px', backgroundColor: '#fafafa' }}>
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'info.main' }}>
             <CloudUpload sx={{ mr: 1 }} />
-            Plot Images
+            Plot Images (S3 Storage)
             {currentProperty.propertyImages && currentProperty.propertyImages.length > 0 && (
               <Chip 
                 label={`${currentProperty.propertyImages.length} uploaded`} 
@@ -330,6 +401,8 @@ const PlotForm: React.FC<PlotFormProps> = ({
               />
             )}
           </Typography>
+          
+          {renderUploadProgress()}
           
           <input
             accept="image/*"
@@ -350,9 +423,13 @@ const PlotForm: React.FC<PlotFormProps> = ({
               disabled={uploading === 'propertyImages'}
               sx={{ mb: 2 }}
             >
-              {uploading === 'propertyImages' ? 'Uploading Images...' : 'Upload Plot Images'}
+              {uploading === 'propertyImages' ? 'Uploading to S3...' : 'Upload Plot Images to S3'}
             </Button>
           </label>
+          
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+            Images will be uploaded directly to Amazon S3 cloud storage for better performance.
+          </Typography>
           
           {currentProperty.propertyImages && currentProperty.propertyImages.length > 0 && (
             <Box sx={{ mt: 2 }}>
@@ -418,7 +495,7 @@ const PlotForm: React.FC<PlotFormProps> = ({
                                 size="small"
                                 onClick={() => removeFile('propertyImages', imgIndex)}
                                 sx={{ 
-                                  backgroundColor: 'rgba(255,255,255,0.95)',
+                                    backgroundColor: 'rgba(255,255,255,0.95)',
                                 }}
                               >
                                 <Delete sx={{ fontSize: 18 }} />
@@ -429,6 +506,16 @@ const PlotForm: React.FC<PlotFormProps> = ({
                         <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
                           {image.title}
                         </Typography>
+                        {image.url && !image.url.startsWith('data:') && (
+                          <Typography variant="caption" color="success.main" display="block">
+                            ✓ S3 Storage
+                          </Typography>
+                        )}
+                        {image.url && image.url.startsWith('data:') && (
+                          <Typography variant="caption" color="warning.main" display="block">
+                            ⚠ Base64 (needs re-upload)
+                          </Typography>
+                        )}
                       </CardContent>
                     </Card>
                   </Grid>
@@ -443,7 +530,7 @@ const PlotForm: React.FC<PlotFormProps> = ({
         <Paper sx={{ p: 3, mt: 2, border: '1px solid #e0e0e0', borderRadius: '12px', backgroundColor: '#fafafa' }}>
           <Typography variant="h6" gutterBottom sx={{ display: 'flex', alignItems: 'center', color: 'info.main' }}>
             <Description sx={{ mr: 1 }} />
-            Plot Layouts & Plans
+            Plot Layouts & Plans (S3 Storage)
             {currentProperty.floorPlans && currentProperty.floorPlans.length > 0 && (
               <Chip 
                 label={`${currentProperty.floorPlans.length} uploaded`} 
@@ -473,9 +560,13 @@ const PlotForm: React.FC<PlotFormProps> = ({
               disabled={uploading === 'floorPlans'}
               sx={{ mb: 2 }}
             >
-              {uploading === 'floorPlans' ? 'Uploading Layouts...' : 'Upload Plot Layouts'}
+              {uploading === 'floorPlans' ? 'Uploading to S3...' : 'Upload Plot Layouts to S3'}
             </Button>
           </label>
+          
+          <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 2 }}>
+            Layouts & plans will be uploaded directly to Amazon S3 cloud storage.
+          </Typography>
           
           {currentProperty.floorPlans && currentProperty.floorPlans.length > 0 && (
             <Box sx={{ mt: 2 }}>
@@ -537,6 +628,16 @@ const PlotForm: React.FC<PlotFormProps> = ({
                         <Typography variant="body2" noWrap sx={{ fontWeight: 500 }}>
                           {plan.title}
                         </Typography>
+                        {plan.url && !plan.url.startsWith('data:') && (
+                          <Typography variant="caption" color="success.main" display="block">
+                            ✓ S3 Storage
+                          </Typography>
+                        )}
+                        {plan.url && plan.url.startsWith('data:') && (
+                          <Typography variant="caption" color="warning.main" display="block">
+                            ⚠ Base64 (needs re-upload)
+                          </Typography>
+                        )}
                       </CardContent>
                     </Card>
                   </Grid>
@@ -551,5 +652,4 @@ const PlotForm: React.FC<PlotFormProps> = ({
 };
 
 export default PlotForm;
-
 

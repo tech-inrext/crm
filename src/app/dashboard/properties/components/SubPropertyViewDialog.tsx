@@ -1,7 +1,7 @@
 // app/dashboard/properties/components/SubPropertyViewDialog.tsx
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +15,9 @@ import {
   CardContent,
   Chip,
   IconButton,
+  CircularProgress,
+  Tabs,
+  Tab,
 } from "@mui/material";
 import {
   CloudDownload,
@@ -24,11 +27,12 @@ import {
   Description,
   CloudUpload,
   Star,
-  CheckCircle,
   Home,
   BusinessCenter,
   Landscape,
   Layers,
+  BrokenImage,
+  ZoomIn,
 } from "@mui/icons-material";
 import { Property } from '@/services/propertyService';
 import { useAuth } from "@/contexts/AuthContext";
@@ -43,6 +47,32 @@ interface SubPropertyViewDialogProps {
   onDownloadFile: (url: string, filename: string) => Promise<void>;
 }
 
+interface TabPanelProps {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}
+
+function TabPanel(props: TabPanelProps) {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`media-tabpanel-${index}`}
+      aria-labelledby={`media-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ pt: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+}
+
 const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
   open,
   onClose,
@@ -54,10 +84,92 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
 }) => {
   const { getPermissions } = useAuth();
   
+  // State for image loading and errors
+  const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
+  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
+  const [primaryImageUrl, setPrimaryImageUrl] = useState<string | null>(null);
+  const [primaryImageLoading, setPrimaryImageLoading] = useState(true);
+  const [primaryImageError, setPrimaryImageError] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
+  const [selectedFloorPlanIndex, setSelectedFloorPlanIndex] = useState<number | null>(null);
+
   // Check if user has write permission for property module
   const canEditProperty = getPermissions("property").hasWriteAccess;
 
-  if (!property) return null;
+  // Get primary image URL
+  useEffect(() => {
+    if (property?.propertyImages && property.propertyImages.length > 0) {
+      let primaryImageUrl = null;
+      
+      if (typeof property.propertyImages[0] === 'string') {
+        // Case 1: Array of strings
+        primaryImageUrl = formatImageUrl(property.propertyImages[0]);
+      } else if (property.propertyImages[0] && typeof property.propertyImages[0] === 'object') {
+        // Case 2: Array of objects
+        const imagesArray = property.propertyImages as Array<{url: string; isPrimary?: boolean}>;
+        const primaryImage = imagesArray.find(img => img.isPrimary) || imagesArray[0];
+        primaryImageUrl = formatImageUrl(primaryImage.url);
+      }
+      
+      if (primaryImageUrl) {
+        setPrimaryImageUrl(primaryImageUrl);
+        setPrimaryImageLoading(true);
+        setPrimaryImageError(false);
+      }
+    }
+  }, [property]);
+
+  // Format image URL
+  const formatImageUrl = (url: string): string => {
+    if (!url) return '';
+    
+    // Remove any extra quotes or spaces
+    url = url.trim().replace(/^["']|["']$/g, '');
+    
+    // Check if it's already a full URL
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    // Check if it's a base64 image
+    if (url.startsWith('data:image')) {
+      return url;
+    }
+    
+    // Handle relative paths
+    if (url.startsWith('/')) {
+      return url;
+    }
+    
+    // For other paths
+    return url;
+  };
+
+  // Handle primary image load
+  const handlePrimaryImageLoad = () => {
+    setPrimaryImageLoading(false);
+    setPrimaryImageError(false);
+  };
+
+  // Handle primary image error
+  const handlePrimaryImageError = () => {
+    console.error("Failed to load primary image:", primaryImageUrl);
+    setPrimaryImageLoading(false);
+    setPrimaryImageError(true);
+  };
+
+  // Handle image load
+  const handleImageLoad = (id: string) => {
+    setLoadingImages(prev => ({ ...prev, [id]: false }));
+    setImageErrors(prev => ({ ...prev, [id]: false }));
+  };
+
+  // Handle image error
+  const handleImageError = (id: string) => {
+    console.error(`Failed to load image: ${id}`);
+    setLoadingImages(prev => ({ ...prev, [id]: false }));
+    setImageErrors(prev => ({ ...prev, [id]: true }));
+  };
 
   // Get property type icon
   const getPropertyTypeIcon = (type: string) => {
@@ -79,6 +191,63 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
     }
   };
 
+  // Extract image URL from propertyImages
+  const extractImageData = (image: any, index: number) => {
+    let url = '';
+    let title = '';
+    let id = '';
+    
+    if (typeof image === 'string') {
+      url = formatImageUrl(image);
+      title = `Image ${index + 1}`;
+      id = `image-${index}`;
+    } else if (image && typeof image === 'object') {
+      url = formatImageUrl(image.url);
+      title = image.title || `Image ${index + 1}`;
+      id = image._id || `image-${index}`;
+    }
+    
+    return { url, title, id };
+  };
+
+  // Extract floor plan data
+  const extractFloorPlanData = (floorPlan: any, index: number) => {
+    let url = '';
+    let title = '';
+    let id = '';
+    
+    if (typeof floorPlan === 'string') {
+      url = formatImageUrl(floorPlan);
+      title = `Floor Plan ${index + 1}`;
+      id = `floorplan-${index}`;
+    } else if (floorPlan && typeof floorPlan === 'object') {
+      url = formatImageUrl(floorPlan.url || floorPlan.imageUrl);
+      title = floorPlan.title || floorPlan.name || `Floor Plan ${index + 1}`;
+      id = floorPlan._id || `floorplan-${index}`;
+    }
+    
+    return { url, title, id };
+  };
+
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  const handleFloorPlanClick = (index: number) => {
+    setSelectedFloorPlanIndex(index);
+  };
+
+  const handleCloseFloorPlanView = () => {
+    setSelectedFloorPlanIndex(null);
+  };
+
+  if (!property) return null;
+
+  // Check if floor plans exist
+  const hasFloorPlans = property.floorPlans && property.floorPlans.length > 0;
+  const hasPropertyImages = property.propertyImages && property.propertyImages.length > 0;
+  const propertyTypeColor = getPropertyTypeColor(property.propertyType);
+
   return (
     <Dialog 
       open={open} 
@@ -98,24 +267,79 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
       {/* Enhanced Header with Gradient Overlay */}
       <Box sx={{ 
         position: 'relative',
-        height: { xs: 200, md: 200 },
-        background: property?.propertyImages?.length > 0 
-          ? `linear-gradient(135deg, rgba(25, 118, 210, 0.95) 0%, rgba(15, 82, 147, 0.85) 100%), url(${typeof property.propertyImages[0] === 'string' ? property.propertyImages[0] : property.propertyImages[0]?.url})`
+        height: { xs: 200, md: 350 },
+        background: primaryImageUrl && !primaryImageError
+          ? `linear-gradient(135deg, rgba(25, 118, 210, 0.95) 0%, rgba(15, 82, 147, 0.85) 100%)`
           : 'linear-gradient(135deg, #1976d2 0%, #0f5293 100%)',
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed',
         color: 'white',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        p: { xs: 3, md: 4 }
+        p: { xs: 3, md: 4 },
+        overflow: 'hidden'
       }}>
+        {/* Background image */}
+        {primaryImageUrl && !primaryImageError && (
+          <Box
+            component="img"
+            src={primaryImageUrl}
+            alt={property.propertyName}
+            onLoad={handlePrimaryImageLoad}
+            onError={handlePrimaryImageError}
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              objectFit: 'cover',
+              opacity: 0.4,
+              display: primaryImageLoading ? 'none' : 'block'
+            }}
+          />
+        )}
+        
+        {/* Loading overlay for primary image */}
+        {primaryImageLoading && primaryImageUrl && !primaryImageError && (
+          <Box
+            sx={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'rgba(0, 0, 0, 0.3)',
+            }}
+          >
+            <CircularProgress sx={{ color: 'white' }} />
+          </Box>
+        )}
+        
+        {/* Gradient overlay */}
+        <Box
+          sx={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: primaryImageUrl && !primaryImageError
+              ? 'linear-gradient(135deg, rgba(25, 118, 210, 0.95) 0%, rgba(15, 82, 147, 0.85) 100%)'
+              : 'linear-gradient(135deg, #1976d2 0%, #0f5293 100%)',
+            zIndex: 1,
+          }}
+        />
+
         {/* Top Action Bar */}
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'end', 
           alignItems: 'flex-end',
+          zIndex: 2,
+          position: 'relative'
         }}>
           <IconButton 
             onClick={onClose}
@@ -141,22 +365,24 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
           alignItems: 'flex-end', 
           justifyContent: 'space-between', 
           flexWrap: 'wrap', 
-          mt: 'auto'
+          mt: 'auto',
+          zIndex: 2,
+          position: 'relative'
         }}>
           <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
             <Typography variant="h2" fontWeight={800} sx={{ 
-              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
+              fontSize: { xs: '2rem', sm: '2.5rem', md: '2.5rem' },
               textShadow: '0 4px 20px rgba(0,0,0,0.4)',
               lineHeight: 1.1,
             }}>
-              {property?.propertyName}
+              {property.propertyName}
             </Typography>
             
             <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
               <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                {getPropertyTypeIcon(property?.propertyType)}
+                {getPropertyTypeIcon(property.propertyType)}
                 <Typography variant="h6" sx={{ ml: 1.5, opacity: 0.95, fontWeight: 600, textTransform: 'capitalize' }}>
-                  {property?.propertyType} Property
+                  {property.propertyType} Property
                 </Typography>
               </Box>
             </Box>
@@ -169,16 +395,17 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
             border: '1px solid rgba(255,255,255,0.2)',
             borderRadius: 4,
             p: { xs: 1, md: 2 },
-            minWidth: { xs: '100%', md: 280 }
+            minWidth: { xs: '100%', md: 280 },
+            mt: { xs: 2, md: 0 }
           }}>
             <Typography variant="h3" fontWeight={800} sx={{ 
               textShadow: '0 2px 10px rgba(0,0,0,0.3)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: { xs: 'flex-start', md: 'flex-end' },
-              fontSize: { xs: '1.5rem', md: '2.5rem' }
+              fontSize: { xs: '1.5rem', md: '2rem' }
             }}>
-              ₹{property?.price ? `${property.price}` : 'Contact for Price'}
+              ₹{property.price ? `${property.price}` : 'Contact for Price'}
             </Typography>
           </Box>
         </Box>
@@ -207,27 +434,38 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
           >
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
               {/* Quick Stats */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CloudUpload color={getPropertyTypeColor(property.propertyType)} />
-                <Typography variant="body2" fontWeight={600}>
-                  {property?.propertyImages?.length || 0} Images
-                </Typography>
-              </Box>
+              {hasPropertyImages && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <CloudUpload color={propertyTypeColor} />
+                  <Typography variant="body2" fontWeight={600}>
+                    {property.propertyImages?.length || 0} Images
+                  </Typography>
+                </Box>
+              )}
+              
+              {hasFloorPlans && (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Layers color={propertyTypeColor} />
+                  <Typography variant="body2" fontWeight={600}>
+                    {property.floorPlans?.length || 0} Floor Plans
+                  </Typography>
+                </Box>
+              )}
               
               {/* Floors Info */}
               {(property.propertyType === 'residential' || property.propertyType === 'commercial') && 
                property.floors && property.floors > 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Layers color={getPropertyTypeColor(property.propertyType)} />
+                  <Layers color={propertyTypeColor} />
                   <Typography variant="body2" fontWeight={600}>
-                    {property.floors} Floor{property.floors > 1 ? '' : ''}
+                    {property.floors} Floor{property.floors > 1 ? 's' : ''}
                   </Typography>
                 </Box>
               )}
               
               {property?.amenities && property.amenities.length > 0 && (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Star color={getPropertyTypeColor(property.propertyType)} />
+                  <Star color={propertyTypeColor} />
                   <Typography variant="body2" fontWeight={600}>
                     {property.amenities.length} Amenities
                   </Typography>
@@ -236,7 +474,7 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
             </Box>
             
             {/* Download All Button */}
-            {property?.propertyImages?.length > 0 && (
+            {(hasPropertyImages || hasFloorPlans) && (
               <Button
                 variant="contained"
                 startIcon={<CloudDownload />}
@@ -281,10 +519,10 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
                     mb: 3,
                     pb: 2,
                     borderBottom: '2px solid',
-                    borderColor: `${getPropertyTypeColor(property.propertyType)}.100`
+                    borderColor: `${propertyTypeColor}.100`
                   }}>
-                    <Description sx={{ mr: 2, color: `${getPropertyTypeColor(property.propertyType)}.main`, fontSize: 28 }} />
-                    <Typography variant="h5" fontWeight={700} sx={{ color: `${getPropertyTypeColor(property.propertyType)}.main` }}>
+                    <Description sx={{ mr: 2, color: `${propertyTypeColor}.main`, fontSize: 28 }} />
+                    <Typography variant="h5" fontWeight={700} sx={{ color: `${propertyTypeColor}.main` }}>
                       Property Overview
                     </Typography>
                   </Box>
@@ -336,7 +574,7 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
                           <Typography variant="h6" fontWeight={700} sx={{ color: 'primary.main', mb: 2 }}>
                             🏡 Residential Specifications
                           </Typography>
-                          <Grid sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             {property?.bedrooms && property.bedrooms > 0 && (
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'primary.main' }} />
@@ -385,7 +623,7 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
                                   </Typography>
                               </Box>
                             )}
-                          </Grid>
+                          </Box>
                         </Paper>
                       </Grid>
                     )}
@@ -397,10 +635,10 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
                           <Typography variant="h6" fontWeight={700} sx={{ color: 'warning.main', mb: 2 }}>
                             🏢 Commercial Specifications
                           </Typography>
-                          <Grid sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             {property?.carpetArea && (
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box sx={{ display: 'flex', width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
                                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                     Carpet: {property.carpetArea} {property?.sizeUnit || ''}
                                   </Typography>
@@ -408,13 +646,13 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
                             )}
                             {property?.builtUpArea && (
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box sx={{ display: 'flex', width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
+                                <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
                                 <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                                     Built-up: {property.builtUpArea} {property?.sizeUnit || ''}
                                   </Typography>
                               </Box>
                             )}
-                          </Grid>
+                          </Box>
                         </Paper>
                       </Grid>
                     )}
@@ -467,7 +705,7 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
                           <Typography variant="h6" fontWeight={700} sx={{ color: 'secondary.main', mb: 2 }}>
                             ⭐ Amenities & Features
                           </Typography>
-                          <Grid sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                             {property.amenities.map((amenity, index) => (
                               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }} key={index}>
                                 <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'secondary.main' }} />
@@ -476,7 +714,7 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
                                   </Typography>
                               </Box>
                             ))}
-                          </Grid>
+                          </Box>
                         </Paper>
                       </Grid>
                     )}
@@ -495,7 +733,7 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
                 border: '1px solid rgba(0,0,0,0.05)'
               }}>
                 <CardContent sx={{ p: 2 }}>
-                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: `${getPropertyTypeColor(property.propertyType)}.main` }}>
+                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: `${propertyTypeColor}.main` }}>
                     ℹ️ Quick Info
                   </Typography>
                   
@@ -507,7 +745,7 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
                         icon={getPropertyTypeIcon(property.propertyType)}
                         label={property.propertyType}
                         size="small" 
-                        color={getPropertyTypeColor(property.propertyType)}
+                        color={propertyTypeColor}
                         sx={{ textTransform: 'capitalize' }}
                       />
                     </Box>
@@ -519,6 +757,16 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
                         {property?.propertyImages?.length || 0}
                       </Typography>
                     </Box>
+                    
+                    {/* Floor Plans */}
+                    {hasFloorPlans && (
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
+                        <Typography variant="body2" color="text.secondary">Floor Plans</Typography>
+                        <Typography variant="body2" fontWeight={600}>
+                          {property.floorPlans?.length || 0}
+                        </Typography>
+                      </Box>
+                    )}
                     
                     {/* Floors (for residential/commercial) */}
                     {(property.propertyType === 'residential' || property.propertyType === 'commercial') && 
@@ -556,112 +804,440 @@ const SubPropertyViewDialog: React.FC<SubPropertyViewDialogProps> = ({
             </Grid>
           </Grid>
 
-          {/* Images Section */}
-          {property?.propertyImages && property.propertyImages.length > 0 && (
+          {/* Media Sections with Tabs */}
+          {(hasPropertyImages || hasFloorPlans) && (
             <Card sx={{ 
               mt: 4, 
               borderRadius: 3, 
               boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
               border: '1px solid rgba(0,0,0,0.05)'
             }}>
-              <CardContent sx={{ p: 2 }}>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                  <Typography variant="h6" fontWeight={700} sx={{ 
-                    color: `${getPropertyTypeColor(property.propertyType)}.main`,
-                    display: 'flex',
-                    alignItems: 'center'
-                  }}>
-                    <CloudUpload sx={{ mr: 1.5 }} />
-                    Property Images ({property.propertyImages.length})
-                  </Typography>
-                  <Button
-                    variant="outlined"
-                    startIcon={<CloudDownload />}
-                    onClick={() => onDownloadImages(property.propertyImages)}
-                    size="small"
-                    sx={{ borderRadius: 2 }}
+              <CardContent sx={{ p: 0 }}>
+                {/* Tabs Header */}
+                <Box sx={{ borderBottom: 1, borderColor: 'divider', px: 3, pt: 2 }}>
+                  <Tabs 
+                    value={tabValue} 
+                    onChange={handleTabChange}
+                    variant="scrollable"
+                    scrollButtons="auto"
+                    sx={{
+                      '& .MuiTab-root': {
+                        fontWeight: 600,
+                        textTransform: 'none',
+                        fontSize: '1rem',
+                        minHeight: 48,
+                      }
+                    }}
                   >
-                    Download All
-                  </Button>
+                    {hasPropertyImages && (
+                      <Tab 
+                        icon={<CloudUpload />} 
+                        iconPosition="start"
+                        label={`Images (${property.propertyImages?.length || 0})`} 
+                        sx={{ color: tabValue === 0 ? `${propertyTypeColor}.main` : 'text.secondary' }}
+                      />
+                    )}
+                    {hasFloorPlans && (
+                      <Tab 
+                        icon={<Layers />} 
+                        iconPosition="start"
+                        label={`Floor Plans (${property.floorPlans?.length || 0})`} 
+                        sx={{ color: tabValue === (hasPropertyImages ? 1 : 0) ? `${propertyTypeColor}.main` : 'text.secondary' }}
+                      />
+                    )}
+                  </Tabs>
                 </Box>
-                <Grid container spacing={2}>
-                  {property.propertyImages.map((image, index) => {
-                    const imageUrl = typeof image === 'string' ? image : image.url;
-                    const imageTitle = typeof image === 'string' 
-                      ? `Image ${index + 1}` 
-                      : image.title || `Image ${index + 1}`;
 
-                    return (
-                      <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
-                        <Card 
-                          sx={{ 
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            border: '2px solid transparent',
-                            '&:hover': {
-                              transform: 'translateY(-4px)',
-                              boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
-                              borderColor: `${getPropertyTypeColor(property.propertyType)}.main`
-                            }
-                          }}
-                        >
-                          <Box sx={{ position: 'relative', paddingTop: '75%' }}>
-                            <Box
-                              sx={{
-                                position: 'absolute',
-                                top: 0,
-                                left: 0,
-                                right: 0,
-                                bottom: 0,
-                                backgroundImage: `url(${imageUrl})`,
-                                backgroundSize: 'cover',
-                                backgroundPosition: 'center',
-                                borderRadius: '8px 8px 0 0',
-                              }}
-                            >
-                              {/* Download Button */}
-                              <IconButton
-                                sx={{
-                                  position: 'absolute',
-                                  top: 8,
-                                  right: 8,
-                                  backgroundColor: 'rgba(255,255,255,0.95)',
-                                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                {/* Images Tab Panel */}
+                {hasPropertyImages && (
+                  <TabPanel value={tabValue} index={0}>
+                    <Box sx={{ px: 2 }}>
+                      <Grid container spacing={2}>
+                        {property.propertyImages.map((image, index) => {
+                          const { url, title, id } = extractImageData(image, index);
+                          
+                          if (!url) return null;
+
+                          return (
+                            <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
+                              <Card 
+                                sx={{ 
+                                  cursor: 'pointer',
+                                  transition: 'all 0.3s ease',
+                                  border: '2px solid transparent',
                                   '&:hover': {
-                                    backgroundColor: 'white',
-                                    transform: 'scale(1.1)'
+                                    transform: 'translateY(-4px)',
+                                    boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
+                                    borderColor: `${propertyTypeColor}.main`
                                   },
-                                  transition: 'all 0.2s ease'
+                                  height: '100%'
                                 }}
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  onDownloadFile(imageUrl, imageTitle);
-                                }}
-                                size="small"
                               >
-                                <CloudDownload sx={{ fontSize: 16 }} />
-                              </IconButton>
-                            </Box>
-                          </Box>
-                          <Box sx={{ p: 1 }}>
-                            <Typography variant="caption" color="text.secondary" noWrap>
-                              {imageTitle}
-                            </Typography>
-                          </Box>
-                        </Card>
+                                <Box sx={{ position: 'relative', paddingTop: '75%' }}>
+                                  {!imageErrors[id] && url ? (
+                                    <>
+                                      {loadingImages[id] && (
+                                        <Box sx={{ 
+                                          position: 'absolute', 
+                                          top: 0, 
+                                          left: 0, 
+                                          right: 0, 
+                                          bottom: 0,
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          bgcolor: 'rgba(0,0,0,0.05)',
+                                          borderRadius: '8px 8px 0 0'
+                                        }}>
+                                          <CircularProgress size={24} />
+                                        </Box>
+                                      )}
+                                      
+                                      <Box
+                                        component="img"
+                                        src={url}
+                                        alt={title}
+                                        onLoad={() => handleImageLoad(id)}
+                                        onError={() => handleImageError(id)}
+                                        sx={{
+                                          position: 'absolute',
+                                          top: 0,
+                                          left: 0,
+                                          width: '100%',
+                                          height: '100%',
+                                          objectFit: 'cover',
+                                          borderRadius: '8px 8px 0 0',
+                                          display: loadingImages[id] ? 'none' : 'block'
+                                        }}
+                                      />
+                                    </>
+                                  ) : (
+                                    <Box sx={{ 
+                                      position: 'absolute',
+                                      top: 0,
+                                      left: 0,
+                                      width: '100%',
+                                      height: '100%',
+                                      backgroundColor: '#f5f5f5',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      flexDirection: 'column',
+                                      borderRadius: '8px 8px 0 0'
+                                    }}>
+                                      <BrokenImage sx={{ fontSize: 40, color: '#999', mb: 1 }} />
+                                      <Typography variant="caption" color="text.secondary">
+                                        Failed to load
+                                      </Typography>
+                                    </Box>
+                                  )}
+                                  
+                                  {/* Download Button */}
+                                  {!imageErrors[id] && url && (
+                                    <IconButton
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 8,
+                                        right: 8,
+                                        backgroundColor: 'rgba(255,255,255,0.95)',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                        '&:hover': {
+                                          backgroundColor: 'white',
+                                          transform: 'scale(1.1)'
+                                        },
+                                        transition: 'all 0.2s ease'
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDownloadFile(url, `${title}.jpg`);
+                                      }}
+                                      size="small"
+                                    >
+                                      <CloudDownload sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                  )}
+                                </Box>
+                                <Box sx={{ p: 1.5 }}>
+                                  <Typography 
+                                    variant="body2" 
+                                    fontWeight={600} 
+                                    sx={{ 
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap'
+                                    }}
+                                  >
+                                    {title}
+                                  </Typography>
+                                </Box>
+                              </Card>
+                            </Grid>
+                          );
+                        })}
                       </Grid>
-                    );
-                  })}
-                </Grid>
+                    </Box>
+                  </TabPanel>
+                )}
+
+                {/* Floor Plans Tab Panel */}
+                {hasFloorPlans && (
+                  <TabPanel value={tabValue} index={hasPropertyImages ? 1 : 0}>
+                    <Box sx={{ px: 2 }}>
+                      <Grid container spacing={3}>
+                        {property.floorPlans.map((floorPlan, index) => {
+                          const { url, title, id } = extractFloorPlanData(floorPlan, index);
+                          
+                          if (!url) return null;
+
+                          return (
+                            <Grid size={{ xs: 12, md: 6 }} key={index}>
+                              <Card 
+                                sx={{ 
+                                  cursor: 'pointer',
+                                  transition: 'all 0.3s ease',
+                                  border: '2px solid transparent',
+                                  '&:hover': {
+                                    transform: 'translateY(-4px)',
+                                    boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
+                                    borderColor: `${propertyTypeColor}.main`
+                                  },
+                                  height: '100%'
+                                }}
+                                onClick={() => handleFloorPlanClick(index)}
+                              >
+                                <Box sx={{ position: 'relative', paddingTop: '75%' }}>
+                                  {!imageErrors[id] && url ? (
+                                    <>
+                                      {loadingImages[id] && (
+                                        <Box sx={{ 
+                                          position: 'absolute', 
+                                          top: 0, 
+                                          left: 0, 
+                                          right: 0, 
+                                          bottom: 0,
+                                          display: 'flex',
+                                          alignItems: 'center',
+                                          justifyContent: 'center',
+                                          bgcolor: 'rgba(0,0,0,0.05)',
+                                          borderRadius: '8px 8px 0 0'
+                                        }}>
+                                          <CircularProgress size={24} />
+                                        </Box>
+                                      )}
+                                      
+                                      <Box
+                                        component="img"
+                                        src={url}
+                                        alt={title}
+                                        onLoad={() => handleImageLoad(id)}
+                                        onError={() => handleImageError(id)}
+                                        sx={{
+                                          position: 'absolute',
+                                          top: 0,
+                                          left: 0,
+                                          width: '100%',
+                                          height: '100%',
+                                          objectFit: 'contain',
+                                          backgroundColor: '#f8fafc',
+                                          borderRadius: '8px 8px 0 0',
+                                          display: loadingImages[id] ? 'none' : 'block'
+                                        }}
+                                      />
+                                    </>
+                                  ) : (
+                                    <Box sx={{ 
+                                      position: 'absolute',
+                                      top: 0,
+                                      left: 0,
+                                      width: '100%',
+                                      height: '100%',
+                                      backgroundColor: '#f5f5f5',
+                                      display: 'flex',
+                                      alignItems: 'center',
+                                      justifyContent: 'center',
+                                      flexDirection: 'column',
+                                      borderRadius: '8px 8px 0 0'
+                                    }}>
+                                      <BrokenImage sx={{ fontSize: 40, color: '#999', mb: 1 }} />
+                                      <Typography variant="caption" color="text.secondary">
+                                        Failed to load floor plan
+                                      </Typography>
+                                    </Box>
+                                  )}
+                                  
+                                  {/* View Button */}
+                                  {!imageErrors[id] && url && (
+                                    <IconButton
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 8,
+                                        right: 8,
+                                        backgroundColor: 'rgba(255,255,255,0.95)',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                        '&:hover': {
+                                          backgroundColor: 'white',
+                                          transform: 'scale(1.1)'
+                                        },
+                                        transition: 'all 0.2s ease'
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        handleFloorPlanClick(index);
+                                      }}
+                                      size="small"
+                                    >
+                                      <ZoomIn sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                  )}
+                                  
+                                  {/* Download Button */}
+                                  {!imageErrors[id] && url && (
+                                    <IconButton
+                                      sx={{
+                                        position: 'absolute',
+                                        top: 8,
+                                        right: 48,
+                                        backgroundColor: 'rgba(255,255,255,0.95)',
+                                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                                        '&:hover': {
+                                          backgroundColor: 'white',
+                                          transform: 'scale(1.1)'
+                                        },
+                                        transition: 'all 0.2s ease'
+                                      }}
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        onDownloadFile(url, `${title}.jpg`);
+                                      }}
+                                      size="small"
+                                    >
+                                      <CloudDownload sx={{ fontSize: 16 }} />
+                                    </IconButton>
+                                  )}
+                                  
+                                  {/* Floor Plan Badge */}
+                                  <Chip
+                                    icon={<Layers sx={{ fontSize: 14 }} />}
+                                    label="Floor Plan"
+                                    size="small"
+                                    color="primary"
+                                    sx={{
+                                      position: 'absolute',
+                                      top: 8,
+                                      left: 8,
+                                      height: 24,
+                                      fontSize: '0.75rem',
+                                      fontWeight: 600,
+                                      backgroundColor: 'rgba(25, 118, 210, 0.9)',
+                                      color: 'white',
+                                      '& .MuiChip-icon': {
+                                        color: 'white',
+                                        fontSize: 16
+                                      }
+                                    }}
+                                  />
+                                </Box>
+                                <Box sx={{ p: 2 }}>
+                                  <Typography 
+                                    variant="h6" 
+                                    fontWeight={700}
+                                    sx={{ 
+                                      overflow: 'hidden',
+                                      textOverflow: 'ellipsis',
+                                      whiteSpace: 'nowrap'
+                                    }}
+                                  >
+                                    {title}
+                                  </Typography>
+                                  <Typography variant="body2" color="text.secondary">
+                                    Click to view full size
+                                  </Typography>
+                                </Box>
+                              </Card>
+                            </Grid>
+                          );
+                        })}
+                      </Grid>
+                    </Box>
+                  </TabPanel>
+                )}
               </CardContent>
             </Card>
+          )}
+
+          {/* Floor Plan Full View Dialog */}
+          {selectedFloorPlanIndex !== null && property.floorPlans && property.floorPlans[selectedFloorPlanIndex] && (
+            <Dialog
+              open={selectedFloorPlanIndex !== null}
+              onClose={handleCloseFloorPlanView}
+              maxWidth="lg"
+              fullWidth
+              sx={{
+                '& .MuiDialog-paper': {
+                  borderRadius: 2,
+                  overflow: 'hidden',
+                }
+              }}
+            >
+              <Box sx={{ position: 'relative' }}>
+                <IconButton
+                  onClick={handleCloseFloorPlanView}
+                  sx={{
+                    position: 'absolute',
+                    top: 16,
+                    right: 16,
+                    backgroundColor: 'rgba(0,0,0,0.5)',
+                    color: 'white',
+                    zIndex: 10,
+                    '&:hover': {
+                      backgroundColor: 'rgba(0,0,0,0.7)'
+                    }
+                  }}
+                >
+                  <Close />
+                </IconButton>
+                
+                <Box
+                  component="img"
+                  src={extractFloorPlanData(property.floorPlans[selectedFloorPlanIndex], selectedFloorPlanIndex).url}
+                  alt={extractFloorPlanData(property.floorPlans[selectedFloorPlanIndex], selectedFloorPlanIndex).title}
+                  sx={{
+                    width: '100%',
+                    height: 'auto',
+                    maxHeight: '80vh',
+                    objectFit: 'contain',
+                    backgroundColor: '#f8fafc'
+                  }}
+                />
+                
+                <Box sx={{ 
+                  position: 'absolute', 
+                  bottom: 16, 
+                  left: 0, 
+                  right: 0, 
+                  textAlign: 'center',
+                  zIndex: 10 
+                }}>
+                  <Typography variant="h6" sx={{ 
+                    backgroundColor: 'rgba(0,0,0,0.7)', 
+                    color: 'white', 
+                    display: 'inline-block',
+                    px: 3,
+                    py: 1,
+                    borderRadius: 2
+                  }}>
+                    {extractFloorPlanData(property.floorPlans[selectedFloorPlanIndex], selectedFloorPlanIndex).title}
+                  </Typography>
+                </Box>
+              </Box>
+            </Dialog>
           )}
         </Box>
       </DialogContent>
 
       <DialogActions sx={{ 
         py: 2,
-        px: {sx: 2, md: 3}, 
+        px: {xs: 2, md: 3}, 
         borderTop: '1px solid #e2e8f0', 
         background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
         gap: 2
