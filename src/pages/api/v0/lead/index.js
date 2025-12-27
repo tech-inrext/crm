@@ -1,4 +1,4 @@
-import { Controller, HttpStatus } from "@framework";
+import { Controller } from "@framework";
 import LeadService from "../../../../be/services/LeadService";
 
 class LeadIndexController extends Controller {
@@ -7,11 +7,11 @@ class LeadIndexController extends Controller {
     this.service = new LeadService();
   }
 
-  async get(req, res) {
+  get(req, res) {
     return this.service.getAllLeads(req, res);
   }
 
-  async post(req, res) {
+  post(req, res) {
     return this.service.createLead(req, res);
   }
 }
