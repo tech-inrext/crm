@@ -2,6 +2,7 @@
 
 // React & Core
 import React, { useState, useRef, useCallback, useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import {
   Box,
   Paper,
@@ -69,6 +70,9 @@ const FollowUpDialog = dynamic(
 );
 
 const Leads: React.FC = () => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
   const {
     leads,
     loading,
@@ -102,6 +106,15 @@ const Leads: React.FC = () => {
   const [searchInput, setSearchInput] = useState(search);
   const debouncedSearch = useDebounce(searchInput, 500); // Debounce for 400ms
 
+  // Initialize status filter from query params on mount
+  useEffect(() => {
+    const statusParam = searchParams.get('status');
+    if (statusParam) {
+      const statuses = statusParam.split(',').filter(Boolean);
+      setSelectedStatuses(statuses);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   // Sync debounced search with actual query state
   useEffect(() => {
     setSearch(debouncedSearch);
@@ -111,6 +124,20 @@ const Leads: React.FC = () => {
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchInput(e.target.value);
   };
+
+  const handleStatusChange = useCallback((statuses: string[]) => {
+    setSelectedStatuses(statuses);
+    setPage(0);
+    
+    // Update URL query params
+    const params = new URLSearchParams(searchParams.toString());
+    if (statuses.length > 0) {
+      params.set('status', statuses.join(','));
+    } else {
+      params.delete('status');
+    }
+    router.push(`?${params.toString()}`, { scroll: false });
+  }, [searchParams, router, setSelectedStatuses, setPage]);
 
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [selectedLeadForFeedback, setSelectedLeadForFeedback] = useState<
@@ -213,12 +240,8 @@ const Leads: React.FC = () => {
           onAdd={() => setOpen(true)}
           saving={saving}
           loadLeads={loadLeads}
-          loadLeads={loadLeads}
           selectedStatuses={selectedStatuses}
-          onStatusesChange={(s) => {
-            setSelectedStatuses(s);
-            setPage(0);
-          }}
+          onStatusesChange={handleStatusChange}
         />
       </Paper>
 
@@ -274,10 +297,7 @@ const Leads: React.FC = () => {
                 <LeadsTableHeader
                   header={leadsTableHeaderWithActions}
                   selectedStatuses={selectedStatuses}
-                  onStatusesChange={(s) => {
-                    setSelectedStatuses(s);
-                    setPage(0);
-                  }}
+                  onStatusesChange={handleStatusChange}
                 />
                 <TableBody>
                   {leads.map((row) => (
