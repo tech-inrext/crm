@@ -20,8 +20,8 @@ import {
   MenuItem,
   Chip,
   SelectChangeEvent,
+  Alert,
 } from "@mui/material";
-import Alert from "@mui/material/Alert";
 import { Add, Search } from "@mui/icons-material";
 import { useTrainingVideos, useTrainingVideoCategories } from "@/hooks/useTrainingVideos";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -29,128 +29,23 @@ import PermissionGuard from "@/components/PermissionGuard";
 import { useAuth } from "@/contexts/AuthContext";
 import { TrainingVideo, TrainingVideoFormData } from "@/types/trainingVideo";
 import TrainingVideoCard from "@/components/ui/TrainingVideoCard";
-import TrainingVideoFormDialog from "@/components/ui/TrainingVideoFormDialog";
-import VideoPlayerModal from "@/components/ui/VideoPlayerModal";
+import TrainingVideoFormDialog from "@/components/ui/training-videos/TrainingVideoFormDialog";
+import VideoPlayerModal from "@/components/ui/training-videos/VideoPlayerModal";
 import dynamic from "next/dynamic";
 import {
   GRADIENTS,
   FAB_POSITION,
 } from "@/constants/bookingLogin";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
+import { TrainingVideosActionBar } from "./components/TrainingVideosActionBar";
+import { CategorySection } from "./components/CategorySection";
+import { VideoGrid } from "./components/VideoGrid";
+import { EmptyState } from "./components/EmptyState";
+import { getCategoryLabel } from "@/components/ui/training-videos/constants";
 
 const Pagination = dynamic(() => import("@/components/ui/Navigation/Pagination"), {
   ssr: false,
 });
-
-const SORT_OPTIONS = [
-  { value: "uploadDate_desc", label: "Newest First" },
-  { value: "uploadDate_asc", label: "Oldest First" },
-  { value: "title_asc", label: "Title A-Z" },
-  { value: "title_desc", label: "Title Z-A" }
-];
-
-const getCategoryLabel = (category: string): string => {
-  const categoryLabels: { [key: string]: string } = {
-    "basic-sales-training-fundamentals": "Basic Sales Training Fundamentals",
-    "team-building": "Team Building",
-    "growth-model": "Growth Model",
-    "basic-fundamentals-of-real-estate": "Basic Fundamentals of Real Estate",
-    "company-code-of-conduct-rules-compliances": "Company Code of Conduct, Rules & Compliances (RERA)"
-  };
-  return categoryLabels[category] || category;
-};
-
-interface TrainingVideosActionBarProps {
-  search: string;
-  category: string;
-  sortBy: string;
-  categories: any[];
-  onSearchChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onCategoryChange: (event: SelectChangeEvent) => void;
-  onSortChange: (event: SelectChangeEvent) => void;
-  onCategoryClick: (category: string) => void;
-  onAdd: () => void;
-}
-
-const TrainingVideosActionBar: React.FC<TrainingVideosActionBarProps> = ({
-  search,
-  category,
-  sortBy,
-  categories,
-  onSearchChange,
-  onCategoryChange,
-  onSortChange,
-  onCategoryClick,
-  onAdd,
-}) => {
-  return (
-    <Box sx={{ mb: 3 }}>
-      <Grid container spacing={2} alignItems="center">
-        <Grid size={{ xs: 12, md: 4 }}>
-          <TextField
-            fullWidth
-            placeholder="Search videos, descriptions..."
-            value={search}
-            onChange={onSearchChange}
-            InputProps={{
-              startAdornment: <Search sx={{ color: 'text.secondary', mr: 1 }} />,
-            }}
-            size="small"
-          />
-        </Grid>
-        
-        <Grid size={{ xs: 12, md: 3 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Category</InputLabel>
-            <Select
-              value={category}
-              label="Category"
-              onChange={onCategoryChange}
-            >
-              <MenuItem value="">All Categories</MenuItem>
-              {categories.map((cat) => (
-                <MenuItem key={cat.name} value={cat.name}>
-                  {getCategoryLabel(cat.name)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 3 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Sort By</InputLabel>
-            <Select
-              value={sortBy}
-              label="Sort By"
-              onChange={onSortChange}
-            >
-              {SORT_OPTIONS.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
-
-        <Grid size={{ xs: 12, md: 2 }}>
-          <PermissionGuard module="training-videos" action="write" fallback={<Box />}>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={onAdd}
-              fullWidth
-              sx={{ height: '40px' }}
-            >
-              Add Video
-            </Button>
-          </PermissionGuard>
-        </Grid>
-      </Grid>
-    </Box>
-  );
-};
 
 const TrainingVideos: React.FC = () => {
   const { user } = useAuth();
@@ -316,149 +211,53 @@ const TrainingVideos: React.FC = () => {
       </Paper>
 
       {/* Content Section */}
-{loading || categoriesLoading ? (
-  <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-    <CircularProgress />
-  </Box>
-) : error ? (
-  <Box sx={{ textAlign: "center", mt: 4 }}>
-    <Alert severity="error">{error}</Alert>
-  </Box>
-) : videos.length === 0 ? (
-  <Box sx={{ textAlign: "center", mt: 4 }}>
-    <Typography variant="h6" color="text.secondary">
-      No videos found.
-    </Typography>
-    <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-      {search || category ? "Try adjusting your search criteria" : "Add your first training video to get started"}
-    </Typography>
-    <PermissionGuard module="training-videos" action="write" fallback={null}>
-      <Button 
-        variant="contained" 
-        startIcon={<Add />}
-        onClick={handleAddVideo}
-        sx={{ mt: 2 }}
-      >
-        Add First Video
-      </Button>
-    </PermissionGuard>
-  </Box>
-) : (
-  <Box>
-    {/* When All Categories is selected - Show grouped by category */}
-    {!category ? (
-      categories.map((cat) => {
-        const categoryVideos = videos.filter(video => video.category === cat.name);
-        
-        if (categoryVideos.length === 0) return null;
+      {loading || categoriesLoading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Box sx={{ textAlign: "center", mt: 4 }}>
+          <Alert severity="error">{error}</Alert>
+        </Box>
+      ) : videos.length === 0 ? (
+        <EmptyState
+          hasSearch={!!search}
+          hasCategory={!!category}
+          onAdd={handleAddVideo}
+        />
+      ) : !category ? (
+        // When All Categories is selected - Show grouped by category
+        categories.map((cat) => {
+          const categoryVideos = videos.filter(video => video.category === cat.name);
+          
+          if (categoryVideos.length === 0) return null;
 
-        return (
-          <Box key={cat.name} sx={{ mb: 4 }}>
-            {/* Category Header */}
-            <Paper
-              elevation={1}
-              sx={{
-                p: 2,
-                mb: 2,
-                borderRadius: 2,
-              }}
-            >
-              <Typography
-                variant="h5"
-                sx={{
-                  fontWeight: 600,
-                  color: "text.primary",
-                  fontSize: { xs: "1.25rem", md: "1.5rem" },
-                }}
-              >
-                {getCategoryLabel(cat.name)}
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-                {categoryVideos.length} video{categoryVideos.length !== 1 ? 's' : ''}
-              </Typography>
-            </Paper>
-            
-            {/* Videos Grid for this category */}
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "1fr",
-                  sm: "repeat(2, 1fr)",
-                  md: "repeat(3, 1fr)",
-                  lg: "repeat(4, 1fr)",
-                },
-                gap: { xs: 2, md: 3 },
-                mb: 3,
-              }}
-            >
-              {categoryVideos.map((video) => (
-                <TrainingVideoCard
-                  key={video._id}
-                  video={video}
-                  onPlay={handlePlayVideo}
-                  onEdit={handleEditVideo}
-                  onDelete={handleDeleteVideo}
-                  variant="grid"
-                />
-              ))}
-            </Box>
-          </Box>
-        );
-      })
-    ) : (
-      <>
-        {/* Category Header for specific category */}
-        <Paper
-          elevation={1}
-          sx={{
-            p: 2,
-            mb: 3,
-            borderRadius: 2,
-          }}
-        >
-          <Typography
-            variant="h5"
-            sx={{
-              fontWeight: 600,
-              color: "text.primary",
-              fontSize: { xs: "1.25rem", md: "1.5rem" },
-            }}
-          >
-            {getCategoryLabel(category)}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-            {videos.length} video{videos.length !== 1 ? 's' : ''} found
-          </Typography>
-        </Paper>
-
-        {/* Videos Grid */}
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: {
-              xs: "1fr",
-              sm: "repeat(2, 1fr)",
-              md: "repeat(3, 1fr)",
-              lg: "repeat(4, 1fr)",
-            },
-            gap: { xs: 2, md: 3 },
-            mb: 3,
-          }}
-        >
-          {videos.map((video) => (
-            <TrainingVideoCard
-              key={video._id}
-              video={video}
+          return (
+            <CategorySection
+              key={cat.name}
+              categoryName={cat.name}
+              videos={categoryVideos}
               onPlay={handlePlayVideo}
               onEdit={handleEditVideo}
               onDelete={handleDeleteVideo}
-              variant="grid"
+              getCategoryLabel={getCategoryLabel}
             />
-          ))}
-        </Box>
+          );
+        })
+      ) : (
+        // Specific category selected
+        <VideoGrid
+          videos={videos}
+          category={category}
+          getCategoryLabel={getCategoryLabel}
+          onPlay={handlePlayVideo}
+          onEdit={handleEditVideo}
+          onDelete={handleDeleteVideo}
+        />
+      )}
 
-        {/* Pagination - Only for specific category view */}
+      {/* Pagination */}
+      {videos.length > 0 && totalItems > rowsPerPage && (
         <Box sx={{ 
           display: 'flex', 
           justifyContent: 'center', 
@@ -474,29 +273,7 @@ const TrainingVideos: React.FC = () => {
             pageSizeOptions={[12, 24, 36, 48]}
           />
         </Box>
-      </>
-    )}
-
-    {/* Show pagination for All Categories view if there are more videos */}
-    {!category && totalItems > rowsPerPage && (
-      <Box sx={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        mt: 4,
-        mb: 2 
-      }}>
-        <Pagination
-          page={page}
-          pageSize={rowsPerPage}
-          total={totalItems}
-          onPageChange={setPage}
-          onPageSizeChange={handlePageSizeChange}
-          pageSizeOptions={[12, 24, 36, 48]}
-        />
-      </Box>
-    )}
-  </Box>
-)}
+      )}
 
       {/* Video Player Modal */}
       <VideoPlayerModal
@@ -513,27 +290,6 @@ const TrainingVideos: React.FC = () => {
         onSave={handleSaveVideo}
         loading={loading}
       />
-
-      {/* Floating Action Button for Mobile */}
-      {/* <PermissionGuard module="training-videos" action="write" fallback={<></>}>
-        <Fab
-          color="primary"
-          aria-label="add video"
-          onClick={handleAddVideo}
-          sx={{
-            position: "fixed",
-            bottom: FAB_POSITION.bottom,
-            right: FAB_POSITION.right,
-            background: GRADIENTS.button,
-            display: { xs: "flex", md: "none" },
-            zIndex: FAB_POSITION.zIndex,
-            boxShadow: 3,
-            "&:hover": { background: GRADIENTS.buttonHover },
-          }}
-        >
-          <Add />
-        </Fab>
-      </PermissionGuard> */}
 
       {/* Snackbar for notifications */}
       <Snackbar
@@ -558,5 +314,3 @@ const TrainingVideos: React.FC = () => {
 };
 
 export default TrainingVideos;
-
-
