@@ -108,9 +108,9 @@ const Leads: React.FC = () => {
 
   // Initialize status filter from query params on mount
   useEffect(() => {
-    const statusParam = searchParams.get('status');
+    const statusParam = searchParams.get("status");
     if (statusParam) {
-      const statuses = statusParam.split(',').filter(Boolean);
+      const statuses = statusParam.split(",").filter(Boolean);
       setSelectedStatuses(statuses);
     }
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -125,19 +125,22 @@ const Leads: React.FC = () => {
     setSearchInput(e.target.value);
   };
 
-  const handleStatusChange = useCallback((statuses: string[]) => {
-    setSelectedStatuses(statuses);
-    setPage(0);
-    
-    // Update URL query params
-    const params = new URLSearchParams(searchParams.toString());
-    if (statuses.length > 0) {
-      params.set('status', statuses.join(','));
-    } else {
-      params.delete('status');
-    }
-    router.push(`?${params.toString()}`, { scroll: false });
-  }, [searchParams, router, setSelectedStatuses, setPage]);
+  const handleStatusChange = useCallback(
+    (statuses: string[]) => {
+      setSelectedStatuses(statuses);
+      setPage(0);
+
+      // Update URL query params
+      const params = new URLSearchParams(searchParams.toString());
+      if (statuses.length > 0) {
+        params.set("status", statuses.join(","));
+      } else {
+        params.delete("status");
+      }
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, router, setSelectedStatuses, setPage]
+  );
 
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [selectedLeadForFeedback, setSelectedLeadForFeedback] = useState<
@@ -152,43 +155,43 @@ const Leads: React.FC = () => {
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
       ? {
-        ...col,
-        component: (row, { onEdit }) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              gap: 0.5,
-              pl: 0.5,
-            }}
-          >
-            <PermissionGuard module="lead" action="write" fallback={null}>
-              <IconButton onClick={() => onEdit(row)} size="small">
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </PermissionGuard>
-
-            {/* Feedback button - available to any authenticated user */}
-            <IconButton
-              size="small"
-              onClick={() => {
-                setSelectedLeadForFeedback(row.leadId || row._id || row.id);
-                setFeedbackOpen(true);
+          ...col,
+          component: (row, { onEdit }) => (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                gap: 0.5,
+                pl: 0.5,
               }}
             >
-              <Badge
-                badgeContent={
-                  (row.followUpNotes && row.followUpNotes.length) || 0
-                }
-                color="primary"
+              <PermissionGuard module="lead" action="write" fallback={null}>
+                <IconButton onClick={() => onEdit(row)} size="small">
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </PermissionGuard>
+
+              {/* Feedback button - available to any authenticated user */}
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setSelectedLeadForFeedback(row.leadId || row._id || row.id);
+                  setFeedbackOpen(true);
+                }}
               >
-                <FeedbackIcon fontSize="small" />
-              </Badge>
-            </IconButton>
-          </Box>
-        ),
-      }
+                <Badge
+                  badgeContent={
+                    (row.followUpNotes && row.followUpNotes.length) || 0
+                  }
+                  color="primary"
+                >
+                  <FeedbackIcon fontSize="small" />
+                </Badge>
+              </IconButton>
+            </Box>
+          ),
+        }
       : col
   );
 
@@ -259,7 +262,7 @@ const Leads: React.FC = () => {
                   setEditId(lead._id);
                   setOpen(true);
                 }}
-                onDelete={() => { }}
+                onDelete={() => {}}
                 onStatusChange={updateLeadStatus}
               />
             ))}
@@ -309,7 +312,7 @@ const Leads: React.FC = () => {
                         setEditId(row._id);
                         setOpen(true);
                       }}
-                      onDelete={() => { }}
+                      onDelete={() => {}}
                       onStatusChange={updateLeadStatus}
                     />
                   ))}
