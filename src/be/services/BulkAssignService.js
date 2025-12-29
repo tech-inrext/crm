@@ -19,6 +19,7 @@ class BulkAssignService extends Service {
 
       const count = await Lead.countDocuments({
         status,
+        uploadedBy: req.employee?._id, // Only select leads uploaded by me
         $or: [{ assignedTo: null }, { assignedTo: { $exists: false } }],
       });
 
@@ -41,6 +42,7 @@ class BulkAssignService extends Service {
 
       const availableCount = await Lead.countDocuments({
         status,
+        uploadedBy: updatedBy, // Only select leads uploaded by me
         $or: [{ assignedTo: null }, { assignedTo: { $exists: false } }],
       });
 
@@ -63,6 +65,7 @@ class BulkAssignService extends Service {
           assignTo,
           status,
           updatedBy,
+          availableCount, // Pass the count we found to the worker
         },
         {
           attempts: 3,
