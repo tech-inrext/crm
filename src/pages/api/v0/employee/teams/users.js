@@ -52,15 +52,9 @@ async function handler(req, res) {
           { assignedTo: userId },
           { uploadedBy: userId }
         ], status: { $regex: /site visit/i } });
-      // MoU stats for each user
-         const mouPending = await Employee.countDocuments({ 
-         $or: [
-          { assignedTo: userId },
-          { uploadedBy: userId }
-        ],
-        _id: userId, mouStatus: { $regex: "^Pending$", $options: "i" } 
-      });
-      // Count 'Approved' and 'Completed' separately for clarity
+
+      // MoU stats for each user (only their own status)
+      const mouPending = await Employee.countDocuments({ _id: userId, mouStatus: { $regex: "^Pending$", $options: "i" } });
       const mouApproved = await Employee.countDocuments({ _id: userId, mouStatus: { $regex: "^Approved$", $options: "i" } });
       const mouCompleted = await Employee.countDocuments({ _id: userId, mouStatus: { $regex: "^Completed$", $options: "i" } });
 
@@ -74,9 +68,11 @@ async function handler(req, res) {
         newLeads,
         activeLeads,
         siteVisitCount,
-        mouPending,
-        mouApproved,
-        mouCompleted,
+        mouStats: {
+          pending: mouPending,
+          approved: mouApproved,
+          completed: mouCompleted,
+        },
         totalVendors,
         totalSpend,
       };
