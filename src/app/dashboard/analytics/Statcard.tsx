@@ -8,6 +8,7 @@ import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
 import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
+import Skeleton from "@mui/material/Skeleton";
 import ScheduleCard from "./components/ScheduleCard";
 import { FaUsers, FaHome, FaDollarSign, FaBuilding } from "react-icons/fa";
 type TrendItem = {
@@ -23,13 +24,14 @@ type StatCardProps = {
   trend?: TrendItem[]; // Array of trend items for last N days (sorted desc)
 };
 
-const StatCard: React.FC<StatCardProps & { onClick?: () => void }> = ({
+const StatCard: React.FC<StatCardProps & { onClick?: () => void; loading?: boolean }> = ({
   title,
   value,
   icon,
   iconBg,
   trend,
   onClick,
+  loading = false,
 }) => {
   let trendDisplay: React.ReactNode = null;
 
@@ -48,7 +50,7 @@ const StatCard: React.FC<StatCardProps & { onClick?: () => void }> = ({
   }
 
   // Show only the most recent non-zero trend value, or 'No change today' if all are zero
-  if (trend && Array.isArray(trend) && trend.length > 0) {
+  if (!loading && trend && Array.isArray(trend) && trend.length > 0) {
     // Sort trend by date descending (latest first)
     const sortedTrend = [...trend].sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
@@ -88,6 +90,10 @@ const StatCard: React.FC<StatCardProps & { onClick?: () => void }> = ({
         </Typography>
       );
     }
+  } else if (loading) {
+    trendDisplay = (
+      <Skeleton variant="text" width={80} height={18} sx={{ mt: 0.5 }} />
+    );
   }
 
   return (
@@ -135,14 +141,14 @@ const StatCard: React.FC<StatCardProps & { onClick?: () => void }> = ({
               fontWeight={500}
               sx={{ fontSize: { xs: 11, sm: 13 } }}
             >
-              {title}
+              {loading ? <Skeleton width={60} /> : title}
             </Typography>
             <Typography
               variant="h5"
               fontWeight={700}
               sx={{ mt: 0.5, fontSize: { xs: 22, sm: 24 }, color: "#1a1a1a" }}
             >
-              {value}
+              {loading ? <Skeleton width={70} height={32} /> : value}
             </Typography>
             {trendDisplay}
           </Box>
@@ -158,7 +164,7 @@ const StatCard: React.FC<StatCardProps & { onClick?: () => void }> = ({
               boxShadow: "0 2px 8px 0 rgba(99, 99, 99, 0.04)",
             }}
           >
-            {icon}
+            {loading ? <Skeleton variant="circular" width={32} height={32} /> : icon}
           </Box>
         </Box>
       </CardContent>
@@ -196,7 +202,46 @@ type StatsCardsRowProps = {
 };
 
 export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
+
   const router = useRouter();
+  // State for team users dropdown (must be before any use)
+  const [teamUsers, setTeamUsers] = React.useState<
+    { _id: string; name: string; teamName?: string }[]
+  >([]);
+  // By default, show 'All' (null means all users)
+  const [selectedUser, setSelectedUser] = React.useState<{
+    _id: string;
+    name: string;
+    teamName?: string;
+  } | null>(null);
+
+  // Add an 'All' option for the dropdown (must be after teamUsers is defined)
+  const allOption = { _id: 'all', name: 'All', teamName: '' };
+  const teamUsersWithAll = [allOption, ...teamUsers];
+
+  // Calculate overall sums for "YOUR TEAMS" section (for cards when no user is selected)
+  const overallTeamNewLeads = teamUsers && teamUsers.length > 0
+    ? teamUsers.reduce((acc, user) => acc + (user.newLeads || 0), 0)
+    : 0;
+  const overallTeamActiveLeads = teamUsers && teamUsers.length > 0
+    ? teamUsers.reduce((acc, user) => acc + (user.activeLeads || 0), 0)
+    : 0;
+  const overallTeamSiteVisits = teamUsers && teamUsers.length > 0
+    ? teamUsers.reduce((acc, user) => acc + (user.siteVisitCount || 0), 0)
+    : 0;
+  // State for backend summary of MoUs (for 'All' selection)
+  const [overallTeamMouSummary, setOverallTeamMouSummary] = React.useState<{pending: number, approved: number, completed: number}>({pending: 0, approved: 0, completed: 0});
+  // Calculate overall team MoUs (pending/completed+approved) as fallback
+  const overallTeamMouPending = teamUsers && teamUsers.length > 0
+    ? teamUsers.reduce((acc, user) => acc + (user.mouPending || user.mouStats?.pending || 0), 0)
+    : 0;
+  const overallTeamMouApproved = teamUsers && teamUsers.length > 0
+    ? teamUsers.reduce((acc, user) => {
+        let approved = user.mouApproved || user.mouStats?.approved || 0;
+        let completed = user.mouCompleted || user.mouStats?.completed || 0;
+        return acc + approved + completed;
+      }, 0)
+    : 0;
   const {
     newLeads = 0,
     notconnectedLeads = 0,
@@ -259,35 +304,48 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
       });
   }, []);
 
-  // State for team users dropdown
-  const [teamUsers, setTeamUsers] = React.useState<
-    { _id: string; name: string; teamName?: string }[]
-  >([]);
-  const [selectedUser, setSelectedUser] = React.useState<{
-    _id: string;
-    name: string;
-    teamName?: string;
-  } | null>(null);
+
 
   // State for selected user's analytics
   const [userAnalytics, setUserAnalytics] = React.useState<any | null>(null);
   const [userTrend, setUserTrend] = React.useState<any | null>(null);
   const [userTrendLeads, setUserTrendLeads] = React.useState<any | null>(null);
   const [userLoading, setUserLoading] = React.useState(false);
+  // State for selected user's team MoU stats (sum for all direct reports)
+  const [selectedUserTeamMouStats, setSelectedUserTeamMouStats] = React.useState<{pending: number, approved: number} | null>(null);
+  // State for selected user's direct reports (team members)
+  const [selectedUserTeamUsers, setSelectedUserTeamUsers] = React.useState<any[]>([]);
 
-  // Fetch team users (with team name)
+  // Fetch team users (with team name and stats) and summary for 'All' when selection changes
   React.useEffect(() => {
-    fetch("/api/v0/employee/teams/users")
-      .then((r) => r.json())
-      .then((data) => {
-        if (Array.isArray(data?.users)) {
-          // If teamName is not present, fallback to empty string
-          setTeamUsers(
-            data.users.map((u: any) => ({ ...u, teamName: u.teamName || "" }))
-          );
-        }
-      });
-  }, []);
+    if (!selectedUser || selectedUser._id === 'all') {
+      fetch("/api/v0/employee/teams/users")
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data?.users)) {
+            setTeamUsers(
+              data.users.map((u: any) => ({
+                ...u,
+                teamName: u.teamName || "",
+                newLeads: u.newLeads ?? u.stats?.newLeads ?? 0,
+                activeLeads: u.activeLeads ?? u.stats?.activeLeads ?? 0,
+                siteVisitCount: u.siteVisitCount ?? u.stats?.siteVisitCount ?? 0,
+                mouPending: u.mouPending ?? u.stats?.mouPending ?? u.mouStats?.pending ?? 0,
+                mouApproved: u.mouApproved ?? u.stats?.mouApproved ?? u.mouStats?.approved ?? 0,
+                mouCompleted: u.mouCompleted ?? u.stats?.mouCompleted ?? u.mouStats?.completed ?? 0,
+              }))
+            );
+          }
+          if (data?.summary) {
+            setOverallTeamMouSummary({
+              pending: data.summary.mouPending ?? 0,
+              approved: data.summary.mouApproved ?? 0,
+              completed: data.summary.mouCompleted ?? 0,
+            });
+          }
+        });
+    }
+  }, [selectedUser]);
 
   // Fetch analytics for selected user
   React.useEffect(() => {
@@ -306,6 +364,33 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
       setUserTrend(null);
       setUserTrendLeads(null);
       setUserLoading(false);
+    }
+  }, [selectedUser]);
+
+  // Fetch direct reports (team users) for selected user and sum their MoU stats
+  React.useEffect(() => {
+    if (selectedUser && selectedUser._id && selectedUser._id !== 'all') {
+      fetch(`/api/v0/employee/teams/users?managerId=${selectedUser._id}`)
+        .then((r) => r.json())
+        .then((data) => {
+          if (Array.isArray(data?.users)) {
+            setSelectedUserTeamUsers(data.users);
+            // Sum pending and approved MoUs for all direct reports
+            const pending = data.users.reduce((acc, user) => acc + (user.mouPending ?? user.mouStats?.pending ?? 0), 0);
+            const approved = data.users.reduce((acc, user) => acc + (user.mouApproved ?? user.mouStats?.approved ?? 0), 0);
+            setSelectedUserTeamMouStats({ pending, approved });
+          } else {
+            setSelectedUserTeamUsers([]);
+            setSelectedUserTeamMouStats({ pending: 0, approved: 0 });
+          }
+        })
+        .catch(() => {
+          setSelectedUserTeamUsers([]);
+          setSelectedUserTeamMouStats({ pending: 0, approved: 0 });
+        });
+    } else {
+      setSelectedUserTeamUsers([]);
+      setSelectedUserTeamMouStats(null);
     }
   }, [selectedUser]);
 
@@ -379,6 +464,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           (trendLeads?.siteVisitCount?.[day] ?? 0);
         return { date: getDateNDaysAgo(idx), value };
       });
+      
     }
   }
 
@@ -431,42 +517,47 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             icon={<FaHome size={24} style={{ color: "#4caf50" }} />}
             iconBg="#e8f5e9"
             onClick={() => router.push("/dashboard/teams")}
+            loading={loadingNewLeads}
           />
           <StatCard
             title="Active Leads"
-            value={loadingNewLeads ? "Loading..." : activeLeads}
+            value={activeLeads}
             icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
             iconBg="#e3f2fd"
             trend={activeLeadsTrend}
             onClick={() => router.push("/dashboard/leads?status=active")}
+            loading={loadingNewLeads}
           />
           <StatCard
             title="New Leads"
-            value={loadingNewLeads ? "Loading..." : newLeads}
+            value={newLeads}
             icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
             iconBg="#e3f2fd"
             trend={newLeadsTrend}
             onClick={() => router.push("/dashboard/leads")}
+            loading={loadingNewLeads}
           />
           <StatCard
             title="Site Visits Scheduled"
-            value={siteVisitLoading ? "Loading..." : siteVisitCount ?? 0}
+            value={siteVisitCount ?? 0}
             icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
             iconBg="#f3e5f5"
             trend={siteVisitTrend}
             onClick={() => router.push("/dashboard/leads")}
+            loading={siteVisitLoading}
           />
           <StatCard
             title="MoUs (Pending / Completed)"
             value={
               pendingMouLoading || approvedMouLoading
-                ? "Loading..."
+                ? 0
                 : `${pendingMouTotal ?? 0} / ${approvedMouTotal ?? 0}`
             }
             icon={<FaUsers size={24} style={{ color: "#3949ab" }} />}
             iconBg="#e8eaf6"
             trend={pendingMouTrend}
             onClick={() => router.push("/dashboard/mou")}
+            loading={pendingMouLoading || approvedMouLoading}
           />
           {showVendorBilling && (
             <StatCard
@@ -475,6 +566,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
               icon={<FaBuilding size={24} style={{ color: "#ffb300" }} />}
               iconBg="#fffde7"
               trend={totalVendorsTrend}
+              loading={loadingNewLeads}
             />
           )}
         </Box>
@@ -500,49 +592,59 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
       </Box>
       <div className=" flex flex-row mt-8">
         <div className="text-blue-500 m-2"> YOUR TEAMS </div>
-        <Autocomplete
-          sx={{ minWidth: 280, ml: 2 }}
-          options={teamUsers}
-          getOptionLabel={(option) =>
-            option.teamName
-              ? `${option.name} (${option.teamName})`
-              : option.name
-          }
-          value={selectedUser}
-          onChange={(_, value) => setSelectedUser(value)}
-          renderInput={(params) => (
-            <TextField
-              {...params}
-              label="Select Team User"
-              placeholder="Search user or team..."
-              size="small"
-            />
-          )}
-          isOptionEqualToValue={(option, value) => option._id === value._id}
-          disableClearable
-          filterOptions={(options, state) =>
-            options.filter(
-              (option) =>
-                option.name
-                  .toLowerCase()
-                  .includes(state.inputValue.toLowerCase()) ||
-                (option.teamName &&
-                  option.teamName
+        {teamUsers.length === 0 ? (
+          <Skeleton variant="rectangular" width={280} height={40} sx={{ ml: 2, borderRadius: 1 }} />
+        ) : (
+          <Autocomplete
+            sx={{ minWidth: 280, ml: 2 }}
+            options={teamUsersWithAll}
+            getOptionLabel={(option) =>
+              option.teamName && option._id !== 'all'
+                ? `${option.name} (${option.teamName})`
+                : option.name
+            }
+            value={selectedUser === null ? allOption : selectedUser}
+            onChange={(_, value) => {
+              if (value && value._id === 'all') {
+                setSelectedUser(null);
+              } else {
+                setSelectedUser(value);
+              }
+            }}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Select Team User"
+                placeholder="Search user or team..."
+                size="small"
+              />
+            )}
+            isOptionEqualToValue={(option, value) => option._id === value._id}
+            disableClearable
+            filterOptions={(options, state) =>
+              options.filter(
+                (option) =>
+                  option.name
                     .toLowerCase()
-                    .includes(state.inputValue.toLowerCase()))
-            )
-          }
-          renderOption={(props, option) => (
-            <li {...props} key={option._id}>
-              <span>{option.name}</span>
-              {option.teamName && (
-                <span style={{ color: "#888", marginLeft: 8, fontSize: 12 }}>
-                  ({option.teamName})
-                </span>
-              )}
-            </li>
-          )}
-        />
+                    .includes(state.inputValue.toLowerCase()) ||
+                  (option.teamName &&
+                    option.teamName
+                      .toLowerCase()
+                      .includes(state.inputValue.toLowerCase()))
+              )
+            }
+            renderOption={(props, option) => (
+              <li {...props} key={option._id}>
+                <span>{option.name}</span>
+                {option.teamName && option._id !== 'all' && (
+                  <span style={{ color: "#888", marginLeft: 8, fontSize: 12 }}>
+                    ({option.teamName})
+                  </span>
+                )}
+              </li>
+            )}
+          />
+        )}
       </div>
       <Box
         sx={{
@@ -563,62 +665,74 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             mt: 2,
           }}
         >
-          <StatCard
-            title="Active Leads"
-              value={
-                userLoading
-                  ? "Loading..."
-                  : selectedUser
-                  ? userActiveLeads
-                  : "Teams ActiveLeads" // Custom value for Active Leads
-              }
-            icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
-            iconBg="#e3f2fd"
-            trend={selectedUser ? userActiveLeadsTrend : activeLeadsTrend}
-            onClick={() => router.push("/dashboard/leads?status=active")}
-          />
-          <StatCard
-            title="New Leads"
-              value={
-                userLoading
-                  ? "Loading..."
-                  : selectedUser
-                  ? userAnalytics?.newLeads ?? 0
-                  : "Teams NewlyLeads" // Custom value for New Leads
-              }
-            icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
-            iconBg="#e3f2fd"
-            trend={selectedUser ? userNewLeadsTrend : newLeadsTrend}
-            onClick={() => router.push("/dashboard/leads")}
-          />
-          <StatCard
-            title="Site Visits Scheduled"
-              value={
-                userLoading
-                  ? "Loading..."
-                  : selectedUser
-                  ? userAnalytics?.siteVisitCount ?? 0
-                  : "Teams SiteVisitDone"// Custom value for Site Visits Scheduled
-              }
-            icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
-            iconBg="#f3e5f5"
-            trend={selectedUser ? userSiteVisitTrend : siteVisitTrend}
-            onClick={() => router.push("/dashboard/leads")}
-          />
-          <StatCard
-            title="MoUs (Pending / Completed)"
-            value={
-              userLoading
-                ? "Loading..."
-                : selectedUser && userAnalytics?.mouStats && userAnalytics?.userId === selectedUser._id
-                ? `${userAnalytics.mouStats.pending ?? 0} / ${userAnalytics.mouStats.approved ?? 0}`
-                : "-- / --"
-            }
-            icon={<FaUsers size={24} style={{ color: "#3949ab" }} />}
-            iconBg="#e8eaf6"
-            trend={selectedUser ? userPendingMouTrend : pendingMouTrend}
-            onClick={() => router.push("/dashboard/mou")}
-          />
+          {userLoading || teamUsers.length === 0 ? (
+            // Show shimmer for all 4 cards if loading
+            <>
+              <StatCard loading title="Active Leads" value={0} icon={<FaUsers size={24} style={{ color: "#2196f3" }} />} iconBg="#e3f2fd" />
+              <StatCard loading title="New Leads" value={0} icon={<FaUsers size={24} style={{ color: "#2196f3" }} />} iconBg="#e3f2fd" />
+              <StatCard loading title="Site Visits Scheduled" value={0} icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />} iconBg="#f3e5f5" />
+              <StatCard loading title="MoUs (Pending / Completed)" value={0} icon={<FaUsers size={24} style={{ color: "#3949ab" }} />} iconBg="#e8eaf6" />
+            </>
+          ) : (
+            <>
+              <StatCard
+                title="Active Leads"
+                value={(!selectedUser || selectedUser._id === 'all') ? overallTeamActiveLeads : userActiveLeads}
+                icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
+                iconBg="#e3f2fd"
+                trend={(!selectedUser || selectedUser._id === 'all') ? activeLeadsTrend : userActiveLeadsTrend}
+                onClick={() => router.push("/dashboard/leads?status=active")}
+                loading={userLoading}
+              />
+              <StatCard
+                title="New Leads"
+                value={(!selectedUser || selectedUser._id === 'all') ? overallTeamNewLeads : (userAnalytics?.newLeads ?? 0)}
+                icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
+                iconBg="#e3f2fd"
+                trend={(!selectedUser || selectedUser._id === 'all') ? newLeadsTrend : userNewLeadsTrend}
+                onClick={() => router.push("/dashboard/leads")}
+                loading={userLoading}
+              />
+              <StatCard
+                title="Site Visits Scheduled"
+                value={(!selectedUser || selectedUser._id === 'all') ? overallTeamSiteVisits : (userAnalytics?.siteVisitCount ?? 0)}
+                icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
+                iconBg="#f3e5f5"
+                trend={(!selectedUser || selectedUser._id === 'all') ? siteVisitTrend : userSiteVisitTrend}
+                onClick={() => router.push("/dashboard/leads")}
+                loading={userLoading}
+              />
+              <StatCard
+                title="MoUs (Pending / Completed)"
+                value={
+                  (!selectedUser || selectedUser._id === 'all')
+                    ? `${overallTeamMouSummary.pending} / ${overallTeamMouSummary.approved + overallTeamMouSummary.completed}`
+                    : (selectedUserTeamMouStats
+                        ? `${selectedUserTeamMouStats.pending ?? 0} / ${selectedUserTeamMouStats.approved ?? 0}`
+                        : '0 / 0')
+                }
+                icon={<FaUsers size={24} style={{ color: "#3949ab" }} />}
+                iconBg="#e8eaf6"
+                trend={(!selectedUser || selectedUser._id === 'all') ? pendingMouTrend : userPendingMouTrend}
+                onClick={() => router.push("/dashboard/mou")}
+                loading={userLoading}
+              />
+                  {showVendorBilling && (
+            <StatCard
+                title="Total Vendors & Billing amount"
+                value={
+                  (!selectedUser || selectedUser._id === 'all')
+                    ? `${teamUsers.reduce((acc, user) => acc + (user.totalVendors || 0), 0)} / ₹${teamUsers.reduce((acc, user) => acc + (user.totalSpend || 0), 0).toLocaleString()}`
+                    : `${selectedUser?.totalVendors || 0} / ₹${(selectedUser?.totalSpend || 0).toLocaleString()}`
+                }
+                icon={<FaBuilding size={24} style={{ color: "#ffb300" }} />}
+                iconBg="#fffde7"
+                trend={totalVendorsTrend}
+                loading={loadingNewLeads}
+              />
+          )}
+            </>
+          )}
         </Box>
       </Box>
     </Box>
