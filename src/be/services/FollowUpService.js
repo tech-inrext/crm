@@ -78,10 +78,19 @@ class FollowUpService extends Service {
       }
       console.log(`[FollowUpService] createFollowUp effective user ID: ${currentUserId || "UNKNOWN"}`);
       
-      const initialNotes = (followUpDate || note) ? [{ 
-        followUpDate: followUpDate || null, 
+      const { followUpType } = req.body;
+      const validTypes = ["site visit", "call back", "note"];
+      const safeType = validTypes.includes(followUpType) ? followUpType : "note";
+      
+      // Store date only if type is 'call back' (or 'site visit' if consistent with logic, but user specifically asked for 'call back' condition for date visibility)
+      // The user requirement said: "Store followUpDate only when followUpType === 'call back'"
+      const finalDate = safeType === "call back" ? followUpDate : null;
+
+      const initialNotes = (followUpDate || note || safeType) ? [{ 
+        followUpDate: finalDate || null, 
         note: note || "N/A",
-        submittedBy: currentUserId || null
+        submittedBy: currentUserId || null,
+        followUpType: safeType
       }] : [];
 
       const newFollowUp = new FollowUp({
@@ -128,12 +137,19 @@ class FollowUpService extends Service {
 
       if (!followUp) {
         console.log(`[FollowUpService] Creating new FollowUp document for lead: ${targetLeadId}. User: ${currentUserId || "UNKNOWN"}`);
+        
+        const { followUpType } = req.body;
+        const validTypes = ["site visit", "call back", "note"];
+        const safeType = validTypes.includes(followUpType) ? followUpType : "note";
+        const finalDate = safeType === "call back" ? followUpDate : null;
+
         const newFollowUp = new FollowUp({
           leadId: targetLeadId,
           followUps: [{ 
-            followUpDate: followUpDate || null, 
+            followUpDate: finalDate || null, 
             note: note || "N/A", 
-            submittedBy: currentUserId || null 
+            submittedBy: currentUserId || null,
+            followUpType: safeType
           }],
         });
         await newFollowUp.save();
@@ -142,10 +158,17 @@ class FollowUpService extends Service {
 
       console.log(`[FollowUpService] Appending note to existing FollowUp for lead: ${targetLeadId}`);
       console.log(`[FollowUpService] Saving with submittedBy user ID: ${currentUserId || "MISSING"}`);
+      
+      const { followUpType } = req.body;
+      const validTypes = ["site visit", "call back", "note"];
+      const safeType = validTypes.includes(followUpType) ? followUpType : "note";
+      const finalDate = safeType === "call back" ? followUpDate : null;
+
       followUp.followUps.push({ 
-        followUpDate: followUpDate || null, 
+        followUpDate: finalDate || null, 
         note: note || "N/A",
-        submittedBy: currentUserId || null
+        submittedBy: currentUserId || null,
+        followUpType: safeType
       });
       await followUp.save();
 

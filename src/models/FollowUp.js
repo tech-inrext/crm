@@ -17,6 +17,12 @@ const followUpEntrySchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  // followUpType - site visit, call back, note
+  followUpType: {
+    type: String,
+    enum: ["site visit", "call back", "note"],
+    default: "note",
+  },
 });
 
 const followUpSchema = new mongoose.Schema(
@@ -27,6 +33,7 @@ const followUpSchema = new mongoose.Schema(
       required: true,
       unique: true, // One lead, one FollowUp document
     },
+
     followUps: [followUpEntrySchema],
   },
   { timestamps: true }
