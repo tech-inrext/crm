@@ -229,7 +229,14 @@ class FollowUpService extends Service {
         };
       });
 
-      return res.status(200).json({ success: true, data: items });
+      return res.status(200).json({ 
+        success: true, 
+        data: items,
+        lead: followUp.leadId ? {
+          phone: followUp.leadId.phone,
+          fullName: followUp.leadId.fullName
+        } : null
+      });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
