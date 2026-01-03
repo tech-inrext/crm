@@ -37,12 +37,12 @@ export default async function handler(req, res) {
       }
 
       if (sendMOUApprovalMail) {
-        // await sendMOUApprovalMail(
-        //   mou.email,
-        //   mou.name,
-        //   mou.employeeProfileId,
-        //   mou.mouPdfUrl
-        // );
+        await sendMOUApprovalMail(
+          mou.email,
+          mou.name,
+          mou.employeeProfileId,
+          mou.mouPdfUrl
+        );
         return res.json({ success: true });
       }
       return res
