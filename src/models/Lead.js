@@ -99,11 +99,10 @@ const leadSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
     },
-    followUpNotes: {
-      type: [String],
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
     },
-
-    nextFollowUp: Date,
   },
   { timestamps: true }
 );
