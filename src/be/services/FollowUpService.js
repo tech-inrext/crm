@@ -4,10 +4,57 @@ import Lead from "../../models/Lead";
 import Employee from "../../models/Employee";
 import dbConnect from "../../lib/mongodb";
 import mongoose from "mongoose";
+import notificationService from "../../services/notification.service";
 
 class FollowUpService extends Service {
   constructor() {
     super();
+  }
+
+  // Helper: Send notification for lead note
+  async _sendFollowUpNotification(leadId, note, currentUserId) {
+    try {
+      if (!leadId) return;
+
+      const lead = await Lead.findById(leadId).select("assignedTo fullName phone");
+
+      if (!lead || !lead.assignedTo) {
+        console.log(`[FollowUpService] Notification skipped: Lead ${leadId} has no assigned user`);
+        return;
+      }
+
+      // Don't notify if the user is acting on their own lead
+      if (currentUserId && lead.assignedTo.toString() === currentUserId.toString()) {
+        console.log(`[FollowUpService] Notification skipped: User ${currentUserId} is the lead owner`);
+        return;
+      }
+
+      const sender = await Employee.findById(currentUserId).select("name");
+      const senderName = sender ? sender.name : "A user";
+      const leadName = lead.fullName || lead.phone || "a lead";
+
+      await notificationService.createNotification({
+        recipient: lead.assignedTo,
+        sender: currentUserId,
+        type: "LEAD_NOTE_ADDED",
+        title: "New Note on Lead",
+        message: `${senderName} added a note to lead ${leadName}: "${note.substring(0, 50)}${note.length > 50 ? '...' : ''}"`,
+        metadata: {
+          leadId: lead._id,
+          actionUrl: `/dashboard/leads/${lead._id}`,
+          priority: "MEDIUM",
+          isActionable: true
+        },
+        channels: {
+          inApp: true,
+          email: false, // Optional, keep false to reduce spam
+          push: true
+        }
+      });
+      console.log(`[FollowUpService] Notification sent to ${lead.assignedTo} for lead ${leadId}`);
+    } catch (error) {
+      console.error("[FollowUpService] Error sending notification:", error);
+    }
   }
 
   // Helper: try to find a lead by various normalized forms of an identifier
@@ -63,9 +110,9 @@ class FollowUpService extends Service {
       // Check if follow-up already exists for this lead
       const existingFollowUp = await FollowUp.findOne({ leadId: targetLeadId });
       if (existingFollowUp) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Follow-up record already exists for this lead." 
+        return res.status(400).json({
+          success: false,
+          message: "Follow-up record already exists for this lead."
         });
       }
 
@@ -74,20 +121,20 @@ class FollowUpService extends Service {
       if (currentUserId && typeof currentUserId === "string") {
         try {
           currentUserId = new mongoose.Types.ObjectId(currentUserId);
-        } catch (e) {}
+        } catch (e) { }
       }
       console.log(`[FollowUpService] createFollowUp effective user ID: ${currentUserId || "UNKNOWN"}`);
-      
+
       const { followUpType } = req.body;
       const validTypes = ["site visit", "call back", "note"];
       const safeType = validTypes.includes(followUpType) ? followUpType : "note";
-      
+
       // Store date only if type is 'call back' (or 'site visit' if consistent with logic, but user specifically asked for 'call back' condition for date visibility)
       // The user requirement said: "Store followUpDate only when followUpType === 'call back'"
       const finalDate = safeType === "call back" ? followUpDate : null;
 
-      const initialNotes = (followUpDate || note || safeType) ? [{ 
-        followUpDate: finalDate || null, 
+      const initialNotes = (followUpDate || note || safeType) ? [{
+        followUpDate: finalDate || null,
         note: note || "N/A",
         submittedBy: currentUserId || null,
         followUpType: safeType
@@ -99,6 +146,10 @@ class FollowUpService extends Service {
       });
 
       await newFollowUp.save();
+
+      // Send notification
+      this._sendFollowUpNotification(targetLeadId, note || "Follow-up created", currentUserId);
+
       return res.status(201).json({ success: true, data: newFollowUp });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
@@ -121,9 +172,9 @@ class FollowUpService extends Service {
       }
 
       if (!targetLeadId) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Lead identification is required" 
+        return res.status(400).json({
+          success: false,
+          message: "Lead identification is required"
         });
       }
 
@@ -132,12 +183,12 @@ class FollowUpService extends Service {
       if (currentUserId && typeof currentUserId === "string") {
         try {
           currentUserId = new mongoose.Types.ObjectId(currentUserId);
-        } catch (e) {}
+        } catch (e) { }
       }
 
       if (!followUp) {
         console.log(`[FollowUpService] Creating new FollowUp document for lead: ${targetLeadId}. User: ${currentUserId || "UNKNOWN"}`);
-        
+
         const { followUpType } = req.body;
         const validTypes = ["site visit", "call back", "note"];
         const safeType = validTypes.includes(followUpType) ? followUpType : "note";
@@ -145,9 +196,9 @@ class FollowUpService extends Service {
 
         const newFollowUp = new FollowUp({
           leadId: targetLeadId,
-          followUps: [{ 
-            followUpDate: finalDate || null, 
-            note: note || "N/A", 
+          followUps: [{
+            followUpDate: finalDate || null,
+            note: note || "N/A",
             submittedBy: currentUserId || null,
             followUpType: safeType
           }],
@@ -158,19 +209,22 @@ class FollowUpService extends Service {
 
       console.log(`[FollowUpService] Appending note to existing FollowUp for lead: ${targetLeadId}`);
       console.log(`[FollowUpService] Saving with submittedBy user ID: ${currentUserId || "MISSING"}`);
-      
+
       const { followUpType } = req.body;
       const validTypes = ["site visit", "call back", "note"];
       const safeType = validTypes.includes(followUpType) ? followUpType : "note";
       const finalDate = safeType === "call back" ? followUpDate : null;
 
-      followUp.followUps.push({ 
-        followUpDate: finalDate || null, 
+      followUp.followUps.push({
+        followUpDate: finalDate || null,
         note: note || "N/A",
         submittedBy: currentUserId || null,
         followUpType: safeType
       });
       await followUp.save();
+
+      // Send notification
+      this._sendFollowUpNotification(targetLeadId, note || "Note added", currentUserId);
 
       return res.status(200).json({ success: true, data: followUp });
     } catch (error) {
@@ -214,7 +268,7 @@ class FollowUpService extends Service {
       const items = followUp.followUps.map(f => {
         const item = f.toObject();
         let submittedByName = "Unknown";
-        
+
         if (f.submittedBy) {
           if (f.submittedBy.name) {
             submittedByName = f.submittedBy.name;
@@ -222,15 +276,15 @@ class FollowUpService extends Service {
             submittedByName = `User ID: ${f.submittedBy.toString().slice(-4)}`;
           }
         }
-        
+
         return {
           ...item,
           submittedByName
         };
       });
 
-      return res.status(200).json({ 
-        success: true, 
+      return res.status(200).json({
+        success: true,
         data: items,
         lead: followUp.leadId ? {
           phone: followUp.leadId.phone,
@@ -247,7 +301,7 @@ class FollowUpService extends Service {
       await dbConnect();
       const { action } = req.query || {};
       console.log(`[FollowUpService] POST request received. Action: ${action || "addNote"}`);
-      
+
       if (action === "create") {
         return await this.createFollowUp(req, res);
       } else {
