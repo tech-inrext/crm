@@ -23,6 +23,7 @@ import {
   Home,
   Announcement,
   Assignment,
+  Comment,
 } from "@mui/icons-material";
 import { formatDistanceToNow } from "date-fns";
 import { Notification } from "../../../contexts/NotificationContext";
@@ -80,6 +81,8 @@ const NotificationItem: React.FC<NotificationItemProps> = ({
       case "LEAD_STATUS_UPDATE":
       case "LEAD_FOLLOWUP_DUE":
         return <Assignment color="primary" />;
+      case "LEAD_NOTE_ADDED":
+        return <Comment color="info" />;
       case "CAB_BOOKING_APPROVED":
       case "CAB_BOOKING_REJECTED":
       case "CAB_BOOKING_ASSIGNED":

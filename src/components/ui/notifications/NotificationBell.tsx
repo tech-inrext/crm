@@ -133,6 +133,7 @@ const NotificationBell: React.FC = () => {
       case "LEAD_ASSIGNED":
       case "LEAD_STATUS_UPDATE":
       case "LEAD_FOLLOWUP_DUE":
+      case "LEAD_NOTE_ADDED":
         return "/dashboard/leads";
 
       // Cab booking notifications
@@ -359,8 +360,8 @@ const NotificationBell: React.FC = () => {
                         borderColor:
                           notification.lifecycle.status !== "READ"
                             ? `${getPriorityColor(
-                                notification.metadata.priority
-                              )}.main`
+                              notification.metadata.priority
+                            )}.main`
                             : "transparent",
                       }}
                       onClick={() => handleNotificationClick(notification)}

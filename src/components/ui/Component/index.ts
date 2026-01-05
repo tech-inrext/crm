@@ -17,6 +17,7 @@ export { default as CircularProgress } from './CircularProgress';
 export { default as Collapse } from './Collapse';
 export { default as Container } from './Container';
 export { default as DatePicker } from './DatePicker';
+export { default as DateTimePicker } from './DateTimePicker';
 export { default as Dialog } from './Dialog';
 export { default as DialogActions } from './DialogActions';
 export { default as DialogContent } from './DialogContent';

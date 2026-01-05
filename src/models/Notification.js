@@ -19,6 +19,7 @@ const notificationSchema = new mongoose.Schema(
         "LEAD_ASSIGNED",
         "LEAD_STATUS_UPDATE",
         "LEAD_FOLLOWUP_DUE",
+        "LEAD_NOTE_ADDED",
         "CAB_BOOKING_APPROVED",
         "CAB_BOOKING_REJECTED",
         "CAB_BOOKING_ASSIGNED",

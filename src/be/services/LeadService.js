@@ -1,7 +1,9 @@
 import { Service } from "@framework";
 import Lead from "../../models/Lead";
+import FollowUp from "../../models/FollowUp";
 import { NotificationHelper } from "../../lib/notification-helpers";
 import { leadQueue } from "../../queue/leadQueue";
+import mongoose from "mongoose";
 
 class LeadService extends Service {
   constructor() {
@@ -34,8 +36,15 @@ class LeadService extends Service {
         100 + Math.random() * 900
       )}`;
 
-      const loggedInUserId = req.employee?._id;
-
+      let loggedInUserId = req.employee?._id || req.employee?.id;
+      if (loggedInUserId && typeof loggedInUserId === "string") {
+        try {
+          loggedInUserId = new mongoose.Types.ObjectId(loggedInUserId);
+        } catch (e) {
+          // keep as is
+        }
+      }
+ 
       const newLead = new Lead({
         uploadedBy: loggedInUserId,
         managerId: rest.managerId || loggedInUserId, // Default to logged-in user if not provided
@@ -67,6 +76,31 @@ class LeadService extends Service {
             notificationError
           );
           // Don't fail the creation if notification fails
+        }
+      }
+
+      // Integration with FollowUp collection
+      if (rest.nextFollowUp || rest.followUpNotes) {
+        try {
+          // Prepare the note string. If it's an array (from old schema), join it.
+          const noteStr = Array.isArray(rest.followUpNotes) 
+            ? rest.followUpNotes.join("\n") 
+            : rest.followUpNotes || "N/A";
+
+          console.log(`[LeadService] Creating initial follow-up. User: ${loggedInUserId}, Note: ${noteStr}`);
+
+          const followUp = new FollowUp({
+            leadId: newLead._id,
+            followUps: [{
+              followUpDate: rest.nextFollowUp || null,
+              note: noteStr,
+              submittedBy: loggedInUserId || null
+            }]
+          });
+          await followUp.save();
+          console.log(`[LeadService] Follow-up document saved for lead: ${newLead._id}`);
+        } catch (followUpError) {
+          console.error("Failed to create initial follow-up record:", followUpError);
         }
       }
 
@@ -174,13 +208,27 @@ class LeadService extends Service {
       const query = queryParts.length > 1 ? { $and: queryParts } : baseQuery;
 
       const [leads, totalLeads] = await Promise.all([
-        Lead.find(query).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }),
+        Lead.find(query).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }).lean(),
         Lead.countDocuments(query),
       ]);
 
+      // Merge follow-up data for each lead
+      const mergedLeads = await Promise.all(leads.map(async (lead) => {
+        const followUp = await FollowUp.findOne({ leadId: lead._id }).lean();
+        if (followUp && followUp.followUps && followUp.followUps.length > 0) {
+          const latest = followUp.followUps[followUp.followUps.length - 1];
+          return {
+            ...lead,
+            nextFollowUp: latest.followUpDate,
+            followUpNotes: followUp.followUps.map(f => f.note)
+          };
+        }
+        return lead;
+      }));
+
       return res.status(200).json({
         success: true,
-        data: leads,
+        data: mergedLeads,
         pagination: {
           totalItems: totalLeads,
           currentPage,
@@ -219,7 +267,16 @@ class LeadService extends Service {
         return res.status(403).json({ success: false, error: "Access denied" });
       }
 
-      return res.status(200).json({ success: true, data: lead });
+      // Merge follow-up data
+      const leadObj = lead.toObject();
+      const followUp = await FollowUp.findOne({ leadId: id }).lean();
+      if (followUp && followUp.followUps && followUp.followUps.length > 0) {
+        const latest = followUp.followUps[followUp.followUps.length - 1];
+        leadObj.nextFollowUp = latest.followUpDate;
+        leadObj.followUpNotes = followUp.followUps.map(f => f.note);
+      }
+
+      return res.status(200).json({ success: true, data: leadObj });
     } catch (error) {
       console.error("Error fetching lead:", error);
       return res
@@ -308,6 +365,72 @@ class LeadService extends Service {
             notificationError
           );
           // Don't fail the update if notification fails
+        }
+      }
+
+      // Integration with FollowUp collection on update
+      if (updateFields.nextFollowUp !== undefined || updateFields.followUpNotes !== undefined) {
+        try {
+          const followUp = await FollowUp.findOne({ leadId: id });
+          
+          // Get the latest incoming note
+          let latestIncomingNote = "N/A";
+          if (Array.isArray(updateFields.followUpNotes)) {
+            latestIncomingNote = updateFields.followUpNotes[updateFields.followUpNotes.length - 1] || "N/A";
+          } else if (updateFields.followUpNotes) {
+            latestIncomingNote = updateFields.followUpNotes;
+          }
+
+          const latestIncomingDate = updateFields.nextFollowUp ? new Date(updateFields.nextFollowUp) : null;
+
+          if (followUp) {
+            const lastEntry = followUp.followUps[followUp.followUps.length - 1];
+            
+            // Compare with the last entry to see if we should add a new one
+            const isNoteChanged = lastEntry ? lastEntry.note !== latestIncomingNote : true;
+            
+            let isDateChanged = true;
+            if (lastEntry) {
+              const lastDate = lastEntry.followUpDate ? new Date(lastEntry.followUpDate).getTime() : null;
+              const incomingDate = latestIncomingDate ? latestIncomingDate.getTime() : null;
+              isDateChanged = lastDate !== incomingDate;
+            }
+
+            // Only add a new entry if something actually changed and it's not just the default "N/A"
+            if (isNoteChanged || isDateChanged) {
+              let currentUserId = req.employee?._id || req.employee?.id;
+              if (currentUserId && typeof currentUserId === "string") {
+                try {
+                  currentUserId = new mongoose.Types.ObjectId(currentUserId);
+                } catch (e) {}
+              }
+              followUp.followUps.push({
+                followUpDate: latestIncomingDate,
+                note: latestIncomingNote,
+                submittedBy: currentUserId
+              });
+              await followUp.save();
+            }
+          } else {
+            // Create first record
+            let currentUserId = req.employee?._id || req.employee?.id;
+            if (currentUserId && typeof currentUserId === "string") {
+              try {
+                currentUserId = new mongoose.Types.ObjectId(currentUserId);
+              } catch (e) {}
+            }
+            const newFollowUp = new FollowUp({
+              leadId: id,
+              followUps: [{
+                followUpDate: latestIncomingDate,
+                note: latestIncomingNote,
+                submittedBy: currentUserId
+              }]
+            });
+            await newFollowUp.save();
+          }
+        } catch (followUpError) {
+          console.error("Failed to update follow-up record:", followUpError);
         }
       }
 

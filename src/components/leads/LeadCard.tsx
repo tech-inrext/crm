@@ -17,6 +17,8 @@ import {
   TrendingUp,
   Edit,
   Delete,
+  Feedback,
+  Badge,
 } from "@/components/ui/Component";
 
 import { Schedule } from "@mui/icons-material";
@@ -44,10 +46,11 @@ interface LeadCardProps {
   onEdit: (lead: Lead) => void;
   onDelete: (lead: Lead) => void;
   onStatusChange: (leadId: string, newStatus: string) => Promise<void>;
+  onFeedback: (lead: Lead) => void;
 }
 
 const LeadCard = memo(
-  ({ lead, onEdit, onDelete, onStatusChange }: LeadCardProps) => {
+  ({ lead, onEdit, onDelete, onStatusChange, onFeedback }: LeadCardProps) => {
     const avatar = useMemo(() => {
       if (lead?.fullName) {
         return lead?.fullName?.substring(0, 2).toUpperCase();
@@ -200,6 +203,27 @@ const LeadCard = memo(
                   </IconButton>
                 </Tooltip>
               </PermissionGuard>
+
+              <Tooltip title="Daily Updates/Follow-ups">
+                <IconButton
+                  onClick={() => onFeedback(lead)}
+                  size="small"
+                  sx={COMMON_STYLES.iconButton(
+                    "info.main",
+                    "info.dark"
+                  )}
+                >
+                  <Badge
+                    badgeContent={
+                      (lead.followUpNotes && lead.followUpNotes.length) || 0
+                    }
+                    color="error" // Use error color for visibility on info button
+                    sx={{ "& .MuiBadge-badge": { fontSize: "0.6rem", height: 16, minWidth: 16 } }}
+                  >
+                    <Feedback fontSize="small" />
+                  </Badge>
+                </IconButton>
+              </Tooltip>
             </Box>
           </Stack>
         </CardContent>

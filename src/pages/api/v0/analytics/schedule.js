@@ -1,5 +1,7 @@
 import dbConnect from '@/lib/mongodb';
 import Lead from '@/models/Lead';
+import FollowUp from '@/models/FollowUp';
+import mongoose from 'mongoose';
 import { userAuth } from '@/middlewares/auth';
 
 async function handler(req, res) {
@@ -8,7 +10,8 @@ async function handler(req, res) {
 		// logged-in user id for scoping schedule and overdue
 		const loggedInUserId = req.employee?._id;
 		// base filter for scoping queries to the logged-in user (if present)
-		const baseQuery = loggedInUserId ? { uploadedBy: loggedInUserId } : {};
+		const baseQuery = loggedInUserId ? { uploadedBy: new mongoose.Types.ObjectId(loggedInUserId) } : {};
+		
 		// Get start and end of current week (Monday to Sunday)
 		const now = new Date();
 		const currentDay = now.getDay(); // 0 = Sunday, 1 = Monday, ..., 6 = Saturday
@@ -20,24 +23,60 @@ async function handler(req, res) {
 		sunday.setDate(monday.getDate() + 6);
 		sunday.setHours(23, 59, 59, 999);
 
-		// Fetch leads with follow-ups scheduled for this week (exclude Closed/Dropped)
-		const thisWeekFollowUps = await Lead.find({
-			nextFollowUp: {
-				$gte: monday,
-				$lte: sunday
+		// Implementation Note: Since nextFollowUp and followUpNotes are moved to FollowUp collection,
+		// we use an aggregation pipeline to join and filter.
+		const pipeline = [
+			{ $match: { ...baseQuery, status: { $nin: [/^Closed$/i, /^Dropped$/i] } } },
+			{
+				$lookup: {
+					from: 'followups',
+					localField: '_id',
+					foreignField: 'leadId',
+					as: 'followUpData'
+				}
 			},
-			status: { $nin: [/^Closed$/i, /^Dropped$/i] },
-			...baseQuery
-		})
-		.populate('assignedTo', 'firstName lastName email')
-		.populate('uploadedBy', 'firstName lastName')
-		.sort({ nextFollowUp: 1 })
-		.select('leadId fullName phone status source location nextFollowUp followUpNotes assignedTo uploadedBy createdAt');
+			{ $unwind: { path: '$followUpData', preserveNullAndEmptyArrays: true } },
+			{
+				$addFields: {
+					// Extract the latest follow-up date from the array
+					latestFollowUp: { $arrayElemAt: ['$followUpData.followUps', -1] }
+				}
+			},
+			{
+				$match: {
+					'latestFollowUp.followUpDate': {
+						$gte: monday,
+						$lte: sunday
+					}
+				}
+			},
+			{
+				$lookup: {
+					from: 'employees',
+					localField: 'assignedTo',
+					foreignField: '_id',
+					as: 'assignedTo'
+				}
+			},
+			{ $unwind: { path: '$assignedTo', preserveNullAndEmptyArrays: true } },
+			{
+				$lookup: {
+					from: 'employees',
+					localField: 'uploadedBy',
+					foreignField: '_id',
+					as: 'uploadedBy'
+				}
+			},
+			{ $unwind: { path: '$uploadedBy', preserveNullAndEmptyArrays: true } },
+			{ $sort: { 'latestFollowUp.followUpDate': 1 } }
+		];
+
+		const thisWeekLeads = await Lead.aggregate(pipeline);
 
 		// Group by date for easier display
 		const scheduleByDate = {};
-		thisWeekFollowUps.forEach(lead => {
-			const followUpDate = new Date(lead.nextFollowUp);
+		thisWeekLeads.forEach(lead => {
+			const followUpDate = new Date(lead.latestFollowUp.followUpDate);
 			const dateKey = followUpDate.toISOString().split('T')[0]; // YYYY-MM-DD
 			
 			if (!scheduleByDate[dateKey]) {
@@ -52,50 +91,66 @@ async function handler(req, res) {
 				status: lead.status,
 				source: lead.source,
 				location: lead.location,
-				nextFollowUp: lead.nextFollowUp,
+				nextFollowUp: lead.latestFollowUp.followUpDate,
 				followUpTime: followUpDate.toLocaleTimeString('en-US', { 
 					hour: '2-digit', 
 					minute: '2-digit',
 					hour12: true 
 				}),
 				assignedTo: lead.assignedTo ? {
-					name: `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`,
+					name: lead.assignedTo.name,
 					email: lead.assignedTo.email
 				} : null,
 				uploadedBy: lead.uploadedBy ? {
-					name: `${lead.uploadedBy.firstName} ${lead.uploadedBy.lastName}`
+					name: lead.uploadedBy.name
 				} : null,
-				lastNote: lead.followUpNotes && lead.followUpNotes.length > 0 
-					? lead.followUpNotes[lead.followUpNotes.length - 1] 
-					: null
+				lastNote: lead.latestFollowUp.note || null
 			});
 		});
 
-		// Get additional stats
-		const totalScheduled = thisWeekFollowUps.length;
-		const statusCounts = thisWeekFollowUps.reduce((acc, lead) => {
+		// Get total scheduled
+		const totalScheduled = thisWeekLeads.length;
+		const statusCounts = thisWeekLeads.reduce((acc, lead) => {
 			acc[lead.status] = (acc[lead.status] || 0) + 1;
 			return acc;
 		}, {});
 
-		// Get overdue follow-ups (past due but not completed)
-		// Use current time to determine overdue (more accurate than week start)
-		const nowDate = new Date();
-		const overdueFollowUps = await Lead.countDocuments({
-			nextFollowUp: { $lt: nowDate, $exists: true, $ne: null },
-			status: { $nin: [/^Closed$/i, /^Dropped$/i] },
-			...baseQuery
-		});
+		// Overdue follow-ups count
+		const overduePipeline = [
+			{ $match: { ...baseQuery, status: { $nin: [/^Closed$/i, /^Dropped$/i] } } },
+			{
+				$lookup: {
+					from: 'followups',
+					localField: '_id',
+					foreignField: 'leadId',
+					as: 'followUpData'
+				}
+			},
+			{ $unwind: '$followUpData' },
+			{
+				$addFields: {
+					latestFollowUp: { $arrayElemAt: ['$followUpData.followUps', -1] }
+				}
+			},
+			{
+				$match: {
+					'latestFollowUp.followUpDate': { $lt: now }
+				}
+			},
+			{ $count: 'count' }
+		];
+		const overdueResult = await Lead.aggregate(overduePipeline);
+		const overdueCount = overdueResult.length > 0 ? overdueResult[0].count : 0;
 
 		res.status(200).json({
 			success: true,
 			weekStart: monday.toISOString().split('T')[0],
 			weekEnd: sunday.toISOString().split('T')[0],
 			totalScheduled,
-			overdueCount: overdueFollowUps,
+			overdueCount,
 			statusBreakdown: statusCounts,
 			scheduleByDate,
-			leads: thisWeekFollowUps.map(lead => ({
+			leads: thisWeekLeads.map(lead => ({
 				id: lead._id,
 				leadId: lead.leadId,
 				fullName: lead.fullName,
@@ -103,17 +158,15 @@ async function handler(req, res) {
 				status: lead.status,
 				source: lead.source,
 				location: lead.location,
-				nextFollowUp: lead.nextFollowUp,
+				nextFollowUp: lead.latestFollowUp.followUpDate,
 				assignedTo: lead.assignedTo ? {
-					name: `${lead.assignedTo.firstName} ${lead.assignedTo.lastName}`,
+					name: lead.assignedTo.name,
 					email: lead.assignedTo.email
 				} : null,
 				uploadedBy: lead.uploadedBy ? {
-					name: `${lead.uploadedBy.firstName} ${lead.uploadedBy.lastName}`
+					name: lead.uploadedBy.name
 				} : null,
-				lastNote: lead.followUpNotes && lead.followUpNotes.length > 0 
-					? lead.followUpNotes[lead.followUpNotes.length - 1] 
-					: null
+				lastNote: lead.latestFollowUp.note || null
 			}))
 		});
 	} catch (err) {

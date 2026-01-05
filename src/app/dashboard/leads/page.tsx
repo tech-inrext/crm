@@ -238,6 +238,10 @@ const Leads: React.FC = () => {
                 }}
                 onDelete={() => { }}
                 onStatusChange={updateLeadStatus}
+                onFeedback={(l) => {
+                  setSelectedLeadForFeedback(l.leadId || l._id || l.id);
+                  setFeedbackOpen(true);
+                }}
               />
             ))}
           </Box>

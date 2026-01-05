@@ -8,7 +8,7 @@ export const leadValidationSchema = Yup.object({
   fullName: Yup.string()
     .min(3, "name must be at least 3 characters")
     .max(50, "name must be at most 50 characters")
-    .required("Full Name is required")
+    // .required("Full Name is required")
     .trim(),
   email: Yup.string()
     .email("Invalid email format")
