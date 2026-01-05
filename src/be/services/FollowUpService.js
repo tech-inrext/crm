@@ -47,8 +47,8 @@ class FollowUpService extends Service {
         },
         channels: {
           inApp: true,
-          email: false, // Optional, keep false to reduce spam
-          push: true
+          email: true,
+          push: false
         }
       });
       console.log(`[FollowUpService] Notification sent to ${lead.assignedTo} for lead ${leadId}`);
@@ -148,7 +148,7 @@ class FollowUpService extends Service {
       await newFollowUp.save();
 
       // Send notification
-      this._sendFollowUpNotification(targetLeadId, note || "Follow-up created", currentUserId);
+      await this._sendFollowUpNotification(targetLeadId, note || "Follow-up created", currentUserId);
 
       return res.status(201).json({ success: true, data: newFollowUp });
     } catch (error) {
@@ -224,7 +224,7 @@ class FollowUpService extends Service {
       await followUp.save();
 
       // Send notification
-      this._sendFollowUpNotification(targetLeadId, note || "Note added", currentUserId);
+      await this._sendFollowUpNotification(targetLeadId, note || "Note added", currentUserId);
 
       return res.status(200).json({ success: true, data: followUp });
     } catch (error) {
