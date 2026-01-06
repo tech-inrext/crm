@@ -22,14 +22,14 @@ export function VendorBreakdown() {
   // Filter states - separate temp states for form and applied states for API
   const [tempFilters, setTempFilters] = React.useState({
     status: 'all',
-    month: 'all',
-    year: 'all',
+    fromDate: null,
+    toDate: null,
     avp: 'all'
   });
   const [appliedFilters, setAppliedFilters] = React.useState({
     status: 'all',
-    month: 'all',
-    year: 'all',
+    fromDate: null,
+    toDate: null,
     avp: 'all'
   });
 
@@ -45,10 +45,11 @@ export function VendorBreakdown() {
     try {
       let url = '/api/v0/analytics/cabbooking';
       const params = new URLSearchParams();
-      if (filters.month !== 'all' || filters.year !== 'all') {
-        const monthValue = filters.month !== 'all' ? filters.month : '01';
-        const yearValue = filters.year !== 'all' ? filters.year : new Date().getFullYear().toString();
-        params.append('month', `${yearValue}-${monthValue}`);
+      if (filters.fromDate) {
+        params.append('fromDate', new Date(filters.fromDate).toISOString());
+      }
+      if (filters.toDate) {
+        params.append('toDate', new Date(filters.toDate).toISOString());
       }
       if (filters.status !== 'all') {
         params.append('status', filters.status);
@@ -79,14 +80,10 @@ export function VendorBreakdown() {
         if (data.avpUsers && Array.isArray(data.avpUsers) && data.avpUsers.length > 0) {
           setAvpUsers(data.avpUsers);
         }
-        let filteredVendors = data.allVendors;
-        if (filters.month !== 'all') {
-          filteredVendors = data.allVendors.filter(vendor => (vendor.totalBookings || 0) > 0);
-        }
         setVendorData({
           ...data,
-          allVendors: filteredVendors,
-          totalVendors: filteredVendors.length
+          allVendors: data.allVendors,
+          totalVendors: data.allVendors.length
         });
       } else {
         setVendorData(null);
@@ -115,7 +112,7 @@ export function VendorBreakdown() {
 
     // Handle filter reset
     const handleResetFilters = () => {
-      const resetFilters = { status: 'all', month: 'all', year: 'all', avp: 'all' };
+      const resetFilters = { status: 'all', fromDate: null, toDate: null, avp: 'all' };
       setTempFilters(resetFilters);
       setAppliedFilters(resetFilters);
       setSelectedVendor('');
@@ -144,20 +141,10 @@ export function VendorBreakdown() {
     if (selectedVendor) {
       displayVendors = displayVendors.filter(vendor => vendor.name === selectedVendor);
     }
-  const monthOptions = (() => {
-    const months = [{ value: 'all', label: 'All Months' }];
-    for (let i = 1; i <= 12; i++) {
-      const date = new Date(2000, i - 1, 1);
-      const monthLabel = date.toLocaleDateString('en-US', { month: 'long' });
-      months.push({ value: String(i).padStart(2, '0'), label: monthLabel });
-    }
-    return months;
-  })();
-
   const hasUnappliedChanges = React.useMemo(() => {
     return tempFilters.status !== appliedFilters.status ||
-      tempFilters.month !== appliedFilters.month ||
-      tempFilters.year !== appliedFilters.year ||
+      tempFilters.fromDate !== appliedFilters.fromDate ||
+      tempFilters.toDate !== appliedFilters.toDate ||
       tempFilters.avp !== appliedFilters.avp;
   }, [tempFilters, appliedFilters]);
 
@@ -172,8 +159,6 @@ export function VendorBreakdown() {
         avpError={avpError}
         handleSubmitFilters={handleSubmitFilters}
         handleResetFilters={handleResetFilters}
-        monthOptions={monthOptions}
-        generateYearOptions={generateYearOptions}
         hasUnappliedChanges={hasUnappliedChanges}
       />
       <VendorDropdown
@@ -182,21 +167,41 @@ export function VendorBreakdown() {
         appliedFilters={appliedFilters}
         selectedVendor={selectedVendor}
         setSelectedVendor={setSelectedVendor}
-        monthOptions={monthOptions}
       />
+      {/* Download Excel Button for selected date range */}
+      <div style={{ marginTop: 16, marginBottom: 8 }}>
+        <a
+          href={(() => {
+            // Use appliedFilters for download
+            const from = appliedFilters.fromDate ? new Date(appliedFilters.fromDate).toISOString() : '';
+            const to = appliedFilters.toDate ? new Date(appliedFilters.toDate).toISOString() : '';
+            const params = [];
+            if (from) params.push(`fromDate=${encodeURIComponent(from)}`);
+            if (to) params.push(`toDate=${encodeURIComponent(to)}`);
+            return `/api/v0/analytics/cab-booking-excel${params.length ? '?' + params.join('&') : ''}&ts=${Date.now()}`;
+          })()}
+          download={`cab-booking-${appliedFilters.fromDate ? new Date(appliedFilters.fromDate).toISOString().split('T')[0] : 'all'}-${appliedFilters.toDate ? new Date(appliedFilters.toDate).toISOString().split('T')[0] : 'all'}.xlsx`}
+          style={{
+            display: 'inline-block',
+            padding: '10px 18px',
+            background: '#2196f3',
+            color: '#fff',
+            borderRadius: 6,
+            fontWeight: 600,
+            textDecoration: 'none',
+            marginTop: 8,
+          }}
+        >
+          Download Excel for {appliedFilters.fromDate ? new Date(appliedFilters.fromDate).toLocaleDateString() : 'All'} - {appliedFilters.toDate ? new Date(appliedFilters.toDate).toLocaleDateString() : 'All'}
+        </a>
+      </div>
       {vendorData && allVendors.length === 0 && !loading && (
-        <VendorEmpty appliedFilters={appliedFilters} monthOptions={monthOptions} />
+        <VendorEmpty appliedFilters={appliedFilters} />
       )}
       {vendorData && displayVendors.length > 0 && (
         <Box mt={2}>
           <VendorStatsCards displayVendors={displayVendors} appliedFilters={appliedFilters} />
-          <VendorCardsGrid
-            displayVendors={displayVendors}
-            appliedFilters={appliedFilters}
-            selectedVendor={selectedVendor}
-            setSelectedVendor={setSelectedVendor}
-            monthOptions={monthOptions}
-          />
+          <VendorCardsGrid displayVendors={displayVendors} />
         </Box>
       )}
       {loading && <VendorLoading />}

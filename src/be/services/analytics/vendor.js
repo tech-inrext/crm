@@ -6,6 +6,10 @@ import VendorBooking from "@/models/VendorBooking";
 
 export async function getVendor({ vendorNames, vendorEmails }) {
 	await dbConnect();
+
+	const now = new Date();
+	const monthStart = new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0);
+	const monthEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
 	function getDayRange(offset = 0) {
 		const now = new Date();
 		now.setHours(0, 0, 0, 0);
@@ -36,7 +40,9 @@ export async function getVendor({ vendorNames, vendorEmails }) {
 		}
 		if (conditions.length > 0) vendorMatchConditions = { $or: conditions };
 	}
-	const cabVendorMatch = vendorMatchConditions.cabOwnerName || vendorMatchConditions.driverName || vendorMatchConditions.email ? { $and: [{ isCabVendor: true }, vendorMatchConditions] } : { isCabVendor: true };
+	const cabVendorMatch = Object.keys(vendorMatchConditions).length > 0
+		? { isCabVendor: true, ...vendorMatchConditions }
+		: { isCabVendor: true };
 	const [
 		todayVendors,
 		yesterdayVendors,
@@ -51,14 +57,55 @@ export async function getVendor({ vendorNames, vendorEmails }) {
 		Employee.countDocuments({ isCabVendor: true, createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
 		Employee.aggregate([
 			{ $match: cabVendorMatch },
-			{ $lookup: { from: "cabbookings", localField: "_id", foreignField: "vendor", as: "bookings" } },
-			{ $addFields: {
-				totalBookings: { $size: "$bookings" },
-				completedBookings: { $size: { $filter: { input: "$bookings", cond: { $regexMatch: { input: "$$this.status", regex: /completed/i } } } } },
-				pendingBookings: { $size: { $filter: { input: "$bookings", cond: { $regexMatch: { input: "$$this.status", regex: /pending/i } } } } },
-				totalEarnings: { $sum: "$bookings.fare" },
-				avgFare: { $avg: "$bookings.fare" },
-			} },
+			{
+  $lookup: {
+    from: "cabbookings",
+    let: { vendorId: "$_id" },
+    pipeline: [
+      {
+        $match: {
+          $expr: { $eq: ["$vendor", "$$vendorId"] },
+          createdAt: { $gte: monthStart, $lte: monthEnd },
+        },
+      },
+    ],
+    as: "monthlyBookings",
+  },
+},
+{
+  $addFields: {
+    totalBookings: { $size: "$monthlyBookings" },
+		completedBookings: {
+			$size: {
+				$filter: {
+					input: "$monthlyBookings",
+					cond: {
+						$regexMatch: {
+							input: { $ifNull: ["$$this.status", ""] },
+							regex: /completed/i
+						}
+					},
+				},
+			},
+		},
+		pendingBookings: {
+			$size: {
+				$filter: {
+					input: "$monthlyBookings",
+					cond: {
+						$regexMatch: {
+							input: { $ifNull: ["$$this.status", ""] },
+							regex: /pending/i
+						}
+					},
+				},
+			},
+		},
+	totalEarnings: { $ifNull: [{ $sum: "$monthlyBookings.fare" }, 0] },
+	avgFare: { $ifNull: [{ $avg: "$monthlyBookings.fare" }, 0] },
+  },
+},
+
 			{ $project: {
 				_id: 1, name: {
 					$cond: {
@@ -91,7 +138,7 @@ export async function getVendor({ vendorNames, vendorEmails }) {
 						},
 					},
 				},
-				cabOwnerName: 1, driverName: 1, name: 1, firstName: 1, lastName: 1, email: 1, phone: 1, vehicleType: 1, vehicleNumber: 1, totalBookings: 1, completedBookings: 1, pendingBookings: 1, totalEarnings: { $round: ["$totalEarnings", 2] }, avgFare: { $round: ["$avgFare", 2] }, bookings: 1,
+				cabOwnerName: 1, driverName: 1, name: 1, firstName: 1, lastName: 1, email: 1, phone: 1, vehicleType: 1, vehicleNumber: 1, totalBookings: 1, completedBookings: 1, pendingBookings: 1, totalEarnings: { $round: ["$totalEarnings", 2] }, avgFare: { $round: ["$avgFare", 2] },
 			} },
 			{ $sort: { totalBookings: -1, name: 1 } },
 		]),
@@ -115,7 +162,12 @@ export async function getVendor({ vendorNames, vendorEmails }) {
 		(() => {
 			const vendorBookingMatch = vendorMatchConditions.ownerName ? { ownerName: vendorMatchConditions.ownerName } : {};
 			return VendorBooking.aggregate([
-				{ $match: vendorBookingMatch },
+				{
+					$match: {
+						...vendorBookingMatch,
+						createdAt: { $gte: monthStart, $lte: monthEnd },
+					},
+				},
 				{ $group: {
 					_id: "$ownerName",
 					totalBookings: { $sum: 1 },

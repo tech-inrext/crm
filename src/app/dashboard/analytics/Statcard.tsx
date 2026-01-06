@@ -12,7 +12,7 @@ import Skeleton from "@mui/material/Skeleton";
 import ScheduleCard from "./components/ScheduleCard";
 import { FaUsers, FaHome, FaDollarSign, FaBuilding } from "react-icons/fa";
 type TrendItem = {
-  date: string; // ISO date string
+  date: string;  
   value: number;
 };
 
@@ -208,6 +208,8 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
   const [teamUsers, setTeamUsers] = React.useState<
     { _id: string; name: string; teamName?: string }[]
   >([]);
+  // State for overall users MoUs from users API
+  const [usersMous, setUsersMous] = React.useState<{pending: number, approved: number, completed: number}>({pending: 0, approved: 0, completed: 0});
   // By default, show 'All' (null means all users)
   const [selectedUser, setSelectedUser] = React.useState<{
     _id: string;
@@ -336,11 +338,11 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
               }))
             );
           }
-          if (data?.summary) {
-            setOverallTeamMouSummary({
-              pending: data.summary.mouPending ?? 0,
-              approved: data.summary.mouApproved ?? 0,
-              completed: data.summary.mouCompleted ?? 0,
+          if (data?.mous) {
+            setUsersMous({
+              pending: data.mous.pending ?? 0,
+              approved: data.mous.approved ?? 0,
+              completed: data.mous.completed ?? 0,
             });
           }
         });
@@ -371,8 +373,8 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
   React.useEffect(() => {
     if (selectedUser && selectedUser._id && selectedUser._id !== 'all') {
       fetch(`/api/v0/employee/teams/users?managerId=${selectedUser._id}`)
-        .then((r) => r.json())
-        .then((data) => {
+        .then((r) => r.json()) 
+        .then((data) => {  
           if (Array.isArray(data?.users)) {
             setSelectedUserTeamUsers(data.users);
             // Sum pending and approved MoUs for all direct reports
@@ -512,7 +514,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           }}
         >
           <StatCard
-            title="My Teams"
+            title="My Teams (Direct Connected)"
             value={myTeamsCount ?? 0}
             icon={<FaHome size={24} style={{ color: "#4caf50" }} />}
             iconBg="#e8f5e9"
@@ -525,7 +527,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
             iconBg="#e3f2fd"
             trend={activeLeadsTrend}
-            onClick={() => router.push("/dashboard/leads?status=active")}
+            onClick={() => router.push("/dashboard/leads?status=follow-up%2Ccall+back%2Cdetails+shared%2Csite+visit+done")}
             loading={loadingNewLeads}
           />
           <StatCard
@@ -534,7 +536,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
             iconBg="#e3f2fd"
             trend={newLeadsTrend}
-            onClick={() => router.push("/dashboard/leads")}
+            onClick={() => router.push("/dashboard/leads?status=new")}
             loading={loadingNewLeads}
           />
           <StatCard
@@ -543,7 +545,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
             iconBg="#f3e5f5"
             trend={siteVisitTrend}
-            onClick={() => router.push("/dashboard/leads")}
+            onClick={() => router.push("/dashboard/leads?status=site+visit+done")}
             loading={siteVisitLoading}
           />
           <StatCard
@@ -681,7 +683,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
                 icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
                 iconBg="#e3f2fd"
                 trend={(!selectedUser || selectedUser._id === 'all') ? activeLeadsTrend : userActiveLeadsTrend}
-                onClick={() => router.push("/dashboard/leads?status=active")}
+                onClick={() => router.push("/dashboard/leads?status=follow-up%2Ccall+back%2Cdetails+shared%2Csite+visit+done")}
                 loading={userLoading}
               />
               <StatCard
@@ -690,7 +692,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
                 icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
                 iconBg="#e3f2fd"
                 trend={(!selectedUser || selectedUser._id === 'all') ? newLeadsTrend : userNewLeadsTrend}
-                onClick={() => router.push("/dashboard/leads")}
+                onClick={() => router.push("/dashboard/leads?status=new")}
                 loading={userLoading}
               />
               <StatCard
@@ -699,16 +701,16 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
                 icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
                 iconBg="#f3e5f5"
                 trend={(!selectedUser || selectedUser._id === 'all') ? siteVisitTrend : userSiteVisitTrend}
-                onClick={() => router.push("/dashboard/leads")}
+                onClick={() => router.push("/dashboard/leads?status=site+visit+done")}
                 loading={userLoading}
               />
               <StatCard
                 title="MoUs (Pending / Completed)"
                 value={
                   (!selectedUser || selectedUser._id === 'all')
-                    ? `${overallTeamMouSummary.pending} / ${overallTeamMouSummary.approved + overallTeamMouSummary.completed}`
-                    : (selectedUserTeamMouStats
-                        ? `${selectedUserTeamMouStats.pending ?? 0} / ${selectedUserTeamMouStats.approved ?? 0}`
+                    ? `${usersMous?.pending ?? 0} / ${(usersMous?.approved ?? 0) + (usersMous?.completed ?? 0)}`
+                    : (selectedUser?.mouStats
+                        ? `${selectedUser.mouStats.pending ?? 0} / ${selectedUser.mouStats.approved ?? 0}`
                         : '0 / 0')
                 }
                 icon={<FaUsers size={24} style={{ color: "#3949ab" }} />}
@@ -718,7 +720,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
                 loading={userLoading}
               />
                   {showVendorBilling && (
-            <StatCard
+            <StatCard 
                 title="Total Vendors & Billing amount"
                 value={
                   (!selectedUser || selectedUser._id === 'all')
