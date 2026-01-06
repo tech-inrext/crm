@@ -1,4 +1,3 @@
-// app/dashboard/properties/components/property-view/PropertyHeader.tsx
 "use client";
 
 import React from "react";
@@ -8,10 +7,7 @@ import {
   IconButton,
   CircularProgress,
 } from "@mui/material";
-import {
-  Close,
-  Business,
-} from "@mui/icons-material";
+import { Close, Business } from "@mui/icons-material";
 import { Property } from '@/services/propertyService';
 
 interface PropertyHeaderProps {

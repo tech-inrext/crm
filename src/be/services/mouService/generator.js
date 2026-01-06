@@ -462,26 +462,9 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
     .font("Times-Bold")
     .fontSize(14)
     .text(
-      "NOTE: PAYMENT OR OTHER RELATED TERMS & CONDITIONS OF BUILDER APPLY ON BOTH THE PARTIES."
+      "NOTE: PAYMENT OR OTHER RELATED TERMS."
     );
   doc.moveDown();
-
-  doc
-    .font("Times-Roman")
-    .font("Times-Bold")
-    .fontSize(12)
-    .text("Consideration: -");
-  doc.moveDown();
-
-  const considerationPoints = [
-    "It is agreed that the Facilitator/First Party shall pay brokerage/commission to Associate/Freelancer on Basic Price.",
-    "Eligibility of promotion will be considered according to Freelancer growth matrix.",
-    "Commission on Food Kiosk per Sale Rs.500/- PSF Comm.",
-    "Commission on Retail Shop per Sale Rs.1,000/- PSF Comm. (Applicable on All Floors).",
-    "Commission on Studio per Sale 50K Comm.",
-    "Commission on Eco Village Cottage & Resort (Dehradun) per Sale 3% Comm. On BSP.",
-  ];
-  considerationPoints.forEach((p) => addWrappedText(doc, p));
 
   // Projects list
   doc
@@ -490,11 +473,12 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
     .text("All Non-Exclusive Projects:", { underline: true });
   doc.moveDown(0.5);
   const projects = [
-    ["Godrej", "KW"],
-    ["Saya Piaza", "Bhutani"],
-    ["Urbainia", "SBTL"],
-    ["Paras Avenue", "Master Infra"],
-    ["Lake City (Residential Plot & Farmhouse land)", ""],
+    ["Shri Krishna Divine Valley (Dholera)", "Sui Generis Residenncy (Dholera)"],
+    ["KW Blue Peral (Karol Bagh, Delhi)", "KW Delhi-6 (Ghaziabad)"],
+    ["Migsun Rohini Central (Delhi)", "Corbett County (Jim Corbett)"],
+    ["Urbainia Trinity NX (G. Noida)", "Migsun Lucknow Central (Lucknow)"],
+    ["Eco Village Resort & Cottage (Dehradun)", "The Adriatico (JP Sports City Yamuna Expressway)"],
+    ["Residential Plot & Farmhouse land", "Skyline (Jattari)"],
   ];
   const projCol1X = 70;
   const projCol2X = 300;
@@ -545,7 +529,7 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
     doc.text(row[2], tableCol3X, tableY);
     tableY += tableRowHeight;
   });
-  doc.moveDown(2);
+  doc.moveDown(20);
 
   addWrappedText(
     doc,

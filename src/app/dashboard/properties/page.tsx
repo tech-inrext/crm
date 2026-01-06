@@ -19,7 +19,7 @@ import PropertyList from "./components/PropertyList";
 import EmptyState from "./components/EmptyState";
 import PaginationControls from "./components/PaginationControls";
 import PropertyFormDialog from "./components/PropertyFormDialog";
-import PropertyViewDialog from "./components/PropertyViewDialog";
+import PropertyViewDialog from "./components/PropertyViewDialog/index";
 import SubPropertyViewDialog from "./components/SubPropertyViewDialog";
 
 // Custom debounce hook
@@ -144,7 +144,8 @@ export default function PropertiesPage() {
 
       <PropertiesHeader
         searchTerm={searchTerm}
-        onSearchChange={handleSearchChange}
+        // onSearchChange={handleSearchChange}
+        onSearchChange={(e) => setSearchTerm(handleSearchChange(e))}
         activeFiltersCount={activeFiltersCount}
         showFilters={showFilters}
         toggleFilters={() => setShowFilters(!showFilters)}
