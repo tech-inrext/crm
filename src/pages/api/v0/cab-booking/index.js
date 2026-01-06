@@ -1,8 +1,6 @@
 // /pages/api/v0/cab-booking/index.js
-import dbConnect from "../../../../lib/mongodb";
+import { Controller, HttpStatus } from "@framework";
 import CabBooking from "../../../../models/CabBooking";
-import * as cookie from "cookie";
-import { userAuth } from "../../../../middlewares/auth";
 import Project from "@/models/Project";
 // Ensure Vehicle model is registered with mongoose before any populate calls
 import "@/models/Vehicle";
@@ -42,7 +40,7 @@ const createBooking = async (req, res) => {
       !dropPoint ||
       !requestedDateTime
     ) {
-      return res.status(400).json({
+      return HttpStatus.badRequest(res, {
         success: false,
         message:
           "Missing required fields: project, clientName, numberOfClients, pickupPoint, dropPoint, teamLeader, requestedDateTime",
@@ -51,8 +49,7 @@ const createBooking = async (req, res) => {
 
     // numberOfClients minimum
     if (Number(numberOfClients) < 1) {
-      return res.status(400).json({
-        success: false,
+      return HttpStatus.badRequest(res, {
         message: "numberOfClients must be at least 1",
       });
     }
@@ -75,9 +72,9 @@ const createBooking = async (req, res) => {
     const Employee = (await import("@/models/Employee")).default;
     const employee = await Employee.findById(loggedInUserId);
     if (!employee) {
-      return res
-        .status(400)
-        .json({ success: false, message: "Employee not found" });
+      return HttpStatus.badRequest(res, {
+        message: "Employee not found",
+      });
     }
 
     const managerObjectId = mongoose.isValidObjectId(employee.managerId)
@@ -127,13 +124,9 @@ const createBooking = async (req, res) => {
       console.error("❌ Cab booking request notification failed:", error);
     }
 
-    return res.status(201).json({ success: true, data: doc });
+    return HttpStatus.created(res, { data: doc });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Error creating booking",
-      error: error.message,
-    });
+    return HttpStatus.badRequest(res, { message: "Error creating booking" });
   }
 };
 
@@ -203,8 +196,7 @@ const getAllBookings = async (req, res) => {
       const filteredList = list.filter((s) => s !== "all");
       const invalid = filteredList.filter((s) => !ALLOWED_STATUSES.includes(s));
       if (invalid.length) {
-        return res.status(400).json({
-          success: false,
+        return HttpStatus.badRequest(res, {
           message: `Invalid status value(s): ${invalid.join(
             ", "
           )}. Allowed: ${ALLOWED_STATUSES.join(", ")}`,
@@ -296,8 +288,7 @@ const getAllBookings = async (req, res) => {
       });
     }
 
-    return res.status(200).json({
-      success: true,
+    return HttpStatus.success(res, {
       data,
       pagination: {
         totalItems: total,
@@ -310,76 +301,20 @@ const getAllBookings = async (req, res) => {
       },
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch bookings",
-      error: error.message,
-    });
+    return HttpStatus.badRequest(res, { message: "Failed to fetch bookings" });
   }
 };
 
-// ✅ Same lightweight wrapper pattern you used for leads
-function withAuth(handler) {
-  return async (req, res) => {
-    const parsedCookies = cookie.parse(req.headers.cookie || "");
-    req.cookies = parsedCookies;
-    // Ensure userAuth is awaited and we await the downstream handler as well.
-    return await userAuth(req, res, async () => {
-      // call the handler and return its result so the wrapper doesn't finish
-      // before the handler sends a response.
-      return await handler(req, res);
-    });
-  };
-}
-
-// ✅ Main Handler
-
-const handler = async (req, res) => {
-  // Defensive ENV checks
-  const missingVars = [];
-  if (!process.env.MONGODB_URI) missingVars.push("MONGODB_URI");
-  if (!process.env.SMTP_EMAIL) missingVars.push("SMTP_EMAIL");
-  if (!process.env.SMTP_PASS) missingVars.push("SMTP_PASS");
-  if (!process.env.EMAIL_FROM) missingVars.push("EMAIL_FROM");
-  if (missingVars.length) {
-    console.error(
-      "Missing required environment variables:",
-      missingVars.join(", ")
-    );
-    return res.status(500).json({
-      success: false,
-      message: `Missing required environment variables: ${missingVars.join(
-        ", "
-      )}`,
-      error:
-        "Environment misconfiguration. Please set these variables in Vercel.",
-    });
+class CabBookingIndexController extends Controller {
+  constructor() {
+    super();
+    this.handler = this.handler.bind(this);
   }
-
-  try {
-    await dbConnect();
-  } catch (err) {
-    console.error("Database connection error:", err);
-    return res.status(500).json({
-      success: false,
-      message: "Database connection error",
-      error: err.message,
-    });
-  }
-
-  //it ends here
-
-  if (req.method === "GET") {
+  get(req, res) {
     return getAllBookings(req, res);
   }
-
-  if (req.method === "POST") {
+  post(req, res) {
     return createBooking(req, res);
   }
-
-  return res
-    .status(405)
-    .json({ success: false, message: "Method not allowed" });
-};
-
-export default withAuth(handler);
+}
+export default new CabBookingIndexController().handler;

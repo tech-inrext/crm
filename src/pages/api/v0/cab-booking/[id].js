@@ -1,36 +1,25 @@
 // /pages/api/v0/cab-booking/[id].js
-import dbConnect from "../../../../lib/mongodb";
+import { HttpStatus } from "inrext-framework";
 import CabBooking from "../../../../models/CabBooking";
 import Employee from "../../../../models/Employee";
-import * as cookie from "cookie";
-import { userAuth, isSystemAdminAllowed } from "../../../../middlewares/auth";
+import { isSystemAdminAllowed } from "../../../../middlewares/auth";
 import { sendCabBookingStatusEmail } from "@/lib/emails/cabBookingStatus";
 import { sendCabVendorAssignmentEmail } from "@/lib/emails/cabVendorAssignment"; // <<< added
 import { NotificationHelper } from "../../../../lib/notification-helpers";
 
 async function patchBooking(req, res) {
-  if (req.method !== "PATCH") {
-    return res
-      .status(405)
-      .json({ success: false, message: "Method not allowed" });
-  }
-
-  await dbConnect();
   const { id } = req.query;
-  if (!id)
-    return res
-      .status(400)
-      .json({ success: false, message: "Missing booking id" });
+  if (!id) {
+    return HttpStatus.badRequest(res, { message: "Missing booking id" });
+  }
 
   try {
     const booking = await CabBooking.findById(id);
     if (!booking)
-      return res
-        .status(404)
-        .json({ success: false, message: "Booking not found" });
+      return HttpStatus.notFound(res, { message: "Booking not found" });
 
     if (["rejected", "completed"].includes(booking.status)) {
-      return res.status(403).json({
+      return HttpStatus.forbidden(res, {
         success: false,
         message: "Cannot edit booking after it is rejected or completed.",
       });
@@ -78,7 +67,7 @@ async function patchBooking(req, res) {
         : false;
 
       if (!rawFlag && !roleBased) {
-        return res.status(403).json({
+        return HttpStatus.forbidden(res, {
           success: false,
           message:
             "Only system administrators with write permission to cab-booking can mark a payment-due booking as completed.",
@@ -193,18 +182,20 @@ async function patchBooking(req, res) {
       }
     }
 
-    return res.status(200).json({ success: true, data: updated });
+    return HttpStatus.success(res, { data: updated });
   } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
+    return HttpStatus.badRequest(res, { message: error.message });
   }
 }
 
-function withAuth(handler) {
-  return async (req, res) => {
-    const parsedCookies = cookie.parse(req.headers.cookie || "");
-    req.cookies = parsedCookies;
-    await userAuth(req, res, () => handler(req, res));
-  };
+class PatchBookingController extends Controller {
+  constructor() {
+    super();
+  }
+  patch(req, res) {
+    return patchBooking(req, res);
+  }
 }
 
-export default withAuth(patchBooking);
+const handler = new PatchBookingController().handler;
+export default handler;
