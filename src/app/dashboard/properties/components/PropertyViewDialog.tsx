@@ -9,13 +9,20 @@ import {
   Box,
   Typography,
   Button,
-  Paper,
   Grid,
+  CircularProgress,
   Card,
   CardContent,
+  CardMedia,
   Chip,
   IconButton,
-  CircularProgress,
+  Tooltip,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  ListItemSecondaryAction,
+  Divider,
 } from "@mui/material";
 import {
   CloudDownload,
@@ -23,15 +30,512 @@ import {
   Close,
   Business,
   Description,
-  LocationOn,
-  CloudUpload,
   PlayArrow,
+  PictureAsPdf,
+  Image,
+  VideoFile,
+  InsertDriveFile,
+  Download,
+  ZoomIn,
   BrokenImage,
+  Fullscreen,
+  FullscreenExit,
+  ArrowBack,
+  ArrowForward,
 } from "@mui/icons-material";
 import { Property } from '@/services/propertyService';
-import LeafletMap from "../LeafletMap";
-import SubPropertiesViewer from "./SubPropertiesViewer";
 import { useAuth } from "@/contexts/AuthContext";
+
+// Import components
+import PropertyHeader from "./property-view/PropertyHeader";
+import PropertyQuickActions from "./property-view/PropertyQuickActions";
+import ProjectOverview from "./property-view/ProjectOverview";
+import LocationCard from "./property-view/LocationCard";
+import QuickInfoCard from "./property-view/QuickInfoCard";
+import PropertyMediaTabs from "./property-view/MediaTabs";
+import PropertyMediaDownloadSection from "./property-view/MediaDownloadSection";
+import ImagesGrid from "./property-view/ImagesGrid";
+import { FullscreenImageViewer, VideoViewer } from "./property-view/FullscreenViewers";
+
+// Shared components
+import SubPropertiesViewer from "./SubPropertiesViewer";
+
+// TabPanel component
+const TabPanel = (props: {
+  children?: React.ReactNode;
+  index: number;
+  value: number;
+}) => {
+  const { children, value, index, ...other } = props;
+
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      id={`property-tabpanel-${index}`}
+      aria-labelledby={`property-tab-${index}`}
+      {...other}
+    >
+      {value === index && (
+        <Box sx={{ py: 3 }}>
+          {children}
+        </Box>
+      )}
+    </div>
+  );
+};
+
+// Videos Grid Component
+const VideosGrid: React.FC<{
+  videos: any[];
+  onVideoClick: (index: number) => void;
+  onDownloadVideo: (url: string, filename: string, index: number) => void;
+}> = ({ videos, onVideoClick, onDownloadVideo }) => {
+  return (
+    <Grid container spacing={3}>
+      {videos.map((video, index) => (
+        <Grid item xs={12} sm={6} md={4} key={index}>
+          <Card 
+            sx={{ 
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              border: '2px solid transparent',
+              '&:hover': {
+                transform: 'translateY(-4px)',
+                boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
+                borderColor: 'primary.main'
+              },
+              height: '100%'
+            }}
+            onClick={() => onVideoClick(index)}
+          >
+            <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
+              <CardMedia
+                component="div"
+                sx={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%',
+                  backgroundColor: '#000',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  borderRadius: '8px 8px 0 0'
+                }}
+              >
+                <PlayArrow sx={{ fontSize: 60, color: 'rgba(255,255,255,0.8)' }} />
+                <Chip
+                  label={`${video.duration || '00:00'}`}
+                  size="small"
+                  sx={{
+                    position: 'absolute',
+                    bottom: 8,
+                    right: 8,
+                    backgroundColor: 'rgba(0,0,0,0.7)',
+                    color: 'white',
+                    fontSize: '0.7rem'
+                  }}
+                />
+              </CardMedia>
+              
+              <Tooltip title="Play video">
+                <IconButton
+                  sx={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    transform: 'translate(-50%, -50%)',
+                    backgroundColor: 'rgba(25, 118, 210, 0.9)',
+                    color: 'white',
+                    '&:hover': {
+                      backgroundColor: 'primary.main',
+                      transform: 'translate(-50%, -50%) scale(1.1)'
+                    },
+                    transition: 'all 0.2s ease',
+                    width: 60,
+                    height: 60
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onVideoClick(index);
+                  }}
+                >
+                  <PlayArrow sx={{ fontSize: 32 }} />
+                </IconButton>
+              </Tooltip>
+              
+              <Tooltip title="Download video">
+                <IconButton
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    backgroundColor: 'rgba(255,255,255,0.95)',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                    '&:hover': {
+                      backgroundColor: 'white',
+                      transform: 'scale(1.1)'
+                    },
+                    transition: 'all 0.2s ease'
+                  }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDownloadVideo(video.url, video.title || `video-${index + 1}.mp4`, index);
+                  }}
+                  size="small"
+                >
+                  <CloudDownload sx={{ fontSize: 16 }} />
+                </IconButton>
+              </Tooltip>
+            </Box>
+            
+            <CardContent sx={{ p: 2 }}>
+              <Typography variant="subtitle2" fontWeight={600} noWrap>
+                {video.title || `Video ${index + 1}`}
+              </Typography>
+              <Typography variant="caption" color="text.secondary" noWrap>
+                {video.format || 'MP4'} • {video.size || 'Unknown size'}
+              </Typography>
+            </CardContent>
+          </Card>
+        </Grid>
+      ))}
+    </Grid>
+  );
+};
+
+// Brochures List Component
+const BrochuresList: React.FC<{
+  brochures: any[];
+  onBrochureClick: (index: number) => void;
+  onDownloadBrochure: (url: string, filename: string, index: number) => void;
+}> = ({ brochures, onBrochureClick, onDownloadBrochure }) => {
+  const getFileIcon = (filename: string) => {
+    if (filename.toLowerCase().endsWith('.pdf')) {
+      return <PictureAsPdf color="error" />;
+    } else if (filename.toLowerCase().endsWith('.doc') || filename.toLowerCase().endsWith('.docx')) {
+      return <Description color="primary" />;
+    }
+    return <InsertDriveFile color="action" />;
+  };
+
+  const getFileType = (filename: string) => {
+    if (filename.toLowerCase().endsWith('.pdf')) return 'PDF';
+    if (filename.toLowerCase().endsWith('.doc')) return 'Word DOC';
+    if (filename.toLowerCase().endsWith('.docx')) return 'Word DOCX';
+    return 'Document';
+  };
+
+  return (
+    <List sx={{ width: '100%', bgcolor: 'background.paper' }}>
+      {brochures.map((brochure, index) => (
+        <React.Fragment key={index}>
+          <ListItem 
+            sx={{ 
+              borderRadius: 2,
+              mb: 1,
+              border: '1px solid',
+              borderColor: 'divider',
+              '&:hover': {
+                backgroundColor: 'action.hover',
+                borderColor: 'primary.main'
+              },
+              transition: 'all 0.2s ease'
+            }}
+          >
+            <ListItemIcon>
+              {getFileIcon(brochure.title || brochure.url)}
+            </ListItemIcon>
+            <ListItemText
+              primary={
+                <Typography variant="subtitle1" fontWeight={600}>
+                  {brochure.title || `Brochure ${index + 1}`}
+                </Typography>
+              }
+              secondary={
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mt: 0.5 }}>
+                  <Chip 
+                    label={getFileType(brochure.title || brochure.url)} 
+                    size="small" 
+                    variant="outlined"
+                  />
+                  <Typography variant="caption" color="text.secondary">
+                    {brochure.size || 'Unknown size'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {brochure.pages ? `${brochure.pages} pages` : ''}
+                  </Typography>
+                </Box>
+              }
+            />
+            <ListItemSecondaryAction sx={{ display: 'flex', gap: 1 }}>
+              <Tooltip title="Preview">
+                <IconButton
+                  edge="end"
+                  onClick={() => onBrochureClick(index)}
+                  sx={{ mr: 1 }}
+                >
+                  <ZoomIn />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Download">
+                <IconButton
+                  edge="end"
+                  onClick={() => onDownloadBrochure(
+                    brochure.url, 
+                    brochure.title || `brochure-${index + 1}.pdf`, 
+                    index
+                  )}
+                >
+                  <Download />
+                </IconButton>
+              </Tooltip>
+            </ListItemSecondaryAction>
+          </ListItem>
+          {index < brochures.length - 1 && <Divider variant="inset" component="li" />}
+        </React.Fragment>
+      ))}
+    </List>
+  );
+};
+
+// Creatives Grid Component
+const CreativesGrid: React.FC<{
+  creatives: any[];
+  onCreativeClick: (index: number) => void;
+  onDownloadCreative: (url: string, filename: string, index: number) => void;
+  loadingImages: Record<string, boolean>;
+  imageErrors: Record<string, boolean>;
+  formatImageUrl: (url: string) => string;
+  handleImageLoad: (id: string) => void;
+  handleImageError: (id: string) => void;
+}> = ({
+  creatives,
+  onCreativeClick,
+  onDownloadCreative,
+  loadingImages,
+  imageErrors,
+  formatImageUrl,
+  handleImageLoad,
+  handleImageError,
+}) => {
+  return (
+    <Grid container spacing={3}>
+      {creatives.map((creative, index) => {
+        const creativeId = creative._id || `creative-${index}`;
+        const creativeUrl = formatImageUrl(creative.url);
+        const isImage = creative.type === 'image';
+        
+        return (
+          <Grid item xs={12} sm={6} md={4} lg={3} key={index}>
+            <Card 
+              sx={{ 
+                cursor: isImage ? 'pointer' : 'default',
+                transition: 'all 0.3s ease',
+                border: '2px solid transparent',
+                '&:hover': {
+                  transform: 'translateY(-4px)',
+                  boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
+                  borderColor: 'primary.main'
+                },
+                height: '100%'
+              }}
+              onClick={isImage ? () => onCreativeClick(index) : undefined}
+            >
+              <Box sx={{ position: 'relative', paddingTop: '75%' }}>
+                {isImage ? (
+                  <>
+                    {!imageErrors[creativeId] && creativeUrl ? (
+                      <>
+                        {loadingImages[creativeId] && (
+                          <Box sx={{ 
+                            position: 'absolute', 
+                            top: 0, 
+                            left: 0, 
+                            right: 0, 
+                            bottom: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            bgcolor: 'rgba(0,0,0,0.05)',
+                            borderRadius: '8px 8px 8px 8px'
+                          }}>
+                            <CircularProgress size={24} />
+                          </Box>
+                        )}
+                        
+                        <Box
+                          component="img"
+                          src={creativeUrl}
+                          alt={creative.title || `Creative ${index + 1}`}
+                          onLoad={() => handleImageLoad(creativeId)}
+                          onError={() => handleImageError(creativeId)}
+                          sx={{
+                            position: 'absolute',
+                            top: 0,
+                            left: 0,
+                            width: '100%',
+                            height: '100%',
+                            objectFit: 'cover',
+                            borderRadius: '8px 8px 8px 8px',
+                            display: loadingImages[creativeId] ? 'none' : 'block'
+                          }}
+                        />
+                      </>
+                    ) : (
+                      <Box sx={{ 
+                        position: 'absolute',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        backgroundColor: '#f5f5f5',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexDirection: 'column',
+                        borderRadius: '8px 8px 0 0'
+                      }}>
+                        <BrokenImage sx={{ fontSize: 40, color: '#999', mb: 1 }} />
+                        <Typography variant="caption" color="text.secondary">
+                          Failed to load
+                        </Typography>
+                      </Box>
+                    )}
+                  </>
+                ) : (
+                  <Box sx={{ 
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%',
+                    backgroundColor: 'primary.50',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexDirection: 'column',
+                    borderRadius: '8px 8px 0 0'
+                  }}>
+                    {creative.type === 'video' ? (
+                      <VideoFile sx={{ fontSize: 48, color: 'primary.main', mb: 1 }} />
+                    ) : creative.type === 'pdf' ? (
+                      <PictureAsPdf sx={{ fontSize: 48, color: 'error.main', mb: 1 }} />
+                    ) : (
+                      <InsertDriveFile sx={{ fontSize: 48, color: 'action.main', mb: 1 }} />
+                    )}
+                    <Chip 
+                      label={creative.type?.toUpperCase() || 'FILE'} 
+                      size="small" 
+                      sx={{ mt: 1 }}
+                    />
+                  </Box>
+                )}
+                
+                {isImage && !imageErrors[creativeId] && creativeUrl && (
+                  <>
+                    <Tooltip title="View full screen">
+                      <IconButton
+                        sx={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 8,
+                          backgroundColor: 'rgba(255,255,255,0.95)',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                          '&:hover': {
+                            backgroundColor: 'white',
+                            transform: 'scale(1.1)'
+                          },
+                          transition: 'all 0.2s ease'
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onCreativeClick(index);
+                        }}
+                        size="small"
+                      >
+                        <ZoomIn sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
+                    
+                    <Tooltip title="Download">
+                      <IconButton
+                        sx={{
+                          position: 'absolute',
+                          top: 8,
+                          right: 48,
+                          backgroundColor: 'rgba(255,255,255,0.95)',
+                          boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                          '&:hover': {
+                            backgroundColor: 'white',
+                            transform: 'scale(1.1)'
+                          },
+                          transition: 'all 0.2s ease'
+                        }}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onDownloadCreative(creativeUrl, creative.title || `creative-${index + 1}.jpg`, index);
+                        }}
+                        size="small"
+                      >
+                        <CloudDownload sx={{ fontSize: 16 }} />
+                      </IconButton>
+                    </Tooltip>
+                  </>
+                )}
+                
+                {!isImage && (
+                  <Tooltip title="Download">
+                    <IconButton
+                      sx={{
+                        position: 'absolute',
+                        top: 8,
+                        right: 8,
+                        backgroundColor: 'rgba(255,255,255,0.95)',
+                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                        '&:hover': {
+                          backgroundColor: 'white',
+                          transform: 'scale(1.1)'
+                        },
+                        transition: 'all 0.2s ease'
+                      }}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDownloadCreative(creativeUrl, creative.title || `creative-${index + 1}`, index);
+                      }}
+                      size="small"
+                    >
+                      <CloudDownload sx={{ fontSize: 16 }} />
+                    </IconButton>
+                  </Tooltip>
+                )}
+              </Box>
+              
+              <CardContent sx={{ p: 2 }}>
+                <Typography variant="subtitle2" fontWeight={600} noWrap>
+                  {creative.title || `Creative ${index + 1}`}
+                </Typography>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mt: 1 }}>
+                  <Chip 
+                    label={creative.category || 'General'} 
+                    size="small" 
+                    color="primary"
+                    variant="outlined"
+                  />
+                  {/* <Typography variant="caption" color="text.secondary">
+                    {creative.size || ''}
+                  </Typography> */}
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        );
+      })}
+    </Grid>
+  );
+};
 
 interface PropertyViewDialogProps {
   open: boolean;
@@ -62,15 +566,42 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
 }) => {
   const { getPermissions } = useAuth();
   
-  // State for image loading and errors
+  // State
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
   const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
   const [primaryImageUrl, setPrimaryImageUrl] = useState<string | null>(null);
   const [primaryImageLoading, setPrimaryImageLoading] = useState(true);
   const [primaryImageError, setPrimaryImageError] = useState(false);
+  const [tabValue, setTabValue] = useState(0);
+  const [fullscreenImageIndex, setFullscreenImageIndex] = useState<number | null>(null);
+  const [fullscreenVideoIndex, setFullscreenVideoIndex] = useState<number | null>(null);
+  const [fullscreenCreativeIndex, setFullscreenCreativeIndex] = useState<number | null>(null);
+  const [fullscreenBrochureIndex, setFullscreenBrochureIndex] = useState<number | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Check if user has write permission for property module
   const canEditProperty = getPermissions("property").hasWriteAccess;
+
+  // Format image URL
+  const formatImageUrl = (url: string): string => {
+    if (!url) return '';
+    
+    url = url.trim().replace(/^["']|["']$/g, '');
+    
+    if (url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    
+    if (url.startsWith('data:image')) {
+      return url;
+    }
+    
+    if (url.startsWith('/')) {
+      return url;
+    }
+    
+    return url;
+  };
 
   // Get primary image URL
   useEffect(() => {
@@ -84,32 +615,6 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
       }
     }
   }, [property]);
-
-  // Format image URL
-  const formatImageUrl = (url: string): string => {
-    if (!url) return '';
-    
-    // Remove any extra quotes or spaces
-    url = url.trim().replace(/^["']|["']$/g, '');
-    
-    // Check if it's already a full URL
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    
-    // Check if it's a base64 image
-    if (url.startsWith('data:image')) {
-      return url;
-    }
-    
-    // Handle relative paths
-    if (url.startsWith('/')) {
-      return url;
-    }
-    
-    // For other paths
-    return url;
-  };
 
   // Handle primary image load
   const handlePrimaryImageLoad = () => {
@@ -137,482 +642,202 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
     setImageErrors(prev => ({ ...prev, [id]: true }));
   };
 
+  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+    setTabValue(newValue);
+  };
+
+  // Handle fullscreen view functions
+  const handleImageClick = (index: number) => {
+    setFullscreenImageIndex(index);
+  };
+
+  const handleVideoClick = (index: number) => {
+    setFullscreenVideoIndex(index);
+  };
+
+  const handleCreativeClick = (index: number) => {
+    setFullscreenCreativeIndex(index);
+  };
+
+  const handleBrochureClick = (index: number) => {
+    setFullscreenBrochureIndex(index);
+  };
+
+  const handleCloseFullscreen = () => {
+    setFullscreenImageIndex(null);
+    setFullscreenVideoIndex(null);
+    setFullscreenCreativeIndex(null);
+    setFullscreenBrochureIndex(null);
+    setIsFullscreen(false);
+  };
+
+  const handleFullscreenToggle = () => {
+    setIsFullscreen(!isFullscreen);
+  };
+
+  // Navigation functions for fullscreen view
+  const handleNextImage = () => {
+    if (fullscreenImageIndex !== null && property?.images) {
+      setFullscreenImageIndex((fullscreenImageIndex + 1) % property.images.length);
+    }
+  };
+
+  const handlePrevImage = () => {
+    if (fullscreenImageIndex !== null && property?.images) {
+      setFullscreenImageIndex((fullscreenImageIndex - 1 + property.images.length) % property.images.length);
+    }
+  };
+
+  const handleNextVideo = () => {
+    if (fullscreenVideoIndex !== null && property?.videos) {
+      setFullscreenVideoIndex((fullscreenVideoIndex + 1) % property.videos.length);
+    }
+  };
+
+  const handlePrevVideo = () => {
+    if (fullscreenVideoIndex !== null && property?.videos) {
+      setFullscreenVideoIndex((fullscreenVideoIndex - 1 + property.videos.length) % property.videos.length);
+    }
+  };
+
+  const handleNextCreative = () => {
+    if (fullscreenCreativeIndex !== null && property?.creatives) {
+      setFullscreenCreativeIndex((fullscreenCreativeIndex + 1) % property.creatives.length);
+    }
+  };
+
+  const handlePrevCreative = () => {
+    if (fullscreenCreativeIndex !== null && property?.creatives) {
+      setFullscreenCreativeIndex((fullscreenCreativeIndex - 1 + property.creatives.length) % property.creatives.length);
+    }
+  };
+
+  const handleNextBrochure = () => {
+    if (fullscreenBrochureIndex !== null && property?.brochureUrls) {
+      setFullscreenBrochureIndex((fullscreenBrochureIndex + 1) % property.brochureUrls.length);
+    }
+  };
+
+  const handlePrevBrochure = () => {
+    if (fullscreenBrochureIndex !== null && property?.brochureUrls) {
+      setFullscreenBrochureIndex((fullscreenBrochureIndex - 1 + property.brochureUrls.length) % property.brochureUrls.length);
+    }
+  };
+
+  // Handle keyboard navigation in fullscreen view
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (fullscreenImageIndex !== null || fullscreenVideoIndex !== null || 
+          fullscreenCreativeIndex !== null || fullscreenBrochureIndex !== null) {
+        if (e.key === 'ArrowRight') {
+          if (fullscreenImageIndex !== null) handleNextImage();
+          else if (fullscreenVideoIndex !== null) handleNextVideo();
+          else if (fullscreenCreativeIndex !== null) handleNextCreative();
+          else if (fullscreenBrochureIndex !== null) handleNextBrochure();
+        } else if (e.key === 'ArrowLeft') {
+          if (fullscreenImageIndex !== null) handlePrevImage();
+          else if (fullscreenVideoIndex !== null) handlePrevVideo();
+          else if (fullscreenCreativeIndex !== null) handlePrevCreative();
+          else if (fullscreenBrochureIndex !== null) handlePrevBrochure();
+        } else if (e.key === 'Escape') {
+          handleCloseFullscreen();
+        }
+      }
+    };
+
+    if (fullscreenImageIndex !== null || fullscreenVideoIndex !== null || 
+        fullscreenCreativeIndex !== null || fullscreenBrochureIndex !== null) {
+      window.addEventListener('keydown', handleKeyDown);
+      return () => window.removeEventListener('keydown', handleKeyDown);
+    }
+  }, [fullscreenImageIndex, fullscreenVideoIndex, fullscreenCreativeIndex, fullscreenBrochureIndex]);
+
   if (!property) return null;
 
+  // Check for media existence
+  const hasImages = property.images && property.images.length > 0;
+  const hasVideos = property.videos && property.videos.length > 0;
+  const hasBrochures = property.brochureUrls && property.brochureUrls.length > 0;
+  const hasCreatives = property.creatives && property.creatives.length > 0;
+
+  // Get current fullscreen item
+  const currentFullscreenImage = fullscreenImageIndex !== null && property.images ? 
+    property.images[fullscreenImageIndex] : null;
+  
+  const currentFullscreenVideo = fullscreenVideoIndex !== null && property.videos ? 
+    property.videos[fullscreenVideoIndex] : null;
+  
+  const currentFullscreenCreative = fullscreenCreativeIndex !== null && property.creatives ? 
+    property.creatives[fullscreenCreativeIndex] : null;
+  
+  const currentFullscreenBrochure = fullscreenBrochureIndex !== null && property.brochureUrls ? 
+    property.brochureUrls[fullscreenBrochureIndex] : null;
+
+  // Calculate tab indices
+  const getTabIndex = (mediaType: 'images' | 'videos' | 'brochures' | 'creatives') => {
+    let index = 0;
+    
+    if (mediaType === 'images') return 0;
+    if (hasImages) index++;
+    if (mediaType === 'videos') return index;
+    if (hasVideos) index++;
+    if (mediaType === 'brochures') return index;
+    if (hasBrochures) index++;
+    if (mediaType === 'creatives') return index;
+    return 0;
+  };
+
   return (
-    <Dialog 
-      open={open} 
-      onClose={onClose} 
-      maxWidth="lg" 
-      fullWidth
-      scroll="paper"
-      sx={{
-        '& .MuiDialog-paper': {
-          borderRadius: 3,
-          overflow: 'hidden',
-          boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-          background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-        }
-      }}
-    >
-      {/* Enhanced Header with Gradient Overlay */}
-      <Box sx={{ 
-        position: 'relative',
-        height: { xs: 200, md: 600 },
-        background: 'linear-gradient(135deg, #1976d2 0%, #0f5293 100%)',
-        color: 'white',
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'space-between',
-        p: { xs: 3, md: 4 },
-        overflow: 'hidden'
-      }}>
-        {/* Background image */}
-        {primaryImageUrl && !primaryImageError && (
-          <Box
-            component="img"
-            src={primaryImageUrl}
-            alt={property.projectName}
-            onLoad={handlePrimaryImageLoad}
-            onError={handlePrimaryImageError}
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              opacity: 0.4,
-              display: primaryImageLoading ? 'none' : 'block'
-            }}
-          />
-        )}
-        
-        {/* Loading overlay for primary image */}
-        {primaryImageLoading && primaryImageUrl && !primaryImageError && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: 'rgba(0, 0, 0, 0.3)',
-            }}
-          >
-            <CircularProgress sx={{ color: 'white' }} />
-          </Box>
-        )}
-        
-        {/* Gradient overlay */}
-        <Box
-          sx={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.95) 0%, rgba(15, 82, 147, 0.85) 100%)',
-            zIndex: 1,
-          }}
+    <>
+      <Dialog 
+        open={open} 
+        onClose={onClose} 
+        maxWidth="lg" 
+        fullWidth
+        scroll="paper"
+        sx={{
+          '& .MuiDialog-paper': {
+            borderRadius: 3,
+            overflow: 'hidden',
+            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
+            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+          }
+        }}
+      >
+        <PropertyHeader
+          property={property}
+          onClose={onClose}
+          primaryImageUrl={primaryImageUrl}
+          primaryImageLoading={primaryImageLoading}
+          primaryImageError={primaryImageError}
+          handlePrimaryImageLoad={handlePrimaryImageLoad}
+          handlePrimaryImageError={handlePrimaryImageError}
         />
 
-        {/* Top Action Bar */}
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'end', 
-          alignItems: 'flex-end',
-          zIndex: 2,
-          position: 'relative'
-        }}>
-          <IconButton 
-            onClick={onClose}
-            sx={{
-              color: 'white',
-              backgroundColor: 'rgba(255,255,255,0.15)',
-              backdropFilter: 'blur(10px)',
-              border: '1px solid rgba(255,255,255,0.2)',
-              '&:hover': {
-                backgroundColor: 'rgba(255,255,255,0.25)',
-                transform: 'scale(1.1)'
-              },
-              transition: 'all 0.2s ease'
-            }}
-          >
-            <Close />
-          </IconButton>
-        </Box>
+        <DialogContent sx={{ p: 0 }}>
+          <PropertyQuickActions
+            property={property}
+            hasImages={hasImages}
+            hasVideos={hasVideos}
+            hasBrochures={hasBrochures}
+            hasCreatives={hasCreatives}
+            onDownloadAllMedia={onDownloadAllMedia}
+          />
 
-        {/* Header Content */}
-        <Box sx={{ 
-          display: 'flex', 
-          alignItems: 'flex-end', 
-          justifyContent: 'space-between', 
-          flexWrap: 'wrap', 
-          mt: 'auto',
-          zIndex: 2,
-          position: 'relative'
-        }}>
-          <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
-            <Typography variant="h2" fontWeight={800} sx={{ 
-              fontSize: { xs: '2rem', sm: '2.5rem', md: '3rem' },
-              textShadow: '0 4px 20px rgba(0,0,0,0.4)',
-              lineHeight: 1.1,
-            }}>
-              {property.projectName}
-            </Typography>
-            
-            <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
-              <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-                <Business sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
-                <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 600 }}>
-                  {property.builderName}
-                </Typography>
-              </Box>
-            </Box>
-          </Box>
+          <Box sx={{ p: { xs: 2, md: 4 } }}>
+            <Grid container spacing={4}>
+              <Grid size={{ xs: 12, md: 8 }}>
+                <ProjectOverview property={property} />
+              </Grid>
 
-          <Box sx={{ 
-            textAlign: { xs: 'left', md: 'right' },
-            background: 'rgba(255,255,255,0.15)',
-            backdropFilter: 'blur(10px)',
-            border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: 4,
-            p: { xs: 1, md: 2 },
-            minWidth: { xs: '100%', md: 280 },
-            mt: { xs: 2, md: 0 }
-          }}>
-            <Typography variant="h3" fontWeight={800} sx={{ 
-              textShadow: '0 2px 10px rgba(0,0,0,0.3)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: { xs: 'flex-start', md: 'flex-end' },
-              fontSize: { xs: '1.5rem', md: '2.5rem' }
-            }}>
-              {property.price || 'Contact for Price'}
-            </Typography>
-          </Box>
-        </Box>
-      </Box>
-
-      <DialogContent sx={{ p: 0 }}>
-        {/* Quick Actions Bar */}
-        <Paper sx={{ 
-          p: 3, 
-          borderRadius: 0,
-          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-          borderBottom: '1px solid #e2e8f0',
-          boxShadow: '0 2px 10px rgba(0,0,0,0.05)'
-        }}>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: {
-                xs: 'center',  
-                sm: 'space-between',
-              },
-              flexWrap: 'wrap',
-              gap: 2,
-            }}
-          >
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-              {/* Quick Stats */}
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <CloudUpload color="primary" />
-                <Typography variant="body2" fontWeight={600}>
-                  {property.images?.length || 0} Images
-                </Typography>
-              </Box>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <PlayArrow color="primary" />
-                <Typography variant="body2" fontWeight={600}>
-                  {property.videos?.length || 0} Videos
-                </Typography>
-              </Box>
-              
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Description color="primary" />
-                <Typography variant="body2" fontWeight={600}>
-                  {property.brochureUrls?.length || 0} Brochures
-                </Typography>
-              </Box>
-            </Box>
-            
-            {/* Download All Button */}
-            {(property.brochureUrls?.length > 0 || property.images?.length > 0) && (
-              <Button
-                variant="contained"
-                startIcon={<CloudDownload />}
-                onClick={() => onDownloadAllMedia(property)}
-                sx={{ 
-                  borderRadius: 3,
-                  px: 3,
-                  py: 1,
-                  fontWeight: 600,
-                  background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                  boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
-                  '&:hover': {
-                    boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-                    transform: 'translateY(-1px)'
-                  },
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Download All Media
-              </Button>
-            )}
-          </Box>
-        </Paper>
-
-        {/* Main Content */}
-        <Box sx={{ p: { xs: 2, md: 4 } }}>
-          <Grid container spacing={4}>
-            {/* Left Column - Property Details */}
-            <Grid size={{ xs: 12, lg: 8 }}>
-              {/* Description Card */}
-              <Card sx={{ 
-                mb: 4, 
-                borderRadius: 3, 
-                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                border: '1px solid rgba(0,0,0,0.05)',
-                overflow: 'visible'
-              }}>
-                <CardContent sx={{ p: 2 }}>
-                  <Box sx={{ 
-                    display: 'flex', 
-                    alignItems: 'center', 
-                    mb: 3,
-                    pb: 2,
-                    borderBottom: '2px solid',
-                    borderColor: 'primary.100'
-                  }}>
-                    <Description sx={{ mr: 2, color: 'primary.main', fontSize: 28 }} />
-                    <Typography variant="h5" fontWeight={700} sx={{ color: 'primary.main' }}>
-                      Project Overview
-                    </Typography>
-                  </Box>
-                  
-                  <Typography variant="body1" sx={{ 
-                    color: 'text.secondary', 
-                    lineHeight: 1.8,
-                    fontSize: '1.1rem',
-                    mb: 4
-                  }}>
-                    {property.description}
-                  </Typography>
-
-                  {/* Highlights Grid */}
-                  <Grid container spacing={3}>
-                    {property.status && (
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'primary.50', height: '100%' }}>
-                          <Typography variant="h6" fontWeight={700} sx={{ color: 'primary.main', mb: 2 }}>
-                            🏗️ Project Status
-                          </Typography>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {(Array.isArray(property.status) ? property.status : property.status.split(',')).map((item, index) => (
-                              <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'primary.main' }} />
-                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                  {item.trim()}
-                                </Typography>
-                              </Box>
-                            ))}
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    )}
-
-                    {property.nearby && (
-                      <Grid size={{ xs: 12, md: 6 }}>
-                        <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'success.50', height: '100%' }}>
-                          <Typography variant="h6" fontWeight={700} sx={{ color: 'success.main', mb: 2 }}>
-                            📍 Nearby Locations
-                          </Typography>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                            {(Array.isArray(property.nearby) ? property.nearby : property.nearby.split(',')).map((item, index) => (
-                              <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                <Box sx={{ width: 6, height: 6, borderRadius: '50%', bgcolor: 'success.main' }} />
-                                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                  {item.trim()}
-                                </Typography>
-                              </Box>
-                            ))}
-                          </Box>
-                        </Paper>
-                      </Grid>
-                    )}
-
-                    {property.projectHighlights && (
-                      <Grid size={{ xs: 12 }}>
-                        <Paper sx={{ p: 3, borderRadius: 3, bgcolor: 'warning.50' }}>
-                          <Typography variant="h6" fontWeight={700} sx={{ color: 'warning.main', mb: 2 }}>
-                            ⭐ Project Highlights
-                          </Typography>
-                          <Grid container spacing={2}>
-                            {(Array.isArray(property.projectHighlights) ? property.projectHighlights : property.projectHighlights.split(',')).map((point, index) => (
-                              <Grid size={{ xs: 12, sm: 6, md: 4 }} key={index}>
-                                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                                  <Box sx={{ width: 8, height: 8, borderRadius: '50%', bgcolor: 'warning.main' }} />
-                                  <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-                                    {point.trim()}
-                                  </Typography>
-                                </Box>
-                              </Grid>
-                            ))}
-                          </Grid>
-                        </Paper>
-                      </Grid>
-                    )}
-                  </Grid>
-                </CardContent>
-              </Card>
+              <Grid size={{ xs: 12, md: 4 }}>
+                <LocationCard property={property} />
+                <QuickInfoCard property={property} />
+              </Grid>
             </Grid>
 
-            {/* Right Column - Side Information */}
-            <Grid size={{ xs: 12, lg: 4 }}>
-              {/* Location & Map Card */}
-              <Card sx={{ 
-                mb: 3, 
-                borderRadius: 3, 
-                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                border: '1px solid rgba(0,0,0,0.05)'
-              }}>
-                <CardContent sx={{ p: 0, overflow: 'hidden' }}>
-                  <Box sx={{ p: 3, pb: 0 }}>
-                    <Typography variant="h6" fontWeight={700} gutterBottom sx={{ 
-                      display: 'flex', 
-                      alignItems: 'center',
-                      color: 'primary.main'
-                    }}>
-                      <LocationOn sx={{ mr: 1.5 }} />
-                      Location
-                    </Typography>
-                  </Box>
-
-                  <Box sx={{ p: 0, pb: 2 }}>
-                    <Typography sx={{ p: 2 }}>
-                      {property.location}
-                    </Typography>
-                  </Box>
-
-                  {property.mapLocation ? (
-                    <>
-                      <Box sx={{ height: 200, position: 'relative' }}>
-                        <LeafletMap 
-                          location={property.mapLocation}
-                          propertyName={property.projectName}
-                        />
-                      </Box>
-                      
-                      <Box sx={{ p: 3, pt: 2 }}>
-                        <Paper sx={{ p: 2, borderRadius: 2, bgcolor: 'primary.50', border: '1px solid', borderColor: 'primary.100' }}>
-                          <Typography variant="subtitle2" fontWeight={600} gutterBottom sx={{ color: 'primary.main' }}>
-                            📍 Coordinates
-                          </Typography>
-                          <Grid container spacing={2}>
-                            <Grid size={{ xs: 6 }}>
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                Latitude
-                              </Typography>
-                              <Typography variant="body2" fontWeight={600}>
-                                {property.mapLocation.lat?.toFixed(6) || 'N/A'}
-                              </Typography>
-                            </Grid>
-                            <Grid size={{ xs: 6 }}>
-                              <Typography variant="caption" color="text.secondary" display="block">
-                                Longitude
-                              </Typography>
-                              <Typography variant="body2" fontWeight={600}>
-                                {property.mapLocation.lng?.toFixed(6) || 'N/A'}
-                              </Typography>
-                            </Grid>
-                          </Grid>
-                        </Paper>
-                      </Box>
-                    </>
-                  ) : (
-                    <Paper 
-                      sx={{ 
-                        height: 200, 
-                        display: 'flex', 
-                        alignItems: 'center', 
-                        justifyContent: 'center',
-                        flexDirection: 'column',
-                        bgcolor: 'grey.50',
-                        borderRadius: 0
-                      }}
-                    >
-                      <LocationOn sx={{ fontSize: 48, color: 'grey.400', mb: 2 }} />
-                      <Typography variant="body2" color="text.secondary">
-                        Location not specified
-                      </Typography>
-                    </Paper>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Quick Info Card */}
-              <Card sx={{ 
-                borderRadius: 3, 
-                boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                border: '1px solid rgba(0,0,0,0.05)'
-              }}>
-                <CardContent sx={{ p: 2 }}>
-                  <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: 'primary.main' }}>
-                    ℹ️ Quick Info
-                  </Typography>
-                  
-                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
-                      <Typography variant="body2" color="text.secondary">Property Type</Typography>
-                      <Chip 
-                        label={property.parentId === null ? "Main" : "Sub"} 
-                        size="small" 
-                        color={property.parentId === null ? "primary" : "secondary"}
-                      />
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
-                      <Typography variant="body2" color="text.secondary">Payment Plan</Typography>
-                      <Typography variant="body2" fontWeight={600}>
-                        {property.paymentPlan || 'N/A'}
-                      </Typography>
-                    </Box>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
-                      <Typography variant="body2" color="text.secondary">Total Media</Typography>
-                      <Typography variant="body2" fontWeight={600}>
-                        {(property.images?.length || 0) + (property.videos?.length || 0) + (property.brochureUrls?.length || 0)}
-                      </Typography>
-                    </Box>
-                    
-                    {property.parentId === null && (
-                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', py: 1 }}>
-                        <Typography variant="body2" color="text.secondary">Sub Properties</Typography>
-                        <Typography variant="body2" fontWeight={600}>
-                          {property.subPropertyCount || 0}
-                        </Typography>
-                      </Box>
-                    )}
-                  </Box>
-                </CardContent>
-              </Card>
-            </Grid>
-          </Grid>
-
-          {/* Sub Properties Section */}
-          {property.parentId === null && (
-            <Card sx={{ 
-              mt: 4, 
-              borderRadius: 3, 
-              boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-              border: '1px solid rgba(0,0,0,0.05)'
-            }}>
-              <CardContent sx={{ p: 2 }}>
+            {property.parentId === null && (
+              <Box sx={{ mt: 4 }}>
                 <Box sx={{ 
                   display: 'flex', 
                   alignItems: 'center', 
@@ -630,643 +855,233 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
                   parentId={property._id!} 
                   onViewSubProperty={onViewSubProperty}
                 />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Media Sections */}
-          <Grid container spacing={4} sx={{ mt: 2 }}>
-            {/* Images Section */}
-            {property.images && property.images.length > 0 && (
-              <Grid size={{ xs: 12, lg: 6 }}>
-                <Card sx={{ 
-                  borderRadius: 3, 
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                  border: '1px solid rgba(0,0,0,0.05)'
-                }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                      <Typography variant="h6" fontWeight={700} sx={{ 
-                        color: 'primary.main',
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}>
-                        <CloudUpload sx={{ mr: 1.5 }} />
-                        Project Images ({property.images.length})
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        startIcon={<CloudDownload />}
-                        onClick={() => onDownloadImages(property.images)}
-                        size="small"
-                        sx={{ borderRadius: 2 }}
-                      >
-                        Download All
-                      </Button>
-                    </Box>
-                    <Grid container spacing={2}>
-                      {property.images.map((image, index) => {
-                        const imageId = image._id || `image-${index}`;
-                        const imageUrl = formatImageUrl(image.url);
-                        
-                        return (
-                          <Grid size={{ xs: 6, sm: 4, md: 3 }} key={index}>
-                            <Card 
-                              sx={{ 
-                                cursor: 'pointer',
-                                transition: 'all 0.3s ease',
-                                border: '2px solid transparent',
-                                '&:hover': {
-                                  transform: 'translateY(-4px)',
-                                  boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
-                                  borderColor: 'primary.main'
-                                },
-                                height: '100%'
-                              }}
-                            >
-                              <Box sx={{ position: 'relative', paddingTop: '75%' }}>
-                                {!imageErrors[imageId] && imageUrl ? (
-                                  <>
-                                    {loadingImages[imageId] && (
-                                      <Box sx={{ 
-                                        position: 'absolute', 
-                                        top: 0, 
-                                        left: 0, 
-                                        right: 0, 
-                                        bottom: 0,
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        bgcolor: 'rgba(0,0,0,0.05)',
-                                        borderRadius: '8px 8px 0 0'
-                                      }}>
-                                        <CircularProgress size={24} />
-                                      </Box>
-                                    )}
-                                    
-                                    <Box
-                                      component="img"
-                                      src={imageUrl}
-                                      alt={image.title || `Image ${index + 1}`}
-                                      onLoad={() => handleImageLoad(imageId)}
-                                      onError={() => handleImageError(imageId)}
-                                      sx={{
-                                        position: 'absolute',
-                                        top: 0,
-                                        left: 0,
-                                        width: '100%',
-                                        height: '100%',
-                                        objectFit: 'cover',
-                                        borderRadius: '8px 8px 0 0',
-                                        display: loadingImages[imageId] ? 'none' : 'block'
-                                      }}
-                                    />
-                                  </>
-                                ) : (
-                                  <Box sx={{ 
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    width: '100%',
-                                    height: '100%',
-                                    backgroundColor: '#f5f5f5',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    flexDirection: 'column',
-                                    borderRadius: '8px 8px 0 0'
-                                  }}>
-                                    <BrokenImage sx={{ fontSize: 40, color: '#999', mb: 1 }} />
-                                    <Typography variant="caption" color="text.secondary">
-                                      Failed to load
-                                    </Typography>
-                                  </Box>
-                                )}
-                                
-                                {/* Download Button */}
-                                {!imageErrors[imageId] && imageUrl && (
-                                  <IconButton
-                                    sx={{
-                                      position: 'absolute',
-                                      top: 8,
-                                      right: 8,
-                                      backgroundColor: 'rgba(255,255,255,0.95)',
-                                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                                      '&:hover': {
-                                        backgroundColor: 'white',
-                                        transform: 'scale(1.1)'
-                                      },
-                                      transition: 'all 0.2s ease'
-                                    }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onDownloadFile(imageUrl, image.title || `image-${index + 1}.jpg`);
-                                    }}
-                                    size="small"
-                                  >
-                                    <CloudDownload sx={{ fontSize: 16 }} />
-                                  </IconButton>
-                                )}
-                                
-                                {image.isPrimary && (
-                                  <Chip 
-                                    label="Primary" 
-                                    size="small" 
-                                    color="primary" 
-                                    sx={{ 
-                                      position: 'absolute',
-                                      top: 8,
-                                      left: 8,
-                                      height: 20, 
-                                      fontSize: '0.65rem',
-                                      fontWeight: 600
-                                    }} 
-                                  />
-                                )}
-                              </Box>
-                              
-                              <Box sx={{ p: 1.5 }}>
-                                <Typography 
-                                  variant="body2" 
-                                  fontWeight={600} 
-                                  sx={{ 
-                                    overflow: 'hidden',
-                                    textOverflow: 'ellipsis',
-                                    whiteSpace: 'nowrap'
-                                  }}
-                                >
-                                  {image.title || `Image ${index + 1}`}
-                                </Typography>
-                              </Box>
-                            </Card>
-                          </Grid>
-                        );
-                      })}
-                    </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
+              </Box>
             )}
 
-            {/* Videos Section */}
-            {property.videos && property.videos.length > 0 && (
-              <Grid size={{ xs: 12, lg: 6 }}>
-                <Card sx={{ 
-                  borderRadius: 3, 
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                  border: '1px solid rgba(0,0,0,0.05)'
-                }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                      <Typography variant="h6" fontWeight={700} sx={{ 
-                        color: 'primary.main',
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}>
-                        <PlayArrow sx={{ mr: 1.5 }} />
-                        Videos ({property.videos.length})
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        startIcon={<CloudDownload />}
-                        onClick={() => onDownloadVideos(property.videos)}
-                        size="small"
-                        sx={{ borderRadius: 2 }}
-                      >
-                        Download All
-                      </Button>
+            {(hasImages || hasVideos || hasBrochures || hasCreatives) && (
+              <PropertyMediaTabs
+                property={property}
+                tabValue={tabValue}
+                onTabChange={handleTabChange}
+                hasImages={hasImages}
+                hasVideos={hasVideos}
+                hasBrochures={hasBrochures}
+                hasCreatives={hasCreatives}
+              >
+                {hasImages && (
+                  <TabPanel value={tabValue} index={getTabIndex('images')}>
+                    <Box sx={{ px: 2 }}>
+                      <PropertyMediaDownloadSection
+                        onDownloadImages={() => onDownloadImages(property.images)}
+                        showImages={true}
+                      />
+                      <ImagesGrid
+                        images={property.images}
+                        onImageClick={handleImageClick}
+                        onDownloadImage={(url, filename, index) => onDownloadFile(url, filename)}
+                        loadingImages={loadingImages}
+                        imageErrors={imageErrors}
+                        formatImageUrl={formatImageUrl}
+                        handleImageLoad={handleImageLoad}
+                        handleImageError={handleImageError}
+                      />
                     </Box>
-                    <Grid container spacing={2}>
-                      {property.videos.map((video, index) => {
-                        const videoId = video._id || `video-${index}`;
-                        const videoUrl = formatImageUrl(video.url);
-                        const thumbnailUrl = video.thumbnail ? formatImageUrl(video.thumbnail) : null;
-                        
-                        return (
-                          <Grid size={{ xs: 12, sm: 6 }} key={index}>
-                            <Card sx={{ 
-                              transition: 'all 0.3s ease', 
-                              border: '2px solid transparent',
-                              '&:hover': { 
-                                transform: 'translateY(-4px)', 
-                                boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
-                                borderColor: 'primary.main'
-                              } 
-                            }}>
-                              <Box sx={{ position: 'relative', paddingTop: '56.25%' }}>
-                                <Box
-                                  sx={{
-                                    position: 'absolute',
-                                    top: 0,
-                                    left: 0,
-                                    right: 0,
-                                    bottom: 0,
-                                    backgroundColor: 'grey.100',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center',
-                                    borderRadius: '8px 8px 0 0',
-                                    cursor: 'pointer',
-                                    backgroundImage: thumbnailUrl && !imageErrors[`thumb-${videoId}`] ? `url(${thumbnailUrl})` : 'none',
-                                    backgroundSize: 'cover',
-                                    backgroundPosition: 'center',
-                                    overflow: 'hidden'
-                                  }}
-                                  onClick={() => window.open(videoUrl, '_blank')}
-                                >
-                                  {/* Video play button overlay */}
-                                  <Box sx={{ 
-                                    position: 'absolute', 
-                                    inset: 0, 
-                                    display: 'flex', 
-                                    alignItems: 'center', 
-                                    justifyContent: 'center',
-                                    background: thumbnailUrl && !imageErrors[`thumb-${videoId}`] ? 'rgba(0,0,0,0.3)' : 'transparent'
-                                  }}>
-                                    <PlayArrow sx={{ 
-                                      fontSize: 48, 
-                                      color: 'white', 
-                                      filter: 'drop-shadow(0 2px 8px rgba(0,0,0,0.5))' 
-                                    }} />
-                                  </Box>
-                                  
-                                  {/* Download Button */}
-                                  <IconButton
-                                    sx={{
-                                      position: 'absolute',
-                                      top: 8,
-                                      right: 8,
-                                      backgroundColor: 'rgba(255,255,255,0.95)',
-                                      boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                                      '&:hover': {
-                                        backgroundColor: 'white',
-                                        transform: 'scale(1.1)'
-                                      },
-                                      transition: 'all 0.2s ease',
-                                      zIndex: 2
-                                    }}
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      onDownloadFile(videoUrl, video.title || `video-${index + 1}.mp4`);
-                                    }}
-                                  >
-                                    <CloudDownload />
-                                  </IconButton>
-                                </Box>
-                              </Box>
-                              
-                              <Box sx={{ p: 2 }}>
-                                <Typography variant="body2" fontWeight={600} noWrap>
-                                  {video.title || `Video ${index + 1}`}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary">
-                                  {video.type || 'MP4 Video'}
-                                </Typography>
-                              </Box>
-                            </Card>
-                          </Grid>
-                        );
-                      })}
-                    </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
+                  </TabPanel>
+                )}
 
-            {/* Brochures Section */}
-            {property.brochureUrls && property.brochureUrls.length > 0 && (
-              <Grid size={{ xs: 12, lg: 6 }}>
-                <Card sx={{ 
-                  borderRadius: 3, 
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                  border: '1px solid rgba(0,0,0,0.05)'
-                }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                      <Typography variant="h6" fontWeight={700} sx={{ 
-                        color: 'primary.main',
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}>
-                        <Description sx={{ mr: 1.5 }} />
-                        Brochures ({property.brochureUrls.length})
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        startIcon={<CloudDownload />}
-                        onClick={() => onDownloadBrochures(property.brochureUrls)}
-                        size="small"
-                        sx={{ borderRadius: 2 }}
-                      >
-                        Download All
-                      </Button>
+                {hasVideos && (
+                  <TabPanel value={tabValue} index={getTabIndex('videos')}>
+                    <Box sx={{ px: 2 }}>
+                      <PropertyMediaDownloadSection
+                        onDownloadVideos={() => onDownloadVideos(property.videos)}
+                        showVideos={true}
+                      />
+                      <VideosGrid
+                        videos={property.videos}
+                        onVideoClick={handleVideoClick}
+                        onDownloadVideo={(url, filename, index) => onDownloadFile(url, filename)}
+                      />
                     </Box>
-                    <Grid container spacing={2}>
-                      {property.brochureUrls.map((brochure, index) => {
-                        const brochureUrl = formatImageUrl(brochure.url);
-                        
-                        return (
-                          <Grid size={{ xs: 12 }} key={index}>
-                            <Paper
-                              variant="outlined"
-                              sx={{ 
-                                p: 2, 
-                                borderRadius: 3,
-                                display: 'flex',
-                                justifyContent: 'space-between',
-                                alignItems: 'center',
-                                transition: 'all 0.2s ease',
-                                border: '2px solid',
-                                borderColor: 'grey.200',
-                                '&:hover': {
-                                  backgroundColor: 'primary.50',
-                                  borderColor: 'primary.main',
-                                  transform: 'translateX(4px)'
-                                }
-                              }}
-                            >
-                              <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1 }}>
-                                <Description sx={{ color: 'primary.main', mr: 2, fontSize: 32 }} />
-                                <Box sx={{ minWidth: 0, flex: 1 }}>
-                                  <Typography variant="body1" fontWeight={600} noWrap>
-                                    {brochure.title || `Brochure ${index + 1}`}
-                                  </Typography>
-                                  <Typography variant="caption" color="text.secondary">
-                                    {brochure.type || 'PDF Document'}
-                                  </Typography>
-                                </Box>
-                              </Box>
-                              <IconButton 
-                                onClick={() => onDownloadFile(brochureUrl, brochure.title || `brochure-${index + 1}.pdf`)}
-                                color="primary"
-                                sx={{
-                                  backgroundColor: 'primary.50',
-                                  '&:hover': {
-                                    backgroundColor: 'primary.100',
-                                    transform: 'scale(1.1)'
-                                  },
-                                  transition: 'all 0.2s ease'
-                                }}
-                              >
-                                <CloudDownload />
-                              </IconButton>
-                            </Paper>
-                          </Grid>
-                        );
-                      })}
-                    </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
+                  </TabPanel>
+                )}
 
-            {/* Creatives Section */}
-            {property.creatives && property.creatives.length > 0 && (
-              <Grid size={{ xs: 12, lg: 6 }}>
-                <Card sx={{ 
-                  borderRadius: 3, 
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-                  border: '1px solid rgba(0,0,0,0.05)'
-                }}>
-                  <CardContent sx={{ p: 2 }}>
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                      <Typography variant="h6" fontWeight={700} sx={{ 
-                        color: 'primary.main',
-                        display: 'flex',
-                        alignItems: 'center'
-                      }}>
-                        <CloudUpload sx={{ mr: 1.5 }} />
-                        Creatives ({property.creatives.length})
-                      </Typography>
-                      <Button
-                        variant="outlined"
-                        startIcon={<CloudDownload />}
-                        onClick={() => onDownloadCreatives(property.creatives)}
-                        size="small"
-                        sx={{ borderRadius: 2 }}
-                      >
-                        Download All
-                      </Button>
+                {hasBrochures && (
+                  <TabPanel value={tabValue} index={getTabIndex('brochures')}>
+                    <Box sx={{ px: 2 }}>
+                      <PropertyMediaDownloadSection
+                        onDownloadBrochures={() => onDownloadBrochures(property.brochureUrls)}
+                        showBrochures={true}
+                      />
+                      <BrochuresList
+                        brochures={property.brochureUrls}
+                        onBrochureClick={handleBrochureClick}
+                        onDownloadBrochure={(url, filename, index) => onDownloadFile(url, filename)}
+                      />
                     </Box>
-                    <Grid container spacing={2}>
-                      {property.creatives.map((creative, index) => {
-                        const creativeId = creative._id || `creative-${index}`;
-                        const creativeUrl = formatImageUrl(creative.url);
-                        
-                        return (
-                          <Grid size={{ xs: 12, sm: 6 }} key={index}>
-                            <Card 
-                              sx={{ 
-                                transition: 'all 0.3s ease',
-                                border: '2px solid transparent',
-                                '&:hover': {
-                                  transform: 'translateY(-4px)',
-                                  boxShadow: '0 12px 28px rgba(0,0,0,0.15)',
-                                  borderColor: creative.type === 'image' ? 'primary.main' : 'secondary.main'
-                                }
-                              }}
-                            >
-                              {creative.type === 'image' ? (
-                                <Box sx={{ position: 'relative', paddingTop: '75%' }}>
-                                  {!imageErrors[creativeId] && creativeUrl ? (
-                                    <>
-                                      {loadingImages[creativeId] && (
-                                        <Box sx={{ 
-                                          position: 'absolute', 
-                                          top: 0, 
-                                          left: 0, 
-                                          right: 0, 
-                                          bottom: 0,
-                                          display: 'flex',
-                                          alignItems: 'center',
-                                          justifyContent: 'center',
-                                          bgcolor: 'rgba(0,0,0,0.05)',
-                                          borderRadius: '8px 8px 0 0'
-                                        }}>
-                                          <CircularProgress size={24} />
-                                        </Box>
-                                      )}
-                                      
-                                      <Box
-                                        component="img"
-                                        src={creativeUrl}
-                                        alt={creative.title || `Creative ${index + 1}`}
-                                        onLoad={() => handleImageLoad(creativeId)}
-                                        onError={() => handleImageError(creativeId)}
-                                        sx={{
-                                          position: 'absolute',
-                                          top: 0,
-                                          left: 0,
-                                          width: '100%',
-                                          height: '100%',
-                                          objectFit: 'cover',
-                                          borderRadius: '8px 8px 0 0',
-                                          display: loadingImages[creativeId] ? 'none' : 'block'
-                                        }}
-                                      />
-                                    </>
-                                  ) : (
-                                    <Box sx={{ 
-                                      position: 'absolute',
-                                      top: 0,
-                                      left: 0,
-                                      width: '100%',
-                                      height: '100%',
-                                      backgroundColor: '#f5f5f5',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      flexDirection: 'column',
-                                      borderRadius: '8px 8px 0 0'
-                                    }}>
-                                      <BrokenImage sx={{ fontSize: 40, color: '#999', mb: 1 }} />
-                                      <Typography variant="caption" color="text.secondary">
-                                        Failed to load
-                                      </Typography>
-                                    </Box>
-                                  )}
-                                  
-                                  {/* Download Button */}
-                                  {!imageErrors[creativeId] && creativeUrl && (
-                                    <IconButton
-                                      sx={{
-                                        position: 'absolute',
-                                        top: 8,
-                                        right: 8,
-                                        backgroundColor: 'rgba(255,255,255,0.95)',
-                                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                                        '&:hover': {
-                                          backgroundColor: 'white',
-                                          transform: 'scale(1.1)'
-                                        },
-                                        transition: 'all 0.2s ease'
-                                      }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        onDownloadFile(creativeUrl, creative.title || `creative-${index + 1}.jpg`);
-                                      }}
-                                      size="small"
-                                    >
-                                      <CloudDownload sx={{ fontSize: 16 }} />
-                                    </IconButton>
-                                  )}
-                                </Box>
-                              ) : (
-                                <Box sx={{ position: 'relative', paddingTop: '75%' }}>
-                                  <Box
-                                    sx={{
-                                      position: 'absolute',
-                                      top: 0,
-                                      left: 0,
-                                      right: 0,
-                                      bottom: 0,
-                                      backgroundColor: 'grey.100',
-                                      display: 'flex',
-                                      alignItems: 'center',
-                                      justifyContent: 'center',
-                                      borderRadius: '8px 8px 0 0'
-                                    }}
-                                  >
-                                    <PlayArrow sx={{ fontSize: 48, color: 'secondary.main' }} />
-                                    <IconButton
-                                      sx={{
-                                        position: 'absolute',
-                                        top: 8,
-                                        right: 8,
-                                        backgroundColor: 'rgba(255,255,255,0.95)',
-                                        boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
-                                        '&:hover': {
-                                          backgroundColor: 'white',
-                                          transform: 'scale(1.1)'
-                                        },
-                                        transition: 'all 0.2s ease'
-                                      }}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        onDownloadFile(creativeUrl, creative.title || `creative-${index + 1}.mp4`);
-                                      }}
-                                      size="small"
-                                    >
-                                      <CloudDownload sx={{ fontSize: 16 }} />
-                                    </IconButton>
-                                  </Box>
-                                </Box>
-                              )}
-                              
-                              <Box sx={{ p: 2 }}>
-                                <Typography variant="body2" fontWeight={600} noWrap>
-                                  {creative.title || `Creative ${index + 1}`}
-                                </Typography>
-                                <Typography variant="caption" color="text.secondary" textTransform="capitalize">
-                                  {creative.type} • {creative.size || 'N/A'}
-                                </Typography>
-                              </Box>
-                            </Card>
-                          </Grid>
-                        );
-                      })}
-                    </Grid>
-                  </CardContent>
-                </Card>
-              </Grid>
-            )}
-          </Grid>
-        </Box>
-      </DialogContent>
+                  </TabPanel>
+                )}
 
-      <DialogActions sx={{ 
-        py: 2,
-        px: {xs: 2, md: 3}, 
-        borderTop: '1px solid #e2e8f0', 
-        background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-        gap: 2
-      }}>
-        <Button 
-          onClick={onClose}
-          variant="outlined"
-          sx={{ 
-            borderRadius: 3, 
-            fontWeight: 600,
-            px: {xs: 1, md: 4}, 
-            py: 1,
-            borderWidth: 2,
-            '&:hover': {
-              borderWidth: 2
-            }
-          }}
-        >
-          Close
-        </Button>
-        {/* Only show Edit button if user has write permission */}
-        {canEditProperty && (
+                {hasCreatives && (
+                  <TabPanel value={tabValue} index={getTabIndex('creatives')}>
+                    <Box sx={{ px: 2 }}>
+                      <PropertyMediaDownloadSection
+                        onDownloadCreatives={() => onDownloadCreatives(property.creatives)}
+                        showCreatives={true}
+                      />
+                      <CreativesGrid
+                        creatives={property.creatives}
+                        onCreativeClick={handleCreativeClick}
+                        onDownloadCreative={(url, filename, index) => onDownloadFile(url, filename)}
+                        loadingImages={loadingImages}
+                        imageErrors={imageErrors}
+                        formatImageUrl={formatImageUrl}
+                        handleImageLoad={handleImageLoad}
+                        handleImageError={handleImageError}
+                      />
+                    </Box>
+                  </TabPanel>
+                )}
+              </PropertyMediaTabs>
+            )}
+          </Box>
+        </DialogContent>
+
+        <DialogActions sx={{ 
+          py: 2,
+          px: {xs: 2, md: 3}, 
+          borderTop: '1px solid #e2e8f0', 
+          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
+          gap: 2
+        }}>
           <Button 
-            onClick={() => { 
-              onClose(); 
-              onEdit(property); 
-            }} 
-            variant="contained" 
-            startIcon={<Edit />}
+            onClick={onClose}
+            variant="outlined"
             sx={{ 
               borderRadius: 3, 
               fontWeight: 600,
-              px: {xs: 1, md: 4},        
+              px: {xs: 1, md: 4}, 
               py: 1,
-              background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-              boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
+              borderWidth: 2,
               '&:hover': {
-                boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-                transform: 'translateY(-1px)'
-              },
-              transition: 'all 0.2s ease'
+                borderWidth: 2
+              }
             }}
           >
-            Edit Property
+            Close
           </Button>
+          {canEditProperty && (
+            <Button 
+              onClick={() => { 
+                onClose(); 
+                onEdit(property); 
+              }} 
+              variant="contained" 
+              startIcon={<Edit />}
+              sx={{ 
+                borderRadius: 3, 
+                fontWeight: 600,
+                px: {xs: 1, md: 4},        
+                py: 1,
+                background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
+                boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
+                '&:hover': {
+                  boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
+                  transform: 'translateY(-1px)'
+                },
+                transition: 'all 0.2s ease'
+              }}
+            >
+              Edit Property
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+
+      {/* Fullscreen Image Viewer */}
+      <FullscreenImageViewer
+        open={fullscreenImageIndex !== null}
+        onClose={handleCloseFullscreen}
+        isFullscreen={isFullscreen}
+        onFullscreenToggle={handleFullscreenToggle}
+        currentItem={currentFullscreenImage}
+        itemType="image"
+        onDownload={() => onDownloadFile(
+          formatImageUrl(currentFullscreenImage!.url), 
+          currentFullscreenImage!.title || `image-${fullscreenImageIndex! + 1}.jpg`
         )}
-      </DialogActions>
-    </Dialog>
+        onPrev={handlePrevImage}
+        onNext={handleNextImage}
+        currentIndex={fullscreenImageIndex || 0}
+        totalItems={property.images?.length || 0}
+        title={currentFullscreenImage?.title || `Image ${fullscreenImageIndex! + 1}`}
+        showNavigation={true}
+      />
+
+      {/* Fullscreen Video Viewer */}
+      <FullscreenImageViewer
+        open={fullscreenVideoIndex !== null}
+        onClose={handleCloseFullscreen}
+        isFullscreen={isFullscreen}
+        onFullscreenToggle={handleFullscreenToggle}
+        currentItem={currentFullscreenVideo}
+        itemType="video"
+        onDownload={() => onDownloadFile(
+          formatImageUrl(currentFullscreenVideo!.url), 
+          currentFullscreenVideo!.title || `video-${fullscreenVideoIndex! + 1}.mp4`
+        )}
+        onPrev={handlePrevVideo}
+        onNext={handleNextVideo}
+        currentIndex={fullscreenVideoIndex || 0}
+        totalItems={property.videos?.length || 0}
+        title={currentFullscreenVideo?.title || `Video ${fullscreenVideoIndex! + 1}`}
+        showNavigation={true}
+      />
+
+      {/* Fullscreen Creative Viewer (Image Type) */}
+      {currentFullscreenCreative && currentFullscreenCreative.type === 'image' && (
+        <FullscreenImageViewer
+          open={fullscreenCreativeIndex !== null && currentFullscreenCreative?.type === 'image'}
+          onClose={handleCloseFullscreen}
+          isFullscreen={isFullscreen}
+          onFullscreenToggle={handleFullscreenToggle}
+          currentItem={currentFullscreenCreative}
+          itemType="image"
+          onDownload={() => onDownloadFile(
+            formatImageUrl(currentFullscreenCreative.url), 
+            currentFullscreenCreative.title || `creative-${fullscreenCreativeIndex! + 1}.jpg`
+          )}
+          onPrev={handlePrevCreative}
+          onNext={handleNextCreative}
+          currentIndex={fullscreenCreativeIndex || 0}
+          totalItems={property.creatives?.length || 0}
+          title={currentFullscreenCreative?.title || `Creative ${fullscreenCreativeIndex! + 1}`}
+          showNavigation={true}
+        />
+      )}
+
+      {/* Fullscreen Brochure Viewer */}
+      {currentFullscreenBrochure && (
+        <FullscreenImageViewer
+          open={fullscreenBrochureIndex !== null}
+          onClose={handleCloseFullscreen}
+          isFullscreen={false}
+          onFullscreenToggle={() => {}}
+          currentItem={currentFullscreenBrochure}
+          itemType="brochure"
+          onDownload={() => onDownloadFile(
+            formatImageUrl(currentFullscreenBrochure.url), 
+            currentFullscreenBrochure.title || `brochure-${fullscreenBrochureIndex! + 1}.pdf`
+          )}
+          onPrev={handlePrevBrochure}
+          onNext={handleNextBrochure}
+          currentIndex={fullscreenBrochureIndex || 0}
+          totalItems={property.brochureUrls?.length || 0}
+          title={currentFullscreenBrochure?.title || `Brochure ${fullscreenBrochureIndex! + 1}`}
+          showNavigation={property.brochureUrls?.length > 1}
+        />
+      )}
+    </>
   );
 };
 
 export default PropertyViewDialog;
-

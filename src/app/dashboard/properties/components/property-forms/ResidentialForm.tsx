@@ -221,7 +221,193 @@ const ResidentialForm: React.FC<ResidentialFormProps> = ({
         </Typography>
       </Grid>
 
-      {/* ... (rest of your form fields remain the same) ... */}
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Property Type" value={currentProperty.propertyName || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].propertyName = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField 
+          fullWidth 
+          label="Price" 
+          value={currentProperty.price || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].price = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+          placeholder="Leave empty to inherit from main project"
+          helperText={formData.parentId ? "Leave empty to automatically use main project price" : "Enter price for this residential property"}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+  <TextField 
+    fullWidth 
+    label="Floor" 
+    type="number"
+    value={currentProperty.floors || ''}
+    onChange={(e) => {
+      const newResidential = [...(formData.residentialProperties || [])];
+      if (!newResidential[index]) newResidential[index] = {};
+      const value = e.target.value;
+      // Handle empty value as undefined
+      newResidential[index].floors = value === '' ? undefined : parseInt(value);
+      setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+    }}
+    InputProps={{
+      inputProps: { 
+        min: 0,
+        step: 1
+      }
+    }}
+    helperText="Optional - Number of floor"
+  />
+</Grid>
+      <Grid size={{ xs: 12 }}>
+        <TextField fullWidth label="Property Description" value={currentProperty.propertyDescription || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].propertyDescription = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+          multiline rows={2}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 3 }}>
+        <TextField fullWidth label="Bedrooms" type="number" value={currentProperty.bedrooms || 0}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].bedrooms = parseInt(e.target.value) || 0;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 3 }}>
+        <TextField fullWidth label="Bathrooms" type="number" value={currentProperty.bathrooms || 0}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].bathrooms = parseInt(e.target.value) || 0;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 3 }}>
+        <TextField fullWidth label="Toilets" type="number" value={currentProperty.toilet || 0}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].toilet = parseInt(e.target.value) || 0;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 3 }}>
+        <TextField fullWidth label="Balcony" type="number" value={currentProperty.balcony || 0}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].balcony = parseInt(e.target.value) || 0;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Size Unit" value={currentProperty.sizeUnit || 'sq.ft.'}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].sizeUnit = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Minimum Size" value={currentProperty.minSize || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].minSize = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 4 }}>
+        <TextField fullWidth label="Maximum Size" value={currentProperty.maxSize || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].maxSize = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Carpet Area" value={currentProperty.carpetArea || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].carpetArea = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      <Grid size={{ xs: 12, md: 6 }}>
+        <TextField fullWidth label="Built-up Area" value={currentProperty.builtUpArea || ''}
+          onChange={(e) => {
+            const newResidential = [...(formData.residentialProperties || [])];
+            if (!newResidential[index]) newResidential[index] = {};
+            newResidential[index].builtUpArea = e.target.value;
+            setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+          }}
+        />
+      </Grid>
+      
+
+      <Grid size={{ xs: 12 }}>
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel>Amenities</InputLabel>
+          <Select
+            multiple
+            value={currentProperty.amenities || []}
+            onChange={(e) => {
+              const newResidential = [...(formData.residentialProperties || [])];
+              if (!newResidential[index]) newResidential[index] = {};
+              newResidential[index].amenities = e.target.value as string[];
+              setFormData((prev: any) => ({ ...prev, residentialProperties: newResidential }));
+            }}
+            input={<OutlinedInput label="Amenities" />}
+            renderValue={(selected) => (
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                {(selected as string[]).map((value) => (
+                  <Chip key={value} label={value} size="small" />
+                ))}
+              </Box>
+            )}
+          >
+            {[
+              "24/7 security staff", "CCTV surveillance", "Video door phone and intercom", "Smart lock and smart access control systems", "Gated community and controlled entry", "Fire safety (alarm, extinguisher)",
+              "Swimming pool", "Gymnasium / fitness center", "Jogging track / walking paths", "Clubhouse or community hall", "Landscaped garden and green spaces", "Rooftop lounge or terrace garden", "Playground / children’s play area", 
+              "Pet-friendly zones / dog park", "Party room / multipurpose hall", "Covered parking and garage", "Visitor / guest parking", "Bike parking or storage", "Electric vehicle charging stations", "Proximity to public transport", 
+              "High-speed internet and cable TV provision", "Building Wi-Fi in common areas", "Smart home automation (lighting, climate control)", "Online rent payment and maintenance requests", "Automated package room / lockers for deliveries", 
+              "Spa / wellness center", "Indoor games room (billiards, table tennis)", "Co-working / office space", "Community events and social spaces", "Elder’s sitting area", "Valet trash service", "Storage facilities", "Library / reading lounge", 
+              "Solar power or solar lighting", "Rainwater harvesting", "Waste segregation and recycling"
+            ].map(amenity => (
+              <MenuItem key={amenity} value={amenity}>
+                {amenity}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </Grid>
 
       <Grid size={{ xs: 12 }}>
         <Paper sx={{ p: 3, mt: 2, border: '1px solid #e0e0e0', borderRadius: '12px', backgroundColor: '#fafafa' }}>

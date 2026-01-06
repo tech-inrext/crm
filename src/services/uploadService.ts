@@ -52,13 +52,9 @@ export const uploadService = {
       // Validate file size
       uploadService.validateFileSize(file, 200);
 
-      console.log('Starting S3 upload for:', file.name);
-      
       // Get pre-signed URL from your backend
       const { uploadUrl, fileUrl } = await uploadService.getUploadUrl(file.name, file.type);
 
-      console.log('Got S3 URL, uploading...');
-      
       // Upload directly to S3
       const uploadResponse = await axios.put(uploadUrl, file, {
         headers: {
@@ -68,8 +64,6 @@ export const uploadService = {
         timeout: 300000, // 5 minutes timeout for large files
       });
 
-      console.log('Upload successful:', fileUrl);
-      
       return {
         success: true,
         data: {

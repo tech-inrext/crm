@@ -516,9 +516,7 @@ export const propertyService = {
         })) || []
       };
 
-      console.log('Sending property data to API...');
       const response = await api.post('/property', formattedData);
-      console.log('Property created successfully');
       return response.data;
     } catch (error: any) {
       console.error('Error creating property:', error);

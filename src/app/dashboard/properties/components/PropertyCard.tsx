@@ -511,7 +511,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       {showAdminControls && canEditProperty && (
         <CardContent sx={{ borderTop: "1px solid #e0e0e0", p: 2 }}>
           <Grid container spacing={2} alignItems="center">
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid size={{ xs: 6, sm: 6 }}>
               <Tooltip
                 title={
                   project.isPublic
@@ -539,7 +539,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
                 />
               </Tooltip>
             </Grid>
-            <Grid size={{ xs: 12, sm: 6 }}>
+            <Grid size={{ xs: 6, sm: 6 }}>
               <Tooltip
                 title={
                   project.isFeatured ? "Featured on website" : "Not featured"
