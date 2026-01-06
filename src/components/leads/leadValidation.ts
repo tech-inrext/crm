@@ -1,3 +1,4 @@
+
 import * as Yup from "yup";
 
 export const leadValidationSchema = Yup.object({
@@ -50,15 +51,5 @@ export const leadValidationSchema = Yup.object({
     50,
     "Assigned to must be less than 50 characters"
   ),
-  nextFollowUp: Yup.date().nullable(),
-  followUpNotes: Yup.array()
-    .of(
-      Yup.object().shape({
-        note: Yup.string()
-          .max(500, "Note must be less than 500 characters")
-          .trim(),
-        date: Yup.date(),
-      })
-    )
-    .default([]),
+  // Removed nextFollowUp and followUpNotes fields from validation
 });

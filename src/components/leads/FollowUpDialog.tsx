@@ -176,7 +176,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
           {/* History Section Header */}
           <Box sx={{ px: 3, pt: 2, pb: 1 }}>
             <Typography variant="overline" sx={{ fontWeight: 800, color: "text.secondary", letterSpacing: "0.05em" }}>
-              Previous Records
+              History
             </Typography>
           </Box>
 
@@ -203,7 +203,23 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
               <Stack spacing={3}>
                 {items.map((it) => {
                   const isCallBack = it.followUpType === "call back";
-                  const accentColor = isCallBack ? "#2563eb" : "#059669";
+                  const isSiteVisit = it.followUpType === "site visit";
+                  
+                  let accentColor = "#059669"; // default note (green)
+                  if (isCallBack) accentColor = "#2563eb"; // blue
+                  if (isSiteVisit) accentColor = "#7c3aed"; // violet/purple
+
+                  let bgColor = "#ecfdf5";
+                  if (isCallBack) bgColor = "#eff6ff";
+                  if (isSiteVisit) bgColor = "#f5f3ff";
+
+                  let chipColor = "#065f46";
+                  if (isCallBack) chipColor = "#1e40af";
+                  if (isSiteVisit) chipColor = "#5b21b6";
+
+                  let chipBg = "#d1fae5";
+                  if (isCallBack) chipBg = "#dbeafe";
+                  if (isSiteVisit) chipBg = "#ede9fe";
                   
                   return (
                     <Box
@@ -249,7 +265,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                 height: 36, 
                                 fontSize: "0.9rem", 
                                 fontWeight: 800,
-                                bgcolor: isCallBack ? "#eff6ff" : "#ecfdf5",
+                                bgcolor: bgColor,
                                 color: accentColor,
                                 border: `1px solid ${accentColor}15`
                               }}
@@ -276,8 +292,8 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               fontSize: "0.6rem", 
                               fontWeight: 900, 
                               textTransform: "uppercase",
-                              bgcolor: isCallBack ? "#dbeafe" : "#d1fae5",
-                              color: isCallBack ? "#1e40af" : "#065f46",
+                              bgcolor: chipBg,
+                              color: chipColor,
                               letterSpacing: "0.05em",
                               borderRadius: "6px"
                             }}
@@ -301,7 +317,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                         {/* Footer: Actionable Info */}
                         <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mt: "auto" }}>
                           <Box sx={{ display: "flex", gap: 1 }}>
-                            {it.followUpDate && (
+                            {it.followUpDate && it.followUpType !== "note" && (
                               <Chip
                                 icon={<Event sx={{ fontSize: "14px !important", color: "#2563eb !important" }} />}
                                 label={`Reminder: ${new Date(it.followUpDate).toLocaleString([], { 

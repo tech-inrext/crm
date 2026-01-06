@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import validator from "validator";
 
 const budgetRanges = [
   "<1 Lakh",
@@ -94,10 +93,6 @@ const leadSchema = new mongoose.Schema(
     source: {
       type: String,
       trim: true,
-    },
-    assignedTo: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Employee",
     },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,

@@ -1,272 +1,127 @@
+
 import { Service } from "@framework";
 import FollowUp from "../../models/FollowUp";
 import Lead from "../../models/Lead";
-import Employee from "../../models/Employee";
 import dbConnect from "../../lib/mongodb";
 import mongoose from "mongoose";
 
 class FollowUpService extends Service {
-  constructor() {
-    super();
-  }
-
-  // Helper: try to find a lead by various normalized forms of an identifier
+  // Helper to find lead ID
   async findLeadByIdentifier(identifier) {
     if (!identifier) return null;
     const identifierStr = String(identifier);
-    const invisibleRegex = /[\u200B\uFEFF\u201A\u2018\u2019\u201C\u201D]/g;
-    const normalized = identifierStr.replace(invisibleRegex, "").trim();
-
-    // Try exact matches (raw and normalized) and _id
-    try {
-      const orConditions = [
-        { leadId: identifierStr },
-        { leadId: normalized },
-      ];
-
-      if (identifierStr.match(/^[0-9a-fA-F]{24}$/)) {
-        orConditions.push({ _id: identifierStr });
-      }
-      if (normalized.match(/^[0-9a-fA-F]{24}$/) && normalized !== identifierStr) {
-        orConditions.push({ _id: normalized });
-      }
-
-      const byExact = await Lead.findOne({ $or: orConditions });
-      if (byExact) return byExact;
-    } catch (e) {
-      // ignore
+    
+    // Check if valid ObjectId
+    if (mongoose.Types.ObjectId.isValid(identifierStr)) {
+        // Double check if it exists
+        const byId = await Lead.findById(identifierStr);
+        if (byId) return byId;
     }
+
+    // Check by custom leadId
+    const byCustomId = await Lead.findOne({ leadId: identifierStr });
+    if (byCustomId) return byCustomId;
 
     return null;
   }
 
-  /**
-   * Create a follow-up record for a lead.
-   * This should only be called once per lead.
-   */
-  async createFollowUp(req, res) {
+  async handleFollowUpRequest(req, res) {
     try {
-      const { leadId, leadIdentifier, followUpDate, note } = req.body || {};
-      console.log(`[FollowUpService] createFollowUp body:`, { leadId, leadIdentifier, note });
-
-      let targetLeadId = leadId;
-
-      if (!targetLeadId && leadIdentifier) {
-        const lead = await this.findLeadByIdentifier(leadIdentifier);
-        if (lead) targetLeadId = lead._id;
-      }
-
-      if (!targetLeadId) {
-        return res.status(400).json({ success: false, message: "leadId or leadIdentifier is required" });
-      }
-
-      // Check if follow-up already exists for this lead
-      const existingFollowUp = await FollowUp.findOne({ leadId: targetLeadId });
-      if (existingFollowUp) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Follow-up record already exists for this lead." 
-        });
-      }
-
-      // If note or date is provided, add as first entry, else add an empty entry or empty array
-      let currentUserId = req.employee?._id || req.employee?.id;
-      if (currentUserId && typeof currentUserId === "string") {
-        try {
-          currentUserId = new mongoose.Types.ObjectId(currentUserId);
-        } catch (e) {}
-      }
-      console.log(`[FollowUpService] createFollowUp effective user ID: ${currentUserId || "UNKNOWN"}`);
+      await dbConnect();
+      const { leadId, leadIdentifier, followUpDate, note, followUpType } = req.body || {};
       
-      const { followUpType } = req.body;
+      console.log(`[FollowUpService] Processing request:`, { leadId, leadIdentifier, type: followUpType });
+
+      // 1. Resolve Lead
+      let targetLead = null;
+      if (leadId) {
+          targetLead = await this.findLeadByIdentifier(leadId);
+      }
+      if (!targetLead && leadIdentifier) {
+          targetLead = await this.findLeadByIdentifier(leadIdentifier);
+      }
+
+      if (!targetLead) {
+        return res.status(404).json({ success: false, message: "Lead not found" });
+      }
+
+      // 2. Resolve User
+      const currentUser = req.employee || req.user;
+      const submittedBy = currentUser ? (currentUser._id || currentUser.id) : null;
+
+      // 3. Create Document
+      // Note: We no longer Append. We ALWAYS create a new document.
       const validTypes = ["site visit", "call back", "note"];
       const safeType = validTypes.includes(followUpType) ? followUpType : "note";
       
-      // Store date only if type is 'call back' (or 'site visit' if consistent with logic, but user specifically asked for 'call back' condition for date visibility)
-      // The user requirement said: "Store followUpDate only when followUpType === 'call back'"
-      const finalDate = safeType === "call back" ? followUpDate : null;
-
-      const initialNotes = (followUpDate || note || safeType) ? [{ 
-        followUpDate: finalDate || null, 
-        note: note || "N/A",
-        submittedBy: currentUserId || null,
-        followUpType: safeType
-      }] : [];
-
       const newFollowUp = new FollowUp({
-        leadId: targetLeadId,
-        followUps: initialNotes,
+        leadId: targetLead._id,
+        followUpDate: followUpDate || new Date(), // Default to now if not provided
+        note: note || "N/A",
+        submittedBy: submittedBy ? new mongoose.Types.ObjectId(submittedBy) : null,
+        followUpType: safeType
       });
 
       await newFollowUp.save();
-      return res.status(201).json({ success: true, data: newFollowUp });
+
+      return res.status(201).json({ success: true, data: newFollowUp, message: "Follow-up added successfully" });
+
     } catch (error) {
+      console.error("[FollowUpService] Error:", error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }
 
-  /**
-   * Add a new note and date to an existing follow-up record.
-   */
-  async addNote(req, res) {
+  async getFollowUpHistory(req, res) {
     try {
-      const { leadId, leadIdentifier, followUpDate, note } = req.body || {};
-      console.log(`[FollowUpService] addNote body:`, { leadId, leadIdentifier, note });
-
-      let targetLeadId = leadId;
-
-      if (!targetLeadId && leadIdentifier) {
-        const lead = await this.findLeadByIdentifier(leadIdentifier);
-        if (lead) targetLeadId = lead._id;
-      }
-
-      if (!targetLeadId) {
-        return res.status(400).json({ 
-          success: false, 
-          message: "Lead identification is required" 
-        });
-      }
-
-      const followUp = await FollowUp.findOne({ leadId: targetLeadId });
-      let currentUserId = req.employee?._id || req.employee?.id;
-      if (currentUserId && typeof currentUserId === "string") {
-        try {
-          currentUserId = new mongoose.Types.ObjectId(currentUserId);
-        } catch (e) {}
-      }
-
-      if (!followUp) {
-        console.log(`[FollowUpService] Creating new FollowUp document for lead: ${targetLeadId}. User: ${currentUserId || "UNKNOWN"}`);
-        
-        const { followUpType } = req.body;
-        const validTypes = ["site visit", "call back", "note"];
-        const safeType = validTypes.includes(followUpType) ? followUpType : "note";
-        const finalDate = safeType === "call back" ? followUpDate : null;
-
-        const newFollowUp = new FollowUp({
-          leadId: targetLeadId,
-          followUps: [{ 
-            followUpDate: finalDate || null, 
-            note: note || "N/A", 
-            submittedBy: currentUserId || null,
-            followUpType: safeType
-          }],
-        });
-        await newFollowUp.save();
-        return res.status(201).json({ success: true, data: newFollowUp });
-      }
-
-      console.log(`[FollowUpService] Appending note to existing FollowUp for lead: ${targetLeadId}`);
-      console.log(`[FollowUpService] Saving with submittedBy user ID: ${currentUserId || "MISSING"}`);
-      
-      const { followUpType } = req.body;
-      const validTypes = ["site visit", "call back", "note"];
-      const safeType = validTypes.includes(followUpType) ? followUpType : "note";
-      const finalDate = safeType === "call back" ? followUpDate : null;
-
-      followUp.followUps.push({ 
-        followUpDate: finalDate || null, 
-        note: note || "N/A",
-        submittedBy: currentUserId || null,
-        followUpType: safeType
-      });
-      await followUp.save();
-
-      return res.status(200).json({ success: true, data: followUp });
-    } catch (error) {
-      console.error("[FollowUpService] addNote Error:", error);
-      return res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  /**
-   * Get follow-up details for a lead.
-   */
-  async getFollowUpByLeadId(req, res) {
-    try {
+      await dbConnect();
       const { leadId, leadIdentifier } = req.query;
 
-      let targetLeadId = leadId;
-
-      if (!targetLeadId && leadIdentifier) {
-        const lead = await this.findLeadByIdentifier(leadIdentifier);
-        if (lead) targetLeadId = lead._id;
+      // 1. Resolve Lead
+      let targetLead = null;
+      if (leadId) {
+          targetLead = await this.findLeadByIdentifier(leadId);
+      }
+      if (!targetLead && leadIdentifier) {
+          targetLead = await this.findLeadByIdentifier(leadIdentifier);
       }
 
-      if (!targetLeadId) {
-        return res.status(400).json({ success: false, message: "leadId or leadIdentifier is required" });
+      if (!targetLead) {
+         // Return empty if lead not found (soft fail for frontend search)
+         return res.status(200).json({ success: true, data: [] });
       }
 
-      const followUp = await FollowUp.findOne({ leadId: targetLeadId })
-        .populate("leadId")
-        .populate({
-          path: "followUps.submittedBy",
-          model: "Employee",
-          select: "name",
-          options: { strictPopulate: false }
-        });
+      // 2. Fetch History
+      // Find ALL documents matching this leadId
+      const history = await FollowUp.find({ leadId: targetLead._id })
+        .sort({ createdAt: 1 }) // Oldest first (latest at bottom)
+        .populate("submittedBy", "name email") // Get basic user details
+        .lean();
 
-      if (!followUp) {
-        return res.status(200).json({ success: true, data: [] });
-      }
-
-      // Map for frontend
-      const items = followUp.followUps.map(f => {
-        const item = f.toObject();
-        let submittedByName = "Unknown";
-        
-        if (f.submittedBy) {
-          if (f.submittedBy.name) {
-            submittedByName = f.submittedBy.name;
-          } else if (typeof f.submittedBy === 'string' || (f.submittedBy instanceof mongoose.Types.ObjectId)) {
-            submittedByName = `User ID: ${f.submittedBy.toString().slice(-4)}`;
-          }
-        }
-        
-        return {
-          ...item,
-          submittedByName
-        };
-      });
+      // 3. Format for Frontend
+      const formattedHistory = history.map(doc => ({
+        _id: doc._id,
+        followUpDate: doc.followUpDate,
+        note: doc.note,
+        followUpType: doc.followUpType,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+        submittedByName: doc.submittedBy?.name || "System/Unknown"
+      }));
 
       return res.status(200).json({ 
-        success: true, 
-        data: items,
-        lead: followUp.leadId ? {
-          phone: followUp.leadId.phone,
-          fullName: followUp.leadId.fullName
-        } : null
+          success: true, 
+          data: formattedHistory,
+          lead: {
+              fullName: targetLead.fullName,
+              phone: targetLead.phone,
+              id: targetLead._id
+          }
       });
+
     } catch (error) {
+      console.error("[FollowUpService] Get History Error:", error);
       return res.status(500).json({ success: false, message: error.message });
-    }
-  }
-
-  async post(req, res) {
-    try {
-      await dbConnect();
-      const { action } = req.query || {};
-      console.log(`[FollowUpService] POST request received. Action: ${action || "addNote"}`);
-      
-      if (action === "create") {
-        return await this.createFollowUp(req, res);
-      } else {
-        return await this.addNote(req, res);
-      }
-    } catch (error) {
-      console.error("[FollowUpService] POST fatal error:", error);
-      return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
-    }
-  }
-
-  async get(req, res) {
-    try {
-      await dbConnect();
-      console.log("[FollowUpService] GET request received");
-      return await this.getFollowUpByLeadId(req, res);
-    } catch (error) {
-      console.error("[FollowUpService] GET fatal error:", error);
-      return res.status(500).json({ success: false, message: "Internal Server Error: " + error.message });
     }
   }
 }

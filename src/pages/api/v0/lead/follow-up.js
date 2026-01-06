@@ -8,11 +8,11 @@ class FollowUpController extends Controller {
   }
 
   get(req, res) {
-    return this.service.get(req, res);
+    return this.service.getFollowUpHistory(req, res);
   }
 
   post(req, res) {
-    return this.service.post(req, res);
+    return this.service.handleFollowUpRequest(req, res);
   }
 }
 
