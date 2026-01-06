@@ -141,7 +141,7 @@ const Leads: React.FC = () => {
           selectedStatuses={selectedStatuses}
           onStatusesChange={handleStatusChange}
         />
-      </Paper>
+      </Paper>    
 
       {loading ? (
         <LoadingSkeleton />
