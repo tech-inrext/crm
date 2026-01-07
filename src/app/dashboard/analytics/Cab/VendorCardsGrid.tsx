@@ -29,7 +29,7 @@ export function VendorCardsGrid({ displayVendors }) {
               <Box
                 className="flex flex-wrap sm:flex-nowrap justify-between gap-2 mb-3"
               >
-                {/* Completed */} 
+                {/* Completed */}
                 <Box className="bg-green-50 px-3 py-2 sm:px-4 sm:py-3 rounded-md text-center flex-1 min-w-[45%] sm:min-w-[90px] mb-2 sm:mb-0">
                   <Typography className="font-bold text-sm sm:text-base">
                     {vendor.completedBookings || 0}
