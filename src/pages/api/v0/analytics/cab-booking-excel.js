@@ -36,9 +36,23 @@ export default async function handler(req, res) {
       // Build date filter if fromDate/toDate provided
       let dateFilter = {};
       if (fromDate || toDate) {
+        // Parse dates as UTC
+        let gte, lte;
+        if (fromDate) {
+          gte = new Date(fromDate);
+          if (isNaN(gte.getTime())) {
+            return res.status(400).json({ error: 'Invalid fromDate' });
+          }
+        }
+        if (toDate) {
+          lte = new Date(toDate);
+          if (isNaN(lte.getTime())) {
+            return res.status(400).json({ error: 'Invalid toDate' });
+          }
+        }
         dateFilter.requestedDateTime = {};
-        if (fromDate) dateFilter.requestedDateTime.$gte = new Date(fromDate);
-        if (toDate) dateFilter.requestedDateTime.$lte = new Date(toDate);
+        if (gte) dateFilter.requestedDateTime.$gte = gte;
+        if (lte) dateFilter.requestedDateTime.$lte = lte;
       }
       // Fetch bookings with date filter if present
       let bookings = [];

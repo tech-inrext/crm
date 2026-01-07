@@ -178,7 +178,9 @@ export function VendorBreakdown() {
             const params = [];
             if (from) params.push(`fromDate=${encodeURIComponent(from)}`);
             if (to) params.push(`toDate=${encodeURIComponent(to)}`);
-            return `/api/v0/analytics/cab-booking-excel${params.length ? '?' + params.join('&') : ''}&ts=${Date.now()}`;
+            // Always add ts for cache busting
+            params.push(`ts=${Date.now()}`);
+            return `/api/v0/analytics/cab-booking-excel${params.length ? '?' + params.join('&') : ''}`;
           })()}
           download={`cab-booking-${appliedFilters.fromDate ? new Date(appliedFilters.fromDate).toISOString().split('T')[0] : 'all'}-${appliedFilters.toDate ? new Date(appliedFilters.toDate).toISOString().split('T')[0] : 'all'}.xlsx`}
           style={{

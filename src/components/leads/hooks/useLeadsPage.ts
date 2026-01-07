@@ -1,11 +1,8 @@
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useLeads } from "@/hooks/useLeads";
-import {
-  getDefaultLeadFormData,
-  transformAPILeadToForm,
-} from "@/utils/leadUtils";
+import { getDefaultLeadFormData, transformAPILeadToForm } from "@/utils/leadUtils";
 
 export function useLeadsPage() {
   const router = useRouter();
@@ -25,8 +22,6 @@ export function useLeadsPage() {
     loadLeads,
     saveLead,
     updateLeadStatus,
-    selectedStatuses,
-    setSelectedStatuses,
     stats,
   } = useLeads();
 
@@ -35,24 +30,30 @@ export function useLeadsPage() {
   const [formData, setFormData] = useState(getDefaultLeadFormData());
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [searchInput, setSearchInput] = useState(search);
+
   const debouncedSearch = useDebounce(searchInput, 500);
 
-  // Initialize status filter from query params
-  useEffect(() => {
+  // Derive selectedStatuses from the URL param (source of truth)
+  const selectedStatuses = useMemo(() => {
     const statusParam = searchParams.get("status");
-    if (statusParam) {
-      const statuses = statusParam.split(",").filter(Boolean);
-      setSelectedStatuses(statuses);
-    }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+    return statusParam ? statusParam.split(",").filter(Boolean) : [];
+  }, [searchParams]);
+    useEffect(() => {
+      setPage(0);
+      loadLeads(1, rowsPerPage, search, selectedStatuses);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [rowsPerPage, search, selectedStatuses.join(",")]);
 
-  // Sync debounced search
+//serarch
+
   useEffect(() => {
     setSearch(debouncedSearch);
     setPage(0);
-  }, [debouncedSearch, setSearch, setPage]);
+   }, [debouncedSearch]);
 
-  // Sync form data with selected lead
+  
+  //EDIT FORM SYNC
+
   useEffect(() => {
     if (editId) {
       const lead = leads.find(
@@ -72,18 +73,15 @@ export function useLeadsPage() {
 
   const handleStatusChange = useCallback(
     (statuses: string[]) => {
-      setSelectedStatuses(statuses);
-      setPage(0);
-
       const params = new URLSearchParams(searchParams.toString());
       if (statuses.length > 0) {
         params.set("status", statuses.join(","));
       } else {
         params.delete("status");
       }
-      router.push(`?${params.toString()}`, { scroll: false });
+      router.replace(`?${params.toString()}`, { scroll: false });
     },
-    [searchParams, router, setSelectedStatuses, setPage]
+    [searchParams, router]
   );
 
   const handleEdit = useCallback((leadId: string) => {
@@ -91,8 +89,21 @@ export function useLeadsPage() {
     setOpen(true);
   }, []);
 
+  const handleSaveLead = async (data: any) => {
+    try {
+      await saveLead(data, editId);
+      await loadLeads(1, rowsPerPage, search, selectedStatuses); // always reload with filter
+      // showSnackbar is not defined in this file, so it should be handled in the component, not here
+      setOpen(false);
+      setEditId(null);
+    } catch (err: any) {
+      // error handling should also be in the component
+      console.error("Failed to save lead:", err);
+    }
+  };
+
+   
   return {
-    // State
     leads,
     loading,
     saving,
@@ -115,7 +126,7 @@ export function useLeadsPage() {
     handleSearchChange,
     handleStatusChange,
     handleEdit,
-    saveLead,
+    handleSaveLead,
     updateLeadStatus,
     loadLeads,
   };
