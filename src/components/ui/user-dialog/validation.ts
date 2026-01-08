@@ -19,7 +19,7 @@ export const userValidationSchema = Yup.object({
     .min(3, "Father's Name must be at least 3 characters")
     .max(50, "Father's Name must be at most 50 characters")
     .required("Father's Name is required")
-    .matches(/^[\p{L}\s'-]+$/u, "Father's name must not contain special characters")
+    .matches(/^[\p{L}\s'.\-]+$/u, "Father's name must not contain special characters")
     .test(
       "father-no-leading-digit",
       "Father's name must not start with a digit",

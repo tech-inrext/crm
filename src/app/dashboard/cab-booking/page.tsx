@@ -132,12 +132,12 @@ const CabBooking: React.FC<CabBookingProps> = ({
                 ))}
               </select>
             </div>
-            <button
+            {/* <button
               className="px-4 py-2 bg-[#1976d2] text-white rounded-md shadow hover:bg-[#1976d2]"
               onClick={() => setShowBookingDialog(true)}
             >
               Create Booking
-            </button>
+            </button> */}
           </div>
         )}
 
