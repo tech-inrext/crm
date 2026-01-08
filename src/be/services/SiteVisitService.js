@@ -57,6 +57,7 @@ class SiteVisitService extends Service {
       // 2. Validate Cab Fields
       if (cabRequired) {
         if (!project || !numberOfClients || !pickupPoint || !dropPoint) {
+<<<<<<< HEAD
           return res
             .status(400)
             .json({ success: false, message: "Missing cab booking details" });
