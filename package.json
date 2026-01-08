@@ -34,6 +34,7 @@
     "ioredis": "^5.6.1",
     "jsonwebtoken": "^9.0.2",
     "leaflet": "^1.9.4",
+    "mime-types": "^3.0.2",
     "mongodb": "^6.16.0",
     "mongoose": "^8.15.1",
     "multer": "^2.0.1",
@@ -59,6 +60,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/mime-types": "^3",
     "@types/node": "^20",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19",
