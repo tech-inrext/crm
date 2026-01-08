@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -10,6 +10,7 @@ import {
   Snackbar,
   useTheme,
   useMediaQuery,
+  IconButton,
 } from "@/components/ui/Component";
 import Alert from "@/components/ui/Component/Alert";
 import {
@@ -50,6 +51,14 @@ const SiteVisitDialog = dynamic(
   () => import("@/components/leads/SiteVisitDialog"),
   { ssr: false }
 );
+const LeadsCardsView = dynamic(
+  () => import("@/components/leads/LeadsCardsView"),
+  { ssr: false }
+);
+const LeadsTableView = dynamic(
+  () => import("@/components/leads/LeadsTableView"),
+  { ssr: false }
+);
 
 const Leads: React.FC = () => {
   const theme = useTheme();
@@ -68,37 +77,27 @@ const Leads: React.FC = () => {
     setViewMode,
     searchInput,
     selectedStatuses,
+    setSelectedStatuses,
     page,
     setPage,
     rowsPerPage,
     setRowsPerPage,
     total,
+    search,
+    snackbarOpen,
+    setSnackbarOpen,
+    snackbarMessage,
+    setSnackbarMessage,
+    snackbarSeverity,
+    setSnackbarSeverity,
     handleSearchChange,
     handleStatusChange,
     handleEdit,
-    saveLead,
+    saveLead: handleSaveLead,
     updateLeadStatus,
-    selectedStatuses,
-    setSelectedStatuses,
-  } = useLeads();
-
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
-
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-
-  const [searchInput, setSearchInput] = useState(search);
-  const debouncedSearch = useDebounce(searchInput, 500); // Debounce for 400ms
-
-  // Sync debounced search with actual query state
-  useEffect(() => {
-    setSearch(debouncedSearch);
-    setPage(0);
-  }, [debouncedSearch, setSearch, setPage]);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(e.target.value);
-  };
+    loadLeads,
+    handleClose,
+  } = useLeadsPage();
 
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [selectedLeadForFeedback, setSelectedLeadForFeedback] = useState<
@@ -107,12 +106,6 @@ const Leads: React.FC = () => {
   
   const [siteVisitOpen, setSiteVisitOpen] = useState(false);
   const [selectedLeadForSiteVisit, setSelectedLeadForSiteVisit] = useState<string | null>(null);
-
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<
-    "success" | "error" | "info" | "warning"
-  >("success");
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
@@ -170,19 +163,6 @@ const Leads: React.FC = () => {
       }
       : col
   );
-
-  useEffect(() => {
-    if (editId) {
-      const lead = leads.find(
-        (l) => l.id === editId || l._id === editId || l.leadId === editId
-      );
-      if (lead) {
-        setFormData(transformAPILeadToForm(lead));
-      }
-    } else {
-      setFormData(getDefaultLeadFormData());
-    }
-  }, [editId, leads, setFormData]);
 
   return (
     <Box sx={MODULE_STYLES.leads.leadsContainer}>

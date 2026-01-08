@@ -35,6 +35,11 @@ export function useLeadsPage() {
   const [formData, setFormData] = useState(getDefaultLeadFormData());
   const [viewMode, setViewMode] = useState<"table" | "cards">("table");
   const [searchInput, setSearchInput] = useState(search);
+
+  // Snackbar state
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "info" | "warning">("success");
   const debouncedSearch = useDebounce(searchInput, 500);
 
   // Initialize status filter from query params
@@ -91,6 +96,10 @@ export function useLeadsPage() {
     setOpen(true);
   }, []);
 
+  const handleClose = useCallback(() => {
+    setSnackbarOpen(false);
+  }, []);
+
   return {
     // State
     leads,
@@ -101,20 +110,31 @@ export function useLeadsPage() {
     editId,
     setEditId,
     formData,
+    setFormData,
     viewMode,
     setViewMode,
     searchInput,
     selectedStatuses,
+    setSelectedStatuses,
     page,
     setPage,
     rowsPerPage,
     setRowsPerPage,
     total,
     stats,
+    search,
+    // Snackbar state
+    snackbarOpen,
+    setSnackbarOpen,
+    snackbarMessage,
+    setSnackbarMessage,
+    snackbarSeverity,
+    setSnackbarSeverity,
     // Handlers
     handleSearchChange,
     handleStatusChange,
     handleEdit,
+    handleClose,
     saveLead,
     updateLeadStatus,
     loadLeads,
