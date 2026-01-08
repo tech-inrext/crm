@@ -178,5 +178,4 @@ async function handler(req, res) {
 	}
 }
 
-// Export with auth wrapper so req.employee is populated (scopes to logged-in user)
 export default (req, res) => userAuth(req, res, handler);
