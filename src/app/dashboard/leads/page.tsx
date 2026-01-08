@@ -422,6 +422,7 @@ const Leads: React.FC = () => {
               leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.name
             }
             initialProject={leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.propertyName}
+            clientPhone={leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.phone}
             onSaved={async () => {
               setSnackbarMessage("Site visit scheduled successfully");
               setSnackbarSeverity("success");

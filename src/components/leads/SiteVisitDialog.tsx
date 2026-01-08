@@ -35,6 +35,7 @@ interface SiteVisitDialogProps {
   leadId: string;
   initialClientName?: string;
   initialProject?: string;
+  clientPhone?: string;
   onSaved?: () => void;
 }
 
@@ -44,14 +45,16 @@ const SiteVisitDialog: React.FC<SiteVisitDialogProps> = ({
   leadId,
   initialClientName = "",
   initialProject = "",
+  clientPhone = "",
   onSaved,
 }) => {
   // Form State
   const [project, setProject] = useState(initialProject);
-  const [clientName, setClientName] = useState(initialClientName);
   const [requestedDate, setRequestedDate] = useState<Date | null>(null);
   const [notes, setNotes] = useState("");
   
+  const displayName = initialClientName || clientPhone || "Client";
+
   // Cab State
   const [cabRequired, setCabRequired] = useState(false);
   const [numberOfClients, setNumberOfClients] = useState<string>("");
@@ -65,7 +68,6 @@ const SiteVisitDialog: React.FC<SiteVisitDialogProps> = ({
   useEffect(() => {
     if (open) {
       setProject(initialProject || "");
-      setClientName(initialClientName || "");
       setRequestedDate(null);
       setNotes("");
       setCabRequired(false);
@@ -74,16 +76,15 @@ const SiteVisitDialog: React.FC<SiteVisitDialogProps> = ({
       setDropPoint("");
       setError(null);
     }
-  }, [open, initialProject, initialClientName]);
+  }, [open, initialProject]);
 
   const handleSubmit = async () => {
     // Basic Validation
-    if (!project.trim()) return setError("Project name is required");
-    if (!clientName.trim()) return setError("Client name is required");
     if (!requestedDate) return setError("Requested Date & Time is required");
     
     // Cab Validation
     if (cabRequired) {
+      if (!project.trim()) return setError("Project name is required for cab booking");
       if (!numberOfClients || parseInt(numberOfClients) < 1) return setError("Valid number of clients is required");
       if (!pickupPoint.trim()) return setError("Pickup point is required");
       if (!dropPoint.trim()) return setError("Drop point is required");
@@ -95,8 +96,8 @@ const SiteVisitDialog: React.FC<SiteVisitDialogProps> = ({
     try {
       const payload = {
         leadId,
-        project,
-        clientName,
+        project: cabRequired ? project : undefined,
+        clientName: displayName, // Use name or phone as client identifier
         requestedDateTime: requestedDate,
         notes,
         cabRequired,
@@ -121,8 +122,9 @@ const SiteVisitDialog: React.FC<SiteVisitDialogProps> = ({
   };
 
   const isFormValid = () => {
-    if (!project.trim() || !clientName.trim() || !requestedDate) return false;
+    if (!requestedDate) return false;
     if (cabRequired) {
+      if (!project.trim()) return false;
       if (!numberOfClients || parseInt(numberOfClients) < 1) return false;
       if (!pickupPoint.trim() || !dropPoint.trim()) return false;
     }
@@ -166,7 +168,7 @@ const SiteVisitDialog: React.FC<SiteVisitDialogProps> = ({
               Schedule Site Visit
             </Typography>
             <Typography variant="caption" sx={{ color: "text.secondary", mt: 0.5, display: "block" }}>
-              Plan and track on-site client meetings efficiently
+              Scheduling visit for <span style={{ fontWeight: 600, color: "#111827" }}>{displayName}</span>
             </Typography>
           </Box>
         </Stack>
@@ -198,29 +200,7 @@ const SiteVisitDialog: React.FC<SiteVisitDialogProps> = ({
             </Typography>
             
             <Stack spacing={2.5}>
-              <TextField
-                label="Project Name *"
-                value={project}
-                onChange={(e) => setProject(e.target.value)}
-                fullWidth
-                size="small"
-                placeholder="e.g. Green Valley Phase 1"
-                InputProps={{
-                  sx: { borderRadius: "8px" }
-                }}
-              />
 
-              <TextField
-                label="Client Name *"
-                value={clientName}
-                onChange={(e) => setClientName(e.target.value)}
-                fullWidth
-                size="small"
-                placeholder="Full Name of User/Client"
-                InputProps={{
-                  sx: { borderRadius: "8px" }
-                }}
-              />
 
               <LocalizationProvider dateAdapter={AdapterDateFns}>
                 <DateTimePicker
@@ -298,6 +278,17 @@ const SiteVisitDialog: React.FC<SiteVisitDialogProps> = ({
                 boxShadow: "none" 
               }}>
                 <Stack spacing={2}>
+                  <TextField
+                    label="Project Name *"
+                    value={project}
+                    onChange={(e) => setProject(e.target.value)}
+                    fullWidth
+                    size="small"
+                    placeholder="e.g. Green Valley Phase 1"
+                    InputProps={{
+                      sx: { bgcolor: "#fff", borderRadius: "8px" }
+                    }}
+                  />
                   <TextField
                     label="Number of Clients *"
                     type="number"

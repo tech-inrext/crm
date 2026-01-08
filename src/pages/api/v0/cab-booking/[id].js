@@ -207,4 +207,33 @@ function withAuth(handler) {
   };
 }
 
-export default withAuth(patchBooking);
+async function handler(req, res) {
+  await dbConnect();
+  const { id } = req.query;
+
+  if (req.method === "GET") {
+    try {
+      const booking = await CabBooking.findById(id)
+        .populate("cabBookedBy", "name email phone")
+        .populate("managerId", "name email")
+        .populate("vendor", "name email phone")
+        .lean();
+      
+      if (!booking) {
+        return res.status(404).json({ success: false, message: "Booking not found" });
+      }
+      
+      return res.status(200).json({ success: true, data: booking });
+    } catch (error) {
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  if (req.method === "PATCH") {
+    return patchBooking(req, res);
+  }
+
+  return res.status(405).json({ success: false, message: "Method not allowed" });
+}
+
+export default withAuth(handler);

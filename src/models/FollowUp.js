@@ -30,6 +30,12 @@ const followUpSchema = new mongoose.Schema(
       enum: ["site visit", "call back", "note"],
       default: "note",
     },
+
+    cabBookingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "CabBooking",
+      required: false,
+    },
   },
   { timestamps: true }
 );

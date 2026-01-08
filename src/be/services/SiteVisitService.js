@@ -1,4 +1,3 @@
-
 import { Service } from "@framework";
 import dbConnect from "../../lib/mongodb";
 import FollowUp from "../../models/FollowUp";
@@ -44,13 +43,13 @@ class SiteVisitService extends Service {
       console.log("[SiteVisit] POST Request:", { leadId, cabRequired, project });
 
       // 1. Validate Basic Fields
-      if (!leadId || !project || !clientName || !requestedDateTime) {
+      if (!leadId || !clientName || !requestedDateTime) {
         return res.status(400).json({ success: false, message: "Missing required fields" });
       }
 
       // 2. Validate Cab Fields
       if (cabRequired) {
-        if (!numberOfClients || !pickupPoint || !dropPoint) {
+        if (!project || !numberOfClients || !pickupPoint || !dropPoint) {
             return res.status(400).json({ success: false, message: "Missing cab booking details" });
         }
       }
@@ -71,19 +70,9 @@ class SiteVisitService extends Service {
       const rawUserId = currentUser._id || currentUser.id;
       const userId = new mongoose.Types.ObjectId(rawUserId);
 
-      // 5. Create FollowUp Entry
-      // New Logic: Always create a new document for the site visit
-      const newFollowUp = new FollowUp({
-        leadId: targetLeadId,
-        followUpDate: requestedDateTime, 
-        note: notes || "Site Visit Scheduled",
-        submittedBy: userId,
-        followUpType: "site visit",
-      });
+      // 5. Create Cab Booking FIRST if required (to get its ID)
+      let createdCabBookingId = null;
 
-      await newFollowUp.save();
-
-      // 6. Create Cab Booking if required
       if (cabRequired) {
         // Determine Manager ID safely
         let managerId = null;
@@ -116,8 +105,21 @@ class SiteVisitService extends Service {
           managerId: validManagerId,
         });
 
-        await cabBooking.save();
+        const savedCab = await cabBooking.save();
+        createdCabBookingId = savedCab._id;
       }
+
+      // 6. Create FollowUp Entry (now with optional cabBookingId)
+      const newFollowUp = new FollowUp({
+        leadId: targetLeadId,
+        followUpDate: requestedDateTime, 
+        note: notes || "Site Visit Scheduled",
+        submittedBy: userId,
+        followUpType: "site visit",
+        cabBookingId: createdCabBookingId, // Link!
+      });
+
+      await newFollowUp.save();
 
       return res.status(200).json({ success: true, message: "Site visit scheduled successfully" });
 

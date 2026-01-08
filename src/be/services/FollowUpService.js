@@ -104,6 +104,7 @@ class FollowUpService extends Service {
         followUpDate: doc.followUpDate,
         note: doc.note,
         followUpType: doc.followUpType,
+        cabBookingId: doc.cabBookingId,
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
         submittedByName: doc.submittedBy?.name || "System/Unknown"

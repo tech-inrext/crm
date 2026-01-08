@@ -10,6 +10,9 @@ import {
   Notification,
   VendorBookingForm,
 } from "@/components/cab-booking";
+import BookingDetailsDialog from "@/components/cab-booking/BookingDetailsDialog";
+import { cabBookingApi } from "@/services/cab-booking.service";
+import { Booking } from "@/types/cab-booking";
 import {
   Dialog,
   DialogTitle,
@@ -29,13 +32,29 @@ const CabBooking: React.FC<CabBookingProps> = ({
   const [showBookingDialog, setShowBookingDialog] = useState(false);
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [vendorBookingId, setVendorBookingId] = useState<string | null>(null);
+  
+  const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
+  const [fetchLoading, setFetchLoading] = useState(false);
+
   useEffect(() => {
     if (typeof window === "undefined") return;
     const searchParams = new URLSearchParams(window.location.search);
     const bookingId = searchParams.get("bookingId");
     if (bookingId) {
-      setVendorBookingId(bookingId);
-      setShowVendorDialog(true);
+      // Logic for deep link: Fetch specific booking
+      (async () => {
+        try {
+          setFetchLoading(true);
+          const res = await cabBookingApi.getBookingById(bookingId);
+          if (res?.success && res?.data) {
+            setViewingBooking(res.data);
+          }
+        } catch (err) {
+          console.error("Failed to fetch deep-linked booking:", err);
+        } finally {
+          setFetchLoading(false);
+        }
+      })();
     }
   }, []);
 
@@ -175,6 +194,13 @@ const CabBooking: React.FC<CabBookingProps> = ({
             <VendorBookingForm bookingId={vendorBookingId} />
           </DialogContent>
         </Dialog>
+
+        {/* Global Details Dialog for deep linking */}
+        <BookingDetailsDialog
+          booking={viewingBooking}
+          open={!!viewingBooking}
+          onClose={() => setViewingBooking(null)}
+        />
         {activeView === "tracking" && (
           <div className="p-6 rounded-lg shadow bg-white">
             <h2 className="text-xl font-bold mb-4">Bookings</h2>
