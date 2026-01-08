@@ -6,7 +6,7 @@ import Notification from "../models/Notification.js";
  * @param {Object} job - The BullMQ job object
  */
 const sendLeadFollowUpNotification = async (job) => {
-    const { leadId, scheduledTime, reminderType = "DUE" } = job.data;
+    const { leadId, scheduledTime, reminderType = "DUE", followUpType = "call back" } = job.data;
 
     try {
         const lead = await Lead.findById(leadId);
@@ -16,14 +16,24 @@ const sendLeadFollowUpNotification = async (job) => {
             return;
         }
 
-        // Validate if the follow-up is still valid
-        const currentFollowUpTime = new Date(lead.nextFollowUp).getTime();
-        const scheduledFollowUpTime = new Date(scheduledTime).getTime();
+        // Get the most recent follow-up entry
+        const latestEntry = followUpDoc?.followUps?.length > 0
+            ? followUpDoc.followUps[followUpDoc.followUps.length - 1]
+            : null;
 
         if (!lead.nextFollowUp) {
             console.log(`Follow-up cancelled for lead: ${leadId}, skipping notification.`);
             return;
         }
+
+        // ✅ CHECK: Has this notification type already been sent?
+        if (followUpDoc && followUpDoc.notificationsSent?.includes(reminderType)) {
+            console.log(`✓ Notification ${reminderType} already sent for lead ${leadId}, skipping duplicate`);
+            return;
+        }
+
+        const currentFollowUpTime = new Date(latestEntry.followUpDate).getTime();
+        const scheduledFollowUpTime = new Date(scheduledTime).getTime();
 
         // If the dates are significantly different (e.g. > 5 mins difference), it means it was rescheduled
         const timeDifference = Math.abs(currentFollowUpTime - scheduledFollowUpTime);
@@ -33,25 +43,26 @@ const sendLeadFollowUpNotification = async (job) => {
         }
 
         if (lead.assignedTo) {
-            let title = "Lead Follow-up Due";
-            let message = `Follow-up is due for lead: ${lead.fullName || lead.phone}`;
+            const typeLabel = followUpType === "site visit" ? "Site Visit" : "Follow-up";
+            let title = `Lead ${typeLabel} Due`;
+            let message = `${typeLabel} is due for lead: ${lead.fullName || lead.phone}`;
             let priority = "HIGH";
 
             switch (reminderType) {
                 case "24H_BEFORE":
-                    title = "Upcoming Lead Follow-up (24h)";
-                    message = `You have a follow-up scheduled in 24 hours for lead: ${lead.fullName || lead.phone}`;
+                    title = `Upcoming ${typeLabel} (24h)`;
+                    message = `You have a ${typeLabel.toLowerCase()} scheduled in 24 hours for lead: ${lead.fullName || lead.phone}`;
                     priority = "MEDIUM";
                     break;
                 case "2H_BEFORE":
-                    title = "Upcoming Lead Follow-up (2h)";
-                    message = `You have a follow-up scheduled in 2 hours for lead: ${lead.fullName || lead.phone}`;
+                    title = `Upcoming ${typeLabel} (2h)`;
+                    message = `You have a ${typeLabel.toLowerCase()} scheduled in 2 hours for lead: ${lead.fullName || lead.phone}`;
                     priority = "HIGH";
                     break;
                 case "DUE":
                 default:
-                    title = "Lead Follow-up Due Now";
-                    message = `Follow-up is due now for lead: ${lead.fullName || lead.phone}`;
+                    title = `Lead ${typeLabel} Due Now`;
+                    message = `${typeLabel} is due now for lead: ${lead.fullName || lead.phone}`;
                     priority = "URGENT";
                     break;
             }
@@ -73,7 +84,12 @@ const sendLeadFollowUpNotification = async (job) => {
                     inApp: true,
                     email: true,
                 },
-                scheduledFor: reminderType === "DUE" ? lead.nextFollowUp : undefined, // Only set scheduledFor for the main event if needed for sorting, but here we are sending immediately when job runs
+                scheduledFor: reminderType === "DUE" ? latestEntry.followUpDate : undefined,
+            });
+
+            // ✅ MARK: Add to sent array (atomic operation prevents duplicates)
+            await FollowUp.findByIdAndUpdate(followUpDoc._id, {
+                $addToSet: { notificationsSent: reminderType }
             });
 
             console.log(`✅ Sent ${reminderType} follow-up notification for lead: ${leadId}`);
