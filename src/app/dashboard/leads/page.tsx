@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -10,9 +10,18 @@ import {
   Snackbar,
   useTheme,
   useMediaQuery,
+  IconButton,
 } from "@/components/ui/Component";
 import Alert from "@/components/ui/Component/Alert";
-import { Add, PermissionGuard } from "@/components/ui/Component";
+import {
+  Add,
+  Edit as EditIcon,
+  Feedback as FeedbackIcon,
+  Badge,
+  PermissionGuard,
+  LocationOn,
+} from "@/components/ui/Component";
+import { useDebounce } from "@/hooks/useDebounce";
 import dynamic from "next/dynamic";
 import { GRADIENTS } from "@/constants/leads";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
@@ -38,12 +47,16 @@ const FollowUpDialog = dynamic(
   () => import("@/components/leads/FollowUpDialog"),
   { ssr: false }
 );
-const LeadsTableView = dynamic(
-  () => import("@/components/leads/LeadsTableView"),
+const SiteVisitDialog = dynamic(
+  () => import("@/components/leads/SiteVisitDialog"),
   { ssr: false }
 );
 const LeadsCardsView = dynamic(
   () => import("@/components/leads/LeadsCardsView"),
+  { ssr: false }
+);
+const LeadsTableView = dynamic(
+  () => import("@/components/leads/LeadsTableView"),
   { ssr: false }
 );
 
@@ -64,64 +77,92 @@ const Leads: React.FC = () => {
     setViewMode,
     searchInput,
     selectedStatuses,
+    setSelectedStatuses,
     page,
     setPage,
     rowsPerPage,
     setRowsPerPage,
     total,
+    search,
+    snackbarOpen,
+    setSnackbarOpen,
+    snackbarMessage,
+    setSnackbarMessage,
+    snackbarSeverity,
+    setSnackbarSeverity,
     handleSearchChange,
     handleStatusChange,
     handleEdit,
-    saveLead,
+    saveLead: handleSaveLead,
     updateLeadStatus,
     loadLeads,
+    handleClose,
   } = useLeadsPage();
 
-  const {
-    showSnackbar,
-    snackbarOpen,
-    snackbarMessage,
-    snackbarSeverity,
-    handleClose,
-  } = useLeadsSnackbar();
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
+  const [selectedLeadForFeedback, setSelectedLeadForFeedback] = useState<
+    string | null
+  >(null);
+  
+  const [siteVisitOpen, setSiteVisitOpen] = useState(false);
+  const [selectedLeadForSiteVisit, setSelectedLeadForSiteVisit] = useState<string | null>(null);
 
-  const { feedbackOpen, selectedLeadForFeedback, openFeedback, closeFeedback } =
-    useLeadsFeedback();
+  const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
+    col.label === "Actions"
+      ? {
+        ...col,
+        component: (row, { onEdit }) => (
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "flex-start",
+              gap: 0.5,
+              pl: 0.5,
+            }}
+          >
+            <PermissionGuard module="lead" action="write" fallback={null}>
+              <IconButton onClick={() => onEdit(row)} size="small">
+                <EditIcon fontSize="small" />
+              </IconButton>
+            </PermissionGuard>
 
-  const leadsTableHeaderWithActions = useMemo(
-    () =>
-      leadsTableHeader.map((col) =>
-        col.label === "Actions"
-          ? {
-              ...col,
-              component: (row, { onEdit }) => (
-                <LeadsTableActions
-                  row={row}
-                  onEdit={onEdit}
-                  onFeedback={openFeedback}
-                />
-              ),
-            }
-          : col
-      ),
-    [openFeedback]
+            {/* Site Visit Action */}
+            <PermissionGuard module="lead" action="write" fallback={null}>
+              <IconButton
+                  size="small"
+                  onClick={() => {
+                    setSelectedLeadForSiteVisit(row.leadId || row._id || row.id);
+                    setSiteVisitOpen(true);
+                  }}
+                  title="Schedule Site Visit"
+                >
+                  <LocationOn fontSize="small" color="action" />
+              </IconButton>
+            </PermissionGuard>
+
+            {/* Feedback button - available to any authenticated user */}
+            <IconButton
+              size="small"
+              onClick={() => {
+                setSelectedLeadForFeedback(row.leadId || row._id || row.id);
+                setFeedbackOpen(true);
+              }}
+            >
+              <Badge
+                badgeContent={
+                  row.followUpCount || (row.followUpNotes && row.followUpNotes.length) || 0
+                }
+                color="primary"
+              >
+                <FeedbackIcon fontSize="small" />
+              </Badge>
+            </IconButton>
+          </Box>
+        ),
+      }
+      : col
   );
-
-  const handleSaveLead = async (data: any) => {
-    try {
-      await saveLead(data, editId);
-      showSnackbar(
-        editId ? "Lead updated successfully" : "Lead created successfully",
-        "success"
-      );
-      setOpen(false);
-      setEditId(null);
-    } catch (err: any) {
-      const message = extractErrorMessage(err);
-      showSnackbar(message, "error");
-      console.error("Failed to save lead:", err);
-    }
-  };
 
   return (
     <Box sx={MODULE_STYLES.leads.leadsContainer}>
@@ -188,10 +229,40 @@ const Leads: React.FC = () => {
         {feedbackOpen && selectedLeadForFeedback && (
           <FollowUpDialog
             open={feedbackOpen}
-            onClose={closeFeedback}
+            onClose={() => {
+              setFeedbackOpen(false);
+              setSelectedLeadForFeedback(null);
+            }}
             leadIdentifier={selectedLeadForFeedback}
             onSaved={async () => {
-              await loadLeads(page + 1, rowsPerPage, searchInput);
+              // refresh leads after saving follow-up
+              await loadLeads(page + 1, rowsPerPage, search);
+            }}
+          />
+        )}
+      </React.Suspense>
+      
+      {/* Site Visit Dialog */}
+      <React.Suspense fallback={<div>Loading...</div>}>
+        {siteVisitOpen && selectedLeadForSiteVisit && (
+          <SiteVisitDialog
+            open={siteVisitOpen}
+            onClose={() => {
+              setSiteVisitOpen(false);
+              setSelectedLeadForSiteVisit(null);
+            }}
+            leadId={selectedLeadForSiteVisit}
+            initialClientName={
+              leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.fullName || 
+              leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.name
+            }
+            initialProject={leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.propertyName}
+            clientPhone={leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.phone}
+            onSaved={async () => {
+              setSnackbarMessage("Site visit scheduled successfully");
+              setSnackbarSeverity("success");
+              setSnackbarOpen(true);
+              await loadLeads(page + 1, rowsPerPage, search);
             }}
           />
         )}
