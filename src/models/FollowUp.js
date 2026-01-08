@@ -11,7 +11,7 @@ const followUpSchema = new mongoose.Schema(
 
     followUpDate: {
       type: Date,
-      required: false, 
+      required: false,
     },
 
     note: {
@@ -35,6 +35,12 @@ const followUpSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "CabBooking",
       required: false,
+    },
+
+    notificationsSent: {
+      type: [String],
+      enum: ['24H_BEFORE', '2H_BEFORE', '5MIN_BEFORE'],
+      default: []
     },
   },
   { timestamps: true }

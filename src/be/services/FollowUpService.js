@@ -4,18 +4,19 @@ import FollowUp from "../../models/FollowUp";
 import Lead from "../../models/Lead";
 import dbConnect from "../../lib/mongodb";
 import mongoose from "mongoose";
+import { scheduleFollowUpNotifications } from "../utils/scheduleFollowUpNotifications.js";
 
 class FollowUpService extends Service {
   // Helper to find lead ID
   async findLeadByIdentifier(identifier) {
     if (!identifier) return null;
     const identifierStr = String(identifier);
-    
+
     // Check if valid ObjectId
     if (mongoose.Types.ObjectId.isValid(identifierStr)) {
-        // Double check if it exists
-        const byId = await Lead.findById(identifierStr);
-        if (byId) return byId;
+      // Double check if it exists
+      const byId = await Lead.findById(identifierStr);
+      if (byId) return byId;
     }
 
     // Check by custom leadId
@@ -29,16 +30,16 @@ class FollowUpService extends Service {
     try {
       await dbConnect();
       const { leadId, leadIdentifier, followUpDate, note, followUpType } = req.body || {};
-      
+
       console.log(`[FollowUpService] Processing request:`, { leadId, leadIdentifier, type: followUpType });
 
       // 1. Resolve Lead
       let targetLead = null;
       if (leadId) {
-          targetLead = await this.findLeadByIdentifier(leadId);
+        targetLead = await this.findLeadByIdentifier(leadId);
       }
       if (!targetLead && leadIdentifier) {
-          targetLead = await this.findLeadByIdentifier(leadIdentifier);
+        targetLead = await this.findLeadByIdentifier(leadIdentifier);
       }
 
       if (!targetLead) {
@@ -53,7 +54,7 @@ class FollowUpService extends Service {
       // Note: We no longer Append. We ALWAYS create a new document.
       const validTypes = ["site visit", "call back", "note"];
       const safeType = validTypes.includes(followUpType) ? followUpType : "note";
-      
+
       const newFollowUp = new FollowUp({
         leadId: targetLead._id,
         followUpDate: followUpDate || new Date(), // Default to now if not provided
@@ -63,6 +64,16 @@ class FollowUpService extends Service {
       });
 
       await newFollowUp.save();
+
+      // Schedule notifications if follow-up date is in the future
+      if (followUpDate && new Date(followUpDate) > new Date()) {
+        try {
+          await scheduleFollowUpNotifications(targetLead._id, followUpDate, safeType);
+        } catch (error) {
+          console.error('[FollowUpService] Failed to schedule notifications:', error);
+          // Don't fail the request if notification scheduling fails
+        }
+      }
 
       return res.status(201).json({ success: true, data: newFollowUp, message: "Follow-up added successfully" });
 
@@ -80,15 +91,15 @@ class FollowUpService extends Service {
       // 1. Resolve Lead
       let targetLead = null;
       if (leadId) {
-          targetLead = await this.findLeadByIdentifier(leadId);
+        targetLead = await this.findLeadByIdentifier(leadId);
       }
       if (!targetLead && leadIdentifier) {
-          targetLead = await this.findLeadByIdentifier(leadIdentifier);
+        targetLead = await this.findLeadByIdentifier(leadIdentifier);
       }
 
       if (!targetLead) {
-         // Return empty if lead not found (soft fail for frontend search)
-         return res.status(200).json({ success: true, data: [] });
+        // Return empty if lead not found (soft fail for frontend search)
+        return res.status(200).json({ success: true, data: [] });
       }
 
       // 2. Fetch History
@@ -110,14 +121,14 @@ class FollowUpService extends Service {
         submittedByName: doc.submittedBy?.name || "System/Unknown"
       }));
 
-      return res.status(200).json({ 
-          success: true, 
-          data: formattedHistory,
-          lead: {
-              fullName: targetLead.fullName,
-              phone: targetLead.phone,
-              id: targetLead._id
-          }
+      return res.status(200).json({
+        success: true,
+        data: formattedHistory,
+        lead: {
+          fullName: targetLead.fullName,
+          phone: targetLead.phone,
+          id: targetLead._id
+        }
       });
 
     } catch (error) {

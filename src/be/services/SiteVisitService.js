@@ -4,6 +4,7 @@ import FollowUp from "../../models/FollowUp";
 import CabBooking from "../../models/CabBooking";
 import Lead from "../../models/Lead";
 import mongoose from "mongoose";
+import { scheduleFollowUpNotifications } from "../utils/scheduleFollowUpNotifications.js";
 
 class SiteVisitService extends Service {
   async getLeadId(identifier) {
@@ -12,8 +13,8 @@ class SiteVisitService extends Service {
 
     // 1. If it's already a valid ObjectId hex string, check if it exists as _id
     if (mongoose.Types.ObjectId.isValid(identifierStr)) {
-        const byId = await Lead.findById(identifierStr);
-        if (byId) return byId._id;
+      const byId = await Lead.findById(identifierStr);
+      if (byId) return byId._id;
     }
 
     // 2. Try to find by custom leadId (string)
@@ -26,7 +27,7 @@ class SiteVisitService extends Service {
   async createSiteVisit(req, res) {
     try {
       await dbConnect();
-      
+
       const {
         leadId,
         project,
@@ -50,7 +51,7 @@ class SiteVisitService extends Service {
       // 2. Validate Cab Fields
       if (cabRequired) {
         if (!project || !numberOfClients || !pickupPoint || !dropPoint) {
-            return res.status(400).json({ success: false, message: "Missing cab booking details" });
+          return res.status(400).json({ success: false, message: "Missing cab booking details" });
         }
       }
 
@@ -66,7 +67,7 @@ class SiteVisitService extends Service {
         console.error("[SiteVisit] No user found in request");
         return res.status(401).json({ success: false, message: "Unauthorized" });
       }
-      
+
       const rawUserId = currentUser._id || currentUser.id;
       const userId = new mongoose.Types.ObjectId(rawUserId);
 
@@ -82,7 +83,7 @@ class SiteVisitService extends Service {
         } else if (currentUser.managerId) {
           managerId = currentUser.managerId;
         }
-        
+
         // Fallback to self if no manager (e.g. Admin)
         if (!managerId) {
           managerId = userId;
@@ -112,7 +113,7 @@ class SiteVisitService extends Service {
       // 6. Create FollowUp Entry (now with optional cabBookingId)
       const newFollowUp = new FollowUp({
         leadId: targetLeadId,
-        followUpDate: requestedDateTime, 
+        followUpDate: requestedDateTime,
         note: notes || "Site Visit Scheduled",
         submittedBy: userId,
         followUpType: "site visit",
@@ -120,6 +121,16 @@ class SiteVisitService extends Service {
       });
 
       await newFollowUp.save();
+
+      // Schedule site visit notifications
+      if (requestedDateTime && new Date(requestedDateTime) > new Date()) {
+        try {
+          await scheduleFollowUpNotifications(targetLeadId, requestedDateTime, 'site visit');
+        } catch (error) {
+          console.error('[SiteVisitService] Failed to schedule notifications:', error);
+          // Don't fail the request if notification scheduling fails
+        }
+      }
 
       return res.status(200).json({ success: true, message: "Site visit scheduled successfully" });
 
