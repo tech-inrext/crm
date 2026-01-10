@@ -26,7 +26,18 @@ export async function scheduleFollowUpNotifications(
       { type: "24H_BEFORE", delay: followUpTime - now - 24 * 60 * 60 * 1000 },
       { type: "2H_BEFORE", delay: followUpTime - now - 2 * 60 * 60 * 1000 },
       { type: "5MIN_BEFORE", delay: followUpTime - now - 5 * 60 * 1000 },
+      // Schedule the actual due time notification
+      { type: "DUE", delay: followUpTime - now },
     ];
+
+    // Check for "starting soon" case (less than 5 minutes away)
+    // If the event is in the future but less than 5 minutes away, the 5MIN_BEFORE delay will be negative.
+    // We should send an immediate "starting soon" warning instead.
+    if (followUpTime > now && followUpTime - now < 5 * 60 * 1000) {
+      // Find the negative 5MIN_BEFORE and force it to be immediate (delay 0)
+      // OR just push a new one. Since the loop checks delay > 0, the original 5MIN_BEFORE will be skipped.
+      notifications.push({ type: "5MIN_BEFORE", delay: 0 });
+    }
 
     // Schedule each notification if it's in the future
     const successfulSchedules = [];
