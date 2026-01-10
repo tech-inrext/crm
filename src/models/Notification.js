@@ -181,6 +181,11 @@ const notificationSchema = new mongoose.Schema(
     emailSent: { type: Boolean, default: false },
     emailSentAt: Date,
     emailError: String,
+    emailErrorCode: String,
+    emailMessageId: String,
+    emailResponse: String,
+    lastEmailAttempt: Date,
+    emailRetryCount: { type: Number, default: 0 },
 
     // Scheduling
     scheduledFor: Date, // For delayed notifications

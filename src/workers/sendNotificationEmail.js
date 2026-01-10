@@ -66,32 +66,72 @@ async function sendEmailNotification(job) {
       return;
     }
 
-    // Check user's email preferences
+    // Check user's email preferences with better fallback handling
     const recipient = notification.recipient;
     const category = getNotificationCategory(notification.type);
 
-    if (recipient.notificationPreferences?.email?.[category] === false) {
-      console.log("User has disabled email for category:", category);
+    // Safe check for email preferences with proper defaults
+    const emailPreferences = recipient.notificationPreferences?.email;
+    if (emailPreferences && emailPreferences[category] === false) {
+      console.log(
+        `User ${recipient.email} has disabled email for category: ${category}`
+      );
+      return;
+    }
+
+    // Additional safety check for valid recipient email
+    if (!recipient.email || !recipient.email.includes("@")) {
+      console.error(
+        `Invalid recipient email: ${recipient.email} for notification: ${notificationId}`
+      );
       return;
     }
 
     // Generate email content
     const emailContent = generateEmailContent(notification);
 
-    // Send email
-    await mailer.sendEmail(
-      recipient.email,
-      emailContent.subject,
-      emailContent.html
-    );
+    // Enhanced email sending with proper options
+    const emailOptions = {
+      messageId: `notification-${notification._id}@inrext.com`,
+      entityId: notification.metadata.leadId || notification._id,
+      notificationType: notification.type,
+      maxRetries: 3,
+      retryDelay: 5000,
+    };
 
-    // Update notification status
-    await Notification.findByIdAndUpdate(notificationId, {
-      emailSent: true,
-      emailSentAt: new Date(),
-    });
+    // Send email with enhanced error handling
+    try {
+      const result = await mailer.sendEmail(
+        recipient.email,
+        emailContent.subject,
+        emailContent.html,
+        emailOptions
+      );
 
-    console.log("Email notification sent successfully:", notificationId);
+      // Update notification status with email details
+      await Notification.findByIdAndUpdate(notificationId, {
+        emailSent: true,
+        emailSentAt: new Date(),
+        emailMessageId: result.messageId,
+        emailResponse: result.response,
+      });
+
+      console.log("✅ Email notification sent successfully:", {
+        notificationId,
+        recipient: recipient.email,
+        messageId: result.messageId,
+      });
+    } catch (error) {
+      // Update notification with error details
+      await Notification.findByIdAndUpdate(notificationId, {
+        emailSent: false,
+        emailError: error.message,
+        emailErrorCode: error.code,
+        lastEmailAttempt: new Date(),
+      });
+
+      throw error; // Re-throw for job retry handling
+    }
   } catch (error) {
     console.error("Error in sendEmailNotification:", error);
     throw error; // Will be caught by the main function
