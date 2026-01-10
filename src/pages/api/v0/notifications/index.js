@@ -8,23 +8,20 @@ class NotificationController extends Controller {
   }
 
   async get(req, res) {
-    console.log("Notification endpoint hit");
-
     try {
       await dbConnect();
       const { employee } = req;
 
       if (!employee) {
-        res.status(401).json({
+        return res.status(401).json({
           success: false,
           message: "Authentication required",
         });
-        return;
       }
 
       const {
-        page = "1",
-        limit = "20",
+        page = 1,
+        limit = 20,
         status,
         type,
         priority,
@@ -32,18 +29,35 @@ class NotificationController extends Controller {
         toDate,
       } = req.query;
 
-      // Filter out undefined string values
+      // Validate pagination
+      const pageNum = parseInt(page);
+      const limitNum = parseInt(limit);
+
+      if (isNaN(pageNum) || pageNum < 1 || isNaN(limitNum) || limitNum < 1) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid pagination parameters",
+        });
+      }
+
       const options = {
-        page: parseInt(page),
-        limit: parseInt(limit),
+        page: pageNum,
+        limit: limitNum,
       };
 
       if (status && status !== "undefined") options.status = status;
       if (type && type !== "undefined") options.type = type;
       if (priority && priority !== "undefined") options.priority = priority;
-      if (fromDate && fromDate !== "undefined")
-        options.fromDate = new Date(fromDate);
-      if (toDate && toDate !== "undefined") options.toDate = new Date(toDate);
+
+      if (fromDate && fromDate !== "undefined") {
+        const date = new Date(fromDate);
+        if (!isNaN(date.getTime())) options.fromDate = date;
+      }
+
+      if (toDate && toDate !== "undefined") {
+        const date = new Date(toDate);
+        if (!isNaN(date.getTime())) options.toDate = date;
+      }
 
       const result = await notificationService.getUserNotifications(
         employee._id,
@@ -64,18 +78,15 @@ class NotificationController extends Controller {
   }
 
   async post(req, res) {
-    console.log("Create notification endpoint hit");
-
     try {
       await dbConnect();
       const { employee } = req;
 
       if (!employee) {
-        res.status(401).json({
+        return res.status(401).json({
           success: false,
           message: "Authentication required",
         });
-        return;
       }
 
       const notificationData = {

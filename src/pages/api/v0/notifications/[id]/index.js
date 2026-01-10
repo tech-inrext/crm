@@ -27,24 +27,17 @@ class NotificationByIdController extends Controller {
       const { employee } = req;
       const { id } = req.query;
 
-      const result = await notificationService.getUserNotifications(
-        employee._id,
-        {
-          page: 1,
-          limit: 1,
-        }
-      );
-
-      const notification = result.notifications.find(
-        (n) => n._id.toString() === id
+      // Use a direct findOne query instead of fetching all user notifications
+      const notification = await notificationService.getNotificationById(
+        id,
+        employee._id
       );
 
       if (!notification) {
-        res.status(404).json({
+        return res.status(404).json({
           success: false,
           message: "Notification not found",
         });
-        return;
       }
 
       res.status(200).json({
