@@ -21,7 +21,6 @@ export function useLeads() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [search, setSearch] = useState("");
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [page, setPage] = useState(0); // 0-based for UI
   const [rowsPerPage, setRowsPerPage] = useState(5);
   const [open, setOpen] = useState(false);
@@ -79,14 +78,15 @@ export function useLeads() {
         } else {
           await axios.post(API_BASE, payload);
         }
-        await loadLeads(page + 1, rowsPerPage, search, selectedStatuses);
+        // selectedStatuses is now controlled by the hook using useLeadsPage
+        await loadLeads(page + 1, rowsPerPage, search);
       } catch (error) {
         throw error;
       } finally {
         setSaving(false);
       }
     },
-    [loadLeads, page, rowsPerPage, search, selectedStatuses] // Added status to the dependency array
+    [loadLeads, page, rowsPerPage, search] // Removed status from the dependency array
   );
 
   const updateLeadStatus = useCallback(
@@ -118,8 +118,8 @@ export function useLeads() {
   );
 
   useEffect(() => {
-    loadLeads(page + 1, rowsPerPage, search, selectedStatuses); // API expects 1-based page
-  }, [loadLeads, page, rowsPerPage, search, selectedStatuses]);
+    loadLeads(page + 1, rowsPerPage, search); // API expects 1-based page
+  }, [loadLeads, page, rowsPerPage, search]);
 
   return {
     leads,
@@ -143,7 +143,6 @@ export function useLeads() {
     loadLeads,
     saveLead,
     updateLeadStatus,
-    selectedStatuses,
-    setSelectedStatuses,
+    // selectedStatuses and setSelectedStatuses removed
   };
 }

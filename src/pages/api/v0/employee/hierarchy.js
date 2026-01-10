@@ -13,7 +13,7 @@ const buildHierarchy = (employees, managerId) => {
         String(emp._id) !== String(managerId)
     )
     .forEach((emp) => {
-      const children = buildHierarchy(employees, emp._id); // Recursively find employees under each employee
+      const children = buildHierarchy(employees, emp._id);  
       tree.push({
         _id: emp._id,
         name: emp.name,
@@ -21,7 +21,7 @@ const buildHierarchy = (employees, managerId) => {
         branch: emp.branch,
         managerId: emp.managerId,
         employeeProfileId: emp.employeeProfileId,
-        children: children.length ? children : [], // If no subordinates, return empty array
+        children: children.length ? children : [],   
       });
     });
   return tree;

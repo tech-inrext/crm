@@ -10,6 +10,8 @@ import PermissionGuard from "@/components/PermissionGuard";
 import LeadGenerationChart from '../analytics/Charts/LeadGenerationChart';
 import {StatsCardsRow} from '../analytics/Statcard';
 import {VendorBreakdown} from '../analytics/Cab/Cabvendor'
+// NOTE: The cabBookingAnalyticsWorker runs on the backend and should NOT be imported here.
+// It is started in the backend (e.g., in src/workers/worker.js or a server process).
 import SiteVisitConversionChart from './Charts/SiteVisitConversionChart';
 import {PropertyPieChart} from './Charts/Propertychart'
 import LeadSourcesPieChart from './components/LeadSourcesPieChart';
@@ -73,19 +75,15 @@ export default function NewDashboardPage() {
       fetch('/api/v0/analytics/leads').then(r => r.json()),
       fetch('/api/v0/analytics/schedule').then(r => r.json()),
       fetch('/api/v0/employee/managerMouStats').then(r => r.json()),
-      fetch('/api/v0/analytics/vendor').then(r => r.json())
-    ]).then(([overallData, leadsData, scheduleData, managerMouStats, vendorStats]) => {
+      fetch('/api/v0/analytics/vendor').then(r => r.json()),
+      fetch('/api/v0/employee/teams').then(r => r.json()),
+    ]).then(([overallData, leadsData, scheduleData, managerMouStats, vendorStats, teamsData]) => {
       setOverall({
         ...overallData,
         // Use manager MoU stats for stat card
-        pendingMouTotal: typeof managerMouStats?.pending === 'number' ? managerMouStats.pending : (overallData?.pendingMouTotal ?? (overallData?.mouList?.filter(m => m.status === 'Pending').length || 0)),
-        approvedMouTotal: typeof managerMouStats?.approved === 'number' ? managerMouStats.approved : (overallData?.approvedMouTotal ?? (overallData?.mouList?.filter(m => m.status === 'Approved').length || 0)),
-        // Use vendor stats from backend
-        totalVendors: typeof vendorStats?.totalVendors === 'number' ? vendorStats.totalVendors : (overallData?.totalVendors ?? 0),
-        totalBilling: Array.isArray(vendorStats?.allVendors)
-          ? vendorStats.allVendors.reduce((sum, v) => sum + (v.totalEarnings || 0), 0)
-          : (overallData?.totalBilling ?? 0),
-      });
+        managerMouStats,
+        myTeamsCount: teamsData?.myTeamsCount ?? 0,
+      }); 
       setLeadsAnalytics(leadsData);
       setScheduleAnalytics(scheduleData);
     }).finally(() => {
@@ -133,17 +131,9 @@ export default function NewDashboardPage() {
               teamsLoading={overallLoading}
               vendorCount={overall?.totalVendors || overall?.totalCabVendors}
               totalBilling={overall?.totalBilling}
-              pendingMouTotal={
-                (overall?.pendingMouTotal && overall?.pendingMouTotal > 0)
-                  ? overall.pendingMouTotal
-                  : (overall?.mouList ? overall.mouList.filter(m => m.status === 'Pending').length : 0)
-              }
+              pendingMouTotal={overall?.mouStats?.pending ?? 0}
               pendingMouLoading={overallLoading}
-              approvedMouTotal={
-                (overall?.approvedMouTotal && overall?.approvedMouTotal > 0)
-                  ? overall.approvedMouTotal
-                  : (overall?.mouList ? overall.mouList.filter(m => m.status === 'Approved').length : 0)
-              }
+              approvedMouTotal={overall?.mouStats?.approved ?? 0}
               approvedMouLoading={overallLoading}
               showVendorBilling={analyticsAccess.showTotalVendorsBilling}
               showTotalUsers={analyticsAccess.showTotalUsers}
@@ -152,27 +142,27 @@ export default function NewDashboardPage() {
               analyticsAccess={analyticsAccess}
               trend={overall?.trend}
               trendLeads={{
-                newLeads: leadsAnalytics?.trend?.newLeads,
                 callBackLeads: leadsAnalytics?.trend?.callBackLeads,
                 followUpLeads: leadsAnalytics?.trend?.followUpLeads,
                 detailsSharedLeads: leadsAnalytics?.trend?.detailsSharedLeads,
-                activeLeads: leadsAnalytics?.trend
+                siteVisitCount: overall?.trend?.siteVisitCount,
+                activeLeads: (leadsAnalytics?.trend && overall?.trend)
                   ? {
                       today:
-                        (leadsAnalytics?.trend?.newLeads?.today ?? 0) +
                         (leadsAnalytics?.trend?.callBackLeads?.today ?? 0) +
                         (leadsAnalytics?.trend?.followUpLeads?.today ?? 0) +
-                        (leadsAnalytics?.trend?.detailsSharedLeads?.today ?? 0),
+                        (leadsAnalytics?.trend?.detailsSharedLeads?.today ?? 0) +
+                        (overall?.trend?.siteVisitCount?.today ?? 0),
                       yesterday:
-                        (leadsAnalytics?.trend?.newLeads?.yesterday ?? 0) +
                         (leadsAnalytics?.trend?.callBackLeads?.yesterday ?? 0) +
                         (leadsAnalytics?.trend?.followUpLeads?.yesterday ?? 0) +
-                        (leadsAnalytics?.trend?.detailsSharedLeads?.yesterday ?? 0),
+                        (leadsAnalytics?.trend?.detailsSharedLeads?.yesterday ?? 0) +
+                        (overall?.trend?.siteVisitCount?.yesterday ?? 0),
                       beforeYesterday:
-                        (leadsAnalytics?.trend?.newLeads?.beforeYesterday ?? 0) +
                         (leadsAnalytics?.trend?.callBackLeads?.beforeYesterday ?? 0) +
                         (leadsAnalytics?.trend?.followUpLeads?.beforeYesterday ?? 0) +
-                        (leadsAnalytics?.trend?.detailsSharedLeads?.beforeYesterday ?? 0),
+                        (leadsAnalytics?.trend?.detailsSharedLeads?.beforeYesterday ?? 0) +
+                        (overall?.trend?.siteVisitCount?.beforeYesterday ?? 0),
                     }
                   : undefined,
               }}
@@ -186,6 +176,7 @@ export default function NewDashboardPage() {
                 Vendor Filter & List
               </div>
               <VendorBreakdown />
+               
             </div>
           </div>
         )}
