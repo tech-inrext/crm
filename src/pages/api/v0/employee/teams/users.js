@@ -10,135 +10,187 @@ async function handler(req, res) {
     if (!managerId) {
       return res.status(401).json({ success: false, message: "Unauthorized" });
     }
-    // Save the current manager's _id for summary inclusion
-    const currentManagerId = req.employee?._id?.toString?.() || (typeof managerId === 'string' ? managerId : '');
-    // If managerId is an array (from query), take first
     if (Array.isArray(managerId)) managerId = managerId[0];
-    let users = [];
-    let filter = {};
-    if (managerId && managerId !== 'all') {
-      filter.managerId = managerId;
-    }
-    users = await Employee.find(
-      filter,
-      { _id: 1, name: 1, teamName: 1 }
-    ).lean();
-
-    // For each user, fetch only their own leads (not recursive)
-    const Lead = (await import("@/models/Lead")).default;
     const mongoose = (await import("mongoose")).default;
+    const Lead = (await import("@/models/Lead")).default;
     const { getCabBooking } = await import("@/be/services/analytics/cabBooking");
-    const userStats = await Promise.all(users.map(async (user) => {
-      const userId = typeof user._id === 'string' ? new mongoose.Types.ObjectId(user._id) : user._id;
-      // Count new leads where user is assignedTo (not uploadedBy, not recursive)
-      const newLeads = await Lead.countDocuments({ 
-         $or: [
-          { assignedTo: userId },
-          { uploadedBy: userId }
-        ], 
-         status: { $regex: "^new$", $options: "i" } });
-      const activeStatuses = [
-        "follow-up", "follow up", "callback", "call back", "details shared", "site visit", "site visit done"
-      ];
-      // Count unique active leads for this user (assignedTo only)
-      const activeLeadsDocs = await Lead.find({
-        assignedTo: userId,
-        status: { $in: activeStatuses.map(s => new RegExp(`^${s}$`, 'i')) }
-      }).select('_id');
-      const activeLeads = new Set(activeLeadsDocs.map(l => l._id.toString())).size;
-      // Site visits: status contains 'site visit' (case-insensitive), user is assignedTo only
-      const siteVisitCount = await Lead.countDocuments({ 
-         $or: [
-          { assignedTo: userId },
-          { uploadedBy: userId }
-        ], status: { $regex: /site visit/i } });
+    const activeLeadStatuses = [
+      "followup",
+      "follow up",
+      "callback",
+      "call back",
+      "details shared",
+      "site visit",
+      "site visit done",
+    ];
 
-      // MoU stats for each user (only their own status)
-      const mouPending = await Employee.countDocuments({ _id: userId, mouStatus: { $regex: "^Pending$", $options: "i" } });
-      const mouApproved = await Employee.countDocuments({ _id: userId, mouStatus: { $regex: "^Approved$", $options: "i" } });
-      const mouCompleted = await Employee.countDocuments({ _id: userId, mouStatus: { $regex: "^Completed$", $options: "i" } });
+    // 1. Fetch all employees in one go
+    const allEmployees = await Employee.find({}, { _id: 1, name: 1, teamName: 1, managerId: 1, mouStatus: 1 }).lean();
+    // 2. Build a map of employees by _id and by managerId
+    const empMap = new Map();
+    const managerToChildren = new Map();
+    for (const emp of allEmployees) {
+      const id = emp._id.toString();
+      empMap.set(id, emp);
+      const mgrId = emp.managerId ? emp.managerId.toString() : null;
+      if (mgrId) {
+        if (!managerToChildren.has(mgrId)) managerToChildren.set(mgrId, []);
+        managerToChildren.get(mgrId).push(emp);
+      }
+    }
 
-      // Fetch total vendor and total spend for this user from cab booking analytics
-      const cabBookingAnalytics = await getCabBooking({ avpId: userId });
-      const totalVendors = cabBookingAnalytics?.totalVendors ?? 0;
-      const totalSpend = cabBookingAnalytics?.totalSpend ?? 0;
+    // 3. Get all users under the given managerId (top-level)
+    let users = [];
+    if (managerId && managerId !== 'all') {
+      users = managerToChildren.get(managerId.toString()) || [];
+    } else {
+      users = allEmployees;
+    }
 
+    // 4. Fetch all leads in one go
+    const allLeads = await Lead.find({}, { assignedTo: 1, uploadedBy: 1, status: 1 }).lean();
+
+    // 5. Precompute lead stats for each user
+    const userLeadStats = {};
+    for (const emp of allEmployees) {
+      const id = emp._id.toString();
+      userLeadStats[id] = { newLeads: 0, activeLeads: 0, siteVisitCount: 0 };
+    }
+    for (const lead of allLeads) {
+      const assignedId = lead.assignedTo?.toString?.();
+      const uploadedId = lead.uploadedBy?.toString?.();
+      const status = lead.status?.toLowerCase?.() || "";
+      const ids = new Set();
+      if (assignedId) ids.add(assignedId);
+      if (uploadedId) ids.add(uploadedId);
+      for (const id of ids) {
+        if (!userLeadStats[id]) continue;
+        if (/^new$/i.test(status)) userLeadStats[id].newLeads++;
+        if (activeLeadStatuses.some(s => s.toLowerCase() === status)) userLeadStats[id].activeLeads++;
+        if (/site visit/i.test(status)) userLeadStats[id].siteVisitCount++;
+      }
+    }
+
+    // 6. Precompute MoU stats for each user (as manager)
+    const userMouStats = {};
+    for (const emp of allEmployees) {
+      userMouStats[emp._id.toString()] = { pending: 0, approved: 0, completed: 0 };
+    }
+    for (const emp of allEmployees) {
+      const mgrId = emp.managerId ? emp.managerId.toString() : null;
+      if (!mgrId) continue;
+      const status = emp.mouStatus?.toLowerCase?.() || "";
+      if (!userMouStats[mgrId]) continue;
+      if (status === "pending") userMouStats[mgrId].pending++;
+      if (status === "approved") userMouStats[mgrId].approved++;
+      if (status === "completed") userMouStats[mgrId].completed++;
+    }
+
+    // 7. Precompute cab booking analytics for all users (in parallel, but only for users in the tree)
+    // We'll only compute for users in the tree to avoid unnecessary calls
+    const cabBookingCache = {};
+    async function getCabBookingCached(userId) {
+      if (cabBookingCache[userId]) return cabBookingCache[userId];
+      const res = await getCabBooking({ avpId: new mongoose.Types.ObjectId(userId) });
+      cabBookingCache[userId] = res || { totalVendors: 0, totalSpend: 0 };
+      return cabBookingCache[userId];
+    }
+
+    // 8. Build the user tree with stats (in-memory, recursive, no DB calls)
+    const MAX_DEPTH = 3;
+    async function buildUserTree(user, depth = 0) {
+      const userId = user._id.toString();
+      const children = (depth < MAX_DEPTH && managerToChildren.get(userId)) ? await Promise.all(managerToChildren.get(userId).map(child => buildUserTree(child, depth + 1))) : [];
+      const leadStats = userLeadStats[userId] || { newLeads: 0, activeLeads: 0, siteVisitCount: 0 };
+      const mouStats = userMouStats[userId] || { pending: 0, approved: 0, completed: 0 };
+      const cabBookingAnalytics = await getCabBookingCached(userId);
       return {
         ...user,
-        newLeads,
-        activeLeads,
-        siteVisitCount,
-        mouStats: {
-          pending: mouPending,
-          approved: mouApproved,
-          completed: mouCompleted,
-        },
-        totalVendors,
-        totalSpend,
-      };
-    }));
-
-    // Always return recursive MoU summary for the selected manager (including self and all subordinates)
-    let summary = undefined;
-    if (managerId && managerId !== 'all') {
-      // Recursively find all subordinates under the manager (including self)
-      const allUserIds = new Set();
-      async function collectSubordinates(managerIds) {
-        const subs = await Employee.find({ managerId: { $in: managerIds } }, { _id: 1 }).lean();
-        for (const sub of subs) {
-          if (!allUserIds.has(sub._id.toString())) {
-            allUserIds.add(sub._id.toString());
-            await collectSubordinates([sub._id]);
-          }
-        }
-      }
-      // Always include the selected managerId
-      if (managerId) allUserIds.add(managerId.toString());
-      await collectSubordinates([managerId]);
-      // Defensive: ensure managerId is in the set
-      if (managerId && !allUserIds.has(managerId.toString())) {
-        allUserIds.add(managerId.toString());
-      }
-      const mongoose = (await import("mongoose")).default;
-      const userIdsArr = Array.from(allUserIds).map(id => new mongoose.Types.ObjectId(id));
-      const allPending = await Employee.countDocuments({ _id: { $in: userIdsArr }, mouStatus: { $regex: "^Pending$", $options: "i" } });
-      const allApproved = await Employee.countDocuments({ _id: { $in: userIdsArr }, mouStatus: { $regex: "^Approved$", $options: "i" } });
-      const allCompleted = await Employee.countDocuments({ _id: { $in: userIdsArr }, mouStatus: { $regex: "^Completed$", $options: "i" } });
-      summary = {
-        mouPending: allPending,
-        mouApproved: allApproved,
-        mouCompleted: allCompleted,
-      };
-    } else if (!managerId || managerId === 'all') {
-      // Recursively find all subordinates under the current manager (including self)
-      const allUserIds = new Set();
-      async function collectSubordinates(managerIds) {
-        const subs = await Employee.find({ managerId: { $in: managerIds } }, { _id: 1 }).lean();
-        for (const sub of subs) {
-          if (!allUserIds.has(sub._id.toString())) {
-            allUserIds.add(sub._id.toString());
-            await collectSubordinates([sub._id]);
-          }
-        }
-      }
-      if (currentManagerId) allUserIds.add(currentManagerId);
-      await collectSubordinates([currentManagerId]);
-      if (currentManagerId && !allUserIds.has(currentManagerId)) {
-        allUserIds.add(currentManagerId);
-      }
-      const mongoose = (await import("mongoose")).default;
-      const userIdsArr = Array.from(allUserIds).map(id => new mongoose.Types.ObjectId(id));
-      const allPending = await Employee.countDocuments({ _id: { $in: userIdsArr }, mouStatus: { $regex: "^Pending$", $options: "i" } });
-      const allApproved = await Employee.countDocuments({ _id: { $in: userIdsArr }, mouStatus: { $regex: "^Approved$", $options: "i" } });
-      const allCompleted = await Employee.countDocuments({ _id: { $in: userIdsArr }, mouStatus: { $regex: "^Completed$", $options: "i" } });
-      summary = {
-        mouPending: allPending,
-        mouApproved: allApproved,
-        mouCompleted: allCompleted,
+        newLeads: leadStats.newLeads,
+        activeLeads: leadStats.activeLeads,
+        siteVisitCount: leadStats.siteVisitCount,
+        mouStats,
+        totalVendors: cabBookingAnalytics.totalVendors ?? 0,
+        totalSpend: cabBookingAnalytics.totalSpend ?? 0,
+        children,
       };
     }
+    const userStats = await Promise.all(users.map(user => buildUserTree(user)));
 
-    return res.status(200).json({ success: true, users: userStats, summary });
+    // Helper to recursively sum stats for a user and all children, skipping duplicate _id
+    function sumStats(usersArr, seen = new Set()) {
+      function addStats(a, b) {
+        return {
+          newLeads: a.newLeads + b.newLeads,
+          activeLeads: a.activeLeads + b.activeLeads,
+          siteVisitCount: a.siteVisitCount + b.siteVisitCount,
+          mou: {
+            pending: a.mou.pending + b.mou.pending,
+            approved: a.mou.approved + b.mou.approved,
+            completed: a.mou.completed + b.mou.completed,
+          },
+          totalVendors: a.totalVendors + b.totalVendors,
+          totalSpend: a.totalSpend + b.totalSpend,
+        };
+      }
+      let stats = {
+        newLeads: 0,
+        activeLeads: 0,
+        siteVisitCount: 0,
+        mou: { pending: 0, approved: 0, completed: 0 },
+        totalVendors: 0,
+        totalSpend: 0
+      };
+      for (const user of usersArr) {
+        const userId = typeof user._id === 'string' ? user._id : user._id.toString();
+        if (seen.has(userId)) continue; // skip duplicate
+        seen.add(userId);
+        let userStats = {
+          newLeads: user.newLeads || 0,
+          activeLeads: user.activeLeads || 0,
+          siteVisitCount: user.siteVisitCount || 0,
+          mou: {
+            pending: user.mouStats?.pending || 0,
+            approved: user.mouStats?.approved || 0,
+            completed: user.mouStats?.completed || 0,
+          },
+          totalVendors: user.totalVendors || 0,
+          totalSpend: user.totalSpend || 0
+        };
+        if (user.children && user.children.length > 0) {
+          userStats = addStats(userStats, sumStats(user.children, seen));
+        }
+        stats = addStats(stats, userStats);
+      }
+      return stats;
+    }
+    const initialStats = sumStats(userStats);
+
+    // Calculate combined MoU stats for all users in userStats (top-level only, for backward compatibility)
+    const mous = userStats.reduce((acc, user) => {
+      acc.pending += user.mouStats.pending || 0;  
+      acc.approved += user.mouStats.approved || 0;
+      acc.completed += user.mouStats.completed || 0;
+      return acc;
+    }, { pending: 0, approved: 0, completed: 0 });
+
+    // Remove duplicate users by _id for dropdown (flat list)
+    const uniqueUsersMap = new Map();
+    function collectUniqueUsers(usersArr) {
+      for (const user of usersArr) {
+        const userId = typeof user._id === 'string' ? user._id : user._id.toString();
+        if (!uniqueUsersMap.has(userId)) {
+          uniqueUsersMap.set(userId, user);
+        }
+        if (user.children && user.children.length > 0) {
+          collectUniqueUsers(user.children);
+        }
+      }
+    }
+    collectUniqueUsers(userStats);
+    const uniqueUsers = Array.from(uniqueUsersMap.values());
+
+    return res.status(200).json({ success: true, users: uniqueUsers, mous, initialStats });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }

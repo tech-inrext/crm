@@ -6,8 +6,11 @@ import InputLabel from '@/components/ui/Component/InputLabel';
 import Select from '@/components/ui/Component/Select';
 import MenuItem from '@/components/ui/Component/MenuItem';
 import Button from '@/components/ui/Component/Button';
+import DatePicker from '@/components/ui/Component/DatePicker';
+import LocalizationProvider from '@/components/ui/Component/LocalizationProvider';
+import AdapterDateFns from '@/components/ui/Component/AdapterDateFns';
 
-export function VendorFilterControls({ tempFilters, setTempFilters, appliedFilters, avpUsers, avpLoading, avpError, handleSubmitFilters, handleResetFilters, monthOptions, generateYearOptions, hasUnappliedChanges }) {
+export function VendorFilterControls({ tempFilters, setTempFilters, appliedFilters, avpUsers, avpLoading, avpError, handleSubmitFilters, handleResetFilters, hasUnappliedChanges }) {
   return (
     <Box
       display="grid"
@@ -32,34 +35,25 @@ export function VendorFilterControls({ tempFilters, setTempFilters, appliedFilte
           <MenuItem value="payment_due">Payment Due</MenuItem>
         </Select>
       </FormControl>
-      {/* Month Filter */}
-      <FormControl fullWidth size="small">
-        <InputLabel id="month-filter-label">Month</InputLabel>
-        <Select
-          labelId="month-filter-label"
-          value={tempFilters.month}
-          label="Month"
-          onChange={e => setTempFilters({ ...tempFilters, month: e.target.value })}
-        >
-          {monthOptions.map(month => (
-            <MenuItem key={month.value} value={month.value}>{month.label}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
-      {/* Year Filter */}
-      <FormControl fullWidth size="small">
-        <InputLabel id="year-filter-label">Year</InputLabel>
-        <Select
-          labelId="year-filter-label"
-          value={tempFilters.year}
-          label="Year"
-          onChange={e => setTempFilters({ ...tempFilters, year: e.target.value })}
-        >
-          {generateYearOptions().map(year => (
-            <MenuItem key={year.value} value={year.value}>{year.label}</MenuItem>
-          ))}
-        </Select>
-      </FormControl>
+
+      {/* Date Range Filter */}
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <DatePicker
+          label="From Date"
+          value={tempFilters.fromDate || null}
+          onChange={date => setTempFilters({ ...tempFilters, fromDate: date })}
+          slotProps={{ textField: { size: 'small', fullWidth: true } }}
+        />
+      </LocalizationProvider>
+      <LocalizationProvider dateAdapter={AdapterDateFns}>
+        <DatePicker
+          label="To Date"
+          value={tempFilters.toDate || null}
+          onChange={date => setTempFilters({ ...tempFilters, toDate: date })}
+          slotProps={{ textField: { size: 'small', fullWidth: true } }}
+        />
+      </LocalizationProvider>
+
       {/* AVP Filter */}
       <FormControl fullWidth size="small" disabled={avpLoading} error={!!avpError}>
         <InputLabel id="avp-filter-label">

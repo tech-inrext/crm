@@ -83,7 +83,7 @@ export default function NewDashboardPage() {
         // Use manager MoU stats for stat card
         managerMouStats,
         myTeamsCount: teamsData?.myTeamsCount ?? 0,
-      });
+      }); 
       setLeadsAnalytics(leadsData);
       setScheduleAnalytics(scheduleData);
     }).finally(() => {
@@ -176,29 +176,7 @@ export default function NewDashboardPage() {
                 Vendor Filter & List
               </div>
               <VendorBreakdown />
-              <div style={{ marginTop: 24 }}>
-                <a
-                  href={(() => {
-                    const now = new Date();
-                    const year = now.getFullYear();
-                    const month = String(now.getMonth() + 1).padStart(2, '0');
-                    return `/api/v0/analytics/cab-booking-excel?year=${year}&month=${month}&ts=${Date.now()}`;
-                  })()}
-                  download
-                  style={{
-                    display: 'inline-block',
-                    padding: '10px 18px',
-                    background: '#2196f3',
-                    color: '#fff',
-                    borderRadius: 6,
-                    fontWeight: 600,
-                    textDecoration: 'none',
-                    marginTop: 8,
-                  }}
-                >
-                  Download This Month's Cab Booking Excel
-                </a>
-              </div>
+               
             </div>
           </div>
         )}
