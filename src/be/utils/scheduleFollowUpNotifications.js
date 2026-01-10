@@ -27,6 +27,7 @@ export async function scheduleFollowUpNotifications(
       return;
     }
 
+  try {
     const followUpTime = new Date(followUpDate).getTime();
     const now = Date.now();
 
@@ -49,6 +50,9 @@ export async function scheduleFollowUpNotifications(
     }
 
     // Schedule each notification if it's in the future
+    const successfulSchedules = [];
+    const failedSchedules = [];
+
     const successfulSchedules = [];
     const failedSchedules = [];
 

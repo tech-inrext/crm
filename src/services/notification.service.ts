@@ -405,6 +405,7 @@ class NotificationService {
   }
 
   // Helper: Deliver real-time notifications
+  // Helper: Deliver real-time notifications
   private async deliverRealtimeNotification(notification: any) {
     try {
       // Import socket service dynamically to avoid circular dependencies

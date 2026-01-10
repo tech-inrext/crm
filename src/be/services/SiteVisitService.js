@@ -39,8 +39,14 @@ class SiteVisitService extends Service {
         numberOfClients,
         pickupPoint,
         dropPoint,
+        dropPoint,
       } = req.body;
 
+      console.log("[SiteVisit] POST Request:", {
+        leadId,
+        cabRequired,
+        project,
+      });
       console.log("[SiteVisit] POST Request:", {
         leadId,
         cabRequired,
@@ -49,6 +55,9 @@ class SiteVisitService extends Service {
 
       // 1. Validate Basic Fields
       if (!leadId || !clientName || !requestedDateTime) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Missing required fields" });
         return res
           .status(400)
           .json({ success: false, message: "Missing required fields" });
@@ -70,12 +79,18 @@ class SiteVisitService extends Service {
         return res
           .status(404)
           .json({ success: false, message: "Lead not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Lead not found" });
       }
 
       // 4. Get Current User
       const currentUser = req.employee || req.user;
       if (!currentUser) {
         console.error("[SiteVisit] No user found in request");
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized" });
         return res
           .status(401)
           .json({ success: false, message: "Unauthorized" });
@@ -116,6 +131,7 @@ class SiteVisitService extends Service {
           requestedDateTime,
           notes: notes,
           status: "pending",
+          status: "pending",
           managerId: validManagerId,
         });
 
@@ -149,7 +165,27 @@ class SiteVisitService extends Service {
           console.log(
             `[SiteVisitService] ✅ Successfully scheduled notifications for lead ${targetLeadId}`
           );
+          console.log(
+            `[SiteVisitService] Scheduling notifications for lead ${targetLeadId}, date: ${requestedDateTime}`
+          );
+          await scheduleFollowUpNotifications(
+            targetLeadId,
+            requestedDateTime,
+            "site visit"
+          );
+          console.log(
+            `[SiteVisitService] ✅ Successfully scheduled notifications for lead ${targetLeadId}`
+          );
         } catch (error) {
+          console.error(
+            "[SiteVisitService] ⚠️ Failed to schedule notifications:",
+            {
+              leadId: targetLeadId,
+              error: error.message,
+              stack: error.stack,
+              requestedDateTime,
+            }
+          );
           console.error(
             "[SiteVisitService] ⚠️ Failed to schedule notifications:",
             {
@@ -161,13 +197,21 @@ class SiteVisitService extends Service {
           );
           // Don't fail the request if notification scheduling fails
           // The site visit is still created successfully, notifications can be scheduled manually if needed
+          // The site visit is still created successfully, notifications can be scheduled manually if needed
         }
+      } else {
+        console.log(
+          `[SiteVisitService] Skipping notification scheduling - requested time is in the past or invalid`
+        );
       } else {
         console.log(
           `[SiteVisitService] Skipping notification scheduling - requested time is in the past or invalid`
         );
       }
 
+      return res
+        .status(200)
+        .json({ success: true, message: "Site visit scheduled successfully" });
       return res
         .status(200)
         .json({ success: true, message: "Site visit scheduled successfully" });
