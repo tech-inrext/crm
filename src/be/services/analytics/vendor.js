@@ -184,7 +184,7 @@ export async function getVendor({ vendorNames, vendorEmails }) {
 				{ $sort: { totalBookings: -1 } },
 			]);
 		})(),
-		CabVendor.distinct("cabOwnerName"),
+		CabVendor.distinct("cabOwnerName"), 
 	]);
 	const getBestVendorName = (vendor) => {
 		if (vendor.cabOwnerName && vendor.cabOwnerName.trim()) return vendor.cabOwnerName.trim();

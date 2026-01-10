@@ -351,7 +351,7 @@ export default async function handler(req, res) {
         },
       },
     });
-  } catch (err) {
+  } catch (err) {   
     console.error("Vendor API Error:", err);
     res.status(500).json({ error: err.message });
   }

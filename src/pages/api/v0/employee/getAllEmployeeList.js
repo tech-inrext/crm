@@ -17,7 +17,7 @@ const getAllEmployeeList = async (req, res) => {
   try {
     await dbConnect(); // Ensure DB connection
 
-    const { isCabVendor } = req.query;
+    const { isCabVendor, role } = req.query;
 
     // Normalize stringy booleans from query (?isCabVendor=true / 1 / yes / y ...)
     const normalizeBool = (v) => {
@@ -36,9 +36,21 @@ const getAllEmployeeList = async (req, res) => {
       filter.isCabVendor = vendorVal;
     }
 
-    const employees = await Employee.find(filter)
-      .sort({ createdAt: -1 })
-      .lean();
+
+    let employees;
+    if (role) {
+      // Find all Role IDs matching the role name (e.g., AVP)
+      const Role = require("../../../../models/Role").default;
+      const roles = await Role.find({ name: role }).select("_id");
+      const roleIds = roles.map(r => r._id);
+      employees = await Employee.find({ ...filter, roles: { $in: roleIds } })
+        .sort({ createdAt: -1 })
+        .lean();
+    } else {
+      employees = await Employee.find(filter)
+        .sort({ createdAt: -1 })
+        .lean();
+    }
 
     return res.status(200).json({
       success: true,
@@ -46,6 +58,7 @@ const getAllEmployeeList = async (req, res) => {
       data: employees,
       appliedFilter: {
         isCabVendor: typeof vendorVal === "boolean" ? vendorVal : null,
+        role: role || null,
       },
     });
   } catch (error) {

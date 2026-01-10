@@ -38,6 +38,32 @@ export function VendorBreakdown() {
   const [avpLoading, setAvpLoading] = React.useState(false);
   const [avpError, setAvpError] = React.useState(null);
 
+  // Fetch AVP users from backend
+  const fetchAvpUsers = React.useCallback(async () => {
+    setAvpLoading(true);
+    setAvpError(null);
+    try {
+      const res = await fetch('/api/v0/employee/getAllEmployeeList?role=AVP');
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data)) {
+        setAvpUsers(data.data);
+      } else {
+        setAvpUsers([]);
+        setAvpError('Failed to fetch AVP users');
+      }
+    } catch (e) {      
+      setAvpUsers([]);
+      setAvpError('Failed to fetch AVP users');
+    } finally {
+      setAvpLoading(false);
+    }
+  }, []);
+
+  // Fetch AVP users on mount
+  React.useEffect(() => {
+    fetchAvpUsers();
+  }, [fetchAvpUsers]);
+
   // Prevent duplicate initial fetches (React StrictMode in dev can mount twice)
   const mountRef = React.useRef(false);
   const fetchVendors = async (filters = appliedFilters) => {
@@ -136,6 +162,10 @@ export function VendorBreakdown() {
       displayVendors = displayVendors.filter(vendor => (vendor.pendingBookings || 0) > 0);
     } else if (appliedFilters.status === 'payment_due') {
       displayVendors = displayVendors.filter(vendor => Number(vendor.paymentDue) > 0);
+    }
+    // Filter by selected AVP (managerId)
+    if (appliedFilters.avp && appliedFilters.avp !== 'all') {
+      displayVendors = displayVendors.filter(vendor => vendor.managerId === appliedFilters.avp);
     }
     // Filter by selected vendor
     if (selectedVendor) {

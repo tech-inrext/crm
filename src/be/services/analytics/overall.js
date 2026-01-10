@@ -1,4 +1,3 @@
-// Overall Analytics
 
 import dbConnect from "@/lib/mongodb";
 import Employee from "@/models/Employee";
@@ -55,74 +54,87 @@ async function handler(req, res) {
 		}
 		const currentManagerId = req.employee?._id?.toString?.() || (typeof managerId === 'string' ? managerId : '');
 		if (Array.isArray(managerId)) managerId = managerId[0];
-		let users = [];
 		let filter = {};
 		if (managerId && managerId !== 'all') {
 			filter.managerId = managerId;
 		}
-		users = await Employee.find(
-			filter,
-			{ _id: 1, name: 1, teamName: 1 }
-		).lean();
+		const users = await Employee.find(filter, { _id: 1, name: 1, teamName: 1 }).lean();
 
-		// For each user, fetch only their own leads (not recursive)
-		const Lead = (await import("@/models/Lead")).default;
+		// Batch fetch all userIds
+		const userIds = users.map(u => u._id);
 		const mongoose = (await import("mongoose")).default;
+		const Lead = (await import("@/models/Lead")).default;
 		const { getCabBooking } = await import("@/be/services/analytics/cabBooking");
-		const userStats = await Promise.all(users.map(async (user) => {
-			const userId = typeof user._id === 'string' ? new mongoose.Types.ObjectId(user._id) : user._id;
-			// Count new leads where user is assignedTo or uploadedBy
-			const newLeads = await Lead.countDocuments({
+
+		// Batch: new leads per user
+		const newLeadsAgg = await Lead.aggregate([
+			{ $match: {
 				$or: [
-					{ assignedTo: userId },
-					{ uploadedBy: userId }
+					{ assignedTo: { $in: userIds } },
+					{ uploadedBy: { $in: userIds } }
 				],
 				status: { $regex: "^new$", $options: "i" }
-			});
-			const activeStatuses = [
-				"follow-up", "follow up", "callback", "call back", "details shared", "site visit", "site visit done"
-			];
-			// Count unique active leads for this user (assignedTo only)
-			const activeLeadsDocs = await Lead.find({
-				assignedTo: userId,
+			}},
+			{ $group: { _id: "$assignedTo", count: { $sum: 1 } } }
+		]);
+		const newLeadsMap = Object.fromEntries(newLeadsAgg.map(x => [x._id?.toString?.(), x.count]));
+
+		// Batch: active leads per user (assignedTo only)
+		const activeStatuses = [
+			"follow-up", "follow up", "callback", "call back", "details shared", "site visit", "site visit done"
+		];
+		const activeLeadsAgg = await Lead.aggregate([
+			{ $match: {
+				assignedTo: { $in: userIds },
 				status: { $in: activeStatuses.map(s => new RegExp(`^${s}$`, 'i')) }
-			}).select('_id');
-			const activeLeads = new Set(activeLeadsDocs.map(l => l._id.toString())).size;
-			// Site visits: status contains 'site visit' (case-insensitive), user is assignedTo or uploadedBy
-			const siteVisitCount = await Lead.countDocuments({
+			}},
+			{ $group: { _id: "$assignedTo", count: { $sum: 1 } } }
+		]);
+		const activeLeadsMap = Object.fromEntries(activeLeadsAgg.map(x => [x._id?.toString?.(), x.count]));
+
+		// Batch: site visit count per user
+		const siteVisitAgg = await Lead.aggregate([
+			{ $match: {
 				$or: [
-					{ assignedTo: userId },
-					{ uploadedBy: userId }
+					{ assignedTo: { $in: userIds } },
+					{ uploadedBy: { $in: userIds } }
 				],
 				status: { $regex: /site visit/i }
-			});
+			}},
+			{ $group: { _id: "$assignedTo", count: { $sum: 1 } } }
+		]);
+		const siteVisitMap = Object.fromEntries(siteVisitAgg.map(x => [x._id?.toString?.(), x.count]));
 
-			// MoU stats for each user (only their own status)
-			const mouPending = await Employee.countDocuments({ _id: userId, mouStatus: { $regex: "^Pending$", $options: "i" } });
-			const mouApproved = await Employee.countDocuments({ _id: userId, mouStatus: { $regex: "^Approved$", $options: "i" } });
-			const mouCompleted = await Employee.countDocuments({ _id: userId, mouStatus: { $regex: "^Completed$", $options: "i" } });
+		// Batch: MoU stats per user
+		const mouAgg = await Employee.aggregate([
+			{ $match: { _id: { $in: userIds } } },
+			{ $group: {
+				_id: "$_id",
+				pending: { $sum: { $cond: [{ $regexMatch: { input: "$mouStatus", regex: /^Pending$/i } }, 1, 0] } },
+				approved: { $sum: { $cond: [{ $regexMatch: { input: "$mouStatus", regex: /^Approved$/i } }, 1, 0] } },
+				completed: { $sum: { $cond: [{ $regexMatch: { input: "$mouStatus", regex: /^Completed$/i } }, 1, 0] } }
+			} }
+		]);
+		const mouMap = Object.fromEntries(mouAgg.map(x => [x._id?.toString?.(), { pending: x.pending, approved: x.approved, completed: x.completed }]));
 
-			// Fetch total vendor and total spend for this user from cab booking analytics
-			const cabBookingAnalytics = await getCabBooking({ avpId: userId });
-			const totalVendors = cabBookingAnalytics?.totalVendors ?? 0;
-			const totalSpend = cabBookingAnalytics?.totalSpend ?? 0;
+		// Cab booking analytics (still per user, but can be parallelized)
+		const cabBookingResults = await Promise.all(userIds.map(userId => getCabBooking({ avpId: userId })));
 
+		// Merge all stats
+		const userStats = users.map((user, idx) => {
+			const userIdStr = user._id?.toString?.();
 			return {
 				...user,
-				newLeads,
-				activeLeads,
-				siteVisitCount,
-				mouStats: {
-					pending: mouPending,
-					approved: mouApproved,
-					completed: mouCompleted,
-				},
-				totalVendors,
-				totalSpend,
+				newLeads: newLeadsMap[userIdStr] || 0,
+				activeLeads: activeLeadsMap[userIdStr] || 0,
+				siteVisitCount: siteVisitMap[userIdStr] || 0,
+				mouStats: mouMap[userIdStr] || { pending: 0, approved: 0, completed: 0 },
+				totalVendors: cabBookingResults[idx]?.totalVendors ?? 0,
+				totalSpend: cabBookingResults[idx]?.totalSpend ?? 0,
 			};
-		}));
+		});
 
-		// Always return recursive MoU summary for the selected manager (including self and all subordinates)
+		// ...existing code for recursive MoU summary...
 		let summary = undefined;
 		const collectSubordinates = async (managerIds, allUserIds) => {
 			const subs = await Employee.find({ managerId: { $in: managerIds } }, { _id: 1 }).lean();
@@ -149,16 +161,23 @@ async function handler(req, res) {
 			}
 		}
 		if (allUserIds.size > 0) {
-			const mongoose = (await import("mongoose")).default;
 			const userIdsArr = Array.from(allUserIds).map(id => new mongoose.Types.ObjectId(id));
-			const allPending = await Employee.countDocuments({ _id: { $in: userIdsArr }, mouStatus: { $regex: "^Pending$", $options: "i" } });
-			const allApproved = await Employee.countDocuments({ _id: { $in: userIdsArr }, mouStatus: { $regex: "^Approved$", $options: "i" } });
-			const allCompleted = await Employee.countDocuments({ _id: { $in: userIdsArr }, mouStatus: { $regex: "^Completed$", $options: "i" } });
-			summary = {
-				mouPending: allPending,
-				mouApproved: allApproved,
-				mouCompleted: allCompleted,
-			};
+			const allMouAgg = await Employee.aggregate([
+				{ $match: { _id: { $in: userIdsArr } } },
+				{ $group: {
+					_id: null,
+					mouPending: { $sum: { $cond: [{ $regexMatch: { input: "$mouStatus", regex: /^Pending$/i } }, 1, 0] } },
+					mouApproved: { $sum: { $cond: [{ $regexMatch: { input: "$mouStatus", regex: /^Approved$/i } }, 1, 0] } },
+					mouCompleted: { $sum: { $cond: [{ $regexMatch: { input: "$mouStatus", regex: /^Completed$/i } }, 1, 0] } }
+				} }
+			]);
+			if (allMouAgg.length > 0) {
+				summary = {
+					mouPending: allMouAgg[0].mouPending,
+					mouApproved: allMouAgg[0].mouApproved,
+					mouCompleted: allMouAgg[0].mouCompleted,
+				};
+			}
 		}
 
 		return res.status(200).json({ success: true, users: userStats, summary });
