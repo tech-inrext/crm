@@ -373,9 +373,42 @@ class NotificationService {
     }
   }
 
-  // Helper: Deliver real-time notifications (placeholder for WebSocket)
+  // Helper: Deliver real-time notifications
   private async deliverRealtimeNotification(notification: any) {
-    // This will be implemented when we add WebSocket support
+    try {
+      // Import socket service dynamically to avoid circular dependencies
+      const { default: notificationSocketService } = await import(
+        "./socket.service.js"
+      );
+
+      // Send real-time notification
+      const delivered = await notificationSocketService.sendNotificationToUser(
+        notification.recipient.toString(),
+        {
+          _id: notification._id,
+          title: notification.title,
+          message: notification.message,
+          type: notification.type,
+          metadata: notification.metadata,
+          priority: notification.metadata.priority,
+          createdAt: notification.createdAt,
+          lifecycle: notification.lifecycle,
+        }
+      );
+
+      if (delivered) {
+        console.log(
+          `📱 Real-time notification delivered to user: ${notification.recipient}`
+        );
+      } else {
+        console.log(
+          `📱 User ${notification.recipient} not online, will see notification on next login`
+        );
+      }
+    } catch (error) {
+      console.error("Error delivering real-time notification:", error);
+      // Don't throw error to prevent notification creation from failing
+    }
   }
 
   // Helper: Check for superseded notifications
@@ -491,7 +524,9 @@ class NotificationService {
           // Remove expired subscription
           await Employee.updateOne(
             { _id: recipient._id },
-            { $pull: { pushSubscriptions: { endpoint: subscription.endpoint } } }
+            {
+              $pull: { pushSubscriptions: { endpoint: subscription.endpoint } },
+            }
           );
         }
       });

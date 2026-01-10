@@ -38,34 +38,46 @@ class SiteVisitService extends Service {
         // Cab specific
         numberOfClients,
         pickupPoint,
-        dropPoint
+        dropPoint,
       } = req.body;
 
-      console.log("[SiteVisit] POST Request:", { leadId, cabRequired, project });
+      console.log("[SiteVisit] POST Request:", {
+        leadId,
+        cabRequired,
+        project,
+      });
 
       // 1. Validate Basic Fields
       if (!leadId || !clientName || !requestedDateTime) {
-        return res.status(400).json({ success: false, message: "Missing required fields" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Missing required fields" });
       }
 
       // 2. Validate Cab Fields
       if (cabRequired) {
         if (!project || !numberOfClients || !pickupPoint || !dropPoint) {
-          return res.status(400).json({ success: false, message: "Missing cab booking details" });
+          return res
+            .status(400)
+            .json({ success: false, message: "Missing cab booking details" });
         }
       }
 
       // 3. Resolve Lead ID
       const targetLeadId = await this.getLeadId(leadId);
       if (!targetLeadId) {
-        return res.status(404).json({ success: false, message: "Lead not found" });
+        return res
+          .status(404)
+          .json({ success: false, message: "Lead not found" });
       }
 
       // 4. Get Current User
       const currentUser = req.employee || req.user;
       if (!currentUser) {
         console.error("[SiteVisit] No user found in request");
-        return res.status(401).json({ success: false, message: "Unauthorized" });
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized" });
       }
 
       const rawUserId = currentUser._id || currentUser.id;
@@ -102,7 +114,7 @@ class SiteVisitService extends Service {
           dropPoint,
           requestedDateTime,
           notes: notes,
-          status: 'pending',
+          status: "pending",
           managerId: validManagerId,
         });
 
@@ -125,15 +137,39 @@ class SiteVisitService extends Service {
       // Schedule site visit notifications
       if (requestedDateTime && new Date(requestedDateTime) > new Date()) {
         try {
-          await scheduleFollowUpNotifications(targetLeadId, requestedDateTime, 'site visit');
+          console.log(
+            `[SiteVisitService] Scheduling notifications for lead ${targetLeadId}, date: ${requestedDateTime}`
+          );
+          await scheduleFollowUpNotifications(
+            targetLeadId,
+            requestedDateTime,
+            "site visit"
+          );
+          console.log(
+            `[SiteVisitService] ✅ Successfully scheduled notifications for lead ${targetLeadId}`
+          );
         } catch (error) {
-          console.error('[SiteVisitService] Failed to schedule notifications:', error);
+          console.error(
+            "[SiteVisitService] ⚠️ Failed to schedule notifications:",
+            {
+              leadId: targetLeadId,
+              error: error.message,
+              stack: error.stack,
+              requestedDateTime,
+            }
+          );
           // Don't fail the request if notification scheduling fails
+          // The site visit is still created successfully, notifications can be scheduled manually if needed
         }
+      } else {
+        console.log(
+          `[SiteVisitService] Skipping notification scheduling - requested time is in the past or invalid`
+        );
       }
 
-      return res.status(200).json({ success: true, message: "Site visit scheduled successfully" });
-
+      return res
+        .status(200)
+        .json({ success: true, message: "Site visit scheduled successfully" });
     } catch (error) {
       console.error("SiteVisitService Error:", error);
       return res.status(500).json({ success: false, message: error.message });
