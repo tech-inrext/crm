@@ -1,7 +1,12 @@
 import Notification from "../models/Notification.js";
 import Employee from "../models/Employee.js";
 import { leadQueue } from "../queue/leadQueue.js";
-import pushService from "./push.service";
+import {
+  NOTIFICATION_STATUS,
+  NOTIFICATION_PRIORITY,
+  NOTIFICATION_CHANNELS,
+  NOTIFICATION_TYPES,
+} from "../constants/notifications.js";
 
 export interface NotificationData {
   recipient: string;
@@ -19,11 +24,13 @@ export interface NotificationData {
     priority?: "LOW" | "MEDIUM" | "HIGH" | "URGENT";
     entityStatus?: string;
     isActionable?: boolean;
+    roleId?: string;
+    employeeId?: string;
+    assignedTo?: string;
   };
   channels?: {
     inApp?: boolean;
     email?: boolean;
-    push?: boolean;
   };
   scheduledFor?: Date;
 }
@@ -65,7 +72,6 @@ class NotificationService {
         channels: {
           inApp: true,
           email: false,
-          push: false,
           ...data.channels,
         },
         scheduledFor: data.scheduledFor,
@@ -81,11 +87,6 @@ class NotificationService {
       // Handle real-time delivery
       if (notification.channels.inApp && !data.scheduledFor) {
         await this.deliverRealtimeNotification(notification);
-      }
-
-      // Handle push notifications if enabled
-      if (notification.channels.push && !data.scheduledFor) {
-        await this.sendPushNotification(notification);
       }
 
       return notification;
@@ -162,16 +163,15 @@ class NotificationService {
       }
 
       // Execute query with pagination
-      const notifications = await Notification.find(query)
-        .populate("sender", "name email")
-        // Sort by createdAt descending (newest first)
-        // Priority sorting is removed because string comparison (HIGH < LOW) is incorrect
-        .sort({ createdAt: -1 })
-        .skip((page - 1) * limit)
-        .limit(limit)
-        .lean();
-
-      const total = await Notification.countDocuments(query);
+      const [notifications, total] = await Promise.all([
+        Notification.find(query)
+          .populate("sender", "name email")
+          .sort({ createdAt: -1 })
+          .skip((page - 1) * limit)
+          .limit(limit)
+          .lean(),
+        Notification.countDocuments(query),
+      ]);
 
       return {
         notifications,
@@ -203,6 +203,19 @@ class NotificationService {
       return result;
     } catch (error) {
       console.error("Error marking notifications as read:", error);
+      throw error;
+    }
+  }
+
+  // Get single notification by ID
+  async getNotificationById(notificationId: string, userId: string) {
+    try {
+      return await Notification.findOne({
+        _id: notificationId,
+        recipient: userId,
+      }).populate("sender", "name email");
+    } catch (error) {
+      console.error("Error getting notification by ID:", error);
       throw error;
     }
   }
@@ -286,31 +299,49 @@ class NotificationService {
   // Get notification statistics
   async getNotificationStats(userId: string) {
     try {
-      // Convert string to ObjectId if needed
-      const userObjectId = userId;
+      const userObjectId =
+        typeof userId === "string" ? new Object(userId) : userId; // Ensure ObjectId type if utilizing strict typing later, though mongoose auto-casts usually.
 
-      const [unreadCount, totalCount, recentCount, typeBreakdown] =
-        await Promise.all([
-          Notification.countDocuments({
-            recipient: userObjectId,
-            "lifecycle.status": { $in: ["PENDING", "DELIVERED"] },
-          }),
-          Notification.countDocuments({ recipient: userObjectId }),
-          Notification.countDocuments({
-            recipient: userObjectId,
-            createdAt: { $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-          }),
-          Notification.aggregate([
-            { $match: { recipient: userObjectId } },
-            { $group: { _id: "$type", count: { $sum: 1 } } },
-          ]),
-        ]);
+      // efficient aggregation
+      const stats = await Notification.aggregate([
+        { $match: { recipient: userId } },
+        {
+          $facet: {
+            // Count by type
+            typeBreakdown: [{ $group: { _id: "$type", count: { $sum: 1 } } }],
+            // Total count
+            totalCount: [{ $count: "count" }],
+            // Unread count
+            unreadCount: [
+              {
+                $match: {
+                  "lifecycle.status": { $in: ["PENDING", "DELIVERED"] },
+                },
+              },
+              { $count: "count" },
+            ],
+            // Recent count (last 7 days)
+            recentCount: [
+              {
+                $match: {
+                  createdAt: {
+                    $gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
+                  },
+                },
+              },
+              { $count: "count" },
+            ],
+          },
+        },
+      ]);
+
+      const result = stats[0];
 
       return {
-        unreadCount,
-        totalCount,
-        recentCount,
-        typeBreakdown,
+        unreadCount: result.unreadCount[0]?.count || 0,
+        totalCount: result.totalCount[0]?.count || 0,
+        recentCount: result.recentCount[0]?.count || 0,
+        typeBreakdown: result.typeBreakdown,
       };
     } catch (error) {
       console.error("Error getting notification stats:", error);
@@ -377,6 +408,7 @@ class NotificationService {
   private async deliverRealtimeNotification(notification: any) {
     try {
       // Import socket service dynamically to avoid circular dependencies
+      /* 
       const { default: notificationSocketService } = await import(
         "./socket.service.js"
       );
@@ -405,6 +437,8 @@ class NotificationService {
           `📱 User ${notification.recipient} not online, will see notification on next login`
         );
       }
+      */
+      // Socket service temporarily disabled/missing
     } catch (error) {
       console.error("Error delivering real-time notification:", error);
       // Don't throw error to prevent notification creation from failing
@@ -416,32 +450,37 @@ class NotificationService {
     try {
       const readNotifications = await Notification.find({
         _id: { $in: readNotificationIds },
-      });
+      }).lean();
 
-      for (const notification of readNotifications) {
-        // Find older related notifications that might be superseded
-        const supersedeCandidates = await Notification.find({
-          recipient: notification.recipient,
-          type: notification.type,
-          "metadata.leadId": notification.metadata?.leadId,
-          "metadata.cabBookingId": notification.metadata?.cabBookingId,
-          "lifecycle.status": { $in: ["PENDING", "DELIVERED"] },
-          createdAt: { $lt: notification.createdAt },
-        });
+      // Optimize by running updates in parallel
+      await Promise.all(
+        readNotifications.map(async (notification: any) => {
+          // Find older related notifications that might be superseded
+          const supersedeCandidates = await Notification.find({
+            recipient: notification.recipient,
+            type: notification.type,
+            "metadata.leadId": notification.metadata?.leadId,
+            "metadata.cabBookingId": notification.metadata?.cabBookingId,
+            "lifecycle.status": { $in: ["PENDING", "DELIVERED"] },
+            createdAt: { $lt: notification.createdAt },
+          }).select("_id");
 
-        // Mark older related notifications as superseded
-        if (supersedeCandidates.length > 0) {
-          await Notification.updateMany(
-            { _id: { $in: supersedeCandidates.map((n) => n._id) } },
-            {
-              "lifecycle.status": "ARCHIVED",
-              "lifecycle.archivedReason": "SUPERSEDED",
-              "cleanupRules.supersededBy": notification._id,
-              "timeRules.expiresAt": new Date(Date.now() + 24 * 60 * 60 * 1000), // 1 day
-            }
-          );
-        }
-      }
+          // Mark older related notifications as superseded
+          if (supersedeCandidates.length > 0) {
+            await Notification.updateMany(
+              { _id: { $in: supersedeCandidates.map((n: any) => n._id) } },
+              {
+                "lifecycle.status": "ARCHIVED",
+                "lifecycle.archivedReason": "SUPERSEDED",
+                "cleanupRules.supersededBy": notification._id,
+                "timeRules.expiresAt": new Date(
+                  Date.now() + 24 * 60 * 60 * 1000
+                ), // 1 day
+              }
+            );
+          }
+        })
+      );
     } catch (error) {
       console.error("Error checking superseded notifications:", error);
     }
@@ -491,49 +530,6 @@ class NotificationService {
     } catch (error) {
       console.error("Error getting notification recipients:", error);
       return [];
-    }
-  }
-  // Helper: Send push notifications
-  private async sendPushNotification(notification: any) {
-    try {
-      const recipient = await Employee.findById(notification.recipient).select(
-        "pushSubscriptions"
-      );
-
-      if (
-        !recipient ||
-        !recipient.pushSubscriptions ||
-        recipient.pushSubscriptions.length === 0
-      ) {
-        return;
-      }
-
-      const payload = {
-        title: notification.title,
-        message: notification.message,
-        metadata: notification.metadata,
-      };
-
-      const promises = recipient.pushSubscriptions.map(async (subscription) => {
-        const result = await pushService.sendNotification(
-          subscription,
-          payload
-        );
-
-        if (!result.success && result.error === "SUBSCRIPTION_EXPIRED") {
-          // Remove expired subscription
-          await Employee.updateOne(
-            { _id: recipient._id },
-            {
-              $pull: { pushSubscriptions: { endpoint: subscription.endpoint } },
-            }
-          );
-        }
-      });
-
-      await Promise.all(promises);
-    } catch (error) {
-      console.error("Error sending push notifications:", error);
     }
   }
 }

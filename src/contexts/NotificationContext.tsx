@@ -16,7 +16,6 @@ import {
   NotificationFilters,
 } from "../types/notification.types";
 import { useNotificationAPI } from "../hooks/useNotificationAPI";
-import { usePushNotifications } from "../hooks/usePushNotifications";
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
   undefined
@@ -82,11 +81,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     setUnreadCount,
     setStats,
     notifications,
-  });
-
-  const { subscribeToPushNotifications } = usePushNotifications({
-    user,
-    pendingRoleSelection,
   });
 
   // Utility functions
@@ -183,7 +177,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     setFilters,
     clearError,
     forceRefresh,
-    subscribeToPushNotifications,
   };
 
   return (

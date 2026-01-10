@@ -1,4 +1,9 @@
 import mongoose from "mongoose";
+import {
+  NOTIFICATION_TYPES,
+  NOTIFICATION_STATUS,
+  NOTIFICATION_ACTIONS,
+} from "../constants/notifications.js";
 
 const notificationSchema = new mongoose.Schema(
   {
@@ -15,33 +20,7 @@ const notificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: [
-        "LEAD_ASSIGNED",
-        "LEAD_STATUS_UPDATE",
-        "LEAD_FOLLOWUP_DUE",
-        "CAB_BOOKING_APPROVED",
-        "CAB_BOOKING_REJECTED",
-        "CAB_BOOKING_ASSIGNED",
-        "CAB_BOOKING_REQUEST",
-        "VENDOR_BOOKING_UPDATE",
-        "VENDOR_ASSIGNED",
-        "MOU_APPROVED",
-        "MOU_REJECTED",
-        "MOU_PENDING",
-        "USER_ROLE_CHANGED",
-        "USER_UPDATED",
-        "USER_WELCOME",
-        "USER_ASSIGNED",
-        "NEW_USER_ADDED",
-        "ROLE_CREATED",
-        "ROLE_UPDATED",
-        "PROPERTY_UPLOADED",
-        "PROPERTY_STATUS_UPDATE",
-        "SYSTEM_ANNOUNCEMENT",
-        "REMINDER",
-        "BULK_UPLOAD_COMPLETE",
-        "EMAIL_SENT",
-      ],
+      enum: Object.values(NOTIFICATION_TYPES),
       required: true,
       index: true,
     },
@@ -60,8 +39,8 @@ const notificationSchema = new mongoose.Schema(
     lifecycle: {
       status: {
         type: String,
-        enum: ["PENDING", "DELIVERED", "READ", "ARCHIVED", "EXPIRED"],
-        default: "PENDING",
+        enum: Object.values(NOTIFICATION_STATUS),
+        default: NOTIFICATION_STATUS.PENDING,
         index: true,
       },
 
@@ -82,7 +61,7 @@ const notificationSchema = new mongoose.Schema(
       actionTakenAt: Date,
       actionType: {
         type: String,
-        enum: ["CLICKED", "DISMISSED", "ACTED_UPON", "IGNORED"],
+        enum: Object.values(NOTIFICATION_ACTIONS),
         default: null,
       },
 
@@ -354,6 +333,10 @@ notificationSchema.statics.markAsRead = async function (
     updateData
   );
 };
+
+// Compound indexes for common queries
+notificationSchema.index({ recipient: 1, "lifecycle.status": 1 });
+notificationSchema.index({ recipient: 1, createdAt: -1 });
 
 const Notification =
   mongoose.models.Notification ||

@@ -30,7 +30,6 @@ export interface Notification {
   channels: {
     inApp: boolean;
     email: boolean;
-    push: boolean;
   };
   createdAt: string;
   updatedAt: string;
@@ -81,7 +80,4 @@ export interface NotificationContextType {
 
   // Force refresh
   forceRefresh: () => Promise<void>;
-
-  // Push Notifications
-  subscribeToPushNotifications: () => Promise<void>;
 }
