@@ -3,33 +3,24 @@ import dbConnect from "@/lib/mongodb";
 import Employee from "@/models/Employee";
 import { userAuth } from "@/middlewares/auth";
 
-// Recursive function to build hierarchy for a given managerId (excluding the manager node itself)
-const buildTeamHierarchy = (employees, managerId, visited = new Set()) => {
-  if (visited.has(String(managerId))) return [];
-  visited.add(String(managerId));
-  return employees
-    .filter(
-      (emp) => String(emp.managerId) === String(managerId) && String(emp._id) !== String(managerId)
-    )
-    .map((emp) => ({
-      _id: emp._id,
-      name: emp.name,
-      designation: emp.designation,
-      branch: emp.branch,
-      managerId: emp.managerId,
-      employeeProfileId: emp.employeeProfileId,
-      children: buildTeamHierarchy(employees, emp._id, new Set(visited)),
-    }));
-};
 
-// Recursive function to count all users in the hierarchy
-const countTeamMembers = (team) => {
-  if (!Array.isArray(team)) return 0;
+// Efficiently count all team members under a managerId using a queue (BFS)
+const countTeamMembersBFS = (employees, managerId) => {
   let count = 0;
-  for (const member of team) {
-    count += 1; // count this member
-    if (member.children && member.children.length > 0) {
-      count += countTeamMembers(member.children);
+  const queue = employees.filter(
+    (emp) => String(emp.managerId) === String(managerId) && String(emp._id) !== String(managerId)
+  ).map(emp => emp._id);
+  const visited = new Set();
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+    if (visited.has(String(currentId))) continue;
+    visited.add(String(currentId));
+    count++;
+    // Add direct reports to the queue
+    for (const emp of employees) {
+      if (String(emp.managerId) === String(currentId) && String(emp._id) !== String(currentId)) {
+        queue.push(emp._id);
+      }
     }
   }
   return count;
@@ -47,11 +38,9 @@ async function handler(req, res) {
     // Fetch all employees
     const employees = await Employee.find({}).lean();
 
-    // Build the team hierarchy under the logged-in manager (excluding the manager node itself)
-    const teamHierarchy = buildTeamHierarchy(employees, loggedInUserId);
-    const teamCount = countTeamMembers(teamHierarchy);
-
-    return res.status(200).json({ success: true, team: teamHierarchy, count: teamCount });
+    // Only return the count of team members under the logged-in manager
+    const teamCount = countTeamMembersBFS(employees, loggedInUserId);
+    return res.status(200).json({ success: true, count: teamCount });
   } catch (err) {
     return res.status(500).json({ success: false, message: err.message });
   }

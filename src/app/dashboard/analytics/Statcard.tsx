@@ -320,10 +320,13 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
 
   // myTeamsCount is only from props, not local state
 
-  // Fetch vendor stats from backend
+  // Fetch vendor stats from backend (prevent duplicate calls)
   const [vendorCount, setVendorCount] = React.useState<number>(0);
   const [totalBilling, setTotalBilling] = React.useState<number>(0);
+  const vendorFetchedRef = React.useRef(false);
   React.useEffect(() => {
+    if (vendorFetchedRef.current) return;
+    vendorFetchedRef.current = true;
     fetch("/api/v0/analytics/vendor")
       .then((r) => r.json())
       .then((data) => {
@@ -340,10 +343,13 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
       });
   }, []);
 
-  // Fetch myTeamsCount (direct) and totalTeamsCount (all levels) from backend
+  // Fetch myTeamsCount (direct) and totalTeamsCount (all levels) from backend (prevent duplicate calls)
   const [myTeamsCount, setMyTeamsCount] = React.useState<number>(0);
   const [totalTeamsCount, setTotalTeamsCount] = React.useState<number>(0);
+  const teamsFetchedRef = React.useRef(false);
   React.useEffect(() => {
+    if (teamsFetchedRef.current) return;
+    teamsFetchedRef.current = true;
     fetch("/api/v0/employee/teams")
       .then((r) => r.json())
       .then((data) => {
@@ -368,9 +374,11 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
   // State for selected user's direct reports (team members)
   const [selectedUserTeamUsers, setSelectedUserTeamUsers] = React.useState<any[]>([]);
 
-  // Fetch team users (with team name and stats) and summary for 'All' when selection changes
+  // Fetch team users (with team name and stats) and summary for 'All' when selection changes (prevent duplicate calls for 'All')
+  const teamUsersFetchedRef = React.useRef(false);
   React.useEffect(() => {
-    if (!selectedUser || selectedUser._id === 'all') {
+    if ((!selectedUser || selectedUser._id === 'all') && !teamUsersFetchedRef.current) {
+      teamUsersFetchedRef.current = true;
       fetch("/api/v0/employee/teams/users")
         .then((r) => r.json())
         .then((data) => {
@@ -401,6 +409,10 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             setInitialStats(null);
           }
         });
+    }
+    // Reset ref if user changes to something else
+    if (selectedUser && selectedUser._id !== 'all') {
+      teamUsersFetchedRef.current = false;
     }
   }, [selectedUser]);
 
