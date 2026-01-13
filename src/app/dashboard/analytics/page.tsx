@@ -52,7 +52,7 @@ export default function NewDashboardPage() {
     const palette = ['#08c4a6', '#4285f4', '#ffca28', '#ff7f4e', '#a259e6', '#f06292', '#7cb342'];
     const slices = (leadsAnalytics.slices || []).map((s, idx) => ({ ...s, color: palette[idx % palette.length] }));
     return { ...leadsAnalytics, slices };
-  }, [leadsAnalytics]);
+  }, [leadsAnalytics?.slices]);
   // --- Property Data Metrics (API-based) ---
   const propertyMetrics = React.useMemo(() => {
     if (!leadsAnalytics || !leadsAnalytics.propertyData) return [];
@@ -61,7 +61,7 @@ export default function NewDashboardPage() {
       ...p,
       color: palette[idx % palette.length]
     }));
-  }, [leadsAnalytics]);
+  }, [leadsAnalytics?.propertyData]);
   // Prevent duplicate API calls by using a ref
   const fetchedRef = React.useRef(false);
   React.useEffect(() => {
@@ -70,20 +70,19 @@ export default function NewDashboardPage() {
     setOverallLoading(true);
     setLeadsLoading(true);
     setScheduleLoading(true);
+    // Fetch all analytics data in parallel and batch state updates
     Promise.all([
       fetch('/api/v0/analytics/overall').then(r => r.json()),
       fetch('/api/v0/analytics/leads').then(r => r.json()),
       fetch('/api/v0/analytics/schedule').then(r => r.json()),
       fetch('/api/v0/employee/managerMouStats').then(r => r.json()),
       fetch('/api/v0/analytics/vendor').then(r => r.json()),
-      fetch('/api/v0/employee/teams').then(r => r.json()),
-    ]).then(([overallData, leadsData, scheduleData, managerMouStats, vendorStats, teamsData]) => {
-      setOverall({
+    ]).then(([overallData, leadsData, scheduleData, managerMouStats, vendorStats]) => {
+      // Batch state updates to minimize re-renders
+      setOverall(prev => ({
         ...overallData,
-        // Use manager MoU stats for stat card
         managerMouStats,
-        myTeamsCount: teamsData?.myTeamsCount ?? 0,
-      }); 
+      }));
       setLeadsAnalytics(leadsData);
       setScheduleAnalytics(scheduleData);
     }).finally(() => {

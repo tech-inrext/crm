@@ -232,8 +232,8 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
   // By default, show 'All' (null means all users)
   const [selectedUser, setSelectedUser] = React.useState<TeamUserType | null>(null);
 
-  // Add an 'All' option for the dropdown (must be after teamUsers is defined)
-  const allOption: TeamUserType = {
+  // Memoize 'All' option
+  const allOption: TeamUserType = React.useMemo(() => ({
     _id: 'all',
     name: 'All',
     teamName: '',
@@ -246,50 +246,51 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
     mouStats: { pending: 0, approved: 0, completed: 0 },
     totalVendors: 0,
     totalSpend: 0,
-  };
-  // Helper to recursively flatten all children at all levels
-  function flattenChildren(user) {
-    let result = [];
-    if (user.children && Array.isArray(user.children)) {
-      user.children.forEach((child) => {
-        result.push(child);
-        result = result.concat(flattenChildren(child));
-      });
-    }
-    return result;
-  }
+  }), []);
 
-  // Flatten dropdown: show every user and all children at all levels, plus 'All', but no duplicates
-  const teamUsersWithAll: TeamUserType[] = [allOption];
-  const seenUserIds = new Set();
-  function addUniqueUser(user) {
-    const userId = typeof user._id === 'string' ? user._id : user._id?.toString?.();
-    if (!userId || seenUserIds.has(userId)) return;
-    seenUserIds.add(userId);
-    teamUsersWithAll.push(user);
-  }
-  function addUserAndChildren(user) {
-    addUniqueUser(user);
-    if (user.children && Array.isArray(user.children)) {
-      user.children.forEach(addUserAndChildren);
+  // Memoize flattening and unique user logic
+  const teamUsersWithAll: TeamUserType[] = React.useMemo(() => {
+    const arr: TeamUserType[] = [allOption];
+    const seenUserIds = new Set<string>();
+    function addUniqueUser(user: TeamUserType) {
+      const userId = typeof user._id === 'string' ? user._id : user._id?.toString?.();
+      if (!userId || seenUserIds.has(userId)) return;
+      seenUserIds.add(userId);
+      arr.push(user);
     }
-  }
-  teamUsers.forEach(addUserAndChildren);
+    function addUserAndChildren(user: TeamUserType) {
+      addUniqueUser(user);
+      if (user.children && Array.isArray(user.children)) {
+        user.children.forEach(addUserAndChildren);
+      }
+    }
+    teamUsers.forEach(addUserAndChildren);
+    return arr;
+  }, [teamUsers, allOption]);
 
-  // Calculate overall sums for "YOUR TEAMS" section (for cards when no user is selected)
-  // Use initialStats from backend if available and 'All' is selected
-  const overallTeamNewLeads = (!selectedUser || selectedUser._id === 'all') && initialStats ? initialStats.newLeads : (teamUsers && teamUsers.length > 0 ? teamUsers.reduce((acc, user) => acc + (user.newLeads || 0), 0) : 0);
-  const overallTeamActiveLeads = (!selectedUser || selectedUser._id === 'all') && initialStats ? initialStats.activeLeads : (teamUsers && teamUsers.length > 0 ? teamUsers.reduce((acc, user) => acc + (user.activeLeads || 0), 0) : 0);
-  const overallTeamSiteVisits = (!selectedUser || selectedUser._id === 'all') && initialStats ? initialStats.siteVisitCount : (teamUsers && teamUsers.length > 0 ? teamUsers.reduce((acc, user) => acc + (user.siteVisitCount || 0), 0) : 0);
+  // Memoize overall team stats calculations
+  const overallTeamStats = React.useMemo(() => {
+    const isAll = !selectedUser || selectedUser._id === 'all';
+    return {
+      newLeads: isAll && initialStats ? initialStats.newLeads : (teamUsers && teamUsers.length > 0 ? teamUsers.reduce((acc, user) => acc + (user.newLeads || 0), 0) : 0),
+      activeLeads: isAll && initialStats ? initialStats.activeLeads : (teamUsers && teamUsers.length > 0 ? teamUsers.reduce((acc, user) => acc + (user.activeLeads || 0), 0) : 0),
+      siteVisitCount: isAll && initialStats ? initialStats.siteVisitCount : (teamUsers && teamUsers.length > 0 ? teamUsers.reduce((acc, user) => acc + (user.siteVisitCount || 0), 0) : 0),
+      mouPending: isAll && initialStats ? initialStats.mou?.pending ?? 0 : (teamUsers && teamUsers.length > 0 ? teamUsers.reduce((acc, user) => acc + (user.mouPending || user.mouStats?.pending || 0), 0) : 0),
+      mouApproved: isAll && initialStats ? ((initialStats.mou?.approved ?? 0) + (initialStats.mou?.completed ?? 0)) : (teamUsers && teamUsers.length > 0 ? teamUsers.reduce((acc, user) => {
+        let approved = user.mouApproved || user.mouStats?.approved || 0;
+        let completed = user.mouCompleted || user.mouStats?.completed || 0;
+        return acc + approved + completed;
+      }, 0) : 0),
+    };
+  }, [selectedUser, initialStats, teamUsers]);
+
+  const overallTeamNewLeads = overallTeamStats.newLeads;
+  const overallTeamActiveLeads = overallTeamStats.activeLeads;
+  const overallTeamSiteVisits = overallTeamStats.siteVisitCount;
+  const overallTeamMouPending = overallTeamStats.mouPending;
+  const overallTeamMouApproved = overallTeamStats.mouApproved;
   // State for backend summary of MoUs (for 'All' selection)
   const [overallTeamMouSummary, setOverallTeamMouSummary] = React.useState<{pending: number, approved: number, completed: number}>({pending: 0, approved: 0, completed: 0});
-  // Calculate overall team MoUs (pending/completed+approved) as fallback
-  const overallTeamMouPending = (!selectedUser || selectedUser._id === 'all') && initialStats ? initialStats.mou?.pending ?? 0 : (teamUsers && teamUsers.length > 0 ? teamUsers.reduce((acc, user) => acc + (user.mouPending || user.mouStats?.pending || 0), 0) : 0);
-  const overallTeamMouApproved = (!selectedUser || selectedUser._id === 'all') && initialStats ? ((initialStats.mou?.approved ?? 0) + (initialStats.mou?.completed ?? 0)) : (teamUsers && teamUsers.length > 0 ? teamUsers.reduce((acc, user) => {
-    let approved = user.mouApproved || user.mouStats?.approved || 0;
-    let completed = user.mouCompleted || user.mouStats?.completed || 0;
-    return acc + approved + completed;
-  }, 0) : 0);
   const {
     newLeads = 0,
     notconnectedLeads = 0,
@@ -320,45 +321,31 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
 
   // myTeamsCount is only from props, not local state
 
-  // Fetch vendor stats from backend (prevent duplicate calls)
-  const [vendorCount, setVendorCount] = React.useState<number>(0);
-  const [totalBilling, setTotalBilling] = React.useState<number>(0);
-  const vendorFetchedRef = React.useRef(false);
-  React.useEffect(() => {
-    if (vendorFetchedRef.current) return;
-    vendorFetchedRef.current = true;
-    fetch("/api/v0/analytics/vendor")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data && typeof data.totalVendors === "number") {
-          setVendorCount(data.totalVendors);
-        }
-        if (data && Array.isArray(data.allVendors)) {
-          const sum = data.allVendors.reduce(
-            (acc, v) => acc + (v.totalEarnings || 0),
-            0
-          );
-          setTotalBilling(sum);
-        }
-      });
-  }, []);
 
-  // Fetch myTeamsCount (direct) and totalTeamsCount (all levels) from backend (prevent duplicate calls)
-  const [myTeamsCount, setMyTeamsCount] = React.useState<number>(0);
-  const [totalTeamsCount, setTotalTeamsCount] = React.useState<number>(0);
-  const teamsFetchedRef = React.useRef(false);
+  // Fetch all dashboard stats from overall API (single source of truth)
+  const [dashboardStats, setDashboardStats] = React.useState<any | null>(null);
+  const [dashboardLoading, setDashboardLoading] = React.useState(true);
+  // Fetch vendor stats from vendor API
+  const [vendorStats, setVendorStats] = React.useState<{ totalVendors: number, totalEarnings: number }>({ totalVendors: 0, totalEarnings: 0 });
+  const [vendorLoading, setVendorLoading] = React.useState(true);
   React.useEffect(() => {
-    if (teamsFetchedRef.current) return;
-    teamsFetchedRef.current = true;
-    fetch("/api/v0/employee/teams")
-      .then((r) => r.json())
-      .then((data) => {
-        if (data && typeof data.myTeamsCount === "number") {
-          setMyTeamsCount(data.myTeamsCount);
-        }
-        if (data && typeof data.count === "number") {
-          setTotalTeamsCount(data.count);
-        }
+    setDashboardLoading(true);
+    setVendorLoading(true);
+    // Fetch dashboardStats and vendorStats in parallel
+    Promise.all([
+      fetch("/api/v0/analytics/overall").then((r) => r.json()),
+      fetch("/api/v0/analytics/vendor").then((r) => r.json()),
+    ])
+      .then(([dashboardData, vendorData]) => {
+        setDashboardStats(dashboardData || {});
+        setVendorStats({
+          totalVendors: vendorData?.totalVendors ?? 0,
+          totalEarnings: vendorData?.allVendors?.reduce?.((acc, v) => acc + (v.totalEarnings || 0), 0) ?? 0,
+        });
+      })
+      .finally(() => {
+        setDashboardLoading(false);
+        setVendorLoading(false);
       });
   }, []);
 
@@ -510,53 +497,54 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
     return d.toISOString();
   }
 
-  // Prepare trend arrays for each stat
-  const totalUsersTrend = trendObjToArray(trend?.totalUsers);
-  const newLeadsTrend = trendObjToArray(trend?.newLeads);
-  const siteVisitTrend = trendObjToArray(trend?.siteVisitCount);
-  const pendingMouTrend = trendObjToArray(trend?.pendingMouTotal);
-  const totalVendorsTrend = trendObjToArray(trend?.totalBilling);
+  // Memoize trend arrays and calculations
+  const totalUsersTrend = React.useMemo(() => trendObjToArray(trend?.totalUsers), [trend]);
+  const newLeadsTrend = React.useMemo(() => trendObjToArray(trend?.newLeads), [trend]);
+  const siteVisitTrend = React.useMemo(() => trendObjToArray(trend?.siteVisitCount), [trend]);
+  const pendingMouTrend = React.useMemo(() => trendObjToArray(trend?.pendingMouTotal), [trend]);
+  const totalVendorsTrend = React.useMemo(() => trendObjToArray(trend?.totalBilling), [trend]);
   // For activeLeads, sum up trends for each status if available
-  let activeLeadsTrend: TrendItem[] | undefined = undefined;
-  if (trendLeads?.activeLeads) {
-    // If already array, use as is
-    if (Array.isArray(trendLeads.activeLeads)) {
-      activeLeadsTrend = trendLeads.activeLeads;
-    } else {
-      // Otherwise, sum up only followUp, callBack, detailsShared, siteVisitDone for each day
-      const days = ["today", "yesterday", "beforeYesterday"];
-      activeLeadsTrend = days.map((day, idx) => {
-        const value =
-          (trendLeads?.followUpLeads?.[day] ?? 0) +
-          (trendLeads?.callBackLeads?.[day] ?? 0) +
-          (trendLeads?.detailsSharedLeads?.[day] ?? 0) +
-          (trendLeads?.siteVisitCount?.[day] ?? 0);
-        return { date: getDateNDaysAgo(idx), value };
-      });
-      
+  const activeLeadsTrend: TrendItem[] | undefined = React.useMemo(() => {
+    if (trendLeads?.activeLeads) {
+      if (Array.isArray(trendLeads.activeLeads)) {
+        return trendLeads.activeLeads;
+      } else {
+        const days = ["today", "yesterday", "beforeYesterday"];
+        return days.map((day, idx) => {
+          const value =
+            (trendLeads?.followUpLeads?.[day] ?? 0) +
+            (trendLeads?.callBackLeads?.[day] ?? 0) +
+            (trendLeads?.detailsSharedLeads?.[day] ?? 0) +
+            (trendLeads?.siteVisitCount?.[day] ?? 0);
+          return { date: getDateNDaysAgo(idx), value };
+        });
+      }
     }
-  }
+    return undefined;
+  }, [trendLeads]);
 
   // For selected user, prepare trends
-  const userNewLeadsTrend = trendObjToArray(userTrend?.newLeads);
-  const userSiteVisitTrend = trendObjToArray(userTrend?.siteVisitCount);
-  const userPendingMouTrend = trendObjToArray(userTrend?.pendingMouTotal);
-  let userActiveLeadsTrend: TrendItem[] | undefined = undefined;
-  if (userTrendLeads?.activeLeads) {
-    if (Array.isArray(userTrendLeads.activeLeads)) {
-      userActiveLeadsTrend = userTrendLeads.activeLeads;
-    } else {
-      const days = ["today", "yesterday", "beforeYesterday"];
-      userActiveLeadsTrend = days.map((day, idx) => {
-        const value =
-          (userTrendLeads?.followUpLeads?.[day] ?? 0) +
-          (userTrendLeads?.callBackLeads?.[day] ?? 0) +
-          (userTrendLeads?.detailsSharedLeads?.[day] ?? 0) +
-          (userTrendLeads?.siteVisitCount?.[day] ?? 0);
-        return { date: getDateNDaysAgo(idx), value };
-      });
+  const userNewLeadsTrend = React.useMemo(() => trendObjToArray(userTrend?.newLeads), [userTrend]);
+  const userSiteVisitTrend = React.useMemo(() => trendObjToArray(userTrend?.siteVisitCount), [userTrend]);
+  const userPendingMouTrend = React.useMemo(() => trendObjToArray(userTrend?.pendingMouTotal), [userTrend]);
+  const userActiveLeadsTrend: TrendItem[] | undefined = React.useMemo(() => {
+    if (userTrendLeads?.activeLeads) {
+      if (Array.isArray(userTrendLeads.activeLeads)) {
+        return userTrendLeads.activeLeads;
+      } else {
+        const days = ["today", "yesterday", "beforeYesterday"];
+        return days.map((day, idx) => {
+          const value =
+            (userTrendLeads?.followUpLeads?.[day] ?? 0) +
+            (userTrendLeads?.callBackLeads?.[day] ?? 0) +
+            (userTrendLeads?.detailsSharedLeads?.[day] ?? 0) +
+            (userTrendLeads?.siteVisitCount?.[day] ?? 0);
+          return { date: getDateNDaysAgo(idx), value };
+        });
+      }
     }
-  }
+    return undefined;
+  }, [userTrendLeads]);
 
   return (
     <Box sx={{ width: "100%", mb: 4 }}>
@@ -582,60 +570,58 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
         >
           <StatCard
             title="My Teams (All Levels)"
-            value={totalTeamsCount ?? 0}
+            value={dashboardStats?.teamsCount ?? 0}
             icon={<FaUsers size={24} style={{ color: "#43a047" }} />}
             iconBg="#e8f5e9"
             onClick={() => router.push("/dashboard/teams")}
-            loading={loadingNewLeads}
+            loading={dashboardLoading}
           />
           <StatCard
             title="Active Leads"
-            value={activeLeads}
+            value={dashboardStats?.activeLeads ?? 0}
             icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
             iconBg="#e3f2fd"
             trend={activeLeadsTrend}
             onClick={() => router.push("/dashboard/leads?status=follow-up%2Ccall+back%2Cdetails+shared%2Csite+visit+done")}
-            loading={loadingNewLeads}
+            loading={dashboardLoading}
           />
           <StatCard
             title="New Leads"
-            value={newLeads}
+            value={dashboardStats?.newLeads ?? 0}
             icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
             iconBg="#e3f2fd"
             trend={newLeadsTrend}
             onClick={() => router.push("/dashboard/leads?status=new")}
-            loading={loadingNewLeads}
+            loading={dashboardLoading}
           />
           <StatCard
             title="Site Visits Scheduled"
-            value={siteVisitCount ?? 0}
+            value={dashboardStats?.siteVisitCount ?? 0}
             icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
             iconBg="#f3e5f5"
             trend={siteVisitTrend}
             onClick={() => router.push("/dashboard/leads?status=site+visit+done")}
-            loading={siteVisitLoading}
+            loading={dashboardLoading}
           />
           <StatCard
             title="MoUs (Pending / Completed)"
-            value={
-              pendingMouLoading || approvedMouLoading
-                ? 0
-                : `${pendingMouTotal ?? 0} / ${approvedMouTotal ?? 0}`
-            }
+            value={dashboardLoading
+              ? 0
+              : `${dashboardStats?.mouStats?.pending ?? 0} / ${dashboardStats?.mouStats?.approved ?? 0}`}
             icon={<FaUsers size={24} style={{ color: "#3949ab" }} />}
             iconBg="#e8eaf6"
             trend={pendingMouTrend}
             onClick={() => router.push("/dashboard/mou")}
-            loading={pendingMouLoading || approvedMouLoading}
+            loading={dashboardLoading}
           />
           {showVendorBilling && (
             <StatCard
               title="Total Vendors & Billing amount"
-              value={`${vendorCount || 0} / ₹${totalBilling.toLocaleString()}`}
+              value={`${vendorStats.totalVendors} / ₹${Number(vendorStats.totalEarnings).toLocaleString()}`}
               icon={<FaBuilding size={24} style={{ color: "#ffb300" }} />}
               iconBg="#fffde7"
               trend={totalVendorsTrend}
-              loading={loadingNewLeads}
+              loading={dashboardLoading || vendorLoading}
             />
           )}
         </Box>

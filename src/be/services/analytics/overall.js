@@ -1,7 +1,30 @@
 
+
 import dbConnect from "@/lib/mongodb";
 import Employee from "@/models/Employee";
 import { userAuth } from "@/middlewares/auth";
+
+// Efficiently count all team members under a managerId using a queue (BFS)
+const countTeamMembersBFS = (employees, managerId) => {
+	let count = 0;
+	const queue = employees.filter(
+		(emp) => String(emp.managerId) === String(managerId) && String(emp._id) !== String(managerId)
+	).map(emp => emp._id);
+	const visited = new Set();
+	while (queue.length > 0) {
+		const currentId = queue.shift();
+		if (visited.has(String(currentId))) continue;
+		visited.add(String(currentId));
+		count++;
+		// Add direct reports to the queue
+		for (const emp of employees) {
+			if (String(emp.managerId) === String(currentId) && String(emp._id) !== String(currentId)) {
+				queue.push(emp._id);
+			}
+		}
+	}
+	return count;
+};
 
 // Analytics for overall stats (for dashboard)
 async function getOverall({ userId, employee }) {
@@ -32,6 +55,14 @@ async function getOverall({ userId, employee }) {
 		mouStats.approved = await Employee.countDocuments({ managerId: loggedInUserId.toString(), mouStatus: { $regex: "^Approved$", $options: "i" } });
 	}
 
+	// Teams count (number of subordinates under this manager, recursively)
+	let teamsCount = 0;
+	if (loggedInUserId) {
+		const employees = await Employee.find({}).lean();
+		teamsCount = countTeamMembersBFS(employees, loggedInUserId);
+	}
+ 
+
 	return {
 		loggedInUserId,
 		totalLeads,
@@ -40,6 +71,7 @@ async function getOverall({ userId, employee }) {
 		newLeadSection: newLeadsList.map((lead) => ({ _id: lead._id, name: lead.name, status: lead.status, createdAt: lead.createdAt })),
 		siteVisitCount,
 		mouStats, // { pending, approved }
+		teamsCount,
 		success: true,
 	};
 }
@@ -180,7 +212,14 @@ async function handler(req, res) {
 			}
 		}
 
-		return res.status(200).json({ success: true, users: userStats, summary });
+		// Add teamsCount to the overall response for the logged-in user
+		let teamsCount = 0;
+		if (req.employee?._id) {
+			const employees = await Employee.find({}).lean();
+			teamsCount = countTeamMembersBFS(employees, req.employee._id);
+		}
+
+		return res.status(200).json({ success: true, users: userStats, summary, teamsCount });
 	} catch (err) {
 		return res.status(500).json({ success: false, message: err.message });
 	}
