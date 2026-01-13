@@ -45,9 +45,9 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
         return;
       }
 
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      const firstScriptTag = document.getElementsByTagName('script')[0];
+      const tag = document.createElement("script");
+      tag.src = "https://www.youtube.com/iframe_api";
+      const firstScriptTag = document.getElementsByTagName("script")[0];
       if (firstScriptTag && firstScriptTag.parentNode) {
         firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
       }
@@ -70,7 +70,7 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
     if (!youtubeId || !window.YT) return;
 
     try {
-      playerRef.current = new window.YT.Player('youtube-player', {
+      playerRef.current = new window.YT.Player("youtube-player", {
         videoId: youtubeId,
         playerVars: {
           autoplay: 1,
@@ -92,8 +92,8 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
           onError: (event: any) => {
             console.error("YouTube player error:", event.data);
             onError();
-          }
-        }
+          },
+        },
       });
     } catch (error) {
       console.error("Error creating YouTube player:", error);
@@ -113,37 +113,39 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
 
   if (!youtubeId) {
     return (
-      <Box sx={{ 
-        width: '100%', 
-        height: '100%', 
-        display: 'flex', 
-        alignItems: 'center', 
-        justifyContent: 'center',
-        backgroundColor: 'black',
-      }}>
-        <Typography color="error">
-          Invalid YouTube URL
-        </Typography>
+      <Box
+        sx={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          backgroundColor: "black",
+        }}
+      >
+        <Typography color="error">Invalid YouTube URL</Typography>
       </Box>
     );
   }
 
   return (
-    <Box 
+    <Box
       ref={containerRef}
-      sx={{ 
-        width: '100%', 
-        height: '100%', 
-        position: 'relative',
-        backgroundColor: 'black',
+      sx={{
+        width: "100%",
+        height: "100%",
+        position: "relative",
+        backgroundColor: "black",
       }}
     >
       {/* YouTube Player Container */}
       <Box
         id="youtube-player"
         sx={{
-          width: '100%',
-          height: '100%',
+          width: "100%",
+          height: "60vh",
+          position: "relative",
+          backgroundColor: "black",
         }}
       />
 
@@ -164,9 +166,6 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
           }}
         >
           <CircularProgress sx={{ color: "white" }} />
-          <Typography sx={{ color: 'white', ml: 2 }}>
-            Loading video...
-          </Typography>
         </Box>
       )}
 
@@ -182,26 +181,27 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            flexDirection: 'column',
+            flexDirection: "column",
             backgroundColor: "rgba(0,0,0,0.9)",
             zIndex: 10,
             p: 3,
           }}
         >
-          <Typography variant="h6" sx={{ color: 'error.main', mb: 2 }}>
+          <Typography variant="h6" sx={{ color: "error.main", mb: 2 }}>
             Error loading video
           </Typography>
-          <Typography sx={{ color: 'white', mb: 3, textAlign: 'center' }}>
-            Could not load the YouTube video. Please check the video URL or try again.
+          <Typography sx={{ color: "white", mb: 3, textAlign: "center" }}>
+            Could not load the YouTube video. Please check the video URL or try
+            again.
           </Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
+          <Box sx={{ display: "flex", gap: 2 }}>
             <IconButton
               onClick={onRetry}
               sx={{
-                backgroundColor: 'primary.main',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'primary.dark',
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "primary.dark",
                 },
               }}
             >
@@ -210,10 +210,10 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             <IconButton
               onClick={onClose}
               sx={{
-                backgroundColor: 'error.main',
-                color: 'white',
-                '&:hover': {
-                  backgroundColor: 'error.dark',
+                backgroundColor: "error.main",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "error.dark",
                 },
               }}
             >
@@ -235,8 +235,8 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            cursor: 'pointer',
-            backgroundColor: 'rgba(0,0,0,0.3)',
+            cursor: "pointer",
+            backgroundColor: "rgba(0,0,0,0.3)",
             zIndex: 5,
           }}
           onClick={handlePlayPause}
@@ -249,9 +249,9 @@ export const YouTubePlayer: React.FC<YouTubePlayerProps> = ({
               height: 80,
               "&:hover": {
                 backgroundColor: "rgba(0,0,0,0.9)",
-                transform: 'scale(1.1)',
+                transform: "scale(1.1)",
               },
-              transition: 'all 0.3s ease',
+              transition: "all 0.3s ease",
             }}
           >
             <PlayArrow sx={{ fontSize: 40 }} />

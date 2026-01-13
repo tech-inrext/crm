@@ -1,58 +1,29 @@
 "use client";
 
-// React & Core
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useMemo } from "react";
 import {
   Box,
   Paper,
   Typography,
   Fab,
   CircularProgress,
-  Stack,
-  Table,
-  TableBody,
-  TableContainer,
-  IconButton,
   Snackbar,
   useTheme,
   useMediaQuery,
 } from "@/components/ui/Component";
 import Alert from "@/components/ui/Component/Alert";
-import {
-  Add,
-  Edit as EditIcon,
-  Feedback as FeedbackIcon,
-  Badge,
-  PermissionGuard,
-} from "@/components/ui/Component";
-import { useDebounce } from "@/hooks/useDebounce";
+import { Add, PermissionGuard } from "@/components/ui/Component";
 import dynamic from "next/dynamic";
-import { useLeads } from "@/hooks/useLeads";
-import { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
+import { GRADIENTS } from "@/constants/leads";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
-import {
-  getDefaultLeadFormData,
-  transformAPILeadToForm,
-} from "@/utils/leadUtils";
-import Pagination from "@/components/ui/Navigation/Pagination";
 import { leadsTableHeader } from "@/components/leads/LeadsTableHeaderConfig";
+import { useLeadsPage } from "@/components/leads/hooks/useLeadsPage";
+import { useLeadsSnackbar } from "@/components/leads/hooks/useLeadsSnackbar";
+import { useLeadsFeedback } from "@/components/leads/hooks/useLeadsFeedback";
+import { LeadsTableActions } from "@/components/leads/LeadsTableActions";
+import { extractErrorMessage } from "@/utils/leadErrorHandler";
 
-// Lazy Load Components
 const LeadDialog = dynamic(() => import("@/components/leads/LeadDialog"), {
-  ssr: false,
-});
-const LeadsTableHeader = dynamic(
-  () => import("@/components/leads/LeadsTableHeader"),
-  { ssr: false }
-);
-const LeadsTableRow = dynamic(
-  () => import("@/components/leads/LeadsTableRow"),
-  { ssr: false }
-);
-const LeadCard = dynamic(() => import("@/components/leads/LeadCard"), {
-  ssr: false,
-});
-const StatsCard = dynamic(() => import("@/components/leads/StatsCard"), {
   ssr: false,
 });
 const LoadingSkeleton = dynamic(
@@ -67,143 +38,97 @@ const FollowUpDialog = dynamic(
   () => import("@/components/leads/FollowUpDialog"),
   { ssr: false }
 );
+const LeadsTableView = dynamic(
+  () => import("@/components/leads/LeadsTableView"),
+  { ssr: false }
+);
+const LeadsCardsView = dynamic(
+  () => import("@/components/leads/LeadsCardsView"),
+  { ssr: false }
+);
 
 const Leads: React.FC = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+
   const {
     leads,
     loading,
     saving,
-    search,
-    setSearch,
     open,
     setOpen,
     editId,
     setEditId,
     formData,
-    setFormData,
-    stats,
+    viewMode,
+    setViewMode,
+    searchInput,
+    selectedStatuses,
     page,
     setPage,
     rowsPerPage,
     setRowsPerPage,
     total,
-    loadLeads,
+    handleSearchChange,
+    handleStatusChange,
+    handleEdit,
     saveLead,
     updateLeadStatus,
-    selectedStatuses,
-    setSelectedStatuses,
-  } = useLeads();
+    loadLeads,
+  } = useLeadsPage();
 
-  const [viewMode, setViewMode] = useState<"table" | "cards">("table");
+  const {
+    showSnackbar,
+    snackbarOpen,
+    snackbarMessage,
+    snackbarSeverity,
+    handleClose,
+  } = useLeadsSnackbar();
 
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const { feedbackOpen, selectedLeadForFeedback, openFeedback, closeFeedback } =
+    useLeadsFeedback();
 
-  const [searchInput, setSearchInput] = useState(search);
-  const debouncedSearch = useDebounce(searchInput, 500); // Debounce for 400ms
-
-  // Sync debounced search with actual query state
-  useEffect(() => {
-    setSearch(debouncedSearch);
-    setPage(0);
-  }, [debouncedSearch, setSearch, setPage]);
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(e.target.value);
-  };
-
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [selectedLeadForFeedback, setSelectedLeadForFeedback] = useState<
-    string | null
-  >(null);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<
-    "success" | "error" | "info" | "warning"
-  >("success");
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-
-  const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
-    col.label === "Actions"
-      ? {
-        ...col,
-        component: (row, { onEdit }) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              gap: 0.5,
-              pl: 0.5,
-            }}
-          >
-            <PermissionGuard module="lead" action="write" fallback={null}>
-              <IconButton onClick={() => onEdit(row)} size="small">
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </PermissionGuard>
-
-            {/* Feedback button - available to any authenticated user */}
-            <IconButton
-              size="small"
-              onClick={() => {
-                setSelectedLeadForFeedback(row.leadId || row._id || row.id);
-                setFeedbackOpen(true);
-              }}
-            >
-              <Badge
-                badgeContent={
-                  (row.followUpNotes && row.followUpNotes.length) || 0
-                }
-                color="primary"
-              >
-                <FeedbackIcon fontSize="small" />
-              </Badge>
-            </IconButton>
-          </Box>
-        ),
-      }
-      : col
+  const leadsTableHeaderWithActions = useMemo(
+    () =>
+      leadsTableHeader.map((col) =>
+        col.label === "Actions"
+          ? {
+              ...col,
+              component: (row, { onEdit }) => (
+                <LeadsTableActions
+                  row={row}
+                  onEdit={onEdit}
+                  onFeedback={openFeedback}
+                />
+              ),
+            }
+          : col
+      ),
+    [openFeedback]
   );
 
-  useEffect(() => {
-    if (editId) {
-      const lead = leads.find(
-        (l) => l.id === editId || l._id === editId || l.leadId === editId
+  const handleSaveLead = async (data: any) => {
+    try {
+      await saveLead(data, editId);
+      showSnackbar(
+        editId ? "Lead updated successfully" : "Lead created successfully",
+        "success"
       );
-      if (lead) {
-        setFormData(transformAPILeadToForm(lead));
-      }
-    } else {
-      setFormData(getDefaultLeadFormData());
+      setOpen(false);
+      setEditId(null);
+    } catch (err: any) {
+      const message = extractErrorMessage(err);
+      showSnackbar(message, "error");
+      console.error("Failed to save lead:", err);
     }
-  }, [editId, leads, setFormData]);
+  };
 
   return (
     <Box sx={MODULE_STYLES.leads.leadsContainer}>
-      {/* Heading + Stats */}
       <Paper elevation={2} sx={MODULE_STYLES.layout.headerPaper}>
         <Typography variant="h4" sx={MODULE_STYLES.layout.moduleTitle}>
           Leads
         </Typography>
-
-        {/* <Box sx={MODULE_STYLES.leads.statsGrid}>
-          <StatsCard
-            value={stats.total}
-            label="Total Leads"
-            color="primary.main"
-          />
-          <StatsCard value={stats.new} label="New Leads" color="info.main" />
-          <StatsCard
-            value={stats.closed}
-            label="Closed Deals"
-            color="success.main"
-          />
-          <StatsCard
-            value={`${stats.conversion}%`}
-            label="Conversion Rate"
-            color="warning.main"
-          />
-        </Box> */}
 
         <LeadsActionBar
           search={searchInput}
@@ -213,109 +138,40 @@ const Leads: React.FC = () => {
           onAdd={() => setOpen(true)}
           saving={saving}
           loadLeads={loadLeads}
-          loadLeads={loadLeads}
           selectedStatuses={selectedStatuses}
-          onStatusesChange={(s) => {
-            setSelectedStatuses(s);
-            setPage(0);
-          }}
+          onStatusesChange={handleStatusChange}
         />
       </Paper>
 
-      {/* Body View */}
       {loading ? (
         <LoadingSkeleton />
       ) : isMobile || viewMode === "cards" ? (
-        <Box>
-          <Box sx={MODULE_STYLES.leads.cardsGrid}>
-            {leads.map((lead) => (
-              <LeadCard
-                key={lead.id}
-                lead={lead}
-                onEdit={() => {
-                  setEditId(lead._id);
-                  setOpen(true);
-                }}
-                onDelete={() => { }}
-                onStatusChange={updateLeadStatus}
-              />
-            ))}
-          </Box>
-          {/* Pagination outside the cards grid */}
-          <Box sx={MODULE_STYLES.leads.paginationWrapper}>
-            <Pagination
-              total={total}
-              page={page + 1}
-              onPageChange={(p) => setPage(p - 1)}
-              pageSize={rowsPerPage}
-              onPageSizeChange={(size) => {
-                setRowsPerPage(size);
-                setPage(0);
-              }}
-              pageSizeOptions={[5, 10, 15, 25]}
-            />
-          </Box>
-        </Box>
+        <LeadsCardsView
+          leads={leads}
+          onEdit={handleEdit}
+          onStatusChange={updateLeadStatus}
+          page={page}
+          total={total}
+          rowsPerPage={rowsPerPage}
+          onPageChange={setPage}
+          onPageSizeChange={setRowsPerPage}
+        />
       ) : (
-        <Box sx={MODULE_STYLES.leads.tableWrapper}>
-          <Paper
-            elevation={8}
-            sx={{
-              ...COMMON_STYLES.roundedPaper,
-              ...MODULE_STYLES.leads.tableContainer,
-            }}
-          >
-            <TableContainer>
-              <Table
-                stickyHeader
-                size={MODULE_STYLES.common.getResponsiveTableSize()}
-                sx={MODULE_STYLES.leads.table}
-              >
-                <LeadsTableHeader
-                  header={leadsTableHeaderWithActions}
-                  selectedStatuses={selectedStatuses}
-                  onStatusesChange={(s) => {
-                    setSelectedStatuses(s);
-                    setPage(0);
-                  }}
-                />
-                <TableBody>
-                  {leads.map((row) => (
-                    <LeadsTableRow
-                      key={row.id}
-                      row={row}
-                      header={leadsTableHeaderWithActions}
-                      onEdit={() => {
-                        setEditId(row._id);
-                        setOpen(true);
-                      }}
-                      onDelete={() => { }}
-                      onStatusChange={updateLeadStatus}
-                    />
-                  ))}
-                </TableBody>
-              </Table>
-            </TableContainer>
-          </Paper>
-
-          {/* Pagination outside the scrollable table */}
-          <Box sx={MODULE_STYLES.leads.paginationWrapper}>
-            <Pagination
-              total={total}
-              page={page + 1}
-              onPageChange={(p) => setPage(p - 1)}
-              pageSize={rowsPerPage}
-              onPageSizeChange={(size) => {
-                setRowsPerPage(size);
-                setPage(0);
-              }}
-              pageSizeOptions={[5, 10, 15, 25, 50]}
-            />
-          </Box>
-        </Box>
+        <LeadsTableView
+          leads={leads}
+          header={leadsTableHeaderWithActions}
+          selectedStatuses={selectedStatuses}
+          onStatusesChange={handleStatusChange}
+          onEdit={handleEdit}
+          onStatusChange={updateLeadStatus}
+          page={page}
+          total={total}
+          rowsPerPage={rowsPerPage}
+          onPageChange={setPage}
+          onPageSizeChange={setRowsPerPage}
+        />
       )}
 
-      {/* Dialog */}
       <LeadDialog
         open={open}
         editId={editId}
@@ -325,86 +181,22 @@ const Leads: React.FC = () => {
           setOpen(false);
           setEditId(null);
         }}
-        onSave={async (data) => {
-          try {
-            await saveLead(data, editId);
-            // success toast
-            if (editId) {
-              setSnackbarMessage("Lead updated successfully");
-            } else {
-              setSnackbarMessage("Lead created successfully");
-            }
-            setSnackbarSeverity("success");
-            setSnackbarOpen(true);
-
-            setOpen(false);
-            setEditId(null);
-          } catch (err: any) {
-            // Robust error extraction for various API error shapes
-            const status =
-              err?.response?.status || err?.status || err?.statusCode;
-
-            const extractMessage = (e: any) => {
-              if (!e) return "Failed to save lead";
-              // axios response body
-              const resp = e.response?.data ?? e.data ?? null;
-              if (typeof resp === "string") return resp;
-              if (resp) {
-                if (resp.message) return resp.message;
-                if (resp.msg) return resp.msg;
-                if (resp.error) return resp.error;
-                if (resp.data && typeof resp.data === "string")
-                  return resp.data;
-                if (resp.data && resp.data.message) return resp.data.message;
-                if (Array.isArray(resp.errors) && resp.errors.length) {
-                  return (
-                    resp.errors[0].message || JSON.stringify(resp.errors[0])
-                  );
-                }
-              }
-              // fallback to error.message or JSON
-              if (e.message) return e.message;
-              try {
-                return JSON.stringify(e);
-              } catch (_) {
-                return "Failed to save lead";
-              }
-            };
-
-            const message = extractMessage(err);
-
-            if (status === 409) {
-              setSnackbarMessage(message || "Lead with same identifier exists");
-            } else {
-              setSnackbarMessage(message);
-            }
-            setSnackbarSeverity("error");
-            setSnackbarOpen(true);
-            console.error("Failed to save lead:", err);
-          }
-        }}
+        onSave={handleSaveLead}
       />
 
-      {/* Follow-up Dialog */}
       <React.Suspense fallback={<div>Loading...</div>}>
         {feedbackOpen && selectedLeadForFeedback && (
-          // Lazy-imported component to avoid SSR issues
           <FollowUpDialog
             open={feedbackOpen}
-            onClose={() => {
-              setFeedbackOpen(false);
-              setSelectedLeadForFeedback(null);
-            }}
+            onClose={closeFeedback}
             leadIdentifier={selectedLeadForFeedback}
             onSaved={async () => {
-              // refresh leads after saving follow-up
-              await loadLeads(page + 1, rowsPerPage, search);
+              await loadLeads(page + 1, rowsPerPage, searchInput);
             }}
           />
         )}
       </React.Suspense>
 
-      {/* Mobile Add Button */}
       <PermissionGuard module="lead" action="write" fallback={<></>}>
         <Fab
           color="primary"
@@ -420,17 +212,18 @@ const Leads: React.FC = () => {
           {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
         </Fab>
       </PermissionGuard>
+
       <Snackbar
         open={snackbarOpen}
         autoHideDuration={4000}
         onClose={(event, reason) => {
           if (reason === "clickaway") return;
-          setSnackbarOpen(false);
+          handleClose();
         }}
         anchorOrigin={{ vertical: "top", horizontal: "right" }}
       >
         <Alert
-          onClose={() => setSnackbarOpen(false)}
+          onClose={handleClose}
           severity={snackbarSeverity}
           variant="filled"
         >
