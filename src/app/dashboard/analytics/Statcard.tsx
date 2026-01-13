@@ -10,7 +10,16 @@ import Card from "@mui/material/Card";
 import CardContent from "@mui/material/CardContent";
 import Skeleton from "@mui/material/Skeleton";
 import ScheduleCard from "./components/ScheduleCard";
-import { FaUsers, FaHome, FaDollarSign, FaBuilding } from "react-icons/fa";
+import {
+  FaUsers,
+  FaUserPlus,
+  FaChartLine,
+  FaMapMarkedAlt,
+  FaFileSignature,
+  FaBuilding,
+  FaRupeeSign,
+  FaMapMarkerAlt
+} from "react-icons/fa";
 type TrendItem = {
   date: string;  
   value: number;
@@ -571,7 +580,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           <StatCard
             title="My Teams (All Levels)"
             value={dashboardStats?.teamsCount ?? 0}
-            icon={<FaUsers size={24} style={{ color: "#43a047" }} />}
+            icon={<FaUsers size={24} style={{ color: "#ff0000" }} />}
             iconBg="#e8f5e9"
             onClick={() => router.push("/dashboard/teams")}
             loading={dashboardLoading}
@@ -579,7 +588,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           <StatCard
             title="Active Leads"
             value={dashboardStats?.activeLeads ?? 0}
-            icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
+            icon={<FaChartLine size={24} style={{ color: "#2196f3" }} />}
             iconBg="#e3f2fd"
             trend={activeLeadsTrend}
             onClick={() => router.push("/dashboard/leads?status=follow-up%2Ccall+back%2Cdetails+shared%2Csite+visit+done")}
@@ -588,7 +597,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           <StatCard
             title="New Leads"
             value={dashboardStats?.newLeads ?? 0}
-            icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
+            icon={<FaUserPlus size={24} style={{ color: "#43a047" }} />}
             iconBg="#e3f2fd"
             trend={newLeadsTrend}
             onClick={() => router.push("/dashboard/leads?status=new")}
@@ -597,7 +606,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           <StatCard
             title="Site Visits Scheduled"
             value={dashboardStats?.siteVisitCount ?? 0}
-            icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
+            icon={<FaMapMarkerAlt size={24} style={{ color: "#8e24aa" }} />}
             iconBg="#f3e5f5"
             trend={siteVisitTrend}
             onClick={() => router.push("/dashboard/leads?status=site+visit+done")}
@@ -608,7 +617,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             value={dashboardLoading
               ? 0
               : `${dashboardStats?.mouStats?.pending ?? 0} / ${dashboardStats?.mouStats?.approved ?? 0}`}
-            icon={<FaUsers size={24} style={{ color: "#3949ab" }} />}
+            icon={<FaFileSignature size={24} style={{ color: "#3949ab" }} />}
             iconBg="#e8eaf6"
             trend={pendingMouTrend}
             onClick={() => router.push("/dashboard/mou")}
@@ -618,7 +627,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             <StatCard
               title="Total Vendors & Billing amount"
               value={`${vendorStats.totalVendors} / ₹${Number(vendorStats.totalEarnings).toLocaleString()}`}
-              icon={<FaBuilding size={24} style={{ color: "#ffb300" }} />}
+              icon={<FaRupeeSign size={24} style={{ color: "#ffb300" }} />}
               iconBg="#fffde7"
               trend={totalVendorsTrend}
               loading={dashboardLoading || vendorLoading}
@@ -645,8 +654,8 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           />
         </Box>
       </Box>
-      <div className=" flex flex-row mt-8">
-        <div className="text-blue-500 m-2"> YOUR TEAMS </div>
+      <div className=" flex flex-row mt-8 bg-white border gap-12 border-blue-600/30 p-4 rounded-2xl">
+        <div className="text-blue-500 m-2  text-xl  font-serif "> YOUR TEAMS </div>
         {teamUsers.length === 0 ? (
           <Skeleton variant="rectangular" width={280} height={40} sx={{ ml: 2, borderRadius: 1 }} />
         ) : (
@@ -733,17 +742,20 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           {userLoading || teamUsers.length === 0 ? (
             // Show shimmer for all 4 cards if loading
             <>
-              <StatCard loading title="Active Leads" value={0} icon={<FaUsers size={24} style={{ color: "#2196f3" }} />} iconBg="#e3f2fd" />
-              <StatCard loading title="New Leads" value={0} icon={<FaUsers size={24} style={{ color: "#2196f3" }} />} iconBg="#e3f2fd" />
-              <StatCard loading title="Site Visits Scheduled" value={0} icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />} iconBg="#f3e5f5" />
-              <StatCard loading title="MoUs (Pending / Completed)" value={0} icon={<FaUsers size={24} style={{ color: "#3949ab" }} />} iconBg="#e8eaf6" />
+              <StatCard loading title="My Teams (All Levels)" value={0} icon={<FaUsers size={24} style={{ color: "#ff0000" }} />} iconBg="#e8f5e9"/>
+              <StatCard loading title="Active Leads" value={0} icon={<FaChartLine size={24} style={{ color: "#2196f3" }} />} iconBg="#e3f2fd" />
+              <StatCard loading title="New Leads" value={0} icon={<FaUserPlus size={24} style={{ color: "#43a047" }} />} iconBg="#e3f2fd" />
+              <StatCard loading title="Site Visits Scheduled" value={0} icon={<FaMapMarkerAlt size={24} style={{ color: "#8e24aa" }} />} iconBg="#f3e5f5" />
+              <StatCard loading title="MoUs (Pending / Completed)" value={0} icon={<FaFileSignature size={24} style={{ color: "#3949ab" }} />} iconBg="#e8eaf6" />
+              <StatCard loading title="Total Vendors & Billing amount" value={0} icon={<FaRupeeSign size={24} style={{ color: "#ffb300" }} />} iconBg="#fffde7" />
             </>
+
           ) : (
             <>
               <StatCard
                 title="Active Leads"
                 value={(!selectedUser || selectedUser._id === 'all') ? overallTeamActiveLeads : userActiveLeads}
-                icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
+                icon={<FaChartLine size={24} style={{ color: "#2196f3" }} />}
                 iconBg="#e3f2fd"
                 trend={(!selectedUser || selectedUser._id === 'all') ? activeLeadsTrend : userActiveLeadsTrend}
                 onClick={() => router.push("/dashboard/leads?status=follow-up%2Ccall+back%2Cdetails+shared%2Csite+visit+done")}
@@ -752,7 +764,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
               <StatCard
                 title="New Leads"
                 value={(!selectedUser || selectedUser._id === 'all') ? overallTeamNewLeads : (userAnalytics?.newLeads ?? 0)}
-                icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
+                icon={<FaUserPlus size={24} style={{ color: "#43a047" }} />}
                 iconBg="#e3f2fd"
                 trend={(!selectedUser || selectedUser._id === 'all') ? newLeadsTrend : userNewLeadsTrend}
                 onClick={() => router.push("/dashboard/leads?status=new")}
@@ -761,7 +773,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
               <StatCard
                 title="Site Visits Scheduled"
                 value={(!selectedUser || selectedUser._id === 'all') ? overallTeamSiteVisits : (userAnalytics?.siteVisitCount ?? 0)}
-                icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
+                icon={<FaMapMarkerAlt size={24} style={{ color: "#8e24aa" }} />}
                 iconBg="#f3e5f5"
                 trend={(!selectedUser || selectedUser._id === 'all') ? siteVisitTrend : userSiteVisitTrend}
                 onClick={() => router.push("/dashboard/leads?status=site+visit+done")}
@@ -776,7 +788,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
                         ? `${selectedUser.mouStats.pending ?? 0} / ${selectedUser.mouStats.approved ?? 0}`
                         : '0 / 0')
                 }
-                icon={<FaUsers size={24} style={{ color: "#3949ab" }} />}
+                icon={<FaFileSignature size={24} style={{ color: "#3949ab" }} />}
                 iconBg="#e8eaf6"
                 trend={(!selectedUser || selectedUser._id === 'all') ? pendingMouTrend : userPendingMouTrend}
                 onClick={() => router.push("/dashboard/mou")}
@@ -790,7 +802,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
                     ? `${initialStats.totalVendors || 0} / ₹${(initialStats.totalSpend || 0).toLocaleString()}`
                     : `${selectedUser?.totalVendors || 0} / ₹${(selectedUser?.totalSpend || 0).toLocaleString()}`
                 }
-                icon={<FaBuilding size={24} style={{ color: "#ffb300" }} />}
+                icon={<FaRupeeSign size={24} style={{ color: "#ffb300" }} />}
                 iconBg="#fffde7"
                 trend={totalVendorsTrend}
                 loading={loadingNewLeads}
