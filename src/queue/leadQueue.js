@@ -12,10 +12,11 @@ try {
     maxRetriesPerRequest: 3,
     retryDelayOnFailedConnection: 1000,
     enableOfflineQueue: false,
+    keepAlive: true,
     // Handle connection errors gracefully
     reconnectOnError: (err) => {
       console.warn("Redis reconnect on error:", err.message);
-      return false; // Don't reconnect automatically
+      return err.message.includes("READONLY"); // Only reconnect on readonly errors
     },
   });
 
@@ -31,6 +32,14 @@ try {
 
   connection.on("ready", () => {
     console.log("Redis connection ready");
+  });
+
+  connection.on("close", () => {
+    console.warn("Redis connection closed");
+  });
+
+  connection.on("reconnecting", () => {
+    console.log("Redis reconnecting...");
   });
 
   leadQueue = new Queue("leadQueue", {
@@ -52,5 +61,22 @@ try {
   );
   leadQueue = null;
 }
+
+// Function to check and ensure queue connection
+export const ensureQueueConnection = async () => {
+  if (!leadQueue || !connection) {
+    return false;
+  }
+
+  try {
+    if (connection.status !== "ready") {
+      await connection.connect();
+    }
+    return connection.status === "ready";
+  } catch (error) {
+    console.warn("Failed to ensure queue connection:", error.message);
+    return false;
+  }
+};
 
 export { leadQueue };
