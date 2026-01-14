@@ -1,4 +1,4 @@
-import { leadQueue } from "../../queue/leadQueue.js";
+import { leadQueue, ensureQueueConnection } from "../../queue/leadQueue.js";
 
 /**
  * Schedule multiple notification jobs for a follow-up/site visit
@@ -18,6 +18,15 @@ export async function scheduleFollowUpNotifications(
   }
 
   try {
+    // Check if queue connection is available
+    const isConnected = await ensureQueueConnection();
+    if (!isConnected) {
+      console.warn(
+        "Redis connection not available, skipping notification scheduling"
+      );
+      return;
+    }
+
     const followUpTime = new Date(followUpDate).getTime();
     const now = Date.now();
 
@@ -46,6 +55,12 @@ export async function scheduleFollowUpNotifications(
     for (const notif of notifications) {
       if (notif.delay > 0) {
         try {
+          // Double check connection before adding job
+          const isStillConnected = await ensureQueueConnection();
+          if (!isStillConnected) {
+            throw new Error("Redis connection lost during scheduling");
+          }
+
           await leadQueue.add(
             "sendLeadFollowUpNotification",
             {
@@ -87,7 +102,8 @@ export async function scheduleFollowUpNotifications(
           // For critical notifications (5MIN_BEFORE), try one retry with shorter delay
           if (
             notif.type === "5MIN_BEFORE" &&
-            !error.message.includes("Connection is closed")
+            !error.message.includes("Connection is closed") &&
+            !error.message.includes("Redis connection")
           ) {
             try {
               await new Promise((resolve) => setTimeout(resolve, 1000)); // Wait 1 second
