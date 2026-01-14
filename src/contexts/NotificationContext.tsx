@@ -38,7 +38,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // State
   const [notifications, setNotifications] = useState<NotificationData[]>([]);
-  const [notifications, setNotifications] = useState<NotificationData[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const [stats, setStats] = useState<NotificationStats | null>(null);
   const [loading, setLoading] = useState(false);
@@ -50,7 +49,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
   const [hasMore, setHasMore] = useState(false);
 
   // Filters
-  const [filters, setFiltersState] = useState<NotificationFilters>({
   const [filters, setFiltersState] = useState<NotificationFilters>({
     status: undefined,
     type: undefined,
@@ -101,7 +99,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       await fetchNotifications(currentPage + 1);
     }
   }, [hasMore, loading, currentPage]);
-  }, [hasMore, loading, currentPage]);
 
   const forceRefresh = useCallback(async () => {
     if (user) {
@@ -110,9 +107,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       await refreshStats();
     }
   }, [user]);
-  }, [user]);
 
-  // Effects
   // Effects
   useEffect(() => {
     if (user && !pendingRoleSelection) {
@@ -126,19 +121,14 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [user, pendingRoleSelection]);
 
-    }
-  }, [user, pendingRoleSelection]);
-
   useEffect(() => {
     if (!user || pendingRoleSelection) return;
 
     const intervalId = setInterval(() => {
       refreshUnreadCount();
     }, 30000);
-    }, 30000);
 
     return () => clearInterval(intervalId);
-  }, [user, pendingRoleSelection]);
   }, [user, pendingRoleSelection]);
 
   useEffect(() => {
@@ -146,7 +136,6 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
       fetchNotifications(1);
     }
     prevUnreadCountRef.current = unreadCount;
-  }, [unreadCount]);
   }, [unreadCount]);
 
   useEffect(() => {
@@ -160,13 +149,11 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
   }, [user, pendingRoleSelection]);
-  }, [user, pendingRoleSelection]);
 
   useEffect(() => {
     if (user && !pendingRoleSelection) {
       fetchNotifications(1);
     }
-  }, [filters, user, pendingRoleSelection]);
   }, [filters, user, pendingRoleSelection]);
 
   const value: NotificationContextType = {
