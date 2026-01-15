@@ -1,6 +1,6 @@
-// workers/bulkUploadLeads.js
 import Lead from "../models/Lead.js";
 import BulkUpload from "../models/BulkUpload.js";
+import FollowUp from "../models/FollowUp.js";
 import dbConnect from "../lib/mongodb.js";
 import xlsx from "xlsx";
 
@@ -66,8 +66,9 @@ async function bulkUploadLeads(job) {
       continue;
     }
 
+    const leadIdStr = `LD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
     const lead = new Lead({
-      leadId: `LD-${Math.random().toString(36).substring(2, 8).toUpperCase()}`,
+      leadId: leadIdStr,
       uploadedBy, // ✅ set uploader from job
       fullName: row.fullName || row.name || "",
       email: row.email || "",
@@ -78,12 +79,27 @@ async function bulkUploadLeads(job) {
       status: row.status || "new",
       source: row.source || "",
       assignedTo: row.assignedTo || null,
-      followUpNotes: [],
-      nextFollowUp: row.nextFollowUp ? new Date(row.nextFollowUp) : null,
     });
 
     try {
       await lead.save();
+      
+      // Sync with FollowUp collection
+      const nextFollowUpDate = row.nextFollowUp ? new Date(row.nextFollowUp) : null;
+      const followUpNote = row.followUpNote || row.followUpNotes || "N/A";
+      
+      if (nextFollowUpDate || (followUpNote && followUpNote !== "N/A")) {
+        const followUp = new FollowUp({
+          leadId: lead._id,
+          followUps: [{
+            followUpDate: nextFollowUpDate,
+            note: followUpNote,
+            submittedBy: uploadedBy // ✅ Track who performed the bulk upload
+          }]
+        });
+        await followUp.save();
+      }
+
       console.log("✅ Lead saved:", phone);
       uploaded.push(phone);
     } catch (e) {
