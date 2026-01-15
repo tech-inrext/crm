@@ -267,7 +267,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               </Typography>
                               <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 500 }}>
                                 {it.createdAt ? new Date(it.createdAt).toLocaleString([], { 
-                                  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                                  month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
                                 }) : ""}
                               </Typography>
                             </Box>
@@ -310,7 +310,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               <Chip
                                 icon={<Event sx={{ fontSize: "14px !important", color: "#2563eb !important" }} />}
                                 label={`Reminder: ${new Date(it.followUpDate).toLocaleString([], { 
-                                  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                                  month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' 
                                 })}`}
                                 size="small"
                                 sx={{ 
@@ -370,17 +370,21 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                <IconButton 
                                  size="small" 
                                  sx={{ 
-                                   bgcolor: "#94a3b8", 
-                                   color: "#fff",
-                                   opacity: 0.8,
-                                   "&:hover": { bgcolor: "#64748b", transform: "scale(1.1)", opacity: 1 },
+                                   bgcolor: "#f8fafc", 
+                                   width: 34,
+                                   height: 34,
+                                   border: "1px solid #e2e8f0",
+                                   "&:hover": { bgcolor: "#f1f5f9", transform: "scale(1.1)", borderColor: "#cbd5e1" },
                                    transition: "all 0.2s"
                                  }}
                                >
                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative' }}>
-                                    <svg width="18" height="18" viewBox="0 0 24 24" stroke="currentColor" fill="none" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z" fill="currentColor" stroke="none"/>
-                                        <line x1="2" y1="2" x2="22" y2="22" stroke="white" strokeWidth="2.5" />
+                                    <svg width="22" height="22" viewBox="0 0 24 24">
+                                        {/* Car Icon (Slate) */}
+                                        <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" fill="#64748b" />
+                                        {/* Prohibited Overlays (Purple) */}
+                                        <circle cx="12" cy="12" r="10.5" stroke="#7c3aed" strokeWidth="2.5" fill="none" />
+                                        <line x1="4.5" y1="4.5" x2="19.5" y2="19.5" stroke="#7c3aed" strokeWidth="2.5" />
                                     </svg>
                                  </div>
                                </IconButton>
