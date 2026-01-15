@@ -10,7 +10,14 @@ import notificationCleanupJob from "./notificationCleanup.js";
 import sendLeadFollowUpNotification from "./sendLeadFollowUpNotification.js";
 import { leadQueue } from "../queue/leadQueue.js";
 import bulkAssignLeads from "./bulkAssignLeads.js";
+
 import revertBulkAssign from "./revertBulkAssign.js";
+import dbConnect from "../lib/mongodb.js";
+
+// Initialize DB Connection
+dbConnect()
+  .then(() => console.log("📦 Worker connected to MongoDB"))
+  .catch((err) => console.error("❌ Worker failed to connect to MongoDB", err));
 
 // 🛠️ Load .env
 const __filename = fileURLToPath(import.meta.url);

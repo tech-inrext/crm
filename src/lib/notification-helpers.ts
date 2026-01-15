@@ -19,12 +19,11 @@ export class NotificationHelper {
         sender: assignedById,
         type: "LEAD_ASSIGNED",
         title: "New Lead Assigned",
-        message: `You have been assigned a new lead: ${
-          leadData.name || leadData.phone
-        }`,
+        message: `You have been assigned a new lead: ${leadData.name || leadData.phone
+          }`,
         metadata: {
           leadId,
-          actionUrl: `/dashboard/leads/${leadId}`,
+          actionUrl: `/dashboard/leads?openDialog=true&leadId=${leadId}`,
           priority: leadData.priority || "MEDIUM",
           isActionable: true,
         },
@@ -52,9 +51,8 @@ export class NotificationHelper {
         recipient: userId,
         type: "LEAD_STATUS_UPDATE",
         title: "Lead Status Updated",
-        message: `Lead status changed from "${oldStatus}" to "${newStatus}" for ${
-          leadData?.name || leadData?.phone || "Unknown Lead"
-        }`,
+        message: `Lead status changed from "${oldStatus}" to "${newStatus}" for ${leadData?.name || leadData?.phone || "Unknown Lead"
+          }`,
         metadata: {
           leadId,
           actionUrl: `/dashboard/leads/${leadId}`,
@@ -82,9 +80,8 @@ export class NotificationHelper {
         recipient: assignedToId,
         type: "LEAD_FOLLOWUP_DUE",
         title: "Lead Follow-up Due",
-        message: `Follow-up is due for lead: ${
-          leadData.name || leadData.phone
-        }`,
+        message: `Follow-up is due for lead: ${leadData.name || leadData.phone
+          }`,
         metadata: {
           leadId,
           actionUrl: `/dashboard/leads/${leadId}`,
@@ -401,9 +398,8 @@ export class NotificationHelper {
           sender: uploaderId,
           type: "PROPERTY_UPLOADED",
           title: "New Property Added",
-          message: `A new property has been uploaded: ${
-            propertyData.title || "Property"
-          }`,
+          message: `A new property has been uploaded: ${propertyData.title || "Property"
+            }`,
           metadata: {
             propertyId: propertyData._id,
             actionUrl: `/dashboard/properties/${propertyData._id}`,
@@ -455,11 +451,9 @@ export class NotificationHelper {
         sender: requesterId,
         type: "CAB_BOOKING_REQUESTED",
         title: "New Cab Booking Request",
-        message: `${
-          bookingData.employeeName || "A team member"
-        } has requested a cab booking for ${bookingData.clientName} from ${
-          bookingData.pickupPoint
-        } to ${bookingData.dropPoint}.`,
+        message: `${bookingData.employeeName || "A team member"
+          } has requested a cab booking for ${bookingData.clientName} from ${bookingData.pickupPoint
+          } to ${bookingData.dropPoint}.`,
         metadata: {
           bookingId,
           clientName: bookingData.clientName,
@@ -702,14 +696,13 @@ export class NotificationHelper {
             : "New Team Member Assigned",
           message: isNewUser
             ? `Welcome ${userData.name}! Your account has been created successfully.`
-            : `${userData.name} has been assigned to your team as ${
-                userData.designation || "a new team member"
-              }.`,
+            : `${userData.name} has been assigned to your team as ${userData.designation || "a new team member"
+            }.`,
           metadata: {
             userId,
             userName: userData.name,
             userDesignation: userData.designation,
-            actionUrl: isNewUser ? "/dashboard/profile" : "/dashboard/users",
+            actionUrl: isNewUser ? "/dashboard/profile" : `/dashboard/users?openDialog=true&userId=${userId}`,
             priority: isNewUser ? "HIGH" : "MEDIUM",
           },
           channels: {
@@ -750,8 +743,8 @@ export class NotificationHelper {
       const changeDescription = changes.includes("designation")
         ? `role updated to ${changedFields.designation || userData.designation}`
         : changes.includes("managerId")
-        ? "manager assignment updated"
-        : "profile information updated";
+          ? "manager assignment updated"
+          : "profile information updated";
 
       for (const recipient of recipients) {
         const isUser = recipient === userId;
@@ -768,7 +761,7 @@ export class NotificationHelper {
             userId,
             userName: userData.name,
             changes: changedFields,
-            actionUrl: isUser ? "/dashboard/profile" : "/dashboard/users",
+            actionUrl: isUser ? "/dashboard/profile" : `/dashboard/users?openDialog=true&userId=${userId}&mode=view`,
             priority: "MEDIUM",
           },
           channels: {
@@ -822,7 +815,7 @@ export class NotificationHelper {
             userName: userData.name,
             addedRoles,
             removedRoles,
-            actionUrl: isUser ? "/dashboard/profile" : "/dashboard/users",
+            actionUrl: isUser ? "/dashboard/profile" : `/dashboard/users?openDialog=true&userId=${userId}&mode=view`,
             priority: "HIGH",
           },
           channels: {

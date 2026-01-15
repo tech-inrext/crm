@@ -22,6 +22,7 @@ import { useLeadsSnackbar } from "@/components/leads/hooks/useLeadsSnackbar";
 import { useLeadsFeedback } from "@/components/leads/hooks/useLeadsFeedback";
 import { LeadsTableActions } from "@/components/leads/LeadsTableActions";
 import { extractErrorMessage } from "@/utils/leadErrorHandler";
+import LeadDetailsDialog from "@/components/leads/LeadDetailsDialog";
 
 const LeadDialog = dynamic(() => import("@/components/leads/LeadDialog"), {
   ssr: false,
@@ -75,6 +76,8 @@ const Leads: React.FC = () => {
     saveLead,
     updateLeadStatus,
     loadLeads,
+    dialogMode,
+    handleCloseDialog,
   } = useLeadsPage();
 
   const {
@@ -93,15 +96,15 @@ const Leads: React.FC = () => {
       leadsTableHeader.map((col) =>
         col.label === "Actions"
           ? {
-              ...col,
-              component: (row, { onEdit }) => (
-                <LeadsTableActions
-                  row={row}
-                  onEdit={onEdit}
-                  onFeedback={openFeedback}
-                />
-              ),
-            }
+            ...col,
+            component: (row, { onEdit }) => (
+              <LeadsTableActions
+                row={row}
+                onEdit={onEdit}
+                onFeedback={openFeedback}
+              />
+            ),
+          }
           : col
       ),
     [openFeedback]
@@ -172,17 +175,31 @@ const Leads: React.FC = () => {
         />
       )}
 
-      <LeadDialog
-        open={open}
-        editId={editId}
-        initialData={formData}
-        saving={saving}
-        onClose={() => {
-          setOpen(false);
-          setEditId(null);
-        }}
-        onSave={handleSaveLead}
-      />
+      {dialogMode === "view" ? (
+        <LeadDetailsDialog
+          open={open}
+          onClose={handleCloseDialog}
+          lead={formData}
+        // We might need to pass users/employees list if needed for ID resolution, 
+        // usually leads page fetches them or we can fetch them inside dialog like LeadDialog does.
+        // LeadDialog fetches users on mount. We should probably do same or lift state.
+        // For now, let's let LeadDetailsDialog handle it or pass empty if not available, 
+        // but actually LeadDialog fetches it internally. 
+        // Let's rely on name/email being present in formData or ID.
+        // Ideally we pass the full `users` list if we have it in parent, but `useLeadsPage` doesn't expose it.
+        // Let's update useLeadsPage to expose users if possible, or just fetch inside LeadDetailsDialog.
+        />
+      ) : (
+        <LeadDialog
+          open={open}
+          editId={editId}
+          initialData={formData}
+          saving={saving}
+          onClose={handleCloseDialog}
+          readOnly={false}
+          onSave={handleSaveLead}
+        />
+      )}
 
       <React.Suspense fallback={<div>Loading...</div>}>
         {feedbackOpen && selectedLeadForFeedback && (

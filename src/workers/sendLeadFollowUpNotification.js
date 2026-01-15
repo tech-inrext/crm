@@ -64,7 +64,7 @@ const sendLeadFollowUpNotification = async (job) => {
                 message: message,
                 metadata: {
                     leadId,
-                    actionUrl: `/dashboard/leads/${leadId}`,
+                    actionUrl: `/dashboard/leads?openDialog=true&leadId=${leadId}`,
                     priority: priority,
                     isActionable: true,
                     reminderType: reminderType

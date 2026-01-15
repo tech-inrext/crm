@@ -235,17 +235,16 @@ class EmployeeService extends Service {
 
       // Send notification for user update (only if significant fields changed)
       try {
-        const significantFields = ["designation", "managerId", "departmentId"];
-        const hasSignificantChanges = significantFields.some((field) =>
-          Object.prototype.hasOwnProperty.call(req.body, field)
-        );
+        // Exclude 'roles' from generic update check since it has its own notification
+        const genericChanges = Object.keys(updateFields).filter(key => key !== 'roles');
 
-        if (hasSignificantChanges) {
+        if (genericChanges.length > 0) {
+          const updaterId = req.employee?._id || req.user?._id;
           await notifyUserUpdate(
             updated._id,
             updated.toObject(),
             updateFields,
-            req.employee?._id
+            updaterId
           );
           console.log("✅ User update notification sent");
         }
@@ -312,9 +311,8 @@ class EmployeeService extends Service {
       if (exists) {
         return res.status(409).json({
           success: false,
-          message: `${
-            isCabVendor == true ? "Vendor's" : "Employee's"
-          } Email or Phone No. already exists`,
+          message: `${isCabVendor == true ? "Vendor's" : "Employee's"
+            } Email or Phone No. already exists`,
         });
       }
 
@@ -351,8 +349,8 @@ class EmployeeService extends Service {
         employeeData.roles = Array.isArray(roles)
           ? roles
           : roles
-          ? [roles]
-          : undefined;
+            ? [roles]
+            : undefined;
       }
       if (isCabVendor) {
         employeeData.roles = ["68b6904f3a3a9b850429e610"];
@@ -453,12 +451,12 @@ class EmployeeService extends Service {
       // Search filter
       const searchFilter = search
         ? {
-            $or: [
-              { name: { $regex: search, $options: "i" } },
-              { email: { $regex: search, $options: "i" } },
-              { phone: { $regex: search, $options: "i" } },
-            ],
-          }
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+          ],
+        }
         : {};
 
       // isCabVendor filter
@@ -477,11 +475,11 @@ class EmployeeService extends Service {
       // mouStatus filter (case-insensitive exact match)
       const mouFilter = mouStatus
         ? {
-            mouStatus: {
-              $regex: `^${String(mouStatus).trim()}$`,
-              $options: "i",
-            },
-          }
+          mouStatus: {
+            $regex: `^${String(mouStatus).trim()}$`,
+            $options: "i",
+          },
+        }
         : {};
 
       // slabPercentage requirement filter (only include employees where slabPercentage is set)

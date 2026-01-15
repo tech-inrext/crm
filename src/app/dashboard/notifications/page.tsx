@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Box,
   Typography,
@@ -115,6 +116,36 @@ const NotificationsPage: React.FC = () => {
   useEffect(() => {
     setIsClient(true);
   }, []);
+
+  const router = useRouter();
+
+  const handleNotificationClick = async (notification: any) => {
+    // Mark as read if unread
+    if (notification.lifecycle.status !== "READ") {
+      await markSelectedAsRead();
+    }
+
+    // Prioritize actionUrl from metadata (e.g., specific lead dialog link)
+    if (notification.metadata?.actionUrl) {
+      if (notification.metadata.actionUrl.startsWith("/")) {
+        // Handle legacy lead URLs (e.g., /dashboard/leads/123)
+        const leadMatch = notification.metadata.actionUrl.match(/\/dashboard\/leads\/([a-zA-Z0-9]+)$/);
+        // Handle legacy user URLs (e.g., /dashboard/users/123)
+        const userMatch = notification.metadata.actionUrl.match(/\/dashboard\/users\/([a-zA-Z0-9]+)$/);
+
+        if (leadMatch) {
+          router.push(`/dashboard/leads?openDialog=true&leadId=${leadMatch[1]}`);
+        } else if (userMatch) {
+          router.push(`/dashboard/users?openDialog=true&userId=${userMatch[1]}`);
+        } else {
+          router.push(notification.metadata.actionUrl);
+        }
+      } else {
+        window.location.href = notification.metadata.actionUrl;
+      }
+      return;
+    }
+  };
 
   // Filter notifications based on current criteria
   const filteredNotifications = notifications.filter((notification) => {
@@ -878,6 +909,8 @@ const NotificationsPage: React.FC = () => {
                 {paginatedNotifications.map((notification, index) => (
                   <React.Fragment key={notification._id}>
                     <ListItem
+                      button
+                      onClick={() => handleNotificationClick(notification)}
                       sx={{
                         width: "100%",
                         display: "flex",
@@ -887,21 +920,21 @@ const NotificationsPage: React.FC = () => {
                           notification.lifecycle.status === "READ"
                             ? "transparent"
                             : {
-                                xs: "rgba(25, 118, 210, 0.08)",
-                                sm: "action.hover",
-                              },
+                              xs: "rgba(25, 118, 210, 0.08)",
+                              sm: "action.hover",
+                            },
                         borderLeft:
                           notification.lifecycle.status !== "READ"
                             ? { xs: "3px solid", sm: "4px solid" }
                             : {
-                                xs: "3px solid transparent",
-                                sm: "4px solid transparent",
-                              },
+                              xs: "3px solid transparent",
+                              sm: "4px solid transparent",
+                            },
                         borderColor:
                           notification.lifecycle.status !== "READ"
                             ? `${getPriorityColor(
-                                notification.metadata.priority
-                              )}.main`
+                              notification.metadata.priority
+                            )}.main`
                             : "transparent",
                         py: { xs: 1, sm: 1.5, md: 2 },
                         px: { xs: 0.5, sm: 1.5, md: 2 },

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Badge,
   IconButton,
@@ -35,6 +36,7 @@ import { formatDistanceToNow } from "date-fns";
 
 const NotificationBell: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const router = useRouter();
   const [isClient, setIsClient] = useState(false);
   const {
     notifications,
@@ -123,76 +125,37 @@ const NotificationBell: React.FC = () => {
     }
   };
 
-  // Map notification types to module routes
-  const getModuleRoute = (notification: any): string => {
-    const type = notification.type;
-
-    // Map notification types to their respective module pages
-    switch (type) {
-      // Lead notifications
-      case "LEAD_ASSIGNED":
-      case "LEAD_STATUS_UPDATE":
-      case "LEAD_FOLLOWUP_DUE":
-        return "/dashboard/leads";
-
-      // Cab booking notifications
-      case "CAB_BOOKING_APPROVED":
-      case "CAB_BOOKING_REJECTED":
-      case "CAB_BOOKING_ASSIGNED":
-      case "CAB_BOOKING_REQUEST":
-        return "/dashboard/cab-booking";
-
-      // Vendor notifications
-      case "VENDOR_BOOKING_UPDATE":
-      case "VENDOR_ASSIGNED":
-        return "/dashboard/vendors";
-
-      // MOU notifications
-      case "MOU_APPROVED":
-      case "MOU_REJECTED":
-      case "MOU_PENDING":
-        return "/dashboard/mou";
-
-      // User/Role notifications
-      case "USER_ROLE_CHANGED":
-      case "USER_UPDATED":
-      case "USER_WELCOME":
-      case "USER_ASSIGNED":
-      case "NEW_USER_ADDED":
-      case "ROLE_CREATED":
-      case "ROLE_UPDATED":
-        return "/dashboard/users";
-
-      // Property notifications
-      case "PROPERTY_UPLOADED":
-      case "PROPERTY_STATUS_UPDATE":
-        return "/dashboard/properties";
-
-      // System notifications
-      case "SYSTEM_ANNOUNCEMENT":
-      case "REMINDER":
-      case "BULK_UPLOAD_COMPLETE":
-      case "EMAIL_SENT":
-        return "/dashboard/notifications";
-
-      // Default fallback
-      default:
-        return "/dashboard/notifications";
-    }
-  };
-
   const handleNotificationClick = async (notification: any) => {
     // Mark as read if unread
     if (notification.lifecycle.status !== "READ") {
       await markSelectedAsRead();
     }
 
-    // Get the module route for this notification type
-    const moduleRoute = getModuleRoute(notification);
-
-    // Navigate to the module
     handleClose();
-    window.location.href = moduleRoute;
+
+    // Prioritize actionUrl from metadata (e.g., specific lead dialog link)
+    if (notification.metadata?.actionUrl) {
+      if (notification.metadata.actionUrl.startsWith("/")) {
+        // Handle legacy lead URLs (e.g., /dashboard/leads/123)
+        const leadMatch = notification.metadata.actionUrl.match(/\/dashboard\/leads\/([a-zA-Z0-9]+)$/);
+        // Handle legacy user URLs (e.g., /dashboard/users/123)
+        const userMatch = notification.metadata.actionUrl.match(/\/dashboard\/users\/([a-zA-Z0-9]+)$/);
+
+        if (leadMatch) {
+          router.push(`/dashboard/leads?openDialog=true&leadId=${leadMatch[1]}`);
+        } else if (userMatch) {
+          router.push(`/dashboard/users?openDialog=true&userId=${userMatch[1]}`);
+        } else {
+          router.push(notification.metadata.actionUrl);
+        }
+      } else {
+        window.location.href = notification.metadata.actionUrl;
+      }
+      return;
+    }
+
+    // Default fallback
+    router.push("/dashboard/notifications");
   };
 
   return (
@@ -359,8 +322,8 @@ const NotificationBell: React.FC = () => {
                         borderColor:
                           notification.lifecycle.status !== "READ"
                             ? `${getPriorityColor(
-                                notification.metadata.priority
-                              )}.main`
+                              notification.metadata.priority
+                            )}.main`
                             : "transparent",
                       }}
                       onClick={() => handleNotificationClick(notification)}

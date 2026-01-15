@@ -35,6 +35,9 @@ import {
 } from "@/constants/users";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import { useDebounce } from "@/hooks/useDebounce";
+import { useSearchParams, useRouter } from "next/navigation";
+import VisibilityIcon from "@mui/icons-material/Visibility";
+import UserDetailsDialog from "@/components/ui/dialog/UserDetailsDialog";
 
 const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
   ssr: false,
@@ -48,8 +51,12 @@ const Pagination = dynamic(
 
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth();
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [isClient, setIsClient] = useState(false);
   const [windowWidth, setWindowWidth] = useState(1200);
+
+  const [dialogMode, setDialogMode] = useState<"add" | "edit" | "view">("add");
 
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
@@ -69,7 +76,9 @@ const Users: React.FC = () => {
     addUser,
     updateUser,
     setForm,
+
     loadEmployees,
+    getUserById,
   } = useUsers(debouncedSearch);
 
   const theme = useTheme();
@@ -110,7 +119,52 @@ const Users: React.FC = () => {
     setSelectedUser(null);
     setEditId(null);
     setForm(DEFAULT_USER_FORM);
+    setDialogMode("add");
+
+    // Remove query params
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("openDialog");
+    params.delete("userId");
+    params.delete("mode");
+    router.push(`?${params.toString()}`, { scroll: false });
   };
+
+  // Open dialog from URL params
+  useEffect(() => {
+    if (loading) return; // Wait for employees to load
+
+    const openDialogParam = searchParams.get("openDialog");
+    const userIdParam = searchParams.get("userId");
+    const modeParam = searchParams.get("mode");
+
+    console.log("[UsersPage] Params Debug:", { openDialogParam, userIdParam, loading, modeParam });
+
+    if (openDialogParam === "true" && userIdParam) {
+      const mode = modeParam === "view" ? "view" : "edit";
+      setDialogMode(mode);
+
+      const userToEdit = employees.find(
+        (u: any) => u.id === userIdParam || u._id === userIdParam
+      );
+
+      if (userToEdit) {
+        setSelectedUser(userToEdit);
+        setEditId(userToEdit.id || userToEdit._id);
+        setOpen(true);
+      } else {
+        // User not in current list (maybe on another page), fetch directly
+        console.log("[UsersPage] Fetching missing user:", userIdParam);
+        getUserById(userIdParam).then((fetchedUser: any) => {
+          console.log("[UsersPage] Fetched Fetch Result:", fetchedUser);
+          if (fetchedUser) {
+            setSelectedUser(fetchedUser);
+            setEditId(fetchedUser.id || fetchedUser._id);
+            setOpen(true);
+          }
+        });
+      }
+    }
+  }, [searchParams, employees, loading, getUserById]);
 
   // Helper function to check if current user can edit a specific employee
   const canEditEmployee = (employee: any) => {
@@ -145,41 +199,58 @@ const Users: React.FC = () => {
   const usersTableHeader = USERS_TABLE_HEADER.map((header) =>
     header.label === "Actions"
       ? {
-          ...header,
-          component: (row) => {
-            // Only show edit button if current user is the manager of this employee
-            if (!canEditEmployee(row)) {
-              return null;
-            }
+        ...header,
+        component: (row: any) => {
+          return (
+            <Box display="flex" gap={1}>
+              {/* VIEW BUTTON - Always visible */}
+              <Button
+                variant="outlined"
+                size="small"
+                color="info"
+                onClick={() => {
+                  setSelectedUser(row);
+                  setEditId(row.id || row._id);
+                  setDialogMode("view");
+                  setOpen(true);
 
-            return (
-              <PermissionGuard
-                module={USERS_PERMISSION_MODULE}
-                action="write"
-                fallback={null}
+                  const params = new URLSearchParams(searchParams.toString());
+                  params.set("openDialog", "true");
+                  params.set("userId", row.id || row._id);
+                  params.set("mode", "view");
+                  router.push(`?${params.toString()}`, { scroll: false });
+                }}
+                sx={{ minWidth: 0, px: 1, py: 0.5, minHeight: 0, lineHeight: 1 }}
               >
-                <Button
-                  variant="outlined"
-                  size="small"
-                  onClick={() => {
-                    setSelectedUser(row);
-                    setEditId(row.id || row._id);
-                    setOpen(true);
-                  }}
-                  sx={{
-                    minWidth: 0,
-                    px: 1,
-                    py: 0.5,
-                    minHeight: 0,
-                    lineHeight: 1,
-                  }}
+                <VisibilityIcon fontSize="small" />
+              </Button>
+
+              {/* EDIT BUTTON - Guarded */}
+              {canEditEmployee(row) && (
+                <PermissionGuard
+                  module={USERS_PERMISSION_MODULE}
+                  action="write"
+                  fallback={null}
                 >
-                  <EditIcon fontSize="small" />
-                </Button>
-              </PermissionGuard>
-            );
-          },
-        }
+                  <Button
+                    variant="outlined"
+                    size="small"
+                    onClick={() => {
+                      setSelectedUser(row);
+                      setEditId(row.id || row._id);
+                      setDialogMode("edit");
+                      setOpen(true);
+                    }}
+                    sx={{ minWidth: 0, px: 1, py: 0.5, minHeight: 0, lineHeight: 1 }}
+                  >
+                    <EditIcon fontSize="small" />
+                  </Button>
+                </PermissionGuard>
+              )}
+            </Box>
+          );
+        },
+      }
       : header
   );
 
@@ -206,8 +277,8 @@ const Users: React.FC = () => {
       departmentId: safeForm.departmentId || "",
       roles: Array.isArray(safeForm.roles)
         ? safeForm.roles.map((r: any) =>
-            typeof r === "string" ? r : r._id || r.id || ""
-          )
+          typeof r === "string" ? r : r._id || r.id || ""
+        )
         : [],
       joiningDate,
       aadharUrl: safeForm.aadharUrl || "",
@@ -283,10 +354,10 @@ const Users: React.FC = () => {
                 onEdit={
                   canEditEmployee(user)
                     ? () => {
-                        setSelectedUser(user);
-                        setEditId(user.id || user._id);
-                        setOpen(true);
-                      }
+                      setSelectedUser(user);
+                      setEditId(user.id || user._id);
+                      setOpen(true);
+                    }
                     : undefined
                 }
               />
@@ -316,8 +387,8 @@ const Users: React.FC = () => {
             <TableMap
               data={employees}
               header={usersTableHeader}
-              onEdit={() => {}}
-              onDelete={() => {}}
+              onEdit={() => { }}
+              onDelete={() => { }}
               size={isClient && windowWidth < 600 ? "small" : "medium"}
               stickyHeader
             />
@@ -364,57 +435,67 @@ const Users: React.FC = () => {
             <AddIcon />
           )}
         </Fab>
-        <UserDialog
-          open={open}
-          editId={editId}
-          initialData={getInitialUserForm(selectedUser)}
-          saving={saving}
-          onClose={handleCloseDialog}
-          onSave={async (values) => {
-            try {
-              if (editId) {
-                await updateUser(editId, values);
-                // show success toast for update
-                setSnackbarMessage("User updated successfully");
-              } else {
-                await addUser(values);
-                // show success toast for creation
-                setSnackbarMessage("User created successfully");
-              }
 
-              setSnackbarSeverity("success");
-              setSnackbarOpen(true);
+        {dialogMode === "view" ? (
+          <UserDetailsDialog
+            open={open}
+            user={selectedUser}
+            onClose={handleCloseDialog}
+          />
+        ) : (
+          <UserDialog
+            open={open}
+            editId={editId}
+            initialData={getInitialUserForm(selectedUser)}
+            saving={saving}
+            onClose={handleCloseDialog}
+            onSave={async (values) => {
+              try {
+                if (editId) {
+                  await updateUser(editId, values);
+                  // show success toast for update
+                  setSnackbarMessage("User updated successfully");
+                } else {
+                  await addUser(values);
+                  // show success toast for creation
+                  setSnackbarMessage("User created successfully");
+                }
 
-              handleCloseDialog();
-              setPage(1);
-              setSearch("");
-              await loadEmployees();
-            } catch (err: any) {
-              // Show error in a toast (Snackbar) instead of window.alert
-              const status =
-                err?.status ||
-                err?.statusCode ||
-                (err?.response && err.response.status);
-              const message =
-                err?.message ||
-                (err?.response &&
-                  err.response.data &&
-                  err.response.data.message) ||
-                "Failed to save user";
-              if (status === 409) {
-                // Duplicate user (email/phone)
-                setSnackbarMessage(
-                  message || "User with same email or phone exists"
-                );
-              } else {
-                setSnackbarMessage(message);
+                setSnackbarSeverity("success");
+                setSnackbarOpen(true);
+
+                handleCloseDialog();
+                setPage(1);
+                setSearch("");
+                await loadEmployees();
+              } catch (err: any) {
+                // Show error in a toast (Snackbar) instead of window.alert
+                const status =
+                  err?.status ||
+                  err?.statusCode ||
+                  (err?.response && err.response.status);
+                const message =
+                  err?.message ||
+                  (err?.response &&
+                    err.response.data &&
+                    err.response.data.message) ||
+                  "Failed to save user";
+                if (status === 409) {
+                  // Duplicate user (email/phone)
+                  setSnackbarMessage(
+                    message || "User with same email or phone exists"
+                  );
+                } else {
+                  setSnackbarMessage(message);
+                }
+                setSnackbarSeverity("error");
+                setSnackbarOpen(true);
+                // keep dialog open so user can correct input
               }
-              setSnackbarSeverity("error");
-              setSnackbarOpen(true);
-              // keep dialog open so user can correct input
-            }
-          }}
-        />
+            }}
+          />
+        )}
+
       </PermissionGuard>
       <Snackbar
         open={snackbarOpen}

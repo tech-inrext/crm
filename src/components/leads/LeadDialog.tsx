@@ -41,6 +41,7 @@ interface LeadDialogProps {
   saving: boolean;
   onClose: () => void;
   onSave: (values: LeadFormData) => void;
+  readOnly?: boolean;
 }
 
 const LeadDialog: React.FC<LeadDialogProps> = ({
@@ -50,6 +51,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
   saving,
   onClose,
   onSave,
+  readOnly = false,
 }) => {
   const [users, setUsers] = useState([]);
   const [snackbarMessage, setSnackbarMessage] = useState("");
@@ -92,6 +94,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
           values,
           { setSubmitting, setErrors, setFieldError }
         ) => {
+          if (readOnly) return;
           setSubmitting(true);
           try {
             await onSave(values);
@@ -190,7 +193,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
               id="lead-dialog-title"
               sx={{ fontWeight: 700, color: "#1976d2", fontSize: 20 }}
             >
-              {editId ? "Edit Lead" : "Add Lead"}
+              {readOnly ? "View Lead" : editId ? "Edit Lead" : "Add Lead"}
             </DialogTitle>
             <DialogContent
               sx={{
@@ -201,6 +204,8 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                 maxHeight: "70vh",
                 overflowY: "auto",
                 px: 3,
+                pointerEvents: readOnly ? "none" : "auto",
+                opacity: readOnly ? 0.9 : 1,
               }}
             >
               <BasicInformation
@@ -222,44 +227,46 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                 disabled={saving}
                 sx={{ fontWeight: 600 }}
               >
-                Cancel
+                {readOnly ? "Close" : "Cancel"}
               </Button>
-              <Button
-                type="button"
-                variant="contained"
-                sx={{ fontWeight: 600, bgcolor: "#1976d2", color: "#fff" }}
-                disabled={saving}
-                onClick={() => {
-                  // Recursively mark all fields as touched so field-level errors show
-                  const makeAllTouched = (obj: any) => {
-                    if (obj === null || obj === undefined) return true;
-                    if (typeof obj !== "object") return true;
-                    if (Array.isArray(obj)) return obj.map(() => true);
-                    const out: any = {};
-                    Object.keys(obj).forEach((k) => {
-                      out[k] = makeAllTouched(obj[k]);
-                    });
-                    return out;
-                  };
+              {!readOnly && (
+                <Button
+                  type="button"
+                  variant="contained"
+                  sx={{ fontWeight: 600, bgcolor: "#1976d2", color: "#fff" }}
+                  disabled={saving}
+                  onClick={() => {
+                    // Recursively mark all fields as touched so field-level errors show
+                    const makeAllTouched = (obj: any) => {
+                      if (obj === null || obj === undefined) return true;
+                      if (typeof obj !== "object") return true;
+                      if (Array.isArray(obj)) return obj.map(() => true);
+                      const out: any = {};
+                      Object.keys(obj).forEach((k) => {
+                        out[k] = makeAllTouched(obj[k]);
+                      });
+                      return out;
+                    };
 
-                  try {
-                    const allTouched = makeAllTouched(values || {});
-                    setTouched(allTouched);
-                  } catch (_) {
-                    // fallback: mark top-level keys
-                    const allTouched: any = {};
-                    Object.keys(values || {}).forEach(
-                      (k) => (allTouched[k] = true)
-                    );
-                    setTouched(allTouched);
-                  }
+                    try {
+                      const allTouched = makeAllTouched(values || {});
+                      setTouched(allTouched);
+                    } catch (_) {
+                      // fallback: mark top-level keys
+                      const allTouched: any = {};
+                      Object.keys(values || {}).forEach(
+                        (k) => (allTouched[k] = true)
+                      );
+                      setTouched(allTouched);
+                    }
 
-                  // always submit; Formik will validate and fill errors which will now be visible
-                  submitForm();
-                }}
-              >
-                {saving ? <CircularProgress size={20} /> : "Save"}
-              </Button>
+                    // always submit; Formik will validate and fill errors which will now be visible
+                    submitForm();
+                  }}
+                >
+                  {saving ? <CircularProgress size={20} /> : "Save"}
+                </Button>
+              )}
             </DialogActions>
           </Form>
         )}
