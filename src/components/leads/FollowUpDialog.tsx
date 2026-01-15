@@ -267,7 +267,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               </Typography>
                               <Typography variant="caption" sx={{ color: "text.secondary", fontWeight: 500 }}>
                                 {it.createdAt ? new Date(it.createdAt).toLocaleString([], { 
-                                  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                                  month: 'short', day: 'numeric',year: 'numeric', hour: '2-digit', minute: '2-digit' 
                                 }) : ""}
                               </Typography>
                             </Box>
@@ -310,7 +310,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               <Chip
                                 icon={<Event sx={{ fontSize: "14px !important", color: "#2563eb !important" }} />}
                                 label={`Reminder: ${new Date(it.followUpDate).toLocaleString([], { 
-                                  month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' 
+                                  month: 'short', day: 'numeric',year: 'numeric', hour: '2-digit', minute: '2-digit' 
                                 })}`}
                                 size="small"
                                 sx={{ 

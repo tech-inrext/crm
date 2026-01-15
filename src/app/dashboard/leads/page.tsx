@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -10,6 +10,7 @@ import {
   Snackbar,
   useTheme,
   useMediaQuery,
+  IconButton,
 } from "@/components/ui/Component";
 import Alert from "@/components/ui/Component/Alert";
 import {
@@ -48,6 +49,14 @@ const FollowUpDialog = dynamic(
 );
 const SiteVisitDialog = dynamic(
   () => import("@/components/leads/SiteVisitDialog"),
+  { ssr: false }
+);
+const LeadsTableView = dynamic(
+  () => import("@/components/leads/LeadsTableView"),
+  { ssr: false }
+);
+const LeadsCardsView = dynamic(
+  () => import("@/components/leads/LeadsCardsView"),
   { ssr: false }
 );
 
@@ -92,32 +101,14 @@ const Leads: React.FC = () => {
   const { feedbackOpen, selectedLeadForFeedback, openFeedback, closeFeedback } =
     useLeadsFeedback();
 
-  const [searchInput, setSearchInput] = useState(search);
-  const debouncedSearch = useDebounce(searchInput, 500); // Debounce for 400ms
 
-  // Sync debounced search with actual query state
-  useEffect(() => {
-    setSearch(debouncedSearch);
-    setPage(0);
-  }, [debouncedSearch, setSearch, setPage]);
 
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchInput(e.target.value);
-  };
 
-  const [feedbackOpen, setFeedbackOpen] = useState(false);
-  const [selectedLeadForFeedback, setSelectedLeadForFeedback] = useState<
-    string | null
-  >(null);
   
   const [siteVisitOpen, setSiteVisitOpen] = useState(false);
   const [selectedLeadForSiteVisit, setSelectedLeadForSiteVisit] = useState<string | null>(null);
 
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<
-    "success" | "error" | "info" | "warning"
-  >("success");
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
 
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
@@ -157,8 +148,7 @@ const Leads: React.FC = () => {
             <IconButton
               size="small"
               onClick={() => {
-                setSelectedLeadForFeedback(row.leadId || row._id || row.id);
-                setFeedbackOpen(true);
+                openFeedback(row.leadId || row._id || row.id);
               }}
             >
               <Badge
@@ -283,10 +273,8 @@ const Leads: React.FC = () => {
             initialProject={leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.propertyName}
             clientPhone={leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.phone}
             onSaved={async () => {
-              setSnackbarMessage("Site visit scheduled successfully");
-              setSnackbarSeverity("success");
-              setSnackbarOpen(true);
-              await loadLeads(page + 1, rowsPerPage, search);
+              showSnackbar("Site visit scheduled successfully", "success");
+              await loadLeads(page + 1, rowsPerPage, searchInput);
             }}
           />
         )}
