@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { Worker } from "bullmq";
 import IORedis from "ioredis";
+import mongoose from "mongoose";
 import bulkUploadLeads from "./bulkupload.js";
 import sendOTPJob from "./sendOTPJob.js";
 import sendNotificationEmail from "./sendNotificationEmail.js";
@@ -12,18 +13,35 @@ import { leadQueue } from "../queue/leadQueue.js";
 import bulkAssignLeads from "./bulkAssignLeads.js";
 import revertBulkAssign from "./revertBulkAssign.js";
 // Cab Booking Analytics Worker
-import '../workers/cabBookingAnalyticsWorker.js';
+import "../workers/cabBookingAnalyticsWorker.js";
 
 // 🛠️ Load .env
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
+// 🔗 MongoDB Connection
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) {
+  throw new Error("Please define the MONGODB_URI environment variable");
+}
+
+mongoose
+  .connect(MONGODB_URI, {
+    bufferCommands: false, // Disable buffering for immediate error feedback
+  })
+  .then(() => console.log("✅ Worker connected to MongoDB"))
+  .catch((err) =>
+    console.error("❌ Worker MongoDB Connection Error:", err.message)
+  );
+
 // 🔗 Redis Connection
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 const connection = new IORedis(redisUrl, {
   maxRetriesPerRequest: null, // Required for BullMQ workers
-  tls: redisUrl.startsWith("rediss://") ? { rejectUnauthorized: false } : undefined,
+  tls: redisUrl.startsWith("rediss://")
+    ? { rejectUnauthorized: false }
+    : undefined,
 });
 
 connection.on("error", (err) => {
@@ -32,6 +50,12 @@ connection.on("error", (err) => {
 
 connection.on("connect", () => {
   console.log("✅ Worker connected to Redis");
+});
+
+connection.on("ready", () => {
+  console.log("Redis connection ready");
+  // Schedule tasks only after Redis is ready
+  scheduleCleanupTasks();
 });
 
 class InrextWorker extends Worker {
@@ -68,7 +92,10 @@ worker.addJobListener("bulkUploadLeads", bulkUploadLeads);
 worker.addJobListener("sendOTPJob", sendOTPJob);
 worker.addJobListener("sendNotificationEmail", sendNotificationEmail);
 worker.addJobListener("notificationCleanup", notificationCleanupJob);
-worker.addJobListener("sendLeadFollowUpNotification", sendLeadFollowUpNotification);
+worker.addJobListener(
+  "sendLeadFollowUpNotification",
+  sendLeadFollowUpNotification
+);
 worker.addJobListener("bulkAssignLeads", bulkAssignLeads);
 worker.addJobListener("revertBulkAssign", revertBulkAssign);
 
@@ -106,6 +133,6 @@ const scheduleCleanupTasks = () => {
 };
 
 // Start cleanup scheduling
-scheduleCleanupTasks();
+// scheduleCleanupTasks(); // Moved to Redis 'ready' event
 
 export default worker;
