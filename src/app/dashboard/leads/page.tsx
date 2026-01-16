@@ -104,68 +104,68 @@ const Leads: React.FC = () => {
   const { feedbackOpen, selectedLeadForFeedback, openFeedback, closeFeedback } =
     useLeadsFeedback();
 
-
-
-
-  
   const [siteVisitOpen, setSiteVisitOpen] = useState(false);
-  const [selectedLeadForSiteVisit, setSelectedLeadForSiteVisit] = useState<string | null>(null);
-
-
+  const [selectedLeadForSiteVisit, setSelectedLeadForSiteVisit] = useState<
+    string | null
+  >(null);
 
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
       ? {
-        ...col,
-        component: (row, { onEdit }) => (
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "flex-start",
-              gap: 0.5,
-              pl: 0.5,
-            }}
-          >
-            <PermissionGuard module="lead" action="write" fallback={null}>
-              <IconButton onClick={() => onEdit(row)} size="small">
-                <EditIcon fontSize="small" />
-              </IconButton>
-            </PermissionGuard>
+          ...col,
+          component: (row, { onEdit }) => (
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-start",
+                gap: 0.5,
+                pl: 0.5,
+              }}
+            >
+              <PermissionGuard module="lead" action="write" fallback={null}>
+                <IconButton onClick={() => onEdit(row)} size="small">
+                  <EditIcon fontSize="small" />
+                </IconButton>
+              </PermissionGuard>
 
-            {/* Site Visit Action */}
-            <PermissionGuard module="lead" action="write" fallback={null}>
-              <IconButton
+              {/* Site Visit Action */}
+              <PermissionGuard module="lead" action="write" fallback={null}>
+                <IconButton
                   size="small"
                   onClick={() => {
-                    setSelectedLeadForSiteVisit(row.leadId || row._id || row.id);
+                    setSelectedLeadForSiteVisit(
+                      row.leadId || row._id || row.id
+                    );
                     setSiteVisitOpen(true);
                   }}
                   title="Schedule Site Visit"
                 >
                   <LocationOn fontSize="small" color="action" />
-              </IconButton>
-            </PermissionGuard>
+                </IconButton>
+              </PermissionGuard>
 
-            {/* Feedback button - available to any authenticated user */}
-            <IconButton
-              size="small"
-              onClick={() => {
-                openFeedback(row.leadId || row._id || row.id);
-              }}
-            >
-              <Badge
-                badgeContent={
-                  row.followUpCount || (row.followUpNotes && row.followUpNotes.length) || 0
-                }
-                color="primary"
+              {/* Feedback button - available to any authenticated user */}
+              <IconButton
+                size="small"
+                onClick={() => {
+                  openFeedback(row.leadId || row._id || row.id);
+                }}
               >
-                <FeedbackIcon fontSize="small" />
-              </Badge>
-            </IconButton>
-          </Box>
-        ),
-      }
+                <Badge
+                  badgeContent={
+                    row.followUpCount ||
+                    (row.followUpNotes && row.followUpNotes.length) ||
+                    0
+                  }
+                  color="primary"
+                >
+                  <FeedbackIcon fontSize="small" />
+                </Badge>
+              </IconButton>
+            </Box>
+          ),
+        }
       : col
   );
 
@@ -239,14 +239,6 @@ const Leads: React.FC = () => {
           open={open}
           onClose={handleCloseDialog}
           lead={formData}
-        // We might need to pass users/employees list if needed for ID resolution, 
-        // usually leads page fetches them or we can fetch them inside dialog like LeadDialog does.
-        // LeadDialog fetches users on mount. We should probably do same or lift state.
-        // For now, let's let LeadDetailsDialog handle it or pass empty if not available, 
-        // but actually LeadDialog fetches it internally. 
-        // Let's rely on name/email being present in formData or ID.
-        // Ideally we pass the full `users` list if we have it in parent, but `useLeadsPage` doesn't expose it.
-        // Let's update useLeadsPage to expose users if possible, or just fetch inside LeadDetailsDialog.
         />
       ) : (
         <LeadDialog
@@ -272,7 +264,7 @@ const Leads: React.FC = () => {
           />
         )}
       </React.Suspense>
-      
+
       {/* Site Visit Dialog */}
       <React.Suspense fallback={<div>Loading...</div>}>
         {siteVisitOpen && selectedLeadForSiteVisit && (
@@ -284,11 +276,23 @@ const Leads: React.FC = () => {
             }}
             leadId={selectedLeadForSiteVisit}
             initialClientName={
-              leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.fullName || 
-              leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.name
+              leads.find(
+                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit
+              )?.fullName ||
+              leads.find(
+                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit
+              )?.name
             }
-            initialProject={leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.propertyName}
-            clientPhone={leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.phone}
+            initialProject={
+              leads.find(
+                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit
+              )?.propertyName
+            }
+            clientPhone={
+              leads.find(
+                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit
+              )?.phone
+            }
             onSaved={async () => {
               showSnackbar("Site visit scheduled successfully", "success");
               await loadLeads(page + 1, rowsPerPage, searchInput);
