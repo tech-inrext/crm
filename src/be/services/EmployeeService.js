@@ -2,8 +2,10 @@ import { Service } from "@framework";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
 import Employee from "../../models/Employee";
+import { leadQueue } from "../../queue/leadQueue.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
+import Role from "../../models/Role";
 import { sendNewEmployeeWelcomeEmail } from "@/lib/emails/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "@/lib/emails/managerNewReport";
 import { sendRoleChangeEmail } from "../../lib/emails/sendRoleChangeEmail";
@@ -676,6 +678,445 @@ class EmployeeService extends Service {
       return res.status(500).json({
         success: false,
         message: "Failed to fetch profile",
+        error: error.message,
+      });
+    }
+  }
+
+
+  async requestOTP(req, res) {
+    try {
+      const { email } = req.body || {};
+
+      if (!email) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Email is required" });
+      }
+
+      const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+      const isValid = emailRegex.test(email);
+
+      if (!isValid) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid email address. Please enter a valid email ID.",
+        });
+      }
+
+      const employee = await Employee.findOne({ email });
+      if (!employee) {
+        return res
+          .status(404)
+          .json({ success: false, message: "This email is not registered." });
+      }
+
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const expiry = Date.now() + 10 * 60 * 1000;
+
+      // Use a direct update to avoid triggering full-document validation
+      // (some Employee documents may be missing required fields used by validation)
+      const updateResult = await Employee.updateOne(
+        { _id: employee._id },
+        { $set: { resetOTP: otp, resetOTPExpires: expiry } }
+      );
+
+      if (updateResult.matchedCount === 0 && updateResult.modifiedCount === 0) {
+        console.error("❌ Failed to update employee OTP:", updateResult);
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to save OTP for the user" });
+      }
+
+      try {
+        if (leadQueue) {
+          await leadQueue.add("sendOTPJob", { email, otp });
+          return res
+            .status(200)
+            .json({ success: true, message: "OTP is being sent to email" });
+        } else {
+          console.warn("Queue not available, OTP sending skipped");
+          return res.status(200).json({
+            success: true,
+            message: "OTP generated but queue unavailable",
+          });
+        }
+      } catch (error) {
+        console.error("❌ Queueing OTP job failed:", error);
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to queue OTP email" });
+      }
+    } catch (err) {
+      // Catch any unexpected errors and ensure we always return JSON
+      console.error("❌ Unhandled error in request-otp:", err);
+      try {
+        return res
+          .status(500)
+          .json({ success: false, message: "Internal Server Error" });
+      } catch (e) {
+        // If even sending JSON fails, fall back to plain text with proper header
+        res.setHeader("Content-Type", "text/plain");
+        return res.status(500).send("Internal Server Error");
+      }
+    }
+  }
+
+  async resetPasswordWithOTP(req, res) {
+    const { email, otp, newPassword, confirmPassword } = req.body;
+
+    if (!email || !otp || !newPassword || !confirmPassword) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Missing fields" });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Passwords do not match" });
+    }
+
+    const isPasswordStrong = (password) => {
+      return /^(?=.*[a-zA-Z])(?=.*\d).{8,}$/.test(password); // at least 8 chars, mix of letters & numbers
+    };
+
+    if (!isPasswordStrong(newPassword)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Password must be at least 8 characters with letters and numbers",
+      });
+    }
+
+    const employee = await Employee.findOne({ email });
+
+    if (
+      !employee ||
+      employee.resetOTP !== otp ||
+      Date.now() > employee.resetOTPExpires
+    ) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid or expired OTP" });
+    }
+
+    try {
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      // Use an atomic update to avoid triggering full document validation
+      // (some legacy documents may be missing required fields like employeeProfileId)
+      const result = await Employee.updateOne(
+        { _id: employee._id },
+        {
+          $set: {
+            password: hashedPassword,
+            isPasswordReset: true,
+            passwordLastResetAt: new Date(),
+          },
+          $unset: { resetOTP: "", resetOTPExpires: "" },
+        }
+      );
+
+      if (!result || result.matchedCount === 0) {
+        return res
+          .status(500)
+          .json({ success: false, message: "Failed to update password" });
+      }
+    } catch (err) {
+      console.error("Error updating password:", err);
+      return res
+        .status(500)
+        .json({ success: false, message: "Internal server error" });
+    }
+
+    return res
+      .status(200)
+      .json({ success: true, message: "Password updated successfully" });
+  }
+
+  async resetPassword(req, res) {
+    const { newPassword, email, oldPassword } = req.body;
+
+    if (!email || !newPassword || !oldPassword) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and new password are required",
+      });
+    }
+
+    try {
+      const employee = await Employee.findOne({ email });
+
+      if (!employee) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Invalid Email or Old Password" });
+      }
+
+      const isMatch = await bcrypt.compare(oldPassword, employee.password);
+
+      if (!isMatch) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Invalid Email or Old Password" });
+      }
+
+      // Hash the new password
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+      employee.password = hashedPassword;
+      employee.isPasswordReset = true;
+      employee.passwordLastResetAt = new Date(); // ✅ for 3-month expiry tracking
+
+      await employee.save();
+
+      res
+        .status(200)
+        .json({ success: true, message: "Password reset successfully" });
+    } catch (err) {
+      res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
+  async getAllEmployeeList(req, res) {
+    try {
+      const { isCabVendor } = req.query;
+
+      // Normalize stringy booleans from query (?isCabVendor=true / 1 / yes / y ...)
+      const normalizeBool = (v) => {
+        if (typeof v === "boolean") return v;
+        if (v == null) return undefined;
+        const s = String(v).trim().toLowerCase();
+        if (["true", "1", "yes", "y"].includes(s)) return true;
+        if (["false", "0", "no", "n"].includes(s)) return false;
+        return undefined; // ignore invalid values
+      };
+
+      const vendorVal = normalizeBool(isCabVendor);
+
+      const filter = {};
+      if (typeof vendorVal === "boolean") {
+        filter.isCabVendor = vendorVal;
+      }
+
+      const employees = await Employee.find(filter)
+        .sort({ createdAt: -1 })
+        .lean();
+
+      return res.status(200).json({
+        success: true,
+        count: employees.length,
+        data: employees,
+        appliedFilter: {
+          isCabVendor: typeof vendorVal === "boolean" ? vendorVal : null,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch employees",
+        error: error.message,
+      });
+    }
+  }
+
+  async switchRole(req, res) {
+    try {
+      const employeeId = req.employee._id; // ✅ From loginAuth middleware
+
+      // Get selected roleId from body
+      const { roleId } = req.body;
+      if (!roleId) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Missing roleId in request body" });
+      }
+
+      // Find employee and populate roles (assumes multiple roles)
+      const employee = await Employee.findById(employeeId).populate("roles"); // Note: 'roles' plural
+
+      if (!employee) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Employee not found" });
+      }
+
+      // ✅ Check if roleId exists in employee's roles
+      const roleExists = employee.roles.some(
+        (role) => role._id.toString() === roleId
+      );
+
+      if (!roleExists) {
+        return res.status(403).json({
+          success: false,
+          message: "You do not have access to this role",
+        });
+      }
+
+      //find selected role
+      const selectedRole = employee.roles.find(
+        (role) => role._id.toString() === roleId
+      );
+
+      // ✅ Create new token with selected role
+      const newToken = jwt.sign(
+        { _id: employeeId, roleId },
+        process.env.JWT_SECRET,
+        {
+          expiresIn: "7d",
+        }
+      );
+
+      // ✅ Set new token in HttpOnly cookie
+      res.setHeader(
+        "Set-Cookie",
+        cookie.serialize("token", newToken, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          maxAge: 60 * 60 * 24 * 7,
+          sameSite: "strict",
+          path: "/",
+        })
+      );
+
+      res.status(200).json({
+        success: true,
+        message: `Role switched successfully to ${selectedRole.name}`,
+        role: selectedRole,
+      });
+    } catch (err) {
+      res
+        .status(500)
+        .json({ success: false, message: "Error: " + err.message });
+    }
+  }
+
+  // 🔹 Recursive function to build hierarchy starting from a manager (including the manager)
+  buildHierarchy(employees, managerId) {
+    const tree = [];
+    employees
+      .filter(
+        (emp) =>
+          String(emp.managerId) === String(managerId) &&
+          String(emp._id) !== String(managerId)
+      )
+      .forEach((emp) => {
+        const children = this.buildHierarchy(employees, emp._id); // Recursively find employees under each employee
+        tree.push({
+          _id: emp._id,
+          name: emp.name,
+          designation: emp.designation,
+          branch: emp.branch,
+          managerId: emp.managerId,
+          employeeProfileId: emp.employeeProfileId,
+          children: children.length ? children : [], // If no subordinates, return empty array
+        });
+      });
+    return tree;
+  }
+
+  // 🔹 Handler for getting the hierarchy (including the manager)
+  async getHierarchyByManager(req, res) {
+    try {
+      const { managerId } = req.query; // Get managerId from the query params
+      
+      if (!managerId) {
+        return res.status(400).json({
+          success: false,
+          message: "Manager ID is required as query parameter",
+        });
+      }
+
+      // Fetch all employees
+      const employees = await Employee.find({}).lean();
+
+      // Fetch the manager details
+      const manager = employees.find(
+        (emp) => String(emp._id) === String(managerId)
+      );
+
+      if (!manager) {
+        return res.status(404).json({
+          success: false,
+          message: "Manager not found",
+        });
+      }
+
+      // Build hierarchy starting from the manager themselves
+      const hierarchy = {
+        _id: manager._id,
+        name: manager.name,
+        designation: manager.designation,
+        branch: manager.branch,
+        managerId: manager.managerId,
+        employeeProfileId: manager.employeeProfileId,
+        children: this.buildHierarchy(employees, manager._id), // Recursively find subordinates
+      };
+
+      return res.status(200).json({
+        success: true,
+        data: hierarchy,
+      });
+    } catch (err) {
+      console.error("Hierarchy Fetch Error:", err.message);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch hierarchy",
+        error: err.message,
+      });
+    }
+  }
+
+  async getMouStats(req, res) {
+    try {
+      const pendingCount = await Employee.countDocuments({
+        mouStatus: { $regex: "^Pending$", $options: "i" },
+      });
+      const completedCount = await Employee.countDocuments({
+        mouStatus: { $regex: "^Completed$", $options: "i" },
+      });
+      return res.status(200).json({
+        success: true,
+        pending: pendingCount,
+        completed: completedCount,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch MoU stats",
+        error: error.message,
+      });
+    }
+  }
+
+  async getManagerMouStats(req, res) {
+    try {
+      const loggedInId =
+        req.employee?._id?.toString?.() || req.user?._id?.toString?.() || "";
+      if (!loggedInId) {
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized" });
+      }
+      // Only employees whose managerId is loggedInId
+      const pendingCount = await Employee.countDocuments({
+        managerId: loggedInId,
+        mouStatus: { $regex: "^Pending$", $options: "i" },
+      });
+      const approvedCount = await Employee.countDocuments({
+        managerId: loggedInId,
+        mouStatus: { $regex: "^Approved$", $options: "i" },
+      });
+      return res.status(200).json({
+        success: true,
+        pending: pendingCount,
+        approved: approvedCount,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch MoU stats for manager",
         error: error.message,
       });
     }
