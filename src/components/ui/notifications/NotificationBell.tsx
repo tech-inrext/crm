@@ -234,6 +234,7 @@ const NotificationBell: React.FC = () => {
     hasMore,
     clearError,
     forceRefresh,
+    markAsRead,
   } = useNotifications();
 
   const {
@@ -263,7 +264,9 @@ const NotificationBell: React.FC = () => {
   };
 
   const handleNotificationClick = async (notification: any) => {
-    if (notification.lifecycle.status !== "READ") await markSelectedAsRead();
+    if (notification.lifecycle.status !== "READ") {
+      await markAsRead([notification._id], { actionType: "CLICKED" });
+    }
     handleClose();
 
     if (notification.metadata?.actionUrl) {

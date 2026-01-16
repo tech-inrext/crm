@@ -11,7 +11,7 @@ class NotificationByIdController extends Controller {
     return this.service.getNotificationById(req, res);
   }
 
-  put(req, res) {
+  patch(req, res) {
     return this.service.updateNotification(req, res);
   }
 
