@@ -13,10 +13,42 @@ import bulkAssignLeads from "./bulkAssignLeads.js";
 
 import revertBulkAssign from "./revertBulkAssign.js";
 import dbConnect from "../lib/mongodb.js";
+import checkFollowUpsJob from "./checkFollowUpsJob.js";
 
 // Initialize DB Connection
 dbConnect()
-  .then(() => console.log("📦 Worker connected to MongoDB"))
+  .then(async () => {
+    console.log("📦 Worker connected to MongoDB");
+
+    // 🛠️ Ensure the Schedule exists for the Scalable Poller
+    // We run this once on worker startup.
+    if (leadQueue) {
+      // Remove previous job to update schedule if needed (optional)
+      // await leadQueue.removeRepeatable("checkFollowUps", { every: 60000 });
+
+      await leadQueue.add(
+        "checkFollowUps",
+        {},
+        {
+          repeat: {
+            every: 60000, // Run every 60 seconds
+          },
+          jobId: "checkFollowUps-cron",
+        }
+      );
+
+      // ⚡ Trigger immediately once on startup
+      await leadQueue.add(
+        "checkFollowUps",
+        {},
+        {
+          jobId: `checkFollowUps-init-${Date.now()}`,
+        }
+      );
+
+      console.log("⏰ Scheduled checkFollowUps job (Immediate + Every 60s)");
+    }
+  })
   .catch((err) => console.error("❌ Worker failed to connect to MongoDB", err));
 
 // 🛠️ Load .env
@@ -28,7 +60,9 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 const connection = new IORedis(redisUrl, {
   maxRetriesPerRequest: null, // Required for BullMQ workers
-  tls: redisUrl.startsWith("rediss://") ? { rejectUnauthorized: false } : undefined,
+  tls: redisUrl.startsWith("rediss://")
+    ? { rejectUnauthorized: false }
+    : undefined,
 });
 
 connection.on("error", (err) => {
@@ -73,9 +107,13 @@ worker.addJobListener("bulkUploadLeads", bulkUploadLeads);
 worker.addJobListener("sendOTPJob", sendOTPJob);
 worker.addJobListener("sendNotificationEmail", sendNotificationEmail);
 worker.addJobListener("notificationCleanup", notificationCleanupJob);
-worker.addJobListener("sendLeadFollowUpNotification", sendLeadFollowUpNotification);
+worker.addJobListener(
+  "sendLeadFollowUpNotification",
+  sendLeadFollowUpNotification
+);
 worker.addJobListener("bulkAssignLeads", bulkAssignLeads);
 worker.addJobListener("revertBulkAssign", revertBulkAssign);
+worker.addJobListener("checkFollowUps", checkFollowUpsJob);
 
 // Event Listeners for Debugging
 worker.on("failed", (job, err) => {
