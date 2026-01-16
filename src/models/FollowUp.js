@@ -46,5 +46,8 @@ const followUpSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+// Compound index for efficient notification queries
+followUpSchema.index({ followUpDate: 1, notificationsSent: 1 });
+
 export default mongoose.models.FollowUp ||
   mongoose.model("FollowUp", followUpSchema);
