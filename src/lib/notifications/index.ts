@@ -49,12 +49,13 @@ export {
 } from "./utils";
 
 // For backward compatibility
-import notificationService from "../../services/notification-util.service";
+import NotificationService from "../../be/services/NotificationService";
+const notificationService = new NotificationService();
 
 export const sendCustomNotification = async (data) => {
-  return await notificationService.createNotification(data);
+  return await notificationService._createSingleNotification(data);
 };
 
 export const sendBulkCustomNotification = async (recipients, data) => {
-  return await notificationService.createBulkNotification(recipients, data);
+  return await notificationService._createBulkNotification(recipients, data);
 };

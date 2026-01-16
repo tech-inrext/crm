@@ -1,12 +1,14 @@
-import notificationService from "../../services/notification-util.service";
+import NotificationService from "../../be/services/NotificationService";
 import Employee from "../../models/Employee.js";
+
+const notificationService = new NotificationService();
 
 /**
  * Safely send a notification with error handling
  */
 export const safeNotify = async (config) => {
   try {
-    await notificationService.createNotification(config);
+    await notificationService._createSingleNotification(config);
   } catch (error) {
     console.error("Notification error:", error);
   }

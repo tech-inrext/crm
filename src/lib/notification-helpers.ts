@@ -62,7 +62,8 @@ import {
   sendBulkNotification,
 } from "./notifications/utils";
 
-import notificationService from "../services/notification-util.service";
+import NotificationService from "../be/services/NotificationService";
+const notificationService = new NotificationService();
 
 // Export all functions
 export {
