@@ -1,5 +1,6 @@
 import Lead from "../models/Lead.js";
 import Notification from "../models/Notification.js";
+import FollowUp from "../models/FollowUp.js";
 
 /**
  * Worker to send lead follow-up notifications
@@ -10,25 +11,30 @@ const sendLeadFollowUpNotification = async (job) => {
 
     try {
         const lead = await Lead.findById(leadId);
+        const followUpDoc = await FollowUp.findOne({ leadId });
 
         if (!lead) {
             console.log(`Lead not found for follow-up notification: ${leadId}`);
             return;
         }
 
-        // Validate if the follow-up is still valid
-        const currentFollowUpTime = new Date(lead.nextFollowUp).getTime();
-        const scheduledFollowUpTime = new Date(scheduledTime).getTime();
+        // Get the most recent follow-up entry
+        const latestEntry = followUpDoc?.followUps?.length > 0 
+            ? followUpDoc.followUps[followUpDoc.followUps.length - 1] 
+            : null;
 
-        if (!lead.nextFollowUp) {
-            console.log(`Follow-up cancelled for lead: ${leadId}, skipping notification.`);
+        if (!latestEntry || !latestEntry.followUpDate) {
+            console.log(`Follow-up cancelled or not found for lead: ${leadId}, skipping notification.`);
             return;
         }
+
+        const currentFollowUpTime = new Date(latestEntry.followUpDate).getTime();
+        const scheduledFollowUpTime = new Date(scheduledTime).getTime();
 
         // If the dates are significantly different (e.g. > 5 mins difference), it means it was rescheduled
         const timeDifference = Math.abs(currentFollowUpTime - scheduledFollowUpTime);
         if (timeDifference > 5 * 60 * 1000) { // 5 minutes tolerance
-            console.log(`Follow-up rescheduled for lead: ${leadId}. Scheduled: ${scheduledTime}, Current: ${lead.nextFollowUp}. Skipping old notification.`);
+            console.log(`Follow-up rescheduled for lead: ${leadId}. Scheduled: ${scheduledTime}, Current: ${latestEntry.followUpDate}. Skipping old notification.`);
             return;
         }
 
@@ -73,7 +79,7 @@ const sendLeadFollowUpNotification = async (job) => {
                     inApp: true,
                     email: true,
                 },
-                scheduledFor: reminderType === "DUE" ? lead.nextFollowUp : undefined, // Only set scheduledFor for the main event if needed for sorting, but here we are sending immediately when job runs
+                scheduledFor: reminderType === "DUE" ? latestEntry.followUpDate : undefined,
             });
 
             console.log(`✅ Sent ${reminderType} follow-up notification for lead: ${leadId}`);

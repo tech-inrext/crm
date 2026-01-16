@@ -1,5 +1,4 @@
 import mongoose from "mongoose";
-import validator from "validator";
 
 const budgetRanges = [
   "<1 Lakh",
@@ -99,11 +98,6 @@ const leadSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
     },
-    followUpNotes: {
-      type: [String],
-    },
-
-    nextFollowUp: Date,
   },
   { timestamps: true }
 );

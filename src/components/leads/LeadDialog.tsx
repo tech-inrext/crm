@@ -15,7 +15,6 @@ import {
   BasicInformation,
   PropertyDetails,
   LeadManagement,
-  Notes,
 } from "./form-sections";
 import { leadValidationSchema } from "./leadValidation";
 
@@ -219,7 +218,6 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
                 setFieldValue={setFieldValue}
                 users={users}
               />
-              <Notes values={values} setFieldValue={setFieldValue} />
             </DialogContent>
             <DialogActions sx={{ p: 2 }}>
               <Button
