@@ -1,3 +1,4 @@
+// hooks/useTrainingVideos.ts
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import { TrainingVideo, Category, TrainingVideoFormData, TrainingVideosResponse, ApiResponse } from "@/types/trainingVideo";
@@ -62,7 +63,7 @@ export function useTrainingVideos({
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to create video");
       }
-      await loadVideos(); // Refresh the list
+      await loadVideos();
       return response.data.data!;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || "Failed to create video");
@@ -75,7 +76,7 @@ export function useTrainingVideos({
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to update video");
       }
-      await loadVideos(); // Refresh the list
+      await loadVideos();
       return response.data.data!;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || "Failed to update video");
@@ -88,11 +89,15 @@ export function useTrainingVideos({
       if (!response.data.success) {
         throw new Error(response.data.message || "Failed to delete video");
       }
-      await loadVideos(); // Refresh the list
+      await loadVideos();
     } catch (err: any) {
       throw new Error(err.response?.data?.message || "Failed to delete video");
     }
   }, [loadVideos]);
+
+  const getStreamUrl = useCallback((videoId: string): string => {
+    return `/api/v0/training-videos/stream/${videoId}`;
+  }, []);
 
   useEffect(() => {
     loadVideos();
@@ -107,6 +112,7 @@ export function useTrainingVideos({
     createVideo,
     updateVideo,
     deleteVideo,
+    getStreamUrl,
     refresh: loadVideos,
   };
 }

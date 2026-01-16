@@ -3,6 +3,32 @@ import TrainingVideo from "../../../../models/TrainingVideo";
 import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 
+// Helper function to extract YouTube ID
+const extractYouTubeId = (url) => {
+  if (!url) return null;
+  
+  const patterns = [
+    /(?:youtube\.com\/watch\?v=|youtu\.be\/)([a-zA-Z0-9_-]+)/,
+    /youtube\.com\/embed\/([a-zA-Z0-9_-]+)/,
+    /youtube\.com\/v\/([a-zA-Z0-9_-]+)/,
+    /youtube\.com\/shorts\/([a-zA-Z0-9_-]+)/
+  ];
+  
+  for (const pattern of patterns) {
+    const match = url.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  return null;
+};
+
+// Helper function to validate YouTube URL
+const isValidYouTubeUrl = (url) => {
+  const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+$/;
+  return youtubeRegex.test(url);
+};
+
 // GET all videos with filtering and pagination
 const getAllVideos = async (req, res) => {
   try {
@@ -73,20 +99,53 @@ const getAllVideos = async (req, res) => {
 // POST create new video
 const createVideo = async (req, res) => {
   try {
-    const videoData = {
-      ...req.body,
-      createdBy: req.employee._id,
-    };
+    const videoData = req.body;
 
     // Validate required fields
-    if (!videoData.title || !videoData.videoUrl || !videoData.thumbnailUrl || !videoData.category) {
+    if (!videoData.title || !videoData.videoUrl || !videoData.category) {
       return res.status(400).json({
         success: false,
-        message: "Title, video URL, thumbnail URL, and category are required"
+        message: "Title, video URL, and category are required"
       });
     }
 
-    const trainingVideo = new TrainingVideo(videoData);
+    // Check if it's a YouTube URL
+    const isYouTube = isValidYouTubeUrl(videoData.videoUrl);
+    let youTubeId = null;
+
+    if (isYouTube) {
+      youTubeId = extractYouTubeId(videoData.videoUrl);
+      if (!youTubeId) {
+        return res.status(400).json({
+          success: false,
+          message: "Invalid YouTube URL format"
+        });
+      }
+      
+      // Auto-set thumbnail for YouTube if not provided
+      if (!videoData.thumbnailUrl) {
+        videoData.thumbnailUrl = `https://img.youtube.com/vi/${youTubeId}/maxresdefault.jpg`;
+      }
+    } else {
+      // For uploaded videos, thumbnail is required
+      if (!videoData.thumbnailUrl) {
+        return res.status(400).json({
+          success: false,
+          message: "Thumbnail URL is required for uploaded videos"
+        });
+      }
+    }
+
+    // Prepare video data
+    const video = {
+      ...videoData,
+      createdBy: req.employee._id,
+      isYouTube,
+      youTubeId,
+      sourceType: isYouTube ? "youtube" : "upload"
+    };
+
+    const trainingVideo = new TrainingVideo(video);
     await trainingVideo.save();
 
     // Populate createdBy for response
@@ -99,6 +158,15 @@ const createVideo = async (req, res) => {
     });
   } catch (error) {
     console.error("Error creating training video:", error);
+    
+    // Handle duplicate YouTube videos
+    if (error.code === 11000 && error.keyPattern?.youTubeId) {
+      return res.status(400).json({
+        success: false,
+        message: "This YouTube video is already added"
+      });
+    }
+    
     return res.status(500).json({
       success: false,
       message: "Failed to create training video",
