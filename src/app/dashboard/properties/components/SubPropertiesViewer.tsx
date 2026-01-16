@@ -208,5 +208,3 @@ const SubPropertiesViewer: React.FC<SubPropertiesViewerProps> = ({ parentId, onV
 };
 
 export default SubPropertiesViewer;
-
-

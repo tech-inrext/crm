@@ -7,5 +7,3 @@ export { default as PropertyFormDialog } from './PropertyFormDialog';
 export { default as PropertyViewDialog } from './PropertyViewDialog';
 export { default as SubPropertyViewDialog } from './SubPropertyViewDialog';
 // export * from './property-forms';
-
-
