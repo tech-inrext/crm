@@ -43,7 +43,7 @@ export const NotificationHeader: React.FC<NotificationHeaderProps> = ({
         {unreadCount > 0 && (
           <Button
             size="small"
-            onClick={onMarkAllRead}
+            onClick={() => onMarkAllRead()}
             disabled={loading || actionLoading === "mark all as read"}
           >
             {actionLoading === "mark all as read" ? (

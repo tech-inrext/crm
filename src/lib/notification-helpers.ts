@@ -62,7 +62,7 @@ import {
   sendBulkNotification,
 } from "./notifications/utils";
 
-import notificationService from "../services/notification.service";
+import notificationService from "../services/notification-util.service";
 
 // Export all functions
 export {

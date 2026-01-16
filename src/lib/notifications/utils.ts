@@ -1,4 +1,4 @@
-import notificationService from "../../services/notification.service";
+import notificationService from "../../services/notification-util.service";
 import Employee from "../../models/Employee.js";
 
 /**
