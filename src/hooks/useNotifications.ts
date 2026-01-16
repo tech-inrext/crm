@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import {
   useNotifications,
   Notification,
@@ -136,14 +137,21 @@ export const useNotificationItem = (notification: Notification) => {
     [notification._id, markAsRead, isRead]
   );
 
+  const router = useRouter();
+  // ... (inside hook)
+
   const handleNotificationClick = useCallback(async () => {
     await markAsReadAction({ actionType: "CLICKED" });
 
     // Navigate to action URL if present
     if (notification.metadata.actionUrl) {
-      window.location.href = notification.metadata.actionUrl;
+      if (notification.metadata.actionUrl.startsWith("/")) {
+        router.push(notification.metadata.actionUrl);
+      } else {
+        window.location.href = notification.metadata.actionUrl;
+      }
     }
-  }, [markAsReadAction, notification.metadata.actionUrl]);
+  }, [markAsReadAction, notification.metadata.actionUrl, router]);
 
   useEffect(() => {
     setIsRead(notification.lifecycle.status === "READ");

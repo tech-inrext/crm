@@ -25,7 +25,7 @@ interface LeadsTableViewProps {
   header: any[];
   selectedStatuses: string[];
   onStatusesChange: (statuses: string[]) => void;
-  onEdit: (leadId: string) => void;
+  onEdit: (leadId: string, mode?: "edit" | "view") => void;
   onStatusChange: (leadId: string, status: string) => Promise<void>;
   page: number;
   total: number;
@@ -73,8 +73,8 @@ const LeadsTableView: React.FC<LeadsTableViewProps> = ({
                   key={row.id}
                   row={row}
                   header={header}
-                  onEdit={() => onEdit(row._id)}
-                  onDelete={() => {}}
+                  onEdit={(_lead: any, mode?: "edit" | "view") => onEdit(row._id, mode)}
+                  onDelete={() => { }}
                   onStatusChange={onStatusChange}
                 />
               ))}

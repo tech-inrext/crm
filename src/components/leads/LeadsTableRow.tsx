@@ -11,13 +11,13 @@ interface LeadsTableRowProps {
     component?: (
       row: Lead,
       handlers: {
-        onEdit: (lead: Lead) => void;
+        onEdit: (lead: Lead, mode?: "edit" | "view") => void;
         onDelete: (lead: Lead) => void;
         onStatusChange: (leadId: string, newStatus: string) => Promise<void>;
       }
     ) => React.ReactNode;
   }>;
-  onEdit: (lead: Lead) => void;
+  onEdit: (lead: Lead, mode?: "edit" | "view") => void;
   onDelete: (lead: Lead) => void;
   onStatusChange: (leadId: string, newStatus: string) => Promise<void>;
 }

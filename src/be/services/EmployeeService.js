@@ -22,14 +22,19 @@ class EmployeeService extends Service {
   async getEmployeeById(req, res) {
     const { id } = req.query;
     try {
-      const employee = await Employee.findById(id).populate("roles");
+      const employee = await Employee.findById(id)
+        .populate("roles")
+        .select(
+          "name email phone altPhone address gender age fatherName designation joiningDate managerId departmentId roles aadharUrl panUrl bankProofUrl signatureUrl mouPdfUrl nominee slabPercentage branch employeeProfileId isCabVendor mouStatus"
+        )
+        .lean();
+
       if (!employee)
         return res
           .status(404)
           .json({ success: false, error: "Employee not found" });
       return res.status(200).json({ success: true, data: employee });
     } catch (err) {
-      console.error(err);
       return res.status(500).json({ success: false, error: err.message });
     }
   }
@@ -211,7 +216,7 @@ class EmployeeService extends Service {
           const changedByEmail = req.employee?.email || "unknown@company.com";
 
           await sendRoleChangeEmail({
-            adminEmail: "rahulmithu002@gmail.com",
+            adminEmail: process.env.ADMIN_EMAIL || "admin@company.com",
             changedByName,
             changedByEmail,
             changedEmployeeName: updated.name,
@@ -230,36 +235,34 @@ class EmployeeService extends Service {
               removedRoles,
               req.employee?._id
             );
-            console.log("✅ Role change notification sent");
           } catch (error) {
-            console.error("❌ Role change notification failed:", error);
+            // Notification failed silently
           }
         }
       }
 
       // Send notification for user update (only if significant fields changed)
       try {
-        const significantFields = ["designation", "managerId", "departmentId"];
-        const hasSignificantChanges = significantFields.some((field) =>
-          Object.prototype.hasOwnProperty.call(req.body, field)
+        // Exclude 'roles' from generic update check since it has its own notification
+        const genericChanges = Object.keys(updateFields).filter(
+          (key) => key !== "roles"
         );
 
-        if (hasSignificantChanges) {
+        if (genericChanges.length > 0) {
+          const updaterId = req.employee?._id || req.user?._id;
           await notifyUserUpdate(
             updated._id,
             updated.toObject(),
             updateFields,
-            req.employee?._id
+            updaterId
           );
-          console.log("✅ User update notification sent");
         }
       } catch (error) {
-        console.error("❌ User update notification failed:", error);
+        // Notification failed silently
       }
 
       return res.status(200).json({ success: true, data: updated });
     } catch (err) {
-      console.error("Error in updateEmployeeDetails:", err);
       return res.status(400).json({ success: false, error: err.message });
     }
   }
@@ -381,16 +384,12 @@ class EmployeeService extends Service {
       const newEmployee = new Employee(employeeData);
 
       await newEmployee.save();
-      console.debug(
-        "[employee:create] saved employee:",
-        newEmployee.toObject()
-      );
 
       // 1) Send welcome email to employee
       try {
         await sendNewEmployeeWelcomeEmail({ employee: newEmployee.toObject() });
       } catch (e) {
-        console.error("[employee:create] welcome email failed:", e);
+        // Email failed silently
       }
 
       // 2) Send email to manager (if managerId is provided)
@@ -404,7 +403,7 @@ class EmployeeService extends Service {
             });
           }
         } catch (e) {
-          console.error("[employee:create] manager email failed:", e);
+          // Email failed silently
         }
       }
 
@@ -415,14 +414,12 @@ class EmployeeService extends Service {
           newEmployee.toObject(),
           managerId
         );
-        console.log("✅ User registration notification sent");
       } catch (error) {
-        console.error("❌ User registration notification failed:", error);
+        // Notification failed silently
       }
 
       return res.status(201).json({ success: true, data: newEmployee });
     } catch (error) {
-      console.log(error);
       return res.status(500).json({
         success: false,
         message: `Error creating employee: ${error.message}`,
