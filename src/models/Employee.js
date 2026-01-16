@@ -165,6 +165,14 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    photo: {
+      type: String,
+      default: "",
+    },
+    specialization: {
+      type: String,
+      default: "",
+    },
     // Nominee subdocument (optional)
     nominee: {
       type: new mongoose.Schema(

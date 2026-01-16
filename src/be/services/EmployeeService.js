@@ -57,6 +57,8 @@ class EmployeeService extends Service {
       nominee,
       slabPercentage,
       branch,
+      photo,
+      specialization,
     } = req.body;
 
     // Build updateFields by checking property presence so empty strings/nulls
@@ -154,6 +156,8 @@ class EmployeeService extends Service {
     if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
       updateFields.roles = Array.isArray(roles) ? roles : [];
     }
+    setIfPresent("photo", photo);
+    setIfPresent("specialization", specialization);
     setIfPresent("aadharUrl", aadharUrl);
     setIfPresent("panUrl", panUrl);
     setIfPresent("bankProofUrl", bankProofUrl);
@@ -287,6 +291,8 @@ class EmployeeService extends Service {
         slabPercentage,
         branch,
         fatherName,
+        photo,
+        specialization,
       } = req.body;
       // validate name - should not start with a digit
       if (name && /^\d/.test(String(name).trim())) {
@@ -361,7 +367,11 @@ class EmployeeService extends Service {
       if (isCabVendor) {
         employeeData.roles = ["68b6904f3a3a9b850429e610"];
       }
+      if (Object.prototype.hasOwnProperty.call(req.body, "specialization"))
+      employeeData.specialization = specialization;
       // documents
+      if (Object.prototype.hasOwnProperty.call(req.body, "photo"))
+      employeeData.photo = photo;
       if (Object.prototype.hasOwnProperty.call(req.body, "aadharUrl"))
         employeeData.aadharUrl = aadharUrl;
       if (Object.prototype.hasOwnProperty.call(req.body, "panUrl"))
@@ -545,7 +555,6 @@ class EmployeeService extends Service {
     }
   }
 
-
   async login(req, res) {
     const { email, password } = req.body;
 
@@ -682,7 +691,6 @@ class EmployeeService extends Service {
       });
     }
   }
-
 
   async requestOTP(req, res) {
     try {
@@ -1020,7 +1028,7 @@ class EmployeeService extends Service {
   async getHierarchyByManager(req, res) {
     try {
       const { managerId } = req.query; // Get managerId from the query params
-      
+
       if (!managerId) {
         return res.status(400).json({
           success: false,
@@ -1121,6 +1129,84 @@ class EmployeeService extends Service {
       });
     }
   }
+
+  async getPublicEmployeeById(req, res) {
+  const { id } = req.query;
+  
+  try {
+    // Validate ID
+    if (!id || id === 'undefined' || id === 'null') {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Employee ID is required" 
+      });
+    }
+
+    const employee = await Employee.findById(id).populate("roles");
+    
+    if (!employee) {
+      return res
+        .status(404)
+        .json({ success: false, error: "Employee not found" });
+    }
+    
+    // Return only public/safe fields (exclude sensitive information)
+    const publicData = {
+      _id: employee._id,
+      employeeProfileId: employee.employeeProfileId,
+      name: employee.name,
+      email: employee.email,
+      phone: employee.phone,
+      designation: employee.designation,
+      departmentId: employee.departmentId,
+      managerId: employee.managerId,
+      gender: employee.gender,
+      age: employee.age,
+      joiningDate: employee.joiningDate,
+      photo: employee.photo,
+      specialization: employee.specialization,
+      isCabVendor: employee.isCabVendor,
+      branch: employee.branch,
+      // Documents (if you want to make them public)
+      aadharUrl: employee.aadharUrl,
+      panUrl: employee.panUrl,
+      bankProofUrl: employee.bankProofUrl,
+      signatureUrl: employee.signatureUrl,
+      // Roles (non-sensitive info only)
+      roles: employee.roles ? employee.roles.map(role => ({
+        _id: role._id,
+        name: role.name,
+        description: role.description
+      })) : [],
+      createdAt: employee.createdAt,
+      updatedAt: employee.updatedAt
+    };
+    
+    // Remove null/undefined values for cleaner response
+    Object.keys(publicData).forEach(key => {
+      if (publicData[key] === undefined || publicData[key] === null) {
+        delete publicData[key];
+      }
+    });
+    
+    return res.status(200).json({ success: true, data: publicData });
+  } catch (err) {
+    console.error("Public API Error:", err);
+    
+    // Handle invalid ID format
+    if (err.name === 'CastError') {
+      return res.status(400).json({ 
+        success: false, 
+        error: "Invalid employee ID format" 
+      });
+    }
+    
+    return res.status(500).json({ 
+      success: false, 
+      error: "Internal server error" 
+    });
+  }
+}
 }
 
 export default EmployeeService;
