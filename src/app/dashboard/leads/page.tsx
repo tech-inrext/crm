@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -49,6 +49,10 @@ const FollowUpDialog = dynamic(
 );
 const SiteVisitDialog = dynamic(
   () => import("@/components/leads/SiteVisitDialog"),
+  { ssr: false }
+);
+const LeadsTableView = dynamic(
+  () => import("@/components/leads/LeadsTableView"),
   { ssr: false }
 );
 const LeadsCardsView = dynamic(
@@ -107,6 +111,15 @@ const Leads: React.FC = () => {
   const [siteVisitOpen, setSiteVisitOpen] = useState(false);
   const [selectedLeadForSiteVisit, setSelectedLeadForSiteVisit] = useState<string | null>(null);
 
+
+
+
+  
+  const [siteVisitOpen, setSiteVisitOpen] = useState(false);
+  const [selectedLeadForSiteVisit, setSelectedLeadForSiteVisit] = useState<string | null>(null);
+
+
+
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
       ? {
@@ -145,8 +158,7 @@ const Leads: React.FC = () => {
             <IconButton
               size="small"
               onClick={() => {
-                setSelectedLeadForFeedback(row.leadId || row._id || row.id);
-                setFeedbackOpen(true);
+                openFeedback(row.leadId || row._id || row.id);
               }}
             >
               <Badge
@@ -163,6 +175,22 @@ const Leads: React.FC = () => {
       }
       : col
   );
+
+  const handleSaveLead = async (data: any) => {
+    try {
+      await saveLead(data, editId);
+      showSnackbar(
+        editId ? "Lead updated successfully" : "Lead created successfully",
+        "success"
+      );
+      setOpen(false);
+      setEditId(null);
+    } catch (err: any) {
+      const message = extractErrorMessage(err);
+      showSnackbar(message, "error");
+      console.error("Failed to save lead:", err);
+    }
+  };
 
   return (
     <Box sx={MODULE_STYLES.leads.leadsContainer}>
@@ -235,8 +263,7 @@ const Leads: React.FC = () => {
             }}
             leadIdentifier={selectedLeadForFeedback}
             onSaved={async () => {
-              // refresh leads after saving follow-up
-              await loadLeads(page + 1, rowsPerPage, search);
+              await loadLeads(page + 1, rowsPerPage, searchInput);
             }}
           />
         )}
@@ -259,10 +286,8 @@ const Leads: React.FC = () => {
             initialProject={leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.propertyName}
             clientPhone={leads.find(l => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit)?.phone}
             onSaved={async () => {
-              setSnackbarMessage("Site visit scheduled successfully");
-              setSnackbarSeverity("success");
-              setSnackbarOpen(true);
-              await loadLeads(page + 1, rowsPerPage, search);
+              showSnackbar("Site visit scheduled successfully", "success");
+              await loadLeads(page + 1, rowsPerPage, searchInput);
             }}
           />
         )}
