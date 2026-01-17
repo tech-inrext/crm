@@ -15,24 +15,83 @@ import {
   notifyRoleChange,
 } from "../../lib/notification-helpers";
 
+
 class EmployeeService extends Service {
   constructor() {
     super();
   }
-  async getEmployeeById(req, res) {
-    const { id } = req.query;
-    try {
-      const employee = await Employee.findById(id).populate("roles");
-      if (!employee)
-        return res
-          .status(404)
-          .json({ success: false, error: "Employee not found" });
-      return res.status(200).json({ success: true, data: employee });
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ success: false, error: err.message });
-    }
-  }
+async getEmployeeById(req, res) { 
+  const { id } = req.query; 
+  try { 
+    // 1️⃣ Validate employee ID 
+    if (!id || id === "undefined" || id === "null") { 
+    return res.status(400).json({ 
+      success: false, 
+      error: "Employee ID is required", }); 
+    } 
+    // 2️⃣ Fetch employee from DB 
+    const employee = await Employee.findById(id).populate("roles"); 
+    if (!employee) 
+      { return res.status(404).json({ 
+        success: false, 
+        error: "Employee not found", }); 
+      } 
+      // 3️⃣ Check if user is fully authenticated (token + roleId) 
+      const token = req.cookies?.token; 
+      let isFullyAuthenticated = false; 
+      if (token) { 
+        try { 
+          const decoded = jwt.verify(token, process.env.JWT_SECRET); 
+          if (decoded?._id && decoded?.roleId) { 
+            isFullyAuthenticated = true; 
+          } } catch { 
+            // Invalid or expired token → treat as public user 
+            isFullyAuthenticated = false; 
+          } 
+        } 
+        // 4️⃣ If authenticated with role → return full employee data 
+        if (isFullyAuthenticated) { 
+          return res.status(200).json({ 
+            success: true, 
+            data: employee, 
+          }); 
+        } 
+        // 5️⃣ Otherwise → return public employee data only 
+        const publicData = { 
+          name: employee.name, 
+          email: employee.email, 
+          phone: employee.phone, 
+          altPhone: employee.altPhone, 
+          designation: employee.designation, 
+          photo: employee.photo, 
+          specialization: employee.specialization, 
+        }; 
+        // Remove null / undefined fields 
+        Object.entries(publicData).forEach(([key, value]) => { 
+          if (value == null) delete publicData[key]; 
+        });
+        
+          return res.status(200).json({ 
+            success: true, 
+            data: publicData, 
+          }); 
+        } catch (error) { 
+          console.error("Get Employee Error:", error); 
+          
+          // 6️⃣ Handle invalid MongoDB ObjectId 
+          if (error.name === "CastError") { 
+            return res.status(400).json({ 
+              success: false, 
+              error: "Invalid employee ID format", 
+            }); 
+          } 
+          
+          return res.status(500).json({ 
+            success: false, 
+            error: "Internal server error", 
+          }); 
+        } 
+      }
 
   async updateEmployeeDetails(req, res) {
     const { id } = req.query;
@@ -57,6 +116,8 @@ class EmployeeService extends Service {
       nominee,
       slabPercentage,
       branch,
+      photo,
+      specialization,
     } = req.body;
 
     // Build updateFields by checking property presence so empty strings/nulls
@@ -154,6 +215,8 @@ class EmployeeService extends Service {
     if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
       updateFields.roles = Array.isArray(roles) ? roles : [];
     }
+    setIfPresent("photo", photo);
+    setIfPresent("specialization", specialization);
     setIfPresent("aadharUrl", aadharUrl);
     setIfPresent("panUrl", panUrl);
     setIfPresent("bankProofUrl", bankProofUrl);
@@ -287,6 +350,8 @@ class EmployeeService extends Service {
         slabPercentage,
         branch,
         fatherName,
+        photo,
+        specialization,
       } = req.body;
       // validate name - should not start with a digit
       if (name && /^\d/.test(String(name).trim())) {
@@ -361,7 +426,11 @@ class EmployeeService extends Service {
       if (isCabVendor) {
         employeeData.roles = ["68b6904f3a3a9b850429e610"];
       }
+      if (Object.prototype.hasOwnProperty.call(req.body, "specialization"))
+      employeeData.specialization = specialization;
       // documents
+      if (Object.prototype.hasOwnProperty.call(req.body, "photo"))
+      employeeData.photo = photo;
       if (Object.prototype.hasOwnProperty.call(req.body, "aadharUrl"))
         employeeData.aadharUrl = aadharUrl;
       if (Object.prototype.hasOwnProperty.call(req.body, "panUrl"))
@@ -545,7 +614,6 @@ class EmployeeService extends Service {
     }
   }
 
-
   async login(req, res) {
     const { email, password } = req.body;
 
@@ -682,7 +750,6 @@ class EmployeeService extends Service {
       });
     }
   }
-
 
   async requestOTP(req, res) {
     try {
@@ -1020,7 +1087,7 @@ class EmployeeService extends Service {
   async getHierarchyByManager(req, res) {
     try {
       const { managerId } = req.query; // Get managerId from the query params
-      
+
       if (!managerId) {
         return res.status(400).json({
           success: false,
