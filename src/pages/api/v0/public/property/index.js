@@ -1,8 +1,6 @@
 // pages/api/public/property/index.js
 import dbConnect from "@/lib/mongodb";
-import Property from "@/models/Property"; // Your Property model
-// import "@/models/SubProperty"; // If you have sub-properties to populate
-
+import Property from "@/models/Property";  
 export default async function handler(req, res) {
   if (req.method !== "GET") {
     return res.status(405).json({ success: false, message: "Method not allowed" });
