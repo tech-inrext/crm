@@ -15,24 +15,83 @@ import {
   notifyRoleChange,
 } from "../../lib/notification-helpers";
 
+
 class EmployeeService extends Service {
   constructor() {
     super();
   }
-  async getEmployeeById(req, res) {
-    const { id } = req.query;
-    try {
-      const employee = await Employee.findById(id).populate("roles");
-      if (!employee)
-        return res
-          .status(404)
-          .json({ success: false, error: "Employee not found" });
-      return res.status(200).json({ success: true, data: employee });
-    } catch (err) {
-      console.error(err);
-      return res.status(500).json({ success: false, error: err.message });
-    }
-  }
+async getEmployeeById(req, res) { 
+  const { id } = req.query; 
+  try { 
+    // 1️⃣ Validate employee ID 
+    if (!id || id === "undefined" || id === "null") { 
+    return res.status(400).json({ 
+      success: false, 
+      error: "Employee ID is required", }); 
+    } 
+    // 2️⃣ Fetch employee from DB 
+    const employee = await Employee.findById(id).populate("roles"); 
+    if (!employee) 
+      { return res.status(404).json({ 
+        success: false, 
+        error: "Employee not found", }); 
+      } 
+      // 3️⃣ Check if user is fully authenticated (token + roleId) 
+      const token = req.cookies?.token; 
+      let isFullyAuthenticated = false; 
+      if (token) { 
+        try { 
+          const decoded = jwt.verify(token, process.env.JWT_SECRET); 
+          if (decoded?._id && decoded?.roleId) { 
+            isFullyAuthenticated = true; 
+          } } catch { 
+            // Invalid or expired token → treat as public user 
+            isFullyAuthenticated = false; 
+          } 
+        } 
+        // 4️⃣ If authenticated with role → return full employee data 
+        if (isFullyAuthenticated) { 
+          return res.status(200).json({ 
+            success: true, 
+            data: employee, 
+          }); 
+        } 
+        // 5️⃣ Otherwise → return public employee data only 
+        const publicData = { 
+          name: employee.name, 
+          email: employee.email, 
+          phone: employee.phone, 
+          altPhone: employee.altPhone, 
+          designation: employee.designation, 
+          photo: employee.photo, 
+          specialization: employee.specialization, 
+        }; 
+        // Remove null / undefined fields 
+        Object.entries(publicData).forEach(([key, value]) => { 
+          if (value == null) delete publicData[key]; 
+        });
+        
+          return res.status(200).json({ 
+            success: true, 
+            data: publicData, 
+          }); 
+        } catch (error) { 
+          console.error("Get Employee Error:", error); 
+          
+          // 6️⃣ Handle invalid MongoDB ObjectId 
+          if (error.name === "CastError") { 
+            return res.status(400).json({ 
+              success: false, 
+              error: "Invalid employee ID format", 
+            }); 
+          } 
+          
+          return res.status(500).json({ 
+            success: false, 
+            error: "Internal server error", 
+          }); 
+        } 
+      }
 
   async updateEmployeeDetails(req, res) {
     const { id } = req.query;
@@ -1129,84 +1188,6 @@ class EmployeeService extends Service {
       });
     }
   }
-
-  async getPublicEmployeeById(req, res) {
-  const { id } = req.query;
-  
-  try {
-    // Validate ID
-    if (!id || id === 'undefined' || id === 'null') {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Employee ID is required" 
-      });
-    }
-
-    const employee = await Employee.findById(id).populate("roles");
-    
-    if (!employee) {
-      return res
-        .status(404)
-        .json({ success: false, error: "Employee not found" });
-    }
-    
-    // Return only public/safe fields (exclude sensitive information)
-    const publicData = {
-      _id: employee._id,
-      employeeProfileId: employee.employeeProfileId,
-      name: employee.name,
-      email: employee.email,
-      phone: employee.phone,
-      designation: employee.designation,
-      departmentId: employee.departmentId,
-      managerId: employee.managerId,
-      gender: employee.gender,
-      age: employee.age,
-      joiningDate: employee.joiningDate,
-      photo: employee.photo,
-      specialization: employee.specialization,
-      isCabVendor: employee.isCabVendor,
-      branch: employee.branch,
-      // Documents (if you want to make them public)
-      aadharUrl: employee.aadharUrl,
-      panUrl: employee.panUrl,
-      bankProofUrl: employee.bankProofUrl,
-      signatureUrl: employee.signatureUrl,
-      // Roles (non-sensitive info only)
-      roles: employee.roles ? employee.roles.map(role => ({
-        _id: role._id,
-        name: role.name,
-        description: role.description
-      })) : [],
-      createdAt: employee.createdAt,
-      updatedAt: employee.updatedAt
-    };
-    
-    // Remove null/undefined values for cleaner response
-    Object.keys(publicData).forEach(key => {
-      if (publicData[key] === undefined || publicData[key] === null) {
-        delete publicData[key];
-      }
-    });
-    
-    return res.status(200).json({ success: true, data: publicData });
-  } catch (err) {
-    console.error("Public API Error:", err);
-    
-    // Handle invalid ID format
-    if (err.name === 'CastError') {
-      return res.status(400).json({ 
-        success: false, 
-        error: "Invalid employee ID format" 
-      });
-    }
-    
-    return res.status(500).json({ 
-      success: false, 
-      error: "Internal server error" 
-    });
-  }
-}
 }
 
 export default EmployeeService;

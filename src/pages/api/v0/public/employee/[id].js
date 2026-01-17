@@ -5,9 +5,10 @@ class PublicEmployeeController extends Controller {
   constructor() {
     super();
     this.service = new EmployeeService();
+    this.skipAuth = ["get"];
   }
   get(req, res) {
-    return this.service.getPublicEmployeeById(req, res);
+    return this.service.getEmployeeById(req, res);
   }
 }
 
