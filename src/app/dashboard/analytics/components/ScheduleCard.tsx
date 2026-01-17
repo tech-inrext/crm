@@ -1,4 +1,5 @@
 import React from 'react';
+import Skeleton from '@/components/ui/Component/Skeleton';
 import Pagination from '@mui/material/Pagination';
 import Select from '@mui/material/Select';
 import MenuItem from '@mui/material/MenuItem';
@@ -105,7 +106,16 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ analyticsAccess, scheduleLo
           </Box>
           <Box>
             {scheduleLoading && (
-              <Typography sx={{ color: '#666', textAlign: 'center', py: 2.5 }}>Loading schedule...</Typography>
+              <Box sx={{ py: 2.5 }}>
+                <Skeleton variant="rectangular" width="100%" height={40} sx={{ mb: 2, borderRadius: 2 }} />
+                <Skeleton variant="text" width="60%" height={32} sx={{ mb: 1 }} />
+                <Skeleton variant="text" width="40%" height={24} sx={{ mb: 1 }} />
+                {[...Array(2)].map((_, i) => (
+                  <Box key={i} sx={{ mb: 2 }}>
+                    <Skeleton variant="rectangular" width="100%" height={60} sx={{ borderRadius: 2 }} />
+                  </Box>
+                ))}
+              </Box>
             )}
             {!scheduleLoading && scheduleAnalytics && scheduleAnalytics.success && (
               <Box>
@@ -182,7 +192,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({ analyticsAccess, scheduleLo
                     <Typography className="text-[#666] text-[0.95rem]">Rows:</Typography>
                     <Select
                       value={leadsPerPage}
-                      onChange={handleChangeRowsPerPage}
+                      onChange ={handleChangeRowsPerPage}
                       size="small"
                     >
                       <MenuItem value={2}>2</MenuItem>

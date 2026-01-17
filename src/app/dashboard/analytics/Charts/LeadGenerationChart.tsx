@@ -89,14 +89,17 @@ export default function LeadGenerationChart({ period = 'month' }: Props) {
     };
   }, [period]);
 
+  // Use MUI Box for the main container
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const Box = require('@mui/material/Box').default;
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-[#eceff1] px-7 pt-8 pb-4 max-w-[850px]">
-      <div className="flex justify-between items-center mb-3">
-        <div className="font-semibold text-[#222]">{loading ? 'Loading...' : (error ? 'Error loading data' : '')}</div>
-      </div>
-      <div className="h-[350px]">
+    <Box className="bg-white rounded-2xl shadow-sm border border-[#eceff1] px-7 pt-8 pb-4 max-w-[850px]">
+      <Box className="flex justify-between items-center mb-3">
+        <Box className="font-semibold text-[#222]">{loading ? 'Loading...' : (error ? 'Error loading data' : '')}</Box>
+      </Box>
+      <Box className="h-[350px]">
         <Bar data={chartData} options={options} />
-      </div>
-    </div>
+      </Box>
+    </Box>
   );
 }
