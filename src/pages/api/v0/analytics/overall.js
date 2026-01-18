@@ -1,16 +1,21 @@
-import { userAuth } from "@/middlewares/auth";
-import { AnalyticsService } from "@/be/services/Analytics";
+import { Controller } from "@framework";
+import * as OverallAnalyticsService from "@/be/services/analytics/overall";
 
-async function handler(req, res) {
-  try {
-    const employee = req.employee;
-    const userId = req.query.userId;
-    const result = await AnalyticsService.getOverall({ userId, employee });
-    res.status(200).json(result);
-  } catch (err) {
-    console.error("Analytics API error:", err);
-    res.status(500).json({ error: err.message, success: false });
-  }
+class OverallAnalyticsController extends Controller {
+	constructor() {
+		super();
+	}
+
+	// GET: overall dashboard stats
+	async get(req, res) {
+		const result = await OverallAnalyticsService.getOverall({
+			userId: req.query.userId,
+			employee: req.employee,
+		});
+		return res.status(200).json(result);
+	}
+
+ 
 }
 
-export default (req, res) => userAuth(req, res, handler);
+export default new OverallAnalyticsController().handler;
