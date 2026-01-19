@@ -80,20 +80,20 @@ export function useUsers(debouncedSearch: string) {
         };
 
         const payload = { ...userData };
-  console.debug("[addUser] payload before uploads:", payload);
+        console.debug("[addUser] payload before uploads:", payload);
         if (userData.aadharFile) payload.aadharUrl = await uploadFile(userData.aadharFile);
         if (userData.panFile) payload.panUrl = await uploadFile(userData.panFile);
         if (userData.bankProofFile) payload.bankProofUrl = await uploadFile(userData.bankProofFile);
-  if (userData.signatureFile) payload.signatureUrl = await uploadFile(userData.signatureFile);
+        if (userData.signatureFile) payload.signatureUrl = await uploadFile(userData.signatureFile);
 
         // Remove file objects before sending
         delete payload.aadharFile;
         delete payload.panFile;
         delete payload.bankProofFile;
-  delete payload.signatureFile;
+        delete payload.signatureFile;
 
         await axios.post(USERS_API_BASE, payload);
-  console.debug("[addUser] POST completed");
+        console.debug("[addUser] POST completed");
         await loadEmployees(page, rowsPerPage, debouncedSearch, false);
       } catch (error) {
         // Normalize axios errors so caller can show friendly messages
@@ -136,11 +136,11 @@ export function useUsers(debouncedSearch: string) {
         if (userData.aadharFile) payload.aadharUrl = await uploadFile(userData.aadharFile);
         if (userData.panFile) payload.panUrl = await uploadFile(userData.panFile);
         if (userData.bankProofFile) payload.bankProofUrl = await uploadFile(userData.bankProofFile);
-  if (userData.signatureFile) payload.signatureUrl = await uploadFile(userData.signatureFile);
+        if (userData.signatureFile) payload.signatureUrl = await uploadFile(userData.signatureFile);
         delete payload.aadharFile;
         delete payload.panFile;
         delete payload.bankProofFile;
-  delete payload.signatureFile;
+        delete payload.signatureFile;
 
         await axios.patch(`${USERS_API_BASE}/${id}`, payload);
         await loadEmployees(page, rowsPerPage, debouncedSearch, false);
@@ -153,6 +153,16 @@ export function useUsers(debouncedSearch: string) {
     },
     [page, rowsPerPage, debouncedSearch, loadEmployees]
   );
+
+  const getUserById = useCallback(async (id: string) => {
+    try {
+      const response = await axios.get(`${USERS_API_BASE}/${id}`);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error("Failed to fetch user:", error);
+      return null;
+    }
+  }, []);
 
   return {
     employees,
@@ -174,6 +184,7 @@ export function useUsers(debouncedSearch: string) {
     addUser,
     updateUser,
     loadEmployees,
+    getUserById,
     reload: loadEmployees,
   };
 }
