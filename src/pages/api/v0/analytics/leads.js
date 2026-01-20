@@ -1,5 +1,5 @@
 import { Controller } from "@framework";
-import LeadAnalyticsService from "@/be/services/Analytics/leads";
+import LeadAnalyticsService from "@/be/services/analytics/leads";
 
 class LeadAnalyticsController extends Controller {
   constructor() {
