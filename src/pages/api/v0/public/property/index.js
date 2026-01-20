@@ -1,5 +1,5 @@
 import { Controller } from "@framework";
-import PropertyService from "../../../../../be/services/PropertyService";
+import PropertyService from "@/be/services/PropertyService";
 import * as cookie from "cookie";
 import { userAuth } from "../../../../../middlewares/auth";
 
