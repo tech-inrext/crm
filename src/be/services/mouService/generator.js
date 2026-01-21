@@ -329,7 +329,7 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
     BRANCH_ADDRESSES[branchKey] || BRANCH_ADDRESSES.Noida;
   addWrappedText(
     doc,
-    `is a company having its Co. office at ${facilitatorAddress} hereinafter referred to as the facilitator which expression unless repugnant to the context or subject shall mean and include its successors, representatives and assigns; i.e. the First Party.`
+    `is a company having its Co. office at ${facilitatorAddress} Hereinafter referred to as the facilitator which expression unless repugnant to the context or subject shall mean and include its successors, representatives and assigns; i.e. the First Party.`
   );
 
   // AND
@@ -345,13 +345,13 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
     .font("Times-Roman")
     .font("Times-Bold")
     .fontSize(12)
-    .text(`Mr/Mrs. ${employeeName}`, { continued: true });
+    .text(`Mr/Ms. ${employeeName}`, { continued: true });
   if (employeeFatherName)
     doc
       .font("Times-Roman")
       .font("Times-Roman")
       .fontSize(12)
-      .text(` S/o. ${employeeFatherName}`, { continued: true });
+      .text(` S/o / D/o. ${employeeFatherName}`, { continued: true });
   doc
     .font("Times-Roman")
     .font("Times-Bold")
@@ -449,7 +449,7 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
     "27. That all payments made by Inrext Pvt. Ltd. shall be inclusive of the Taxes any deviations or changes to this clause shall be mutually decided on or before signing any agreement and the same shall be incorporated in the agreement.",
     "28. That the Associate will raise its Invoice/Commission bill on a monthly basis (Commission slab as per mentioned bellow) and the amount will be disbursed within 45-60 days from receiving a paper invoice and after due verification by the First Party. Associate commission shall be paid to Associate in such manner and installments, which shall become due on such payout structure as have been mentioned below. First Party shall not be liable to pay any interest on the amount of commission including on the ground of delay in payment thereof.",
     "29. Any payment made for site visits to the Associate will be subject to deduction from their Commission slab.",
-    "30. This MOU valid for 3 months from the date of execution as mentioned in this MOU.",
+    "30. This MOU will remain valid and effective until any amendments or modifications are made to the brokerage structure, slab, transactional terms, or any specific clauses in the future.",
     "31. Once the Agreement stand cancelled/terminated, in the event neither party shall use each other's intellectual property of the other party.",
     "32. Any dispute and differences arising out of or relating to this contract including interpretation of its terms shall be resolved through joint discussion of the chief executives of both the parties. However, if the dispute is not resolved by joint discussions, then the matter shall be referred to and settled by the party's arbitration and the arbitrator shall be appointed by the first party only. The arbitration proceedings shall be held in accordance with the arbitration and conciliation act, 2013 per any subsequent enactment or amendment thereto. The decision of the arbitrator shall be final and binding upon the parties. The venue of arbitration proceedings shall be at Noida.",
     "For all legal matters between the facilitator and associate Courts/Tribunals/Forums at Noida shall have the exclusive jurisdiction.",
