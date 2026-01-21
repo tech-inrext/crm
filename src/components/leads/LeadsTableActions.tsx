@@ -3,12 +3,13 @@ import { Box, IconButton, Badge } from "@/components/ui/Component";
 import {
   Edit as EditIcon,
   Feedback as FeedbackIcon,
+  Visibility as ViewIcon,
   PermissionGuard,
 } from "@/components/ui/Component";
 
 interface LeadsTableActionsProps {
   row: any;
-  onEdit: (row: any) => void;
+  onEdit: (row: any, mode?: "edit" | "view") => void;
   onFeedback: (leadId: string) => void;
 }
 
@@ -32,6 +33,10 @@ export const LeadsTableActions: React.FC<LeadsTableActionsProps> = ({
           <EditIcon fontSize="small" />
         </IconButton>
       </PermissionGuard>
+
+      <IconButton onClick={() => onEdit(row, "view")} size="small" title="View Details">
+        <ViewIcon fontSize="small" />
+      </IconButton>
 
       <IconButton
         size="small"

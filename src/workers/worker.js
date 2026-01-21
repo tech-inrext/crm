@@ -11,101 +11,109 @@ import sendLeadFollowUpNotification from "./sendLeadFollowUpNotification.js";
 import { leadQueue } from "../queue/leadQueue.js";
 import bulkAssignLeads from "./bulkAssignLeads.js";
 import revertBulkAssign from "./revertBulkAssign.js";
+<<<<<<< HEAD
 // Cab Booking Analytics Worker
 import '../workers/cabBookingAnalyticsWorker.js';
+=======
+import dbConnect from "../lib/mongodb.js";
+import checkFollowUpsJob from "./checkFollowUpsJob.js";
+>>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
 
-// 🛠️ Load .env
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 
-// 🔗 Redis Connection
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 const connection = new IORedis(redisUrl, {
-  maxRetriesPerRequest: null, // Required for BullMQ workers
-  tls: redisUrl.startsWith("rediss://") ? { rejectUnauthorized: false } : undefined,
+  maxRetriesPerRequest: null,
+  tls: redisUrl.startsWith("rediss://")
+    ? { rejectUnauthorized: false }
+    : undefined,
 });
 
-connection.on("error", (err) => {
-  console.error("❌ Worker Redis Connection Error:", err.message);
-});
-
-connection.on("connect", () => {
-  console.log("✅ Worker connected to Redis");
-});
+connection.on("error", (err) =>
+  console.error("Redis connection error:", err.message)
+);
+connection.on("connect", () => console.log("Worker connected to Redis"));
 
 class InrextWorker extends Worker {
   constructor() {
     super("leadQueue", async (job) => this.jobsMapper(job), { connection });
-    this.jobMethods = [];
   }
+
   async jobsMapper(job) {
-    const jobName = job.name;
-    // Fix: We MUST check for the function and AWAIT its completion
-    if (typeof this[jobName] === "function") {
+    if (typeof this[job.name] === "function") {
       try {
-        console.log(`🚀 Executing ${jobName}...`);
-        await this[jobName](job); // <--- THE CRITICAL FIX: Add 'await'
-        console.log(`✅ ${jobName} finished successfully.`);
+        console.log(`Executing ${job.name}...`);
+        await this[job.name](job);
+        console.log(`${job.name} completed`);
       } catch (error) {
-        console.error(`❌ ${jobName} failed:`, error.message);
-        throw error; // Let BullMQ know it failed so it can retry
+        console.error(`${job.name} failed:`, error.message);
+        throw error;
       }
     } else {
-      console.error(`🚨 No handler found for job: ${jobName}`);
+      console.error(`No handler for job: ${job.name}`);
     }
   }
+
   addJobListener(jobName, cb) {
-    if (this.jobMethods.includes(jobName)) {
-      throw "Job already added";
-    }
     this[jobName] = cb;
   }
 }
 
 const worker = new InrextWorker();
+
 worker.addJobListener("bulkUploadLeads", bulkUploadLeads);
 worker.addJobListener("sendOTPJob", sendOTPJob);
 worker.addJobListener("sendNotificationEmail", sendNotificationEmail);
 worker.addJobListener("notificationCleanup", notificationCleanupJob);
-worker.addJobListener("sendLeadFollowUpNotification", sendLeadFollowUpNotification);
+worker.addJobListener(
+  "sendLeadFollowUpNotification",
+  sendLeadFollowUpNotification
+);
 worker.addJobListener("bulkAssignLeads", bulkAssignLeads);
 worker.addJobListener("revertBulkAssign", revertBulkAssign);
+worker.addJobListener("checkFollowUps", checkFollowUpsJob);
 
-// Event Listeners for Debugging
-worker.on("failed", (job, err) => {
-  console.error(`❌ Job ${job.name} failed (ID: ${job.id}):`, err);
-});
+worker.on("failed", (job, err) =>
+  console.error(`Job ${job.name} failed:`, err)
+);
+worker.on("error", (err) => console.error("Worker error:", err));
+worker.on("completed", (job) => console.log(`Job ${job.name} completed`));
 
-worker.on("error", (err) => {
-  console.error("❌ Worker Error:", err);
-});
+dbConnect()
+  .then(async () => {
+    console.log("Worker connected to MongoDB");
 
-worker.on("completed", (job) => {
-  console.log(`✅ Job ${job.name} completed (ID: ${job.id})`);
-});
+    if (leadQueue) {
+      await leadQueue.add(
+        "checkFollowUps",
+        {},
+        {
+          repeat: { every: 60000 },
+          jobId: "checkFollowUps-cron",
+        }
+      );
+      await leadQueue.add(
+        "checkFollowUps",
+        {},
+        {
+          jobId: `checkFollowUps-init-${Date.now()}`,
+        }
+      );
+      console.log("Scheduled checkFollowUps job");
 
-// Schedule periodic cleanup tasks
-const scheduleCleanupTasks = () => {
-  if (!leadQueue) {
-    console.warn("Queue not available, skipping cleanup scheduling");
-    return;
-  }
-
-  // Schedule hourly cleanup for expired notifications
-  setInterval(() => {
-    leadQueue.add("notificationCleanup", { action: "expired" });
-  }, 60 * 60 * 1000); // Every hour
-
-  // Schedule daily cleanup for old notifications
-  setInterval(() => {
-    leadQueue.add("notificationCleanup", { action: "all" });
-  }, 24 * 60 * 60 * 1000); // Every 24 hours
-
-  console.log("Notification cleanup tasks scheduled");
-};
-
-// Start cleanup scheduling
-scheduleCleanupTasks();
+      setInterval(
+        () => leadQueue.add("notificationCleanup", { action: "expired" }),
+        60 * 60 * 1000
+      );
+      setInterval(
+        () => leadQueue.add("notificationCleanup", { action: "all" }),
+        24 * 60 * 60 * 1000
+      );
+      console.log("Notification cleanup scheduled");
+    }
+  })
+  .catch((err) => console.error("Worker failed to connect to MongoDB", err));
 
 export default worker;

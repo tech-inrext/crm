@@ -83,7 +83,11 @@ export default function NewDashboardPage() {
         // Use manager MoU stats for stat card
         managerMouStats,
         myTeamsCount: teamsData?.myTeamsCount ?? 0,
+<<<<<<< HEAD
       });
+=======
+      }); 
+>>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
       setLeadsAnalytics(leadsData);
       setScheduleAnalytics(scheduleData);
     }).finally(() => {
@@ -176,6 +180,7 @@ export default function NewDashboardPage() {
                 Vendor Filter & List
               </div>
               <VendorBreakdown />
+<<<<<<< HEAD
               <div style={{ marginTop: 24 }}>
                 <a
                   href={(() => {
@@ -199,6 +204,9 @@ export default function NewDashboardPage() {
                   Download This Month's Cab Booking Excel
                 </a>
               </div>
+=======
+               
+>>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
             </div>
           </div>
         )}

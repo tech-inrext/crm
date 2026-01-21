@@ -1,8 +1,7 @@
-import dbConnect from "../../../../lib/mongodb";
-import TrainingVideo from "../../../../models/TrainingVideo";
-import * as cookie from "cookie";
-import { userAuth } from "../../../../middlewares/auth";
+import { Controller } from "@framework";
+import TrainingVideoService from "../../../../be/services/TrainingVideoService";
 
+<<<<<<< HEAD
 // Helper function to extract YouTube ID
 const extractYouTubeId = (url) => {
   if (!url) return null;
@@ -93,9 +92,15 @@ const getAllVideos = async (req, res) => {
       message: "Failed to fetch training videos",
       error: error.message,
     });
+=======
+class TrainingVideoIndexController extends Controller {
+  constructor() {
+    super();
+    this.service = new TrainingVideoService();
+>>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
   }
-};
 
+<<<<<<< HEAD
 // POST create new video
 const createVideo = async (req, res) => {
   try {
@@ -172,42 +177,15 @@ const createVideo = async (req, res) => {
       message: "Failed to create training video",
       error: error.message,
     });
+=======
+  async get(req, res) {
+    return this.service.getAllVideos(req, res);
+>>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
   }
-};
 
-function withAuth(handler) {
-  return async (req, res) => {
-    const parsedCookies = cookie.parse(req.headers.cookie || "");
-    req.cookies = parsedCookies;
-    await userAuth(req, res, () => handler(req, res));
-  };
+  async post(req, res) {
+    return this.service.createVideo(req, res);
+  }
 }
 
-const handler = async (req, res) => {
-  await dbConnect();
-
-  try {
-    if (req.method === "GET") {
-      return getAllVideos(req, res);
-    }
-
-    if (req.method === "POST") {
-      return createVideo(req, res);
-    }
-
-    return res.status(405).json({
-      success: false,
-      message: "Method not allowed",
-    });
-  } catch (error) {
-    console.error("API Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-      error: error.message,
-    });
-  }
-};
-
-export default withAuth(handler);
-
+export default new TrainingVideoIndexController().handler;

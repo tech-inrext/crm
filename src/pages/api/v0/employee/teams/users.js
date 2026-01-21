@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import dbConnect from "@/lib/mongodb";
 import Employee from "@/models/Employee";
 import { userAuth } from "@/middlewares/auth";
@@ -145,3 +146,20 @@ async function handler(req, res) {
 }
 
 export default (req, res) => userAuth(req, res, handler);
+=======
+import { Controller } from "@framework";
+import UserStatsService from "@/be/services/analytics/users";
+
+class UserStatsController extends Controller {
+  constructor() {
+    super();
+    this.service = new UserStatsService();
+  }
+
+  get(req, res) {
+    return this.service.getAllUsers(req, res);
+  }
+}
+
+export default new UserStatsController().handler;
+>>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa

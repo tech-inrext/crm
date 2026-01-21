@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import dbConnect from "@/lib/mongodb";
 import Employee from "@/models/Employee";
 import VendorBooking from "@/models/VendorBooking";
@@ -354,5 +355,20 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error("Vendor API Error:", err);
     res.status(500).json({ error: err.message });
+=======
+import { Controller } from "@framework";
+import VendorAnalyticsService from "@/be/services/analytics/vendor";
+
+class VendorAnalyticsController extends Controller {
+  constructor() {
+    super();
+    this.service = new VendorAnalyticsService();
+  }
+
+  get(req, res) {
+    return this.service.getVendor(req, res);
+>>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
   }
 }
+
+export default new VendorAnalyticsController().handler;

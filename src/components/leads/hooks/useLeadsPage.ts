@@ -30,6 +30,7 @@ export function useLeadsPage() {
     stats,
   } = useLeads();
 
+  const [dialogMode, setDialogMode] = useState<"edit" | "view">("edit");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [formData, setFormData] = useState(getDefaultLeadFormData());
@@ -49,7 +50,20 @@ export function useLeadsPage() {
       const statuses = statusParam.split(",").filter(Boolean);
       setSelectedStatuses(statuses);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Check for openDialog param
+    const openDialog = searchParams.get("openDialog");
+    const leadId = searchParams.get("leadId");
+    const mode = searchParams.get("mode") as "view" | "edit" | null;
+
+    if (openDialog === "true" && leadId) {
+      // We need to wait for leads to be loaded potentially, but if we have the ID we can try to find it
+      // or just set the ID and let the other effect handle form data population
+      setEditId(leadId);
+      setDialogMode(mode || "view"); // Default to view if coming from notification/url without explicit mode, or use query param
+      setOpen(true);
+    }
+  }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Sync debounced search
   useEffect(() => {
@@ -91,14 +105,37 @@ export function useLeadsPage() {
     [searchParams, router, setSelectedStatuses, setPage]
   );
 
-  const handleEdit = useCallback((leadId: string) => {
+  const handleEdit = useCallback((leadId: string, mode: "edit" | "view" = "edit") => {
     setEditId(leadId);
+    setDialogMode(mode);
     setOpen(true);
   }, []);
 
+<<<<<<< HEAD
   const handleClose = useCallback(() => {
     setSnackbarOpen(false);
   }, []);
+=======
+  const handleCloseDialog = useCallback(() => {
+    setOpen(false);
+    setEditId(null);
+    setDialogMode("edit");
+
+    // Remove query params
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("openDialog");
+    params.delete("leadId");
+    params.delete("mode");
+
+    // Use replace to avoid adding to history stack, or push if navigation history is desired. 
+    // Usually replacing is better for closing dialogs to avoid "back button re-opens dialog" loop if not desired, 
+    // but here push might be safer if we want to preserve state? 
+    // Actually, usually users expect back button to go back to previous page, not re-open dialog.
+    // Let's use push to be consistent with other navigation, but replace is often cleaner for state changes.
+    // The user just said "remove the params from url".
+    router.push(`?${params.toString()}`, { scroll: false });
+  }, [searchParams, router]);
+>>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
 
   return {
     // State
@@ -134,9 +171,14 @@ export function useLeadsPage() {
     handleSearchChange,
     handleStatusChange,
     handleEdit,
+<<<<<<< HEAD
     handleClose,
+=======
+    handleCloseDialog,
+>>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
     saveLead,
     updateLeadStatus,
     loadLeads,
+    dialogMode,
   };
 }
