@@ -267,5 +267,3 @@ const AdditionalDetailsSection: React.FC<AdditionalDetailsSectionProps> = ({
 };
 
 export default AdditionalDetailsSection;
-
-
