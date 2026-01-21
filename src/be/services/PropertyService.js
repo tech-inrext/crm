@@ -20,13 +20,12 @@ class PropertyService extends Service {
         maxPrice,
         featured = "false",
       } = req.query;
-
+      
       console.log("Origin: ", req.headers.origin);
 
       const currentPage = Math.max(parseInt(page), 1);
       const itemsPerPage = Math.min(parseInt(limit), 50);
       const skip = (currentPage - 1) * itemsPerPage;
-
       const query = {
         isPublic: true, // Only return public properties
         parentId: null, // Only main projects

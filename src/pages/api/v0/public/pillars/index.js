@@ -14,9 +14,7 @@ class PillarIndexController extends Controller {
     return this.service.getAllPillars(req, res);
   }
 
-  async post(req, res) {
-    return this.service.createPillar(req, res);
-  }
+ 
 }
 
 export default new PillarIndexController().handler;
