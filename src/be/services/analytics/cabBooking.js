@@ -8,7 +8,7 @@ class CabBookingService {
   async getCabBooking({ vendorNames, vendorEmails, month, status }) {
     try {
       await dbConnect();
-
+      console.log("");
       /* ---------------- Filters ---------------- */
       const filters = {};
 
