@@ -144,11 +144,6 @@ class PropertyService extends Service {
 
       // Find property that is public
       const property = await Property.findOne(query)
-        .select(
-          "propertyName propertyDescription price propertyType minSize maxSize sizeUnit bedrooms bathrooms carpetArea builtUpArea ownershipType landType propertyImages amenities parentId",
-        )
-        .lean();
-
       if (!property) {
         return res.status(404).json({
           success: false,

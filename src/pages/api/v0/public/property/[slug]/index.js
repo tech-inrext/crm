@@ -11,21 +11,25 @@ class PropertyByIdController extends Controller {
     // Skip framework's default authn for GET
     this.skipAuth = ["get"];
   }
+async get(req, res) {
+    console.log("Inside public property by id controller");
 
- async get(req, res) {
-  // ✅ CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    /**
+     * 🔓 PUBLIC SUB-PROPERTIES
+     * Example:
+     * /api/v0/public/property?id=123&publicSub=true
+     */
+    if (req.query.publicSub === "true") {
+      return this.service.getPublicSubProperties(req, res);
+    }
 
-  // ✅ HANDLE PREFLIGHT
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
+    /**
+     * 🔓 PUBLIC SINGLE PROPERTY (Parent Project)
+     * Example:
+     * /api/v0/public/property/some-slug
+     */
+    return this.service.getPublicPropertyById(req, res);
   }
-
-  console.log("Inside public property index controller");
-  return this.service.getPublicProperties(req, res);
-}
 }
 
 export default new PropertyByIdController().handler;
