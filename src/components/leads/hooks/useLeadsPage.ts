@@ -111,11 +111,7 @@ export function useLeadsPage() {
     setOpen(true);
   }, []);
 
-<<<<<<< HEAD
-  const handleClose = useCallback(() => {
-    setSnackbarOpen(false);
-  }, []);
-=======
+
   const handleCloseDialog = useCallback(() => {
     setOpen(false);
     setEditId(null);
@@ -135,7 +131,7 @@ export function useLeadsPage() {
     // The user just said "remove the params from url".
     router.push(`?${params.toString()}`, { scroll: false });
   }, [searchParams, router]);
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
+ 
 
   return {
     // State
@@ -171,11 +167,8 @@ export function useLeadsPage() {
     handleSearchChange,
     handleStatusChange,
     handleEdit,
-<<<<<<< HEAD
-    handleClose,
-=======
+ 
     handleCloseDialog,
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
     saveLead,
     updateLeadStatus,
     loadLeads,

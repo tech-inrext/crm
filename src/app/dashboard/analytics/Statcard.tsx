@@ -12,11 +12,7 @@ import Skeleton from "@mui/material/Skeleton";
 import ScheduleCard from "./components/ScheduleCard";
 import { FaUsers, FaHome, FaDollarSign, FaBuilding } from "react-icons/fa";
 type TrendItem = {
-<<<<<<< HEAD
-  date: string; // ISO date string
-=======
   date: string;  
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
   value: number;
 };
 
@@ -206,48 +202,6 @@ type StatsCardsRowProps = {
 };
 
 export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
-<<<<<<< HEAD
-
-  const router = useRouter();
-  // State for team users dropdown (must be before any use)
-  const [teamUsers, setTeamUsers] = React.useState<
-    { _id: string; name: string; teamName?: string }[]
-  >([]);
-  // By default, show 'All' (null means all users)
-  const [selectedUser, setSelectedUser] = React.useState<{
-    _id: string;
-    name: string;
-    teamName?: string;
-  } | null>(null);
-
-  // Add an 'All' option for the dropdown (must be after teamUsers is defined)
-  const allOption = { _id: 'all', name: 'All', teamName: '' };
-  const teamUsersWithAll = [allOption, ...teamUsers];
-
-  // Calculate overall sums for "YOUR TEAMS" section (for cards when no user is selected)
-  const overallTeamNewLeads = teamUsers && teamUsers.length > 0
-    ? teamUsers.reduce((acc, user) => acc + (user.newLeads || 0), 0)
-    : 0;
-  const overallTeamActiveLeads = teamUsers && teamUsers.length > 0
-    ? teamUsers.reduce((acc, user) => acc + (user.activeLeads || 0), 0)
-    : 0;
-  const overallTeamSiteVisits = teamUsers && teamUsers.length > 0
-    ? teamUsers.reduce((acc, user) => acc + (user.siteVisitCount || 0), 0)
-    : 0;
-  // State for backend summary of MoUs (for 'All' selection)
-  const [overallTeamMouSummary, setOverallTeamMouSummary] = React.useState<{pending: number, approved: number, completed: number}>({pending: 0, approved: 0, completed: 0});
-  // Calculate overall team MoUs (pending/completed+approved) as fallback
-  const overallTeamMouPending = teamUsers && teamUsers.length > 0
-    ? teamUsers.reduce((acc, user) => acc + (user.mouPending || user.mouStats?.pending || 0), 0)
-    : 0;
-  const overallTeamMouApproved = teamUsers && teamUsers.length > 0
-    ? teamUsers.reduce((acc, user) => {
-        let approved = user.mouApproved || user.mouStats?.approved || 0;
-        let completed = user.mouCompleted || user.mouStats?.completed || 0;
-        return acc + approved + completed;
-      }, 0)
-    : 0;
-=======
   const router = useRouter();
   // Extended type for team users to include all used properties
   type TeamUserType = {
@@ -336,7 +290,6 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
     let completed = user.mouCompleted || user.mouStats?.completed || 0;
     return acc + approved + completed;
   }, 0) : 0);
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
   const {
     newLeads = 0,
     notconnectedLeads = 0,
@@ -387,14 +340,11 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
       });
   }, []);
 
-<<<<<<< HEAD
-  // Fetch myTeamsCount from backend
-  const [myTeamsCount, setMyTeamsCount] = React.useState<number>(0);
-=======
+
   // Fetch myTeamsCount (direct) and totalTeamsCount (all levels) from backend
   const [myTeamsCount, setMyTeamsCount] = React.useState<number>(0);
   const [totalTeamsCount, setTotalTeamsCount] = React.useState<number>(0);
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
+
   React.useEffect(() => {
     fetch("/api/v0/employee/teams")
       .then((r) => r.json())
@@ -402,12 +352,10 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
         if (data && typeof data.myTeamsCount === "number") {
           setMyTeamsCount(data.myTeamsCount);
         }
-<<<<<<< HEAD
-=======
+
         if (data && typeof data.count === "number") {
           setTotalTeamsCount(data.count);
         }
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
       });
   }, []);
 
@@ -443,7 +391,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
               }))
             );
           }
-<<<<<<< HEAD
+
           if (data?.summary) {
             setOverallTeamMouSummary({
               pending: data.summary.mouPending ?? 0,
@@ -451,7 +399,6 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
               completed: data.summary.mouCompleted ?? 0,
             });
           }
-=======
           if (data?.mous) {
             setUsersMous({
               pending: data.mous.pending ?? 0,
@@ -464,7 +411,6 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           } else {
             setInitialStats(null);
           }
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
         });
     }
   }, [selectedUser]);
@@ -493,13 +439,10 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
   React.useEffect(() => {
     if (selectedUser && selectedUser._id && selectedUser._id !== 'all') {
       fetch(`/api/v0/employee/teams/users?managerId=${selectedUser._id}`)
-<<<<<<< HEAD
-        .then((r) => r.json())
-        .then((data) => {
-=======
+
         .then((r) => r.json()) 
         .then((data) => {  
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
+
           if (Array.isArray(data?.users)) {
             setSelectedUserTeamUsers(data.users);
             // Sum pending and approved MoUs for all direct reports
@@ -639,15 +582,10 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           }}
         >
           <StatCard
-<<<<<<< HEAD
-            title="My Teams"
-            value={myTeamsCount ?? 0}
-            icon={<FaHome size={24} style={{ color: "#4caf50" }} />}
-=======
+
             title="My Teams (All Levels)"
             value={totalTeamsCount ?? 0}
             icon={<FaUsers size={24} style={{ color: "#43a047" }} />}
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
             iconBg="#e8f5e9"
             onClick={() => router.push("/dashboard/teams")}
             loading={loadingNewLeads}
@@ -658,11 +596,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
             iconBg="#e3f2fd"
             trend={activeLeadsTrend}
-<<<<<<< HEAD
-            onClick={() => router.push("/dashboard/leads?status=active")}
-=======
             onClick={() => router.push("/dashboard/leads?status=follow-up%2Ccall+back%2Cdetails+shared%2Csite+visit+done")}
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
             loading={loadingNewLeads}
           />
           <StatCard
@@ -671,11 +605,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
             iconBg="#e3f2fd"
             trend={newLeadsTrend}
-<<<<<<< HEAD
-            onClick={() => router.push("/dashboard/leads")}
-=======
             onClick={() => router.push("/dashboard/leads?status=new")}
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
             loading={loadingNewLeads}
           />
           <StatCard
@@ -684,11 +614,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
             iconBg="#f3e5f5"
             trend={siteVisitTrend}
-<<<<<<< HEAD
-            onClick={() => router.push("/dashboard/leads")}
-=======
             onClick={() => router.push("/dashboard/leads?status=site+visit+done")}
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
             loading={siteVisitLoading}
           />
           <StatCard
@@ -743,19 +669,6 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
           <Autocomplete
             sx={{ minWidth: 280, ml: 2 }}
             options={teamUsersWithAll}
-<<<<<<< HEAD
-            getOptionLabel={(option) =>
-              option.teamName && option._id !== 'all'
-                ? `${option.name} (${option.teamName})`
-                : option.name
-            }
-            value={selectedUser === null ? allOption : selectedUser}
-            onChange={(_, value) => {
-              if (value && value._id === 'all') {
-                setSelectedUser(null);
-              } else {
-                setSelectedUser(value);
-=======
             getOptionLabel={(option) => {
               if (option._id === 'all') return option.name;
               return option.teamName ? `${option.name} (${option.teamName})` : option.name;
@@ -780,7 +693,6 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
                 } catch (e) {
                   setSelectedUserTeamUsers([]);
                 }
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
               }
             }}
             renderInput={(params) => (
@@ -807,18 +719,9 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             }
             renderOption={(props, option) => (
               <li {...props} key={option._id}>
-<<<<<<< HEAD
-                <span>{option.name}</span>
-                {option.teamName && option._id !== 'all' && (
-                  <span style={{ color: "#888", marginLeft: 8, fontSize: 12 }}>
-                    ({option.teamName})
-                  </span>
-                )}
-=======
                 {option.teamName && option._id !== 'all'
                   ? `${option.name} (${option.teamName})`
                   : option.name}
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
               </li>
             )}
           />
@@ -859,11 +762,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
                 icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
                 iconBg="#e3f2fd"
                 trend={(!selectedUser || selectedUser._id === 'all') ? activeLeadsTrend : userActiveLeadsTrend}
-<<<<<<< HEAD
-                onClick={() => router.push("/dashboard/leads?status=active")}
-=======
                 onClick={() => router.push("/dashboard/leads?status=follow-up%2Ccall+back%2Cdetails+shared%2Csite+visit+done")}
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
                 loading={userLoading}
               />
               <StatCard
@@ -872,11 +771,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
                 icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
                 iconBg="#e3f2fd"
                 trend={(!selectedUser || selectedUser._id === 'all') ? newLeadsTrend : userNewLeadsTrend}
-<<<<<<< HEAD
-                onClick={() => router.push("/dashboard/leads")}
-=======
                 onClick={() => router.push("/dashboard/leads?status=new")}
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
                 loading={userLoading}
               />
               <StatCard
@@ -885,27 +780,17 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
                 icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
                 iconBg="#f3e5f5"
                 trend={(!selectedUser || selectedUser._id === 'all') ? siteVisitTrend : userSiteVisitTrend}
-<<<<<<< HEAD
-                onClick={() => router.push("/dashboard/leads")}
-=======
                 onClick={() => router.push("/dashboard/leads?status=site+visit+done")}
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
                 loading={userLoading}
               />
               <StatCard
                 title="MoUs (Pending / Completed)"
                 value={
-<<<<<<< HEAD
-                  (!selectedUser || selectedUser._id === 'all')
-                    ? `${overallTeamMouSummary.pending} / ${overallTeamMouSummary.approved + overallTeamMouSummary.completed}`
-                    : (selectedUserTeamMouStats
-                        ? `${selectedUserTeamMouStats.pending ?? 0} / ${selectedUserTeamMouStats.approved ?? 0}`
-=======
+
                   (!selectedUser || selectedUser._id === 'all') && initialStats
                     ? `${initialStats.mou?.pending ?? 0} / ${(initialStats.mou?.approved ?? 0) + (initialStats.mou?.completed ?? 0)}`
                     : (selectedUser?.mouStats
                         ? `${selectedUser.mouStats.pending ?? 0} / ${selectedUser.mouStats.approved ?? 0}`
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
                         : '0 / 0')
                 }
                 icon={<FaUsers size={24} style={{ color: "#3949ab" }} />}
@@ -915,19 +800,12 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
                 loading={userLoading}
               />
                   {showVendorBilling && (
-<<<<<<< HEAD
-            <StatCard
-                title="Total Vendors & Billing amount"
-                value={
-                  (!selectedUser || selectedUser._id === 'all')
-                    ? `${teamUsers.reduce((acc, user) => acc + (user.totalVendors || 0), 0)} / ₹${teamUsers.reduce((acc, user) => acc + (user.totalSpend || 0), 0).toLocaleString()}`
-=======
+
             <StatCard 
                 title="Total Vendors & Billing amount"
                 value={
                   (!selectedUser || selectedUser._id === 'all') && initialStats
                     ? `${initialStats.totalVendors || 0} / ₹${(initialStats.totalSpend || 0).toLocaleString()}`
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
                     : `${selectedUser?.totalVendors || 0} / ₹${(selectedUser?.totalSpend || 0).toLocaleString()}`
                 }
                 icon={<FaBuilding size={24} style={{ color: "#ffb300" }} />}
@@ -942,8 +820,4 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
       </Box>
     </Box>
   );
-<<<<<<< HEAD
 };
-=======
-};
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
