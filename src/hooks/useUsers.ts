@@ -85,12 +85,14 @@ export function useUsers(debouncedSearch: string) {
         if (userData.panFile) payload.panUrl = await uploadFile(userData.panFile);
         if (userData.bankProofFile) payload.bankProofUrl = await uploadFile(userData.bankProofFile);
         if (userData.signatureFile) payload.signatureUrl = await uploadFile(userData.signatureFile);
+        if (userData.photoFile) payload.photo = await uploadFile(userData.photoFile);
 
         // Remove file objects before sending
         delete payload.aadharFile;
         delete payload.panFile;
         delete payload.bankProofFile;
         delete payload.signatureFile;
+        delete payload.photoFile;
 
         await axios.post(USERS_API_BASE, payload);
         console.debug("[addUser] POST completed");
@@ -137,10 +139,12 @@ export function useUsers(debouncedSearch: string) {
         if (userData.panFile) payload.panUrl = await uploadFile(userData.panFile);
         if (userData.bankProofFile) payload.bankProofUrl = await uploadFile(userData.bankProofFile);
         if (userData.signatureFile) payload.signatureUrl = await uploadFile(userData.signatureFile);
+        if (userData.photoFile) payload.photo = await uploadFile(userData.photoFile);
         delete payload.aadharFile;
         delete payload.panFile;
         delete payload.bankProofFile;
         delete payload.signatureFile;
+        delete payload.photoFile;
 
         await axios.patch(`${USERS_API_BASE}/${id}`, payload);
         await loadEmployees(page, rowsPerPage, debouncedSearch, false);

@@ -13,6 +13,7 @@ import DialogActions from "@/components/ui/Component/DialogActions";
 import TextField from "@/components/ui/Component/TextField";
 import Button from "@/components/ui/Component/Button";
 import Box from "@/components/ui/Component/Box";
+import Avatar from "@/components/ui/Component/Avatar";
 import AccountCircle from "@/components/ui/Component/AccountCircle";
 import {
   Logout,
@@ -154,6 +155,11 @@ const ProfileMenu: React.FC = () => {
     return user?.roles.find((role) => role._id === user?.currentRole)?.name;
   };
 
+  // Check if user has a photo
+  const userPhoto = user.photo || "";
+  const hasPhoto = userPhoto && userPhoto.trim() !== "";
+  const userInitials = user.name?.charAt(0).toUpperCase() || "U";
+
   return (
     <>
       <IconButton
@@ -164,7 +170,34 @@ const ProfileMenu: React.FC = () => {
         aria-haspopup="true"
         aria-expanded={open ? "true" : undefined}
       >
-        <AccountCircle fontSize="large" />
+        {hasPhoto ? (
+          <Avatar
+            src={userPhoto}
+            alt={user.name}
+            sx={{
+              width: 40,
+              height: 40,
+              border: "2px solid #1976d2",
+              "& img": {
+                objectFit: "cover",
+                objectPosition: "top",
+              },
+            }}
+          />
+        ) : (
+          <Avatar
+            sx={{
+              width: 40,
+              height: 40,
+              bgcolor: "#1976d2",
+              fontSize: 18,
+              fontWeight: "bold",
+              border: "2px solid #1976d2",
+            }}
+          >
+            {userInitials}
+          </Avatar>
+        )}
       </IconButton>
       <Menu
         id="profile-menu"
@@ -193,15 +226,46 @@ const ProfileMenu: React.FC = () => {
               "&:hover": { backgroundColor: "transparent" },
             }}
           >
-            <Typography
-              variant="subtitle1"
-              sx={{ fontWeight: 600, color: "#000" }}
-            >
-              {user.name}
-            </Typography>
-            <Typography variant="body2" sx={{ color: "#666" }}>
-              {user.email}
-            </Typography>
+            <Box display="flex" alignItems="center" gap={2} mb={1}>
+              {hasPhoto ? (
+                <Avatar
+                  src={userPhoto}
+                  alt={user.name}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    border: "2px solid #1976d2",
+                    "& img": {
+                      objectFit: "cover",
+                      objectPosition: "top",
+                    },
+                  }}
+                />
+              ) : (
+                <Avatar
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    bgcolor: "#1976d2",
+                    fontSize: 18,
+                    fontWeight: "bold",
+                  }}
+                >
+                  {userInitials}
+                </Avatar>
+              )}
+              <Box>
+                <Typography
+                  variant="subtitle1"
+                  sx={{ fontWeight: 600, color: "#000" }}
+                >
+                  {user.name}
+                </Typography>
+                <Typography variant="body2" sx={{ color: "#666" }}>
+                  {user.email}
+                </Typography>
+              </Box>
+            </Box>
           </MenuItem>,
           <Divider key="divider-1" />,
         ]}
@@ -299,7 +363,8 @@ const ProfileMenu: React.FC = () => {
         onClose={handleProfileClose} 
         user={{
           ...user,
-          currentRole: typeof user?.currentRole === 'string' ? user.currentRole : user?.currentRole?._id || ''
+          currentRole: typeof user?.currentRole === 'string' ? user.currentRole : user?.currentRole?._id || '',
+          photo: user?.photo || '',
         }} 
       />
     </>

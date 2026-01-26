@@ -118,6 +118,7 @@ async getEmployeeById(req, res) {
       branch,
       photo,
       specialization,
+      panNumber,
     } = req.body;
 
     // Build updateFields by checking property presence so empty strings/nulls
@@ -188,6 +189,42 @@ async getEmployeeById(req, res) {
         updateFields.phone = phone;
       }
     }
+
+    // PAN Number validation (REQUIRED)
+  if (Object.prototype.hasOwnProperty.call(req.body, "panNumber")) {
+    if (!panNumber || panNumber.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "PAN Number is required",
+      });
+    }
+    
+    // Validate PAN format: 5 letters, 4 digits, 1 letter
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    const formattedPan = panNumber.toUpperCase().trim();
+    
+    if (!panRegex.test(formattedPan)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)",
+      });
+    }
+    
+    // Check if PAN already exists for another employee
+    const existingPanUser = await Employee.findOne({
+      panNumber: formattedPan,
+      _id: { $ne: id },
+    });
+    
+    if (existingPanUser) {
+      return res.status(409).json({
+        success: false,
+        message: "PAN Number already exists for another employee",
+      });
+    }
+    
+    updateFields.panNumber = formattedPan;
+  }
 
     // Allow joiningDate update
     if (Object.prototype.hasOwnProperty.call(req.body, "joiningDate")) {
@@ -350,6 +387,7 @@ async getEmployeeById(req, res) {
         fatherName,
         photo,
         specialization,
+        panNumber,
       } = req.body;
       // validate name - should not start with a digit
       if (name && /^\d/.test(String(name).trim())) {
@@ -370,26 +408,64 @@ async getEmployeeById(req, res) {
           .status(400)
           .json({ success: false, message: "Invalid alternate phone number" });
       }
+      // PAN Number validation (REQUIRED)
+    if (!panNumber || panNumber.trim() === "") {
+      return res.status(400).json({
+        success: false,
+        message: "PAN Number is required",
+      });
+    }
+    
+    // Validate PAN format: 5 letters, 4 digits, 1 letter
+    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+    const formattedPan = panNumber.toUpperCase().trim();
+    
+    if (!panRegex.test(formattedPan)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)",
+      });
+    }
+
       const isCabVendor = req.body.isCabVendor || false;
       const dummyPassword = "Inrext@123";
       const hashedPassword = await bcrypt.hash(dummyPassword, 10);
 
       // 🚫 Check duplicate email/phone
-      const exists = await Employee.findOne({ $or: [{ email }, { phone }] });
+      const exists = await Employee.findOne({ $or: [{ email }, { phone }, { panNumber: formattedPan }] });
       if (exists) {
+      if (exists.email === email) {
         return res.status(409).json({
           success: false,
           message: `${
             isCabVendor == true ? "Vendor's" : "Employee's"
-          } Email or Phone No. already exists`,
+          } Email already exists`,
         });
       }
+      if (exists.phone === phone) {
+        return res.status(409).json({
+          success: false,
+          message: `${
+            isCabVendor == true ? "Vendor's" : "Employee's"
+          } Phone No. already exists`,
+        });
+      }
+      if (exists.panNumber === formattedPan) {
+        return res.status(409).json({
+          success: false,
+          message: `${
+            isCabVendor == true ? "Vendor's" : "Employee's"
+          } PAN Number already exists`,
+        });
+      }
+    }
 
       // ✅ Create new employee (only set optional fields if present)
       const employeeData = {
         name,
         email,
         phone,
+        panNumber: formattedPan,
         password: hashedPassword,
         isCabVendor,
         mouStatus: "Pending",
@@ -522,6 +598,7 @@ async getEmployeeById(req, res) {
               { name: { $regex: search, $options: "i" } },
               { email: { $regex: search, $options: "i" } },
               { phone: { $regex: search, $options: "i" } },
+              { panNumber: { $regex: search, $options: "i" } },
             ],
           }
         : {};
@@ -676,6 +753,7 @@ async getEmployeeById(req, res) {
       // Convert to plain object before sending
       const employeeData = employee.toObject();
       employeeData.managerName = managerName;
+      employeeData.photo = employee.photo || "";
       delete employeeData.password;
 
       return res.status(200).json({
@@ -731,6 +809,7 @@ async getEmployeeById(req, res) {
           managerId: user.managerId,
           managerName: managerName,
           joiningDate: user.joiningDate,
+          photo: user.photo || "",
           currentRole: req.roleId,
         },
       });
