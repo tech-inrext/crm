@@ -276,22 +276,29 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
           }}
         >
           <PermissionGuard module="lead" action="write" fallback={<></>}>
-            <BulkUpload loadLeads={loadLeads} />
-          </PermissionGuard>
-
-          <PermissionGuard module="lead" action="write" fallback={<></>}>
-            <BulkAssign onSuccess={loadLeads} />
-          </PermissionGuard>
-
-          <PermissionGuard module="lead" action="write" fallback={<></>}>
             <Button
               variant="contained"
               startIcon={<DownloadIcon />}
               onClick={async () => {
                 try {
                   const XLSX = await import("xlsx");
-                  const headers = [["fullName", "email", "phone"]];
-                  const ws = XLSX.utils.aoa_to_sheet(headers);
+                  const data = [
+                    ["fullName", "email", "phone"],
+                    ["Sample Lead Name 1", "lead1@gmail.com", "7500000001"],
+                    [
+                      "Sample Lead Name 2",
+                      "(leave blank if not available)",
+                      "7500000002",
+                    ],
+                    ["Sample Lead Name 3", "lead3@gmail.com", "7500000003"],
+                    ["Sample Lead Name 4", "(leave blank if not available)", "7500000004"],
+                    [
+                      "(leave blank if not available)",
+                      "lead5@gmail.com",
+                      "7500000005",
+                    ],
+                  ];
+                  const ws = XLSX.utils.aoa_to_sheet(data);
                   const wb = XLSX.utils.book_new();
                   XLSX.utils.book_append_sheet(wb, ws, "Template");
                   XLSX.writeFile(wb, "lead_upload_template.xlsx");
@@ -322,6 +329,16 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               {isTablet ? "Template" : "Download Lead Template"}
             </Button>
           </PermissionGuard>
+
+          <PermissionGuard module="lead" action="write" fallback={<></>}>
+            <BulkUpload loadLeads={loadLeads} />
+          </PermissionGuard>
+
+          <PermissionGuard module="lead" action="write" fallback={<></>}>
+            <BulkAssign onSuccess={loadLeads} />
+          </PermissionGuard>
+
+
 
           <PermissionGuard module="lead" action="write" fallback={<></>}>
             <Button
