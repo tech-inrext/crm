@@ -18,6 +18,8 @@ class PropertyService extends Service {
         builderName,
         minPrice,
         maxPrice,
+        minSize,
+        maxSize,
         featured = "false",
       } = req.query;
 
@@ -89,8 +91,8 @@ class PropertyService extends Service {
         Property.find(query)
           .skip(skip)
           .limit(itemsPerPage)
-          .select(
-            "projectName builderName description location price minPrice maxPrice propertyType images slug status amenities nearby projectHighlights mapLocation isFeatured createdAt",
+         .select(
+  "projectName builderName description location price minPrice maxPrice minSize maxSize sizeUnit propertyType images slug status amenities nearby projectHighlights mapLocation isFeatured createdAt"
           )
           .sort({ isFeatured: -1, createdAt: -1 })
           .lean(),
