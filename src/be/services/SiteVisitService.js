@@ -3,7 +3,9 @@ import dbConnect from "../../lib/mongodb";
 import FollowUp from "../../models/FollowUp";
 import CabBooking from "../../models/CabBooking";
 import Lead from "../../models/Lead";
+import Employee from "../../models/Employee"; // Added import
 import mongoose from "mongoose";
+import { sendCabBookingApprovalEmail } from "../../lib/cabBookingApproval"; // Added import
 
 class SiteVisitService extends Service {
   async getLeadId(identifier) {
@@ -107,6 +109,20 @@ class SiteVisitService extends Service {
 
         const savedCab = await cabBooking.save();
         createdCabBookingId = savedCab._id;
+
+        // Send email notification to manager
+        try {
+          // Fetch full employee and manager objects to get emails
+          const employee = await Employee.findById(userId);
+          const manager = await Employee.findById(validManagerId);
+          
+          if (employee && manager) {
+             await sendCabBookingApprovalEmail({ manager, employee, booking: savedCab });
+          }
+        } catch (err) {
+          console.error("SiteVisit Cab Email failed:", err);
+          // Don't block flow if email fails
+        }
       }
 
       // 6. Create FollowUp Entry (now with optional cabBookingId)

@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 
 export function middleware(req: Request) {
-   const origin = req.headers.get("origin");
-  const allowedOrigin = "http://localhost:3001";
+  const origin = req.headers.get("origin");
+
+  const allowedOrigins = [
+    "http://localhost:3001",
+    "https://test.inrext.com",
+  ];
 
   const response = NextResponse.next();
 
-  if (origin === allowedOrigin) {
-    console.log("🔥 MIDDLEWARE HIT:", req.method, req.url);
-
+  if (origin && allowedOrigins.includes(origin)) {
     response.headers.set("Access-Control-Allow-Origin", origin);
   }
 

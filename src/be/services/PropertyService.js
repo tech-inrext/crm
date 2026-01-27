@@ -1,7 +1,6 @@
 import { Service } from "@framework";
 import Property from "../../models/Property";
 import mongoose from "mongoose";
-
 class PropertyService extends Service {
   constructor() {
     super();
@@ -20,7 +19,7 @@ class PropertyService extends Service {
         maxPrice,
         featured = "false",
       } = req.query;
-      
+
       console.log("Origin: ", req.headers.origin);
 
       const currentPage = Math.max(parseInt(page), 1);
@@ -143,7 +142,7 @@ class PropertyService extends Service {
       }
 
       // Find property that is public
-      const property = await Property.findOne(query);   
+      const property = await Property.findOne(query);
       if (!property) {
         return res.status(404).json({
           success: false,
@@ -182,6 +181,80 @@ class PropertyService extends Service {
       return res.status(500).json({
         success: false,
         error: "Error: " + error.message,
+      });
+    }
+  }
+
+  async getPublicSubProperties(req, res) {
+    try {
+      const { parentId } = req.query;
+      const { page = 1, limit = 50, search = "" } = req.query;
+
+      console.log("Fetching public Sub Properties for Parent ID:", parentId);
+
+      if (!parentId) {
+        return res.status(400).json({
+          success: false,
+          message: "Parent ID is required",
+        });
+      }
+
+      const currentPage = Math.max(parseInt(page), 1);
+      const itemsPerPage = Math.min(parseInt(limit), 100);
+      const skip = (currentPage - 1) * itemsPerPage;
+
+      const query = {
+        parentId: parentId,
+      };
+
+      // Add search filter
+      if (search) {
+        query.$or = [
+          { propertyName: { $regex: search, $options: "i" } },
+          { propertyDescription: { $regex: search, $options: "i" } },
+          { price: { $regex: search, $options: "i" } },
+        ];
+      }
+
+      const [subProperties, totalSubProperties] = await Promise.all([
+        Property.find(query)
+          .skip(skip)
+          .limit(itemsPerPage)
+          .sort({ createdAt: -1 })
+          .populate("createdBy", "name email")
+          .populate(
+            "parentId",
+            "projectName builderName location price minPrice maxPrice",
+          )
+          .lean(),
+        Property.countDocuments(query),
+      ]);
+
+      // Get parent project details
+      const parentProject = await Property.findById(parentId)
+        .populate("createdBy", "name email")
+        .lean();
+
+      return res.status(200).json({
+        success: true,
+        data: subProperties,
+        parentProject: parentProject,
+        pagination: {
+          totalItems: totalSubProperties,
+          currentPage,
+          itemsPerPage,
+          totalPages: Math.ceil(totalSubProperties / itemsPerPage),
+          hasNextPage:
+            currentPage < Math.ceil(totalSubProperties / itemsPerPage),
+          hasPrevPage: currentPage > 1,
+        },
+      });
+    } catch (error) {
+      console.error("Get Sub Properties Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch sub-properties",
+        error: error.message,
       });
     }
   }
