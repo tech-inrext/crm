@@ -1,7 +1,9 @@
 import { Service } from "@framework";
 import Lead from "../../models/Lead";
+import FollowUp from "../../models/FollowUp";
 import { NotificationHelper } from "../../lib/notification-helpers";
 import { leadQueue } from "../../queue/leadQueue";
+import mongoose from "mongoose";
 
 class LeadService extends Service {
   constructor() {
@@ -11,8 +13,6 @@ class LeadService extends Service {
   async createLead(req, res) {
     try {
       const { phone, ...rest } = req.body;
-
-      // validator(req.body, "createLead");
 
       if (!phone) {
         return res.status(400).json({
@@ -34,14 +34,23 @@ class LeadService extends Service {
         100 + Math.random() * 900
       )}`;
 
-      const loggedInUserId = req.employee?._id;
-
+      let loggedInUserId = req.employee?._id || req.employee?.id;
+      if (loggedInUserId && typeof loggedInUserId === "string") {
+        try {
+          loggedInUserId = new mongoose.Types.ObjectId(loggedInUserId);
+        } catch (e) {
+          // keep as is
+        }
+      }
+ 
+      // Removed nextFollowUp / followUpNotes from newLead object
+      // The rest of the fields (company, name, etc.) are still spread from ...rest
       const newLead = new Lead({
         uploadedBy: loggedInUserId,
-        managerId: rest.managerId || loggedInUserId, // Default to logged-in user if not provided
+        managerId: rest.managerId || loggedInUserId, 
         leadId,
         phone,
-        ...rest,
+        ...rest, 
       });
 
       await newLead.save();
@@ -62,50 +71,7 @@ class LeadService extends Service {
             }
           );
         } catch (notificationError) {
-          console.error(
-            "Failed to send new lead notification:",
-            notificationError
-          );
-          // Don't fail the creation if notification fails
-        }
-      }
-
-      // Schedule follow-up notifications if nextFollowUp is set
-      if (rest.nextFollowUp) {
-        try {
-          const followUpDate = new Date(rest.nextFollowUp);
-          const now = Date.now();
-
-          // Define reminders: 24h before, 2h before, and Due time
-          const reminders = [
-            { type: "24H_BEFORE", offset: 24 * 60 * 60 * 1000 },
-            { type: "2H_BEFORE", offset: 2 * 60 * 60 * 1000 },
-            { type: "DUE", offset: 0 },
-          ];
-
-          if (leadQueue) {
-            for (const reminder of reminders) {
-              const scheduleTime = followUpDate.getTime() - reminder.offset;
-              const delay = scheduleTime - now;
-
-              if (delay > 0) {
-                await leadQueue.add(
-                  "sendLeadFollowUpNotification",
-                  {
-                    leadId: newLead._id,
-                    scheduledTime: followUpDate.toISOString(),
-                    reminderType: reminder.type,
-                  },
-                  { delay }
-                );
-              }
-            }
-          }
-        } catch (queueError) {
-          console.error(
-            "Failed to schedule follow-up notification:",
-            queueError
-          );
+          console.error("Failed to send new lead notification:", notificationError);
         }
       }
 
@@ -127,7 +93,6 @@ class LeadService extends Service {
       const skip = (currentPage - 1) * itemsPerPage;
 
       const loggedInUserId = req.employee?._id;
-      // Show leads where user is: creator (uploadedBy) OR manager (managerId) OR assigned (assignedTo)
       const baseQuery = {
         $or: [
           { uploadedBy: loggedInUserId },
@@ -136,7 +101,6 @@ class LeadService extends Service {
         ],
       };
 
-      // Optional search filter
       const searchQuery = search
         ? {
             $or: [
@@ -147,20 +111,13 @@ class LeadService extends Service {
           }
         : {};
 
-      // Optional status filter
-      // Accepts: status=New or status=New,Closed or status[]=New&status[]=Closed
       let statusQuery = {};
       if (status) {
-        // status may be a string (possibly comma-separated) or array
         const statuses = Array.isArray(status)
           ? status
-          : String(status)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
+          : String(status).split(",").map((s) => s.trim()).filter(Boolean);
 
         if (statuses.length) {
-          // Build case-insensitive match for each status to be safe
           statusQuery = {
             status: { $in: statuses.map((s) => new RegExp(`^${s}$`, "i")) },
           };
@@ -174,13 +131,30 @@ class LeadService extends Service {
       const query = queryParts.length > 1 ? { $and: queryParts } : baseQuery;
 
       const [leads, totalLeads] = await Promise.all([
-        Lead.find(query).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }),
+        Lead.find(query).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }).lean(),
         Lead.countDocuments(query),
       ]);
 
+      // Merge follow-up data for each lead (AGGREGATING NEW SCHEMA)
+      const mergedLeads = await Promise.all(leads.map(async (lead) => {
+        // 1. Get Count
+        const count = await FollowUp.countDocuments({ leadId: lead._id });
+        
+        // 2. Get Latest
+        const latest = await FollowUp.findOne({ leadId: lead._id }).sort({ createdAt: -1 }).lean();
+
+        return {
+          ...lead,
+          followUpCount: count, // Used for Badge
+          nextFollowUp: latest ? latest.followUpDate : null,
+          // Providing empty arrays as notes are no longer on Lead object
+          followUpNotes: latest ? [latest.note] : [] 
+        };
+      }));
+
       return res.status(200).json({
         success: true,
-        data: leads,
+        data: mergedLeads,
         pagination: {
           totalItems: totalLeads,
           currentPage,
@@ -202,14 +176,11 @@ class LeadService extends Service {
     const loggedInUserId = req.employee?._id;
 
     try {
-      const lead = await Lead.findById(id); // Fetch lead
+      const lead = await Lead.findById(id);
       if (!lead) {
-        return res
-          .status(404)
-          .json({ success: false, error: "Lead not found" });
+        return res .status(404).json({ success: false, error: "Lead not found" });
       }
 
-      // Check if user has access: is creator OR manager OR assigned
       const hasAccess =
         String(lead.uploadedBy) === String(loggedInUserId) ||
         String(lead.managerId) === String(loggedInUserId) ||
@@ -219,12 +190,19 @@ class LeadService extends Service {
         return res.status(403).json({ success: false, error: "Access denied" });
       }
 
-      return res.status(200).json({ success: true, data: lead });
+      const leadObj = lead.toObject();
+      
+      // Aggregating FollowUps
+      const count = await FollowUp.countDocuments({ leadId: id });
+      const latest = await FollowUp.findOne({ leadId: id }).sort({ createdAt: -1 }).lean();
+
+      leadObj.followUpCount = count;
+      leadObj.nextFollowUp = latest ? latest.followUpDate : null;
+
+      return res.status(200).json({ success: true, data: leadObj });
     } catch (error) {
       console.error("Error fetching lead:", error);
-      return res
-        .status(500)
-        .json({ success: false, error: "Error: " + error.message });
+      return res.status(500).json({ success: false, error: "Error: " + error.message });
     }
   }
 
@@ -234,19 +212,18 @@ class LeadService extends Service {
     const loggedInUserId = req.employee?._id;
 
     try {
-      // Get the original lead before updating to compare changes
       const originalLead = await Lead.findById(id);
       if (!originalLead) {
-        return res
-          .status(404)
-          .json({ success: false, error: "Lead not found" });
+        return res.status(404).json({ success: false, error: "Lead not found" });
       }
 
-      // Normalize assignedTo: if it's an empty string, set it to null
-      // This prevents CastErrors on queries and keeps "unassigned" state consistent
       if (updateFields.assignedTo === "") {
         updateFields.assignedTo = null;
       }
+
+      // REMOVED LOGIC: Integration with FollowUp collection is GONE.
+      // REMOVED LOGIC: Scheduling follow-up notifications is GONE (from this endpoint).
+      // Lead update is now strictly about Lead details (Status, Phone, Name, Assignee).
 
       const updatedLead = await Lead.findByIdAndUpdate(
         id,
@@ -255,99 +232,30 @@ class LeadService extends Service {
       );
 
       if (!updatedLead) {
-        return res
-          .status(404)
-          .json({ success: false, error: "Lead not found" });
+        return res.status(404).json({ success: false, error: "Lead not found" });
       }
 
-      // Check if status changed and send notification
+      // Notifications (Status & Assign) logic kept the same...
       if (updateFields.status && originalLead.status !== updateFields.status) {
-        try {
+         try {
           await NotificationHelper.notifyLeadStatusUpdate(
             updatedLead._id,
             updatedLead.assignedTo || req.employee._id,
             originalLead.status,
             updateFields.status,
-            {
-              leadId: updatedLead.leadId,
-              company: updatedLead.company || "Unknown Company",
-              name: updatedLead.name,
-              phone: updatedLead.phone,
-            }
+            { leadId: updatedLead.leadId, company: updatedLead.company, name: updatedLead.name, phone: updatedLead.phone }
           );
-        } catch (notificationError) {
-          console.error(
-            "Failed to send lead status notification:",
-            notificationError
-          );
-          // Don't fail the update if notification fails
-        }
+        } catch (e) {}
       }
-
-      // Check if lead was assigned to someone and send notification
-      if (
-        updateFields.assignedTo &&
-        originalLead.assignedTo?.toString() !== updateFields.assignedTo
-      ) {
-        try {
+      if (updateFields.assignedTo && originalLead.assignedTo?.toString() !== updateFields.assignedTo) {
+         try {
           await NotificationHelper.notifyLeadAssigned(
             updatedLead._id,
             updateFields.assignedTo,
             req.employee._id,
-            {
-              leadId: updatedLead.leadId,
-              company: updatedLead.company || "Unknown Company",
-              name: updatedLead.name,
-              phone: updatedLead.phone,
-              priority: "HIGH",
-            }
+            { leadId: updatedLead.leadId, company: updatedLead.company, name: updatedLead.name, phone: updatedLead.phone, priority: "HIGH" }
           );
-        } catch (notificationError) {
-          console.error(
-            "Failed to send lead assignment notification:",
-            notificationError
-          );
-          // Don't fail the update if notification fails
-        }
-      }
-
-      // Schedule follow-up notifications if nextFollowUp is updated
-      if (updateFields.nextFollowUp) {
-        try {
-          const followUpDate = new Date(updateFields.nextFollowUp);
-          const now = Date.now();
-
-          // Define reminders: 24h before, 2h before, and Due time
-          const reminders = [
-            { type: "24H_BEFORE", offset: 24 * 60 * 60 * 1000 },
-            { type: "2H_BEFORE", offset: 2 * 60 * 60 * 1000 },
-            { type: "DUE", offset: 0 },
-          ];
-
-          if (leadQueue) {
-            for (const reminder of reminders) {
-              const scheduleTime = followUpDate.getTime() - reminder.offset;
-              const delay = scheduleTime - now;
-
-              if (delay > 0) {
-                await leadQueue.add(
-                  "sendLeadFollowUpNotification",
-                  {
-                    leadId: updatedLead._id,
-                    scheduledTime: followUpDate.toISOString(),
-                    reminderType: reminder.type,
-                  },
-                  { delay }
-                );
-              }
-            }
-          }
-        } catch (queueError) {
-          console.error(
-            "Failed to schedule follow-up notification:",
-            queueError
-          );
-        }
+        } catch (e) {}
       }
 
       return res.status(200).json({ success: true, data: updatedLead });

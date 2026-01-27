@@ -7,8 +7,7 @@ import {
   Autocomplete,
 } from "@/components/ui/Component";
 
-import { LocalizationProvider, DateTimePicker } from "@mui/x-date-pickers";
-import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+
 
 import { Field, FieldProps } from "formik";
 import { useAuth } from "@/contexts/AuthContext";
@@ -222,35 +221,7 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
           )}
         </Field>
 
-        <Field name="nextFollowUp">
-          {({ field, meta }: FieldProps) => (
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DateTimePicker
-                label="Next Follow-up"
-                value={
-                  values.nextFollowUp ? new Date(values.nextFollowUp) : null
-                }
-                onChange={(date) => {
-                  setFieldValue("nextFollowUp", date ? date.toISOString() : "");
-                }}
-                slotProps={{
-                  textField: {
-                    error: meta.touched && !!meta.error,
-                    helperText: meta.touched && meta.error,
-                    placeholder: "dd/mm/yyyy hh:mm",
-                    sx: {
-                      bgcolor: "#fff",
-                      borderRadius: 1,
-                      flex: 1,
-                      height: 56,
-                    },
-                  },
-                }}
-                format="dd/MM/yyyy HH:mm"
-              />
-            </LocalizationProvider>
-          )}
-        </Field>
+
       </Box>
       <Box
         sx={{

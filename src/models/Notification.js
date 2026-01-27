@@ -174,7 +174,6 @@ const notificationSchema = new mongoose.Schema(
     channels: {
       inApp: { type: Boolean, default: true },
       email: { type: Boolean, default: false },
-      push: { type: Boolean, default: false }, // Future implementation
     },
 
     // Email delivery status

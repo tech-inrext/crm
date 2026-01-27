@@ -14,8 +14,8 @@ export interface LeadFormData {
   manager?: string; // UI-only field for manager autocomplete
   managerId?: string; // ObjectId reference to Employee (lead manager)
   assignedTo?: string; // ObjectId reference to Employee (assigned team member)
-  nextFollowUp?: string;
-  followUpNotes: Array<{ note: string; date: string }>;
+  // nextFollowUp?: string; // REMOVED
+  // followUpNotes: Array<{ note: string; date: string }>; // REMOVED
 }
 
 export const formatLeadValue = (value?: number): string => {
@@ -122,12 +122,7 @@ export const transformAPILeadToForm = (apiLead: Lead): LeadFormData => {
     manager: apiLead.managerId ? String(apiLead.managerId) : "",
     managerId: apiLead.managerId ? String(apiLead.managerId) : "",
     assignedTo: apiLead.assignedTo ? String(apiLead.assignedTo) : "",
-    nextFollowUp: apiLead.nextFollowUp
-      ? new Date(apiLead.nextFollowUp).toISOString()
-      : "",
-    followUpNotes: Array.isArray(apiLead.followUpNotes)
-      ? apiLead.followUpNotes.map((note) => ({ note }))
-      : [],
+    // NO follow up fields
   };
 };
 
@@ -185,17 +180,9 @@ export const transformFormToAPI = (
   // include managerId if present in form (frontend uses manager/managerId fields)
   if ((formData as any).managerId && (formData as any).managerId !== "")
     (payload as any).managerId = (formData as any).managerId;
-  if (formData.nextFollowUp && formData.nextFollowUp !== "")
-    payload.nextFollowUp = new Date(formData.nextFollowUp);
-  // followUpNotes: backend expects array of strings, so map to string array
-  if (
-    Array.isArray(formData.followUpNotes) &&
-    formData.followUpNotes.length > 0
-  ) {
-    payload.followUpNotes = formData.followUpNotes.map(
-      (noteObj) => noteObj.note
-    );
-  }
+
+  // REMOVED follow-up transform logic
+
   return payload;
 };
 
@@ -234,17 +221,17 @@ export const getDefaultLeadFormData = (): LeadFormData => {
     manager: "",
     managerId: "",
     assignedTo: "",
-    nextFollowUp: "",
-    followUpNotes: [],
+    // nextFollowUp: "", // REMOVED
+    // followUpNotes: [], // REMOVED
   };
 };
 
 export const transformAPIRole = (apiRole: any): any => {
   const permissions: string[] = [];
   const moduleMap: Record<string, string> = {
-    employee: "User",  
-    role: "Role",  
-    lead: "Lead",  
+    employee: "User",
+    role: "Role",
+    lead: "Lead",
     department: "Department",
   };
   apiRole.read?.forEach((module: string) => {
@@ -269,12 +256,12 @@ export const transformAPIRole = (apiRole: any): any => {
     delete: apiRole.delete,
     // preserve system admin flag if present
     isSystemAdmin: Boolean(apiRole.isSystemAdmin),
-  // Preserve special access fields with proper defaults
-  showTotalUsers: Boolean(apiRole.showTotalUsers || false),
-  showTotalVendorsBilling: Boolean(apiRole.showTotalVendorsBilling || false),
-  showCabBookingAnalytics: Boolean(apiRole.showCabBookingAnalytics || false),
-  showScheduleThisWeek: Boolean(apiRole.showScheduleThisWeek || false),
-};
+    // Preserve special access fields with proper defaults
+    showTotalUsers: Boolean(apiRole.showTotalUsers || false),
+    showTotalVendorsBilling: Boolean(apiRole.showTotalVendorsBilling || false),
+    showCabBookingAnalytics: Boolean(apiRole.showCabBookingAnalytics || false),
+    showScheduleThisWeek: Boolean(apiRole.showScheduleThisWeek || false),
+  };
 };
 
 
@@ -294,7 +281,7 @@ export const transformToAPIRole = (role: any) => {
       showTotalVendorsBilling: Boolean((role as any).showTotalVendorsBilling || false),
       showCabBookingAnalytics: Boolean((role as any).showCabBookingAnalytics || false),
       showScheduleThisWeek: Boolean((role as any).showScheduleThisWeek || false),
- 
+
     };
   }
 
@@ -335,12 +322,12 @@ export const transformToAPIRole = (role: any) => {
     delete: deletePerms,
     // if original role object had isSystemAdmin, carry it through
     isSystemAdmin: Boolean((role as any).isSystemAdmin),
-  
+
     // Preserve special access fields with proper defaults
     showTotalUsers: Boolean((role as any).showTotalUsers || false),
     showTotalVendorsBilling: Boolean((role as any).showTotalVendorsBilling || false),
     showCabBookingAnalytics: Boolean((role as any).showCabBookingAnalytics || false),
     showScheduleThisWeek: Boolean((role as any).showScheduleThisWeek || false),
- 
+
   };
 };

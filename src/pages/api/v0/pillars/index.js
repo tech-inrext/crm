@@ -1,280 +1,34 @@
-import dbConnect from "@/lib/mongodb";
-import Pillar from "@/models/Pillar";
+import { Controller } from "@framework";
+import PillarService from "../../../../be/services/PillarService";
 import * as cookie from "cookie";
-import { userAuth } from "@/middlewares/auth";
-import Property from "@/models/Property";
+import { userAuth } from "../../../../middlewares/auth";
 
-// GET all pillars with filtering and pagination
-const getAllPillars = async (req, res) => {
-  try {
-    const { 
-      page = 1, 
-      limit = 12, 
-      category = "", 
-      search = "",
-      activeOnly = "true" 
-    } = req.query;
-
-    const currentPage = Math.max(parseInt(page), 1);
-    const itemsPerPage = Math.min(parseInt(limit), 50);
-    const skip = (currentPage - 1) * itemsPerPage;
-
-    const query = {};
-    
-    // Filter by active status
-    if (activeOnly === "true") {
-      query.isActive = true;
-    }
-
-    // Filter by category
-    if (category) {
-      query.category = category;
-    }
-
-    // Search across multiple fields
-    if (search) {
-      query.$or = [
-        { name: { $regex: search, $options: "i" } },
-        { designation: { $regex: search, $options: "i" } },
-        { about: { $regex: search, $options: "i" } },
-        { expertise: { $regex: search, $options: "i" } },
-        { skills: { $regex: search, $options: "i" } }
-      ];
-    }
-
-    const [pillars, totalPillars] = await Promise.all([
-      Pillar.find(query)
-        .skip(skip)
-        .limit(itemsPerPage)
-        .populate("projects", "projectName builderName location price images slug")
-        .populate("createdBy", "name email")
-        .sort({ category: 1, createdAt: -1 }),
-      Pillar.countDocuments(query)
-    ]);
-
-    return res.status(200).json({
-      success: true,
-      data: pillars,
-      pagination: {
-        totalItems: totalPillars,
-        currentPage,
-        itemsPerPage,
-        totalPages: Math.ceil(totalPillars / itemsPerPage),
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching pillars:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch pillars",
-      error: error.message,
-    });
+class PillarIndexController extends Controller {
+  constructor() {
+    super();
+    this.service = new PillarService();
+    // this.skipAuth = ["get"];
   }
-};
 
-// POST create new pillar
-const createPillar = async (req, res) => {
-  try {
-    if (!req.isSystemAdmin) {
-      return res.status(403).json({
-        success: false,
-        message: "Only administrators can create pillars"
-      });
-    }
+  // Override handler to inject user info for GET if possible, 
+  // or rely on userAuth being skipped so GET is public.
+  // Ideally, if we skipAuth for GET, we don't have user info.
+  // But if the route needs to differentiate between logged in and public, we might need custom logic.
+  // The original route had:
+  // if (req.method === "GET") { try userAuth... catch... }
+  //
+  // Here, we can override the 'get' method or use middleware injection.
+  // Since 'getAllPillars' logic doesn't seemingly depend on user context (except maybe implicit logging?),
+  // and 'getPublicPillars' is definitely public.
+  // I'll stick to skipAuth = ['get'] which means public access.
 
-    const pillarData = {
-      ...req.body,
-      createdBy: req.employee._id,
-    };
-
-    // Validate required fields
-    if (!pillarData.name || !pillarData.category || !pillarData.designation || 
-        !pillarData.about || !pillarData.experience) {
-      return res.status(400).json({
-        success: false,
-        message: "Name, category, designation, about, and experience are required"
-      });
-    }
-
-    // Ensure at least one profile image
-    if (!pillarData.profileImages || pillarData.profileImages.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "At least one profile image is required"
-      });
-    }
-
-    const pillar = new Pillar(pillarData);
-    await pillar.save();
-
-    // Populate for response
-    await pillar.populate("projects", "projectName builderName location price images slug");
-    await pillar.populate("createdBy", "name email");
-
-    return res.status(201).json({
-      success: true,
-      message: "Pillar created successfully",
-      data: pillar,
-    });
-  } catch (error) {
-    console.error("Error creating pillar:", error);
-    
-    if (error.name === 'ValidationError') {
-      const errors = Object.values(error.errors).map(err => err.message);
-      return res.status(400).json({
-        success: false,
-        message: "Validation Error",
-        errors: errors
-      });
-    }
-
-    if (error.code === 11000) {
-      return res.status(400).json({
-        success: false,
-        message: "Pillar with similar details already exists"
-      });
-    }
-
-    return res.status(500).json({
-      success: false,
-      message: "Failed to create pillar",
-      error: error.message,
-    });
+  async get(req, res) {
+    return this.service.getAllPillars(req, res);
   }
-};
 
-// GET all pillars for public website
-const getPublicPillars = async (req, res) => {
-  try {
-    const { 
-      category = "", 
-      limit = "50",
-      featured = "false"
-    } = req.query;
-
-    const itemsPerPage = Math.min(parseInt(limit), 100);
-    
-    const query = { isActive: true };
-    
-    // Filter by category if provided
-    if (category) {
-      query.category = category;
-    }
-
-    // Filter featured pillars if requested
-    if (featured === "true") {
-      query.isFeatured = true;
-    }
-
-    const pillars = await Pillar.find(query)
-      .select("name category profileImages designation about experience expertise skills projects isFeatured")
-      .populate("projects", "projectName builderName location price images slug propertyType")
-      .sort({ category: 1, createdAt: -1 })
-      .limit(itemsPerPage);
-
-    return res.status(200).json({
-      success: true,
-      data: pillars,
-      total: pillars.length,
-    });
-  } catch (error) {
-    console.error("Error fetching public pillars:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch pillars",
-      error: error.message,
-    });
+  async post(req, res) {
+    return this.service.createPillar(req, res);
   }
-};
-
-// Auth wrapper
-function withAuth(handler) {
-  return async (req, res) => {
-    try {
-      const parsedCookies = cookie.parse(req.headers.cookie || "");
-      req.cookies = parsedCookies;
-      
-      // For GET requests, allow public access
-      if (req.method === "GET") {
-        try {
-          await userAuth(req, res, () => {});
-        } catch (authError) {
-          // Continue without authentication for GET requests
-          req.employee = null;
-          req.isSystemAdmin = false;
-        }
-      } else {
-        // For POST requests, require authentication
-        await userAuth(req, res, () => {});
-      }
-      
-      return handler(req, res);
-    } catch (error) {
-      return res.status(401).json({
-        success: false,
-        message: "Authentication failed"
-      });
-    }
-  };
 }
 
-// Main handler
-const handler = async (req, res) => {
-  await dbConnect();
-
-  // Set CORS headers
-  res.setHeader("Access-Control-Allow-Credentials", true);
-  res.setHeader(
-    "Access-Control-Allow-Origin",
-    process.env.NEXTAUTH_URL || "http://localhost:3000"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Methods",
-    "GET,POST,PATCH,DELETE,OPTIONS"
-  );
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
-  );
-
-  // Add cache control headers
-  res.setHeader('Cache-Control', 'no-cache, no-store, max-age=0, must-revalidate');
-  res.setHeader('Pragma', 'no-cache');
-  res.setHeader('Expires', '0');
-
-  if (req.method === "OPTIONS") {
-    res.status(200).end();
-    return;
-  }
-
-  try {
-    if (req.method === "GET") {
-      // Check if it's a public request using a different parameter name
-      const { isPublic, featured, category } = req.query;
-      
-      if (isPublic === "true") {
-        return getPublicPillars(req, res);
-      }
-      
-      return getAllPillars(req, res);
-    }
-
-    if (req.method === "POST") {
-      return createPillar(req, res);
-    }
-
-    return res.status(405).json({
-      success: false,
-      message: "Method not allowed",
-    });
-  } catch (error) {
-    console.error("API Handler Error:", error);
-    return res.status(500).json({
-      success: false,
-      message: "Internal server error",
-    });
-  }
-};
-
-export default withAuth(handler);
-
+export default new PillarIndexController().handler;

@@ -2,7 +2,7 @@ import React from "react";
 import Box from "@/components/ui/Component/Box";
 import Typography from "@/components/ui/Component/Typography";
 
-export function VendorEmpty({ appliedFilters, monthOptions }) {
+export function VendorEmpty({ appliedFilters }) {
   return (
     <Box className="bg-yellow-100 border border-yellow-300 rounded-xl p-4 text-yellow-800 text-center">
       <Typography className="font-semibold mb-2 text-yellow-900">
@@ -10,19 +10,13 @@ export function VendorEmpty({ appliedFilters, monthOptions }) {
       </Typography>
 
       <Box className="text-sm mb-2 space-y-1">
-        {(appliedFilters.month !== "all" || appliedFilters.year !== "all") && (
+        {(appliedFilters.fromDate || appliedFilters.toDate) && (
           <Box>
             <span role="img" aria-label="calendar">📅</span>{" "}
             <strong>
-              No cab booking data found for{" "}
-              {[
-                appliedFilters.month !== "all"
-                  ? monthOptions.find((m) => m.value === appliedFilters.month)?.label
-                  : null,
-                appliedFilters.year !== "all" ? appliedFilters.year : null,
-              ]
-                .filter(Boolean)
-                .join(" ")}
+              No cab booking data found for{' '}
+              {appliedFilters.fromDate ? `from ${new Date(appliedFilters.fromDate).toLocaleDateString()}` : ''}
+              {appliedFilters.toDate ? ` to ${new Date(appliedFilters.toDate).toLocaleDateString()}` : ''}
             </strong>
           </Box>
         )}
