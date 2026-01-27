@@ -1,5 +1,5 @@
 import { Controller } from "@framework";
-import PropertyService from "@/be/services/PropertyService";
+import PropertyService from "../../../../../be/services/PropertyService";
 import * as cookie from "cookie";
 import { userAuth } from "../../../../../middlewares/auth";
 
@@ -11,20 +11,14 @@ class PropertyIndexController extends Controller {
   }
 
   async get(req, res) {
-  // ✅ CORS headers
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+    console.log("Inside public property index controller");
 
-  // ✅ HANDLE PREFLIGHT
-  if (req.method === "OPTIONS") {
-    return res.status(200).end();
+    if (req.query.parentId !== undefined) {
+      return this.service.getPublicSubProperties(req, res);
+    }
+
+    return this.service.getPublicProperties(req, res);
   }
-
-  console.log("Inside public property index controller");
-  return this.service.getPublicProperties(req, res);
-}
-
 
   // async post(req, res) {
   //   return this.service.createProperty(req, res);
