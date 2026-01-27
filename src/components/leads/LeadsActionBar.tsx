@@ -20,6 +20,7 @@ import {
   ViewModule,
   History,
   FilterAltIcon,
+  DownloadIcon,
 } from "@/components/ui/Component";
 import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
@@ -280,6 +281,46 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
 
           <PermissionGuard module="lead" action="write" fallback={<></>}>
             <BulkAssign onSuccess={loadLeads} />
+          </PermissionGuard>
+
+          <PermissionGuard module="lead" action="write" fallback={<></>}>
+            <Button
+              variant="contained"
+              startIcon={<DownloadIcon />}
+              onClick={async () => {
+                try {
+                  const XLSX = await import("xlsx");
+                  const headers = [["fullName", "email", "phone"]];
+                  const ws = XLSX.utils.aoa_to_sheet(headers);
+                  const wb = XLSX.utils.book_new();
+                  XLSX.utils.book_append_sheet(wb, ws, "Template");
+                  XLSX.writeFile(wb, "lead_upload_template.xlsx");
+                } catch (error) {
+                  console.error("Error downloading template:", error);
+                }
+              }}
+              size="small"
+              sx={{
+                minWidth: { xs: "100%", sm: "auto" },
+                height: 40,
+                borderRadius: 2,
+                fontWeight: 600,
+                fontSize: "0.8rem",
+                px: { xs: 2, sm: 3 },
+                boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+                outline: "none",
+                "&:hover": {
+                  boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
+                  transform: "translateY(-1px)",
+                },
+                "&:focus": {
+                  outline: "none",
+                  boxShadow: "none",
+                },
+              }}
+            >
+              {isTablet ? "Template" : "Download Lead Template"}
+            </Button>
           </PermissionGuard>
 
           <PermissionGuard module="lead" action="write" fallback={<></>}>
