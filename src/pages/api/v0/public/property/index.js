@@ -1,5 +1,5 @@
 import { Controller } from "@framework";
-import PropertyService from "@/be/services/PropertyService";
+import PropertyService from "../../../../../be/services/PropertyService";
 import * as cookie from "cookie";
 import { userAuth } from "../../../../../middlewares/auth";
 
@@ -11,12 +11,14 @@ class PropertyIndexController extends Controller {
   }
 
   async get(req, res) {
+    console.log("Inside public property index controller");
 
+    if (req.query.parentId !== undefined) {
+      return this.service.getPublicSubProperties(req, res);
+    }
 
-  console.log("Inside public property index controller");
-  return this.service.getPublicProperties(req, res);
-}
-
+    return this.service.getPublicProperties(req, res);
+  }
 
   // async post(req, res) {
   //   return this.service.createProperty(req, res);
