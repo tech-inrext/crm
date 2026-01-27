@@ -11,7 +11,7 @@ import {
   Menu,
   MenuItem,
 } from "@mui/material";
-import { PlayArrow, Edit, Delete, MoreVert } from "@mui/icons-material";
+import { PlayArrow, Edit, Delete, MoreVert, YouTube } from "@mui/icons-material";
 import { TrainingVideo } from "@/types/trainingVideo";
 import PermissionGuard from "@/components/PermissionGuard";
 
@@ -69,7 +69,7 @@ const TrainingVideoCard: React.FC<TrainingVideoCardProps> = ({
 
   const formatDate = (dateString: string) => {
     if (typeof window === "undefined") {
-      return "Recently"; // SSR fallback
+      return "Recently";
     }
     return new Date(dateString).toLocaleDateString("en-US", {
       year: "numeric",
@@ -90,6 +90,7 @@ const TrainingVideoCard: React.FC<TrainingVideoCardProps> = ({
         height: "100%",
         display: "flex",
         flexDirection: "column",
+        position: "relative",
       }}
     >
       {/* Thumbnail with Play Button */}
@@ -104,6 +105,27 @@ const TrainingVideoCard: React.FC<TrainingVideoCardProps> = ({
           }}
           onClick={handlePlay}
         />
+
+        {/* YouTube Badge */}
+        {video.isYouTube && (
+          <Box
+            sx={{
+              position: "absolute",
+              top: 8,
+              right: 8,
+              backgroundColor: "rgba(255, 0, 0, 0.85)",
+              borderRadius: "4px",
+              padding: "2px 6px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              zIndex: 2,
+            }}
+          >
+            <YouTube sx={{ fontSize: 18, color: "white" }} />
+            <Typography variant="caption" sx={{ color: "white", fontWeight: 500 }} />
+          </Box>
+        )}
 
         {/* Play Button Overlay */}
         <Box
@@ -139,25 +161,6 @@ const TrainingVideoCard: React.FC<TrainingVideoCardProps> = ({
             <PlayArrow sx={{ color: "primary.main", fontSize: 40 }} />
           </IconButton>
         </Box>
-
-        {/* Duration Badge */}
-        {video.duration && (
-          <Box
-            sx={{
-              position: "absolute",
-              bottom: 8,
-              right: 8,
-              backgroundColor: "rgba(0,0,0,0.7)",
-              color: "white",
-              padding: "2px 6px",
-              borderRadius: 1,
-              fontSize: "0.75rem",
-              fontWeight: "bold",
-            }}
-          >
-            {video.duration}
-          </Box>
-        )}
       </Box>
 
       {/* Card Content */}
@@ -227,6 +230,18 @@ const TrainingVideoCard: React.FC<TrainingVideoCardProps> = ({
             {video.description}
           </Typography>
         )}
+
+        {/* Footer */}
+        <Box sx={{ 
+          display: "flex", 
+          justifyContent: "space-between", 
+          alignItems: "center",
+          mt: "auto"
+        }}>
+          <Typography variant="caption" color="text.secondary">
+            {formatDate(video.uploadDate)}
+          </Typography>
+        </Box>
       </CardContent>
 
       {/* Action Menu */}
@@ -266,3 +281,4 @@ const TrainingVideoCard: React.FC<TrainingVideoCardProps> = ({
 };
 
 export default TrainingVideoCard;
+
