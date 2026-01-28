@@ -1,6 +1,6 @@
-import Lead from "../be/models/Lead.js";
-import Notification from "../be/models/Notification.js";
-import FollowUp from "../be/models/FollowUp.js";
+import Lead from "../models/Lead.js";
+import Notification from "../models/Notification.js";
+import FollowUp from "../models/FollowUp.js";
 
 /**
  * Worker to send lead follow-up notifications

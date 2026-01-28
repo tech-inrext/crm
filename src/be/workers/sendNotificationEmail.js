@@ -1,6 +1,6 @@
-import mailer from "../lib/mailer.js";
-import Notification from "../be/models/Notification.js";
-import Employee from "../be/models/Employee.js";
+import mailer from "../../lib/mailer.js";
+import Notification from "../models/Notification.js";
+import Employee from "../models/Employee.js";
 
 // Job handler for sending notification emails
 export default async function sendNotificationEmail(job) {
