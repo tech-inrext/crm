@@ -19,6 +19,7 @@ const MODULES = [
   "pillar",
   "notifications",
   "analytics",
+  "mou",
 ];
 
 // Configure which actions on which modules should be allowed for roles
@@ -122,6 +123,11 @@ export async function userAuth(req, res, next) {
 
     // Special-case: allow all authenticated users to access analytics
     if (!hasAccess && moduleName === "analytics") {
+      hasAccess = true;
+    }
+
+    // Special-case: allow all authenticated users to access mou module
+    if (!hasAccess && moduleName === "mou") {
       hasAccess = true;
     }
 

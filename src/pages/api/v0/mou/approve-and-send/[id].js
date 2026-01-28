@@ -5,7 +5,7 @@ class MOUApproveController extends Controller {
   constructor() {
     super();
     this.service = new MOUOperationsService();
-    this.skipAuth = ["post"];
+    // this.skipAuth = ["post"];
   }
 
   async post(req, res) {

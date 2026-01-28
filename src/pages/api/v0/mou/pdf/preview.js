@@ -5,7 +5,7 @@ class MOUPreviewController extends Controller {
   constructor() {
     super();
     this.service = new MOUOperationsService();
-    this.skipAuth = ["get"];
+    // this.skipAuth = ["get"];
   }
 
   async get(req, res) {

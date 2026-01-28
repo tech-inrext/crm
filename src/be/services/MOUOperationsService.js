@@ -6,27 +6,14 @@ import { generateMOUPDF } from "./mouService/generator"; // Sibling import
 import { uploadToS3 } from "../../lib/s3"; // Standard import
 import { NotificationHelper } from "../../lib/notification-helpers";
 import { sendMOUApprovalMail } from "../../lib/emails/sendMOUApprovedMail";
-import { loginAuth } from "../../middlewares/loginAuth"; // Import to use manually if needed
+
 
 class MOUOperationsService extends Service {
   constructor() {
     super();
   }
 
-  async _tryAuth(req, res) {
-    // Attempt to hydrate req.employee using loginAuth, but don't fail if it fails.
-    // This is to maintain the "optional facilitator" behavior.
-    if (req.employee) return;
-    try {
-      await new Promise((resolve) => {
-        loginAuth(req, res, () => {
-          resolve();
-        });
-      });
-    } catch (e) {
-      // Ignore auth errors
-    }
-  }
+
 
   async approveAndSendMOU(req, res) {
     try {
@@ -34,7 +21,7 @@ class MOUOperationsService extends Service {
       if (!id)
         return res.status(400).json({ success: false, message: "Missing id" });
 
-      await this._tryAuth(req, res);
+
 
       const mou = await Employee.findById(id);
       if (!mou)
@@ -108,7 +95,7 @@ class MOUOperationsService extends Service {
       if (!id)
         return res.status(400).json({ success: false, message: "Missing id" });
 
-      await this._tryAuth(req, res);
+
 
       const mou = await Employee.findById(id).lean();
       if (!mou)
@@ -172,26 +159,54 @@ class MOUOperationsService extends Service {
   async resendMOUMail(req, res) {
     try {
       const { id } = req.query;
+      console.log("MOUOperationsService: resendMOUMail called for ID:", id);
       if (!id)
         return res.status(400).json({ success: false, message: "Missing id" });
 
-      const mou = await Employee.findById(id).lean();
+      const mou = await Employee.findById(id); // Removed .lean() to allow saving
       if (!mou)
         return res
           .status(404)
           .json({ success: false, message: "Employee not found" });
 
-      if (!mou.mouPdfUrl)
-        return res
-          .status(400)
-          .json({ success: false, message: "MOU PDF not available" });
+      let s3Url = mou.mouPdfUrl;
+
+      if (!s3Url) {
+        // If PDF is missing, try to regenerate it
+
+
+        const facilitatorSignatureUrl =
+          req.employee &&
+          (req.employee.signatureUrl || req.employee.signatureURL)
+            ? req.employee.signatureUrl || req.employee.signatureURL
+            : "";
+
+        const pdfPath = await generateMOUPDF(
+          mou.toObject(),
+          facilitatorSignatureUrl
+        );
+
+        const buffer = fs.readFileSync(pdfPath);
+        const key = `mou/${mou._id}_${Date.now()}.pdf`;
+        s3Url = await uploadToS3(buffer, key, "application/pdf");
+
+        mou.mouPdfUrl = s3Url;
+        if (mou.mouStatus !== "Approved") {
+          mou.mouStatus = "Approved";
+        }
+        await mou.save();
+
+        try {
+          if (fs.existsSync(pdfPath)) fs.unlinkSync(pdfPath);
+        } catch (e) {}
+      }
 
       try {
         await sendMOUApprovalMail(
           mou.email,
           mou.name,
           mou.employeeProfileId,
-          mou.mouPdfUrl
+          s3Url
         );
         return res.json({ success: true });
       } catch (e) {
