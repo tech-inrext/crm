@@ -1,5 +1,5 @@
-import Lead from "../models/Lead.js";
-import LeadAssignmentHistory from "../models/LeadAssignmentHistory.js";
+import Lead from "../be/models/Lead.js";
+import LeadAssignmentHistory from "../be/models/LeadAssignmentHistory.js";
 import dbConnect from "../lib/mongodb.js";
 import mongoose from "mongoose";
 

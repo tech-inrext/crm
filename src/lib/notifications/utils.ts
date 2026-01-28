@@ -1,5 +1,5 @@
 import NotificationService from "../../be/services/NotificationService";
-import Employee from "../../models/Employee.js";
+import Employee from "../../be/models/Employee.js";
 
 const notificationService = new NotificationService();
 

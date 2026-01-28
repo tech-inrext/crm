@@ -1,6 +1,6 @@
 import dbConnect from "@/lib/mongodb";
-import Employee from "@/models/Employee";
-import Lead from "@/models/Lead";
+import Employee from "../../models/Employee";
+import Lead from "../../models/Lead";
 import CabBookingService from "@/be/services/analytics/cabBooking";
 
 class UserStatsService {

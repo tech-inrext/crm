@@ -1,5 +1,5 @@
-import Notification from "../models/Notification.js";
-import Employee from "../models/Employee.js";
+import Notification from "../be/models/Notification.js";
+import Employee from "../be/models/Employee.js";
 
 /**
  * Notification cleanup worker to handle:
