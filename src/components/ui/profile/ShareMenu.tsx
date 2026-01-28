@@ -1,3 +1,4 @@
+// components/ui/ShareMenu.tsx - Updated version with _id
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import Divider from "@mui/material/Divider";
@@ -10,18 +11,18 @@ import LanguageIcon from "@mui/icons-material/Language";
 import PictureAsPdfIcon from "@mui/icons-material/PictureAsPdf";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import ContentCopyIcon from "@mui/icons-material/ContentCopy";
+import ShareIcon from "@mui/icons-material/Share";
 import { useState } from "react";
 import Snackbar from "@mui/material/Snackbar";
 import Alert from "@mui/material/Alert";
 import CircularProgress from "@mui/material/CircularProgress";
 import Box from "@mui/material/Box";
 
-import { shareLinks } from "@/utils/shareActions";
-
 interface ShareMenuProps {
   anchorEl: HTMLElement | null;
   open: boolean;
   onClose: () => void;
+  userId?: string;
   userName?: string;
   userData?: {
     phone?: string;
@@ -38,6 +39,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
   anchorEl,
   open,
   onClose,
+  userId,
   userName,
   userData = {},
 }) => {
@@ -47,16 +49,22 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error" | "info">("success");
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
-  const links = shareLinks(userName);
   const { phone, email, altPhone, photo, designation, specialization, branch } = userData;
   const whatsappNumber = altPhone || phone;
 
+  // Generate visiting card URL using userId (MongoDB _id)
+  const getVisitingCardUrl = () => {
+    if (!userId) return "http://localhost:3001";
+    
+    // Use userId for the URL parameter
+    return `http://localhost:3001/visiting-card/${userId}`;
+  };
+
   const handleCopyLink = async () => {
     try {
-      const url = links.visitingCard;
-      const fullUrl = `${window.location.origin}${url}`;
+      const url = getVisitingCardUrl();
       
-      await navigator.clipboard.writeText(fullUrl);
+      await navigator.clipboard.writeText(url);
       
       setSnackbarMessage("Link copied to clipboard!");
       setSnackbarSeverity("success");
@@ -71,9 +79,33 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
   };
 
   const handlePreviewVisitingCard = () => {
-    if (userName) {
-      const encodedName = encodeURIComponent(userName);
-      router.push(`/visiting-card/${encodedName}`);
+    if (userId) {
+      // Use userId to navigate to visiting card page
+      const url = getVisitingCardUrl();
+      window.open(url, '_blank');
+      onClose();
+    } else {
+      setSnackbarMessage("User ID is required");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
+    }
+  };
+
+  const handleShareWhatsApp = () => {
+    if (userId && userName) {
+      const url = getVisitingCardUrl();
+      const message = `Check out ${userName}'s digital visiting card: ${url}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+      window.open(whatsappUrl, '_blank');
+      onClose();
+    }
+  };
+
+  const handleShareFacebook = () => {
+    if (userId) {
+      const url = getVisitingCardUrl();
+      const facebookUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(url)}`;
+      window.open(facebookUrl, '_blank');
       onClose();
     }
   };
@@ -85,7 +117,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
     }
   };
 
-  const handleWhatsApp = () => {
+  const handleWhatsAppDirect = () => {
     if (whatsappNumber) {
       const cleanedNumber = whatsappNumber.replace(/[^0-9]/g, "");
       window.open(`https://wa.me/${cleanedNumber}`, '_blank');
@@ -107,6 +139,13 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
 
   const handleDownloadPDF = async () => {
     try {
+      if (!userId) {
+        setSnackbarMessage("User ID is required for PDF generation");
+        setSnackbarSeverity("error");
+        setSnackbarOpen(true);
+        return;
+      }
+      
       setIsGeneratingPDF(true);
       
       // Show loading message
@@ -114,40 +153,30 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
       setSnackbarSeverity("info");
       setSnackbarOpen(true);
       
-      // Prepare user data - ENSURE all fields are strings
+      // Prepare user data with userId
       const pdfUserData = {
+        id: userId, // Add userId for backend fetching
         name: userName || "User",
         phone: phone || "",
         email: email || "",
         altPhone: altPhone || "",
         photo: photo || "",
         designation: designation || "",
-        specialization: specialization || "", // ✅ CRITICAL: Specialization must be here
+        specialization: specialization || "",
         branch: branch || "",
       };
 
-      // 🔍 DEBUG: Log the data being sent to PDF generator
-      console.log('=== PDF Generation Debug ===');
-      console.log('User Data received in ShareMenu:', userData);
-      console.log('PDF User Data being sent:', pdfUserData);
-      console.log('Specialization value:', pdfUserData.specialization);
-      console.log('Photo value:', pdfUserData.photo);
-      console.log('===========================');
-      
       // Dynamically import the PDF generation function
       const { generateVisitingCardPDF } = await import('@/utils/pdfGenerator');
       
-      // Call the PDF generation function
+      // Call the PDF generation function with userId
       await generateVisitingCardPDF(pdfUserData);
       
       setSnackbarMessage("PDF downloaded successfully!");
       setSnackbarSeverity("success");
       setSnackbarOpen(true);
       
-      // Close menu after a short delay
-      setTimeout(() => {
-        onClose();
-      }, 1000);
+      onClose();
       
     } catch (error) {
       console.error("❌ Failed to generate PDF:", error);
@@ -171,18 +200,58 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
         onClose={onClose}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
         transformOrigin={{ vertical: "bottom", horizontal: "center" }}
-        PaperProps={{ sx: { borderRadius: 2, minWidth: 220 } }}
+        PaperProps={{ sx: { borderRadius: 2, minWidth: 220, maxWidth: 300 } }}
       >
-        <MenuItem onClick={handlePreviewVisitingCard}>
+        <MenuItem 
+          onClick={handlePreviewVisitingCard}
+          disabled={!userId}
+          sx={{ 
+            opacity: userId ? 1 : 0.6,
+            cursor: userId ? "pointer" : "default"
+          }}
+        >
           <VisibilityIcon sx={{ mr: 1, color: "#2196F3" }} />
           Preview Visiting Card
         </MenuItem>
 
         <Divider />
 
-        <MenuItem onClick={handleCopyLink}>
+        <MenuItem 
+          onClick={handleCopyLink}
+          disabled={!userId}
+          sx={{ 
+            opacity: userId ? 1 : 0.6,
+            cursor: userId ? "pointer" : "default"
+          }}
+        >
           <ContentCopyIcon sx={{ mr: 1, color: "#757575" }} />
           Copy Link
+        </MenuItem>
+
+        <Divider />
+
+        <MenuItem 
+          onClick={handleShareWhatsApp}
+          disabled={!userId}
+          sx={{ 
+            opacity: userId ? 1 : 0.6,
+            cursor: userId ? "pointer" : "default"
+          }}
+        >
+          <WhatsAppIcon sx={{ mr: 1, color: "#25D366" }} />
+          Share on WhatsApp
+        </MenuItem>
+
+        <MenuItem 
+          onClick={handleShareFacebook}
+          disabled={!userId}
+          sx={{ 
+            opacity: userId ? 1 : 0.6,
+            cursor: userId ? "pointer" : "default"
+          }}
+        >
+          <ShareIcon sx={{ mr: 1, color: "#1877F2" }} />
+          Share on Facebook
         </MenuItem>
 
         <Divider />
@@ -200,7 +269,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
         </MenuItem>
 
         <MenuItem 
-          onClick={handleWhatsApp} 
+          onClick={handleWhatsAppDirect} 
           disabled={!whatsappNumber}
           sx={{ 
             opacity: whatsappNumber ? 1 : 0.6,
@@ -208,7 +277,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
           }}
         >
           <WhatsAppIcon sx={{ mr: 1, color: whatsappNumber ? "#25D366" : "#cccccc" }} />
-          {whatsappNumber ? "WhatsApp" : "No WhatsApp"}
+          {whatsappNumber ? "WhatsApp Direct" : "No WhatsApp"}
         </MenuItem>
 
         <MenuItem 
@@ -232,9 +301,11 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
 
         <MenuItem 
           onClick={handleDownloadPDF} 
-          disabled={isGeneratingPDF}
+          disabled={isGeneratingPDF || !userId}
           sx={{
             position: 'relative',
+            opacity: userId ? 1 : 0.6,
+            cursor: userId ? (isGeneratingPDF ? "wait" : "pointer") : "default"
           }}
         >
           {isGeneratingPDF ? (
@@ -271,4 +342,3 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
 };
 
 export default ShareMenu;
-

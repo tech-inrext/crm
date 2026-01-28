@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Dialog from "@/components/ui/Component/Dialog";
 import DialogContent from "@/components/ui/Component/DialogContent";
 import DialogActions from "@/components/ui/Component/DialogActions";
@@ -8,7 +10,6 @@ import Typography from "@/components/ui/Component/Typography";
 import Box from "@/components/ui/Component/Box";
 import Divider from "@/components/ui/Component/Divider";
 import IconButton from "@/components/ui/Component/IconButton";
-import { useRouter } from "next/navigation";
 
 import CloseIcon from "@mui/icons-material/Close";
 import ShareIcon from "@mui/icons-material/Share";
@@ -20,6 +21,7 @@ interface ProfileProps {
   open: boolean;
   onClose: () => void;
   user: {
+    _id: string;
     name: string;
     email: string;
     phone?: string;
@@ -27,13 +29,21 @@ interface ProfileProps {
     roles: { name: string; _id: string }[];
     currentRole: string;
     department?: string;
+    altPhone?: string;
+    designation?: string;
+    specialization?: string;
+    branch?: string;
+    gender?: string;
+    address?: string;
+    managerName?: string;
+    managerId?: string;
+    joiningDate?: string;
     [key: string]: any;
   } | null;
 }
 
 const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
-  const router = useRouter();
 
   const handleShareOpen = (e: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(e.currentTarget);
@@ -43,17 +53,14 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
     setAnchorEl(null);
   };
 
-  const handleDownloadPDF = () => {
-    console.log("Download PDF clicked");
-  };
-
   const handlePreviewVisitingCard = () => {
-    if (user?.name) {
-      const encodedName = encodeURIComponent(user.name);
-      router.push(`/visiting-card/${encodedName}`);
-      onClose();
-    }
-  };
+  if (user?._id) {
+    // Use the employee ID in the route
+    const visitingCardUrl = `http://localhost:3001/visiting-card/${user._id}`;
+    window.open(visitingCardUrl, '_blank');
+    onClose();
+  }
+};
 
   let content;
 
@@ -81,7 +88,7 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
       (r) => r._id === user.currentRole
     )?.name;
 
-    const hasPhoto = user.photo && user.photo.trim() !== "";
+    const hasPhoto = user.photo && user.photo.trim() !== '';
 
     content = (
       <Box
@@ -107,9 +114,9 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
             border: "3px solid #fff",
             mb: 1,
             "& img": {
-                            objectFit: "cover",
-                            objectPosition: "top",
-                          },
+              objectFit: "cover",
+              objectPosition: "top",
+            },
           }}
           src={hasPhoto ? user.photo : undefined}
           alt={user.name}
@@ -178,12 +185,12 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
             </Box>
           )}
 
-          {user.id && (
+          {user._id && (
             <Box display="flex" justifyContent="space-between" mb={1}>
               <Typography variant="subtitle2" color="text.secondary">
                 User ID
               </Typography>
-              <Typography variant="body2">{user.id}</Typography>
+              <Typography variant="body2">{user._id}</Typography>
             </Box>
           )}
         </Box>
@@ -316,6 +323,7 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
           startIcon={<VisibilityIcon />}
           onClick={handlePreviewVisitingCard}
           sx={{ fontWeight: 600, borderRadius: 2, flex: 1 }}
+          disabled={!user?._id}
         >
           Preview Card
         </Button>
@@ -333,6 +341,7 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
           anchorEl={anchorEl}
           open={Boolean(anchorEl)}
           onClose={handleShareClose}
+          userId={user?._id}
           userName={user?.name}
           userData={{
             phone: user?.phone,
@@ -340,12 +349,11 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
             altPhone: user?.altPhone,
             photo: user?.photo,
             designation: user?.designation,
-            specialization: user?.specialization, 
+            specialization: user?.specialization,
             branch: user?.branch,
           }}
         />
       </DialogActions>
-
     </Dialog>
   );
 };
