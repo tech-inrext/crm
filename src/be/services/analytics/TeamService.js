@@ -1,5 +1,5 @@
 import { Service } from "@framework";
-import Employee from "@/models/Employee";
+import Employee from "../../models/Employee";
 
 class TeamService extends Service {
   constructor() {
