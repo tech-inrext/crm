@@ -1,5 +1,5 @@
 import { Service } from "@framework";
-import Branch from "../../models/Branch";
+import Branch from "../models/Branch";
 
 class BranchService extends Service {
   constructor() {

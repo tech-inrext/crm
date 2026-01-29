@@ -1,6 +1,6 @@
 import { Service } from "@framework";
 import dbConnect from "@/lib/mongodb";
-import Lead from "@/models/Lead";
+import Lead from "../../models/Lead";
 
 const CONVERTED_STATUSES = [
   "site visit done",

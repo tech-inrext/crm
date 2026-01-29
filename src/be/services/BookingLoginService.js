@@ -1,5 +1,5 @@
 import { Service } from "@framework";
-import BookingLogin from "../../models/BookingLogin";
+import BookingLogin from "../models/BookingLogin";
 import ExcelJS from "exceljs";
 
 class BookingLoginService extends Service {

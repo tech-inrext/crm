@@ -1,6 +1,6 @@
 import { Service } from "@framework";
-import Notification from "../../models/Notification.js";
-import Employee from "../../models/Employee.js";
+import Notification from "../models/Notification.js";
+import Employee from "../models/Employee.js";
 import { leadQueue } from "../../queue/leadQueue.js";
 
 const UNREAD_STATUS = ["PENDING", "DELIVERED"];

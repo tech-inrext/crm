@@ -2,23 +2,14 @@ import React, { useEffect, useState } from "react";
 import { Box, TextField, Typography, MenuItem } from "@/components/ui/Component";
 import { Field, FieldProps } from "formik";
 
-const propertyTypeOptions = [
-  // { value: "Rent", label: "Rent" },
-  // { value: "Buy", label: "Buy" },
-  // { value: "Sell", label: "Sell" },
-  { value: "residential", label: "Residential" },
-  { value: "commercial", label: "Commercial" },
-  { value: "plot", label: "Plot" },
-];
-
-const budgetRangeOptions = [
-  { value: "<1 Lakh", label: "<1 Lakh" },
-  { value: "1 Lakh to 10 Lakh", label: "1 Lakh to 10 Lakh" },
-  { value: "10 Lakh to 20 Lakh", label: "10 Lakh to 20 Lakh" },
-  { value: "20 Lakh to 30 Lakh", label: "20 Lakh to 30 Lakh" },
-  { value: "30 Lakh to 50 Lakh", label: "30 Lakh to 50 Lakh" },
-  { value: "50 Lakh to 1 Crore", label: "50 Lakh to 1 Crore" },
-  { value: ">1 Crore", label: ">1 Crore" },
+const budgetRanges = [
+  { value: "<1 Lakh", label: "<1 Lakh", min: 0, max: 100000 },
+  { value: "1 Lakh to 10 Lakh", label: "1 Lakh to 10 Lakh", min: 100000, max: 1000000 },
+  { value: "10 Lakh to 20 Lakh", label: "10 Lakh to 20 Lakh", min: 1000000, max: 2000000 },
+  { value: "20 Lakh to 30 Lakh", label: "20 Lakh to 30 Lakh", min: 2000000, max: 3000000 },
+  { value: "30 Lakh to 50 Lakh", label: "30 Lakh to 50 Lakh", min: 3000000, max: 5000000 },
+  { value: "50 Lakh to 1 Crore", label: "50 Lakh to 1 Crore", min: 5000000, max: 10000000 },
+  { value: ">1 Crore", label: ">1 Crore", min: 10000000, max: Number.POSITIVE_INFINITY },
 ];
 
 interface PropertyDetailsProps {
@@ -27,8 +18,16 @@ interface PropertyDetailsProps {
 }
 
 interface PropertyApiItem {
-  projectName?: string;
+  _id?: string;
+  location?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  price?: string | number;
   propertyName?: string;
+}
+
+interface SubPropertyItem {
+  propertyType?: string;
 }
 
 interface PropertyOption {
@@ -41,7 +40,33 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
   setFieldValue,
 }) => {
   const [propertyOptions, setPropertyOptions] = useState<PropertyOption[]>([]);
+  const [propertyItems, setPropertyItems] = useState<PropertyApiItem[]>([]);
   const [isLoadingProperties, setIsLoadingProperties] = useState(false);
+  const [subPropertyTypeOptions, setSubPropertyTypeOptions] = useState<PropertyOption[]>([]);
+  const [isLoadingSubProperties, setIsLoadingSubProperties] = useState(false);
+
+  const mapPriceToBudgetRange = (price?: number | null) => {
+    if (!price || Number.isNaN(price)) return "";
+
+    const range = budgetRanges.find((item) => price >= item.min && price < item.max);
+    return range?.value ?? "";
+  };
+
+  const extractNumericPrice = (value?: string | number | null) => {
+    if (value === undefined || value === null) return null;
+    if (typeof value === "number") return Number.isNaN(value) ? null : value;
+    if (typeof value !== "string") return null;
+    if (!value || value.toLowerCase().includes("contact")) return null;
+
+    const numericString = value.replace(/[^\d.]/g, "");
+    const parsed = parseFloat(numericString);
+    return Number.isNaN(parsed) ? null : parsed;
+  };
+
+  const formatPropertyTypeLabel = (value?: string) => {
+    if (!value) return "";
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -59,18 +84,19 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
         const items: PropertyApiItem[] = Array.isArray(json.data) ? json.data : [];
         const options = items
           .map((item) => {
-            const name = item.projectName || item.propertyName;
-            if (!name) return null;
-            return { value: name, label: name };
+            if (!item.propertyName) return null;
+            return { value: item.propertyName, label: item.propertyName };
           })
           .filter(Boolean) as PropertyOption[];
 
         if (isMounted) {
           setPropertyOptions(options);
+          setPropertyItems(items);
         }
       } catch {
         if (isMounted) {
           setPropertyOptions([]);
+          setPropertyItems([]);
         }
       } finally {
         if (isMounted) {
@@ -85,6 +111,88 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (!values?.propertyName || propertyItems.length === 0) return;
+
+    const selected = propertyItems.find(
+      (item) => item.propertyName === values.propertyName
+    );
+
+    if (!selected) return;
+
+    if (selected.location) {
+      setFieldValue("location", selected.location);
+    }
+
+    const numericPrice =
+      selected.maxPrice ??
+      selected.minPrice ??
+      extractNumericPrice(selected.price);
+
+    const budgetRange = mapPriceToBudgetRange(numericPrice ?? null);
+    if (budgetRange) {
+      setFieldValue("budgetRange", budgetRange);
+    }
+  }, [values?.propertyName, propertyItems, setFieldValue]);
+
+  useEffect(() => {
+    if (!values?.propertyName || propertyItems.length === 0) return;
+
+    const selected = propertyItems.find((item) => item.propertyName === values.propertyName);
+    if (!selected?._id) return;
+
+    let isMounted = true;
+
+    const loadSubProperties = async () => {
+      setIsLoadingSubProperties(true);
+      try {
+        const res = await fetch(
+          `/api/v0/property?parentId=${selected._id}&search=&page=1&limit=100&action=subproperties`
+        );
+        const json = await res.json();
+
+        if (!res.ok || !json?.success) {
+          throw new Error(json?.message || "Failed to load sub-properties");
+        }
+
+        const items: SubPropertyItem[] = Array.isArray(json.data) ? json.data : [];
+        const uniqueTypes = Array.from(
+          new Set(items.map((item) => item.propertyType).filter(Boolean) as string[])
+        );
+
+        const options = uniqueTypes.map((type) => ({
+          value: type,
+          label: formatPropertyTypeLabel(type),
+        }));
+
+        if (isMounted) {
+          setSubPropertyTypeOptions(options);
+
+          if (options.length === 1) {
+            setFieldValue("propertyType", options[0].value);
+          } else if (!options.find((opt) => opt.value === values.propertyType)) {
+            setFieldValue("propertyType", "");
+          }
+        }
+      } catch {
+        if (isMounted) {
+          setSubPropertyTypeOptions([]);
+          setFieldValue("propertyType", "");
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingSubProperties(false);
+        }
+      }
+    };
+
+    loadSubProperties();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [values?.propertyName, propertyItems, setFieldValue, values?.propertyType]);
 
   return (
   <>
@@ -137,9 +245,12 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
             helperText={meta.touched && meta.error}
             inputProps={{ "aria-label": "Property type" }}
             sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+            disabled={isLoadingSubProperties || subPropertyTypeOptions.length === 0}
           >
-            <MenuItem value="">Select property type...</MenuItem>
-            {propertyTypeOptions.map((option) => (
+            <MenuItem value="">
+              {isLoadingSubProperties ? "Loading property types..." : "Select property type..."}
+            </MenuItem>
+            {subPropertyTypeOptions.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>
@@ -170,7 +281,7 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
             sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
           >
             <MenuItem value="">Select budget range...</MenuItem>
-            {budgetRangeOptions.map((option) => (
+            {budgetRanges.map((option) => (
               <MenuItem key={option.value} value={option.value}>
                 {option.label}
               </MenuItem>
