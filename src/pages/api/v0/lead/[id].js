@@ -1,6 +1,5 @@
 import { Controller } from "@framework";
 import LeadService from "../../../../be/services/LeadService";
-import { userAuth } from "@/middlewares/auth";
 
 class LeadByIdController extends Controller {
   constructor() {
@@ -17,5 +16,4 @@ class LeadByIdController extends Controller {
   }
 }
 
-const controller = new LeadByIdController();
-export default (req, res) => userAuth(req, res, controller.handler);
+export default new LeadByIdController().handler;

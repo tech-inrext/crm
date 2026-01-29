@@ -6,7 +6,7 @@ import mime from "mime-types";
 import { promisify } from "util";
 import dbConnect from "../../../../../lib/mongodb";
 import TrainingVideo from "../../../../../be/models/TrainingVideo";
-import { userAuth } from "../../../../../middlewares/auth";
+import { userAuth } from "../../../../../be/middlewares/auth";
 import * as cookie from "cookie";
 
 const stat = promisify(fs.stat);
