@@ -1,14 +1,15 @@
-import { memo, useMemo } from "react";
+import { memo, useState } from "react";
 import {
   Card,
   CardContent,
   Box,
   Typography,
   Stack,
-  Avatar,
   Divider,
-  IconButton,
-  Tooltip,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  ClickAwayListener,
 } from "@mui/material";
 
 import {
@@ -16,16 +17,15 @@ import {
   Phone,
   TrendingUp,
   Edit,
-  Delete,
   PersonAdd,
   HomeIcon,
   PinIcon,
 } from "@/components/ui/Component";
 
 import { Schedule } from "@mui/icons-material";
+import { MoreVert, NoteAlt, Event } from "@mui/icons-material";
 
 import type { LeadDisplay as Lead } from "../../types/lead";
-import StatusChip, { getStatusColor } from "./StatusChip";
 import StatusDropdown from "./StatusDropdown";
 import PermissionGuard from "../PermissionGuard";
 
@@ -34,36 +34,23 @@ const GRADIENTS = {
   paper: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
 };
 
-const COMMON_STYLES = {
-  iconButton: (bg: string, hover?: string) => ({
-    backgroundColor: bg,
-    color: "white",
-    "&:hover": { backgroundColor: hover || `${bg}99` },
-  }),
-};
-
 interface LeadCardProps {
   lead: Lead;
-  onEdit: (lead: Lead) => void;
-  onDelete: (lead: Lead) => void;
+  onEdit: () => void;
+  onScheduleSiteVisit: (leadId: string) => void;
+  onOpenFeedback: (leadId: string) => void;
   onStatusChange: (leadId: string, newStatus: string) => Promise<void>;
 }
 
-// Helper to darken a hex color
-const darkenColor = (hex: string, percent: number = 20): string => {
-  const num = parseInt(hex.replace("#", ""), 16);
-  const amt = Math.round(2.55 * percent);
-  const R = Math.max((num >> 16) - amt, 0);
-  const G = Math.max(((num >> 8) & 0x00ff) - amt, 0);
-  const B = Math.max((num & 0x0000ff) - amt, 0);
-  return `#${(0x1000000 + R * 0x10000 + G * 0x100 + B).toString(16).slice(1)}`;
-};
-
 const LeadCard = memo(
-  ({ lead, onEdit, onDelete, onStatusChange }: LeadCardProps) => {
-    // Get status color and its darker shade for the fold
-    const statusColor = getStatusColor(lead.status || "");
-    const statusFoldColor = darkenColor(statusColor, 25);
+  ({
+    lead,
+    onEdit,
+    onScheduleSiteVisit,
+    onOpenFeedback,
+    onStatusChange,
+  }: LeadCardProps) => {
+    const [actionsOpen, setActionsOpen] = useState(false);
 
     return (
       <Card
@@ -122,24 +109,11 @@ const LeadCard = memo(
         <Box
           sx={{
             position: "absolute",
-            right: -6,
-            top: -8,
+            right: 1,
+            top: 1,
             zIndex: 1,
             borderRadius: "4px 4px 0 4px",
-            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
             overflow: "visible",
-            // Folded corner effect on right side
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: -6,
-              right: 0,
-              width: 0,
-              height: 0,
-              borderStyle: "solid",
-              borderWidth: "6px 6px 0 0",
-              borderColor: "#1565c0 transparent transparent transparent",
-            },
           }}
         >
           <StatusDropdown
@@ -151,39 +125,66 @@ const LeadCard = memo(
           />
         </Box>
 
-        {/* Bottom Center Edit Pill */}
+        {/* Bottom Right Sticky Action Button */}
         <PermissionGuard module="lead" action="write" fallback={<></>}>
-          <Tooltip title="Edit Lead">
-            <IconButton
-              onClick={() => onEdit(lead)}
-              size="small"
+          <ClickAwayListener onClickAway={() => setActionsOpen(false)}>
+            <Box
               sx={{
                 position: "absolute",
-                bottom: 0,
-                left: "50%",
-                transform: "translate(-50%, 50%)",
-                backgroundColor: "primary.main",
-                color: "white",
-                px: 2,
-                py: 0.5,
-                borderRadius: "20px",
-                boxShadow: "0 4px 12px rgba(25, 118, 210, 0.4)",
-                "&:hover": {
-                  backgroundColor: "primary.dark",
-                  transform: "translate(-50%, 50%) scale(1.05)",
-                },
-                transition: "all 0.2s ease",
+                bottom: 6,
+                right: 6,
+                zIndex: 2,
               }}
             >
-              <Edit sx={{ fontSize: 16, mr: 0.5 }} />
-              <Typography
-                component="span"
-                sx={{ fontSize: "0.75rem", fontWeight: 600 }}
+              <SpeedDial
+                ariaLabel="Lead actions"
+                direction="left"
+                icon={<SpeedDialIcon icon={<MoreVert />} />}
+                open={actionsOpen}
+                onClose={() => setActionsOpen(false)}
+                FabProps={{
+                  size: "small",
+                  sx: {
+                    backgroundColor: "primary.main",
+                    color: "white",
+                    boxShadow: "0 6px 16px rgba(25, 118, 210, 0.35)",
+                    "&:hover": { backgroundColor: "primary.dark" },
+                  },
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    setActionsOpen((prev) => !prev);
+                  },
+                }}
               >
-                Edit
-              </Typography>
-            </IconButton>
-          </Tooltip>
+                <SpeedDialAction
+                  icon={<Edit fontSize="small" />}
+                  tooltipTitle="Edit"
+                  onClick={() => {
+                    setActionsOpen(false);
+                    onEdit();
+                  }}
+                />
+                <SpeedDialAction
+                  icon={<NoteAlt fontSize="small" />}
+                  tooltipTitle="Notes"
+                  onClick={() => {
+                    setActionsOpen(false);
+                    onOpenFeedback(lead._id || lead.id || lead.leadId || "");
+                  }}
+                />
+                <SpeedDialAction
+                  icon={<Event fontSize="small" />}
+                  tooltipTitle="Site Visit"
+                  onClick={() => {
+                    setActionsOpen(false);
+                    onScheduleSiteVisit(
+                      lead._id || lead.id || lead.leadId || ""
+                    );
+                  }}
+                />
+              </SpeedDial>
+            </Box>
+          </ClickAwayListener>
         </PermissionGuard>
         <CardContent sx={{ p: 1.5 }}>
           <Stack spacing={2}>
