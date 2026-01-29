@@ -5,7 +5,7 @@ export function middleware(req: Request) {
 
   const allowedOrigins = [
     "http://localhost:3001",
-    "https://www.inrext.com", 
+    "https://www.inrext.com",
     "https://test.inrext.com",
   ];
 

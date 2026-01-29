@@ -12,6 +12,8 @@ interface LeadsCardsViewProps {
   leads: any[];
   onEdit: (leadId: string) => void;
   onStatusChange: (leadId: string, status: string) => Promise<void>;
+  onScheduleSiteVisit: (leadId: string) => void;
+  onOpenFeedback: (leadId: string) => void;
   page: number;
   total: number;
   rowsPerPage: number;
@@ -23,6 +25,8 @@ const LeadsCardsView: React.FC<LeadsCardsViewProps> = ({
   leads,
   onEdit,
   onStatusChange,
+  onScheduleSiteVisit,
+  onOpenFeedback,
   page,
   total,
   rowsPerPage,
@@ -36,9 +40,10 @@ const LeadsCardsView: React.FC<LeadsCardsViewProps> = ({
           <LeadCard
             key={lead.id}
             lead={lead}
-            onEdit={() => onEdit(lead._id)}
-            onDelete={() => {}}
+            onEdit={() => onEdit(lead.leadId || lead._id || lead.id)}
             onStatusChange={onStatusChange}
+            onScheduleSiteVisit={onScheduleSiteVisit}
+            onOpenFeedback={onOpenFeedback}
           />
         ))}
       </Box>
