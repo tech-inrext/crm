@@ -118,14 +118,12 @@ const TrainingVideoCard: React.FC<TrainingVideoCardProps> = ({
               padding: "2px 6px",
               display: "flex",
               alignItems: "center",
-              gap: 0.5,
+              justifyContent: "center",
               zIndex: 2,
             }}
           >
-            <YouTube sx={{ fontSize: 14, color: "white" }} />
-            <Typography variant="caption" sx={{ color: "white", fontWeight: 500 }}>
-              YouTube
-            </Typography>
+            <YouTube sx={{ fontSize: 18, color: "white" }} />
+            <Typography variant="caption" sx={{ color: "white", fontWeight: 500 }} />
           </Box>
         )}
 

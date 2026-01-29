@@ -306,28 +306,6 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
           <Close />
         </IconButton>
 
-        {/* YouTube Badge */}
-        {isYouTube && (
-          <Box
-            sx={{
-              position: "absolute",
-              top: 16,
-              left: 16,
-              zIndex: 100,
-              display: "flex",
-              alignItems: "center",
-              bgcolor: "rgba(255, 0, 0, 0.8)",
-              borderRadius: "4px",
-              padding: "4px 8px",
-            }}
-          >
-            <YouTubeIcon sx={{ fontSize: 20, color: "white", mr: 0.5 }} />
-            <Typography variant="caption" sx={{ color: "white", fontWeight: 600 }}>
-              YouTube
-            </Typography>
-          </Box>
-        )}
-
         {/* Video Container */}
         <Box 
           sx={{ 

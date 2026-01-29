@@ -1,7 +1,6 @@
 import { Service } from "@framework";
 import Property from "../../models/Property";
 import mongoose from "mongoose";
-
 class PropertyService extends Service {
   constructor() {
     super();
