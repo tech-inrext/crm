@@ -1,6 +1,5 @@
 import dbConnect from "@/lib/mongodb";
 import Employee from "../../models/Employee";
-import { userAuth } from "@/middlewares/auth";
 
 class OverallAnalyticsService {
   /**

@@ -3,7 +3,7 @@ import dbConnect from "../../../../lib/mongodb";
 import CabVendor from "../../../../be/models/CabVendor";
 import Employee from "../../../../be/models/Employee"; // to verify refs
 import * as cookie from "cookie";
-import { userAuth } from "../../../../middlewares/auth";
+import { userAuth } from "../../../../be/middlewares/auth";
 
 // ✅ Create CabVendor (WRITE)
 const createCabVendor = async (req, res) => {
