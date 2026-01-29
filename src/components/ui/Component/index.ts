@@ -117,7 +117,8 @@ export { default as VisibilityIcon } from "./VisibilityIcon";
 export { default as VisibilityOffIcon } from "./VisibilityOffIcon";
 export { default as Work } from "./Work";
 export { default as WorkIcon } from "./WorkIcon";
-
+export { default as PinIcon } from "./PinIcon";
+export { default as HomeIcon } from "./HomeIcon";
 // Hooks and utilities
 export { default as useMediaQuery } from "./useMediaQuery";
 export { default as useTheme } from "./useTheme";
