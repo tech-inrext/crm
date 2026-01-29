@@ -7,8 +7,6 @@ import {
   Autocomplete,
 } from "@/components/ui/Component";
 
-
-
 import { Field, FieldProps } from "formik";
 import { useAuth } from "@/contexts/AuthContext";
 import { teamHierarchyService } from "@/services/team-hierarchy.service";
@@ -102,14 +100,14 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
 
   return (
     <>
-      <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+      <Typography variant="h6" sx={{ mt: 1.5, mb: 0.75, fontWeight: 600 }}>
         Lead Management
       </Typography>
 
       <Box
         sx={{
           display: "flex",
-          gap: 2,
+          gap: 1.5,
           flexDirection: { xs: "column", sm: "row" },
         }}
       >
@@ -118,11 +116,18 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
             <TextField
               {...field}
               label="Status"
+              size="small"
               select
               value={values.status}
               onChange={(e) => setFieldValue("status", e.target.value)}
               inputProps={{ "aria-label": "Lead status" }}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                flex: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
             >
               <MenuItem value="">Select status...</MenuItem>
               {statusOptions.map((option) => (
@@ -156,10 +161,16 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                 <TextField
                   {...params}
                   label="Manager"
+                  size="small"
                   error={meta.touched && !!meta.error}
                   helperText={meta.touched && meta.error}
                   placeholder="Search and select employee"
-                  sx={{ bgcolor: "#fff", borderRadius: 1 }}
+                  sx={{
+                    bgcolor: "#fff",
+                    borderRadius: 1,
+                    "& .MuiInputBase-root": { minHeight: 40 },
+                    "& .MuiInputBase-input": { py: 1 },
+                  }}
                 />
               )}
               renderOption={(props, option) => {
@@ -185,7 +196,7 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
       <Box
         sx={{
           display: "flex",
-          gap: 2,
+          gap: 1.5,
           flexDirection: { xs: "column", sm: "row" },
         }}
       >
@@ -194,13 +205,20 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
             <TextField
               {...field}
               label="Source"
+              size="small"
               select
               value={values.source}
               onChange={(e) => setFieldValue("source", e.target.value)}
               error={meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               inputProps={{ "aria-label": "Lead source" }}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1, height: 56 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                flex: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               SelectProps={{
                 MenuProps: {
                   PaperProps: {
@@ -220,13 +238,11 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
             </TextField>
           )}
         </Field>
-
-
       </Box>
       <Box
         sx={{
           display: "flex",
-          gap: 2,
+          gap: 1.5,
           flexDirection: { xs: "column", sm: "row" },
         }}
       >
@@ -251,10 +267,16 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                 <TextField
                   {...params}
                   label="Assigned To"
+                  size="small"
                   error={meta.touched && !!meta.error}
                   helperText={meta.touched && meta.error}
                   placeholder="Search and select employee"
-                  sx={{ bgcolor: "#fff", borderRadius: 1 }}
+                  sx={{
+                    bgcolor: "#fff",
+                    borderRadius: 1,
+                    "& .MuiInputBase-root": { minHeight: 40 },
+                    "& .MuiInputBase-input": { py: 1 },
+                  }}
                 />
               )}
               renderOption={(props, option) => {

@@ -67,7 +67,7 @@ export const LEADS_STYLES = {
     p: { xs: 0.5, sm: 1, md: 2 },
     pt: { xs: 1, sm: 2, md: 3 },
     mt: 0, // Removed top margin for leads module
-    minHeight: "100vh",
+    height: "calc(100vh - 64px)",
     bgcolor: "background.default",
     overflow: "hidden",
   } as SxProps<Theme>,
@@ -90,8 +90,11 @@ export const LEADS_STYLES = {
     gridTemplateColumns: {
       xs: "1fr",
       sm: "repeat(2, 1fr)",
-      lg: "repeat(3, 1fr)",
+      md: "repeat(3, 1fr)",
+      lg: "repeat(4, 1fr)",
     },
+    height: "calc(100% - 70px)",
+    overflowY: "auto",
     gap: { xs: 1.5, sm: 2, md: 3 },
     mb: { xs: 2, sm: 3 },
   } as SxProps<Theme>,
