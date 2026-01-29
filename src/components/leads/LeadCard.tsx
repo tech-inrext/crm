@@ -68,6 +68,7 @@ const LeadCard = memo(
           background: GRADIENTS.paper,
           position: "relative",
           overflow: "visible",
+          height: "266px",
           mt: 1.5, // margin top to accommodate the floating badges
           mb: 2, // margin bottom to accommodate the floating edit pill
         }}
@@ -138,17 +139,21 @@ const LeadCard = memo(
             >
               <SpeedDial
                 ariaLabel="Lead actions"
-                direction="left"
+                direction="up"
                 icon={<SpeedDialIcon icon={<MoreVert />} />}
                 open={actionsOpen}
                 onClose={() => setActionsOpen(false)}
                 FabProps={{
                   size: "small",
                   sx: {
-                    backgroundColor: "primary.main",
-                    color: "white",
-                    boxShadow: "0 6px 16px rgba(25, 118, 210, 0.35)",
-                    "&:hover": { backgroundColor: "primary.dark" },
+                    backgroundColor: "#fff",
+                    color: "#64748b",
+                    border: "1px solid #e2e8f0",
+                    boxShadow: "0 2px 6px rgba(15, 23, 42, 0.08)",
+                    "&:hover": {
+                      backgroundColor: "#f8fafc",
+                      boxShadow: "0 4px 10px rgba(15, 23, 42, 0.12)",
+                    },
                   },
                   onClick: (event) => {
                     event.stopPropagation();

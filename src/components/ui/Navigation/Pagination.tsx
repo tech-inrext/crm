@@ -62,7 +62,10 @@ const Pagination: React.FC<PaginationProps> = ({
         mt: 1,
         justifyContent: "center",
         flexWrap: "wrap",
-        padding: { xs: "8px", sm: "4px" }, // Add padding adjustment for small screens
+        padding: { xs: "8px", sm: "6px" },
+        bgcolor: "#f8fafc",
+        border: "1px solid #e2e8f0",
+        borderRadius: 999,
       }}
     >
       {/* Previous Button */}
@@ -71,11 +74,13 @@ const Pagination: React.FC<PaginationProps> = ({
         onClick={() => canPrev && onPageChange(page - 1)}
         disabled={!canPrev}
         sx={{
-          bgcolor: "#232b36",
-          color: "#fff",
-          "&:hover": { bgcolor: "#283046" },
-          fontSize: { xs: "14px", sm: "16px" }, // Adjust icon size for small screens
-          padding: { xs: "4px", sm: "8px" }, // Adjust padding for smaller icons on mobile
+          bgcolor: "#fff",
+          color: "#475569",
+          border: "1px solid #e2e8f0",
+          "&:hover": { bgcolor: "#f1f5f9" },
+          fontSize: { xs: "14px", sm: "16px" },
+          padding: { xs: "4px", sm: "6px" },
+          boxShadow: "none",
         }}
       >
         <ArrowBackIosNewIcon fontSize="small" />
@@ -83,7 +88,7 @@ const Pagination: React.FC<PaginationProps> = ({
 
       {/* Page Input */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-        <Typography sx={{ color: "#bfc9d9", fontSize: { xs: 12, sm: 14 } }}>
+        <Typography sx={{ color: "#64748b", fontSize: { xs: 12, sm: 14 } }}>
           Page
         </Typography>
         <input
@@ -93,18 +98,18 @@ const Pagination: React.FC<PaginationProps> = ({
           onKeyDown={handlePageSubmit}
           onBlur={triggerPageChange} // Trigger onBlur
           style={{
-            width: "50px", // Smaller input box on mobile
-            padding: "2px 5px",
-            borderRadius: 6,
-            border: "1px solid #232b36",
-            background: "#181d23",
-            color: "#bfc9d9",
+            width: "48px",
+            padding: "2px 6px",
+            borderRadius: 8,
+            border: "1px solid #e2e8f0",
+            background: "#fff",
+            color: "#0f172a",
             fontWeight: 500,
             textAlign: "center",
-            fontSize: "14px", // Smaller text for mobile
+            fontSize: "13px",
           }}
         />
-        <Typography sx={{ color: "#bfc9d9", fontSize: { xs: 12, sm: 14 } }}>
+        <Typography sx={{ color: "#64748b", fontSize: { xs: 12, sm: 14 } }}>
           of {totalPages}
         </Typography>
       </Box>
@@ -115,11 +120,13 @@ const Pagination: React.FC<PaginationProps> = ({
         onClick={() => canNext && onPageChange(page + 1)}
         disabled={!canNext}
         sx={{
-          bgcolor: "#232b36",
-          color: "#fff",
-          "&:hover": { bgcolor: "#283046" },
-          fontSize: { xs: "14px", sm: "16px" }, // Adjust icon size for small screens
-          padding: { xs: "4px", sm: "8px" }, // Adjust padding for smaller icons on mobile
+          bgcolor: "#fff",
+          color: "#475569",
+          border: "1px solid #e2e8f0",
+          "&:hover": { bgcolor: "#f1f5f9" },
+          fontSize: { xs: "14px", sm: "16px" },
+          padding: { xs: "4px", sm: "6px" },
+          boxShadow: "none",
         }}
       >
         <ArrowForwardIosIcon fontSize="small" />
@@ -127,8 +134,8 @@ const Pagination: React.FC<PaginationProps> = ({
 
       {/* Page Size Selector */}
       {onPageSizeChange && (
-        <Box sx={{ ml: 2, display: "flex", alignItems: "center", gap: 1 }}>
-          <Typography sx={{ color: "#bfc9d9", fontSize: { xs: 12, sm: 14 } }}>
+        <Box sx={{ ml: 1, display: "flex", alignItems: "center", gap: 0.75 }}>
+          <Typography sx={{ color: "#64748b", fontSize: { xs: 12, sm: 14 } }}>
             Rows:
           </Typography>
           <select
@@ -136,12 +143,12 @@ const Pagination: React.FC<PaginationProps> = ({
             onChange={(e) => onPageSizeChange(Number(e.target.value))}
             style={{
               padding: "2px 8px",
-              borderRadius: 6,
-              border: "1px solid #232b36",
-              background: "#181d23",
-              color: "#bfc9d9",
+              borderRadius: 8,
+              border: "1px solid #e2e8f0",
+              background: "#fff",
+              color: "#0f172a",
               fontWeight: 500,
-              fontSize: "14px", // Smaller font size for mobile
+              fontSize: "13px",
             }}
           >
             {pageSizeOptions.map((opt) => (

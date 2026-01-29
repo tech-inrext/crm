@@ -34,7 +34,7 @@ const LeadsCardsView: React.FC<LeadsCardsViewProps> = ({
   onPageSizeChange,
 }) => {
   return (
-    <Box>
+    <Box className="p-2 h-[calc(100%-168px)] ">
       <Box sx={MODULE_STYLES.leads.cardsGrid}>
         {leads.map((lead) => (
           <LeadCard
