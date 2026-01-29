@@ -22,7 +22,7 @@ export const generateVisitingCardPDF = async (userData: UserData) => {
     }
 
     // Convert logo to base64
-    const logoBase64 = await convertImageToBase64("/inrext white logo png.png");
+    const logoBase64 = await convertImageToBase64("https://inrext.s3.ap-south-1.amazonaws.com/Static+Assets/digital-visiting-card_BG.jpg");
 
     // Prepare WhatsApp number (use altPhone if available, otherwise use phone)
     const whatsappNumber = (userData.altPhone || userData.phone || "").replace(
