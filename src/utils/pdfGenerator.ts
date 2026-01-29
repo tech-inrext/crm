@@ -22,7 +22,10 @@ export const generateVisitingCardPDF = async (userData: UserData) => {
     }
 
     // Convert logo to base64
-    const logoBase64 = await convertImageToBase64("https://inrext.s3.ap-south-1.amazonaws.com/Static+Assets/digital-visiting-card_BG.jpg");
+    const logoBase64 = await convertImageToBase64("/inrext white logo png.png");
+
+    // Convert background to base64 to avoid CORS issues when html2canvas captures
+    const backgroundBase64 = await convertImageToBase64("https://inrext.s3.ap-south-1.amazonaws.com/Static+Assets/digital-visiting-card_BG.jpg");
 
     // Prepare WhatsApp number (use altPhone if available, otherwise use phone)
     const whatsappNumber = (userData.altPhone || userData.phone || "").replace(
@@ -31,7 +34,7 @@ export const generateVisitingCardPDF = async (userData: UserData) => {
     );
 
     // Build HTML content using template literals
-    const htmlContent = buildHTMLContent(userData, logoBase64, photoBase64, whatsappNumber);
+    const htmlContent = buildHTMLContent(userData, logoBase64, photoBase64, whatsappNumber, backgroundBase64);
 
     // Create temporary div
     const tempDiv = createTempDiv(htmlContent);
@@ -78,7 +81,8 @@ const buildHTMLContent = (
   userData: UserData,
   logoBase64: string,
   photoBase64: string,
-  whatsappNumber: string
+  whatsappNumber: string,
+  backgroundBase64: string,
 ): string => {
   // Build profile image HTML
   const profileImageHTML = photoBase64
@@ -91,10 +95,10 @@ const buildHTMLContent = (
     .map((word, i) => (i === 2 ? `\n${word}` : word))
     .join(" ");
 
-  return `
+    return `
     <div id="pdf-visiting-card" style="${cardContainerStyle}">
-      <!-- Background Image with Overlay -->
-      <div style="${backgroundImageStyle}">
+      <!-- Background Image with Overlay (embedded base64) -->
+      <div style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url('${backgroundBase64}'); background-size: cover; background-position: center;">
         <div style="${gradientOverlayStyle}"></div>
       </div>
 
@@ -140,11 +144,6 @@ const buildHTMLContent = (
 
           <!-- Specialization -->
           <div style="${fieldContainerStyle}">
-            <span style="${iconWrapperStyle}">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="white" style="opacity: 0.9;">
-                <path d="M10 16v-1H3.01L3 19c0 1.11.89 2 2 2h14c1.11 0 2-.89 2-2v-4h-7v1h-4zm10-9h-4.01V5l-2-2h-4l-2 2v2H4c-1.1 0-2 .9-2 2v3c0 1.11.89 2 2 2h6v-2h4v2h6c1.1 0 2-.9 2-2V9c0-1.1-.9-2-2-2zm-6 0h-4V5h4v2z"/>
-              </svg>
-            </span>
             <p style="${fieldTextStyle}">${userData.specialization || ""}</p>
           </div>
         </div>
@@ -255,7 +254,7 @@ const backgroundImageStyle = `
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('/digital-visiting-card_BG.jpg');
+  background-image: url('https://inrext.s3.ap-south-1.amazonaws.com/Static+Assets/digital-visiting-card_BG.jpg');
   background-size: cover;
   background-position: center;
 `;

@@ -54,59 +54,6 @@ const extractYouTubeId = (url) => {
   }
 };
 
-// YouTube URL validation helper functions
-const isValidYouTubeUrl = (url) => {
-  if (!url) return false;
-  
-  const patterns = [
-    /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/i,
-    /^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=[\w-]{11}/i,
-    /^(https?:\/\/)?(www\.)?youtu\.be\/[\w-]{11}/i,
-    /^(https?:\/\/)?(www\.)?youtube\.com\/embed\/[\w-]{11}/i,
-    /^(https?:\/\/)?(www\.)?youtube\.com\/v\/[\w-]{11}/i,
-    /^(https?:\/\/)?(www\.)?youtube\.com\/shorts\/[\w-]{11}/i
-  ];
-  
-  return patterns.some(pattern => pattern.test(url));
-};
-
-const extractYouTubeId = (url) => {
-  if (!url) return null;
-  
-  try {
-    // Handle youtu.be URLs
-    if (url.includes('youtu.be/')) {
-      const id = url.split('youtu.be/')[1];
-      return id.split('?')[0].split('/')[0];
-    }
-    
-    // Handle youtube.com URLs
-    if (url.includes('youtube.com')) {
-      // Try to get the v parameter
-      const urlObj = new URL(url);
-      const videoId = urlObj.searchParams.get('v');
-      if (videoId) return videoId;
-      
-      // Handle embed URLs
-      if (url.includes('/embed/')) {
-        const parts = url.split('/embed/');
-        return parts[1].split('?')[0].split('/')[0];
-      }
-      
-      // Handle shorts URLs
-      if (url.includes('/shorts/')) {
-        const parts = url.split('/shorts/');
-        return parts[1].split('?')[0].split('/')[0];
-      }
-    }
-    
-    return null;
-  } catch (error) {
-    console.error("Error extracting YouTube ID:", error);
-    return null;
-  }
-};
-
 class TrainingVideoService extends Service {
   constructor() {
     super();
