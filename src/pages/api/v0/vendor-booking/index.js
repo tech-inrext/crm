@@ -1,6 +1,6 @@
 // /pages/api/v0/vendor-booking/index.js
 import dbConnect from "../../../../lib/mongodb";
-import VendorBooking from "../../../../models/VendorBooking";
+import VendorBooking from "../../../../be/models/VendorBooking";
 import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 

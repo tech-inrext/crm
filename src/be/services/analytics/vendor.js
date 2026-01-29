@@ -1,8 +1,8 @@
 import dbConnect from "@/lib/mongodb";
-import Employee from "@/models/Employee";
-import VendorBooking from "@/models/VendorBooking";
-import CabVendor from "@/models/CabVendor";
-import CabBooking from "@/models/CabBooking";
+import Employee from "../../models/Employee";
+import VendorBooking from "../../models/VendorBooking";
+import CabVendor from "../../models/CabVendor";
+import CabBooking from "../../models/CabBooking";
 
 class VendorAnalyticsService {
   async getVendor(req, res) {

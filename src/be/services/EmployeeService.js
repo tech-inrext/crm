@@ -1,11 +1,11 @@
 import { Service } from "@framework";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
-import Employee from "../../models/Employee";
+import Employee from "../models/Employee";
 import { leadQueue } from "../../queue/leadQueue.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
-import Role from "../../models/Role";
+import Role from "../models/Role";
 import { sendNewEmployeeWelcomeEmail } from "@/lib/emails/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "@/lib/emails/managerNewReport";
 import { sendRoleChangeEmail } from "../../lib/emails/sendRoleChangeEmail";

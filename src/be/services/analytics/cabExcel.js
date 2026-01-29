@@ -2,7 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import * as XLSX from 'xlsx';
 import dbConnect from '@/lib/mongodb';
-import CabBooking from '@/models/CabBooking';
+import CabBooking from '../../models/CabBooking';
 import mongoose from 'mongoose';
 
 class CabBookingExcelService {

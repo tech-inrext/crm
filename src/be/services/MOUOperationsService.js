@@ -1,7 +1,7 @@
 import { Service } from "@framework";
 import fs from "fs";
 import path from "path";
-import Employee from "../../models/Employee"; // Standard import
+import Employee from "../models/Employee"; // Standard import
 import { generateMOUPDF } from "./mouService/generator"; // Sibling import
 import { uploadToS3 } from "../../lib/s3"; // Standard import
 import { NotificationHelper } from "../../lib/notification-helpers";

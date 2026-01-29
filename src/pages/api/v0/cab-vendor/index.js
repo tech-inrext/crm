@@ -1,7 +1,7 @@
 // /pages/api/v0/cab-vendor/index.js
 import dbConnect from "../../../../lib/mongodb";
-import CabVendor from "../../../../models/CabVendor";
-import Employee from "../../../../models/Employee"; // to verify refs
+import CabVendor from "../../../../be/models/CabVendor";
+import Employee from "../../../../be/models/Employee"; // to verify refs
 import * as cookie from "cookie";
 import { userAuth } from "../../../../middlewares/auth";
 
