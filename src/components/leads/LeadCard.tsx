@@ -1,14 +1,15 @@
-import { memo, useMemo } from "react";
+import { memo, useState } from "react";
 import {
   Card,
   CardContent,
   Box,
   Typography,
   Stack,
-  Avatar,
   Divider,
-  IconButton,
-  Tooltip,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  ClickAwayListener,
 } from "@mui/material";
 
 import {
@@ -16,13 +17,15 @@ import {
   Phone,
   TrendingUp,
   Edit,
-  Delete,
+  PersonAdd,
+  HomeIcon,
+  PinIcon,
 } from "@/components/ui/Component";
 
 import { Schedule } from "@mui/icons-material";
+import { MoreVert, NoteAlt, Event } from "@mui/icons-material";
 
 import type { LeadDisplay as Lead } from "../../types/lead";
-import StatusChip, { getStatusColor } from "./StatusChip";
 import StatusDropdown from "./StatusDropdown";
 import PermissionGuard from "../PermissionGuard";
 
@@ -31,29 +34,23 @@ const GRADIENTS = {
   paper: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
 };
 
-const COMMON_STYLES = {
-  iconButton: (bg: string, hover?: string) => ({
-    backgroundColor: bg,
-    color: "white",
-    "&:hover": { backgroundColor: hover || `${bg}99` },
-  }),
-};
-
 interface LeadCardProps {
   lead: Lead;
-  onEdit: (lead: Lead) => void;
-  onDelete: (lead: Lead) => void;
+  onEdit: () => void;
+  onScheduleSiteVisit: (leadId: string) => void;
+  onOpenFeedback: (leadId: string) => void;
   onStatusChange: (leadId: string, newStatus: string) => Promise<void>;
 }
 
 const LeadCard = memo(
-  ({ lead, onEdit, onDelete, onStatusChange }: LeadCardProps) => {
-    const avatar = useMemo(() => {
-      if (lead?.fullName) {
-        return lead?.fullName?.substring(0, 2).toUpperCase();
-      }
-      return "N/A";
-    }, [lead]);
+  ({
+    lead,
+    onEdit,
+    onScheduleSiteVisit,
+    onOpenFeedback,
+    onStatusChange,
+  }: LeadCardProps) => {
+    const [actionsOpen, setActionsOpen] = useState(false);
 
     return (
       <Card
@@ -69,9 +66,127 @@ const LeadCard = memo(
           border: "1px solid",
           borderColor: "divider",
           background: GRADIENTS.paper,
+          position: "relative",
+          overflow: "visible",
+          mt: 1.5, // margin top to accommodate the floating badges
+          mb: 2, // margin bottom to accommodate the floating edit pill
         }}
       >
-        <CardContent sx={{ p: 3 }}>
+        {/* Ribbon clip hanging over card edge - TOP LEFT */}
+        <Box
+          sx={{
+            position: "absolute",
+            top: -8,
+            left: -6,
+            backgroundColor: "#22c55e",
+            color: "white",
+            px: 1.5,
+            py: 0.5,
+            fontSize: "0.7rem",
+            fontWeight: 700,
+            letterSpacing: "0.5px",
+            whiteSpace: "nowrap",
+            borderRadius: "4px 4px 4px 0",
+            boxShadow: "0 2px 8px rgba(34, 197, 94, 0.4)",
+            // Folded corner effect on left side
+            "&::after": {
+              content: '""',
+              position: "absolute",
+              bottom: -6,
+              left: 0,
+              width: 0,
+              height: 0,
+              borderStyle: "solid",
+              borderWidth: "0 6px 6px 0",
+              borderColor: "transparent #16a34a transparent transparent",
+            },
+          }}
+        >
+          Warm Lead
+        </Box>
+
+        {/* Top-Right Status Pin - same style as Warm Lead */}
+        <Box
+          sx={{
+            position: "absolute",
+            right: 1,
+            top: 1,
+            zIndex: 1,
+            borderRadius: "4px 4px 0 4px",
+            overflow: "visible",
+          }}
+        >
+          <StatusDropdown
+            leadId={lead._id || lead.id || lead.leadId || ""}
+            currentStatus={lead.status}
+            onStatusChange={onStatusChange}
+            variant="chip"
+            size="small"
+          />
+        </Box>
+
+        {/* Bottom Right Sticky Action Button */}
+        <PermissionGuard module="lead" action="write" fallback={<></>}>
+          <ClickAwayListener onClickAway={() => setActionsOpen(false)}>
+            <Box
+              sx={{
+                position: "absolute",
+                bottom: 6,
+                right: 6,
+                zIndex: 2,
+              }}
+            >
+              <SpeedDial
+                ariaLabel="Lead actions"
+                direction="left"
+                icon={<SpeedDialIcon icon={<MoreVert />} />}
+                open={actionsOpen}
+                onClose={() => setActionsOpen(false)}
+                FabProps={{
+                  size: "small",
+                  sx: {
+                    backgroundColor: "primary.main",
+                    color: "white",
+                    boxShadow: "0 6px 16px rgba(25, 118, 210, 0.35)",
+                    "&:hover": { backgroundColor: "primary.dark" },
+                  },
+                  onClick: (event) => {
+                    event.stopPropagation();
+                    setActionsOpen((prev) => !prev);
+                  },
+                }}
+              >
+                <SpeedDialAction
+                  icon={<Edit fontSize="small" />}
+                  tooltipTitle="Edit"
+                  onClick={() => {
+                    setActionsOpen(false);
+                    onEdit();
+                  }}
+                />
+                <SpeedDialAction
+                  icon={<NoteAlt fontSize="small" />}
+                  tooltipTitle="Notes"
+                  onClick={() => {
+                    setActionsOpen(false);
+                    onOpenFeedback(lead._id || lead.id || lead.leadId || "");
+                  }}
+                />
+                <SpeedDialAction
+                  icon={<Event fontSize="small" />}
+                  tooltipTitle="Site Visit"
+                  onClick={() => {
+                    setActionsOpen(false);
+                    onScheduleSiteVisit(
+                      lead._id || lead.id || lead.leadId || ""
+                    );
+                  }}
+                />
+              </SpeedDial>
+            </Box>
+          </ClickAwayListener>
+        </PermissionGuard>
+        <CardContent sx={{ p: 1.5 }}>
           <Stack spacing={2}>
             <Box
               sx={{
@@ -81,17 +196,6 @@ const LeadCard = memo(
               }}
             >
               <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Avatar
-                  sx={{
-                    bgcolor: getStatusColor(lead.status),
-                    width: 48,
-                    height: 48,
-                    fontSize: "1.2rem",
-                    fontWeight: 700,
-                  }}
-                >
-                  {avatar}
-                </Avatar>
                 <Box>
                   <Typography
                     variant="h6"
@@ -100,18 +204,35 @@ const LeadCard = memo(
                   >
                     {lead?.fullName}
                   </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    ID: {lead.id}
-                  </Typography>
+
+                  <Box sx={{ display: "flex" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <HomeIcon
+                        sx={{ color: "text.secondary", fontSize: 18 }}
+                      />
+                      <Typography
+                        fontSize={12}
+                        variant="body2"
+                        color="text.secondary"
+                      >
+                        {lead.propertyName}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ display: "flex" }}>
+                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                      <PinIcon sx={{ color: "text.secondary", fontSize: 18 }} />
+                      <Typography
+                        fontSize={12}
+                        variant="body2"
+                        color="text.secondary"
+                      >
+                        {lead.location}
+                      </Typography>
+                    </Box>
+                  </Box>
                 </Box>
               </Box>
-              <StatusDropdown
-                leadId={lead._id || lead.id || lead.leadId || ""}
-                currentStatus={lead.status}
-                onStatusChange={onStatusChange}
-                variant="chip"
-                size="small"
-              />
             </Box>
 
             <Divider />
@@ -157,6 +278,16 @@ const LeadCard = memo(
                   {lead.budgetRange}
                 </Typography>
               </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                <PersonAdd sx={{ color: "text.secondary", fontSize: 18 }} />
+                <Typography
+                  variant="body2"
+                  color="text.primary"
+                  fontWeight={600}
+                >
+                  {lead.assignedTo}
+                </Typography>
+              </Box>
               {lead.nextFollowUp && (
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Schedule sx={{ color: "text.secondary", fontSize: 18 }} />
@@ -177,30 +308,6 @@ const LeadCard = memo(
                 </Box>
               )}
             </Stack>
-
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 1,
-                mt: 2,
-              }}
-            >
-              <PermissionGuard module="lead" action="write" fallback={<></>}>
-                <Tooltip title="Edit Lead">
-                  <IconButton
-                    onClick={() => onEdit(lead)}
-                    size="small"
-                    sx={COMMON_STYLES.iconButton(
-                      "primary.main",
-                      "primary.dark"
-                    )}
-                  >
-                    <Edit fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-              </PermissionGuard>
-            </Box>
           </Stack>
         </CardContent>
       </Card>
