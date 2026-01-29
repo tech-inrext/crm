@@ -1,41 +1,230 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import {
   Badge,
   IconButton,
   Popover,
   Box,
-  Typography,
-  Divider,
   Button,
+  Alert,
   List,
   ListItem,
   ListItemText,
-  ListItemIcon,
-  Chip,
+  Divider,
+  Typography,
   CircularProgress,
-  Alert,
+  Chip,
 } from "@mui/material";
 import {
   Notifications as NotificationsIcon,
   NotificationsNone,
-  MarkAsUnread,
-  Archive,
-  Delete,
   CheckCircle,
   Info,
   Warning,
   Error as ErrorIcon,
-  Close,
 } from "@mui/icons-material";
 import { useNotifications } from "../../../contexts/NotificationContext";
 import { useNotificationActions } from "../../../hooks/useNotifications";
+import { NotificationHeader } from "./NotificationHeader";
+import { NotificationBulkActions } from "./NotificationBulkActions";
 import { formatDistanceToNow } from "date-fns";
+
+const getPriorityColor = (priority: string) => {
+  switch (priority) {
+    case "URGENT":
+      return "error";
+    case "HIGH":
+      return "warning";
+    case "MEDIUM":
+      return "info";
+    case "LOW":
+    default:
+      return "default";
+  }
+};
+
+const getPriorityIcon = (priority: string) => {
+  const iconProps = { fontSize: "small" as const };
+  switch (priority) {
+    case "URGENT":
+      return <ErrorIcon color="error" {...iconProps} />;
+    case "HIGH":
+      return <Warning color="warning" {...iconProps} />;
+    case "MEDIUM":
+      return <Info color="info" {...iconProps} />;
+    case "LOW":
+    default:
+      return <CheckCircle color="action" {...iconProps} />;
+  }
+};
+
+const SimpleNotificationList: React.FC<{
+  notifications: any[];
+  loading: boolean;
+  hasMore: boolean;
+  isClient: boolean;
+  onLoadMore: () => void;
+  onNotificationClick: (notification: any) => void;
+}> = ({
+  notifications,
+  loading,
+  hasMore,
+  isClient,
+  onLoadMore,
+  onNotificationClick,
+}) => {
+  if (loading && notifications.length === 0) {
+    return (
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <CircularProgress size={24} />
+        <Typography variant="body2" sx={{ mt: 1 }}>
+          Loading notifications...
+        </Typography>
+      </Box>
+    );
+  }
+
+  if (notifications.length === 0) {
+    return (
+      <Box sx={{ p: 3, textAlign: "center" }}>
+        <NotificationsNone
+          sx={{ fontSize: 48, color: "text.secondary", mb: 1 }}
+        />
+        <Typography variant="body2" color="text.secondary">
+          No notifications yet
+        </Typography>
+      </Box>
+    );
+  }
+
+  const formatTime = (dateString: string) => {
+    if (!isClient) return "moments ago";
+    try {
+      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
+    } catch {
+      return "Unknown time";
+    }
+  };
+
+  return (
+    <>
+      <List sx={{ p: 0 }}>
+        {notifications.map((notification, index) => {
+          const isUnread = notification.lifecycle.status !== "READ";
+          const priority = notification.metadata?.priority || "LOW";
+
+          return (
+            <React.Fragment key={notification._id}>
+              <ListItem
+                sx={{
+                  cursor: "pointer",
+                  backgroundColor: isUnread ? "action.hover" : "transparent",
+                  "&:hover": { backgroundColor: "action.selected" },
+                  borderLeft: isUnread ? "4px solid" : "4px solid transparent",
+                  borderColor: isUnread
+                    ? `${getPriorityColor(priority)}.main`
+                    : "transparent",
+                  py: 1.5,
+                  px: 2,
+                }}
+                onClick={() => onNotificationClick(notification)}
+              >
+                <Box sx={{ minWidth: 32, mr: 1 }}>
+                  {getPriorityIcon(priority)}
+                </Box>
+                <ListItemText
+                  primary={
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 0.5,
+                      }}
+                    >
+                      <Typography
+                        variant="body2"
+                        fontWeight={isUnread ? 600 : 400}
+                        sx={{ flex: 1 }}
+                      >
+                        {notification.title}
+                      </Typography>
+                      <Chip
+                        label={priority}
+                        size="small"
+                        color={getPriorityColor(priority) as any}
+                        variant="outlined"
+                        sx={{ fontSize: "0.65rem", height: 18 }}
+                      />
+                    </Box>
+                  }
+                  secondary={
+                    <>
+                      <Typography
+                        component="span"
+                        variant="body2"
+                        color="text.secondary"
+                        sx={{
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 2,
+                          WebkitBoxOrient: "vertical",
+                          fontSize: "0.875rem",
+                        }}
+                      >
+                        {notification.message}
+                      </Typography>
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        color="text.disabled"
+                        sx={{ mt: 0.5, display: "block" }}
+                      >
+                        {formatTime(notification.createdAt)}
+                        {notification.sender && (
+                          <> • {notification.sender.name}</>
+                        )}
+                      </Typography>
+                    </>
+                  }
+                />
+              </ListItem>
+              {index < notifications.length - 1 && <Divider />}
+            </React.Fragment>
+          );
+        })}
+      </List>
+      {hasMore && (
+        <Box sx={{ p: 2, textAlign: "center" }}>
+          <Button
+            onClick={onLoadMore}
+            disabled={loading}
+            variant="text"
+            size="small"
+          >
+            {loading ? (
+              <>
+                <CircularProgress size={16} sx={{ mr: 1 }} />
+                Loading...
+              </>
+            ) : (
+              "Load more"
+            )}
+          </Button>
+        </Box>
+      )}
+    </>
+  );
+};
 
 const NotificationBell: React.FC = () => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [isClient, setIsClient] = useState(false);
+  const router = useRouter();
+
   const {
     notifications,
     unreadCount,
@@ -45,6 +234,7 @@ const NotificationBell: React.FC = () => {
     hasMore,
     clearError,
     forceRefresh,
+    markAsRead,
   } = useNotifications();
 
   const {
@@ -58,141 +248,53 @@ const NotificationBell: React.FC = () => {
     clearSelection,
     hasSelectedItems,
   } = useNotificationActions({
-    onSuccess: (action, count) => {
-      console.log(`Successfully ${action} ${count} notifications`);
-    },
-    onError: (action, error) => {
-      console.error(`Failed to ${action}:`, error);
-    },
+    onSuccess: (action, count) =>
+      console.log(`Successfully ${action} ${count} notifications`),
+    onError: (action, error) => console.error(`Failed to ${action}:`, error),
   });
 
-  const open = Boolean(anchorEl);
+  useEffect(() => setIsClient(true), []);
 
-  // Prevent hydration mismatch by only rendering client-specific content after hydration
-  useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  const handleClick = (event: React.MouseEvent<HTMLElement>) => {
+  const handleClick = (event: React.MouseEvent<HTMLElement>) =>
     setAnchorEl(event.currentTarget);
-  };
 
   const handleClose = () => {
     setAnchorEl(null);
     clearSelection();
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case "URGENT":
-        return "error";
-      case "HIGH":
-        return "warning";
-      case "MEDIUM":
-        return "info";
-      case "LOW":
-      default:
-        return "default";
-    }
-  };
-
-  const getPriorityIcon = (priority: string) => {
-    switch (priority) {
-      case "URGENT":
-        return <ErrorIcon color="error" fontSize="small" />;
-      case "HIGH":
-        return <Warning color="warning" fontSize="small" />;
-      case "MEDIUM":
-        return <Info color="info" fontSize="small" />;
-      case "LOW":
-      default:
-        return <CheckCircle color="action" fontSize="small" />;
-    }
-  };
-
-  const formatNotificationTime = (dateString: string) => {
-    if (!isClient) {
-      // Return a stable placeholder during SSR
-      return "moments ago";
-    }
-
-    try {
-      return formatDistanceToNow(new Date(dateString), { addSuffix: true });
-    } catch {
-      return "Unknown time";
-    }
-  };
-
-  // Map notification types to module routes
-  const getModuleRoute = (notification: any): string => {
-    const type = notification.type;
-
-    // Map notification types to their respective module pages
-    switch (type) {
-      // Lead notifications
-      case "LEAD_ASSIGNED":
-      case "LEAD_STATUS_UPDATE":
-      case "LEAD_FOLLOWUP_DUE":
-        return "/dashboard/leads";
-
-      // Cab booking notifications
-      case "CAB_BOOKING_APPROVED":
-      case "CAB_BOOKING_REJECTED":
-      case "CAB_BOOKING_ASSIGNED":
-      case "CAB_BOOKING_REQUEST":
-        return "/dashboard/cab-booking";
-
-      // Vendor notifications
-      case "VENDOR_BOOKING_UPDATE":
-      case "VENDOR_ASSIGNED":
-        return "/dashboard/vendors";
-
-      // MOU notifications
-      case "MOU_APPROVED":
-      case "MOU_REJECTED":
-      case "MOU_PENDING":
-        return "/dashboard/mou";
-
-      // User/Role notifications
-      case "USER_ROLE_CHANGED":
-      case "USER_UPDATED":
-      case "USER_WELCOME":
-      case "USER_ASSIGNED":
-      case "NEW_USER_ADDED":
-      case "ROLE_CREATED":
-      case "ROLE_UPDATED":
-        return "/dashboard/users";
-
-      // Property notifications
-      case "PROPERTY_UPLOADED":
-      case "PROPERTY_STATUS_UPDATE":
-        return "/dashboard/properties";
-
-      // System notifications
-      case "SYSTEM_ANNOUNCEMENT":
-      case "REMINDER":
-      case "BULK_UPLOAD_COMPLETE":
-      case "EMAIL_SENT":
-        return "/dashboard/notifications";
-
-      // Default fallback
-      default:
-        return "/dashboard/notifications";
-    }
-  };
-
   const handleNotificationClick = async (notification: any) => {
-    // Mark as read if unread
     if (notification.lifecycle.status !== "READ") {
-      await markSelectedAsRead();
+      await markAsRead([notification._id], { actionType: "CLICKED" });
     }
-
-    // Get the module route for this notification type
-    const moduleRoute = getModuleRoute(notification);
-
-    // Navigate to the module
     handleClose();
-    window.location.href = moduleRoute;
+
+    if (notification.metadata?.actionUrl) {
+      if (notification.metadata.actionUrl.startsWith("/")) {
+        const leadMatch = notification.metadata.actionUrl.match(
+          /\/dashboard\/leads\/([a-zA-Z0-9]+)$/
+        );
+        const userMatch = notification.metadata.actionUrl.match(
+          /\/dashboard\/users\/([a-zA-Z0-9]+)$/
+        );
+
+        if (leadMatch) {
+          router.push(
+            `/dashboard/leads?openDialog=true&leadId=${leadMatch[1]}`
+          );
+        } else if (userMatch) {
+          router.push(
+            `/dashboard/users?openDialog=true&userId=${userMatch[1]}`
+          );
+        } else {
+          router.push(notification.metadata.actionUrl);
+        }
+      } else {
+        window.location.href = notification.metadata.actionUrl;
+      }
+      return;
+    }
+    router.push("/dashboard/notifications");
   };
 
   return (
@@ -209,17 +311,11 @@ const NotificationBell: React.FC = () => {
       </IconButton>
 
       <Popover
-        open={open}
+        open={Boolean(anchorEl)}
         anchorEl={anchorEl}
         onClose={handleClose}
-        anchorOrigin={{
-          vertical: "bottom",
-          horizontal: "right",
-        }}
-        transformOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+        transformOrigin={{ vertical: "top", horizontal: "right" }}
         PaperProps={{
           sx: {
             width: 400,
@@ -230,254 +326,42 @@ const NotificationBell: React.FC = () => {
         }}
       >
         <Box>
-          {/* Header */}
-          <Box
-            sx={{
-              p: 2,
-              borderBottom: "1px solid",
-              borderColor: "divider",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="h6" fontWeight={600}>
-              Notifications
-            </Typography>
-            <Box sx={{ display: "flex", gap: 1 }}>
-              {unreadCount > 0 && (
-                <Button
-                  size="small"
-                  onClick={() => markAllAsReadAction()}
-                  disabled={loading || actionLoading === "mark all as read"}
-                >
-                  {actionLoading === "mark all as read" ? (
-                    <CircularProgress size={16} />
-                  ) : (
-                    "Mark all read"
-                  )}
-                </Button>
-              )}
-              <Button
-                size="small"
-                onClick={() => forceRefresh()}
-                disabled={loading}
-                title="Refresh notifications"
-              >
-                Refresh
-              </Button>
-              <IconButton size="small" onClick={handleClose}>
-                <Close fontSize="small" />
-              </IconButton>
-            </Box>
-          </Box>
+          <NotificationHeader
+            unreadCount={unreadCount}
+            loading={loading}
+            actionLoading={actionLoading}
+            onMarkAllRead={markAllAsReadAction}
+            onRefresh={forceRefresh}
+            onClose={handleClose}
+          />
 
-          {/* Error Alert */}
           {error && (
             <Alert severity="error" onClose={clearError} sx={{ m: 1 }}>
               {error}
             </Alert>
           )}
 
-          {/* Bulk Actions */}
           {hasSelectedItems && (
-            <Box
-              sx={{
-                p: 1,
-                backgroundColor: "action.hover",
-                display: "flex",
-                gap: 1,
-                alignItems: "center",
-              }}
-            >
-              <Typography variant="body2" sx={{ flex: 1 }}>
-                {selectedIds.length} selected
-              </Typography>
-              <IconButton
-                size="small"
-                onClick={() => markSelectedAsRead()}
-                disabled={actionLoading === "mark as read"}
-                title="Mark as read"
-              >
-                <MarkAsUnread fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={() => archiveSelected()}
-                disabled={actionLoading === "archive"}
-                title="Archive"
-              >
-                <Archive fontSize="small" />
-              </IconButton>
-              <IconButton
-                size="small"
-                onClick={() => deleteSelected()}
-                disabled={actionLoading === "delete"}
-                title="Delete"
-              >
-                <Delete fontSize="small" />
-              </IconButton>
-            </Box>
+            <NotificationBulkActions
+              selectedCount={selectedIds.length}
+              actionLoading={actionLoading}
+              onMarkAsRead={markSelectedAsRead}
+              onArchive={archiveSelected}
+              onDelete={deleteSelected}
+            />
           )}
 
-          {/* Notifications List */}
           <Box sx={{ maxHeight: 400, overflow: "auto" }}>
-            {loading && notifications.length === 0 ? (
-              <Box sx={{ p: 3, textAlign: "center" }}>
-                <CircularProgress size={24} />
-                <Typography variant="body2" sx={{ mt: 1 }}>
-                  Loading notifications...
-                </Typography>
-              </Box>
-            ) : notifications.length === 0 ? (
-              <Box sx={{ p: 3, textAlign: "center" }}>
-                <NotificationsNone
-                  sx={{ fontSize: 48, color: "text.secondary", mb: 1 }}
-                />
-                <Typography variant="body2" color="text.secondary">
-                  No notifications yet
-                </Typography>
-              </Box>
-            ) : (
-              <List sx={{ p: 0 }}>
-                {notifications.map((notification, index) => (
-                  <React.Fragment key={notification._id}>
-                    <ListItem
-                      sx={{
-                        cursor: "pointer",
-                        backgroundColor:
-                          notification.lifecycle.status === "READ"
-                            ? "transparent"
-                            : "action.hover",
-                        "&:hover": {
-                          backgroundColor: "action.selected",
-                        },
-                        borderLeft:
-                          notification.lifecycle.status !== "READ"
-                            ? "4px solid"
-                            : "4px solid transparent",
-                        borderColor:
-                          notification.lifecycle.status !== "READ"
-                            ? `${getPriorityColor(
-                                notification.metadata.priority
-                              )}.main`
-                            : "transparent",
-                      }}
-                      onClick={() => handleNotificationClick(notification)}
-                    >
-                      <ListItemIcon
-                        sx={{ minWidth: 40 }}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleSelection(notification._id);
-                        }}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={selectedIds.includes(notification._id)}
-                          onChange={() => toggleSelection(notification._id)}
-                          style={{ cursor: "pointer" }}
-                        />
-                      </ListItemIcon>
-
-                      <ListItemIcon sx={{ minWidth: 32 }}>
-                        {getPriorityIcon(notification.metadata.priority)}
-                      </ListItemIcon>
-
-                      <ListItemText
-                        primary={
-                          <>
-                            <Typography
-                              component="span"
-                              variant="body2"
-                              fontWeight={
-                                notification.lifecycle.status !== "READ"
-                                  ? 600
-                                  : 400
-                              }
-                              sx={{
-                                flex: 1,
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              }}
-                            >
-                              {notification.title}
-                            </Typography>{" "}
-                            <Chip
-                              label={notification.metadata.priority}
-                              size="small"
-                              color={
-                                getPriorityColor(
-                                  notification.metadata.priority
-                                ) as any
-                              }
-                              variant="outlined"
-                              sx={{ fontSize: "0.7rem", height: 20 }}
-                            />
-                          </>
-                        }
-                        secondary={
-                          <>
-                            <Typography
-                              component="span"
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                display: "-webkit-box",
-                                WebkitLineClamp: 2,
-                                WebkitBoxOrient: "vertical",
-                                mb: 0.5,
-                              }}
-                            >
-                              {notification.message}
-                            </Typography>
-                            <br />
-                            <Typography
-                              component="span"
-                              variant="caption"
-                              color="text.disabled"
-                            >
-                              {formatNotificationTime(notification.createdAt)}
-                              {notification.sender && (
-                                <> • from {notification.sender.name}</>
-                              )}
-                            </Typography>
-                          </>
-                        }
-                      />
-                    </ListItem>
-                    {index < notifications.length - 1 && <Divider />}
-                  </React.Fragment>
-                ))}
-              </List>
-            )}
-
-            {/* Load More */}
-            {hasMore && (
-              <Box sx={{ p: 2, textAlign: "center" }}>
-                <Button
-                  onClick={loadMoreNotifications}
-                  disabled={loading}
-                  variant="text"
-                  size="small"
-                >
-                  {loading ? (
-                    <>
-                      <CircularProgress size={16} sx={{ mr: 1 }} />
-                      Loading...
-                    </>
-                  ) : (
-                    "Load more"
-                  )}
-                </Button>
-              </Box>
-            )}
+            <SimpleNotificationList
+              notifications={notifications}
+              loading={loading}
+              hasMore={hasMore}
+              isClient={isClient}
+              onLoadMore={loadMoreNotifications}
+              onNotificationClick={handleNotificationClick}
+            />
           </Box>
 
-          {/* Footer */}
           {notifications.length > 0 && (
             <Box
               sx={{
@@ -492,7 +376,6 @@ const NotificationBell: React.FC = () => {
                 size="small"
                 onClick={() => {
                   handleClose();
-                  // Navigate to notifications page when implemented
                   window.location.href = "/dashboard/notifications";
                 }}
               >

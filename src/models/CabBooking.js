@@ -21,6 +21,11 @@ const cabBookingSchema = new mongoose.Schema(
         return `CAB-${ts}-${rand}`;
       },
     },
+    leadId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Lead",
+      default: null,
+    },
     project: {
       type: String,
       required: [true, "Project name is required"],

@@ -6,9 +6,9 @@ import InputLabel from '@/components/ui/Component/InputLabel';
 import Select from '@/components/ui/Component/Select';
 import MenuItem from '@/components/ui/Component/MenuItem';
 
-export function VendorDropdown({ vendorData, allVendors, appliedFilters, selectedVendor, setSelectedVendor, monthOptions }) {
+export function VendorDropdown({ vendorData, allVendors, appliedFilters, selectedVendor, setSelectedVendor }) {
   if (!vendorData || allVendors.length === 0) return null;
-  const showFiltered = (appliedFilters.status !== 'all' || appliedFilters.month !== 'all' || appliedFilters.avp !== 'all');
+  const showFiltered = (appliedFilters.status !== 'all' || appliedFilters.fromDate || appliedFilters.toDate || appliedFilters.avp !== 'all');
   return (
     <Box mb={2}>
       {showFiltered && (
