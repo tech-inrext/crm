@@ -1,6 +1,59 @@
 import { Service } from "@framework";
 import TrainingVideo from "../../models/TrainingVideo";
 
+// YouTube URL validation helper functions
+const isValidYouTubeUrl = (url) => {
+  if (!url) return false;
+  
+  const patterns = [
+    /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.be)\/.+/i,
+    /^(https?:\/\/)?(www\.)?youtube\.com\/watch\?v=[\w-]{11}/i,
+    /^(https?:\/\/)?(www\.)?youtu\.be\/[\w-]{11}/i,
+    /^(https?:\/\/)?(www\.)?youtube\.com\/embed\/[\w-]{11}/i,
+    /^(https?:\/\/)?(www\.)?youtube\.com\/v\/[\w-]{11}/i,
+    /^(https?:\/\/)?(www\.)?youtube\.com\/shorts\/[\w-]{11}/i
+  ];
+  
+  return patterns.some(pattern => pattern.test(url));
+};
+
+const extractYouTubeId = (url) => {
+  if (!url) return null;
+  
+  try {
+    // Handle youtu.be URLs
+    if (url.includes('youtu.be/')) {
+      const id = url.split('youtu.be/')[1];
+      return id.split('?')[0].split('/')[0];
+    }
+    
+    // Handle youtube.com URLs
+    if (url.includes('youtube.com')) {
+      // Try to get the v parameter
+      const urlObj = new URL(url);
+      const videoId = urlObj.searchParams.get('v');
+      if (videoId) return videoId;
+      
+      // Handle embed URLs
+      if (url.includes('/embed/')) {
+        const parts = url.split('/embed/');
+        return parts[1].split('?')[0].split('/')[0];
+      }
+      
+      // Handle shorts URLs
+      if (url.includes('/shorts/')) {
+        const parts = url.split('/shorts/');
+        return parts[1].split('?')[0].split('/')[0];
+      }
+    }
+    
+    return null;
+  } catch (error) {
+    console.error("Error extracting YouTube ID:", error);
+    return null;
+  }
+};
+
 class TrainingVideoService extends Service {
   constructor() {
     super();
@@ -77,26 +130,57 @@ class TrainingVideoService extends Service {
   // POST create new video
   async createVideo(req, res) {
     try {
-      const videoData = {
-        ...req.body,
-        createdBy: req.employee._id,
-      };
+      const videoData = req.body;
 
       // Validate required fields
       if (
         !videoData.title ||
         !videoData.videoUrl ||
-        !videoData.thumbnailUrl ||
         !videoData.category
       ) {
         return res.status(400).json({
           success: false,
-          message:
-            "Title, video URL, thumbnail URL, and category are required",
+          message: "Title, video URL and category are required",
         });
       }
 
-      const trainingVideo = new TrainingVideo(videoData);
+      // Check if it's a YouTube URL
+      const isYouTube = isValidYouTubeUrl(videoData.videoUrl);
+      let youTubeId = null;
+
+      if (isYouTube) {
+        youTubeId = extractYouTubeId(videoData.videoUrl);
+        if (!youTubeId) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid YouTube URL format"
+          });
+        }
+
+        // Auto-set thumbnail for YouTube if not provided
+        if (!videoData.thumbnailUrl) {
+          videoData.thumbnailUrl = `https://img.youtube.com/vi/${youTubeId}/maxresdefault.jpg`;
+        }
+      } else {
+        // For uploaded videos, thumbnail is required
+        if (!videoData.thumbnailUrl) {
+          return res.status(400).json({
+            success: false,
+            message: "Thumbnail URL is required for uploaded videos"
+          });
+        }
+      }
+
+      // Prepare video data
+      const video = {
+        ...videoData,
+        createdBy: req.employee._id,
+        isYouTube,
+        youTubeId,
+        sourceType: isYouTube ? "youtube" : "upload"
+      };
+
+      const trainingVideo = new TrainingVideo(video);
       await trainingVideo.save();
 
       // Populate createdBy for response
@@ -109,6 +193,13 @@ class TrainingVideoService extends Service {
       });
     } catch (error) {
       console.error("Error creating training video:", error);
+      // Handle duplicate YouTube videos
+      if (error.code === 11000 && error.keyPattern?.youTubeId) {
+        return res.status(400).json({
+          success: false,
+          message: "This YouTube video is already added"
+        });
+      }
       return res.status(500).json({
         success: false,
         message: "Failed to create training video",

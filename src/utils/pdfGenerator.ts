@@ -360,7 +360,7 @@ const userNameContainerStyle = `
 
 const userNameStyle = `
   margin: 0;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 700;
   text-transform: uppercase;
   line-height: 1.2;
@@ -404,7 +404,7 @@ const dividerStyle = `
 const contactIconsContainerStyle = `
   display: flex;
   justify-content: center;
-  gap: 20px;
+  gap: 18px;
   margin-top: 32px;
   padding-left: 24px;
   padding-right: 24px;
@@ -413,8 +413,8 @@ const contactIconsContainerStyle = `
 const iconLinkStyle = `
   background-color: white;
   color: #333;
-  width: 58px;
-  height: 58px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -425,7 +425,7 @@ const iconLinkStyle = `
 
 const addressContainerStyle = `
   margin-top: auto;
-  padding-bottom: 28px;
+  padding-bottom: 30px;
   padding-left: 24px;
   padding-right: 24px;
   text-align: center;
@@ -434,7 +434,7 @@ const addressContainerStyle = `
 const addressTextStyle = `
   opacity: 0.9;
   font-size: 14px;
-  line-height: 1.7;
+  line-height: 1.5;
   letter-spacing: 0.02em;
   margin: 0;
 `;
