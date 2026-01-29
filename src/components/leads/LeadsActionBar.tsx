@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import {
   Box,
+  Button,
   MenuItem,
   Menu,
   CircularProgress,
@@ -262,10 +263,46 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
           <Box
             sx={{
               display: "flex",
+              alignItems: "center",
+              gap: 1,
               justifyContent: { xs: "center", sm: "flex-end" },
               order: { xs: 3, sm: 3 },
             }}
           >
+            {!isTablet && (
+              <Button
+                variant="contained"
+                startIcon={<PersonAdd />}
+                onClick={onAdd}
+                disabled={saving}
+                sx={{
+                  minWidth: { xs: "auto", sm: 140 },
+                  height: { xs: 42, sm: 38 },
+                  borderRadius: 1.5,
+                  fontWeight: 500,
+                  fontSize: { xs: "0.85rem", sm: "0.95rem" },
+                  textTransform: "none",
+                  backgroundColor: "#e8f1ff",
+                  color: "#1e5fbf",
+                  boxShadow: "none",
+                  border: "1px solid rgba(30, 95, 191, 0.18)",
+                  "& .MuiButton-startIcon": {
+                    marginRight: "6px",
+                  },
+                  "&:hover": {
+                    backgroundColor: "#deebff",
+                    borderColor: "rgba(30, 95, 191, 0.28)",
+                    boxShadow: "none",
+                  },
+                }}
+              >
+                {saving ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  "Add Lead"
+                )}
+              </Button>
+            )}
             <Tooltip title="Lead actions">
               <IconButton
                 size="small"
@@ -405,34 +442,32 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                   {isTablet ? "Upload Status" : "Check Upload Status"}
                 </MenuItem>
 
-                <MenuItem
-                  onClick={() => {
-                    onAdd();
-                    closeActionsMenu();
-                  }}
-                  disabled={saving}
-                  sx={{
-                    borderRadius: 1,
-                    gap: 1.5,
-                    py: 1,
-                    px: 1.5,
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  {saving ? (
-                    <CircularProgress size={18} color="inherit" />
-                  ) : (
-                    <>
-                      {isTablet ? (
+                {isTablet && (
+                  <MenuItem
+                    onClick={() => {
+                      onAdd();
+                      closeActionsMenu();
+                    }}
+                    disabled={saving}
+                    sx={{
+                      borderRadius: 1,
+                      gap: 1.5,
+                      py: 1,
+                      px: 1.5,
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {saving ? (
+                      <CircularProgress size={18} color="inherit" />
+                    ) : (
+                      <>
                         <Add fontSize="small" />
-                      ) : (
-                        <PersonAdd fontSize="small" />
-                      )}
-                      Add Lead
-                    </>
-                  )}
-                </MenuItem>
+                        Add Lead
+                      </>
+                    )}
+                  </MenuItem>
+                )}
               </Stack>
             </Menu>
             <Box

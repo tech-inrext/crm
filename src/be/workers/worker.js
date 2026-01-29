@@ -8,16 +8,13 @@ import sendOTPJob from "./sendOTPJob.js";
 import sendNotificationEmail from "./sendNotificationEmail.js";
 import notificationCleanupJob from "./notificationCleanup.js";
 import sendLeadFollowUpNotification from "./sendLeadFollowUpNotification.js";
-import { leadQueue } from "../queue/leadQueue.js";
+import { leadQueue } from "../../queue/leadQueue.js";
 import bulkAssignLeads from "./bulkAssignLeads.js";
 import revertBulkAssign from "./revertBulkAssign.js";
-<<<<<<< HEAD
 // Cab Booking Analytics Worker
-import '../workers/cabBookingAnalyticsWorker.js';
-=======
-import dbConnect from "../lib/mongodb.js";
+import "../workers/cabBookingAnalyticsWorker.js";
+import dbConnect from "../../lib/mongodb.js";
 import checkFollowUpsJob from "./checkFollowUpsJob.js";
->>>>>>> b2a0ab50945edf2ee552121946fe43258068b2aa
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

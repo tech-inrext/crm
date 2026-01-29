@@ -1,6 +1,6 @@
 
 import { Controller } from '@framework';
-import { userAuth } from '@/middlewares/auth';
+import { userAuth } from '../../../../be/middlewares/auth';
 import CabBookingExcelService from '@/be/services/analytics/cabExcel';
 import fs from 'fs';
 

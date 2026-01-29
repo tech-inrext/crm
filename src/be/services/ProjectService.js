@@ -1,5 +1,5 @@
 import { Service } from "@framework";
-import Project from "../../models/Project";
+import Project from "../models/Project";
 
 class ProjectService extends Service {
   constructor() {

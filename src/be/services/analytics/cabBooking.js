@@ -1,10 +1,8 @@
-
 import dbConnect from "@/lib/mongodb";
-import CabBooking from "@/models/CabBooking";
-import Employee from "@/models/Employee";
-import CabVendor from "@/models/CabVendor";
-import VendorBooking from "@/models/VendorBooking";
- 
+import CabBooking from "../../models/CabBooking";
+import Employee from "../../models/Employee";
+import CabVendor from "../../models/CabVendor";
+import VendorBooking from "../../models/VendorBooking";
 
 class CabBookingService {
   async getCabBooking({ vendorNames, vendorEmails, month, status }) {
@@ -247,8 +245,7 @@ class CabBookingService {
         (v, i, self) =>
           i ===
           self.findIndex(
-            (x) =>
-              (x.name || "").toLowerCase() === (v.name || "").toLowerCase()
+            (x) => (x.name || "").toLowerCase() === (v.name || "").toLowerCase()
           )
       );
 
@@ -273,4 +270,3 @@ class CabBookingService {
 }
 
 export default new CabBookingService();
- 

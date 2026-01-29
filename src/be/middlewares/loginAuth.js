@@ -1,7 +1,7 @@
 import jwt from "jsonwebtoken";
 import Employee from "../models/Employee";
 import Role from "../models/Role";
-import dbConnect from "../lib/mongodb";
+import dbConnect from "../../lib/mongodb";
 
 export async function loginAuth (req, res, next){
   try {

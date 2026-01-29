@@ -1,5 +1,5 @@
 import { Service } from "@framework";
-import Role from "../../models/Role";
+import Role from "../models/Role";
 import { NotificationHelper } from "../../lib/notification-helpers";
 
 class RoleService extends Service {

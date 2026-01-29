@@ -209,7 +209,6 @@ const Leads: React.FC = () => {
         <LoadingSkeleton />
       ) : (
         <>
-          {" "}
           {leads.length > 0 ? (
             <LeadsCardsView
               leads={leads}

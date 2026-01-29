@@ -1,9 +1,9 @@
 // pages/api/v0/property/[id].js
 import dbConnect from "@/lib/mongodb";
-import Property from "@/models/Property";
+import Property from "../../../../be/models/Property";
 import mongoose from "mongoose";
 import * as cookie from "cookie";
-import { userAuth } from "@/middlewares/auth";
+import { userAuth } from "../../../../be/middlewares/auth";
 
 // Get property by ID or slug
 const getPropertyById = async (req, res) => {

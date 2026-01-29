@@ -1,7 +1,7 @@
  
 import { Service } from "@framework";
 import dbConnect from "@/lib/mongodb";
-import Lead from "@/models/Lead";
+import Lead from "../../models/Lead";
 
 class LeadAnalyticsService extends Service {
   async getLeadsAnalytics(req, res) {

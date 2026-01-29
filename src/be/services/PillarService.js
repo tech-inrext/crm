@@ -1,6 +1,6 @@
 import { Service } from "@framework";
-import Pillar from "../../models/Pillar";
-import Property from "../../models/Property"; // Imported in original but seemingly unused? keeping it just in case implicit usage or I missed something.
+import Pillar from "../models/Pillar";
+import Property from "../models/Property"; // Imported in original but seemingly unused? keeping it just in case implicit usage or I missed something.
 
 class PillarService extends Service {
   constructor() {

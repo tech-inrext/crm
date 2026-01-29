@@ -1,7 +1,7 @@
 
 import { Service } from "@framework";
-import FollowUp from "../../models/FollowUp";
-import Lead from "../../models/Lead";
+import FollowUp from "../models/FollowUp";
+import Lead from "../models/Lead";
 import dbConnect from "../../lib/mongodb";
 import mongoose from "mongoose";
 

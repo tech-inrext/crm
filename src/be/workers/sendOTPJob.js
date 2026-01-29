@@ -1,5 +1,5 @@
 // src/workers/sendOTPJob.js
-import { sendOTPEmail } from "../lib/sendOTPEmail.js";
+import { sendOTPEmail } from "../../lib/sendOTPEmail.js";
 
 const sendOTPJob = async (job) => {
   const { email, otp } = job.data;

@@ -1,7 +1,7 @@
 import Lead from "../models/Lead.js";
 import BulkUpload from "../models/BulkUpload.js";
 import FollowUp from "../models/FollowUp.js";
-import dbConnect from "../lib/mongodb.js";
+import dbConnect from "../../lib/mongodb.js";
 import xlsx from "xlsx";
 
 const parseExcelBuffer = (buffer) => {

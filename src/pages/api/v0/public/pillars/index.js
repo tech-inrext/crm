@@ -1,7 +1,6 @@
 import { Controller } from "@framework";
 import PillarService from "../../../../../be/services/PillarService";
 import * as cookie from "cookie";
-import { userAuth } from "../../../../../middlewares/auth";
 
 class PillarIndexController extends Controller {
   constructor() {

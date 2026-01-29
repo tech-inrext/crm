@@ -1,5 +1,5 @@
 import { Service } from "@framework";
-import TrainingVideo from "../../models/TrainingVideo";
+import TrainingVideo from "../models/TrainingVideo";
 
 // YouTube URL validation helper functions
 const isValidYouTubeUrl = (url) => {

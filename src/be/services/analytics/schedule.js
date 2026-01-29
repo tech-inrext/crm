@@ -1,6 +1,6 @@
  
 import dbConnect from "@/lib/mongodb";
-import Lead from "@/models/Lead";
+import Lead from "../../models/Lead";
 
 class ScheduleAnalyticsService {
   async getSchedule(req, res) {

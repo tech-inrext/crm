@@ -1,7 +1,7 @@
 import { Service } from "@framework";
 import { leadQueue } from "../../queue/leadQueue";
-import LeadAssignmentHistory from "../../models/LeadAssignmentHistory";
-import Lead from "../../models/Lead";
+import LeadAssignmentHistory from "../models/LeadAssignmentHistory";
+import Lead from "../models/Lead";
 import { v4 as uuidv4 } from "uuid";
 import mongoose from "mongoose";
 
