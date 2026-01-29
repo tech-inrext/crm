@@ -1,5 +1,5 @@
 import { Service } from "@framework";
-import CabBooking from "../../models/CabBooking";
+import CabBooking from "../models/CabBooking";
 import mongoose from "mongoose";
 
 class CabVendorService extends Service {

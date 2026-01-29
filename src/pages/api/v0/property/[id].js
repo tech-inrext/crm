@@ -1,6 +1,6 @@
 // pages/api/v0/property/[id].js
 import dbConnect from "@/lib/mongodb";
-import Property from "@/models/Property";
+import Property from "../../../../be/models/Property";
 import mongoose from "mongoose";
 import * as cookie from "cookie";
 import { userAuth } from "@/middlewares/auth";
