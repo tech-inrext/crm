@@ -56,7 +56,7 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
   const handlePreviewVisitingCard = () => {
   if (user?._id) {
     // Use the employee ID in the route
-    const visitingCardUrl = `http://localhost:3001/visiting-card/${user._id}`;
+    const visitingCardUrl = `https://inrext.com/visiting-card/${user._id}`;
     window.open(visitingCardUrl, '_blank');
     onClose();
   }
