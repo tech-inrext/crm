@@ -1,6 +1,5 @@
 import { Controller } from "@framework";
 import PropertyService from "../../../../../../be/services/PropertyService";
-import * as cookie from "cookie";
 
 class PropertyByIdController extends Controller {
   constructor() {

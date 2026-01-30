@@ -98,7 +98,7 @@ class OverallAnalyticsService {
       }
 
       const mongoose = (await import("mongoose")).default;
-      const Lead = (await import("@/models/Lead")).default;
+      const Lead = (await import("../../models/Lead")).default;
       const { getCabBooking } = await import("@/be/services/analytics/cabBooking");
 
       if (Array.isArray(managerId)) managerId = managerId[0];
