@@ -32,6 +32,7 @@ export interface UserFormData {
   age?: number;
   altPhone?: string;
   fatherName?: string;
+  specialization?: string;
   joiningDate?: string;
   designation: string;
   managerId: string;
@@ -43,6 +44,8 @@ export interface UserFormData {
   aadharUrl?: string;
   panUrl?: string;
   bankProofUrl?: string;
+  photoFile?: File | null;
+  photoUrl?: string;
   nominee?: {
     name?: string;
     phone?: string;
