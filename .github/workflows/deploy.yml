@@ -16,6 +16,9 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch || github.ref }}
+      - name: Print vars
+        run: |
+          echo "EC2_KEY=${{ vars.EC2_KEY }}"
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -30,18 +33,12 @@ jobs:
       - name: Build
         run: yarn build
 
-      - name: Prepare SSH key
-        run: |
-          mkdir -p ~/.ssh
-          printf "%s" "${{ secrets.EC2_KEY }}" | tr -d '\r' > ~/.ssh/deploy_key
-          chmod 600 ~/.ssh/deploy_key
-
       - name: Upload build artifacts
         uses: appleboy/scp-action@v0.1.7
         with:
           host: 3.109.56.139
-          username: ec2-user
-          key_path: ~/.ssh/deploy_key
+          username: ubuntu
+          key: ${{ vars.EC2_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
           source: ".next,package.json,yarn.lock,public,next.config.ts"
           target: /home/ubuntu/crm
@@ -50,8 +47,8 @@ jobs:
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 3.109.56.139
-          username: ec2-user
-          key_path: ~/.ssh/deploy_key
+          username: ubuntu
+          key: ${{ vars.EC2_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
           script: |
             cd /home/ubuntu/crm
