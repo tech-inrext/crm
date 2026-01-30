@@ -1,17 +1,22 @@
-name: Build & Deploy Next.js (Tag Based)
+name: Manual Deploy Next.js (Tag Based)
 
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "Git tag to deploy (e.g. v1.0.2)"
+        required: true
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout tag
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: refs/tags/${{ inputs.tag }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -31,9 +36,9 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           source: ".next,public,package.json"
-          target: "/home/ubuntu/crm/${{ github.ref_name }}"
+          target: "/home/ubuntu/crm/${{ inputs.tag }}"
 
-      - name: Deploy on EC2 (Fully Automated)
+      - name: Deploy on EC2 (Zero Manual Setup)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -43,12 +48,12 @@ jobs:
             set -e
 
             BASE=/home/ubuntu/crm
-            VERSION=${{ github.ref_name }}
+            VERSION=${{ inputs.tag }}
             RELEASE_DIR=$BASE/$VERSION
 
             echo "🚀 Deploying $VERSION"
 
-            # ---------- SYSTEM BOOTSTRAP ----------
+            # ---------- BOOTSTRAP ----------
             if ! command -v node >/dev/null 2>&1; then
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               sudo apt-get install -y nodejs
@@ -58,14 +63,14 @@ jobs:
               sudo npm install -g pm2
             fi
 
-            # ---------- VALIDATION ----------
+            # ---------- VALIDATE ----------
             cd $RELEASE_DIR
             if [ ! -d ".next/standalone" ]; then
               echo "❌ .next/standalone missing"
               exit 1
             fi
 
-            # ---------- ASSEMBLE RUNTIME ----------
+            # ---------- RUNTIME ----------
             rm -rf runtime
             mkdir -p runtime/.next
 
@@ -73,7 +78,7 @@ jobs:
             cp -r .next/static runtime/.next/
             cp -r public runtime/
 
-            # ---------- SWITCH CURRENT ----------
+            # ---------- SWITCH ----------
             ln -sfn $RELEASE_DIR/runtime $BASE/current
 
             export NODE_ENV=production
@@ -88,4 +93,4 @@ jobs:
 
             pm2 save
 
-            echo "✅ Deployment of $VERSION completed"
+            echo "✅ $VERSION deployed successfully"
