@@ -990,7 +990,7 @@ class EmployeeService extends Service {
   }
 
   // 🔹 Recursive function to build hierarchy starting from a manager (including the manager)
-  buildHierarchy(employees, managerId) {
+  buildHierarchy(employees, managerId, visited = new Set()) {
     const tree = [];
     employees
       .filter(
@@ -999,7 +999,17 @@ class EmployeeService extends Service {
           String(emp._id) !== String(managerId)
       )
       .forEach((emp) => {
-        const children = this.buildHierarchy(employees, emp._id); // Recursively find employees under each employee
+        const empIdStr = String(emp._id);
+        
+        // Prevent infinite recursion (cycle detection)
+        if (visited.has(empIdStr)) {
+          return;
+        }
+
+        const newVisited = new Set(visited);
+        newVisited.add(empIdStr);
+
+        const children = this.buildHierarchy(employees, emp._id, newVisited); // Recursively find employees under each employee
         tree.push({
           _id: emp._id,
           name: emp.name,
@@ -1041,6 +1051,7 @@ class EmployeeService extends Service {
       }
 
       // Build hierarchy starting from the manager themselves
+      const visited = new Set([String(manager._id)]);
       const hierarchy = {
         _id: manager._id,
         name: manager.name,
@@ -1048,7 +1059,7 @@ class EmployeeService extends Service {
         branch: manager.branch,
         managerId: manager.managerId,
         employeeProfileId: manager.employeeProfileId,
-        children: this.buildHierarchy(employees, manager._id), // Recursively find subordinates
+        children: this.buildHierarchy(employees, manager._id, visited), // Recursively find subordinates
       };
 
       return res.status(200).json({
