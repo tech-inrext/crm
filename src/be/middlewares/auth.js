@@ -1,8 +1,8 @@
 import jwt from "jsonwebtoken";
-import Role from "../be/models/Role";
-import Employee from "../be/models/Employee";
-import dbConnect from "../lib/mongodb";
-import { checkPermission } from "../utils/checkPermission";
+import Role from "../models/Role";
+import Employee from "../models/Employee";
+import dbConnect from "../../lib/mongodb";
+import { checkPermission } from "../../utils/checkPermission";
 
 const MODULES = [
   "lead",

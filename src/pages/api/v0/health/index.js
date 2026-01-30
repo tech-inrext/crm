@@ -1,6 +1,6 @@
 import { Controller } from "@framework";
 import dbConnect from "../../../../lib/mongodb.js";
-import { leadQueue } from "../../../../queue/leadQueue.js";
+import { leadQueue } from "../../../../be/queue/leadQueue.js";
 
 class HealthController extends Controller {
   constructor() {

@@ -1,6 +1,6 @@
 import { Controller } from "@framework";
 import EmployeeService from "../../../../be/services/EmployeeService";
-import { loginAuth } from "../../../../middlewares/loginAuth";
+import { loginAuth } from "../../../../be/middlewares/loginAuth";
 
 class UserProfileController extends Controller {
   constructor() {

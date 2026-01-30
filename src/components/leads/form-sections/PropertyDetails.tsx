@@ -1,5 +1,15 @@
+<<<<<<< HEAD
 import React, { useEffect, useState } from "react";
 import { Box, TextField, Typography, MenuItem } from "@/components/ui/Component";
+=======
+import React from "react";
+import {
+  Box,
+  TextField,
+  Typography,
+  MenuItem,
+} from "@/components/ui/Component";
+>>>>>>> fa33383460db150c6ab4c24480d46abbe3f90748
 import { Field, FieldProps } from "formik";
 
 const budgetRanges = [
@@ -196,14 +206,14 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
 
   return (
   <>
-    <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+    <Typography variant="h6" sx={{ mt: 1.5, mb: 0.75, fontWeight: 600 }}>
       Property Details
     </Typography>
 
     <Box
       sx={{
         display: "flex",
-        gap: 2,
+        gap: 1.5,
         flexDirection: { xs: "column", sm: "row" },
       }}
     >
@@ -212,14 +222,25 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
           <TextField
             {...field}
             label="Property Name"
+            size="small"
             select
             value={values.propertyName}
             onChange={(e) => setFieldValue("propertyName", e.target.value)}
             error={meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
             inputProps={{ "aria-label": "Property name" }}
+<<<<<<< HEAD
             sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
             disabled={isLoadingProperties}
+=======
+            sx={{
+              bgcolor: "#fff",
+              borderRadius: 1,
+              flex: 1,
+              "& .MuiInputBase-root": { minHeight: 40 },
+              "& .MuiInputBase-input": { py: 1 },
+            }}
+>>>>>>> fa33383460db150c6ab4c24480d46abbe3f90748
           >
             <MenuItem value="">
               {isLoadingProperties ? "Loading properties..." : "Select property name..."}
@@ -238,14 +259,25 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
           <TextField
             {...field}
             label="Property Type"
+            size="small"
             select
             value={values.propertyType}
             onChange={(e) => setFieldValue("propertyType", e.target.value)}
             error={meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
             inputProps={{ "aria-label": "Property type" }}
+<<<<<<< HEAD
             sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
             disabled={isLoadingSubProperties || subPropertyTypeOptions.length === 0}
+=======
+            sx={{
+              bgcolor: "#fff",
+              borderRadius: 1,
+              flex: 1,
+              "& .MuiInputBase-root": { minHeight: 40 },
+              "& .MuiInputBase-input": { py: 1 },
+            }}
+>>>>>>> fa33383460db150c6ab4c24480d46abbe3f90748
           >
             <MenuItem value="">
               {isLoadingSubProperties ? "Loading property types..." : "Select property type..."}
@@ -262,9 +294,9 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
     <Box
       sx={{
         display: "flex",
-        gap: 2,
+        gap: 1.5,
         flexDirection: { xs: "column", sm: "row" },
-        mt: 2,
+        mt: 1.5,
       }}
     >
       <Field name="budgetRange">
@@ -272,13 +304,20 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
           <TextField
             {...field}
             label="Budget Range"
+            size="small"
             select
             value={values.budgetRange}
             onChange={(e) => setFieldValue("budgetRange", e.target.value)}
             error={meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
             inputProps={{ "aria-label": "Budget range" }}
-            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+            sx={{
+              bgcolor: "#fff",
+              borderRadius: 1,
+              flex: 1,
+              "& .MuiInputBase-root": { minHeight: 40 },
+              "& .MuiInputBase-input": { py: 1 },
+            }}
           >
             <MenuItem value="">Select budget range...</MenuItem>
             {budgetRanges.map((option) => (
@@ -295,13 +334,20 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
           <TextField
             {...field}
             label="Location"
+            size="small"
             value={values.location}
             onChange={(e) => setFieldValue("location", e.target.value)}
             error={meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
             placeholder="e.g., Bangalore, Whitefield"
             inputProps={{ "aria-label": "Property location" }}
-            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+            sx={{
+              bgcolor: "#fff",
+              borderRadius: 1,
+              flex: 1,
+              "& .MuiInputBase-root": { minHeight: 40 },
+              "& .MuiInputBase-input": { py: 1 },
+            }}
           />
         )}
       </Field>

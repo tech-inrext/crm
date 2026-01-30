@@ -13,13 +13,18 @@ export const MODULE_LAYOUT_STYLES = {
 
   // Header paper styles
   headerPaper: {
-    p: { xs: 1, sm: 2, md: 3 },
+    p: 2,
     borderRadius: { xs: 1, sm: 2, md: 3 },
-  mb: { xs: 1.5, sm: 2, md: 3 }, // add bottom margin so content below isn't touched
+    mb: { xs: 1.5, sm: 2, md: 3 }, // add bottom margin so content below isn't touched
     mt: 0, // Removed top margin from headerPaper
     background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
     overflow: "hidden",
     elevation: 2,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    flexWrap: "wrap",
   } as SxProps<Theme>,
 
   // Module title styles
@@ -62,7 +67,7 @@ export const LEADS_STYLES = {
     p: { xs: 0.5, sm: 1, md: 2 },
     pt: { xs: 1, sm: 2, md: 3 },
     mt: 0, // Removed top margin for leads module
-    minHeight: "100vh",
+    height: "calc(100vh - 64px)",
     bgcolor: "background.default",
     overflow: "hidden",
   } as SxProps<Theme>,
@@ -85,8 +90,11 @@ export const LEADS_STYLES = {
     gridTemplateColumns: {
       xs: "1fr",
       sm: "repeat(2, 1fr)",
-      lg: "repeat(3, 1fr)",
+      md: "repeat(3, 1fr)",
+      lg: "repeat(4, 1fr)",
     },
+    height: "calc(100% - 70px)",
+    overflowY: "auto",
     gap: { xs: 1.5, sm: 2, md: 3 },
     mb: { xs: 2, sm: 3 },
   } as SxProps<Theme>,
@@ -116,7 +124,8 @@ export const LEADS_STYLES = {
       top: 0,
       zIndex: 100,
       "& .MuiTableRow-root": {
-        background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important",
+        background:
+          "linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important",
       },
     },
     "& .MuiTableBody-root": {
@@ -348,7 +357,7 @@ export const VISUAL_CONSTANTS = {
     card: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
     tableHeader: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
   },
-  
+
   shadows: {
     card: 3,
     table: 8,

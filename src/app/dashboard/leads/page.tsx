@@ -207,33 +207,31 @@ const Leads: React.FC = () => {
 
       {loading ? (
         <LoadingSkeleton />
-      ) : isMobile || viewMode === "cards" ? (
-        <LeadsCardsView
-          leads={leads}
-          onEdit={handleEdit}
-          onStatusChange={updateLeadStatus}
-          page={page}
-          total={total}
-          rowsPerPage={rowsPerPage}
-          onPageChange={setPage}
-          onPageSizeChange={setRowsPerPage}
-        />
       ) : (
-        <LeadsTableView
-          leads={leads}
-          header={leadsTableHeaderWithActions}
-          selectedStatuses={selectedStatuses}
-          onStatusesChange={handleStatusChange}
-          onEdit={handleEdit}
-          onStatusChange={updateLeadStatus}
-          page={page}
-          total={total}
-          rowsPerPage={rowsPerPage}
-          onPageChange={setPage}
-          onPageSizeChange={setRowsPerPage}
-        />
+        <>
+          {leads.length > 0 ? (
+            <LeadsCardsView
+              leads={leads}
+              onEdit={handleEdit}
+              onStatusChange={updateLeadStatus}
+              onScheduleSiteVisit={(leadId) => {
+                setSelectedLeadForSiteVisit(leadId);
+                setSiteVisitOpen(true);
+              }}
+              onOpenFeedback={openFeedback}
+              page={page}
+              total={total}
+              rowsPerPage={rowsPerPage}
+              onPageChange={setPage}
+              onPageSizeChange={setRowsPerPage}
+            />
+          ) : (
+            <div className="flex justify-center items-center h-full">
+              No matching leads found
+            </div>
+          )}
+        </>
       )}
-
       {dialogMode === "view" ? (
         <LeadDetailsDialog
           open={open}
