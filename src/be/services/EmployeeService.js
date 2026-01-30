@@ -6,8 +6,8 @@ import { leadQueue } from "../queue/leadQueue.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
 import Role from "../models/Role";
-import { sendNewEmployeeWelcomeEmail } from "@/lib/emails/newEmployeeWelcome";
-import { sendManagerNewReportEmail } from "@/lib/emails/managerNewReport";
+import { sendNewEmployeeWelcomeEmail } from "../email-service/employee/newEmployeeWelcome";
+import { sendManagerNewReportEmail } from "../email-service/manager/managerNewReport.js";
 import { sendRoleChangeEmail } from "../../lib/emails/sendRoleChangeEmail";
 import {
   notifyUserRegistration,
