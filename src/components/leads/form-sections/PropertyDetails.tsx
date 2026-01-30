@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-import React, { useEffect, useState } from "react";
-import { Box, TextField, Typography, MenuItem } from "@/components/ui/Component";
-=======
 import React from "react";
 import {
   Box,
@@ -9,7 +5,7 @@ import {
   Typography,
   MenuItem,
 } from "@/components/ui/Component";
->>>>>>> fa33383460db150c6ab4c24480d46abbe3f90748
+
 import { Field, FieldProps } from "formik";
 
 const budgetRanges = [
@@ -229,10 +225,7 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
             error={meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
             inputProps={{ "aria-label": "Property name" }}
-<<<<<<< HEAD
-            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-            disabled={isLoadingProperties}
-=======
+ 
             sx={{
               bgcolor: "#fff",
               borderRadius: 1,
@@ -240,7 +233,6 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
               "& .MuiInputBase-root": { minHeight: 40 },
               "& .MuiInputBase-input": { py: 1 },
             }}
->>>>>>> fa33383460db150c6ab4c24480d46abbe3f90748
           >
             <MenuItem value="">
               {isLoadingProperties ? "Loading properties..." : "Select property name..."}
@@ -266,10 +258,7 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
             error={meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
             inputProps={{ "aria-label": "Property type" }}
-<<<<<<< HEAD
-            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-            disabled={isLoadingSubProperties || subPropertyTypeOptions.length === 0}
-=======
+ 
             sx={{
               bgcolor: "#fff",
               borderRadius: 1,
@@ -277,7 +266,6 @@ const PropertyDetails: React.FC<PropertyDetailsProps> = ({
               "& .MuiInputBase-root": { minHeight: 40 },
               "& .MuiInputBase-input": { py: 1 },
             }}
->>>>>>> fa33383460db150c6ab4c24480d46abbe3f90748
           >
             <MenuItem value="">
               {isLoadingSubProperties ? "Loading property types..." : "Select property type..."}
