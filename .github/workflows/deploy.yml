@@ -33,22 +33,22 @@ jobs:
       - name: Upload build artifacts
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
+          host: 3.109.56.139
+          username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
           source: ".next,package.json,yarn.lock,public,next.config.ts"
-          target: ${{ secrets.EC2_PATH }}
+          target: /home/ubuntu/crm
 
       - name: Restart app
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ${{ secrets.EC2_USER }}
+          host: 3.109.56.139
+          username: ec2-user
           key: ${{ secrets.EC2_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
           script: |
-            cd ${{ secrets.EC2_PATH }}
+            cd /home/ubuntu/crm
             yarn install --production --ignore-optional --prefer-offline
             pm2 restart all --update-env
             pm2 reload ecosystem.config.js --env production
