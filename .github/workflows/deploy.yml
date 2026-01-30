@@ -1,34 +1,40 @@
-name: Deploy to EC2
+name: Deploy to EC2 (Tag-based)
 
 on:
   workflow_dispatch:
     inputs:
-      branch:
-        description: "Branch to deploy"
+      tag:
+        description: "Git tag to deploy (e.g. v1.0.0)"
         required: true
-        default: "main"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Checkout
+      # 1️⃣ Checkout exact tag
+      - name: Checkout tag
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.inputs.branch || github.ref }}
+          ref: refs/tags/${{ github.event.inputs.tag }}
+
+      # 2️⃣ Setup Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
+      # 3️⃣ Install deps
       - name: Install dependencies
         run: |
           corepack enable
           yarn install --immutable
 
+      # 4️⃣ Build (standalone)
       - name: Build
         run: yarn build
 
+      # 5️⃣ Upload build artifacts to versioned release folder
       - name: Upload build artifacts
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -36,10 +42,11 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
-          source: ".next,package.json,yarn.lock,public,next.config.ts"
-          target: /home/ubuntu/crm
+          source: ".next/standalone,.next/static,public"
+          target: /home/ubuntu/crm/releases/${{ github.event.inputs.tag }}
 
-      - name: Restart app
+      # 6️⃣ Assemble folders + switch release + restart PM2
+      - name: Activate release
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: 3.109.158.79
@@ -47,15 +54,44 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
           script: |
-            # Install Node.js if missing
+            set -e
+
+            RELEASE=${{ github.event.inputs.tag }}
+            BASE=/home/ubuntu/crm
+            RELEASE_DIR=$BASE/releases/$RELEASE
+
+            cd $RELEASE_DIR
+
+            # Ensure Node.js exists
             if ! command -v node >/dev/null 2>&1; then
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               sudo apt-get install -y nodejs
             fi
 
-            cd /home/ubuntu/crm
-            corepack enable
-            corepack prepare yarn@stable --activate
-            yarn install --production --ignore-optional --prefer-offline
-            pm2 restart all --update-env
-            pm2 reload ecosystem.config.js --env production
+            # ---- Assemble standalone runtime ----
+            rm -rf .next
+            mkdir -p .next
+
+            # Move standalone server to root
+            cp -r .next/standalone/* ./
+            rm -rf .next/standalone
+
+            # Move static assets
+            mv .next/static .next/static || true
+
+            # Environment
+            export NODE_ENV=production
+            export PORT=3000
+
+            # Switch current symlink
+            cd $BASE
+            ln -sfn releases/$RELEASE current
+
+            # Start / Restart PM2
+            if pm2 describe inrext >/dev/null 2>&1; then
+              pm2 restart inrext --update-env
+            else
+              pm2 start current/server.js --name inrext --update-env
+            fi
+
+            pm2 save
