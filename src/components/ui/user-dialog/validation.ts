@@ -202,7 +202,7 @@ export const userValidationSchema = Yup.object({
   dateOfBirth: Yup.string()
     .nullable()
     .required("Date of Birth is required")
-    .test("age-restriction", "Age must be more than 21 years", (val) => {
+    .test("age-restriction", "Age should be atleast 21 years", (val) => {
       if (!val) return false;
       const dob = new Date(val);
       const today = new Date();
