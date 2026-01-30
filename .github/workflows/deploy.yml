@@ -36,7 +36,7 @@ jobs:
       - name: Upload build artifacts
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: 3.109.56.139
+          host: 3.109.158.79
           username: ubuntu
           key: ${{ vars.EC2_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
@@ -46,7 +46,7 @@ jobs:
       - name: Restart app
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: 3.109.56.139
+          host: 3.109.158.79
           username: ubuntu
           key: ${{ vars.EC2_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
