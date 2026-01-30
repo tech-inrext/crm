@@ -2,7 +2,6 @@ import { Service } from "@framework";
 import Lead from "../models/Lead";
 import FollowUp from "../models/FollowUp";
 import { NotificationHelper } from "../../lib/notification-helpers";
-import { leadQueue } from "../../queue/leadQueue";
 import mongoose from "mongoose";
 
 class LeadService extends Service {

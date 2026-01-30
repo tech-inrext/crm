@@ -28,13 +28,16 @@
         "./src/*"
       ],
       "@framework/*": [
-        "./src/framework/*"
+        "src/be/framework/*"
       ],
       "@framework": [
-        "./src/framework/index.js"
+        "src/be/framework/index.js"
       ],
       "@models/*": [
         "src/be/models/*"
+      ],
+      "@middlewares/*": [
+        "src/be/middlewares/*"
       ]
     },
     "strictNullChecks": false,

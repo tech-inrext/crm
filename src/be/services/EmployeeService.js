@@ -2,7 +2,7 @@ import { Service } from "@framework";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
 import Employee from "../models/Employee";
-import { leadQueue } from "../../queue/leadQueue.js";
+import { leadQueue } from "../queue/leadQueue.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
 import Role from "../models/Role";
