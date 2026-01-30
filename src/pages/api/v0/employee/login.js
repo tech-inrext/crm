@@ -1,11 +1,10 @@
-import { Controller } from "@framework";
+import { PublicController } from "@framework";
 import EmployeeService from "../../../../be/services/EmployeeService";
 
-class EmployeeLoginController extends Controller {
+class EmployeeLoginController extends PublicController {
   constructor() {
     super();
     this.service = new EmployeeService();
-    this.skipAuth = ["post"];
   }
 
   async post(req, res) {
