@@ -16,10 +16,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.inputs.branch || github.ref }}
-      - name: Print vars
-        run: |
-          echo "EC2_KEY=${{ vars.EC2_KEY }}"
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
@@ -38,7 +34,7 @@ jobs:
         with:
           host: 3.109.158.79
           username: ubuntu
-          key: ${{ vars.EC2_KEY }}
+          key: ${{ secrets.EC2_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
           source: ".next,package.json,yarn.lock,public,next.config.ts"
           target: /home/ubuntu/crm
@@ -48,10 +44,18 @@ jobs:
         with:
           host: 3.109.158.79
           username: ubuntu
-          key: ${{ vars.EC2_KEY }}
+          key: ${{ secrets.EC2_KEY }}
           port: ${{ secrets.EC2_PORT || 22 }}
           script: |
+            # Install Node.js if missing
+            if ! command -v node >/dev/null 2>&1; then
+              curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+              sudo apt-get install -y nodejs
+            fi
+
             cd /home/ubuntu/crm
+            corepack enable
+            corepack prepare yarn@stable --activate
             yarn install --production --ignore-optional --prefer-offline
             pm2 restart all --update-env
             pm2 reload ecosystem.config.js --env production
