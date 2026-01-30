@@ -215,20 +215,27 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
             </TextField>
           )}
         </Field>
-        <Field name="age">
+        <Field name="dateOfBirth">
           {({ field, meta }: FieldProps) => (
             <TextField
               {...field}
-              label={FIELD_LABELS.AGE}
-              type="number"
+              value={toDateInputString(field.value)}
+              label={`${FIELD_LABELS.DATE_OF_BIRTH || "Date of Birth"} *`} // Add asterisk for mandatory field
+              type="date"
               fullWidth
               margin="normal"
+              InputLabelProps={{ shrink: true }}
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              className="bg-white rounded-md flex-1 h-14 text-base px-4"
               onChange={(e) => {
+                const v = e.target.value || "";
                 if (field.name) setFieldTouched(field.name, true, true);
-                if ((field as any).onChange) (field as any).onChange(e);
+                if (field.name && (field as any).onChange) {
+                  (field as any).onChange({
+                    target: { name: field.name, value: v },
+                  });
+                }
               }}
             />
           )}
