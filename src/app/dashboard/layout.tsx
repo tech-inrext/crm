@@ -209,7 +209,7 @@ export default function DashboardLayout({
                 pl: { xs: 0, lg: "260px" },
                 pr: { xs: 0 },
                 transition: "padding-left 0.3s ease",
-                minHeight: "100vh",
+                height: "calc(100vh - 64px)",
                 width: "100%",
               }}
             >

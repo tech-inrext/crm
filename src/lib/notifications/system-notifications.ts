@@ -1,5 +1,5 @@
 import { getEmployeeIdsByRoles, sendBulkNotification } from "./utils";
-import Employee from "../../models/Employee.js";
+import Employee from "../../be/models/Employee.js";
 
 /**
  * Send system-wide announcement
@@ -44,9 +44,8 @@ export const notifyPropertyUploaded = async (uploaderId, propertyData) => {
     sender: uploaderId,
     type: "PROPERTY_UPLOADED",
     title: "New Property Added",
-    message: `A new property has been uploaded: ${
-      propertyData.title || "Property"
-    }`,
+    message: `A new property has been uploaded: ${propertyData.title || "Property"
+      }`,
     metadata: {
       propertyId: propertyData._id,
       actionUrl: `/dashboard/properties/${propertyData._id}`,

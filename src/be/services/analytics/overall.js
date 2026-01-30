@@ -1,6 +1,5 @@
 import dbConnect from "@/lib/mongodb";
-import Employee from "@/models/Employee";
-import { userAuth } from "@/middlewares/auth";
+import Employee from "../../models/Employee";
 
 class OverallAnalyticsService {
   /**
@@ -10,7 +9,7 @@ class OverallAnalyticsService {
     await dbConnect();
 
     try {
-      const Lead = (await import("@/models/Lead")).default;
+      const Lead = (await import("../../models/Lead")).default;
 
       const loggedInUserId = req.employee?._id;
       let userId = req.query.userId || loggedInUserId;

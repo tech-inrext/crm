@@ -1,8 +1,8 @@
 // pages/api/v0/property/index.js
 import dbConnect from "@/lib/mongodb";
-import Property from "@/models/Property";
+import Property from "../../../../be/models/Property";
 import * as cookie from "cookie";
-import { userAuth } from "@/middlewares/auth";
+import { userAuth } from "../../../../be/middlewares/auth";
 import mongoose from "mongoose";
 
 const mapFileType = (fileType) => {

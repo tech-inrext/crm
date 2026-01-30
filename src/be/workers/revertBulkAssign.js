@@ -1,6 +1,6 @@
 import Lead from "../models/Lead.js";
 import LeadAssignmentHistory from "../models/LeadAssignmentHistory.js";
-import dbConnect from "../lib/mongodb.js";
+import dbConnect from "../../lib/mongodb.js";
 import mongoose from "mongoose";
 
 async function revertBulkAssign(job) {
