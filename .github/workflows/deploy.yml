@@ -1,97 +1,91 @@
-name: Deploy to EC2 (Tag-based)
+name: Build & Deploy Next.js (Tag Based)
 
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Git tag to deploy (e.g. v1.0.0)"
-        required: true
+  push:
+    tags:
+      - "v*"
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      # 1️⃣ Checkout exact tag
-      - name: Checkout tag
+      - name: Checkout
         uses: actions/checkout@v4
-        with:
-          ref: refs/tags/${{ github.event.inputs.tag }}
 
-      # 2️⃣ Setup Node
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 20
 
-      # 3️⃣ Install deps
       - name: Install dependencies
-        run: |
-          corepack enable
-          yarn install --immutable
+        run: npm ci
 
-      # 4️⃣ Build (standalone)
-      - name: Build
-        run: yarn build
+      - name: Build (standalone)
+        run: npm run build
 
-      # 5️⃣ Upload build artifacts to versioned release folder
-      - name: Upload build artifacts
+      - name: Upload build to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
-          host: 3.109.158.79
+          host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
-          port: ${{ secrets.EC2_PORT || 22 }}
-          source: ".next/standalone,.next/static,public"
-          target: /home/ubuntu/crm/releases/${{ github.event.inputs.tag }}
+          source: ".next,public,package.json"
+          target: "/home/ubuntu/crm/${{ github.ref_name }}"
 
-      # 6️⃣ Assemble folders + switch release + restart PM2
-      - name: Activate release
+      - name: Deploy on EC2 (Fully Automated)
         uses: appleboy/ssh-action@v1.0.3
         with:
-          host: 3.109.158.79
+          host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
-          port: ${{ secrets.EC2_PORT || 22 }}
           script: |
             set -e
 
-            RELEASE=${{ github.event.inputs.tag }}
             BASE=/home/ubuntu/crm
-            RELEASE_DIR=$BASE/releases/$RELEASE
+            VERSION=${{ github.ref_name }}
+            RELEASE_DIR=$BASE/$VERSION
 
-            cd $RELEASE_DIR
+            echo "🚀 Deploying $VERSION"
 
-            # Ensure Node.js exists
+            # ---------- SYSTEM BOOTSTRAP ----------
             if ! command -v node >/dev/null 2>&1; then
               curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
               sudo apt-get install -y nodejs
             fi
 
-            # ---- Assemble standalone runtime ----
-            rm -rf .next
-            mkdir -p .next
+            if ! command -v pm2 >/dev/null 2>&1; then
+              sudo npm install -g pm2
+            fi
 
-            # Move standalone server to root
-            cp -r .next/standalone/* ./
-            rm -rf .next/standalone
+            # ---------- VALIDATION ----------
+            cd $RELEASE_DIR
+            if [ ! -d ".next/standalone" ]; then
+              echo "❌ .next/standalone missing"
+              exit 1
+            fi
 
-            # Move static assets
-            mv .next/static .next/static || true
+            # ---------- ASSEMBLE RUNTIME ----------
+            rm -rf runtime
+            mkdir -p runtime/.next
 
-            # Environment
+            cp -r .next/standalone/* runtime/
+            cp -r .next/static runtime/.next/
+            cp -r public runtime/
+
+            # ---------- SWITCH CURRENT ----------
+            ln -sfn $RELEASE_DIR/runtime $BASE/current
+
             export NODE_ENV=production
             export PORT=3000
 
-            # Switch current symlink
-            cd $BASE
-            ln -sfn releases/$RELEASE current
-
-            # Start / Restart PM2
-            if pm2 describe inrext >/dev/null 2>&1; then
-              pm2 restart inrext --update-env
+            # ---------- PM2 ----------
+            if pm2 describe crm >/dev/null 2>&1; then
+              pm2 reload crm --update-env
             else
-              pm2 start current/server.js --name inrext --update-env
+              pm2 start $BASE/current/server.js --name crm
             fi
 
             pm2 save
+
+            echo "✅ Deployment of $VERSION completed"
