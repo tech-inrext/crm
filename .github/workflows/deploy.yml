@@ -31,6 +31,21 @@ jobs:
         run: yarn install
 
       - name: Build (standalone)
+        env:
+          NODE_ENV: production
+          PORT: 80
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          REDIS_URL: redis://127.0.0.1:6379
+          QUEUE_NAME: default
+          QUEUE_PREFIX: bull
+          SMTP_EMAIL: tech.inrext@gmail.com
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: YourApp Support <tech.inrext@gmail.com>
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          AWS_REGION: ap-south-1
+          AWS_BUCKET_NAME: inrext
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: yarn build
 
       - name: Prepare runtime bundle (standalone)
