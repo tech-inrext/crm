@@ -8,6 +8,11 @@ import ContactInfoSection from "./ContactInfoSection";
 import NomineeSection from "./NomineeSection";
 import RequiredDocuments from "./RequiredDocuments";
 import { FIELD_LABELS } from "@/constants/users";
+import { Field, FieldProps } from "formik";
+import { TextField, MenuItem } from "@mui/material";
+import { toDateInputString } from "@/components/ui/user-dialog/utils/formatters";
+import { GENDER_OPTIONS } from "@/constants/users";
+import { useFormikContext } from "formik";
 
 interface BasicInformationProps {
   editId: string | null;
@@ -48,11 +53,14 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
               inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               onChange={(e) => {
-                if (field.name) setFieldTouched(field.name, true, true);
                 const v = (e.target as HTMLInputElement).value.replace(
                   /\D/g,
                   ""
                 );
+                if (field.name) {
+                  const formik = useFormikContext();
+                  formik.setFieldValue(field.name, v);
+                }
                 if (field.name && (field as any).onChange) {
                   (field as any).onChange({
                     target: { name: field.name, value: v },
@@ -73,7 +81,10 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
               onChange={(e) => {
-                if (field.name) setFieldTouched(field.name, true, true);
+                if (field.name) {
+                  const formik = useFormikContext();
+                  formik.setFieldValue(field.name, e.target.value);
+                }
                 if ((field as any).onChange) (field as any).onChange(e);
               }}
             />
@@ -91,7 +102,10 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
             helperText={meta.touched && meta.error}
             sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
             onChange={(e) => {
-              if (field.name) setFieldTouched(field.name, true, true);
+              if (field.name) {
+                const formik = useFormikContext();
+                formik.setFieldValue(field.name, e.target.value);
+              }
               if ((field as any).onChange) (field as any).onChange(e);
             }}
           />
@@ -116,13 +130,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               helperText={meta.touched && meta.error}
               sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
               onChange={(e) => {
-                if (field.name) setFieldTouched(field.name, true, true);
-                if ((field as any).onChange) (field as any).onChange(e);
+                if (field.name) {
+                  const formik = useFormikContext();
+                  formik.setFieldValue(field.name, e.target.value);
+                }
               }}
             >
-              {genderOptions.map((option) => (
-                <MenuItem key={option.value} value={option.value}>
-                  {option.label}
+              {GENDER_OPTIONS.map((option) => (
+                <MenuItem key={option} value={option}>
+                  {option}
                 </MenuItem>
               ))}
             </TextField>
@@ -143,7 +159,10 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               className="bg-white rounded-md flex-1 h-14 text-base px-4"
               onChange={(e) => {
                 const v = e.target.value || "";
-                if (field.name) setFieldTouched(field.name, true, true);
+                if (field.name) {
+                  const formik = useFormikContext();
+                  formik.setFieldValue(field.name, v);
+                }
                 if (field.name && (field as any).onChange) {
                   (field as any).onChange({
                     target: { name: field.name, value: v },
