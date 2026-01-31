@@ -50,3 +50,11 @@ jobs:
           ls -la runtime
           ls -la runtime/.next || true
           ls -la runtime/.next/static || true
+      - name: Upload build to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          source: "runtime"
+          target: "/home/ubuntu/crm/${{ inputs.tag }}"
