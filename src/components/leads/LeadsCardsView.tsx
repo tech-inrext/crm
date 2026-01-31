@@ -40,7 +40,7 @@ const LeadsCardsView: React.FC<LeadsCardsViewProps> = ({
           <LeadCard
             key={lead.id}
             lead={lead}
-            onEdit={() => onEdit(lead.leadId || lead._id || lead.id)}
+            onEdit={() => onEdit(lead._id || lead.leadId || lead.id)}
             onStatusChange={onStatusChange}
             onScheduleSiteVisit={onScheduleSiteVisit}
             onOpenFeedback={onOpenFeedback}

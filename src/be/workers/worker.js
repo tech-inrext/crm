@@ -8,7 +8,7 @@ import sendOTPJob from "./sendOTPJob.js";
 import sendNotificationEmail from "./sendNotificationEmail.js";
 import notificationCleanupJob from "./notificationCleanup.js";
 import sendLeadFollowUpNotification from "./sendLeadFollowUpNotification.js";
-import { leadQueue } from "../../queue/leadQueue.js";
+import { leadQueue } from "../queue/leadQueue.js";
 import bulkAssignLeads from "./bulkAssignLeads.js";
 import revertBulkAssign from "./revertBulkAssign.js";
 import dbConnect from "../../lib/mongodb.js";

@@ -1,6 +1,5 @@
 import { Controller } from "@framework";
 import PillarService from "../../../../be/services/PillarService";
-import * as cookie from "cookie";
 
 class PillarByIdController extends Controller {
   constructor() {

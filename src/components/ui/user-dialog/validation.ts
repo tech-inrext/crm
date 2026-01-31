@@ -199,6 +199,7 @@ export const userValidationSchema = Yup.object({
         return true;
       }
     ),
+ 
   dateOfBirth: Yup.string()
     .nullable()
     .required("Date of Birth is required")
@@ -217,4 +218,28 @@ export const userValidationSchema = Yup.object({
       }
       return false;
     }),
+ 
+    photoFile: Yup.mixed()
+    .nullable()
+    .test(
+      "photo-size",
+      "Photo file must be less than 1MB",
+      function (value) {
+        const { photo } = this.parent || {};
+        if (value && typeof value === "object" && value.size !== undefined) {
+          return value.size <= 1024 * 1024;
+        }
+        if (typeof photo === "string" && photo.trim() !== "")
+          return true;
+        return true;
+      }
+    ),
+    panNumber: Yup.string()
+    .required("PAN Number is required")
+    .matches(
+      /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
+      "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)"
+    )
+    .transform((value) => value ? value.toUpperCase().trim() : value),
+ 
 });

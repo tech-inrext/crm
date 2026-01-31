@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-    async headers() {
+  output: "standalone",
+  async headers() {
     return [
       {
         source: "/uploads/:path*",
