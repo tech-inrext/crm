@@ -36,26 +36,22 @@ jobs:
       - name: Prepare runtime bundle (standalone)
         run: |
           set -e
-          rm -rf runtime
-          mkdir -p runtime/.next
 
-          # standalone server + minimal node_modules
+          rm -rf runtime
+          mkdir runtime
+
+          # 1️⃣ Copy EVERYTHING from standalone (creates .next, server.js, node_modules, package.json)
           cp -R .next/standalone/* runtime/
 
-          # static assets
+          # 2️⃣ Merge static assets into existing .next (no deletion)
           cp -R .next/static runtime/.next/
-
-          # public assets (if exists)
-          if [ -d public ]; then
-            cp -R public runtime/
-          fi
 
           echo "✅ Runtime bundle prepared:"
           ls -la runtime
           ls -la runtime/.next || true
           ls -la runtime/.next/static || true
 
-      - name: Deploy on EC2 (Zero Manual Setup)
+      - name: Deploy on EC2 (Symlink + PM2)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -80,32 +76,24 @@ jobs:
               sudo npm install -g pm2
             fi
 
-            # ---------- VALIDATE ----------
-            cd $RELEASE_DIR
-            if [ ! -d ".next/standalone" ]; then
-              echo "❌ .next/standalone missing"
-              exit 1
-            fi
+            # ---------- VALIDATE RUNTIME ----------
+            cd "$RELEASE_DIR"
 
-            # ---------- RUNTIME ----------
-            rm -rf runtime
-            mkdir -p runtime/.next
-
-            cp -r .next/standalone/* runtime/
-            cp -r .next/static runtime/.next/
-            cp -r public runtime/
+            test -f server.js || (echo "❌ server.js missing" && exit 1)
+            test -d .next || (echo "❌ .next missing" && exit 1)
+            test -d .next/static || (echo "❌ .next/static missing" && exit 1)
+            test -f package.json || (echo "❌ package.json missing" && exit 1)
 
             # ---------- SWITCH ----------
-            ln -sfn $RELEASE_DIR/runtime $BASE/current
-
-            export NODE_ENV=production
-            export PORT=3000
+            ln -sfn "$RELEASE_DIR" "$BASE/current"
 
             # ---------- PM2 ----------
+            cd "$BASE/current"
+
             if pm2 describe crm >/dev/null 2>&1; then
-              pm2 reload crm --update-env
+              PORT=3000 NODE_ENV=production pm2 reload crm --update-env
             else
-              pm2 start $BASE/current/server.js --name crm
+              PORT=3000 NODE_ENV=production pm2 start server.js --name crm
             fi
 
             pm2 save
