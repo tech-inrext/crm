@@ -20,25 +20,79 @@ class EmployeeService extends Service {
   constructor() {
     super();
   }
-  async getEmployeeById(req, res) {
-    const { id } = req.query;
-    try {
-      const employee = await Employee.findById(id)
-        .populate("roles")
-        .select(
-          "name email phone altPhone address gender dateOfBirth fatherName designation joiningDate managerId departmentId roles aadharUrl panUrl bankProofUrl signatureUrl mouPdfUrl nominee slabPercentage branch employeeProfileId isCabVendor mouStatus"
-        )
-        .lean();
+async getEmployeeById(req, res) { 
+  const { id } = req.query; 
+  try { 
+    // 1️⃣ Validate employee ID 
+    if (!id || id === "undefined" || id === "null") { 
+    return res.status(400).json({ 
+      success: false, 
+      error: "Employee ID is required", }); 
+    } 
+    // 2️⃣ Fetch employee from DB 
+    const employee = await Employee.findById(id).populate("roles"); 
+    if (!employee) 
+      { return res.status(404).json({ 
+        success: false, 
+        error: "Employee not found", }); 
+      } 
+      // 3️⃣ Check if user is fully authenticated (token + roleId) 
+      const token = req.cookies?.token; 
+      let isFullyAuthenticated = false; 
+      if (token) { 
+        try { 
+          const decoded = jwt.verify(token, process.env.JWT_SECRET); 
+          if (decoded?._id && decoded?.roleId) { 
+            isFullyAuthenticated = true; 
+          } } catch { 
+            // Invalid or expired token → treat as public user 
+            isFullyAuthenticated = false; 
+          } 
+        } 
+        // 4️⃣ If authenticated with role → return full employee data 
+        if (isFullyAuthenticated) { 
+          return res.status(200).json({ 
+            success: true, 
+            data: employee, 
+          }); 
+        } 
+        // 5️⃣ Otherwise → return public employee data only 
+        const publicData = { 
+          name: employee.name, 
+          email: employee.email, 
+          phone: employee.phone, 
+          altPhone: employee.altPhone, 
+          designation: employee.designation, 
+          photo: employee.photo, 
+          specialization: employee.specialization, 
+        }; 
+        // Remove null / undefined fields 
+        Object.entries(publicData).forEach(([key, value]) => { 
+          if (value == null) delete publicData[key]; 
+        });
+        
+          return res.status(200).json({ 
+            success: true, 
+            data: publicData, 
+          }); 
+        } catch (error) { 
+          console.error("Get Employee Error:", error); 
+          
+          // 6️⃣ Handle invalid MongoDB ObjectId 
+          if (error.name === "CastError") { 
+            return res.status(400).json({ 
+              success: false, 
+              error: "Invalid employee ID format", 
+            }); 
+          } 
+          
+          return res.status(500).json({ 
+            success: false, 
+            error: "Internal server error", 
+          }); 
+        } 
+      }
 
-      if (!employee)
-        return res
-          .status(404)
-          .json({ success: false, error: "Employee not found" });
-      return res.status(200).json({ success: true, data: employee });
-    } catch (err) {
-      return res.status(500).json({ success: false, error: err.message });
-    }
-  }
   async updateEmployeeDetails(req, res) {
     const { id } = req.query;
     const {
@@ -176,22 +230,6 @@ class EmployeeService extends Service {
     if (Object.prototype.hasOwnProperty.call(req.body, "joiningDate")) {
       updateFields.joiningDate = joiningDate;
     }
-// Allow dateOfBirth update (safe handling)
-if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
-  if (dateOfBirth === "" || dateOfBirth === null) {
-    updateFields.dateOfBirth = null; // allow clearing
-  } else {
-    const parsedDate = new Date(dateOfBirth);
-    if (isNaN(parsedDate.getTime())) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid dateOfBirth format",
-      });
-    }
-    updateFields.dateOfBirth = parsedDate;
-  }
-}
-
 
     setIfPresent("altPhone", altPhone);
     // validate altPhone if provided
@@ -204,7 +242,23 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
     }
     setIfPresent("address", address);
     setIfPresent("gender", gender);
-    // allow clearing age by sending null
+    // allow clearing dateOfBirth by sending null
+   // Allow dateOfBirth update (safe handling)
+if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
+  if (dateOfBirth === "" || dateOfBirth === null) {
+    updateFields.dateOfBirth = null;
+  } else {
+    const parsedDate = new Date(dateOfBirth);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid dateOfBirth format",
+      });
+    }
+    updateFields.dateOfBirth = parsedDate;
+  }
+}
+
     setIfPresent("designation", designation);
     setIfPresent("managerId", managerId);
     setIfPresent("departmentId", departmentId);
@@ -329,7 +383,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
         phone,
         address,
         gender,
-        age,
+        dateOfBirth,
         altPhone,
         joiningDate,
         designation,
@@ -437,8 +491,8 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
         employeeData.address = address;
       if (Object.prototype.hasOwnProperty.call(req.body, "gender"))
         employeeData.gender = gender;
-      if (Object.prototype.hasOwnProperty.call(req.body, "age"))
-        employeeData.age = age;
+      if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth"))
+        employeeData.dateOfBirth = dateOfBirth;
       if (Object.prototype.hasOwnProperty.call(req.body, "joiningDate"))
         employeeData.joiningDate = joiningDate
           ? new Date(joiningDate)
