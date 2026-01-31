@@ -103,7 +103,7 @@ async getEmployeeById(req, res) {
       address,
       fatherName,
       gender,
-      age,
+      dateOfBirth,
       designation,
       joiningDate,
       managerId,
@@ -242,10 +242,23 @@ async getEmployeeById(req, res) {
     }
     setIfPresent("address", address);
     setIfPresent("gender", gender);
-    // allow clearing age by sending null
-    if (Object.prototype.hasOwnProperty.call(req.body, "age")) {
-      updateFields.age = age;
+    // allow clearing dateOfBirth by sending null
+   // Allow dateOfBirth update (safe handling)
+if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
+  if (dateOfBirth === "" || dateOfBirth === null) {
+    updateFields.dateOfBirth = null;
+  } else {
+    const parsedDate = new Date(dateOfBirth);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid dateOfBirth format",
+      });
     }
+    updateFields.dateOfBirth = parsedDate;
+  }
+}
+
     setIfPresent("designation", designation);
     setIfPresent("managerId", managerId);
     setIfPresent("departmentId", departmentId);
@@ -370,7 +383,7 @@ async getEmployeeById(req, res) {
         phone,
         address,
         gender,
-        age,
+        dateOfBirth,
         altPhone,
         joiningDate,
         designation,
@@ -478,8 +491,8 @@ async getEmployeeById(req, res) {
         employeeData.address = address;
       if (Object.prototype.hasOwnProperty.call(req.body, "gender"))
         employeeData.gender = gender;
-      if (Object.prototype.hasOwnProperty.call(req.body, "age"))
-        employeeData.age = age;
+      if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth"))
+        employeeData.dateOfBirth = dateOfBirth;
       if (Object.prototype.hasOwnProperty.call(req.body, "joiningDate"))
         employeeData.joiningDate = joiningDate
           ? new Date(joiningDate)

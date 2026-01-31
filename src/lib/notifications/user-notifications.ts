@@ -30,6 +30,7 @@ export const notifyUserRegistration = async (
         userId,
         userName: userData.name,
         userDesignation: userData.designation,
+          dateOfBirth: userData.dateOfBirth,
         actionUrl: isNewUser
           ? "/dashboard/profile"
           : `/dashboard/users?openDialog=true&userId=${userId}`,

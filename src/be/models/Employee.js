@@ -88,13 +88,17 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       enum: ["Pending", "Approved", "Rejected"],
     },
-    age: {
-      type: Number,
-      min: [0, "Age cannot be negative"],
-      max: [120, "Age cannot exceed 120"],
-      set: (val) => (val === "" ? undefined : val),
+    dateOfBirth: {
+      type: Date,
+      required: [true, "Date of Birth is required"],
+      validate: {
+        validator: function (value) {
+          return !isNaN(new Date(value).getTime());
+        },
+        message: "Invalid Date of Birth",
+      },
     },
-    joiningDate: {
+    joiningDate: {  
       type: Date, // No validator, just a plain date
     },
     departmentId: {
