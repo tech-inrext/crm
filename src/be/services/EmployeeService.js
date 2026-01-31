@@ -25,7 +25,7 @@ class EmployeeService extends Service {
       const employee = await Employee.findById(id)
         .populate("roles")
         .select(
-          "name email phone altPhone address gender age fatherName designation joiningDate managerId departmentId roles aadharUrl panUrl bankProofUrl signatureUrl mouPdfUrl nominee slabPercentage branch employeeProfileId isCabVendor mouStatus"
+          "name email phone altPhone address gender dateOfBirth fatherName designation joiningDate managerId departmentId roles aadharUrl panUrl bankProofUrl signatureUrl mouPdfUrl nominee slabPercentage branch employeeProfileId isCabVendor mouStatus"
         )
         .lean();
 
@@ -49,7 +49,7 @@ class EmployeeService extends Service {
       address,
       fatherName,
       gender,
-      age,
+      dateOfBirth,
       designation,
       joiningDate,
       managerId,
@@ -137,6 +137,22 @@ class EmployeeService extends Service {
     if (Object.prototype.hasOwnProperty.call(req.body, "joiningDate")) {
       updateFields.joiningDate = joiningDate;
     }
+// Allow dateOfBirth update (safe handling)
+if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
+  if (dateOfBirth === "" || dateOfBirth === null) {
+    updateFields.dateOfBirth = null; // allow clearing
+  } else {
+    const parsedDate = new Date(dateOfBirth);
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid dateOfBirth format",
+      });
+    }
+    updateFields.dateOfBirth = parsedDate;
+  }
+}
+
 
     setIfPresent("altPhone", altPhone);
     // validate altPhone if provided
@@ -150,9 +166,6 @@ class EmployeeService extends Service {
     setIfPresent("address", address);
     setIfPresent("gender", gender);
     // allow clearing age by sending null
-    if (Object.prototype.hasOwnProperty.call(req.body, "age")) {
-      updateFields.age = age;
-    }
     setIfPresent("designation", designation);
     setIfPresent("managerId", managerId);
     setIfPresent("departmentId", departmentId);
