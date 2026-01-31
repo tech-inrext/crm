@@ -43,9 +43,6 @@ jobs:
           # 1️⃣ Copy EVERYTHING from standalone (creates .next, server.js, node_modules, package.json)
           cp -R .next/standalone/* runtime/
 
-          # 2️⃣ Merge static assets into existing .next (no deletion)
-          cp -R .next/static runtime/.next/
-
           echo "✅ Runtime bundle prepared:"
           ls -la runtime
           ls -la runtime/.next || true
