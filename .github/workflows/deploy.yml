@@ -33,14 +33,27 @@ jobs:
       - name: Build (standalone)
         run: yarn build
 
-      - name: Upload build to EC2
-        uses: appleboy/scp-action@v0.1.7
-        with:
-          host: ${{ secrets.EC2_HOST }}
-          username: ubuntu
-          key: ${{ secrets.EC2_KEY }}
-          source: ".next,public,package.json"
-          target: "/home/ubuntu/crm/${{ inputs.tag }}"
+      - name: Prepare runtime bundle (standalone)
+        run: |
+          set -e
+          rm -rf runtime
+          mkdir -p runtime/.next
+
+          # standalone server + minimal node_modules
+          cp -R .next/standalone/* runtime/
+
+          # static assets
+          cp -R .next/static runtime/.next/
+
+          # public assets (if exists)
+          if [ -d public ]; then
+            cp -R public runtime/
+          fi
+
+          echo "✅ Runtime bundle prepared:"
+          ls -la runtime
+          ls -la runtime/.next || true
+          ls -la runtime/.next/static || true
 
       - name: Deploy on EC2 (Zero Manual Setup)
         uses: appleboy/ssh-action@v1.0.3
