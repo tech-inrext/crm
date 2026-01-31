@@ -5,7 +5,7 @@ import CabBooking from "../models/CabBooking";
 import Lead from "../models/Lead";
 import Employee from "../models/Employee"; // Added import
 import mongoose from "mongoose";
-import { sendCabBookingApprovalEmail } from "../../lib/cabBookingApproval"; // Added import
+import { sendCabBookingApprovalEmail } from "../email-service/cab-booking/cabBookingApproval"; // Added import
 
 class SiteVisitService extends Service {
   async getLeadId(identifier) {
