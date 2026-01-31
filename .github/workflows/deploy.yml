@@ -51,7 +51,7 @@ jobs:
           ls -la runtime/.next || true
           ls -la runtime/.next/static || true
 
-      - name: Deploy on EC2 (Symlink + PM2)
+        # - name: Deploy on EC2 (Symlink + PM2)
         uses: appleboy/ssh-action@v1.0.3
         with:
           host: ${{ secrets.EC2_HOST }}
