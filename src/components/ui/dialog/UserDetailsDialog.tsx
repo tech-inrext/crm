@@ -328,11 +328,11 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 label="Relation"
                 value={user.nominee?.relation}
               />
-              <DetailItem
+              {/* <DetailItem
                 icon={Person}
                 label="Gender"
                 value={user.nominee?.gender}
-              />
+              /> */}
             </SectionCard>
           </div>
         </div>
