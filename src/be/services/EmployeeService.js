@@ -8,7 +8,7 @@ import validator from "validator";
 import Role from "../models/Role";
 import { sendNewEmployeeWelcomeEmail } from "../email-service/employee/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "../email-service/manager/managerNewReport.js";
-import { sendRoleChangeEmail } from "../../lib/emails/sendRoleChangeEmail";
+import { sendRoleChangeEmail } from "../email-service/role/sendRoleChangeEmail.js";
 import {
   notifyUserRegistration,
   notifyUserUpdate,
