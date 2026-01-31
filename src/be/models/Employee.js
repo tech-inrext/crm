@@ -98,7 +98,7 @@ const employeeSchema = new mongoose.Schema(
         message: "Invalid Date of Birth",
       },
     },
-    joining: {  
+    joiningDate: {  
       type: Date, // No validator, just a plain date
     },
     departmentId: {
