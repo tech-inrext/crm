@@ -1,6 +1,6 @@
 import { Service } from "@framework";
-import BulkUpload from "../../models/BulkUpload";
-import { leadQueue } from "../../queue/leadQueue";
+import BulkUpload from "../models/BulkUpload";
+import { leadQueue } from "../queue/leadQueue";
 import mongoose from "mongoose";
 import { uploadToS3 } from "@/lib/s3";
 import xlsx from "xlsx";

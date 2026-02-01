@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "run-worker": "node src/workers/worker.js"
+    "run-worker": "node src/be/workers/worker.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.842.0",
@@ -30,10 +30,13 @@
     "exceljs": "^4.4.0",
     "formik": "^2.4.6",
     "framer-motion": "^12.23.24",
+    "html2canvas": "^1.4.1",
     "inrext-framework": "^1.0.0",
     "ioredis": "^5.6.1",
     "jsonwebtoken": "^9.0.2",
+    "jspdf": "^4.0.0",
     "leaflet": "^1.9.4",
+    "mime-types": "^3.0.2",
     "mongodb": "^6.16.0",
     "mongoose": "^8.15.1",
     "multer": "^2.0.1",
@@ -41,12 +44,13 @@
     "next-connect": "^1.0.0",
     "nodemailer": "^7.0.6",
     "pdfkit": "^0.17.2",
-    "react": "^19.0.0",
+    "react": "^19.2.3",
     "react-chartjs-2": "^5.3.0",
-    "react-dom": "^19.0.0",
+    "react-dom": "^19.2.3",
     "react-icons": "^5.5.0",
     "react-is": "^19.2.1",
     "react-leaflet": "^5.0.0",
+    "react-qr-code": "^2.0.18",
     "recharts": "^3.2.1",
     "slugify": "^1.6.6",
     "sonner": "^2.0.7",
@@ -59,6 +63,7 @@
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@tailwindcss/postcss": "^4",
+    "@types/mime-types": "^3",
     "@types/node": "^20",
     "@types/react": "^19.1.6",
     "@types/react-dom": "^19",
@@ -66,5 +71,6 @@
     "eslint-config-next": "15.3.2",
     "tailwindcss": "^4",
     "typescript": "5.9.3"
-  }
+  },
+  "packageManager": "yarn@4.10.2+sha512.0b0e54ad5381f0a35184957bd3ea44e37f5a4fb1960b903b0fb9a3c7c2c009190455c41ef2a1977b1dbd3b72c5f152da696e9c52e2bc78a011b6adea8ee73ba3"
 }

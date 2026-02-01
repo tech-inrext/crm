@@ -2,7 +2,11 @@
   "compilerOptions": {
     "target": "ES2017",
     "strict": false,
-    "lib": ["dom", "dom.iterable", "esnext"],
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
     "allowJs": true,
     "skipLibCheck": true,
     "noEmit": true,
@@ -20,10 +24,21 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/*"],
-      "@framework/*": ["./src/framework/*"],
-      "@framework": ["./src/framework/index.js"],
-      "@models/*": ["./src/models/*"]
+      "@/*": [
+        "./src/*"
+      ],
+      "@framework/*": [
+        "src/be/framework/*"
+      ],
+      "@framework": [
+        "src/be/framework/index.js"
+      ],
+      "@models/*": [
+        "src/be/models/*"
+      ],
+      "@middlewares/*": [
+        "src/be/middlewares/*"
+      ]
     },
     "strictNullChecks": false,
     "strictFunctionTypes": false,
@@ -36,6 +51,13 @@
     "exactOptionalPropertyTypes": false,
     "noUncheckedIndexedAccess": false
   },
-  "include": ["next-env.d.ts", ".next/types/**/*.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules"]
+  "include": [
+    "next-env.d.ts",
+    ".next/types/**/*.ts",
+    "**/*.ts",
+    "**/*.tsx"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

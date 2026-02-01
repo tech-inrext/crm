@@ -10,7 +10,7 @@ import {
   Alert,
 } from "@/components/ui/Component";
 
-const BulkUpload = ({ loadLeads }) => {
+const BulkUpload = ({ loadLeads, hideButton = false }) => {
   const theme = useTheme();
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const fileInputRef = useRef(null);
@@ -107,7 +107,7 @@ const BulkUpload = ({ loadLeads }) => {
 
   return (
     <>
-      <label htmlFor="bulk-upload-excel" style={{ display: "inline-block" }}>
+      {hideButton ? (
         <input
           accept=".xlsx, .xls, .csv"
           style={{ display: "none" }}
@@ -116,47 +116,56 @@ const BulkUpload = ({ loadLeads }) => {
           ref={fileInputRef}
           onChange={handleFileUpload}
         />
-        <Button
-          variant="contained"
-          startIcon={
-            !isTablet ? (
-              uploading ? (
+      ) : (
+        <label htmlFor="bulk-upload-excel" style={{ display: "inline-block" }}>
+          <input
+            accept=".xlsx, .xls, .csv"
+            style={{ display: "none" }}
+            id="bulk-upload-excel"
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileUpload}
+          />
+          <Button
+            variant="contained"
+            startIcon={
+              !isTablet ? (
+                uploading ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  <UploadFile />
+                )
+              ) : null
+            }
+            component="span"
+            size="small"
+            disabled={uploading}
+            sx={{
+              minWidth: { xs: "100%", sm: "auto" },
+              height: 40,
+              borderRadius: 2,
+              fontWeight: 600,
+              fontSize: "0.8rem",
+              px: { xs: 2, sm: 3 },
+              boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
+              "&:hover": {
+                boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
+                transform: "translateY(-1px)",
+              },
+            }}
+          >
+            {uploading ? (
+              isTablet ? (
                 <CircularProgress size={20} color="inherit" />
               ) : (
-                <UploadFile />
+                "Uploading..."
               )
-            ) : null
-          }
-          component="span"
-          size="small"
-          disabled={uploading}
-          sx={{
-            minWidth: { xs: "100%", sm: "auto" },
-            height: 40,
-            borderRadius: 2,
-            fontWeight: 600,
-            fontSize: "0.8rem",
-            px: { xs: 2, sm: 3 },
-            boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
-            "&:hover": {
-              boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
-              transform: "translateY(-1px)",
-            },
-          }}
-        >
-          {uploading ? (
-            isTablet ? (
-              <CircularProgress size={20} color="inherit" />
             ) : (
-              "Uploading..."
-            )
-          ) : isTablet ? (
-            "Bulk Upload"
-          ) : (
-            "Bulk Upload"
-          )}
-        </Button>
-      </label>
+              "Bulk Upload"
+            )}
+          </Button>
+        </label>
+      )}
 
       <Snackbar
         open={snackbarOpen}

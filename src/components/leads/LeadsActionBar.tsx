@@ -2,11 +2,9 @@ import React, { useState } from "react";
 import {
   Box,
   Button,
-  Select,
   MenuItem,
   Menu,
   CircularProgress,
-  Fab,
   IconButton,
   Stack,
   Tooltip,
@@ -16,11 +14,13 @@ import {
 import {
   Add,
   PersonAdd,
-  ViewList,
-  ViewModule,
   History,
   FilterAltIcon,
+  DownloadIcon,
+  UploadFile,
+  AssignmentInd,
 } from "@/components/ui/Component";
+import { MoreVert } from "@mui/icons-material";
 import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import dynamic from "next/dynamic";
@@ -63,16 +63,21 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   onStatusesChange,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const [uploadStatusOpen, setUploadStatusOpen] = useState(false);
   const [mobileAnchor, setMobileAnchor] = useState<null | HTMLElement>(null);
+  const [actionsAnchor, setActionsAnchor] = useState<null | HTMLElement>(null);
 
   const openMobileMenu = (e: React.MouseEvent<HTMLElement>) =>
     setMobileAnchor(e.currentTarget);
   const closeMobileMenu = () => setMobileAnchor(null);
 
   const mobileMenuOpen = Boolean(mobileAnchor);
+  const actionsMenuOpen = Boolean(actionsAnchor);
+
+  const openActionsMenu = (e: React.MouseEvent<HTMLElement>) =>
+    setActionsAnchor(e.currentTarget);
+  const closeActionsMenu = () => setActionsAnchor(null);
 
   return (
     <Box
@@ -89,10 +94,10 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
       <Box
         sx={{
           display: "flex",
-          flexDirection: { xs: "column", sm: "row" },
-          gap: { xs: 1, sm: 2 },
-          alignItems: { xs: "stretch", sm: "center" },
-          justifyContent: { xs: "center", sm: "flex-end", md: "flex-end" },
+          flexDirection: "row",
+          gap: 2,
+          alignItems: "center",
+          justifyContent: "flex-start",
           width: "100%",
         }}
       >
@@ -100,6 +105,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
         <Box
           sx={{
             width: "100%",
+            maxWidth: "300px",
             flexGrow: 1,
             order: { xs: 1, sm: 1 },
             minWidth: 0, // allow child to shrink below its intrinsic width
@@ -109,15 +115,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
             sx={{
               width: "100%",
               minWidth: 0,
-              maxWidth: "100%",
-              "& .MuiInputBase-input": {
-                textAlign: "center",
-              },
-              "& .MuiInputBase-input::placeholder": {
-                fontSize: "0.75rem !important",
-                opacity: 1,
-                textAlign: "center",
-              },
+              maxWidth: "300px",
               "& .MuiInputBase-input:focus::placeholder": {
                 opacity: 0.4,
               },
@@ -134,217 +132,361 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
           />
         </Box>
 
-        {/* Mobile-only status filter button (visible on small screens) */}
-        {isMobile && (
-          <Box
-            sx={{
-              display: { xs: "flex", sm: "none" },
-              alignItems: "center",
-              ml: 1,
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            ml: 1,
+          }}
+        >
+          <Tooltip title="Filter status">
+            <IconButton
+              size="small"
+              onClick={openMobileMenu}
+              sx={{
+                backgroundColor:
+                  selectedStatuses.length > 0 ? "primary.main" : "#fff",
+                color: selectedStatuses.length > 0 ? "white" : "inherit",
+                boxShadow: 1,
+                "&:hover": {
+                  backgroundColor:
+                    selectedStatuses.length > 0 ? "primary.dark" : "#f5f5f5",
+                },
+              }}
+              aria-controls={mobileMenuOpen ? "mobile-status-menu" : undefined}
+              aria-haspopup="true"
+              aria-expanded={mobileMenuOpen ? "true" : undefined}
+            >
+              <FilterAltIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+
+          <Menu
+            id="mobile-status-menu"
+            anchorEl={mobileAnchor}
+            open={mobileMenuOpen}
+            onClose={closeMobileMenu}
+            MenuListProps={{
+              sx: {
+                minWidth: 220,
+                py: 0.5,
+              },
+            }}
+            PaperProps={{
+              sx: {
+                borderRadius: 2,
+                boxShadow: "0 12px 24px rgba(0,0,0,0.12)",
+                overflow: "hidden",
+              },
             }}
           >
-            <Tooltip title="Filter status">
-              <IconButton
-                size="small"
-                onClick={openMobileMenu}
-                sx={{ background: "#fff", boxShadow: 1 }}
-                aria-controls={
-                  mobileMenuOpen ? "mobile-status-menu" : undefined
-                }
-                aria-haspopup="true"
-                aria-expanded={mobileMenuOpen ? "true" : undefined}
-              >
-                <FilterAltIcon fontSize="small" />
-              </IconButton>
-            </Tooltip>
-
-            <Menu
-              id="mobile-status-menu"
-              anchorEl={mobileAnchor}
-              open={mobileMenuOpen}
-              onClose={closeMobileMenu}
-              MenuListProps={{ sx: { minWidth: 200 } }}
+            <MenuItem
+              onClick={() => {
+                onStatusesChange([]);
+                closeMobileMenu();
+              }}
+              sx={{
+                fontWeight: 700,
+                fontSize: "0.95rem",
+                borderBottom: "1px solid rgba(0,0,0,0.08)",
+                py: 1,
+                px: 1.5,
+                "&:hover": { backgroundColor: "transparent" },
+              }}
             >
+              All Statuses
+            </MenuItem>
+            {LEAD_STATUSES.filter(Boolean).map((s) => (
+              <MenuItem
+                key={s}
+                onClick={() => {
+                  const newStatuses = selectedStatuses.includes(s)
+                    ? selectedStatuses.filter((st) => st !== s)
+                    : [...selectedStatuses, s];
+                  onStatusesChange(newStatuses);
+                }}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 1.5,
+                  py: 0.75,
+                  px: 1.5,
+                  borderRadius: 1,
+                  mx: 0.75,
+                  my: 0.25,
+                  "&:hover": {
+                    backgroundColor: "action.hover",
+                  },
+                }}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedStatuses.includes(s)}
+                  readOnly
+                  style={{ cursor: "pointer" }}
+                />
+                <Box
+                  component="span"
+                  sx={{
+                    textTransform: "capitalize",
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  {s}
+                </Box>
+              </MenuItem>
+            ))}
+            {selectedStatuses.length > 0 && (
               <MenuItem
                 onClick={() => {
                   onStatusesChange([]);
                   closeMobileMenu();
                 }}
-                sx={{ fontWeight: "bold", borderBottom: "1px solid rgba(0,0,0,0.08)" }}
+                sx={{
+                  color: "error.main",
+                  justifyContent: "center",
+                  borderTop: "1px solid rgba(0,0,0,0.08)",
+                  mt: 0.5,
+                  py: 1,
+                  fontWeight: 600,
+                }}
               >
-                All Statuses
+                Clear All
               </MenuItem>
-              {LEAD_STATUSES.filter(Boolean).map((s) => (
-                <MenuItem
-                  key={s}
-                  onClick={() => {
-                    const newStatuses = selectedStatuses.includes(s)
-                      ? selectedStatuses.filter((st) => st !== s)
-                      : [...selectedStatuses, s];
-                    onStatusesChange(newStatuses);
-                  }}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 1.5,
-                  }}
-                >
-                  <input
-                    type="checkbox"
-                    checked={selectedStatuses.includes(s)}
-                    readOnly
-                    style={{ cursor: "pointer" }}
-                  />
-                  <Box component="span" sx={{ textTransform: "capitalize" }}>
-                    {s}
-                  </Box>
-                </MenuItem>
-              ))}
-              {selectedStatuses.length > 0 && (
-                <MenuItem
-                  onClick={() => {
-                    onStatusesChange([]);
-                    closeMobileMenu();
-                  }}
-                  sx={{
-                    color: "error.main",
-                    justifyContent: "center",
-                    borderTop: "1px solid rgba(0,0,0,0.08)",
-                    mt: 0.5,
-                  }}
-                >
-                  Clear All
-                </MenuItem>
-              )}
-            </Menu>
-          </Box>
-        )}
+            )}
+          </Menu>
+        </Box>
 
-        {/* View Toggle */}
-        {!isTablet && (
-          <Stack
-            direction="row"
-            spacing={{ xs: 0.5, sm: 1 }}
+        {/* Action Menu */}
+        <PermissionGuard module="lead" action="write" fallback={<></>}>
+          <Box
             sx={{
-              justifyContent: { xs: "center", sm: "flex-start" },
-              order: { xs: 2, sm: 2 },
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              justifyContent: { xs: "center", sm: "flex-end" },
+              order: { xs: 3, sm: 3 },
             }}
           >
-            {[
-              { mode: "table", icon: ViewList, title: "Table View" },
-              { mode: "cards", icon: ViewModule, title: "Card View" },
-            ].map(({ mode, icon: Icon, title }) => (
-              <Tooltip key={mode} title={title}>
-                <IconButton
-                  onClick={() => setViewMode(mode as "table" | "cards")}
-                  size="small"
-                  sx={{
-                    backgroundColor:
-                      viewMode === mode ? "primary.main" : "action.hover",
-                    color: viewMode === mode ? "white" : "text.primary",
-                    "&:hover": { backgroundColor: "primary.dark" },
-                    minWidth: 40,
-                    height: 40,
-                    outline: "none",
+            {!isTablet && (
+              <Button
+                variant="contained"
+                startIcon={<PersonAdd />}
+                onClick={onAdd}
+                disabled={saving}
+                sx={{
+                  minWidth: { xs: "auto", sm: 140 },
+                  height: { xs: 42, sm: 38 },
+                  borderRadius: 1.5,
+                  fontWeight: 500,
+                  fontSize: { xs: "0.85rem", sm: "0.95rem" },
+                  textTransform: "none",
+                  backgroundColor: "#e8f1ff",
+                  color: "#1e5fbf",
+                  boxShadow: "none",
+                  border: "1px solid rgba(30, 95, 191, 0.18)",
+                  "& .MuiButton-startIcon": {
+                    marginRight: "6px",
+                  },
+                  "&:hover": {
+                    backgroundColor: "#deebff",
+                    borderColor: "rgba(30, 95, 191, 0.28)",
                     boxShadow: "none",
-                    "&:focus": {
-                      outline: "none",
-                      boxShadow: "none",
-                    },
+                  },
+                }}
+              >
+                {saving ? (
+                  <CircularProgress size={20} color="inherit" />
+                ) : (
+                  "Add Lead"
+                )}
+              </Button>
+            )}
+            <Tooltip title="Lead actions">
+              <IconButton
+                size="small"
+                onClick={openActionsMenu}
+                sx={{ background: "#fff", boxShadow: 1 }}
+                aria-controls={
+                  actionsMenuOpen ? "lead-actions-menu" : undefined
+                }
+                aria-haspopup="true"
+                aria-expanded={actionsMenuOpen ? "true" : undefined}
+              >
+                <MoreVert fontSize="small" />
+              </IconButton>
+            </Tooltip>
+            <Menu
+              id="lead-actions-menu"
+              anchorEl={actionsAnchor}
+              open={actionsMenuOpen}
+              onClose={closeActionsMenu}
+              MenuListProps={{ sx: { p: 0.5 } }}
+            >
+              <Stack
+                direction="column"
+                spacing={0.5}
+                sx={{
+                  minWidth: 220,
+                }}
+              >
+                <MenuItem
+                  onClick={async () => {
+                    try {
+                      const XLSX = await import("xlsx");
+                      const data = [
+                        ["fullName", "email", "phone"],
+                        ["Sample Lead Name 1", "lead1@gmail.com", "7500000001"],
+                        [
+                          "Sample Lead Name 2",
+                          "(leave blank if not available)",
+                          "7500000002",
+                        ],
+                        ["Sample Lead Name 3", "lead3@gmail.com", "7500000003"],
+                        [
+                          "Sample Lead Name 4",
+                          "(leave blank if not available)",
+                          "7500000004",
+                        ],
+                        [
+                          "(leave blank if not available)",
+                          "lead5@gmail.com",
+                          "7500000005",
+                        ],
+                      ];
+                      const ws = XLSX.utils.aoa_to_sheet(data);
+                      const wb = XLSX.utils.book_new();
+                      XLSX.utils.book_append_sheet(wb, ws, "Template");
+                      XLSX.writeFile(wb, "lead_upload_template.xlsx");
+                    } catch (error) {
+                      console.error("Error downloading template:", error);
+                    } finally {
+                      closeActionsMenu();
+                    }
+                  }}
+                  sx={{
+                    borderRadius: 1,
+                    gap: 1.5,
+                    py: 1,
+                    px: 1.5,
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
                   }}
                 >
-                  <Icon fontSize="small" />
-                </IconButton>
-              </Tooltip>
-            ))}
-          </Stack>
-        )}
+                  <DownloadIcon fontSize="small" />
+                  {isTablet ? "Template" : "Download Template"}
+                </MenuItem>
 
-        {/* Action Buttons */}
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={{ xs: 1, sm: 1.5 }}
-          sx={{
-            width: { xs: "100%", sm: "auto" },
-            alignItems: "stretch",
-            order: { xs: 3, sm: 3 },
-            // Prevent button text from wrapping and being clipped
-            "& .MuiButton-root": {
-              whiteSpace: "nowrap",
-            },
-          }}
-        >
-          <PermissionGuard module="lead" action="write" fallback={<></>}>
-            <BulkUpload loadLeads={loadLeads} />
-          </PermissionGuard>
+                <MenuItem
+                  onClick={() => {
+                    closeActionsMenu();
+                    const input = document.getElementById(
+                      "bulk-upload-excel"
+                    ) as HTMLInputElement | null;
+                    input?.click();
+                  }}
+                  sx={{
+                    borderRadius: 1,
+                    gap: 1.5,
+                    py: 1,
+                    px: 1.5,
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  <UploadFile fontSize="small" />
+                  Bulk Upload
+                </MenuItem>
 
-          <PermissionGuard module="lead" action="write" fallback={<></>}>
-            <BulkAssign onSuccess={loadLeads} />
-          </PermissionGuard>
+                <MenuItem
+                  onClick={() => {
+                    closeActionsMenu();
+                    setTimeout(() => {
+                      const trigger = document.getElementById(
+                        "bulk-assign-trigger"
+                      );
+                      trigger?.dispatchEvent(
+                        new MouseEvent("click", { bubbles: true })
+                      );
+                    }, 0);
+                  }}
+                  sx={{
+                    borderRadius: 1,
+                    gap: 1.5,
+                    py: 1,
+                    px: 1.5,
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  <AssignmentInd fontSize="small" />
+                  Bulk Assign
+                </MenuItem>
 
-          <PermissionGuard module="lead" action="write" fallback={<></>}>
-            <Button
-              variant="contained"
-              startIcon={!isTablet ? <History /> : null}
-              onClick={() => setUploadStatusOpen(true)}
-              size="small"
+                <MenuItem
+                  onClick={() => {
+                    setUploadStatusOpen(true);
+                    closeActionsMenu();
+                  }}
+                  sx={{
+                    borderRadius: 1,
+                    gap: 1.5,
+                    py: 1,
+                    px: 1.5,
+                    fontSize: "0.9rem",
+                    fontWeight: 600,
+                  }}
+                >
+                  <History fontSize="small" />
+                  {isTablet ? "Upload Status" : "Check Upload Status"}
+                </MenuItem>
+
+                {isTablet && (
+                  <MenuItem
+                    onClick={() => {
+                      onAdd();
+                      closeActionsMenu();
+                    }}
+                    disabled={saving}
+                    sx={{
+                      borderRadius: 1,
+                      gap: 1.5,
+                      py: 1,
+                      px: 1.5,
+                      fontSize: "0.9rem",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {saving ? (
+                      <CircularProgress size={18} color="inherit" />
+                    ) : (
+                      <>
+                        <Add fontSize="small" />
+                        Add Lead
+                      </>
+                    )}
+                  </MenuItem>
+                )}
+              </Stack>
+            </Menu>
+            <Box
               sx={{
-                minWidth: { xs: "100%", sm: "auto" },
-                height: 40,
-                borderRadius: 2,
-                fontWeight: 600,
-                fontSize: "0.8rem",
-                px: { xs: 2, sm: 3 },
-                boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
-                outline: "none",
-                "&:hover": {
-                  boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
-                  transform: "translateY(-1px)",
-                },
-                "&:focus": {
-                  outline: "none",
-                  boxShadow: "none",
-                },
+                position: "absolute",
+                width: 0,
+                height: 0,
+                overflow: "hidden",
               }}
             >
-              {isTablet ? "Upload Status" : "Check Upload Status"}
-            </Button>
-          </PermissionGuard>
-
-          <PermissionGuard module="lead" action="write" fallback={<></>}>
-            <Button
-              variant="contained"
-              startIcon={!isTablet ? <PersonAdd /> : <Add />}
-              onClick={onAdd}
-              disabled={saving}
-              size="small"
-              sx={{
-                minWidth: { xs: "100%", sm: "auto" },
-                height: 40,
-                borderRadius: 2,
-                fontWeight: 600,
-                fontSize: "0.8rem",
-                px: { xs: 2, sm: 3 },
-                boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
-                outline: "none",
-                "&:hover": {
-                  boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
-                  transform: "translateY(-1px)",
-                },
-                "&:focus": {
-                  outline: "none",
-                  boxShadow: "none",
-                },
-              }}
-            >
-              {saving ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                "Add Lead"
-              )}{" "}
-            </Button>
-          </PermissionGuard>
-        </Stack>
+              <BulkUpload loadLeads={loadLeads} hideButton />
+              <BulkAssign
+                onSuccess={loadLeads}
+                hideButton
+                buttonId="bulk-assign-trigger"
+              />
+            </Box>
+          </Box>
+        </PermissionGuard>
       </Box>
 
       {/* Upload Status Dialog */}

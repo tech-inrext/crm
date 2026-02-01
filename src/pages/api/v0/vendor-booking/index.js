@@ -1,8 +1,8 @@
 // /pages/api/v0/vendor-booking/index.js
 import dbConnect from "../../../../lib/mongodb";
-import VendorBooking from "../../../../models/VendorBooking";
+import VendorBooking from "../../../../be/models/VendorBooking";
 import * as cookie from "cookie";
-import { userAuth } from "../../../../middlewares/auth";
+import { userAuth } from "../../../../be/middlewares/auth";
 
 const createBooking = async (req, res) => {
   try {
@@ -52,7 +52,15 @@ const handler = async (req, res) => {
   if (req.method === "POST") {
     return createBooking(req, res);
   }
-  return res.status(405).json({ success: false, message: "Method not allowed" });
+  return res
+    .status(405)
+    .json({ success: false, message: "Method not allowed" });
 };
 
-export default userAuth(handler);
+const withAuth = (handlerFn) => async (req, res) => {
+  const parsedCookies = cookie.parse(req.headers.cookie || "");
+  req.cookies = parsedCookies;
+  return userAuth(req, res, () => handlerFn(req, res));
+};
+
+export default withAuth(handler);
