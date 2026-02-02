@@ -65,7 +65,7 @@ jobs:
           ls -la runtime
           ls -la runtime/.next || true
           ls -la runtime/.next/static || true
-      - name: Upload build to EC2
+      - name: Upload build and restart pm2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -73,3 +73,6 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           source: "runtime"
           target: "/home/ubuntu/crm"
+          script: |
+            cd /home/ubuntu/crm/runtime && pm2 restart all --update-env
+            pm2 save
