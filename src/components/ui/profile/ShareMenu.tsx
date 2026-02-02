@@ -119,7 +119,13 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
 
   const handleWhatsAppDirect = () => {
     if (whatsappNumber) {
-      const cleanedNumber = whatsappNumber.replace(/[^0-9]/g, "");
+      let cleanedNumber = whatsappNumber.replace(/[^0-9]/g, "");
+
+      // Auto prepend 91 if not included
+      if (!cleanedNumber.startsWith("91")) {
+        cleanedNumber = "91" + cleanedNumber;
+      }
+
       window.open(`https://wa.me/${cleanedNumber}`, '_blank');
       onClose();
     }
@@ -133,7 +139,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
   };
 
   const handleWebsite = () => {
-    window.open("https://www.inrext.com", '_blank');
+    window.open("https://inrext.com", '_blank');
     onClose();
   };
 
