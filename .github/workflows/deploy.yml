@@ -73,5 +73,11 @@ jobs:
           key: ${{ secrets.EC2_KEY }}
           source: "runtime"
           target: "/home/ubuntu/crm"
-      - name: Restart PM2 process
-        run: pm2 restart all
+      - name: Restart PM2 process on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            cd /home/ubuntu/crm && pm2 restart all
