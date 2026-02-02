@@ -139,7 +139,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
   };
 
   const handleWebsite = () => {
-    window.open("https://inrext.com", '_blank');
+    window.open("https://www.inrext.com", '_blank');
     onClose();
   };
 
