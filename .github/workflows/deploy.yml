@@ -74,5 +74,5 @@ jobs:
           source: "runtime"
           target: "/home/ubuntu/crm"
           script: |
-            cd /home/ubuntu/crm/runtime && pm2 restart all --update-env
+            cd /home/ubuntu/crm/runtime && pm2 restart crm --update-env
             pm2 save

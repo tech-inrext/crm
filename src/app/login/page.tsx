@@ -236,7 +236,7 @@ const LandingPage: React.FC = () => {
                 textShadow: "0 20px 40px rgba(0,0,0,0.3)",
               }}
             >
-              Built for Teams, <br /> Changed 1.
+              Built for Teams, <br /> 2.
             </Typography>
 
             <Typography
