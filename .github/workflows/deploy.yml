@@ -72,4 +72,4 @@ jobs:
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
           source: "runtime"
-          target: "/home/ubuntu/crm/${{ inputs.tag }}"
+          target: "/home/ubuntu/crm"
