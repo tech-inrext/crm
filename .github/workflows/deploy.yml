@@ -1,4 +1,4 @@
-name: Manual Deploy Next.js (Tag Based)
+name: Production Deployment (Tag Based)
 
 on:
   workflow_dispatch:
@@ -75,6 +75,7 @@ jobs:
           script: |
             set -e
             cd /home/ubuntu/crm/runtime
-            pm2 restart crm --update-env
+            pm2 delete all
+            pm2 start server.js --update-env
             pm2 save
             pm2 status
