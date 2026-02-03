@@ -4,10 +4,10 @@ import Employee from "../models/Employee";
 import Vehicle from "../models/Vehicle"; // implicit registration
 import mongoose from "mongoose";
 import { isSystemAdminAllowed } from "../middlewares/auth";
-import { sendCabBookingApprovalEmail } from "../../lib/cabBookingApproval";
+import { sendCabBookingApprovalEmail } from "../email-service/cab-booking/cabBookingApproval";
 import { NotificationHelper } from "../../lib/notification-helpers";
-import { sendCabBookingStatusEmail } from "../../lib/emails/cabBookingStatus";
-import { sendCabVendorAssignmentEmail } from "../../lib/emails/cabVendorAssignment";
+import { sendCabBookingStatusEmail } from "../email-service/cab-booking/cabBookingStatus";
+import { sendCabVendorAssignmentEmail } from "../email-service/cab-vendor/cabVendorAssignment";
 
 class CabBookingService extends Service {
   constructor() {

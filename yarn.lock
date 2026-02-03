@@ -268,7 +268,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aws-sdk/credential-provider-http@npm:^3.972.3":
+"@aws-sdk/credential-provider-http@npm:^3.972.3, @aws-sdk/credential-provider-http@npm:^3.972.4":
   version: 3.972.4
   resolution: "@aws-sdk/credential-provider-http@npm:3.972.4"
   dependencies:
@@ -325,11 +325,11 @@ __metadata:
   linkType: hard
 
 "@aws-sdk/credential-provider-node@npm:^3.972.2":
-  version: 3.972.2
-  resolution: "@aws-sdk/credential-provider-node@npm:3.972.2"
+  version: 3.972.3
+  resolution: "@aws-sdk/credential-provider-node@npm:3.972.3"
   dependencies:
     "@aws-sdk/credential-provider-env": "npm:^3.972.2"
-    "@aws-sdk/credential-provider-http": "npm:^3.972.3"
+    "@aws-sdk/credential-provider-http": "npm:^3.972.4"
     "@aws-sdk/credential-provider-ini": "npm:^3.972.2"
     "@aws-sdk/credential-provider-process": "npm:^3.972.2"
     "@aws-sdk/credential-provider-sso": "npm:^3.972.2"
@@ -340,7 +340,7 @@ __metadata:
     "@smithy/shared-ini-file-loader": "npm:^4.4.3"
     "@smithy/types": "npm:^4.12.0"
     tslib: "npm:^2.6.2"
-  checksum: 10c0/2e3ba913eb1e29c2492feca6e43479efef5e8627bd402c3cb58ac6ff146f2dd3a730ddcd36d153207b8d9f6b885c91c7705f204121b2753cf8d2c62faebfd29a
+  checksum: 10c0/3ac1dc0468a3c03eac43438a9c5895024f7cc99b43bc3a7c377b0afdfa4d1cc613a27010f884ed53e9aa09e66eed7ed49d82d531b6e09e84f3da7979b16f406f
   languageName: node
   linkType: hard
 
@@ -3594,13 +3594,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"async-generator-function@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "async-generator-function@npm:1.0.0"
-  checksum: 10c0/2c50ef856c543ad500d8d8777d347e3c1ba623b93e99c9263ecc5f965c1b12d2a140e2ab6e43c3d0b85366110696f28114649411cbcd10b452a92a2318394186
-  languageName: node
-  linkType: hard
-
 "async@npm:^3.2.4":
   version: 3.2.6
   resolution: "async@npm:3.2.6"
@@ -5323,23 +5316,20 @@ __metadata:
   linkType: hard
 
 "get-intrinsic@npm:^1.2.4, get-intrinsic@npm:^1.2.5, get-intrinsic@npm:^1.2.6, get-intrinsic@npm:^1.2.7, get-intrinsic@npm:^1.3.0":
-  version: 1.3.1
-  resolution: "get-intrinsic@npm:1.3.1"
+  version: 1.3.0
+  resolution: "get-intrinsic@npm:1.3.0"
   dependencies:
-    async-function: "npm:^1.0.0"
-    async-generator-function: "npm:^1.0.0"
     call-bind-apply-helpers: "npm:^1.0.2"
     es-define-property: "npm:^1.0.1"
     es-errors: "npm:^1.3.0"
     es-object-atoms: "npm:^1.1.1"
     function-bind: "npm:^1.1.2"
-    generator-function: "npm:^2.0.0"
     get-proto: "npm:^1.0.1"
     gopd: "npm:^1.2.0"
     has-symbols: "npm:^1.1.0"
     hasown: "npm:^2.0.2"
     math-intrinsics: "npm:^1.1.0"
-  checksum: 10c0/9f4ab0cf7efe0fd2c8185f52e6f637e708f3a112610c88869f8f041bb9ecc2ce44bf285dfdbdc6f4f7c277a5b88d8e94a432374d97cca22f3de7fc63795deb5d
+  checksum: 10c0/52c81808af9a8130f581e6a6a83e1ba4a9f703359e7a438d1369a5267a25412322f03dcbd7c549edaef0b6214a0630a28511d7df0130c93cfd380f4fa0b5b66a
   languageName: node
   linkType: hard
 
