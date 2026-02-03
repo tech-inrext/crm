@@ -57,7 +57,7 @@ const LeadsCardsView: React.FC<LeadsCardsViewProps> = ({
             onPageSizeChange(size);
             onPageChange(0);
           }}
-          pageSizeOptions={[5, 10, 15, 25]}
+          pageSizeOptions={[8, 16, 32, 48]}
         />
       </Box>
     </Box>
