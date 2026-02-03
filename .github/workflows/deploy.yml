@@ -7,14 +7,14 @@ on:
         description: "Git tag to deploy (e.g. v1.0.2)"
         required: true
 
+env:
+  # Allowlist of GitHub usernames permitted to run this workflow.
+  ALLOWED_ACTORS: '["rahul-raj-hl","nandanSrivastava"]'
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
     if: ${{ contains(fromJson(env.ALLOWED_ACTORS), github.actor) }}
-    env:
-      # Allowlist of GitHub usernames permitted to run this workflow.
-      ALLOWED_ACTORS: '["rahul-raj-hl","nandanSrivastava"]'
-
     steps:
       - name: Checkout tag
         uses: actions/checkout@v4
