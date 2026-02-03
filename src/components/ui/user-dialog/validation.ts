@@ -199,6 +199,26 @@ export const userValidationSchema = Yup.object({
         return true;
       }
     ),
+ 
+  dateOfBirth: Yup.string()
+    .nullable()
+    .required("Date of Birth is required")
+    .test("age-restriction", "Age should be atleast 21 years", (val) => {
+      if (!val) return false;
+      const dob = new Date(val);
+      const today = new Date();
+      const age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      const dayDiff = today.getDate() - dob.getDate();
+      if (
+        age > 21 ||
+        (age === 21 && (monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0)))
+      ) {
+        return true;
+      }
+      return false;
+    }),
+ 
     photoFile: Yup.mixed()
     .nullable()
     .test(
@@ -221,4 +241,5 @@ export const userValidationSchema = Yup.object({
       "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)"
     )
     .transform((value) => value ? value.toUpperCase().trim() : value),
+ 
 });

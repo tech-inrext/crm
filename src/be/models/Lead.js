@@ -96,7 +96,7 @@ const leadSchema = new mongoose.Schema(
     },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Employee",
+      ref: "Employee",   
     },
   },
   { timestamps: true }
