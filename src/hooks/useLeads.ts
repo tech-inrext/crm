@@ -23,7 +23,7 @@ export function useLeads() {
   const [search, setSearch] = useState("");
   const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
   const [page, setPage] = useState(0); // 0-based for UI
-  const [rowsPerPage, setRowsPerPage] = useState(5);
+  const [rowsPerPage, setRowsPerPage] = useState(8);
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   const [formData, setFormData] = useState<LeadFormData>(
@@ -35,7 +35,7 @@ export function useLeads() {
   const loadLeads = useCallback(
     async (
       page = 1,
-      limit = 5,
+      limit = 8,
       search = "",
       statusParams: string[] = []
     ) => {
