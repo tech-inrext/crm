@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Box,
   Paper,
@@ -91,6 +91,8 @@ const Leads: React.FC = () => {
     loadLeads,
     dialogMode,
     handleCloseDialog,
+    dateFilter, // Add dateFilter
+    handleDateFilterChange, // Add dateFilter handler
   } = useLeadsPage();
 
   const {
@@ -202,6 +204,8 @@ const Leads: React.FC = () => {
           loadLeads={loadLeads}
           selectedStatuses={selectedStatuses}
           onStatusesChange={handleStatusChange}
+          dateFilter={dateFilter} // Pass dateFilter
+          onDateFilterChange={handleDateFilterChange} // Pass handler
         />
       </Paper>
 
@@ -335,5 +339,4 @@ const Leads: React.FC = () => {
     </Box>
   );
 };
-
 export default Leads;

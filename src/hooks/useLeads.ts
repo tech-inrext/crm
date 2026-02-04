@@ -30,42 +30,82 @@ export function useLeads() {
     getDefaultLeadFormData()
   );
 
+  // Add date filter state
+  const [dateFilter, setDateFilter] = useState<{
+    startDate?: Date | null;
+    endDate?: Date | null;
+  }>({
+    startDate: null,
+    endDate: null,
+  });
+
   const stats = useMemo(() => calculateLeadStats(leads), [leads]);
 
   const loadLeads = useCallback(
-    async (
-      page = 1,
-      limit = 5,
-      search = "",
-      statusParams: string[] = []
-    ) => {
-      setLoading(true);
-      try {
-        const response = await axios.get(`${API_BASE}`, {
-          params: {
-            page,
-            limit,
-            search,
-            ...(statusParams.length > 0 ? { status: statusParams.join(",") } : {}),
-          },
+  async (
+    pageNum = 1,
+    limit = 5,
+    searchQuery = "",
+    statusParams: string[] = []
+  ) => {
+    setLoading(true);
+    try {
+      const params: any = {
+        page: pageNum,
+        limit,
+        search: searchQuery,
+        ...(statusParams.length > 0 ? { status: statusParams.join(",") } : {}),
+      };
+
+      console.log("Loading leads with params:", params);
+
+      const response = await axios.get(`${API_BASE}`, {
+        params,
+      });
+
+      let apiLeadsData = response.data.data || [];
+      
+      // Client-side date filtering if API doesn't support it
+      if (dateFilter?.startDate || dateFilter?.endDate) {
+        apiLeadsData = apiLeadsData.filter((lead: any) => {
+          if (!lead.createdAt) return true;
+          
+          const leadDate = new Date(lead.createdAt);
+          let passesFilter = true;
+          
+          if (dateFilter.startDate) {
+            passesFilter = passesFilter && leadDate >= dateFilter.startDate;
+          }
+          
+          if (dateFilter.endDate) {
+            // End date ko inclusive banane ke liye
+            const endOfDay = new Date(dateFilter.endDate);
+            endOfDay.setHours(23, 59, 59, 999);
+            passesFilter = passesFilter && leadDate <= endOfDay;
+          }
+          
+          return passesFilter;
         });
-
-        const apiLeadsData = response.data.data || [];
-        const transformedLeads = apiLeadsData.map(transformAPILead);
-
-        setApiLeads(apiLeadsData);
-        setLeads(transformedLeads);
-        setTotal(response.data.pagination?.totalItems || 0);
-      } catch (error) {
-        setApiLeads([]);
-        setLeads([]);
-        setTotal(0);
-      } finally {
-        setLoading(false);
+        
+        console.log("Filtered leads count:", apiLeadsData.length);
       }
-    },
-    []
-  );
+
+      const transformedLeads = apiLeadsData.map(transformAPILead);
+
+      setApiLeads(apiLeadsData);
+      setLeads(transformedLeads);
+      setTotal(apiLeadsData.length); // Client-side filtering ke liye total update karein
+    } catch (error) {
+      console.error("Error loading leads:", error);
+      setApiLeads([]);
+      setLeads([]);
+      setTotal(0);
+    } finally {
+      setLoading(false);
+    }
+  },
+  [dateFilter]
+);
 
   const saveLead = useCallback(
     async (formData: LeadFormData, editId?: string | null) => {
@@ -86,7 +126,7 @@ export function useLeads() {
         setSaving(false);
       }
     },
-    [loadLeads, page, rowsPerPage, search, selectedStatuses] // Added status to the dependency array
+    [loadLeads, page, rowsPerPage, search, selectedStatuses]
   );
 
   const updateLeadStatus = useCallback(
@@ -118,7 +158,7 @@ export function useLeads() {
   );
 
   useEffect(() => {
-    loadLeads(page + 1, rowsPerPage, search, selectedStatuses); // API expects 1-based page
+    loadLeads(page + 1, rowsPerPage, search, selectedStatuses);
   }, [loadLeads, page, rowsPerPage, search, selectedStatuses]);
 
   return {
@@ -145,5 +185,7 @@ export function useLeads() {
     updateLeadStatus,
     selectedStatuses,
     setSelectedStatuses,
+    dateFilter, // Return dateFilter
+    setDateFilter, // Return setDateFilter
   };
 }

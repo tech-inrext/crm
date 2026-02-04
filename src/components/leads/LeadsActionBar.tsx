@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   Box,
   Button,
@@ -10,6 +10,11 @@ import {
   Tooltip,
   useMediaQuery,
   useTheme,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  TextField,
 } from "@/components/ui/Component";
 import {
   Add,
@@ -20,7 +25,9 @@ import {
   UploadFile,
   AssignmentInd,
 } from "@/components/ui/Component";
-import { MoreVert } from "@mui/icons-material";
+import { MoreVert, CalendarToday } from "@mui/icons-material";
+import { LocalizationProvider, DatePicker } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import dynamic from "next/dynamic";
@@ -36,7 +43,7 @@ const CheckUploadStatusDialog = dynamic(
   () => import("@/components/leads/CheckUploadStatusDialog"),
   {
     ssr: false,
-  }
+  },
 );
 
 interface LeadsActionBarProps {
@@ -49,6 +56,15 @@ interface LeadsActionBarProps {
   loadLeads: () => void;
   selectedStatuses: string[];
   onStatusesChange: (statuses: string[]) => void;
+  // New props for date filter
+  dateFilter?: {
+    startDate?: Date | null;
+    endDate?: Date | null;
+  };
+  onDateFilterChange?: (dateRange: {
+    startDate?: Date | null;
+    endDate?: Date | null;
+  }) => void;
 }
 
 const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
@@ -61,23 +77,98 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   loadLeads,
   selectedStatuses = [],
   onStatusesChange,
+  dateFilter,
+  onDateFilterChange,
 }) => {
   const theme = useTheme();
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const [uploadStatusOpen, setUploadStatusOpen] = useState(false);
+  const [dateFilterOpen, setDateFilterOpen] = useState(false);
   const [mobileAnchor, setMobileAnchor] = useState<null | HTMLElement>(null);
   const [actionsAnchor, setActionsAnchor] = useState<null | HTMLElement>(null);
+  const [filterMenuAnchor, setFilterMenuAnchor] = useState<null | HTMLElement>(
+    null,
+  );
+  const [tempDateRange, setTempDateRange] = useState<{
+    startDate?: Date | null;
+    endDate?: Date | null;
+  }>({
+    startDate: dateFilter?.startDate || null,
+    endDate: dateFilter?.endDate || null,
+  });
 
-  const openMobileMenu = (e: React.MouseEvent<HTMLElement>) =>
-    setMobileAnchor(e.currentTarget);
+  // Add ref for filter button
+  const filterButtonRef = useRef<HTMLButtonElement>(null);
+
+  const openMobileMenu = (e: React.MouseEvent<HTMLElement>) => {
+    // If clicked from the filter button directly
+    if (e.currentTarget === filterButtonRef.current) {
+      setMobileAnchor(e.currentTarget);
+    } else {
+      // If clicked from filter menu item, use the filter button as anchor
+      if (filterButtonRef.current) {
+        setMobileAnchor(filterButtonRef.current);
+      }
+    }
+  };
+
   const closeMobileMenu = () => setMobileAnchor(null);
+
+  const openFilterMenu = (e: React.MouseEvent<HTMLElement>) =>
+    setFilterMenuAnchor(e.currentTarget);
+
+  const closeFilterMenu = () => setFilterMenuAnchor(null);
 
   const mobileMenuOpen = Boolean(mobileAnchor);
   const actionsMenuOpen = Boolean(actionsAnchor);
+  const filterMenuOpen = Boolean(filterMenuAnchor);
 
   const openActionsMenu = (e: React.MouseEvent<HTMLElement>) =>
     setActionsAnchor(e.currentTarget);
+
   const closeActionsMenu = () => setActionsAnchor(null);
+
+  // Check if any filters are active
+  const isFilterActive =
+    selectedStatuses.length > 0 ||
+    (dateFilter && (dateFilter.startDate || dateFilter.endDate));
+
+  // Format date for display
+  const formatDateForDisplay = (date: Date | null) => {
+    if (!date) return "";
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+  };
+
+  // Handle date filter apply
+  const handleDateFilterApply = () => {
+    if (onDateFilterChange) {
+      onDateFilterChange(tempDateRange);
+    }
+    setDateFilterOpen(false);
+  };
+
+  // Handle clear date filter
+  const handleClearDateFilter = () => {
+    setTempDateRange({ startDate: null, endDate: null });
+    if (onDateFilterChange) {
+      onDateFilterChange({ startDate: null, endDate: null });
+    }
+    setDateFilterOpen(false);
+  };
+
+  // Handle clear all filters
+  const handleClearAllFilters = () => {
+    onStatusesChange([]);
+    if (onDateFilterChange) {
+      onDateFilterChange({ startDate: null, endDate: null });
+    }
+    closeFilterMenu();
+    closeMobileMenu();
+  };
 
   return (
     <Box
@@ -108,7 +199,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
             maxWidth: "300px",
             flexGrow: 1,
             order: { xs: 1, sm: 1 },
-            minWidth: 0, // allow child to shrink below its intrinsic width
+            minWidth: 0,
           }}
         >
           <SearchBar
@@ -132,6 +223,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
           />
         </Box>
 
+        {/* Filter Button with Menu */}
         <Box
           sx={{
             display: "flex",
@@ -139,33 +231,227 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
             ml: 1,
           }}
         >
-          <Tooltip title="Filter status">
+          <Tooltip title="Filter leads">
             <IconButton
+              ref={filterButtonRef}
               size="small"
-              onClick={openMobileMenu}
+              onClick={(e) => {
+                // Open the main filter menu on button click
+                openFilterMenu(e);
+              }}
               sx={{
-                backgroundColor:
-                  selectedStatuses.length > 0 ? "primary.main" : "#fff",
-                color: selectedStatuses.length > 0 ? "white" : "inherit",
+                backgroundColor: isFilterActive ? "primary.main" : "#fff",
+                color: isFilterActive ? "white" : "inherit",
                 boxShadow: 1,
                 "&:hover": {
-                  backgroundColor:
-                    selectedStatuses.length > 0 ? "primary.dark" : "#f5f5f5",
+                  backgroundColor: isFilterActive ? "primary.dark" : "#f5f5f5",
                 },
+                position: "relative",
               }}
-              aria-controls={mobileMenuOpen ? "mobile-status-menu" : undefined}
+              aria-controls={filterMenuOpen ? "filter-options-menu" : undefined}
               aria-haspopup="true"
-              aria-expanded={mobileMenuOpen ? "true" : undefined}
+              aria-expanded={filterMenuOpen ? "true" : undefined}
             >
               <FilterAltIcon fontSize="small" />
+              {isFilterActive && (
+                <Box
+                  sx={{
+                    position: "absolute",
+                    top: 4,
+                    right: 4,
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    backgroundColor: "error.main",
+                    border: "1px solid white",
+                  }}
+                />
+              )}
             </IconButton>
           </Tooltip>
 
+          {/* Filter Options Menu */}
+          <Menu
+            id="filter-options-menu"
+            anchorEl={filterMenuAnchor}
+            open={filterMenuOpen}
+            onClose={closeFilterMenu}
+            MenuListProps={{
+              sx: {
+                minWidth: 200,
+                py: 0.5,
+              },
+            }}
+            PaperProps={{
+              sx: {
+                borderRadius: 2,
+                boxShadow: "0 12px 24px rgba(0,0,0,0.12)",
+                overflow: "hidden",
+                mt: 1,
+              },
+            }}
+          >
+            {/* Date Filter Option */}
+            <MenuItem
+              onClick={() => {
+                setTempDateRange({
+                  startDate: dateFilter?.startDate || null,
+                  endDate: dateFilter?.endDate || null,
+                });
+                setDateFilterOpen(true);
+                closeFilterMenu();
+              }}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                py: 0.75,
+                px: 1.5,
+                borderRadius: 1,
+                mx: 0.75,
+                my: 0.25,
+                "&:hover": {
+                  backgroundColor: "action.hover",
+                },
+              }}
+            >
+              <CalendarToday fontSize="small" />
+              <Box sx={{ flexGrow: 1 }}>
+                <Box
+                  component="span"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                    display: "block",
+                  }}
+                >
+                  Date Filter
+                </Box>
+                {(dateFilter?.startDate || dateFilter?.endDate) && (
+                  <Box
+                    component="span"
+                    sx={{
+                      fontSize: "0.75rem",
+                      color: "text.secondary",
+                      display: "block",
+                      mt: 0.25,
+                    }}
+                  >
+                    {dateFilter.startDate &&
+                      formatDateForDisplay(dateFilter.startDate)}
+                    {dateFilter.startDate && dateFilter.endDate && " - "}
+                    {dateFilter.endDate &&
+                      formatDateForDisplay(dateFilter.endDate)}
+                  </Box>
+                )}
+              </Box>
+              {(dateFilter?.startDate || dateFilter?.endDate) && (
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    backgroundColor: "primary.main",
+                  }}
+                />
+              )}
+            </MenuItem>
+
+            {/* Status Filter Option */}
+            <MenuItem
+              onClick={(e) => {
+                closeFilterMenu();
+                // Open status filter menu with filter button as anchor
+                openMobileMenu(e);
+              }}
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 1.5,
+                py: 0.75,
+                px: 1.5,
+                borderRadius: 1,
+                mx: 0.75,
+                my: 0.25,
+                "&:hover": {
+                  backgroundColor: "action.hover",
+                },
+              }}
+            >
+              <FilterAltIcon fontSize="small" />
+              <Box sx={{ flexGrow: 1 }}>
+                <Box
+                  component="span"
+                  sx={{
+                    fontWeight: 600,
+                    fontSize: "0.9rem",
+                    display: "block",
+                  }}
+                >
+                  Status Filter
+                </Box>
+                {selectedStatuses.length > 0 && (
+                  <Box
+                    component="span"
+                    sx={{
+                      fontSize: "0.75rem",
+                      color: "text.secondary",
+                      display: "block",
+                      mt: 0.25,
+                    }}
+                  >
+                    {selectedStatuses.length} selected
+                  </Box>
+                )}
+              </Box>
+              {selectedStatuses.length > 0 && (
+                <Box
+                  sx={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: "50%",
+                    backgroundColor: "primary.main",
+                  }}
+                />
+              )}
+            </MenuItem>
+
+            {/* Clear All Filters Option */}
+            {isFilterActive && (
+              <MenuItem
+                onClick={handleClearAllFilters}
+                sx={{
+                  color: "error.main",
+                  justifyContent: "center",
+                  borderTop: "1px solid rgba(0,0,0,0.08)",
+                  mt: 0.5,
+                  py: 1,
+                  fontWeight: 600,
+                  fontSize: "0.9rem",
+                  "&:hover": {
+                    backgroundColor: "rgba(211, 47, 47, 0.04)",
+                  },
+                }}
+              >
+                Clear All Filters
+              </MenuItem>
+            )}
+          </Menu>
+
+          {/* Status Filter Menu */}
           <Menu
             id="mobile-status-menu"
             anchorEl={mobileAnchor}
             open={mobileMenuOpen}
             onClose={closeMobileMenu}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "left",
+            }}
             MenuListProps={{
               sx: {
                 minWidth: 220,
@@ -177,6 +463,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 borderRadius: 2,
                 boxShadow: "0 12px 24px rgba(0,0,0,0.12)",
                 overflow: "hidden",
+                mt: 1,
               },
             }}
           >
@@ -204,6 +491,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                     ? selectedStatuses.filter((st) => st !== s)
                     : [...selectedStatuses, s];
                   onStatusesChange(newStatuses);
+                  // Keep menu open for multiple selections
                 }}
                 sx={{
                   display: "flex",
@@ -223,7 +511,12 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                   type="checkbox"
                   checked={selectedStatuses.includes(s)}
                   readOnly
-                  style={{ cursor: "pointer" }}
+                  style={{
+                    cursor: "pointer",
+                    width: 16,
+                    height: 16,
+                    accentColor: "#1e5fbf",
+                  }}
                 />
                 <Box
                   component="span"
@@ -231,6 +524,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                     textTransform: "capitalize",
                     fontWeight: 600,
                     fontSize: "0.9rem",
+                    flexGrow: 1,
                   }}
                 >
                   {s}
@@ -250,9 +544,13 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                   mt: 0.5,
                   py: 1,
                   fontWeight: 600,
+                  fontSize: "0.9rem",
+                  "&:hover": {
+                    backgroundColor: "rgba(211, 47, 47, 0.04)",
+                  },
                 }}
               >
-                Clear All
+                Clear Status
               </MenuItem>
             )}
           </Menu>
@@ -323,6 +621,14 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               open={actionsMenuOpen}
               onClose={closeActionsMenu}
               MenuListProps={{ sx: { p: 0.5 } }}
+              PaperProps={{
+                sx: {
+                  borderRadius: 2,
+                  boxShadow: "0 12px 24px rgba(0,0,0,0.12)",
+                  overflow: "hidden",
+                  mt: 1,
+                },
+              }}
             >
               <Stack
                 direction="column"
@@ -372,6 +678,9 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                     px: 1.5,
                     fontSize: "0.9rem",
                     fontWeight: 600,
+                    "&:hover": {
+                      backgroundColor: "action.hover",
+                    },
                   }}
                 >
                   <DownloadIcon fontSize="small" />
@@ -382,7 +691,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                   onClick={() => {
                     closeActionsMenu();
                     const input = document.getElementById(
-                      "bulk-upload-excel"
+                      "bulk-upload-excel",
                     ) as HTMLInputElement | null;
                     input?.click();
                   }}
@@ -393,6 +702,9 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                     px: 1.5,
                     fontSize: "0.9rem",
                     fontWeight: 600,
+                    "&:hover": {
+                      backgroundColor: "action.hover",
+                    },
                   }}
                 >
                   <UploadFile fontSize="small" />
@@ -404,10 +716,10 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                     closeActionsMenu();
                     setTimeout(() => {
                       const trigger = document.getElementById(
-                        "bulk-assign-trigger"
+                        "bulk-assign-trigger",
                       );
                       trigger?.dispatchEvent(
-                        new MouseEvent("click", { bubbles: true })
+                        new MouseEvent("click", { bubbles: true }),
                       );
                     }, 0);
                   }}
@@ -418,6 +730,9 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                     px: 1.5,
                     fontSize: "0.9rem",
                     fontWeight: 600,
+                    "&:hover": {
+                      backgroundColor: "action.hover",
+                    },
                   }}
                 >
                   <AssignmentInd fontSize="small" />
@@ -436,6 +751,9 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                     px: 1.5,
                     fontSize: "0.9rem",
                     fontWeight: 600,
+                    "&:hover": {
+                      backgroundColor: "action.hover",
+                    },
                   }}
                 >
                   <History fontSize="small" />
@@ -456,6 +774,9 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                       px: 1.5,
                       fontSize: "0.9rem",
                       fontWeight: 600,
+                      "&:hover": {
+                        backgroundColor: "action.hover",
+                      },
                     }}
                   >
                     {saving ? (
@@ -488,6 +809,78 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
           </Box>
         </PermissionGuard>
       </Box>
+
+      {/* Date Filter Dialog */}
+      <Dialog
+        open={dateFilterOpen}
+        onClose={() => setDateFilterOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle sx={{ pb: 1, fontWeight: 600 }}>
+          Filter by Date Range
+        </DialogTitle>
+        <DialogContent>
+          <LocalizationProvider dateAdapter={AdapterDateFns}>
+            <Box
+              sx={{ display: "flex", flexDirection: "column", gap: 2, mt: 1 }}
+            >
+              <DatePicker
+                label="Start Date"
+                value={tempDateRange.startDate}
+                onChange={(newValue) =>
+                  setTempDateRange((prev) => ({ ...prev, startDate: newValue }))
+                }
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    size: "small",
+                  },
+                }}
+              />
+              <DatePicker
+                label="End Date"
+                value={tempDateRange.endDate}
+                onChange={(newValue) =>
+                  setTempDateRange((prev) => ({ ...prev, endDate: newValue }))
+                }
+                minDate={tempDateRange.startDate || undefined}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    size: "small",
+                  },
+                }}
+              />
+            </Box>
+          </LocalizationProvider>
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 2, gap: 1 }}>
+          <Button
+            onClick={handleClearDateFilter}
+            color="error"
+            variant="outlined"
+            size="small"
+          >
+            Clear
+          </Button>
+          <Button
+            onClick={() => setDateFilterOpen(false)}
+            variant="outlined"
+            size="small"
+          >
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDateFilterApply}
+            variant="contained"
+            size="small"
+            disabled={!tempDateRange.startDate && !tempDateRange.endDate}
+          >
+            Apply Filter
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       {/* Upload Status Dialog */}
       <CheckUploadStatusDialog
