@@ -214,7 +214,7 @@ const RequiredDocuments: React.FC = () => {
       <ForFreelancer />
 
       <Typography variant="h6" sx={{ mt: 2, fontWeight: 600 }}>
-        Required Documents
+        Required Documents (Only JPG files are allowed)
       </Typography>
 
       <Box

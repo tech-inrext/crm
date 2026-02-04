@@ -84,7 +84,7 @@ const NomineeSection: React.FC = () => {
           )}
         </Field>
 
-        <Field name="nominee.gender">
+        {/* <Field name="nominee.gender">
           {({ field, meta }: FieldProps) => (
             <TextField
               {...field}
@@ -108,7 +108,7 @@ const NomineeSection: React.FC = () => {
               ))}
             </TextField>
           )}
-        </Field>
+        </Field> */}
 
         <Field name="nominee.occupation">
           {({ field, meta }: FieldProps) => (
@@ -116,11 +116,12 @@ const NomineeSection: React.FC = () => {
               {...field}
               value={field.value ?? ""}
               label={FIELD_LABELS.NOMINEE_OCCUPATION}
+              select
               fullWidth
               margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, gridColumn: "1 / -1" }}
+              sx={{ bgcolor: "#fff", borderRadius: 1}}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
