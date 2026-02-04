@@ -4,7 +4,7 @@ import { MODULE_STYLES } from "@/styles/moduleStyles";
 
 const LoadingSkeleton = memo(() => (
   <Box sx={MODULE_STYLES.leads.cardsGrid}>
-    {Array.from({ length: 6 }).map((_, index) => (
+    {Array.from({ length: 8 }).map((_, index) => (
       <Card
         key={index}
         sx={{

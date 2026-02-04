@@ -1,4 +1,4 @@
-name: Manual Deploy Next.js (Tag Based)
+name: Production Deployment (Tag Based)
 
 on:
   workflow_dispatch:
@@ -10,7 +10,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout tag
         uses: actions/checkout@v4
@@ -51,25 +50,31 @@ jobs:
       - name: Prepare runtime bundle (standalone)
         run: |
           set -e
-
           rm -rf runtime
           mkdir runtime
-
-          # 1️⃣ Copy EVERYTHING from standalone (creates .next, server.js, node_modules, package.json)
           cp -R .next/standalone/. runtime/
-
-          # 2️⃣ Merge static assets into existing .next (no deletion)
+          mkdir -p runtime/.next
           cp -R .next/static runtime/.next/
 
-          echo "✅ Runtime bundle prepared:"
-          ls -la runtime
-          ls -la runtime/.next || true
-          ls -la runtime/.next/static || true
-      - name: Upload build to EC2
+      - name: Upload runtime to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
-          source: "runtime"
-          target: "/home/ubuntu/crm/${{ inputs.tag }}"
+          source: "runtime/**"
+          target: "/home/ubuntu/crm"
+
+      - name: Restart pm2 on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            set -e
+            cd /home/ubuntu/crm/runtime
+            pm2 delete all
+            pm2 start server.js --update-env
+            pm2 save
+            pm2 status

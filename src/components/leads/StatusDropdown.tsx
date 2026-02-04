@@ -66,7 +66,7 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
         }
         sx={{
           minWidth: 70,
-          maxWidth: 110,
+          maxWidth: 150,
           width: "fit-content",
           height: 24,
           backgroundColor: getStatusColor(currentStatus),
@@ -78,7 +78,7 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
           opacity: disabled || isUpdating ? 0.6 : 1,
           "& .MuiSelect-select": {
             padding: "4px 6px 4px 8px !important",
-            paddingRight: "20px !important",
+            paddingRight: "28px !important",
             minHeight: "auto !important",
             display: "flex",
             alignItems: "center",
