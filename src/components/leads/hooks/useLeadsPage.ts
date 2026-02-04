@@ -28,6 +28,8 @@ export function useLeadsPage() {
     selectedStatuses,
     setSelectedStatuses,
     stats,
+    dateFilter, // Get dateFilter from useLeads
+    setDateFilter, // Get setDateFilter from useLeads
   } = useLeads();
 
   const [dialogMode, setDialogMode] = useState<"edit" | "view">("edit");
@@ -52,10 +54,8 @@ export function useLeadsPage() {
     const mode = searchParams.get("mode") as "view" | "edit" | null;
 
     if (openDialog === "true" && leadId) {
-      // We need to wait for leads to be loaded potentially, but if we have the ID we can try to find it
-      // or just set the ID and let the other effect handle form data population
       setEditId(leadId);
-      setDialogMode(mode || "view"); // Default to view if coming from notification/url without explicit mode, or use query param
+      setDialogMode(mode || "view");
       setOpen(true);
     }
   }, [searchParams]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -100,6 +100,12 @@ export function useLeadsPage() {
     [searchParams, router, setSelectedStatuses, setPage]
   );
 
+  const handleDateFilterChange = useCallback((dateRange: { startDate?: Date | null; endDate?: Date | null }) => {
+    console.log("Setting date filter:", dateRange); // Debug log
+    setDateFilter(dateRange);
+    setPage(0);
+  }, [setDateFilter]);
+
   const handleEdit = useCallback((leadId: string, mode: "edit" | "view" = "edit") => {
     setEditId(leadId);
     setDialogMode(mode);
@@ -117,12 +123,6 @@ export function useLeadsPage() {
     params.delete("leadId");
     params.delete("mode");
 
-    // Use replace to avoid adding to history stack, or push if navigation history is desired. 
-    // Usually replacing is better for closing dialogs to avoid "back button re-opens dialog" loop if not desired, 
-    // but here push might be safer if we want to preserve state? 
-    // Actually, usually users expect back button to go back to previous page, not re-open dialog.
-    // Let's use push to be consistent with other navigation, but replace is often cleaner for state changes.
-    // The user just said "remove the params from url".
     router.push(`?${params.toString()}`, { scroll: false });
   }, [searchParams, router]);
 
@@ -146,11 +146,13 @@ export function useLeadsPage() {
     setRowsPerPage,
     total,
     stats,
+    dateFilter, // Add dateFilter to return
     // Handlers
     handleSearchChange,
     handleStatusChange,
     handleEdit,
     handleCloseDialog,
+    handleDateFilterChange, // Add date filter handler to return
     saveLead,
     updateLeadStatus,
     loadLeads,
