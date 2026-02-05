@@ -42,6 +42,32 @@ interface ProfileProps {
   } | null;
 }
 
+// Phone formatter utility function
+const formatPhoneForDisplay = (phone?: string): string => {
+  if (!phone) return '';
+  
+  // Remove all non-digit characters
+  const digitsOnly = phone.replace(/\D/g, '');
+  
+  // Format Indian numbers (10 digits)
+  if (digitsOnly.length === 10) {
+    return `+91 ${digitsOnly.substring(0, 5)} ${digitsOnly.substring(5)}`;
+  }
+  
+  // Format numbers with country code (12 digits for India)
+  if (digitsOnly.length === 12 && digitsOnly.startsWith('91')) {
+    return `+${digitsOnly.substring(0, 2)} ${digitsOnly.substring(2, 7)} ${digitsOnly.substring(7)}`;
+  }
+  
+  // If already includes +, return as is
+  if (phone.includes('+')) {
+    return phone;
+  }
+  
+  // Default: add + for international format
+  return `+${digitsOnly}`;
+};
+
 const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
 
@@ -359,3 +385,5 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
 };
 
 export default Profile;
+
+
