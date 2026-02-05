@@ -47,6 +47,9 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: yarn build
 
+      - name: Build worker
+        run: yarn worker:build
+
       - name: Prepare runtime bundle (standalone)
         run: |
           set -e
@@ -55,6 +58,7 @@ jobs:
           cp -R .next/standalone/. runtime/
           mkdir -p runtime/.next
           cp -R .next/static runtime/.next/
+          cp -R dist/worker/worker.cjs runtime/worker/worker.cjs
 
       - name: Upload runtime to EC2
         uses: appleboy/scp-action@v0.1.7
