@@ -249,7 +249,7 @@ const LeadCard = memo(
                     ariaLabel="Actions"
                     sx={{ 
                         position: 'absolute', 
-                        bottom: 0, 
+                        bottom: 16, 
                         right: 0,
                         '& .MuiFab-root': {
                             width: 36,
