@@ -58,6 +58,7 @@ jobs:
           cp -R .next/standalone/. runtime/
           mkdir -p runtime/.next
           cp -R .next/static runtime/.next/
+          mkdir -p runtime/worker
           cp -R dist/worker/worker.cjs runtime/worker/worker.cjs
 
       - name: Upload runtime to EC2
