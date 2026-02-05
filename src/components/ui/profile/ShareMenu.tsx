@@ -164,8 +164,15 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
   };
 
   const handleWhatsAppDirect = () => {
-    if (formattedWhatsAppNumber) {
-      window.open(`https://wa.me/${formattedWhatsAppNumber}`, '_blank');
+    if (whatsappNumber) {
+      let cleanedNumber = whatsappNumber.replace(/[^0-9]/g, "");
+
+      // Auto prepend 91 if not included
+      if (!cleanedNumber.startsWith("91")) {
+        cleanedNumber = "91" + cleanedNumber;
+      }
+
+      window.open(`https://wa.me/${cleanedNumber}`, '_blank');
       onClose();
     } else {
       setSnackbarMessage("No valid WhatsApp number available");

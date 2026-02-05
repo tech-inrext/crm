@@ -77,7 +77,7 @@ export interface Property {
     url: string;
     title?: string;
     description?: string;
-    type?: "2d" | "3d" | "structural";
+    type?: "2d" | "3d" | "structural" | "image" | "pdf";
     uploadedAt?: string;
   }[];
 
@@ -181,6 +181,33 @@ export interface SinglePublicPropertyResponse {
   message?: string;
 }
 
+// Helper function to clean base64 data
+const cleanBase64Data = (data: any): any => {
+  const cleaned = JSON.parse(JSON.stringify(data));
+  
+  const cleanArray = (arr: any[] | undefined) => {
+    if (!arr || !Array.isArray(arr)) return arr;
+    return arr.map(item => {
+      if (item && item.url && item.url.startsWith('data:')) {
+        // Remove base64 items
+        console.warn('Removing base64 data:', item.url.substring(0, 50) + '...');
+        return null;
+      }
+      return item;
+    }).filter(item => item !== null);
+  };
+  
+  // Clean all file arrays
+  cleaned.images = cleanArray(cleaned.images);
+  cleaned.propertyImages = cleanArray(cleaned.propertyImages);
+  cleaned.floorPlans = cleanArray(cleaned.floorPlans);
+  cleaned.creatives = cleanArray(cleaned.creatives);
+  cleaned.videos = cleanArray(cleaned.videos);
+  cleaned.brochureUrls = cleanArray(cleaned.brochureUrls);
+  
+  return cleaned;
+};
+
 export const propertyService = {
   getAllProperties: async (
     search = '', 
@@ -239,7 +266,6 @@ export const propertyService = {
     return response.data;
   },
 
-  // Get single public property
   getPublicPropertyById: async (idOrSlug: string, withChildren = "false"): Promise<SinglePublicPropertyResponse> => {
     const response = await publicApi.get(`/property/${idOrSlug}`, {
       params: { 
@@ -250,7 +276,6 @@ export const propertyService = {
     return response.data;
   },
 
-  // Get featured properties
   getFeaturedProperties: async (limit = 6): Promise<PublicPropertyResponse> => {
     const response = await publicApi.get('/property', {
       params: { 
@@ -263,13 +288,11 @@ export const propertyService = {
     return response.data;
   },
 
-  // Toggle public visibility (admin only)
   togglePublicVisibility: async (id: string, isPublic: boolean): Promise<SinglePropertyResponse> => {
     const response = await api.patch(`/property/${id}`, { isPublic });
     return response.data;
   },
 
-  // Toggle featured status (admin only)
   toggleFeaturedStatus: async (id: string, isFeatured: boolean): Promise<SinglePropertyResponse> => {
     const response = await api.patch(`/property/${id}`, { isFeatured });
     return response.data;
@@ -348,11 +371,14 @@ export const propertyService = {
 
   createProperty: async (propertyData: any): Promise<PropertyResponse> => {
     try {
+      // Clean any base64 data before sending
+      const cleanedData = cleanBase64Data(propertyData);
+      
       const formattedData = {
-        ...propertyData,
-        propertyType: Array.isArray(propertyData.propertyType) ? propertyData.propertyType : [propertyData.propertyType],
+        ...cleanedData,
+        propertyType: Array.isArray(cleanedData.propertyType) ? cleanedData.propertyType : [cleanedData.propertyType],
         
-        images: propertyData.images?.map((img: any) => ({
+        images: cleanedData.images?.map((img: any) => ({
           url: img.url,
           title: img.title || '',
           description: img.description || '',
@@ -360,7 +386,7 @@ export const propertyService = {
           uploadedAt: img.uploadedAt || new Date().toISOString()
         })) || [],
         
-        propertyImages: propertyData.propertyImages?.map((img: any) => ({
+        propertyImages: cleanedData.propertyImages?.map((img: any) => ({
           url: img.url,
           title: img.title || '',
           description: img.description || '',
@@ -368,7 +394,7 @@ export const propertyService = {
           uploadedAt: img.uploadedAt || new Date().toISOString()
         })) || [],
         
-        floorPlans: propertyData.floorPlans?.map((plan: any) => ({
+        floorPlans: cleanedData.floorPlans?.map((plan: any) => ({
           url: plan.url,
           title: plan.title || '',
           description: plan.description || '',
@@ -376,7 +402,7 @@ export const propertyService = {
           uploadedAt: plan.uploadedAt || new Date().toISOString()
         })) || [],
         
-        creatives: propertyData.creatives?.map((creative: any) => ({
+        creatives: cleanedData.creatives?.map((creative: any) => ({
           type: creative.type || 'image',
           url: creative.url,
           title: creative.title || '',
@@ -385,7 +411,7 @@ export const propertyService = {
           uploadedAt: creative.uploadedAt || new Date().toISOString()
         })) || [],
         
-        videos: propertyData.videos?.map((video: any) => ({
+        videos: cleanedData.videos?.map((video: any) => ({
           url: video.url,
           title: video.title || '',
           description: video.description || '',
@@ -394,35 +420,24 @@ export const propertyService = {
           uploadedAt: video.uploadedAt || new Date().toISOString()
         })) || [],
         
-        brochureUrls: propertyData.brochureUrls?.map((brochure: any) => ({
+        brochureUrls: cleanedData.brochureUrls?.map((brochure: any) => ({
           title: brochure.title || '',
           url: brochure.url,
           type: brochure.type || 'PDF Document'
         })) || [],
 
-        floorPlans: propertyData.floorPlans?.map((plan: any) => ({
-          url: plan.url,
-          title: plan.title || '',
-          description: plan.description || '',
-          type: plan.type === 'image/webp' ? 'image' : 
-                 plan.type === 'application/pdf' ? 'pdf' : 
-                 plan.type || '2d',
-          uploadedAt: plan.uploadedAt || new Date().toISOString()
-        })) || [],
-        
-        residentialProperties: propertyData.residentialProperties?.map((prop: any) => ({
+        residentialProperties: cleanedData.residentialProperties?.map((prop: any) => ({
           propertyName: prop.propertyName || '',
           propertyDescription: prop.propertyDescription || '',
           price: prop.price || '',
-          floors: prop.floors || undefined,
-          paymentPlan: prop.paymentPlan || propertyData.paymentPlan,
+          floors: prop.floors,
+          paymentPlan: prop.paymentPlan || cleanedData.paymentPlan,
           bedrooms: prop.bedrooms || 0,
           bathrooms: prop.bathrooms || 0,
           toilet: prop.toilet || 0,
           balcony: prop.balcony || 0,
           carpetArea: prop.carpetArea || '',
           builtUpArea: prop.builtUpArea || '',
-          floors: prop.floors,
           minSize: prop.minSize || '',
           maxSize: prop.maxSize || '',
           sizeUnit: prop.sizeUnit || 'sq.ft.',
@@ -438,22 +453,19 @@ export const propertyService = {
             url: plan.url,
             title: plan.title || '',
             description: plan.description || '',
-            type: plan.type === 'image/webp' ? 'image' : 
-                   plan.type === 'application/pdf' ? 'pdf' : 
-                   plan.type || '2d',
+            type: plan.type || '2d',
             uploadedAt: plan.uploadedAt || new Date().toISOString()
           })) || []
         })) || [],
         
-        commercialProperties: propertyData.commercialProperties?.map((prop: any) => ({
+        commercialProperties: cleanedData.commercialProperties?.map((prop: any) => ({
           propertyName: prop.propertyName || '',
           propertyDescription: prop.propertyDescription || '',
           price: prop.price || '',
-          floors: prop.floors || undefined,
-          paymentPlan: prop.paymentPlan || propertyData.paymentPlan,
+          floors: prop.floors,
+          paymentPlan: prop.paymentPlan || cleanedData.paymentPlan,
           carpetArea: prop.carpetArea || '',
           builtUpArea: prop.builtUpArea || '',
-          floors: prop.floors,
           minSize: prop.minSize || '',
           maxSize: prop.maxSize || '',
           sizeUnit: prop.sizeUnit || 'sq.ft.',
@@ -469,18 +481,16 @@ export const propertyService = {
             url: plan.url,
             title: plan.title || '',
             description: plan.description || '',
-            type: plan.type === 'image/webp' ? 'image' : 
-                   plan.type === 'application/pdf' ? 'pdf' : 
-                   plan.type || '2d',
+            type: plan.type || '2d',
             uploadedAt: plan.uploadedAt || new Date().toISOString()
           })) || []
         })) || [],
         
-        plotProperties: propertyData.plotProperties?.map((prop: any) => ({
+        plotProperties: cleanedData.plotProperties?.map((prop: any) => ({
           propertyName: prop.propertyName || '',
           propertyDescription: prop.propertyDescription || '',
           price: prop.price || '',
-          paymentPlan: prop.paymentPlan || propertyData.paymentPlan,
+          paymentPlan: prop.paymentPlan || cleanedData.paymentPlan,
           ownershipType: prop.ownershipType || 'Freehold',
           landType: prop.landType || 'Residential Plot',
           approvedBy: prop.approvedBy || '',
@@ -500,9 +510,7 @@ export const propertyService = {
             url: plan.url,
             title: plan.title || '',
             description: plan.description || '',
-            type: plan.type === 'image/webp' ? 'image' : 
-                   plan.type === 'application/pdf' ? 'pdf' : 
-                   plan.type || '2d',
+            type: plan.type || '2d',
             uploadedAt: plan.uploadedAt || new Date().toISOString()
           })) || []
         })) || []
@@ -511,12 +519,15 @@ export const propertyService = {
       const response = await api.post('/property', formattedData);
       return response.data;
     } catch (error: any) {
-      throw new Error(error.message || "Failed to create property");
+      console.error('Error creating property:', error);
+      throw new Error(error.response?.data?.message || error.message || "Failed to create property");
     }
   },
 
   updateProperty: async (idOrSlug: string, propertyData: Partial<Property>): Promise<SinglePropertyResponse> => {
-    const response = await api.patch(`/property/${idOrSlug}`, propertyData);
+    // Clean any base64 data before sending
+    const cleanedData = cleanBase64Data(propertyData);
+    const response = await api.patch(`/property/${idOrSlug}`, cleanedData);
     return response.data;
   },
 
@@ -551,4 +562,31 @@ export const propertyService = {
     });
     return response.data;
   },
+  
+  // Helper to validate property data has no base64
+  validatePropertyData: (propertyData: any): { valid: boolean; errors: string[] } => {
+    const errors: string[] = [];
+    
+    const checkArray = (arr: any[], name: string) => {
+      if (!arr || !Array.isArray(arr)) return;
+      
+      arr.forEach((item, index) => {
+        if (item && item.url && item.url.startsWith('data:')) {
+          errors.push(`Base64 data found in ${name}[${index}]`);
+        }
+      });
+    };
+    
+    checkArray(propertyData.images, 'images');
+    checkArray(propertyData.propertyImages, 'propertyImages');
+    checkArray(propertyData.floorPlans, 'floorPlans');
+    checkArray(propertyData.creatives, 'creatives');
+    checkArray(propertyData.videos, 'videos');
+    checkArray(propertyData.brochureUrls, 'brochureUrls');
+    
+    return {
+      valid: errors.length === 0,
+      errors
+    };
+  }
 };

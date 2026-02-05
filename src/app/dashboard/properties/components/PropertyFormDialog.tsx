@@ -25,9 +25,10 @@ import {
   Tooltip,
   LinearProgress,
 } from "@mui/material";
-import { CloudUpload, Public } from "@mui/icons-material";
+import { CloudUpload, Public, Warning } from "@mui/icons-material";
 import { toast } from 'sonner';
 import { Property } from '@/services/propertyService';
+import { uploadService } from '@/services/uploadService';
 import { PropertyTypeSelector, AdditionalDetailsSection } from './index';
 
 interface PropertyFormDialogProps {
@@ -68,6 +69,39 @@ const UploadProgress = ({ uploadProgress }: { uploadProgress: { [key: string]: n
   );
 };
 
+const Base64Warning = ({ formData }: { formData: any }) => {
+  const hasBase64 = () => {
+    const checkArray = (arr: any[]) => {
+      if (!arr || !Array.isArray(arr)) return false;
+      return arr.some(item => item && item.url && item.url.startsWith('data:'));
+    };
+    
+    return (
+      checkArray(formData.images) ||
+      checkArray(formData.propertyImages) ||
+      checkArray(formData.floorPlans) ||
+      checkArray(formData.creatives) ||
+      checkArray(formData.videos) ||
+      checkArray(formData.brochureUrls)
+    );
+  };
+  
+  if (!hasBase64()) return null;
+  
+  return (
+    <Alert 
+      severity="warning" 
+      icon={<Warning />}
+      sx={{ mb: 2 }}
+    >
+      <Typography variant="body2">
+        <strong>Warning:</strong> Some files are stored as base64 data. 
+        Please re-upload these files to S3 for better performance.
+      </Typography>
+    </Alert>
+  );
+};
+
 const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
   open,
   onClose,
@@ -83,6 +117,14 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
 }) => {
   const handleSubmit = async () => {
     await onSubmit(formData);
+  };
+
+  const handleFileUploadWrapper = async (files: FileList, field: string) => {
+    try {
+      await onFileUpload(files, field);
+    } catch (error: any) {
+      toast.error(`Upload failed: ${error.message}`);
+    }
   };
 
   return (
@@ -106,6 +148,11 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
             <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
               Fields marked with <Typography component="span" color="error">*</Typography> are required
             </Typography>
+          </Grid>
+          
+          {/* Base64 Warning */}
+          <Grid size={{ xs: 12 }}>
+            <Base64Warning formData={formData} />
           </Grid>
           
           <Grid size={{ xs: 12, md: 6 }}>
@@ -279,8 +326,14 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
           <Grid size={{ xs: 12 }}>
             <Paper sx={{ p: 2, mb: 2, border: '1px solid #e0e0e0', borderRadius: '15px' }}>
               <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
-                Project Media Uploads
+                Project Media Uploads (S3 Storage)
               </Typography>
+
+              <Alert severity="info" sx={{ mb: 2 }}>
+                <Typography variant="body2">
+                  All files are uploaded directly to Amazon S3 cloud storage for better performance and reliability.
+                </Typography>
+              </Alert>
 
               {/* Upload Progress */}
               <UploadProgress uploadProgress={uploadProgress} />
@@ -295,14 +348,14 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
                     multiple
                     onChange={async (e) => {
                       if (e.target.files) {
-                        await onFileUpload(e.target.files, 'images');
+                        await handleFileUploadWrapper(e.target.files, 'images');
                       }
                     }}
                     disabled={uploading}
                   />
                   <label htmlFor="project-images">
                     <Button variant="outlined" component="span" startIcon={<CloudUpload />} fullWidth disabled={uploading}>
-                      {uploading ? 'Uploading...' : 'Upload Project Images & Files'}
+                      {uploading ? 'Uploading to S3...' : 'Upload Project Images & Files'}
                     </Button>
                   </label>
                   
@@ -317,6 +370,7 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
                             images: prev.images.filter((_: any, i: number) => i !== imgIndex) 
                           }));
                         }}
+                        color={img.url && img.url.startsWith('data:') ? "warning" : "default"}
                       />
                     ))}
                   </Box>
@@ -331,14 +385,14 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
                     multiple
                     onChange={async (e) => {
                       if (e.target.files) {
-                        await onFileUpload(e.target.files, 'brochureUrls');
+                        await handleFileUploadWrapper(e.target.files, 'brochureUrls');
                       }
                     }}
                     disabled={uploading}
                   />
                   <label htmlFor="brochure-upload">
                     <Button variant="outlined" component="span" startIcon={<CloudUpload />} fullWidth disabled={uploading}>
-                      {uploading ? 'Uploading...' : 'Upload Brochures & Documents'}
+                      {uploading ? 'Uploading to S3...' : 'Upload Brochures & Documents'}
                     </Button>
                   </label>
                   
@@ -353,6 +407,7 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
                             brochureUrls: prev.brochureUrls.filter((_: any, i: number) => i !== brochureIndex) 
                           }));
                         }}
+                        color={brochure.url && brochure.url.startsWith('data:') ? "warning" : "default"}
                       />
                     ))}
                   </Box>
@@ -369,14 +424,14 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
                     multiple
                     onChange={async (e) => {
                       if (e.target.files) {
-                        await onFileUpload(e.target.files, 'creatives');
+                        await handleFileUploadWrapper(e.target.files, 'creatives');
                       }
                     }}
                     disabled={uploading}
                   />
                   <label htmlFor="creatives-upload">
                     <Button variant="outlined" component="span" startIcon={<CloudUpload />} fullWidth disabled={uploading}>
-                      {uploading ? 'Uploading...' : 'Upload Creatives (Images/Videos)'}
+                      {uploading ? 'Uploading to S3...' : 'Upload Creatives (Images/Videos)'}
                     </Button>
                   </label>
                   
@@ -391,6 +446,7 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
                             creatives: prev.creatives.filter((_: any, i: number) => i !== creativeIndex) 
                           }));
                         }}
+                        color={creative.url && creative.url.startsWith('data:') ? "warning" : "default"}
                       />
                     ))}
                   </Box>
@@ -405,14 +461,14 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
                     multiple
                     onChange={async (e) => {
                       if (e.target.files) {
-                        await onFileUpload(e.target.files, 'videos');
+                        await handleFileUploadWrapper(e.target.files, 'videos');
                       }
                     }}
                     disabled={uploading}
                   />
                   <label htmlFor="videos-upload">
                     <Button variant="outlined" component="span" startIcon={<CloudUpload />} fullWidth disabled={uploading}>
-                      {uploading ? 'Uploading...' : 'Upload Videos'}
+                      {uploading ? 'Uploading to S3...' : 'Upload Videos'}
                     </Button>
                   </label>
                   
@@ -427,6 +483,7 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
                             videos: prev.videos.filter((_: any, i: number) => i !== videoIndex) 
                           }));
                         }}
+                        color={video.url && video.url.startsWith('data:') ? "warning" : "default"}
                       />
                     ))}
                   </Box>
@@ -439,10 +496,10 @@ const PropertyFormDialog: React.FC<PropertyFormDialogProps> = ({
       
       <DialogActions sx={{ p: 3, backgroundColor: '#f5f5f5', borderTop: '1px solid #e0e0e0', borderRadius: '0 0 15px 15px' }}>
         <Button onClick={onClose}>Cancel</Button>
-        <Tooltip title={!isFormValid ? "Please fill all required fields" : "All required fields are filled"} arrow placement="top">
+        <Tooltip title={!isFormValid ? "Please fill all required fields and ensure all files are uploaded to S3" : "Ready to submit"} arrow placement="top">
           <span>
             <Button onClick={handleSubmit} variant="contained" disabled={!isFormValid || uploading}>
-              {uploading ? 'Uploading...' : editingProperty ? "Update Property" : "Create Properties"}
+              {uploading ? 'Uploading to S3...' : editingProperty ? "Update Property" : "Create Properties"}
             </Button>
           </span>
         </Tooltip>

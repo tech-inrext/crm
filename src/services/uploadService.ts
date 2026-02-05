@@ -41,12 +41,13 @@ export const uploadService = {
       }
       throw new Error('Failed to get upload URL');
     } catch (error: any) {
+      console.error('S3 URL generation error:', error);
       throw new Error(error.response?.data?.message || 'Failed to get upload URL');
     }
   },
 
   // Upload file directly to S3
-  uploadFileDirect: async (file: File): Promise<UploadResponse> => {
+  uploadFile: async (file: File): Promise<UploadResponse> => {
     try {
       // Validate file size
       uploadService.validateFileSize(file, 200);
@@ -55,12 +56,12 @@ export const uploadService = {
       const { uploadUrl, fileUrl } = await uploadService.getUploadUrl(file.name, file.type);
 
       // Upload directly to S3
-      await axios.put(uploadUrl, file, {
+      const uploadResponse = await axios.put(uploadUrl, file, {
         headers: {
           'Content-Type': file.type,
         },
         withCredentials: false,
-        timeout: 300000, 
+        timeout: 300000, // 5 minutes timeout for large files
       });
 
       return {
@@ -72,56 +73,27 @@ export const uploadService = {
           fileType: file.type,
           fileSize: file.size,
         },
+        message: 'File uploaded to S3 successfully'
       };
     } catch (error: any) {
-      console.error('Direct upload error:', error);
+      console.error('S3 upload error:', error);
       return {
         success: false,
-        message: error.message || 'Failed to upload file to storage',
+        message: error.message || 'Failed to upload file to S3 storage',
       };
     }
   },
 
-  // Base64 upload for small files
-  uploadFileBase64: async (file: File): Promise<UploadResponse> => {
-    return new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const base64 = e.target?.result as string;
-        resolve({
-          success: true,
-          data: {
-            url: base64,
-            fileName: file.name,
-            originalName: file.name,
-            fileType: file.type,
-            fileSize: file.size,
-          },
-        });
-      };
-      reader.onerror = () => resolve({
-        success: false,
-        message: 'Failed to read file'
-      });
-      reader.readAsDataURL(file);
-    });
+  // Check if URL is base64 (for validation)
+  isBase64: (url: string): boolean => {
+    return url.startsWith('data:');
   },
 
-  // Main upload function - chooses method based on file size
-  uploadFile: async (file: File): Promise<UploadResponse> => {
-    const MAX_BASE64_SIZE = 5 * 1024 * 1024; // 5MB
-    
-    try {
-      if (file.size > MAX_BASE64_SIZE) {
-        return await uploadService.uploadFileDirect(file);
-      } else {
-        return await uploadService.uploadFileBase64(file);
-      }
-    } catch (error: any) {
-      return {
-        success: false,
-        message: error.message || 'Upload failed',
-      };
-    }
-  },
+  // Validate S3 URL format
+  isValidS3Url: (url: string): boolean => {
+    return url.includes('s3.amazonaws.com') || 
+           url.includes('amazonaws.com/s3') ||
+           url.startsWith('https://') || 
+           url.startsWith('http://');
+  }
 };
