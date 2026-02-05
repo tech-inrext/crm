@@ -27,7 +27,7 @@ import {
 } from "@/components/ui/Component";
 
 import { Schedule, MoreVert, NoteAlt, Event } from "@mui/icons-material";
-import { Schedule, MoreVert, NoteAlt, Event } from "@mui/icons-material";
+ 
 
 import type { LeadDisplay as Lead } from "../../types/lead";
 import StatusDropdown from "./StatusDropdown";
@@ -117,14 +117,9 @@ const LeadCard = memo(
           "&:hover": {
             boxShadow: "0 16px 32px rgba(0,0,0,0.12)",
             transform: "translateY(-4px)",
-            boxShadow: "0 12px 24px rgba(0,0,0,0.1)",
           },
           border: "1px solid",
           borderColor: "divider",
-          background: GRADIENTS.paper,
-          position: "relative",
-          overflow: "visible",
-          height: "266px",
           mt: 1.5,
           mb: 2,
         }}
