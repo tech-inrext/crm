@@ -23,3 +23,5 @@ class PillarByIdController extends Controller {
 }
 
 export default new PillarByIdController().handler;
+
+

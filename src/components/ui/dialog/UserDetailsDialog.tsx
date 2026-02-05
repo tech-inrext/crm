@@ -182,7 +182,11 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 value={user.altPhone}
               />
               <DetailItem icon={Person} label="Gender" value={user.gender} />
-              <DetailItem icon={CalendarToday} label="Age" value={user.age} />
+               <DetailItem
+                icon={CalendarToday}
+                label="Date of Birth"
+                value={formatDate(user.dateOfBirth)}
+              />
               <DetailItem
                 icon={Person}
                 label="Specialization"
@@ -324,11 +328,11 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 label="Relation"
                 value={user.nominee?.relation}
               />
-              <DetailItem
+              {/* <DetailItem
                 icon={Person}
                 label="Gender"
                 value={user.nominee?.gender}
-              />
+              /> */}
             </SectionCard>
           </div>
         </div>

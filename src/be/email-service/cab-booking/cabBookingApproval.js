@@ -1,5 +1,5 @@
 // /lib/emails/cabBookingApproval.js
-import mailer from "./mailer.js";
+import mailer from "../mailer.js";
 
 export async function sendCabBookingApprovalEmail({
   manager,

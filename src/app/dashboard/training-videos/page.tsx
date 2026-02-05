@@ -191,7 +191,7 @@ const TrainingVideos: React.FC = () => {
             color: "text.primary",
             fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
             mb: { xs: 2, md: 3 },
-            textAlign: { xs: "center", sm: "left" },
+            textAlign: { xs: "left", sm: "left" },
           }}
         >
           Training Videos

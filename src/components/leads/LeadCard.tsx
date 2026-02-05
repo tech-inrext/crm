@@ -10,7 +10,11 @@ import {
   SpeedDialAction,
   SpeedDialIcon,
   ClickAwayListener,
+  Chip,
+  Avatar,
+  useTheme,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
 
 import {
   Email,
@@ -22,6 +26,7 @@ import {
   PinIcon,
 } from "@/components/ui/Component";
 
+import { Schedule, MoreVert, NoteAlt, Event } from "@mui/icons-material";
 import { Schedule, MoreVert, NoteAlt, Event } from "@mui/icons-material";
 
 import type { LeadDisplay as Lead } from "../../types/lead";
@@ -97,12 +102,20 @@ const LeadCard = memo(
 
     return (
       <Card
-        elevation={2}
+        elevation={0}
         sx={{
-          borderRadius: 3,
-          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+          borderRadius: 4,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+          background: "#fff",
+          position: "relative",
+          height: "100%",
+          minHeight: "340px",
+          display: "flex",
+          flexDirection: "column",
+          transition: "all 0.3s ease",
+          overflow: "visible",
           "&:hover": {
-            elevation: 8,
+            boxShadow: "0 16px 32px rgba(0,0,0,0.12)",
             transform: "translateY(-4px)",
             boxShadow: "0 12px 24px rgba(0,0,0,0.1)",
           },

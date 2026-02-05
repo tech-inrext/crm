@@ -26,9 +26,9 @@ import {
   Business,
   Landscape,
 } from "@mui/icons-material";
-import ResidentialForm from "./ResidentialForm";
-import CommercialForm from "./CommercialForm";
-import PlotForm from "./PlotForm";
+import ResidentialForm from "./ResidentialForm/index";
+import CommercialForm from "./CommercialForm/index";
+import PlotForm from "./PlotForm/index";
 
 interface PropertyTypeSelectorProps {
   formData: any;
@@ -317,4 +317,3 @@ const PropertyTypeSelector: React.FC<PropertyTypeSelectorProps> = ({
 };
 
 export default PropertyTypeSelector;
-

@@ -35,6 +35,45 @@ interface ShareMenuProps {
   };
 }
 
+// Phone formatter utility function
+const formatPhoneForWhatsApp = (phone?: string): string => {
+  if (!phone) return '';
+  
+  // Remove all non-digit characters
+  const digitsOnly = phone.replace(/\D/g, '');
+  
+  // Handle Indian numbers (10 digits)
+  if (digitsOnly.length === 10) {
+    return `+91${digitsOnly}`;
+  }
+  
+  // Handle numbers with country code but without + (12 digits for India)
+  if (digitsOnly.length === 12 && digitsOnly.startsWith('91')) {
+    return `+${digitsOnly}`;
+  }
+  
+  // If already has +, return as is
+  if (phone.startsWith('+')) {
+    return phone;
+  }
+  
+  // Default: add + for international format
+  return `+${digitsOnly}`;
+};
+
+// Format for display
+const formatPhoneForDisplay = (phone?: string): string => {
+  if (!phone) return '';
+  const formatted = formatPhoneForWhatsApp(phone);
+  
+  // Format for display: +91 XXXXX XXXXX
+  if (formatted.startsWith('+91') && formatted.length === 13) {
+    return `${formatted.substring(0, 3)} ${formatted.substring(3, 8)} ${formatted.substring(8)}`;
+  }
+  
+  return phone;
+};
+
 const ShareMenu: React.FC<ShareMenuProps> = ({
   anchorEl,
   open,
@@ -50,7 +89,14 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
   const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const { phone, email, altPhone, photo, designation, specialization, branch } = userData;
+
+  // Use altPhone if available, otherwise phone
   const whatsappNumber = altPhone || phone;
+  // Format for WhatsApp
+  const formattedWhatsAppNumber = formatPhoneForWhatsApp(whatsappNumber);
+  // Format for display
+  const displayPhone = formatPhoneForDisplay(phone);
+  const displayAltPhone = formatPhoneForDisplay(altPhone);
 
   // Generate visiting card URL using userId (MongoDB _id)
   const getVisitingCardUrl = () => {
@@ -119,9 +165,19 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
 
   const handleWhatsAppDirect = () => {
     if (whatsappNumber) {
-      const cleanedNumber = whatsappNumber.replace(/[^0-9]/g, "");
+      let cleanedNumber = whatsappNumber.replace(/[^0-9]/g, "");
+
+      // Auto prepend 91 if not included
+      if (!cleanedNumber.startsWith("91")) {
+        cleanedNumber = "91" + cleanedNumber;
+      }
+
       window.open(`https://wa.me/${cleanedNumber}`, '_blank');
       onClose();
+    } else {
+      setSnackbarMessage("No valid WhatsApp number available");
+      setSnackbarSeverity("error");
+      setSnackbarOpen(true);
     }
   };
 
