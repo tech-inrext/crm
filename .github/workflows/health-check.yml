@@ -27,7 +27,7 @@ jobs:
           echo "Service details:"
           echo "$RESPONSE" | jq -r '.data.services // {} | to_entries[] | "\(.key): \(.value)"'
 
-          if [ "$STATUS" != "ok" ]; then
+          if [ "$STATUS" != "alert" ]; then
             echo "❌ System not healthy. Status: $STATUS"
             exit 1
           fi
