@@ -101,26 +101,29 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
   };
 
   return (
-    <Menu
-      anchorEl={anchorEl}
-      open={Boolean(anchorEl)}
-      onClose={onClose}
-      anchorOrigin={{
-        vertical: "bottom",
-        horizontal: "left",
-      }}
-      transformOrigin={{
-        vertical: "top",
-        horizontal: "left",
-      }}
-      PaperProps={{
-        sx: {
-          width: 260,
-          borderRadius: 3,
-          p: 1,
-        },
-      }}
-    >
+ <Menu
+  anchorEl={anchorEl}
+  open={Boolean(anchorEl)}
+  onClose={onClose}
+  anchorOrigin={{
+    vertical: "bottom",
+    horizontal: "left",
+  }}
+  transformOrigin={{
+    vertical: "top",
+    horizontal: "left",
+  }}
+  PaperProps={{
+    sx: {
+      width: 260,
+      borderRadius: 3,
+      p: 1,
+      mt: 6,   // ✅ THIS SHIFTS DROPDOWN LOWER
+      overflow: "hidden",
+    },
+  }}
+>
+
       {/* ---------- Suggested ---------- */}
       <Typography
         sx={{
