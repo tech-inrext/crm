@@ -130,7 +130,7 @@ class LeadService extends Service {
       const query = queryParts.length > 1 ? { $and: queryParts } : baseQuery;
 
       const [leads, totalLeads] = await Promise.all([
-        Lead.find(query).skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }).lean(),
+        Lead.find(query).populate("assignedTo", "fullName name email").populate("uploadedBy", "fullName name").populate("managerId", "fullName name").skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }).lean(),
         Lead.countDocuments(query),
       ]);
 

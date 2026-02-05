@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -22,14 +22,13 @@ import {
   PinIcon,
 } from "@/components/ui/Component";
 
-import { Schedule } from "@mui/icons-material";
-import { MoreVert, NoteAlt, Event } from "@mui/icons-material";
+import { Schedule, MoreVert, NoteAlt, Event } from "@mui/icons-material";
 
 import type { LeadDisplay as Lead } from "../../types/lead";
 import StatusDropdown from "./StatusDropdown";
 import PermissionGuard from "../PermissionGuard";
+import AssignedDropdown from "./AssignedDropdown";
 
-// Style constants
 const GRADIENTS = {
   paper: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
 };
@@ -51,6 +50,50 @@ const LeadCard = memo(
     onStatusChange,
   }: LeadCardProps) => {
     const [actionsOpen, setActionsOpen] = useState(false);
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+
+    const handleAssignedClick = (event: React.MouseEvent<HTMLElement>) => {
+      setAnchorEl(event.currentTarget);
+    };
+
+    const handleCloseMenu = () => {
+      setAnchorEl(null);
+    };
+
+    const handleAssignUser = async (user) => {
+      setAssignedUser(user);
+      setIsManualAssign(true);
+
+      try {
+        const response = await fetch(`/api/v0/leads/${lead._id}/assign`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ assignedTo: user._id }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Failed to update assignment");
+        }
+
+        console.log(`Assigned to: ${user.name}`);
+      } catch (error) {
+        console.error("Error updating assignment:", error);
+      }
+    };
+
+    const leadId = lead._id || lead.id || lead.leadId || "";
+    const [assignedUser, setAssignedUser] = useState<any>(
+      lead.assignedTo || null,
+    );
+    const [isManualAssign, setIsManualAssign] = useState(false);
+
+    useEffect(() => {
+      if (!isManualAssign) {
+        setAssignedUser(lead.assignedTo || null);
+      }
+    }, [lead.assignedTo, isManualAssign]);
 
     return (
       <Card
@@ -69,11 +112,11 @@ const LeadCard = memo(
           position: "relative",
           overflow: "visible",
           height: "266px",
-          mt: 1.5, // margin top to accommodate the floating badges
-          mb: 2, // margin bottom to accommodate the floating edit pill
+          mt: 1.5,
+          mb: 2,
         }}
       >
-        {/* Ribbon clip hanging over card edge - TOP LEFT */}
+        {/* Ribbon */}
         <Box
           sx={{
             position: "absolute",
@@ -89,7 +132,6 @@ const LeadCard = memo(
             whiteSpace: "nowrap",
             borderRadius: "4px 4px 4px 0",
             boxShadow: "0 2px 8px rgba(34, 197, 94, 0.4)",
-            // Folded corner effect on left side
             "&::after": {
               content: '""',
               position: "absolute",
@@ -106,7 +148,7 @@ const LeadCard = memo(
           Warm Lead
         </Box>
 
-        {/* Top-Right Status Pin - same style as Warm Lead */}
+        {/* Status */}
         <Box
           sx={{
             position: "absolute",
@@ -118,7 +160,7 @@ const LeadCard = memo(
           }}
         >
           <StatusDropdown
-            leadId={lead._id || lead.id || lead.leadId || ""}
+            leadId={leadId}
             currentStatus={lead.status}
             onStatusChange={onStatusChange}
             variant="chip"
@@ -126,17 +168,10 @@ const LeadCard = memo(
           />
         </Box>
 
-        {/* Bottom Right Sticky Action Button */}
+        {/* Actions */}
         <PermissionGuard module="lead" action="write" fallback={<></>}>
           <ClickAwayListener onClickAway={() => setActionsOpen(false)}>
-            <Box
-              sx={{
-                position: "absolute",
-                bottom: 6,
-                right: 6,
-                zIndex: 2,
-              }}
-            >
+            <Box sx={{ position: "absolute", bottom: 6, right: 6, zIndex: 2 }}>
               <SpeedDial
                 ariaLabel="Lead actions"
                 direction="up"
@@ -169,144 +204,102 @@ const LeadCard = memo(
                     onEdit();
                   }}
                 />
+
                 <SpeedDialAction
                   icon={<NoteAlt fontSize="small" />}
                   tooltipTitle="Notes"
                   onClick={() => {
                     setActionsOpen(false);
-                    onOpenFeedback(lead._id || lead.id || lead.leadId || "");
+                    onOpenFeedback(leadId);
                   }}
                 />
+
                 <SpeedDialAction
                   icon={<Event fontSize="small" />}
                   tooltipTitle="Site Visit"
                   onClick={() => {
                     setActionsOpen(false);
-                    onScheduleSiteVisit(
-                      lead._id || lead.id || lead.leadId || ""
-                    );
+                    onScheduleSiteVisit(leadId);
                   }}
                 />
               </SpeedDial>
             </Box>
           </ClickAwayListener>
         </PermissionGuard>
+
         <CardContent sx={{ p: 1.5 }}>
           <Stack spacing={2}>
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-                <Box>
-                  <Typography
-                    variant="h6"
-                    fontWeight={700}
-                    color="text.primary"
-                  >
-                    {lead?.fullName}
-                  </Typography>
+            <Box>
+              <Typography variant="h6" fontWeight={700}>
+                {lead?.fullName}
+              </Typography>
 
-                  <Box sx={{ display: "flex" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <HomeIcon
-                        sx={{ color: "text.secondary", fontSize: 18 }}
-                      />
-                      <Typography
-                        fontSize={12}
-                        variant="body2"
-                        color="text.secondary"
-                      >
-                        {lead.propertyName}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ display: "flex" }}>
-                    <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                      <PinIcon sx={{ color: "text.secondary", fontSize: 18 }} />
-                      <Typography
-                        fontSize={12}
-                        variant="body2"
-                        color="text.secondary"
-                      >
-                        {lead.location}
-                      </Typography>
-                    </Box>
-                  </Box>
-                </Box>
+              <Box display="flex" alignItems="center" gap={1}>
+                <HomeIcon sx={{ fontSize: 18 }} />
+                <Typography fontSize={12}>{lead.propertyName}</Typography>
+              </Box>
+
+              <Box display="flex" alignItems="center" gap={1}>
+                <PinIcon sx={{ fontSize: 18 }} />
+                <Typography fontSize={12}>{lead.location}</Typography>
               </Box>
             </Box>
 
             <Divider />
 
             <Stack spacing={1}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Email sx={{ color: "text.secondary", fontSize: 18 }} />
-                <Typography variant="body2" color="text.primary">
-                  {lead.email || "Not provided"}
-                </Typography>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Email sx={{ fontSize: 18 }} />
+                <Typography>{lead.email || "Not provided"}</Typography>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+
+              <Box display="flex" alignItems="center" gap={1}>
                 <Typography
                   component="a"
                   href={`tel:${lead.phone}`}
-                  variant="body2"
-                  color="primary.main"
-                  gap={1}
-                  sx={{
-                    textDecoration: "none",
-                    "&:hover": {
-                      textDecoration: "underline",
-                      cursor: "pointer",
-                    },
-                  }}
+                  sx={{ textDecoration: "none" }}
                 >
-                  <Phone
-                    sx={{
-                      color: "text.secondary",
-                      fontSize: 18,
-                    }}
-                  />
-                  {lead.phone}
+                  <Phone sx={{ fontSize: 18 }} /> {lead.phone}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <TrendingUp sx={{ color: "text.secondary", fontSize: 18 }} />
-                <Typography
-                  variant="body2"
-                  color="text.primary"
-                  fontWeight={600}
-                >
-                  {lead.budgetRange}
+
+              <Box display="flex" alignItems="center" gap={1}>
+                <TrendingUp sx={{ fontSize: 18 }} />
+                <Typography fontWeight={600}>{lead.budgetRange}</Typography>
+              </Box>
+
+              {/* Assigned */}
+              <Box
+                display="flex"
+                alignItems="center"
+                gap={1}
+                sx={{ cursor: "pointer" }}
+                onClick={handleAssignedClick}
+              >
+                <PersonAdd sx={{ fontSize: 18 }} />
+
+                <Typography fontWeight={600}>
+                  {assignedUser?.name || assignedUser?.fullName || "Unassigned"}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <PersonAdd sx={{ color: "text.secondary", fontSize: 18 }} />
-                <Typography
-                  variant="body2"
-                  color="text.primary"
-                  fontWeight={600}
-                >
-                  {lead.assignedTo}
-                </Typography>
-              </Box>
+
+              <AssignedDropdown
+                assignedTo={assignedUser}
+                anchorEl={anchorEl}
+                onClose={handleCloseMenu}
+                onAssign={handleAssignUser}
+              />
+
               {lead.nextFollowUp && (
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Schedule sx={{ color: "text.secondary", fontSize: 18 }} />
-                  <Typography
-                    variant="body2"
-                    color="text.primary"
-                    sx={{ fontSize: "0.875rem" }}
-                  >
+                <Box display="flex" alignItems="center" gap={1}>
+                  <Schedule sx={{ fontSize: 18 }} />
+                  <Typography>
                     {(() => {
                       const date = new Date(lead.nextFollowUp);
                       if (isNaN(date.getTime())) return "Invalid date";
                       return `${date.toLocaleDateString()} ${date.toLocaleTimeString(
                         [],
-                        { hour: "2-digit", minute: "2-digit" }
+                        { hour: "2-digit", minute: "2-digit" },
                       )}`;
                     })()}
                   </Typography>
@@ -317,7 +310,7 @@ const LeadCard = memo(
         </CardContent>
       </Card>
     );
-  }
+  },
 );
 
 LeadCard.displayName = "LeadCard";
