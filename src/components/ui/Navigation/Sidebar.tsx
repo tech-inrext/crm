@@ -55,7 +55,7 @@ const SidebarContent = ({ links, onClose }) => {
         height: "100%",
         background: "#fff",
         color: "#fff",
-        boxShadow: "2px 0 8px rgba(0, 0, 0, 0.1)",
+        borderRight: "1px solid #E6EEF5",
         overflow: "hidden",
       }}
     >
@@ -83,7 +83,7 @@ const SidebarContent = ({ links, onClose }) => {
                 borderRadius: { xs: 1, sm: 2 },
                 mx: { xs: 0.25, sm: 0.5, md: 1 }, // Reduced margin on mobile
                 mb: { xs: 0.25, sm: 0.5 }, // Reduced bottom margin
-                py: { xs: 0.75, sm: 1, md: 1.5 }, // Better responsive padding
+                py: { xs: 0.75, sm: 1, md: 1, lg: 1 }, // Better responsive padding
                 px: { xs: 0.75, sm: 1, md: 2 }, // Responsive horizontal padding
                 minHeight: { xs: 36, sm: 40, md: 48 }, // Smaller on mobile but still touch-friendly
                 transition: "all 0.2s ease",

@@ -1,0 +1,34 @@
+name: Inrext Health Check
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+jobs:
+  health:
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+
+    steps:
+      - name: Check API health
+        run: |
+          RESPONSE=$(curl -s --max-time 5 https://dashboard.inrext.com/api/v0/health)
+
+          echo "Response: $RESPONSE"
+
+          STATUS=$(echo $RESPONSE | jq -r '.data.status')
+          TIMESTAMP=$(echo $RESPONSE | jq -r '.data.timestamp')
+
+          echo "Status: $STATUS"
+          echo "Timestamp: $TIMESTAMP"
+
+          echo "Service details:"
+          echo "$RESPONSE" | jq -r '.data.services // {} | to_entries[] | "\(.key): \(.value)"'
+
+          if [ "$STATUS" != "healthy" ]; then
+            echo "❌ System not healthy. Status: $STATUS"
+            exit 1
+          fi
+
+          echo "✅ System healthy"

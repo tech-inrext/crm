@@ -7,7 +7,6 @@ export const MODULE_LAYOUT_STYLES = {
     p: { xs: 0.5, sm: 1, md: 2 },
     pt: 0, // Removed top padding from main container
     minHeight: "100vh",
-    bgcolor: "background.default",
     overflow: "hidden",
   } as SxProps<Theme>,
 
@@ -68,7 +67,6 @@ export const LEADS_STYLES = {
     pt: { xs: 1, sm: 2, md: 3 },
     mt: 0, // Removed top margin for leads module
     height: "calc(100vh - 64px)",
-    bgcolor: "background.default",
     overflow: "hidden",
   } as SxProps<Theme>,
 
