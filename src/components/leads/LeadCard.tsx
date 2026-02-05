@@ -1,21 +1,10 @@
 import { memo, useState, useEffect } from "react";
 import {
-  Card,
-  CardContent,
-  Box,
-  Typography,
-  Stack,
-  Divider,
   SpeedDial,
   SpeedDialAction,
   SpeedDialIcon,
   ClickAwayListener,
-  Chip,
-  Avatar,
-  useTheme,
 } from "@mui/material";
-import { alpha } from "@mui/material/styles";
-
 import {
   Email,
   Phone,
@@ -25,18 +14,11 @@ import {
   HomeIcon,
   PinIcon,
 } from "@/components/ui/Component";
-
 import { Schedule, MoreVert, NoteAlt, Event } from "@mui/icons-material";
- 
-
 import type { LeadDisplay as Lead } from "../../types/lead";
 import StatusDropdown from "./StatusDropdown";
 import PermissionGuard from "../PermissionGuard";
 import AssignedDropdown from "./AssignedDropdown";
-
-const GRADIENTS = {
-  paper: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-};
 
 interface LeadCardProps {
   lead: Lead;
@@ -101,72 +83,15 @@ const LeadCard = memo(
     }, [lead.assignedTo, isManualAssign]);
 
     return (
-      <Card
-        elevation={0}
-        sx={{
-          borderRadius: 4,
-          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-          background: "#fff",
-          position: "relative",
-          height: "100%",
-          minHeight: "340px",
-          display: "flex",
-          flexDirection: "column",
-          transition: "all 0.3s ease",
-          overflow: "visible",
-          "&:hover": {
-            boxShadow: "0 16px 32px rgba(0,0,0,0.12)",
-            transform: "translateY(-4px)",
-          },
-          border: "1px solid",
-          borderColor: "divider",
-          mt: 1.5,
-          mb: 2,
-        }}
-      >
+      <div className="relative flex flex-col h-full min-h-[340px] bg-white border border-gray-300 rounded-2xl shadow-md transition-transform duration-300 hover:shadow-lg hover:-translate-y-1 mt-1.5 mb-2">
         {/* Ribbon */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: -8,
-            left: -6,
-            backgroundColor: "#22c55e",
-            color: "white",
-            px: 1.5,
-            py: 0.5,
-            fontSize: "0.7rem",
-            fontWeight: 700,
-            letterSpacing: "0.5px",
-            whiteSpace: "nowrap",
-            borderRadius: "4px 4px 4px 0",
-            boxShadow: "0 2px 8px rgba(34, 197, 94, 0.4)",
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: -6,
-              left: 0,
-              width: 0,
-              height: 0,
-              borderStyle: "solid",
-              borderWidth: "0 6px 6px 0",
-              borderColor: "transparent #16a34a transparent transparent",
-            },
-          }}
-        >
+        <div className="absolute top-[-8px] left-[-6px] bg-green-500 text-white px-2 py-1 text-xs font-bold tracking-wide rounded-tr-lg shadow-md">
           Warm Lead
-        </Box>
+          <div className="absolute bottom-[-6px] left-0 w-0 h-0 border-t-[6px] border-t-transparent border-r-[6px] border-r-green-600"></div>
+        </div>
 
         {/* Status */}
-        <Box
-          sx={{
-            position: "absolute",
-            right: 1,
-            top: 1,
-            zIndex: 1,
-            borderRadius: "4px 4px 0 4px",
-            overflow: "visible",
-          }}
-        >
+        <div className="absolute top-1 right-1 z-10">
           <StatusDropdown
             leadId={leadId}
             currentStatus={lead.status}
@@ -174,12 +99,12 @@ const LeadCard = memo(
             variant="chip"
             size="small"
           />
-        </Box>
+        </div>
 
         {/* Actions */}
         <PermissionGuard module="lead" action="write" fallback={<></>}>
           <ClickAwayListener onClickAway={() => setActionsOpen(false)}>
-            <Box sx={{ position: "absolute", bottom: 6, right: 6, zIndex: 2 }}>
+            <div className="absolute bottom-6 right-6 z-20">
               <SpeedDial
                 ariaLabel="Lead actions"
                 direction="up"
@@ -188,16 +113,8 @@ const LeadCard = memo(
                 onClose={() => setActionsOpen(false)}
                 FabProps={{
                   size: "small",
-                  sx: {
-                    backgroundColor: "#fff",
-                    color: "#64748b",
-                    border: "1px solid #e2e8f0",
-                    boxShadow: "0 2px 6px rgba(15, 23, 42, 0.08)",
-                    "&:hover": {
-                      backgroundColor: "#f8fafc",
-                      boxShadow: "0 4px 10px rgba(15, 23, 42, 0.12)",
-                    },
-                  },
+                  className:
+                    "bg-white text-gray-500 border border-gray-300 shadow-sm hover:bg-gray-100 hover:shadow-md",
                   onClick: (event) => {
                     event.stopPropagation();
                     setActionsOpen((prev) => !prev);
@@ -231,65 +148,61 @@ const LeadCard = memo(
                   }}
                 />
               </SpeedDial>
-            </Box>
+            </div>
           </ClickAwayListener>
         </PermissionGuard>
 
-        <CardContent sx={{ p: 1.5 }}>
-          <Stack spacing={2}>
-            <Box>
-              <Typography variant="h6" fontWeight={700}>
-                {lead?.fullName}
-              </Typography>
+        <div className="p-4">
+          <div className="space-y-4">
+            <div>
+              <h6 className="text-lg font-bold">{lead?.fullName}</h6>
 
-              <Box display="flex" alignItems="center" gap={1}>
-                <HomeIcon sx={{ fontSize: 18 }} />
-                <Typography fontSize={12}>{lead.propertyName}</Typography>
-              </Box>
+              <div className="flex items-center gap-2">
+                <HomeIcon className="text-sm" />
+                <p className="text-xs">{lead.propertyName}</p>
+              </div>
 
-              <Box display="flex" alignItems="center" gap={1}>
-                <PinIcon sx={{ fontSize: 18 }} />
-                <Typography fontSize={12}>{lead.location}</Typography>
-              </Box>
-            </Box>
+              <div className="flex items-center gap-2">
+                <PinIcon className="text-sm" />
+                <p className="text-xs">{lead.location}</p>
+              </div>
+            </div>
 
-            <Divider />
+            <hr className="border-gray-300" />
 
-            <Stack spacing={1}>
-              <Box display="flex" alignItems="center" gap={1}>
-                <Email sx={{ fontSize: 18 }} />
-                <Typography>{lead.email || "Not provided"}</Typography>
-              </Box>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Email className="text-sm" />
+                <p>{lead.email || "Not provided"}</p>
+              </div>
 
-              <Box display="flex" alignItems="center" gap={1}>
-                <Typography
-                  component="a"
-                  href={`tel:${lead.phone}`}
-                  sx={{ textDecoration: "none" }}
-                >
-                  <Phone sx={{ fontSize: 18 }} /> {lead.phone}
-                </Typography>
-              </Box>
+              <div className="flex items-center gap-2">
+                <a href={`tel:${lead.phone}`} className="no-underline">
+                  <Phone className="text-sm" /> {lead.phone}
+                </a>
+              </div>
 
-              <Box display="flex" alignItems="center" gap={1}>
-                <TrendingUp sx={{ fontSize: 18 }} />
-                <Typography fontWeight={600}>{lead.budgetRange}</Typography>
-              </Box>
+              <div className="flex items-center gap-2">
+                <TrendingUp className="text-sm" />
+                <p className="font-semibold">{lead.budgetRange}</p>
+              </div>
 
               {/* Assigned */}
-              <Box
-                display="flex"
-                alignItems="center"
-                gap={1}
-                sx={{ cursor: "pointer" }}
+              <div
                 onClick={handleAssignedClick}
+                className="flex items-center justify-between border border-gray-300 rounded-lg px-4 py-2 cursor-pointer transition-colors duration-200 hover:border-blue-500 hover:bg-gray-100"
               >
-                <PersonAdd sx={{ fontSize: 18 }} />
+                <div className="flex items-center gap-2">
+                  <PersonAdd className="text-sm text-gray-500" />
+                  <p className="font-semibold text-sm">
+                    {assignedUser?.name ||
+                      assignedUser?.fullName ||
+                      "Unassigned"}
+                  </p>
+                </div>
 
-                <Typography fontWeight={600}>
-                  {assignedUser?.name || assignedUser?.fullName || "Unassigned"}
-                </Typography>
-              </Box>
+                <p className="text-xs text-gray-500">▼</p>
+              </div>
 
               <AssignedDropdown
                 assignedTo={assignedUser}
@@ -299,9 +212,9 @@ const LeadCard = memo(
               />
 
               {lead.nextFollowUp && (
-                <Box display="flex" alignItems="center" gap={1}>
-                  <Schedule sx={{ fontSize: 18 }} />
-                  <Typography>
+                <div className="flex items-center gap-2">
+                  <Schedule className="text-sm" />
+                  <p>
                     {(() => {
                       const date = new Date(lead.nextFollowUp);
                       if (isNaN(date.getTime())) return "Invalid date";
@@ -310,13 +223,13 @@ const LeadCard = memo(
                         { hour: "2-digit", minute: "2-digit" },
                       )}`;
                     })()}
-                  </Typography>
-                </Box>
+                  </p>
+                </div>
               )}
-            </Stack>
-          </Stack>
-        </CardContent>
-      </Card>
+            </div>
+          </div>
+        </div>
+      </div>
     );
   },
 );

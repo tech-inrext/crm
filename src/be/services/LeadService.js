@@ -83,7 +83,60 @@ class LeadService extends Service {
       });
     }
   }
+  async assignLead(req, res) {
+  const { leadId } = req.query;
+  const { assignedTo } = req.body;
+  const loggedInUserId = req.employee?._id;
 
+  if (!leadId || !assignedTo) {
+    return res.status(400).json({
+      success: false,
+      message: "Missing required fields",
+    });
+  }
+
+  const lead = await Lead.findById(leadId);
+  if (!lead) {
+    return res.status(404).json({
+      success: false,
+      message: "Lead not found",
+    });
+  }
+
+  const previousAssignee = lead.assignedTo?.toString();
+
+  lead.assignedTo = assignedTo;
+  lead.updatedBy = loggedInUserId;
+  await lead.save();
+
+  // 🔔 Notify ONLY if assignee changed
+  if (previousAssignee !== assignedTo) {
+    try {
+      await NotificationHelper.notifyLeadAssigned(
+        lead._id,
+        assignedTo,
+        loggedInUserId,
+        {
+          leadId: lead.leadId,
+          company: lead.company,
+          name: lead.name,
+          phone: lead.phone,
+          priority: "HIGH",
+        }
+      );
+    } catch (e) {
+      console.error("Assign notification failed", e);
+    }
+  }
+
+  return res.status(200).json({
+    success: true,
+    data: lead,
+    message: "Lead assigned successfully",
+  });
+}
+
+ 
   async getAllLeads(req, res) {
     try {
       const { page = 1, limit = 5, search = "", status } = req.query;
