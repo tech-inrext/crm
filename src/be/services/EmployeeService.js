@@ -49,7 +49,7 @@ class EmployeeService extends Service {
       address,
       fatherName,
       gender,
-      age,
+        dateOfBirth,
       designation,
       joiningDate,
       managerId,
@@ -150,9 +150,24 @@ class EmployeeService extends Service {
     setIfPresent("address", address);
     setIfPresent("gender", gender);
     // allow clearing age by sending null
-    if (Object.prototype.hasOwnProperty.call(req.body, "age")) {
-      updateFields.age = age;
+   // Allow dateOfBirth update
+if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
+  if (dateOfBirth === "" || dateOfBirth === null) {
+    updateFields.dateOfBirth = null;
+  } else {
+    const parsedDate = new Date(dateOfBirth);
+
+    if (isNaN(parsedDate.getTime())) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid dateOfBirth format",
+      });
     }
+
+    updateFields.dateOfBirth = parsedDate;
+  }
+}
+
     setIfPresent("designation", designation);
     setIfPresent("managerId", managerId);
     setIfPresent("departmentId", departmentId);
@@ -275,7 +290,7 @@ class EmployeeService extends Service {
         phone,
         address,
         gender,
-        age,
+        dateOfBirth,
         altPhone,
         joiningDate,
         designation,
@@ -342,8 +357,41 @@ class EmployeeService extends Service {
         employeeData.address = address;
       if (Object.prototype.hasOwnProperty.call(req.body, "gender"))
         employeeData.gender = gender;
-      if (Object.prototype.hasOwnProperty.call(req.body, "age"))
-        employeeData.age = age;
+     // Calculate age from dateOfBirth
+if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
+  if (!dateOfBirth) {
+    return res.status(400).json({
+      success: false,
+      message: "Date of Birth is required",
+    });
+  }
+
+  const dob = new Date(dateOfBirth);
+
+  if (isNaN(dob.getTime())) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid dateOfBirth format",
+    });
+  }
+
+  employeeData.dateOfBirth = dob;
+
+  // ✅ Auto calculate age
+  const today = new Date();
+  let calculatedAge = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+
+  if (
+    monthDiff < 0 ||
+    (monthDiff === 0 && today.getDate() < dob.getDate())
+  ) {
+    calculatedAge--;
+  }
+
+  employeeData.age = calculatedAge;
+}
+
       if (Object.prototype.hasOwnProperty.call(req.body, "joiningDate"))
         employeeData.joiningDate = joiningDate
           ? new Date(joiningDate)
