@@ -103,7 +103,7 @@ async getEmployeeById(req, res) {
       address,
       fatherName,
       gender,
-        dateOfBirth,
+      dateOfBirth,
       designation,
       joiningDate,
       managerId,
@@ -242,21 +242,19 @@ async getEmployeeById(req, res) {
     }
     setIfPresent("address", address);
     setIfPresent("gender", gender);
-    // allow clearing age by sending null
-   // Allow dateOfBirth update
+    // allow clearing dateOfBirth by sending null
+   // Allow dateOfBirth update (safe handling)
 if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
   if (dateOfBirth === "" || dateOfBirth === null) {
     updateFields.dateOfBirth = null;
   } else {
     const parsedDate = new Date(dateOfBirth);
-
     if (isNaN(parsedDate.getTime())) {
       return res.status(400).json({
         success: false,
         message: "Invalid dateOfBirth format",
       });
     }
-
     updateFields.dateOfBirth = parsedDate;
   }
 }
@@ -493,41 +491,8 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
         employeeData.address = address;
       if (Object.prototype.hasOwnProperty.call(req.body, "gender"))
         employeeData.gender = gender;
-     // Calculate age from dateOfBirth
-if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
-  if (!dateOfBirth) {
-    return res.status(400).json({
-      success: false,
-      message: "Date of Birth is required",
-    });
-  }
-
-  const dob = new Date(dateOfBirth);
-
-  if (isNaN(dob.getTime())) {
-    return res.status(400).json({
-      success: false,
-      message: "Invalid dateOfBirth format",
-    });
-  }
-
-  employeeData.dateOfBirth = dob;
-
-  // ✅ Auto calculate age
-  const today = new Date();
-  let calculatedAge = today.getFullYear() - dob.getFullYear();
-  const monthDiff = today.getMonth() - dob.getMonth();
-
-  if (
-    monthDiff < 0 ||
-    (monthDiff === 0 && today.getDate() < dob.getDate())
-  ) {
-    calculatedAge--;
-  }
-
-  employeeData.age = calculatedAge;
-}
-
+      if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth"))
+        employeeData.dateOfBirth = dateOfBirth;
       if (Object.prototype.hasOwnProperty.call(req.body, "joiningDate"))
         employeeData.joiningDate = joiningDate
           ? new Date(joiningDate)
