@@ -109,7 +109,7 @@ const NomineeSection: React.FC = () => {
             </TextField>
           )}
         </Field> */}
-        </Field> */}
+       
 
         <Field name="nominee.occupation">
           {({ field, meta }: FieldProps) => (

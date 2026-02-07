@@ -39,14 +39,14 @@ export const userValidationSchema = Yup.object({
     .min(VALIDATION_RULES.ADDRESS.min)
     .required("Address is required"),
   gender: Yup.string().oneOf(GENDER_OPTIONS).required("Gender is required"),
-  age: Yup.number()
-    .transform((value, originalValue) => {
-      // treat empty string as null so it's optional in the form
-      return originalValue === "" || originalValue === null ? null : value;
-    })
-    .min(VALIDATION_RULES.AGE.min)
-    .max(VALIDATION_RULES.AGE.max)
-    .nullable(),
+  // age: Yup.number()
+  //   .transform((value, originalValue) => {
+  //     // treat empty string as null so it's optional in the form
+  //     return originalValue === "" || originalValue === null ? null : value;
+  //   })
+  //   .min(VALIDATION_RULES.AGE.min)
+  //   .max(VALIDATION_RULES.AGE.max)
+  //   .nullable(),
   altPhone: Yup.string()
     .transform((value, originalValue) => (originalValue === "" ? null : value))
     .nullable()
@@ -217,47 +217,4 @@ export const userValidationSchema = Yup.object({
         return true;
       }
     ),
- 
-  dateOfBirth: Yup.string()
-    .nullable()
-    .required("Date of Birth is required")
-    .test("age-restriction", "Age should be atleast 21 years", (val) => {
-      if (!val) return false;
-      const dob = new Date(val);
-      const today = new Date();
-      const age = today.getFullYear() - dob.getFullYear();
-      const monthDiff = today.getMonth() - dob.getMonth();
-      const dayDiff = today.getDate() - dob.getDate();
-      if (
-        age > 21 ||
-        (age === 21 && (monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0)))
-      ) {
-        return true;
-      }
-      return false;
-    }),
- 
-    photoFile: Yup.mixed()
-    .nullable()
-    .test(
-      "photo-size",
-      "Photo file must be less than 1MB",
-      function (value) {
-        const { photo } = this.parent || {};
-        if (value && typeof value === "object" && value.size !== undefined) {
-          return value.size <= 1024 * 1024;
-        }
-        if (typeof photo === "string" && photo.trim() !== "")
-          return true;
-        return true;
-      }
-    ),
-    panNumber: Yup.string()
-    .required("PAN Number is required")
-    .matches(
-      /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
-      "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)"
-    )
-    .transform((value) => value ? value.toUpperCase().trim() : value),
- 
 });
