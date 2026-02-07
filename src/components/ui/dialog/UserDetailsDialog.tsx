@@ -125,7 +125,8 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                     const parent = target.parentElement;
                     if (parent) {
                       const initials = document.createElement("span");
-                      initials.textContent = user.name?.substring(0, 2).toUpperCase() || "";
+                      initials.textContent =
+                        user.name?.substring(0, 2).toUpperCase() || "";
                       initials.className = "text-2xl sm:text-3xl font-bold";
                       parent.appendChild(initials);
                     }
@@ -182,7 +183,7 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 value={user.altPhone}
               />
               <DetailItem icon={Person} label="Gender" value={user.gender} />
-               <DetailItem
+              <DetailItem
                 icon={CalendarToday}
                 label="Date of Birth"
                 value={formatDate(user.dateOfBirth)}
@@ -196,6 +197,11 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 icon={Person}
                 label="Father''s Name"
                 value={user.fatherName}
+              />
+              <DetailItem
+                icon={Description}
+                label="PAN Number"
+                value={user.panNumber}
               />
               <DetailItem icon={Home} label="Address" value={user.address} />
             </SectionCard>
