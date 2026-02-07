@@ -83,7 +83,7 @@ const NomineeSection: React.FC = () => {
             />
           )}
         </Field>
-
+{/* 
         <Field name="nominee.gender">
           {({ field, meta }: FieldProps) => (
             <TextField
@@ -108,7 +108,7 @@ const NomineeSection: React.FC = () => {
               ))}
             </TextField>
           )}
-        </Field>
+        </Field> */}
 
         <Field name="nominee.occupation">
           {({ field, meta }: FieldProps) => (

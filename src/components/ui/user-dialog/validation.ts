@@ -58,6 +58,24 @@ export const userValidationSchema = Yup.object({
         return /^\d{10}$/.test(String(val));
       }
     ),
+     dateOfBirth: Yup.string()
+    .nullable()
+    .required("Date of Birth is required")
+    .test("age-restriction", "Age should be atleast 21 years", (val) => {
+      if (!val) return false;
+      const dob = new Date(val);
+      const today = new Date();
+      const age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      const dayDiff = today.getDate() - dob.getDate();
+      if (
+        age > 21 ||
+        (age === 21 && (monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0)))
+      ) {
+        return true;
+      }
+      return false;
+    }),
   joiningDate: Yup.string()
     .nullable()
     .test("not-in-future", "Joining date cannot be a future date", (val) => {
