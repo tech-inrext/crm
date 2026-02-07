@@ -14,9 +14,11 @@ export const DEFAULT_USER_FORM = {
   phone: "",
   address: "",
   gender: "Male",
-  age: "",
+  dateOfBirth: "",
   altPhone: "",
+
   fatherName: "",
+  specialization: "",
   joiningDate: "",
   designation: "",
   managerId: "",
@@ -31,11 +33,13 @@ export const DEFAULT_USER_FORM = {
   panUrl: "",
   bankProofUrl: "",
   signatureUrl: "",
+  photo: "",
   // Nominee details (optional)
   nominee: null,
   // Freelancer fields
   slabPercentage: "",
   branch: "",
+  panNumber: "",
 };
 
 // Gender Options
@@ -84,18 +88,22 @@ export const FIELD_LABELS = {
   PAN: "PAN Card (Max 1 MB)",
   BANK_PROOF: "Bank Proof (Max 1 MB)",
   SIGNATURE: "Signature (Max 1 MB)",
+  PHOTO: "Photo (Max 1 MB)",
   EMAIL: "Email *",
   PHONE: "Phone *",
-  ALT_PHONE: "Alternate Phone",
+  ALT_PHONE: "Whats App Number",
   FATHER_NAME: "Father's Name *",
+  SPECIALIZATION: "Specialization",
   ADDRESS: "Address *",
   GENDER: "Gender *",
+  DATE_OF_BIRTH: "Date of Birth",
   NOMINEE_DETAILS: "Nominee Details",
   NOMINEE_FULL_NAME: "Full Name",
   NOMINEE_PHONE: "Phone Number",
   NOMINEE_OCCUPATION: "Occupation",
   NOMINEE_RELATION: "Relation with Nominee",
   DATE_OF_BIRTH: "Date of birth",
+  // NOMINEE_GENDER: "Gender",
   JOINING_DATE: "Joining Date",
   DESIGNATION: "Designation *",
   MANAGER: "Manager *",
@@ -104,6 +112,7 @@ export const FIELD_LABELS = {
   FOR_FREELANCER: "For Freelancer",
   SLAB_PERCENTAGE: "Slab Percentage",
   BRANCH: "Branch",
+  PAN_NUMBER: "PAN Number",
 };
 
 // Button Labels

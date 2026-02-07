@@ -84,6 +84,8 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
     }
   };
 
+  const hasPhoto = user.photo && user.photo.trim() !== "";
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       <DialogTitle className="bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold text-lg sm:text-xl py-5 px-6 flex items-center justify-between">
@@ -111,11 +113,23 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
         <div className="p-6 sm:p-8">
           <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8 bg-white p-6 rounded-lg shadow-sm">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 text-white flex items-center justify-center text-2xl sm:text-3xl font-bold shadow-lg">
-              {user.avatarUrl ? (
+              {hasPhoto ? (
                 <img
-                  src={user.avatarUrl}
+                  src={user.photo}
                   alt={user.name}
-                  className="w-full h-full rounded-full object-cover"
+                  className="w-full h-full object-cover object-top rounded-full"
+                  onError={(e) => {
+                    // Fallback to initials if image fails to load
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = "none";
+                    const parent = target.parentElement;
+                    if (parent) {
+                      const initials = document.createElement("span");
+                      initials.textContent = user.name?.substring(0, 2).toUpperCase() || "";
+                      initials.className = "text-2xl sm:text-3xl font-bold";
+                      parent.appendChild(initials);
+                    }
+                  }}
                 />
               ) : (
                 <span>{user.name?.substring(0, 2).toUpperCase()}</span>
@@ -164,11 +178,20 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
               />
               <DetailItem
                 icon={Phone}
-                label="Alternate Phone"
+                label="Whats App Number"
                 value={user.altPhone}
               />
               <DetailItem icon={Person} label="Gender" value={user.gender} />
-              <DetailItem icon={CalendarToday} label="Age" value={user.age} />
+               <DetailItem
+                icon={CalendarToday}
+                label="Date of Birth"
+                value={formatDate(user.dateOfBirth)}
+              />
+              <DetailItem
+                icon={Person}
+                label="Specialization"
+                value={user.specialization}
+              />
               <DetailItem
                 icon={Person}
                 label="Father''s Name"
@@ -185,6 +208,11 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 icon={Work}
                 label="Designation"
                 value={user.designation}
+              />
+              <DetailItem
+                icon={Description}
+                label="PAN Number"
+                value={user.panNumber}
               />
               <DetailItem
                 icon={CalendarToday}
@@ -240,6 +268,11 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
               colorClass="text-orange-600"
             >
               <DetailItem
+                icon={Description}
+                label="Pan Card Number"
+                value={user.panNumber}
+              />
+              <DetailItem
                 icon={Fingerprint}
                 label="Aadhar Card"
                 value={user.aadharUrl}
@@ -261,6 +294,12 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 icon={Description}
                 label="Signature"
                 value={user.signatureUrl}
+                isLink
+              />
+              <DetailItem
+                icon={Description}
+                label="Photo"
+                value={user.photo}
                 isLink
               />
             </SectionCard>
@@ -289,11 +328,11 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 label="Relation"
                 value={user.nominee?.relation}
               />
-              <DetailItem
+              {/* <DetailItem
                 icon={Person}
                 label="Gender"
                 value={user.nominee?.gender}
-              />
+              /> */}
             </SectionCard>
           </div>
         </div>

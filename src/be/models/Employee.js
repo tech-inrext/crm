@@ -88,7 +88,7 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       enum: ["Pending", "Approved", "Rejected"],
     },
-     dateOfBirth: {
+    dateOfBirth: {
       type: Date,
       required: [true, "Date of Birth is required"],
       validate: {
@@ -98,7 +98,7 @@ const employeeSchema = new mongoose.Schema(
         message: "Invalid Date of Birth",
       },
     },
-    joiningDate: {
+    joiningDate: {  
       type: Date, // No validator, just a plain date
     },
     departmentId: {
@@ -169,6 +169,31 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    photo: {
+      type: String,
+      default: "",
+    },
+    specialization: {
+      type: String,
+      default: "",
+    },
+    panNumber: {
+  type: String,
+  trim: true,
+  uppercase: true,
+  required: [true, "PAN Number is required"],
+  validate: {
+    validator: function (value) {
+      // Strict PAN card validation regex
+      const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+      return panRegex.test(value);
+    },
+    message: "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)",
+  },
+  set: (value) => value.toUpperCase().trim(),
+  index: true,
+  unique: true,
+},
     // Nominee subdocument (optional)
     nominee: {
       type: new mongoose.Schema(

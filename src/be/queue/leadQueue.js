@@ -21,7 +21,7 @@ try {
 
   // Handle Redis connection events
   connection.on("error", (error) => {
-    console.warn("Redis connection error (non-blocking):", error.message);
+    // console.warn("Redis connection error (non-blocking):", error.message);
     // Don't throw error, just log it
   });
 

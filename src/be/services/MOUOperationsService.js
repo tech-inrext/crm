@@ -5,7 +5,7 @@ import Employee from "../models/Employee"; // Standard import
 import { generateMOUPDF } from "./mouService/generator"; // Sibling import
 import { uploadToS3 } from "../../lib/s3"; // Standard import
 import { NotificationHelper } from "../../lib/notification-helpers";
-import { sendMOUApprovalMail } from "../../lib/emails/sendMOUApprovedMail";
+import { sendMOUApprovalMail } from "../email-service/mou/sendMOUApprovedMail.js";
 
 
 class MOUOperationsService extends Service {

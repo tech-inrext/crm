@@ -191,7 +191,7 @@ const LandingPage: React.FC = () => {
         flexDirection: "column",
         px: { xs: 2, sm: 3 },
         py: { xs: 2, sm: 4 },
-        }}
+      }}
     >
       {" "}
       {/* Main Content */}
@@ -216,44 +216,42 @@ const LandingPage: React.FC = () => {
             minHeight: { md: "70vh" },
           }}
         >
-          
           {/* Features Section */}
           <Box
-  sx={{
-    flex: { md: 1 },
-    mb: { xs: 4, md: 0 },
-    maxWidth: { xs: "100%", md: "500px" },
-    width: "100%",
-    textAlign: "center",
-  }}
->
+            sx={{
+              flex: { md: 1 },
+              mb: { xs: 4, md: 0 },
+              maxWidth: { xs: "100%", md: "500px" },
+              width: "100%",
+              textAlign: "center",
+            }}
+          >
+            <Typography
+              variant="h3"
+              sx={{
+                color: "white",
+                fontWeight: 700,
+                mb: 2,
+                fontSize: { xs: "1.75rem", sm: "2rem", md: "2.5rem" },
+                textShadow: "0 20px 40px rgba(0,0,0,0.3)",
+              }}
+            >
+              Built for Teams, <br /> Designed for Growth.
+            </Typography>
 
-  <Typography
-    variant="h3"
-    sx={{
-      color: "white",
-      fontWeight: 700,
-      mb: 2,
-      fontSize: { xs: "1.75rem", sm: "2rem", md: "2.5rem" },
-      textShadow: "0 20px 40px rgba(0,0,0,0.3)",
-    }}
-  >
-    Built for Teams, <br /> Designed for Growth.
-  </Typography>
-
-  <Typography
-    variant="h6"
-    sx={{
-      color: "rgba(255, 255, 255, 0.9)",
-      mb: 4,
-      fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
-      lineHeight: 1,
-      textShadow: "0 20px 40px rgba(0,0,0,0.3)",
-    }}
-  >
-    Welcome to the Inrext CRM
-  </Typography>
-</Box>
+            <Typography
+              variant="h6"
+              sx={{
+                color: "rgba(255, 255, 255, 0.9)",
+                mb: 4,
+                fontSize: { xs: "1rem", sm: "1.125rem", md: "1.25rem" },
+                lineHeight: 1,
+                textShadow: "0 20px 40px rgba(0,0,0,0.3)",
+              }}
+            >
+              Welcome to the Inrext CRM
+            </Typography>
+          </Box>
 
           {/* Login Section */}
           <Box
@@ -344,7 +342,11 @@ const LandingPage: React.FC = () => {
                             edge="end"
                             size="small"
                           >
-                            {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                            {showPassword ? (
+                              <VisibilityOffIcon />
+                            ) : (
+                              <VisibilityIcon />
+                            )}
                           </IconButton>
                         </InputAdornment>
                       ),
@@ -362,11 +364,9 @@ const LandingPage: React.FC = () => {
                       fontWeight: 600,
                       textTransform: "none",
                       fontSize: { xs: "1rem", sm: "1.1rem" },
-                      background:
-                        "#1976d2",
+                      background: "#1976d2",
                       "&:hover": {
-                        background:
-                          "#1976d2",
+                        background: "#1976d2",
                       },
                     }}
                   >
