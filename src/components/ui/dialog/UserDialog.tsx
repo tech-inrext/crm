@@ -46,6 +46,7 @@ export interface UserFormData {
   bankProofUrl?: string;
   photoFile?: File | null;
   photoUrl?: string;
+  panNumber: string;
   nominee?: {
     name?: string;
     phone?: string;
