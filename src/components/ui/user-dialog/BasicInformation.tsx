@@ -9,6 +9,8 @@ import { Field, FieldProps, useFormikContext } from "formik";
 import { GENDER_OPTIONS, FIELD_LABELS } from "@/constants/users";
 import NomineeSection from "./NomineeSection";
 import RequiredDocuments from "./RequiredDocuments";
+import { Photo } from "@mui/icons-material";
+import PhotoUpload from "./PhotoUpload";
 
 const genderOptions = GENDER_OPTIONS.map((gender) => ({
   value: gender,
@@ -41,6 +43,13 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
       <Typography variant="h6" sx={{ mt: 1, fontWeight: 600 }}>
         {FIELD_LABELS.BASIC_INFO}
       </Typography>
+
+      <Box
+        sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+          <Box sx={{width: "100%", maxWidth: 400}}>
+            <PhotoUpload/>
+          </Box>
+      </Box>
 
       <Box
         sx={{
