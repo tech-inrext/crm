@@ -73,68 +73,41 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
       assignedTo?._id?.toString() === member?._id?.toString();
 
     return (
-      <Stack
-        direction="row"
-        spacing={1.5}
-        alignItems="center"
-        sx={{
-          px: 2,
-          py: 1,
-          cursor: "pointer",
-          borderRadius: 2,
-          backgroundColor: isAssigned ? "#e0f2fe" : "transparent",
-          "&:hover": {
-            backgroundColor: "#f1f5f9",
-          },
-        }}
+      <div
+        className={`flex items-center px-4 py-2 cursor-pointer rounded-lg ${isAssigned ? 'bg-blue-100' : 'hover:bg-gray-100'}`}
         onClick={() => handleAssign(member)}
       >
-        <Avatar src={member?.avatar} sx={{ width: 32, height: 32 }}>
+        <Avatar src={member?.avatar} className="w-8 h-8">
           {member?.name?.[0]}
         </Avatar>
 
-        <Typography fontSize={14} fontWeight={500}>
+        <Typography className="text-sm font-medium ml-2">
           {member?.name}
         </Typography>
-      </Stack>
+      </div>
     );
   };
 
   return (
- <Menu
-  anchorEl={anchorEl}
-  open={Boolean(anchorEl)}
-  onClose={onClose}
-  anchorOrigin={{
-    vertical: "bottom",
-    horizontal: "left",
-  }}
-  transformOrigin={{
-    vertical: "top",
-    horizontal: "left",
-  }}
-  PaperProps={{
-    sx: {
-      width: 260,
-      borderRadius: 3,
-      p: 1,
-      mt: 6,   // ✅ THIS SHIFTS DROPDOWN LOWER
-      overflow: "hidden",
-    },
-  }}
->
-
+    <Menu
+      anchorEl={anchorEl}
+      open={Boolean(anchorEl)}
+      onClose={onClose}
+      anchorOrigin={{
+        vertical: "bottom",
+        horizontal: "left",
+      }}
+      transformOrigin={{
+        vertical: "top",
+        horizontal: "left",
+      }}
+      PaperProps={{
+        className: "w-64 rounded-lg p-4 overflow-hidden", // removed mt-6
+        style: { marginTop: 0 }, // ensure no extra margin
+      }}
+    >
       {/* ---------- Suggested ---------- */}
-      <Typography
-        sx={{
-          px: 2,
-          pt: 1,
-          pb: 0.5,
-          fontSize: 12,
-          fontWeight: 600,
-          color: "text.secondary",
-        }}
-      >
+      <Typography className="px-4 pt-2 pb-1 text-xs font-semibold text-gray-500">
         SUGGESTED
       </Typography>
 
@@ -142,27 +115,14 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
         <MemberRow member={{ ...user, name: "Assign to Me" }} />
       )}
 
-      <Divider sx={{ my: 1 }} />
+      <Divider className="my-2" />
 
       {/* ---------- All Agents ---------- */}
-      <Typography
-        sx={{
-          px: 2,
-          pb: 0.5,
-          fontSize: 12,
-          fontWeight: 600,
-          color: "text.secondary",
-        }}
-      >
+      <Typography className="px-4 pb-1 text-xs font-semibold text-gray-500">
         ALL AGENTS
       </Typography>
 
-      <Box
-        sx={{
-          maxHeight: ROW_HEIGHT * VISIBLE_ROWS,
-          overflowY: "auto",
-        }}
-      >
+      <Box className="max-h-[calc(52px*3)] overflow-y-auto">
         {allMembers.map((member) => (
           <MemberRow key={member._id} member={member} />
         ))}
