@@ -59,10 +59,10 @@ export function VendorBreakdown() {
     }
   }, []);
 
-  // Fetch AVP users on mount
+  // Fetch AVP users on mount and when AVP filter changes
   React.useEffect(() => {
     fetchAvpUsers();
-  }, [fetchAvpUsers]);
+  }, [fetchAvpUsers, tempFilters.avp]);
 
   // Prevent duplicate initial fetches (React StrictMode in dev can mount twice)
   const mountRef = React.useRef(false);
@@ -103,9 +103,6 @@ export function VendorBreakdown() {
         data = await p;
       }
       if (data.success) {
-        if (data.avpUsers && Array.isArray(data.avpUsers) && data.avpUsers.length > 0) {
-          setAvpUsers(data.avpUsers);
-        }
         setVendorData({
           ...data,
           allVendors: data.allVendors,
