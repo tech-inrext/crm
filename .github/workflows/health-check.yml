@@ -14,6 +14,7 @@ jobs:
       - name: Check API health
         run: |
           RESPONSE=$(curl -s --max-time 5 https://dashboard.inrext.com/api/v0/health)
+          echo "$RESPONSE" > /tmp/health_response.json
 
           echo "Response: $RESPONSE"
 
@@ -26,9 +27,38 @@ jobs:
           echo "Service details:"
           echo "$RESPONSE" | jq -r '.data.services // {} | to_entries[] | "\(.key): \(.value)"'
 
-          if [ "$STATUS" != "healthy" ]; then
+          if [ "$STATUS" != "ok" ]; then
             echo "❌ System not healthy. Status: $STATUS"
             exit 1
           fi
 
           echo "✅ System healthy"
+      - name: Notify Brevo email on failure
+        if: failure()
+        env:
+          BREVO_API_KEY: ${{ secrets.BREVO_API_KEY }}
+          HEALTH_EMAIL_TO_1: rajsrivastvaa@gmail.com
+          HEALTH_EMAIL_TO_2: nandan.shri21@gmail.com
+          HEALTH_EMAIL_FROM: rajsrivastvaa@gmail.com
+        run: |
+          RESPONSE=$(cat /tmp/health_response.json 2>/dev/null || echo "{}")
+          STATUS=$(echo "$RESPONSE" | jq -r '.data.status // "unknown"')
+          TIMESTAMP=$(echo "$RESPONSE" | jq -r '.data.timestamp // "unknown"')
+          SERVICES=$(echo "$RESPONSE" | jq -r '.data.services // {} | to_entries[]? | "\(.key): \(.value)"')
+
+          SUBJECT="[Inrext] Health check failed: $STATUS"
+          BODY="ALERT: Inrext health check FAILED\n--------------------------------\nStatus:     $STATUS\nTimestamp:  $TIMESTAMP\n\nServices:\n${SERVICES:-none}\n\nRaw response:\n$RESPONSE"
+
+          PAYLOAD=$(jq -n \
+            --arg from "$HEALTH_EMAIL_FROM" \
+            --arg to1 "$HEALTH_EMAIL_TO_1" \
+            --arg to2 "$HEALTH_EMAIL_TO_2" \
+            --arg subject "$SUBJECT" \
+            --arg body "$BODY" \
+            '{sender:{email:$from},to:[{email:$to1},{email:$to2}],subject:$subject,textContent:$body}')
+
+          curl -sS -X POST "https://api.brevo.com/v3/smtp/email" \
+            -H "accept: application/json" \
+            -H "content-type: application/json" \
+            -H "api-key: $BREVO_API_KEY" \
+            -d "$PAYLOAD"
