@@ -39,14 +39,14 @@ export const userValidationSchema = Yup.object({
     .min(VALIDATION_RULES.ADDRESS.min)
     .required("Address is required"),
   gender: Yup.string().oneOf(GENDER_OPTIONS).required("Gender is required"),
-  age: Yup.number()
-    .transform((value, originalValue) => {
-      // treat empty string as null so it's optional in the form
-      return originalValue === "" || originalValue === null ? null : value;
-    })
-    .min(VALIDATION_RULES.AGE.min)
-    .max(VALIDATION_RULES.AGE.max)
-    .nullable(),
+  // age: Yup.number()
+  //   .transform((value, originalValue) => {
+  //     // treat empty string as null so it's optional in the form
+  //     return originalValue === "" || originalValue === null ? null : value;
+  //   })
+  //   .min(VALIDATION_RULES.AGE.min)
+  //   .max(VALIDATION_RULES.AGE.max)
+  //   .nullable(),
   altPhone: Yup.string()
     .transform((value, originalValue) => (originalValue === "" ? null : value))
     .nullable()
@@ -58,6 +58,24 @@ export const userValidationSchema = Yup.object({
         return /^\d{10}$/.test(String(val));
       }
     ),
+       dateOfBirth: Yup.string()
+    .nullable()
+    .required("Date of Birth is required")
+    .test("age-restriction", "Age should be atleast 21 years", (val) => {
+      if (!val) return false;
+      const dob = new Date(val);
+      const today = new Date();
+      const age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      const dayDiff = today.getDate() - dob.getDate();
+      if (
+        age > 21 ||
+        (age === 21 && (monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0)))
+      ) {
+        return true;
+      }
+      return false;
+    }),
   joiningDate: Yup.string()
     .nullable()
     .test("not-in-future", "Joining date cannot be a future date", (val) => {
