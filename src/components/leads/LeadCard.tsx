@@ -1,0 +1,331 @@
+import { memo, useState } from "react";
+import {
+  Card,
+  CardContent,
+  Box,
+  Typography,
+  Stack,
+  Divider,
+  SpeedDial,
+  SpeedDialAction,
+  SpeedDialIcon,
+  ClickAwayListener,
+  Chip,
+  Avatar,
+  useTheme,
+} from "@mui/material";
+import { alpha } from "@mui/material/styles";
+
+import {
+  Email,
+  Phone,
+  TrendingUp,
+  Edit,
+  PersonAdd,
+  HomeIcon,
+  PinIcon,
+} from "@/components/ui/Component";
+
+import { Schedule, MoreVert, NoteAlt, Event } from "@mui/icons-material";
+
+import type { LeadDisplay as Lead } from "../../types/lead";
+import StatusDropdown from "./StatusDropdown";
+import PermissionGuard from "../PermissionGuard";
+
+// Helper for row items with icons
+const InfoRow = ({
+  icon,
+  text,
+  color,
+  isLink = false,
+  href = "",
+}: {
+  icon: React.ReactNode;
+  text: string | React.ReactNode;
+  color: string;
+  isLink?: boolean;
+  href?: string;
+}) => {
+  const content = (
+    <Box sx={{ display: "flex", alignItems: "center", width: "100%" }}>
+      <Box
+        sx={{
+          mr: 1.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 32,
+          height: 32,
+          borderRadius: "50%",
+          bgcolor: alpha(color, 0.1),
+          color: color,
+          flexShrink: 0,
+        }}
+      >
+        {icon}
+      </Box>
+      <Typography
+        variant="body2"
+        color="text.primary"
+        fontWeight={500}
+        sx={{
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          flex: 1,
+        }}
+      >
+        {text}
+      </Typography>
+    </Box>
+  );
+
+  if (isLink && href) {
+    return (
+      <Box
+        component="a"
+        href={href}
+        sx={{
+          textDecoration: "none",
+          display: "block",
+          "&:hover": {
+            "& p": { color: "primary.main" },
+          },
+        }}
+      >
+        {content}
+      </Box>
+    );
+  }
+  return content;
+};
+
+interface LeadCardProps {
+  lead: Lead;
+  onEdit: () => void;
+  onScheduleSiteVisit: (leadId: string) => void;
+  onOpenFeedback: (leadId: string) => void;
+  onStatusChange: (leadId: string, newStatus: string) => Promise<void>;
+}
+
+const LeadCard = memo(
+  ({
+    lead,
+    onEdit,
+    onScheduleSiteVisit,
+    onOpenFeedback,
+    onStatusChange,
+  }: LeadCardProps) => {
+    const [actionsOpen, setActionsOpen] = useState(false);
+    const theme = useTheme();
+
+    return (
+      <Card
+        elevation={0}
+        sx={{
+          borderRadius: 4,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+          background: "#fff",
+          position: "relative",
+          height: "100%",
+          minHeight: "340px",
+          display: "flex",
+          flexDirection: "column",
+          transition: "all 0.3s ease",
+          overflow: "visible",
+          "&:hover": {
+            boxShadow: "0 16px 32px rgba(0,0,0,0.12)",
+            transform: "translateY(-4px)",
+          },
+        }}
+      >
+        {/* Status Badge (Top-Left) */}
+        <Box sx={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}>
+          <Chip
+            label="Warm Lead"
+            size="small"
+            sx={{
+              fontWeight: 700,
+              fontSize: "0.75rem",
+              bgcolor: alpha(theme.palette.success.main, 0.1),
+              color: theme.palette.success.main,
+              borderRadius: 2,
+              height: 24,
+            }}
+          />
+        </Box>
+
+        {/* Status Dropdown (Top-Right) */}
+        <Box sx={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}>
+            <StatusDropdown
+              leadId={lead._id || lead.id || lead.leadId || ""}
+              currentStatus={lead.status}
+              onStatusChange={onStatusChange}
+              variant="chip"
+              size="small"
+            />
+        </Box>
+
+        <CardContent sx={{ p: 2.5, flexGrow: 1, pt: 6 }}>
+          {/* Header Section: Name & Project */}
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              variant="h6"
+              fontWeight={700}
+              sx={{
+                mb: 0.5,
+                lineHeight: 1.3,
+                color: "text.primary",
+                display: "-webkit-box",
+                WebkitLineClamp: 1,
+                WebkitBoxOrient: "vertical",
+                overflow: "hidden",
+              }}
+            >
+              {lead?.fullName || "Unknown Lead"}
+            </Typography>
+
+            <Stack spacing={0.5}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                  <HomeIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                  <Typography variant="caption" color="text.secondary" noWrap>
+                    {lead.propertyName || "Property not set"}
+                  </Typography>
+                </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <PinIcon sx={{ fontSize: 16, color: "text.secondary" }} />
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  {lead.location || "Location not set"}
+                </Typography>
+              </Box>
+            </Stack>
+          </Box>
+
+          <Divider sx={{ my: 2, borderStyle: "dashed" }} />
+
+          {/* Contact Details Grid */}
+          <Stack spacing={1.5}>
+            <InfoRow
+              icon={<Email sx={{ fontSize: 18 }} />}
+              text={lead.email || "Not provided"}
+              color={theme.palette.info.main}
+            />
+            <InfoRow
+              icon={<Phone sx={{ fontSize: 18 }} />}
+              text={lead.phone}
+              color={theme.palette.success.main}
+              isLink
+              href={`tel:${lead.phone}`}
+            />
+            <InfoRow
+              icon={<TrendingUp sx={{ fontSize: 18 }} />}
+              text={lead.budgetRange || "Budget N/A"}
+              color={theme.palette.warning.main}
+            />
+             <InfoRow
+              icon={<PersonAdd sx={{ fontSize: 18 }} />}
+              text={lead.assignedTo || "Unassigned"}
+              color={theme.palette.secondary.main}
+            />
+          </Stack>
+
+        </CardContent>
+        {/* Footer / Actions */}
+        <Box
+            sx={{
+                p: 2,
+                pt: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "flex-end",
+                mt: "auto"
+            }}
+        >
+
+            <PermissionGuard module="lead" action="write" fallback={<></>}>
+              <ClickAwayListener onClickAway={() => setActionsOpen(false)}>
+                <Box sx={{ position: "relative", zIndex: 20 }}>
+                  <SpeedDial
+                    ariaLabel="Actions"
+                    sx={{ 
+                        position: 'absolute', 
+                        bottom: 16, 
+                        right: 0,
+                        '& .MuiFab-root': {
+                            width: 36,
+                            height: 36,
+                            minHeight: 36,
+                            boxShadow: 'none',
+                             border: `1px solid ${theme.palette.divider}`,
+                             bgcolor: 'transparent',
+                             color: 'text.secondary',
+                             '&:hover': {
+                                 bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                 color: 'primary.main',
+                                 borderColor: 'primary.main'
+                             }
+                        }
+                    }}
+                    icon={<SpeedDialIcon icon={<MoreVert sx={{ fontSize: 20 }} />} />}
+                    onClose={() => setActionsOpen(false)}
+                    onOpen={() => setActionsOpen(true)}
+                    open={actionsOpen}
+                    direction="up"
+                  >
+                    <SpeedDialAction
+                      icon={<Edit sx={{ fontSize: 18, color: theme.palette.primary.main }} />}
+                      tooltipTitle="Edit"
+                      sx={{
+                        bgcolor: alpha(theme.palette.primary.main, 0.1),
+                        "&:hover": {
+                          bgcolor: alpha(theme.palette.primary.main, 0.2),
+                        },
+                      }}
+                      onClick={() => {
+                        setActionsOpen(false);
+                        onEdit();
+                      }}
+                    />
+                    <SpeedDialAction
+                      icon={<NoteAlt sx={{ fontSize: 18, color: theme.palette.warning.main }} />}
+                      tooltipTitle="Notes"
+                      sx={{
+                        bgcolor: alpha(theme.palette.warning.main, 0.1),
+                        "&:hover": {
+                          bgcolor: alpha(theme.palette.warning.main, 0.2),
+                        },
+                      }}
+                      onClick={() => {
+                        setActionsOpen(false);
+                        onOpenFeedback(lead._id || lead.id || lead.leadId || "");
+                      }}
+                    />
+                    <SpeedDialAction
+                      icon={<Event sx={{ fontSize: 18, color: theme.palette.secondary.main }} />}
+                      tooltipTitle="Site Visit"
+                      sx={{
+                        bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                        "&:hover": {
+                          bgcolor: alpha(theme.palette.secondary.main, 0.2),
+                        },
+                      }}
+                      onClick={() => {
+                        setActionsOpen(false);
+                        onScheduleSiteVisit(
+                          lead._id || lead.id || lead.leadId || ""
+                        );
+                      }}
+                    />
+                  </SpeedDial>
+                </Box>
+              </ClickAwayListener>
+            </PermissionGuard>
+        </Box>
+      </Card>
+    );
+  }
+);
+
+LeadCard.displayName = "LeadCard";
+
+export default LeadCard;
