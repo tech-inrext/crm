@@ -23,7 +23,7 @@ const employeeSchema = new mongoose.Schema(
       unique: true,
       index: true,
       immutable: true,
-      required: true,
+      // required: true,
       match: new RegExp(`^${EMP_ID_PREFIX}\\d{${EMP_ID_PAD}}$`),
     },
 
@@ -90,7 +90,7 @@ const employeeSchema = new mongoose.Schema(
     },
     dateOfBirth: {
       type: Date,
-      required: [true, "Date of Birth is required"],
+      // required: [true, "Date of Birth is required"],
       validate: {
         validator: function (value) {
           return !isNaN(new Date(value).getTime());
@@ -181,7 +181,7 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       trim: true,
       uppercase: true,
-      required: [true, "PAN Number is required"],
+      // required: [true, "PAN Number is required"],
       validate: {
         validator: function (value) {
           // Strict PAN card validation regex
