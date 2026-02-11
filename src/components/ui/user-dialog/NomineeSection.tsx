@@ -116,7 +116,7 @@ const NomineeSection: React.FC = () => {
               {...field}
               value={field.value ?? ""}
               label={FIELD_LABELS.NOMINEE_OCCUPATION}
-              select
+              // select
               fullWidth
               margin="normal"
               error={!!meta.touched && !!meta.error}

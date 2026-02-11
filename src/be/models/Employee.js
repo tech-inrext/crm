@@ -203,7 +203,7 @@ const employeeSchema = new mongoose.Schema(
           phone: { type: String, trim: true },
           occupation: { type: String, trim: true },
           relation: { type: String, trim: true },
-          gender: { type: String, enum: ["Male", "Female", "Other"] },
+          // gender: { type: String, enum: ["Male", "Female", "Other"] },
         },
         { _id: false },
       ),
