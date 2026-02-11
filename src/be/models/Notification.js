@@ -17,6 +17,7 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       enum: [
         "LEAD_ASSIGNED",
+        "BULK_LEAD_ASSIGNED",
         "LEAD_STATUS_UPDATE",
         "LEAD_FOLLOWUP_DUE",
         "CAB_BOOKING_APPROVED",
@@ -142,6 +143,11 @@ const notificationSchema = new mongoose.Schema(
 
     metadata: {
       leadId: { type: mongoose.Schema.Types.ObjectId, ref: "Lead" },
+      leadName: String,
+      leadPhone: String,
+      leadLocation: String,
+      leadPropertyType: String,
+      leadBudget: String,
       cabBookingId: { type: mongoose.Schema.Types.ObjectId, ref: "CabBooking" },
       vendorBookingId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -162,6 +168,11 @@ const notificationSchema = new mongoose.Schema(
         type: Boolean,
         default: true,
       },
+      isBatch: { type: Boolean, default: false },
+      batchId: String,
+      leadCount: Number,
+      assignedBy: { type: mongoose.Schema.Types.ObjectId, ref: "Employee" },
+      assignedByName: String,
       relatedNotifications: [
         {
           type: mongoose.Schema.Types.ObjectId,
@@ -235,6 +246,10 @@ notificationSchema.methods.getExpiryDays = function () {
   let days = 30; // default
 
   switch (this.type) {
+    case "LEAD_ASSIGNED":
+    case "BULK_LEAD_ASSIGNED":
+      days = this.metadata.priority === "URGENT" ? 7 : 14;
+      break;
     case "LEAD_FOLLOWUP_DUE":
       days = this.metadata.priority === "URGENT" ? 1 : 7;
       break;
@@ -248,7 +263,6 @@ notificationSchema.methods.getExpiryDays = function () {
     case "USER_ROLE_CHANGED":
       days = 90; // Keep longer for audit
       break;
-    case "LEAD_ASSIGNED":
     case "VENDOR_ASSIGNED":
       days = 14;
       break;
@@ -279,6 +293,7 @@ notificationSchema.methods.getCleanupRules = function () {
 
   switch (this.type) {
     case "LEAD_ASSIGNED":
+    case "BULK_LEAD_ASSIGNED":
     case "VENDOR_ASSIGNED":
       rules.preserveIfActionable = true;
       break;

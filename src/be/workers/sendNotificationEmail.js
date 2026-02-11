@@ -101,6 +101,7 @@ async function sendEmailNotification(job) {
 function getNotificationCategory(type) {
   const categoryMap = {
     LEAD_ASSIGNED: "leads",
+    BULK_LEAD_ASSIGNED: "leads",
     LEAD_STATUS_UPDATE: "leads",
     LEAD_FOLLOWUP_DUE: "leads",
     CAB_BOOKING_APPROVED: "cabBooking",
@@ -118,6 +119,7 @@ function getNotificationCategory(type) {
     PROPERTY_STATUS_UPDATE: "system",
     SYSTEM_ANNOUNCEMENT: "system",
     REMINDER: "system",
+    BULK_UPLOAD_COMPLETE: "system",
   };
 
   return categoryMap[type] || "system";
@@ -129,7 +131,24 @@ function generateEmailContent(notification) {
     ? `${baseUrl}${notification.metadata.actionUrl}`
     : `${baseUrl}/dashboard`;
 
-  const subject = `${notification.title} - Inrext CRM`;
+  let subject = `${notification.title} - Inrext CRM`;
+  let customMessage = notification.message;
+  
+  // Customize for bulk assignment
+  if (notification.type === "BULK_LEAD_ASSIGNED" || notification.metadata.isBatch) {
+    const leadCount = notification.metadata.leadCount || 0;
+    const batchId = notification.metadata.batchId || 'N/A';
+    subject = `You've been assigned ${leadCount} new leads - Inrext CRM`;
+    customMessage = `${leadCount} leads have been assigned to you in batch ${batchId}. Click below to view them.`;
+  }
+  // Customize for single lead assignment
+  else if (notification.type === "LEAD_ASSIGNED" && !notification.metadata.isBatch) {
+    const leadName = notification.metadata.leadName || 'Unnamed Lead';
+    const leadPhone = notification.metadata.leadPhone || 'N/A';
+    const leadLocation = notification.metadata.leadLocation || 'N/A';
+    subject = `New Lead Assigned: ${leadName} - Inrext CRM`;
+    customMessage = `Lead "${leadName}" (${leadPhone}) from ${leadLocation} has been assigned to you.`;
+  }
 
   const html = `
     <!DOCTYPE html>
@@ -200,6 +219,28 @@ function generateEmailContent(notification) {
           margin-bottom: 10px;
           display: inline-block;
         }
+          .lead-details {
+          background: white;
+          border-left: 4px solid #007bff;
+          padding: 15px;
+          margin: 15px 0;
+          border-radius: 4px;
+        }
+        .lead-details h4 {
+          margin-top: 0;
+          color: #2c3e50;
+        }
+        .lead-details p {
+          margin: 5px 0;
+          font-size: 14px;
+        }
+        .batch-info {
+          background: #e8f5e9;
+          padding: 10px 15px;
+          border-radius: 4px;
+          margin: 15px 0;
+          border-left: 4px solid #4caf50;
+        }
       </style>
     </head>
     <body>
@@ -224,6 +265,25 @@ function generateEmailContent(notification) {
         <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
           ${notification.message}
         </p>
+
+        ${notification.metadata.isBatch && notification.metadata.leadCount ? `
+          <div class="batch-info">
+            <strong>Batch Assignment Summary:</strong>
+            <p>📊 <strong>${notification.metadata.leadCount}</strong> leads assigned</p>
+            <p>🆔 Batch ID: ${notification.metadata.batchId || 'N/A'}</p>
+          </div>
+        ` : ''}
+        
+        ${!notification.metadata.isBatch && notification.metadata.leadName ? `
+          <div class="lead-details">
+            <h4>Lead Details:</h4>
+            <p><strong>Name:</strong> ${notification.metadata.leadName || 'N/A'}</p>
+            <p><strong>Phone:</strong> ${notification.metadata.leadPhone || 'N/A'}</p>
+            <p><strong>Location:</strong> ${notification.metadata.leadLocation || 'N/A'}</p>
+            <p><strong>Property Type:</strong> ${notification.metadata.leadPropertyType || 'N/A'}</p>
+            <p><strong>Budget:</strong> ${notification.metadata.leadBudget || 'N/A'}</p>
+          </div>
+        ` : ''}
         
         ${
           notification.sender
@@ -239,7 +299,7 @@ function generateEmailContent(notification) {
           notification.metadata.actionUrl
             ? `
           <a href="${actionUrl}" class="action-button">
-            View Details
+            View ${notification.metadata.isBatch ? 'Assigned Leads' : 'Lead Details'}
           </a>
         `
             : ""
@@ -263,7 +323,19 @@ function generateEmailContent(notification) {
 }
 
 function getTypeDisplayName(type) {
-  return type
+  const typeMap = {
+    "LEAD_ASSIGNED": "Lead Assignment",
+    "BULK_LEAD_ASSIGNED": "Bulk Lead Assignment",
+    "LEAD_STATUS_UPDATE": "Lead Status Update",
+    "LEAD_FOLLOWUP_DUE": "Follow-up Due",
+    "CAB_BOOKING_APPROVED": "Cab Booking Approved",
+    "CAB_BOOKING_REJECTED": "Cab Booking Rejected",
+    "CAB_BOOKING_ASSIGNED": "Cab Booking Assigned",
+    "CAB_BOOKING_REQUEST": "Cab Booking Request",
+    "BULK_UPLOAD_COMPLETE": "Bulk Upload Complete"
+  };
+
+  return typeMap[type] || type
     .split("_")
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(" ");
