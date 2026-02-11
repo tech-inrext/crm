@@ -5,7 +5,7 @@ import validator from "validator";
 /* 🔹 Atomic counter model for sequential IDs */
 const CounterSchema = new mongoose.Schema(
   { _id: { type: String }, seq: { type: Number, default: 0 } },
-  { versionKey: false }
+  { versionKey: false },
 );
 const Counter =
   mongoose.models.Counter || mongoose.model("Counter", CounterSchema);
@@ -98,7 +98,7 @@ const employeeSchema = new mongoose.Schema(
         message: "Invalid Date of Birth",
       },
     },
-    joiningDate: {  
+    joiningDate: {
       type: Date, // No validator, just a plain date
     },
     departmentId: {
@@ -178,22 +178,23 @@ const employeeSchema = new mongoose.Schema(
       default: "",
     },
     panNumber: {
-  type: String,
-  trim: true,
-  uppercase: true,
-  required: [true, "PAN Number is required"],
-  validate: {
-    validator: function (value) {
-      // Strict PAN card validation regex
-      const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-      return panRegex.test(value);
+      type: String,
+      trim: true,
+      uppercase: true,
+      required: [true, "PAN Number is required"],
+      validate: {
+        validator: function (value) {
+          // Strict PAN card validation regex
+          const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+          return panRegex.test(value);
+        },
+        message:
+          "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)",
+      },
+      set: (value) => value.toUpperCase().trim(),
+      index: true,
+      unique: true,
     },
-    message: "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)",
-  },
-  set: (value) => value.toUpperCase().trim(),
-  index: true,
-  unique: true,
-},
     // Nominee subdocument (optional)
     nominee: {
       type: new mongoose.Schema(
@@ -204,7 +205,7 @@ const employeeSchema = new mongoose.Schema(
           relation: { type: String, trim: true },
           gender: { type: String, enum: ["Male", "Female", "Other"] },
         },
-        { _id: false }
+        { _id: false },
       ),
       default: null,
     },
@@ -257,7 +258,7 @@ const employeeSchema = new mongoose.Schema(
       },
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 employeeSchema.index({ isCabVendor: 1, createdAt: -1 });
@@ -269,7 +270,7 @@ employeeSchema.pre("validate", async function (next) {
       const doc = await Counter.findOneAndUpdate(
         { _id: EMP_ID_SCOPE },
         { $inc: { seq: 1 } },
-        { new: true, upsert: true }
+        { new: true, upsert: true },
       );
       const n = doc.seq;
       const id = `${EMP_ID_PREFIX}${String(n).padStart(EMP_ID_PAD, "0")}`;
