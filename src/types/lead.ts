@@ -25,7 +25,11 @@ export interface Lead {
   status: string;
   source?: string;
   managerId?: string; // ObjectId reference to Employee (lead manager)
-  assignedTo?: string; // ObjectId reference to Employee (assigned team member)
+  assignedTo?: {
+  _id: string;
+  fullName?: string;
+  name?: string;
+};
   value?: number;
   notes?: string;
   followUpNotes?: string[];
