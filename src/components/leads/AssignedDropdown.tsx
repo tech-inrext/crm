@@ -74,30 +74,20 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
       <ListItemButton
         onClick={() => handleAssign(member)}
         selected={isAssigned}
-        sx={{
-          borderRadius: 1.5,
-          mb: 0.4,
-          py: 0.6,
-          px: 1,
-          transition: "all 0.2s ease",
-          bgcolor: isAssigned ? "#F3E8FF" : "transparent",
-          border: isAssigned ? "1px solid #C4B5FD" : "1px solid transparent",
-          "&:hover": {
-            bgcolor: isAssigned ? "#E9D5FF" : "#F9FAFB",
-          },
-        }}
+        className={`
+    rounded-[6px] mb-[2px] py-[2.4px] px-1 transition-all duration-200 ease-in-out
+    border
+    ${
+      isAssigned
+        ? "bg-purple-100 border-purple-300 hover:bg-purple-200"
+        : "bg-transparent border-transparent hover:bg-gray-50"
+    }
+  `}
       >
         <ListItemAvatar sx={{ minWidth: 36 }}>
           <Avatar
             src={member?.avatar}
-            sx={{
-              width: 30,
-              height: 30,
-              fontSize: 13,
-              bgcolor: "#E9D5FF",
-              color: "#6B21A8",
-              fontWeight: 600,
-            }}
+            className="w-[30px] h-[30px] text-[13px] bg-purple-200 text-purple-800 font-semibold"
           >
             {member?.name?.[0]?.toUpperCase() || "U"}
           </Avatar>
@@ -116,22 +106,20 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
   };
 
   return (
-   <Menu
-  anchorEl={anchorEl}
-  open={Boolean(anchorEl)}
-  onClose={onClose}
-  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-  transformOrigin={{ vertical: "top", horizontal: "center" }}
-  PaperProps={{
-    className:
-      "w-[240px] mt-[2px] rounded-[12px] border border-gray-200 shadow-[0px_6px_18px_rgba(0,0,0,0.08)] overflow-hidden rounded-tl-none rounded-tr-none",
-  }}
->
-
+    <Menu
+      anchorEl={anchorEl}
+      open={Boolean(anchorEl)}
+      onClose={onClose}
+      anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      transformOrigin={{ vertical: "top", horizontal: "center" }}
+      PaperProps={{
+        className:
+          "w-[240px] mt-[2px] rounded-[12px] border border-gray-200 shadow-[0px_6px_18px_rgba(0,0,0,0.08)] overflow-hidden rounded-tl-none rounded-tr-none",
+      }}
+    >
       {/* ---------- Suggested ---------- */}
-    <Box className="px-1.5 pt-[5.6px] pb-[2.4px]">
-  <Typography className="text-[10.5px] font-semibold text-gray-400 tracking-[0.7px] mb-[2.4px]">
-
+      <Box className="px-1.5 pt-[5.6px] pb-[2.4px]">
+        <Typography className="text-[10.5px] font-semibold text-gray-400 tracking-[0.7px] mb-[2.4px]">
           SUGGESTED
         </Typography>
 
@@ -142,14 +130,12 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
 
       {/* ---------- All Agents ---------- */}
       <Box sx={{ px: 1.5, pt: 0.8, pb: 0.5 }}>
-       <Typography className="text-[10.5px] font-semibold text-gray-400 tracking-[0.7px] mb-[2px]">
-
+        <Typography className="text-[10.5px] font-semibold text-gray-400 tracking-[0.7px] mb-[2px]">
           ALL AGENTS
         </Typography>
       </Box>
 
-    <List className="max-h-[190px] overflow-y-auto px-1.5 pb-1.5">
-
+      <List className="max-h-[190px] overflow-y-auto px-1.5 pb-1.5">
         {allMembers.map((member) => (
           <MemberRow key={member?._id} member={member} />
         ))}
