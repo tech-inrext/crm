@@ -587,120 +587,124 @@ class EmployeeService extends Service {
     }
   }
 
-  async getAllEmployees(req, res) {
-    try {
-      const {
-        page = 1,
-        limit = 5,
-        search = "",
-        isCabVendor,
-        mouStatus,
-        requireSlab,
-      } = req.query;
+async getAllEmployees(req, res) {
+  try {
+    const {
+      page = 1,
+      limit = 5,
+      search = "",
+      isCabVendor,
+      mouStatus,
+      requireSlab,
+      role, // ⭐ NEW
+    } = req.query;
 
-      // 🔐 Logged-in user id (string)
-      const loggedInId = (
-        req.employee?._id?.toString?.() ||
+    const loggedInId =
+      (req.employee?._id?.toString?.() ||
         req.user?._id?.toString?.() ||
-        ""
-      ).trim();
+        "").trim();
 
-      // Pagination
-      const currentPage = Number.parseInt(page, 10) || 1;
-      const itemsPerPage = Math.min(100, Number.parseInt(limit, 10) || 5);
-      const skip = (currentPage - 1) * itemsPerPage;
+    const currentPage = Number.parseInt(page, 10) || 1;
+    const itemsPerPage = Math.min(100, Number.parseInt(limit, 10) || 5);
+    const skip = (currentPage - 1) * itemsPerPage;
 
-      // Search filter
-      const searchFilter = search
-        ? {
-            $or: [
-              { name: { $regex: search, $options: "i" } },
-              { email: { $regex: search, $options: "i" } },
-              { phone: { $regex: search, $options: "i" } },
-              { panNumber: { $regex: search, $options: "i" } },
-            ],
-          }
+    /* ---------- SEARCH ---------- */
+    const searchFilter = search
+      ? {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+            { panNumber: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
+    /* ---------- ROLE FILTER ⭐ ---------- */
+    const roleFilter = role
+      ? { role: { $regex: `^${String(role).trim()}$`, $options: "i" } }
+      : {};
+
+    /* ---------- BOOLEAN NORMALIZER ---------- */
+    const normalizeBool = (v) => {
+      if (typeof v === "boolean") return v;
+      if (v == null) return undefined;
+      const s = String(v).trim().toLowerCase();
+      if (["true", "1", "yes", "y"].includes(s)) return true;
+      if (["false", "0", "no", "n"].includes(s)) return false;
+      return undefined;
+    };
+
+    /* ---------- CAB VENDOR ---------- */
+    const vendorVal = normalizeBool(isCabVendor);
+    const vendorFilter =
+      typeof vendorVal === "boolean" ? { isCabVendor: vendorVal } : {};
+
+    /* ---------- MOU STATUS ---------- */
+    const mouFilter = mouStatus
+      ? {
+          mouStatus: {
+            $regex: `^${String(mouStatus).trim()}$`,
+            $options: "i",
+          },
+        }
+      : {};
+
+    /* ---------- SLAB ---------- */
+    const slabReq = normalizeBool(requireSlab);
+    const slabFilter = slabReq
+      ? { slabPercentage: { $exists: true, $nin: ["", null] } }
+      : {};
+
+    /* ---------- MANAGER FILTER ---------- */
+    const castManagerId = (id) =>
+      mongoose.Types.ObjectId.isValid(id)
+        ? new mongoose.Types.ObjectId(id)
+        : id;
+
+    const managerFilter =
+      mouStatus && loggedInId
+        ? { managerId: castManagerId(loggedInId) }
         : {};
 
-      // isCabVendor filter
-      const normalizeBool = (v) => {
-        if (typeof v === "boolean") return v;
-        if (v == null) return undefined;
-        const s = String(v).trim().toLowerCase();
-        if (["true", "1", "yes", "y"].includes(s)) return true;
-        if (["false", "0", "no", "n"].includes(s)) return false;
-        return undefined;
-      };
-      const vendorVal = normalizeBool(isCabVendor);
-      const vendorFilter =
-        typeof vendorVal === "boolean" ? { isCabVendor: vendorVal } : {};
+    /* ---------- FINAL QUERY ---------- */
+    const query = {
+      ...searchFilter,
+      ...roleFilter, // ⭐ IMPORTANT
+      ...vendorFilter,
+      ...mouFilter,
+      ...managerFilter,
+      ...slabFilter,
+    };
 
-      // mouStatus filter (case-insensitive exact match)
-      const mouFilter = mouStatus
-        ? {
-            mouStatus: {
-              $regex: `^${String(mouStatus).trim()}$`,
-              $options: "i",
-            },
-          }
-        : {};
+    const [employees, totalEmployees] = await Promise.all([
+      Employee.find(query)
+        .skip(skip)
+        .limit(itemsPerPage)
+        .sort({ createdAt: -1 })
+        .lean(),
+      Employee.countDocuments(query),
+    ]);
 
-      // slabPercentage requirement filter (only include employees where slabPercentage is set)
-      const slabReq = normalizeBool(requireSlab);
-      const slabFilter = slabReq
-        ? { slabPercentage: { $exists: true, $nin: ["", null] } }
-        : {};
-
-      // ✅ Manager filter (only when mouStatus is present): managerId == loggedInId
-      const castManagerId = (id) =>
-        mongoose?.Types?.ObjectId?.isValid?.(id)
-          ? new mongoose.Types.ObjectId(id)
-          : id;
-
-      const managerFilter =
-        mouStatus && loggedInId ? { managerId: castManagerId(loggedInId) } : {};
-
-      const query = {
-        ...searchFilter,
-        ...vendorFilter,
-        ...mouFilter,
-        ...managerFilter,
-        ...slabFilter,
-      };
-
-      const [employees, totalEmployees] = await Promise.all([
-        Employee.find(query)
-          .skip(skip)
-          .limit(itemsPerPage)
-          .sort({ createdAt: -1 })
-          .lean(),
-        Employee.countDocuments(query),
-      ]);
-
-      return res.status(200).json({
-        success: true,
-        data: employees,
-        pagination: {
-          totalItems: totalEmployees,
-          currentPage,
-          itemsPerPage,
-          totalPages: Math.ceil(totalEmployees / itemsPerPage),
-        },
-        appliedFilter: {
-          search: search || null,
-          isCabVendor: typeof vendorVal === "boolean" ? vendorVal : null,
-          mouStatus: mouStatus || null,
-          managerIdUsed: mouStatus ? loggedInId : null,
-        },
-      });
-    } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Failed to fetch Employee",
-        error: error.message,
-      });
-    }
+    return res.status(200).json({
+      success: true,
+      data: employees,
+      pagination: {
+        totalItems: totalEmployees,
+        currentPage,
+        itemsPerPage,
+        totalPages: Math.ceil(totalEmployees / itemsPerPage),
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch Employee",
+      error: error.message,
+    });
   }
+}
+
 
   async login(req, res) {
     const { email, password } = req.body;
