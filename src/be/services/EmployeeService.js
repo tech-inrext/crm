@@ -586,141 +586,121 @@ class EmployeeService extends Service {
       });
     }
   }
-async getAllEmployees(req, res) {
-  try {
-    const {
-      page = 1,
-      limit = 5,
-      search = "",
-      isCabVendor,
-      mouStatus,
-      requireSlab,
-      role,
-    } = req.query;
 
-    const loggedInId =
-      (req.employee?._id?.toString?.() ||
+  async getAllEmployees(req, res) {
+    try {
+      const {
+        page = 1,
+        limit = 5,
+        search = "",
+        isCabVendor,
+        mouStatus,
+        requireSlab,
+      } = req.query;
+
+      // 🔐 Logged-in user id (string)
+      const loggedInId = (
+        req.employee?._id?.toString?.() ||
         req.user?._id?.toString?.() ||
-        "").trim();
+        ""
+      ).trim();
 
-    const currentPage = parseInt(page, 10) || 1;
-    const itemsPerPage = Math.min(100, parseInt(limit, 10) || 5);
-    const skip = (currentPage - 1) * itemsPerPage;
+      // Pagination
+      const currentPage = Number.parseInt(page, 10) || 1;
+      const itemsPerPage = Math.min(100, Number.parseInt(limit, 10) || 5);
+      const skip = (currentPage - 1) * itemsPerPage;
 
-    /* ---------- SEARCH FILTER ---------- */
-    const searchFilter = search
-      ? {
-          $or: [
-            { name: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } },
-            { phone: { $regex: search, $options: "i" } },
-            { panNumber: { $regex: search, $options: "i" } },
-          ],
-        }
-      : null;
+      // Search filter
+      const searchFilter = search
+        ? {
+            $or: [
+              { name: { $regex: search, $options: "i" } },
+              { email: { $regex: search, $options: "i" } },
+              { phone: { $regex: search, $options: "i" } },
+              { panNumber: { $regex: search, $options: "i" } },
+            ],
+          }
+        : {};
 
-    /* ---------- ROLE FILTER ---------- */
-    let roleFilter = null;
-
-    if (role) {
-      const roleRegex = new RegExp(`^${String(role).trim()}$`, "i");
-
-      roleFilter = {
-        $or: [
-          { role: roleRegex }, // role string
-          { roles: roleRegex }, // roles string
-          { roles: { $elemMatch: { $regex: roleRegex } } }, // roles array string
-          { "roles.name": roleRegex }, // roles object array
-        ],
+      // isCabVendor filter
+      const normalizeBool = (v) => {
+        if (typeof v === "boolean") return v;
+        if (v == null) return undefined;
+        const s = String(v).trim().toLowerCase();
+        if (["true", "1", "yes", "y"].includes(s)) return true;
+        if (["false", "0", "no", "n"].includes(s)) return false;
+        return undefined;
       };
+      const vendorVal = normalizeBool(isCabVendor);
+      const vendorFilter =
+        typeof vendorVal === "boolean" ? { isCabVendor: vendorVal } : {};
+
+      // mouStatus filter (case-insensitive exact match)
+      const mouFilter = mouStatus
+        ? {
+            mouStatus: {
+              $regex: `^${String(mouStatus).trim()}$`,
+              $options: "i",
+            },
+          }
+        : {};
+
+      // slabPercentage requirement filter (only include employees where slabPercentage is set)
+      const slabReq = normalizeBool(requireSlab);
+      const slabFilter = slabReq
+        ? { slabPercentage: { $exists: true, $nin: ["", null] } }
+        : {};
+
+      // ✅ Manager filter (only when mouStatus is present): managerId == loggedInId
+      const castManagerId = (id) =>
+        mongoose?.Types?.ObjectId?.isValid?.(id)
+          ? new mongoose.Types.ObjectId(id)
+          : id;
+
+      const managerFilter =
+        mouStatus && loggedInId ? { managerId: castManagerId(loggedInId) } : {};
+
+      const query = {
+        ...searchFilter,
+        ...vendorFilter,
+        ...mouFilter,
+        ...managerFilter,
+        ...slabFilter,
+      };
+
+      const [employees, totalEmployees] = await Promise.all([
+        Employee.find(query)
+          .skip(skip)
+          .limit(itemsPerPage)
+          .sort({ createdAt: -1 })
+          .lean(),
+        Employee.countDocuments(query),
+      ]);
+
+      return res.status(200).json({
+        success: true,
+        data: employees,
+        pagination: {
+          totalItems: totalEmployees,
+          currentPage,
+          itemsPerPage,
+          totalPages: Math.ceil(totalEmployees / itemsPerPage),
+        },
+        appliedFilter: {
+          search: search || null,
+          isCabVendor: typeof vendorVal === "boolean" ? vendorVal : null,
+          mouStatus: mouStatus || null,
+          managerIdUsed: mouStatus ? loggedInId : null,
+        },
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch Employee",
+        error: error.message,
+      });
     }
-
-    /* ---------- BOOLEAN NORMALIZER ---------- */
-    const normalizeBool = (v) => {
-      if (typeof v === "boolean") return v;
-      if (v == null) return undefined;
-
-      const s = String(v).trim().toLowerCase();
-
-      if (["true", "1", "yes", "y"].includes(s)) return true;
-      if (["false", "0", "no", "n"].includes(s)) return false;
-
-      return undefined;
-    };
-
-    /* ---------- CAB VENDOR ---------- */
-    const vendorVal = normalizeBool(isCabVendor);
-    const vendorFilter =
-      typeof vendorVal === "boolean" ? { isCabVendor: vendorVal } : null;
-
-    /* ---------- MOU STATUS ---------- */
-    const mouFilter = mouStatus
-      ? {
-          mouStatus: {
-            $regex: `^${String(mouStatus).trim()}$`,
-            $options: "i",
-          },
-        }
-      : null;
-
-    /* ---------- SLAB ---------- */
-    const slabReq = normalizeBool(requireSlab);
-    const slabFilter = slabReq
-      ? { slabPercentage: { $exists: true, $nin: ["", null] } }
-      : null;
-
-    /* ---------- MANAGER FILTER ---------- */
-    const castManagerId = (id) =>
-      mongoose.Types.ObjectId.isValid(id)
-        ? new mongoose.Types.ObjectId(id)
-        : id;
-
-    const managerFilter =
-      mouStatus && loggedInId
-        ? { managerId: castManagerId(loggedInId) }
-        : null;
-
-    /* ---------- BUILD FINAL QUERY ---------- */
-    const filters = [
-      searchFilter,
-      roleFilter,
-      vendorFilter,
-      mouFilter,
-      slabFilter,
-      managerFilter,
-    ].filter(Boolean);
-
-    const query = filters.length ? { $and: filters } : {};
-
-    /* ---------- FETCH DATA ---------- */
-    const [employees, totalEmployees] = await Promise.all([
-      Employee.find(query)
-        .skip(skip)
-        .limit(itemsPerPage)
-        .sort({ createdAt: -1 })
-        .lean(),
-      Employee.countDocuments(query),
-    ]);
-
-    return res.status(200).json({
-      success: true,
-      data: employees,
-      pagination: {
-        totalItems: totalEmployees,
-        currentPage,
-        itemsPerPage,
-        totalPages: Math.ceil(totalEmployees / itemsPerPage),
-      },
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch Employee",
-      error: error.message,
-    });
   }
-}
-
 
   async login(req, res) {
     const { email, password } = req.body;
@@ -1056,77 +1036,74 @@ async getAllEmployees(req, res) {
     }
   }
 
- async getAllEmployeeList(req, res) {
-  try {
-    const { isCabVendor, roles, role } = req.query;
+  async getAllEmployeeList(req, res) {
+    try {
+      const { isCabVendor, roles, role } = req.query;
 
-    /* ---------- BOOLEAN NORMALIZER ---------- */
-    const normalizeBool = (v) => {
-      if (typeof v === "boolean") return v;
-      if (v == null) return undefined;
+      /* ---------- BOOLEAN NORMALIZER ---------- */
+      const normalizeBool = (v) => {
+        if (typeof v === "boolean") return v;
+        if (v == null) return undefined;
 
-      const s = String(v).trim().toLowerCase();
+        const s = String(v).trim().toLowerCase();
 
-      if (["true", "1", "yes", "y"].includes(s)) return true;
-      if (["false", "0", "no", "n"].includes(s)) return false;
+        if (["true", "1", "yes", "y"].includes(s)) return true;
+        if (["false", "0", "no", "n"].includes(s)) return false;
 
-      return undefined;
-    };
+        return undefined;
+      };
 
-    const filter = {};
+      const filter = {};
 
-    /* ---------- CAB VENDOR FILTER ---------- */
-    const vendorVal = normalizeBool(isCabVendor);
-    if (typeof vendorVal === "boolean") {
-      filter.isCabVendor = vendorVal;
-    }
-
-    /* ---------- ROLE FILTER ---------- */
-    const roleValue = roles || role;
-
-    if (roleValue) {
-      // 🔥 Step 1 → Find Role documents
-      const roleDocs = await Role.find({
-        name: new RegExp(`^${String(roleValue).trim()}$`, "i")
-      }).select("_id");
-
-      const roleIds = roleDocs.map((r) => r._id);
-
-      if (roleIds.length > 0) {
-        filter.roles = { $in: roleIds };
-      } else {
-        // No role found → return empty
-        return res.status(200).json({
-          success: true,
-          count: 0,
-          data: [],
-          appliedFilter: {
-            role: roleValue
-          }
-        });
+      /* ---------- CAB VENDOR FILTER ---------- */
+      const vendorVal = normalizeBool(isCabVendor);
+      if (typeof vendorVal === "boolean") {
+        filter.isCabVendor = vendorVal;
       }
+
+      /* ---------- ROLE FILTER ---------- */
+      const roleValue = roles || role;
+
+      if (roleValue) {
+        // 🔥 Step 1 → Find Role documents
+        const roleDocs = await Role.find({
+          name: new RegExp(`^${String(roleValue).trim()}$`, "i"),
+        }).select("_id");
+
+        const roleIds = roleDocs.map((r) => r._id);
+
+        if (roleIds.length > 0) {
+          filter.roles = { $in: roleIds };
+        } else {
+          // No role found → return empty
+          return res.status(200).json({
+            success: true,
+            count: 0,
+            data: [],
+            appliedFilter: {
+              role: roleValue,
+            },
+          });
+        }
+      }
+      const employees = await Employee.find(filter)
+        .populate("roles")
+        .sort({ createdAt: -1 })
+        .lean();
+
+      return res.status(200).json({
+        success: true,
+        count: employees.length,
+        data: employees,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch employees",
+        error: error.message,
+      });
     }
-
-    /* ---------- FETCH EMPLOYEES ---------- */
-    const employees = await Employee.find(filter)
-      .populate("roles")
-      .sort({ createdAt: -1 })
-      .lean();
-
-    return res.status(200).json({
-      success: true,
-      count: employees.length,
-      data: employees
-    });
-
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Failed to fetch employees",
-      error: error.message
-    });
   }
-}
 
   async switchRole(req, res) {
     try {

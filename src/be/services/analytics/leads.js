@@ -10,7 +10,10 @@ class LeadAnalyticsService extends Service {
 
       const { period = "month" } = req.query;
       const employee = req.employee;
-      if (!employee?._id) return res.status(401).json({ success: false, message: "Unauthorized" });
+      if (!employee?._id)
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized" });
 
       const loggedInUserId = new mongoose.Types.ObjectId(employee._id);
 
@@ -39,15 +42,36 @@ class LeadAnalyticsService extends Service {
       const { start: yestStart, end: yestEnd } = getDayRange(1);
       const { start: beforeYestStart, end: beforeYestEnd } = getDayRange(2);
 
-      const CONVERTED_STATUSES = ["site visit done", "call back", "follow up", "details shared"];
+      const CONVERTED_STATUSES = [
+        "site visit done",
+        "call back",
+        "follow up",
+        "details shared",
+      ];
       const leadStatuses = ["new", "follow-up", "call back", "details shared"];
 
       const getStatusTrend = (status) =>
         Promise.all([
-          Lead.countDocuments({ ...baseQuery, status: new RegExp(`^${status}$`, "i"), createdAt: { $gte: todayStart, $lte: todayEnd } }),
-          Lead.countDocuments({ ...baseQuery, status: new RegExp(`^${status}$`, "i"), createdAt: { $gte: yestStart, $lte: yestEnd } }),
-          Lead.countDocuments({ ...baseQuery, status: new RegExp(`^${status}$`, "i"), createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd } }),
-        ]).then(([today, yesterday, beforeYesterday]) => ({ today, yesterday, beforeYesterday }));
+          Lead.countDocuments({
+            ...baseQuery,
+            status: new RegExp(`^${status}$`, "i"),
+            createdAt: { $gte: todayStart, $lte: todayEnd },
+          }),
+          Lead.countDocuments({
+            ...baseQuery,
+            status: new RegExp(`^${status}$`, "i"),
+            createdAt: { $gte: yestStart, $lte: yestEnd },
+          }),
+          Lead.countDocuments({
+            ...baseQuery,
+            status: new RegExp(`^${status}$`, "i"),
+            createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd },
+          }),
+        ]).then(([today, yesterday, beforeYesterday]) => ({
+          today,
+          yesterday,
+          beforeYesterday,
+        }));
 
       /* ---------------- Parallel Queries ---------------- */
       const [
@@ -88,7 +112,12 @@ class LeadAnalyticsService extends Service {
           ? Lead.aggregate([
               ...matchStage,
               { $match: { status: { $regex: /^site visit done$/i } } },
-              { $group: { _id: { $dayOfWeek: "$createdAt" }, count: { $sum: 1 } } },
+              {
+                $group: {
+                  _id: { $dayOfWeek: "$createdAt" },
+                  count: { $sum: 1 },
+                },
+              },
             ])
           : Promise.resolve([]),
 
@@ -105,7 +134,11 @@ class LeadAnalyticsService extends Service {
             $group: {
               _id: "$normalizedSource",
               count: { $sum: 1 },
-              converted: { $sum: { $cond: [{ $in: ["$statusLower", CONVERTED_STATUSES] }, 1, 0] } },
+              converted: {
+                $sum: {
+                  $cond: [{ $in: ["$statusLower", CONVERTED_STATUSES] }, 1, 0],
+                },
+              },
             },
           },
         ]),
@@ -123,14 +156,21 @@ class LeadAnalyticsService extends Service {
             $group: {
               _id: "$normalizedProperty",
               count: { $sum: 1 },
-              converted: { $sum: { $cond: [{ $in: ["$statusLower", CONVERTED_STATUSES] }, 1, 0] } },
+              converted: {
+                $sum: {
+                  $cond: [{ $in: ["$statusLower", CONVERTED_STATUSES] }, 1, 0],
+                },
+              },
             },
           },
         ]),
       ]);
 
       /* ---------------- Status Normalize ---------------- */
-      let newLeads = 0, callBackLeads = 0, followUpLeads = 0, detailsSharedLeads = 0;
+      let newLeads = 0,
+        callBackLeads = 0,
+        followUpLeads = 0,
+        detailsSharedLeads = 0;
       statusCounts.forEach((s) => {
         if (s._id === "new") newLeads = s.count;
         if (s._id === "call back") callBackLeads = s.count;
@@ -141,16 +181,35 @@ class LeadAnalyticsService extends Service {
       /* ---------------- Site Visit Chart ---------------- */
       let siteVisitDoneData = [];
       if (period === "month") {
-        const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        const months = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
         const map = {};
         (byMonth || []).forEach((m) => (map[m._id] = m.count));
-        siteVisitDoneData = months.map((label, i) => ({ label, siteVisitDone: map[i + 1] || 0 }));
+        siteVisitDoneData = months.map((label, i) => ({
+          label,
+          siteVisitDone: map[i + 1] || 0,
+        }));
       }
       if (period === "week") {
-        const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
         const map = {};
         (byWeekday || []).forEach((d) => (map[d._id] = d.count));
-        siteVisitDoneData = days.map((label, i) => ({ label, siteVisitDone: map[i + 1] || 0 }));
+        siteVisitDoneData = days.map((label, i) => ({
+          label,
+          siteVisitDone: map[i + 1] || 0,
+        }));
       }
 
       /* ---------------- Source & Property ---------------- */
@@ -177,13 +236,21 @@ class LeadAnalyticsService extends Service {
         callBackLeads,
         followUpLeads,
         detailsSharedLeads,
-        siteVisitConversions: siteVisitDoneData.reduce((s, d) => s + d.siteVisitDone, 0),
+        siteVisitConversions: siteVisitDoneData.reduce(
+          (s, d) => s + d.siteVisitDone,
+          0,
+        ),
         siteVisitDoneData,
         map,
         sourcesOrder,
         slices,
         propertyData,
-        trend: { newLeads: newLeadsTrend, callBackLeads: callBackLeadsTrend, followUpLeads: followUpLeadsTrend, detailsSharedLeads: detailsSharedLeadsTrend },
+        trend: {
+          newLeads: newLeadsTrend,
+          callBackLeads: callBackLeadsTrend,
+          followUpLeads: followUpLeadsTrend,
+          detailsSharedLeads: detailsSharedLeadsTrend,
+        },
       });
     } catch (err) {
       return res.status(500).json({ success: false, message: err.message });

@@ -45,9 +45,7 @@ export function VendorBreakdown() {
     setAvpError(null);
 
     try {
-      const res = await fetch(
-        "/api/v0/employee/getAllEmployeeList?roles=AVP"
-      );
+      const res = await fetch("/api/v0/employee/getAllEmployeeList?role=AVP");
       const data = await res.json();
 
       if (data.success && Array.isArray(data.data)) {
@@ -79,26 +77,19 @@ export function VendorBreakdown() {
       const params = new URLSearchParams();
 
       if (filters.fromDate)
-        params.append(
-          "fromDate",
-          new Date(filters.fromDate).toISOString()
-        );
+        params.append("fromDate", new Date(filters.fromDate).toISOString());
 
       if (filters.toDate)
-        params.append(
-          "toDate",
-          new Date(filters.toDate).toISOString()
-        );
+        params.append("toDate", new Date(filters.toDate).toISOString());
 
-      if (filters.status !== "all")
-        params.append("status", filters.status);
+      if (filters.status !== "all") params.append("status", filters.status);
 
       /* ---------- AVP Filter ---------- */
       if (filters.avp !== "all") {
         if (filters.avp.startsWith("manual_avp_")) {
           const realId = filters.avp.replace("manual_avp_", "");
           const selectedAvp = avpUsers.find(
-            (a) => String(a._id) === String(realId)
+            (a) => String(a._id) === String(realId),
           );
 
           if (selectedAvp) {
@@ -175,34 +166,27 @@ export function VendorBreakdown() {
 
   if (appliedFilters.status === "completed") {
     displayVendors = displayVendors.filter(
-      (v) => (v.completedBookings || 0) > 0
+      (v) => (v.completedBookings || 0) > 0,
     );
   }
 
   if (appliedFilters.status === "pending") {
-    displayVendors = displayVendors.filter(
-      (v) => (v.pendingBookings || 0) > 0
-    );
+    displayVendors = displayVendors.filter((v) => (v.pendingBookings || 0) > 0);
   }
 
   if (appliedFilters.status === "payment_due") {
-    displayVendors = displayVendors.filter(
-      (v) => Number(v.paymentDue) > 0
-    );
+    displayVendors = displayVendors.filter((v) => Number(v.paymentDue) > 0);
   }
 
   /* ---------- Safe AVP Filter ---------- */
   if (appliedFilters.avp !== "all") {
     displayVendors = displayVendors.filter(
-      (vendor) =>
-        String(vendor.managerId) === String(appliedFilters.avp)
+      (vendor) => String(vendor.managerId) === String(appliedFilters.avp),
     );
   }
 
   if (selectedVendor) {
-    displayVendors = displayVendors.filter(
-      (v) => v.name === selectedVendor
-    );
+    displayVendors = displayVendors.filter((v) => v.name === selectedVendor);
   }
 
   /* ---------------- Detect Unapplied Changes ---------------- */
@@ -287,9 +271,7 @@ export function VendorBreakdown() {
 
       {!vendorData && !loading && (
         <Paper sx={{ p: 3, mt: 2, textAlign: "center" }}>
-          <Typography fontWeight={600}>
-            🚗 Cab Driver Analytics
-          </Typography>
+          <Typography fontWeight={600}>🚗 Cab Driver Analytics</Typography>
           <Typography>Loading vendor data...</Typography>
         </Paper>
       )}
