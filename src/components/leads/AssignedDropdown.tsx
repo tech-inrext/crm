@@ -74,20 +74,30 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
       <ListItemButton
         onClick={() => handleAssign(member)}
         selected={isAssigned}
-        className={`
-    rounded-[6px] mb-[2px] py-[2.4px] px-1 transition-all duration-200 ease-in-out
-    border
-    ${
-      isAssigned
-        ? "bg-purple-100 border-purple-300 hover:bg-purple-200"
-        : "bg-transparent border-transparent hover:bg-gray-50"
-    }
-  `}
+        sx={{
+          borderRadius: 1.5,
+          mb: 0.4,
+          py: 0.6,
+          px: 1,
+          transition: "all 0.2s ease",
+          bgcolor: isAssigned ? "#F3E8FF" : "transparent",
+          border: isAssigned ? "1px solid #C4B5FD" : "1px solid transparent",
+          "&:hover": {
+            bgcolor: isAssigned ? "#E9D5FF" : "#F9FAFB",
+          },
+        }}
       >
         <ListItemAvatar sx={{ minWidth: 36 }}>
           <Avatar
             src={member?.avatar}
-            className="w-[30px] h-[30px] text-[13px] bg-purple-200 text-purple-800 font-semibold"
+            sx={{
+              width: 30,
+              height: 30,
+              fontSize: 13,
+              bgcolor: "#E9D5FF",
+              color: "#6B21A8",
+              fontWeight: 600,
+            }}
           >
             {member?.name?.[0]?.toUpperCase() || "U"}
           </Avatar>
@@ -113,8 +123,16 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
       anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       transformOrigin={{ vertical: "top", horizontal: "center" }}
       PaperProps={{
-        className:
-          "w-[240px] mt-[2px] rounded-[12px] border border-gray-200 shadow-[0px_6px_18px_rgba(0,0,0,0.08)] overflow-hidden rounded-tl-none rounded-tr-none",
+        className: `
+      w-[240px]
+      mt-[2px]
+      rounded-xl
+      shadow-[0px_6px_18px_rgba(0,0,0,0.08)]
+      border border-gray-200
+      rounded-tl-none
+      rounded-tr-none
+      overflow-hidden
+    `,
       }}
     >
       {/* ---------- Suggested ---------- */}
@@ -129,7 +147,7 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
       <Divider />
 
       {/* ---------- All Agents ---------- */}
-      <Box sx={{ px: 1.5, pt: 0.8, pb: 0.5 }}>
+      <Box className="px-1.5 pt-[3.2px] pb-[2px]">
         <Typography className="text-[10.5px] font-semibold text-gray-400 tracking-[0.7px] mb-[2px]">
           ALL AGENTS
         </Typography>

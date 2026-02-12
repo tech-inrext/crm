@@ -15,6 +15,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
 
 import {
   Email,
@@ -54,21 +55,17 @@ const InfoRow = ({
     text?.props?.children?.type === AssignedDropdown;
   const content = (
     <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        width: "100%",
-        ...(isAssignedTo
+      className={`flex items-center w-full ${
+        isAssignedTo ? "border rounded-lg px-1 py-0.5 box-border" : ""
+      }`}
+      style={
+        isAssignedTo
           ? {
-              border: `1px solid ${alpha(color, 0.25)}`,
-              borderRadius: 2,
-              px: 1,
-              py: 0.5,
-              boxSizing: "border-box",
-              background: alpha(color, 0.03),
+              borderColor: `${color}40`,
+              backgroundColor: `${color}08`,
             }
-          : {}),
-      }}
+          : {}
+      }
     >
       <Box
         sx={{
@@ -305,18 +302,20 @@ const LeadCard = memo(
               text={lead.budgetRange || "Budget N/A"}
               color={theme.palette.warning.main}
             />
+
             <Box
               onClick={handleAssignedClick}
               sx={{
-                border: `0.5px solid ${alpha(theme.palette.secondary.main, 0.25)}`,
+                border: `0.5px solid  ${alpha(theme.palette.secondary.main, 0.25)}`,
                 borderRadius: 2,
                 width: 240,
-                px: 1,
+                ml: 1, // 👈 shifts border slightly right
+
                 py: 0.5,
                 boxSizing: "border-box",
-                background: alpha(theme.palette.secondary.main, 0.03),
                 display: "flex",
                 alignItems: "center",
+                justifyContent: "space-between", // 👈 important
                 cursor: "pointer",
               }}
             >
@@ -336,7 +335,16 @@ const LeadCard = memo(
                 }
                 color={theme.palette.secondary.main}
               />
+
+              {/* ✅ Dropdown Icon */}
+              <KeyboardArrowDown
+                sx={{
+                  fontSize: 20,
+                  color: alpha(theme.palette.secondary.main, 0.7),
+                }}
+              />
             </Box>
+
             {/* AssignedDropdown rendered at root for proper closing */}
             {anchorEl && (
               <AssignedDropdown
@@ -366,15 +374,27 @@ const LeadCard = memo(
               <Box sx={{ position: "relative", zIndex: 20 }}>
                 <SpeedDial
                   ariaLabel="Actions"
-                  className="absolute bottom-4 right-0"
-                  FabProps={{
-                    className:
-                      "w-9 h-9 min-h-[36px] shadow-none border border-gray-200 bg-transparent text-gray-500 hover:bg-primary/5 hover:text-primary hover:border-primary",
+                  sx={{
+                    position: "absolute",
+                    bottom: 16,
+                    right: 0,
+                    "& .MuiFab-root": {
+                      width: 36,
+                      height: 36,
+                      minHeight: 36,
+                      boxShadow: "none",
+                      border: `1px solid ${theme.palette.divider}`,
+                      bgcolor: "transparent",
+                      color: "text.secondary",
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.05),
+                        color: "primary.main",
+                        borderColor: "primary.main",
+                      },
+                    },
                   }}
                   icon={
-                    <SpeedDialIcon
-                      icon={<MoreVert className="text-[20px]" />}
-                    />
+                    <SpeedDialIcon icon={<MoreVert sx={{ fontSize: 20 }} />} />
                   }
                   onClose={() => setActionsOpen(false)}
                   onOpen={() => setActionsOpen(true)}
@@ -382,17 +402,23 @@ const LeadCard = memo(
                   direction="up"
                 >
                   <SpeedDialAction
-                    icon={<Edit className="text-[18px] text-primary" />}
+                    icon={
+                      <Edit
+                        sx={{ fontSize: 18, color: theme.palette.primary.main }}
+                      />
+                    }
                     tooltipTitle="Edit"
-                    FabProps={{
-                      className: "bg-primary/10 hover:bg-primary/20",
+                    sx={{
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.2),
+                      },
                     }}
                     onClick={() => {
                       setActionsOpen(false);
                       onEdit();
                     }}
                   />
-
                   <SpeedDialAction
                     icon={
                       <NoteAlt
