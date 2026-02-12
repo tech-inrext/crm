@@ -46,7 +46,7 @@ export function VendorBreakdown() {
 
     try {
       const res = await fetch(
-        "/api/v0/employee/getAllEmployeeList?role=AVP"
+        "/api/v0/employee/getAllEmployeeList?roles=AVP"
       );
       const data = await res.json();
 

@@ -586,7 +586,6 @@ class EmployeeService extends Service {
       });
     }
   }
-
 async getAllEmployees(req, res) {
   try {
     const {
@@ -596,7 +595,7 @@ async getAllEmployees(req, res) {
       isCabVendor,
       mouStatus,
       requireSlab,
-      role, // ⭐ NEW
+      role,
     } = req.query;
 
     const loggedInId =
@@ -604,11 +603,11 @@ async getAllEmployees(req, res) {
         req.user?._id?.toString?.() ||
         "").trim();
 
-    const currentPage = Number.parseInt(page, 10) || 1;
-    const itemsPerPage = Math.min(100, Number.parseInt(limit, 10) || 5);
+    const currentPage = parseInt(page, 10) || 1;
+    const itemsPerPage = Math.min(100, parseInt(limit, 10) || 5);
     const skip = (currentPage - 1) * itemsPerPage;
 
-    /* ---------- SEARCH ---------- */
+    /* ---------- SEARCH FILTER ---------- */
     const searchFilter = search
       ? {
           $or: [
@@ -618,27 +617,41 @@ async getAllEmployees(req, res) {
             { panNumber: { $regex: search, $options: "i" } },
           ],
         }
-      : {};
+      : null;
 
-    /* ---------- ROLE FILTER ⭐ ---------- */
-    const roleFilter = role
-      ? { role: { $regex: `^${String(role).trim()}$`, $options: "i" } }
-      : {};
+    /* ---------- ROLE FILTER ---------- */
+    let roleFilter = null;
+
+    if (role) {
+      const roleRegex = new RegExp(`^${String(role).trim()}$`, "i");
+
+      roleFilter = {
+        $or: [
+          { role: roleRegex }, // role string
+          { roles: roleRegex }, // roles string
+          { roles: { $elemMatch: { $regex: roleRegex } } }, // roles array string
+          { "roles.name": roleRegex }, // roles object array
+        ],
+      };
+    }
 
     /* ---------- BOOLEAN NORMALIZER ---------- */
     const normalizeBool = (v) => {
       if (typeof v === "boolean") return v;
       if (v == null) return undefined;
+
       const s = String(v).trim().toLowerCase();
+
       if (["true", "1", "yes", "y"].includes(s)) return true;
       if (["false", "0", "no", "n"].includes(s)) return false;
+
       return undefined;
     };
 
     /* ---------- CAB VENDOR ---------- */
     const vendorVal = normalizeBool(isCabVendor);
     const vendorFilter =
-      typeof vendorVal === "boolean" ? { isCabVendor: vendorVal } : {};
+      typeof vendorVal === "boolean" ? { isCabVendor: vendorVal } : null;
 
     /* ---------- MOU STATUS ---------- */
     const mouFilter = mouStatus
@@ -648,13 +661,13 @@ async getAllEmployees(req, res) {
             $options: "i",
           },
         }
-      : {};
+      : null;
 
     /* ---------- SLAB ---------- */
     const slabReq = normalizeBool(requireSlab);
     const slabFilter = slabReq
       ? { slabPercentage: { $exists: true, $nin: ["", null] } }
-      : {};
+      : null;
 
     /* ---------- MANAGER FILTER ---------- */
     const castManagerId = (id) =>
@@ -665,18 +678,21 @@ async getAllEmployees(req, res) {
     const managerFilter =
       mouStatus && loggedInId
         ? { managerId: castManagerId(loggedInId) }
-        : {};
+        : null;
 
-    /* ---------- FINAL QUERY ---------- */
-    const query = {
-      ...searchFilter,
-      ...roleFilter, // ⭐ IMPORTANT
-      ...vendorFilter,
-      ...mouFilter,
-      ...managerFilter,
-      ...slabFilter,
-    };
+    /* ---------- BUILD FINAL QUERY ---------- */
+    const filters = [
+      searchFilter,
+      roleFilter,
+      vendorFilter,
+      mouFilter,
+      slabFilter,
+      managerFilter,
+    ].filter(Boolean);
 
+    const query = filters.length ? { $and: filters } : {};
+
+    /* ---------- FETCH DATA ---------- */
     const [employees, totalEmployees] = await Promise.all([
       Employee.find(query)
         .skip(skip)
