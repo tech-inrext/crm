@@ -116,36 +116,22 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
   };
 
   return (
-    <Menu
-      anchorEl={anchorEl}
-      open={Boolean(anchorEl)}
-      onClose={onClose}
-      anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      transformOrigin={{ vertical: "top", horizontal: "center" }}
-      PaperProps={{
-        sx: {
-          width: 240,
-          mt: 0.3,
-          borderRadius: "12px",
-          boxShadow: "0px 6px 18px rgba(0,0,0,0.08)",
-          border: "1px solid #E5E7EB",
-          borderTopLeftRadius: 0,
-          borderTopRightRadius: 0,
-          overflow: "hidden",
-        },
-      }}
-    >
+   <Menu
+  anchorEl={anchorEl}
+  open={Boolean(anchorEl)}
+  onClose={onClose}
+  anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+  transformOrigin={{ vertical: "top", horizontal: "center" }}
+  PaperProps={{
+    className:
+      "w-[240px] mt-[2px] rounded-[12px] border border-gray-200 shadow-[0px_6px_18px_rgba(0,0,0,0.08)] overflow-hidden rounded-tl-none rounded-tr-none",
+  }}
+>
+
       {/* ---------- Suggested ---------- */}
-      <Box sx={{ px: 1.5, pt: 1.4, pb: 0.6 }}>
-        <Typography
-          sx={{
-            fontSize: 10.5,
-            fontWeight: 600,
-            color: "#9CA3AF",
-            letterSpacing: 0.7,
-            mb: 0.6,
-          }}
-        >
+    <Box className="px-1.5 pt-[5.6px] pb-[2.4px]">
+  <Typography className="text-[10.5px] font-semibold text-gray-400 tracking-[0.7px] mb-[2.4px]">
+
           SUGGESTED
         </Typography>
 
@@ -156,27 +142,14 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
 
       {/* ---------- All Agents ---------- */}
       <Box sx={{ px: 1.5, pt: 0.8, pb: 0.5 }}>
-        <Typography
-          sx={{
-            fontSize: 10.5,
-            fontWeight: 600,
-            color: "#9CA3AF",
-            letterSpacing: 0.7,
-            mb: 0.5,
-          }}
-        >
+       <Typography className="text-[10.5px] font-semibold text-gray-400 tracking-[0.7px] mb-[2px]">
+
           ALL AGENTS
         </Typography>
       </Box>
 
-      <List
-        sx={{
-          maxHeight: 190,
-          overflowY: "auto",
-          px: 1.5,
-          pb: 1.5,
-        }}
-      >
+    <List className="max-h-[190px] overflow-y-auto px-1.5 pb-1.5">
+
         {allMembers.map((member) => (
           <MemberRow key={member?._id} member={member} />
         ))}

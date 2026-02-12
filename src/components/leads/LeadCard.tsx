@@ -337,17 +337,17 @@ const LeadCard = memo(
                 color={theme.palette.secondary.main}
               />
             </Box>
-                  {/* AssignedDropdown rendered at root for proper closing */}
-                  {anchorEl && (
-                    <AssignedDropdown
-                      assignedTo={assignedUser}
-                      anchorEl={anchorEl}
-                      onClose={() => {
-                        setAnchorEl(null);
-                      }}
-                      onAssign={handleAssignUser}
-                    />
-                  )}
+            {/* AssignedDropdown rendered at root for proper closing */}
+            {anchorEl && (
+              <AssignedDropdown
+                assignedTo={assignedUser}
+                anchorEl={anchorEl}
+                onClose={() => {
+                  setAnchorEl(null);
+                }}
+                onAssign={handleAssignUser}
+              />
+            )}
           </Stack>
         </CardContent>
         {/* Footer / Actions */}
@@ -366,27 +366,15 @@ const LeadCard = memo(
               <Box sx={{ position: "relative", zIndex: 20 }}>
                 <SpeedDial
                   ariaLabel="Actions"
-                  sx={{
-                    position: "absolute",
-                    bottom: 16,
-                    right: 0,
-                    "& .MuiFab-root": {
-                      width: 36,
-                      height: 36,
-                      minHeight: 36,
-                      boxShadow: "none",
-                      border: `1px solid ${theme.palette.divider}`,
-                      bgcolor: "transparent",
-                      color: "text.secondary",
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.primary.main, 0.05),
-                        color: "primary.main",
-                        borderColor: "primary.main",
-                      },
-                    },
+                  className="absolute bottom-4 right-0"
+                  FabProps={{
+                    className:
+                      "w-9 h-9 min-h-[36px] shadow-none border border-gray-200 bg-transparent text-gray-500 hover:bg-primary/5 hover:text-primary hover:border-primary",
                   }}
                   icon={
-                    <SpeedDialIcon icon={<MoreVert sx={{ fontSize: 20 }} />} />
+                    <SpeedDialIcon
+                      icon={<MoreVert className="text-[20px]" />}
+                    />
                   }
                   onClose={() => setActionsOpen(false)}
                   onOpen={() => setActionsOpen(true)}
@@ -394,23 +382,17 @@ const LeadCard = memo(
                   direction="up"
                 >
                   <SpeedDialAction
-                    icon={
-                      <Edit
-                        sx={{ fontSize: 18, color: theme.palette.primary.main }}
-                      />
-                    }
+                    icon={<Edit className="text-[18px] text-primary" />}
                     tooltipTitle="Edit"
-                    sx={{
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.primary.main, 0.2),
-                      },
+                    FabProps={{
+                      className: "bg-primary/10 hover:bg-primary/20",
                     }}
                     onClick={() => {
                       setActionsOpen(false);
                       onEdit();
                     }}
                   />
+
                   <SpeedDialAction
                     icon={
                       <NoteAlt
