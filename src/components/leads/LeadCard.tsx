@@ -304,37 +304,47 @@ const LeadCard = memo(
             />
 
             <Box
-              onClick={handleAssignedClick}
-              sx={{
-                border: `0.5px solid  ${alpha(theme.palette.secondary.main, 0.25)}`,
-                borderRadius: 2,
-                width: 240,
-                ml: 1, // 👈 shifts border slightly right
+  onClick={handleAssignedClick}
+  sx={{
+    position: "relative",
+    borderRadius: 2,
+    width: 240,
+    ml: 1,
+    py: 0.5,
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    cursor: "pointer",
 
-                py: 0.5,
-                boxSizing: "border-box",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between", // 👈 important
-                cursor: "pointer",
-              }}
-            >
-              <InfoRow
-                icon={<PersonAdd sx={{ fontSize: 18 }} />}
-                text={
-                  <Box sx={{ display: "inline-block" }}>
-                    <Box
-                      component="span"
-                      sx={{ color: theme.palette.secondary.main }}
-                    >
-                      {assignedUser?.name ||
-                        assignedUser?.fullName ||
-                        "Unassigned"}
-                    </Box>
-                  </Box>
-                }
-                color={theme.palette.secondary.main}
-              />
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      bottom: 0,
+      left: -4,   // 👈 border shifted from left
+      right: -4,  // 👈 border shifted from right
+      border: `0.5px solid ${alpha(theme.palette.secondary.main, 0.25)}`,
+      borderRadius: 2,
+      pointerEvents: "none",
+    },
+  }}
+>
+  <InfoRow
+    icon={<PersonAdd sx={{ fontSize: 18 }} />}
+    text={
+      <Box sx={{ display: "inline-block" }}>
+        <Box component="span" sx={{ color: "black" }}>
+          {assignedUser?.name ||
+            assignedUser?.fullName ||
+            "Unassigned"}
+        </Box>
+      </Box>
+    }
+    color={theme.palette.secondary.main}
+  />
+
+
 
               {/* ✅ Dropdown Icon */}
               <KeyboardArrowDown
@@ -376,7 +386,7 @@ const LeadCard = memo(
                   ariaLabel="Actions"
                   sx={{
                     position: "absolute",
-                    bottom: 16,
+                    bottom: 24,
                     right: 0,
                     "& .MuiFab-root": {
                       width: 36,
