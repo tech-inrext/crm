@@ -15,6 +15,7 @@ import {
   useTheme,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
+import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
 
 import {
   Email,
@@ -54,21 +55,17 @@ const InfoRow = ({
     text?.props?.children?.type === AssignedDropdown;
   const content = (
     <Box
-      sx={{
-        display: "flex",
-        alignItems: "center",
-        width: "100%",
-        ...(isAssignedTo
+      className={`flex items-center w-full ${
+        isAssignedTo ? "border rounded-lg px-1 py-0.5 box-border" : ""
+      }`}
+      style={
+        isAssignedTo
           ? {
-              border: `1px solid ${alpha(color, 0.25)}`,
-              borderRadius: 2,
-              px: 1,
-              py: 0.5,
-              boxSizing: "border-box",
-              background: alpha(color, 0.03),
+              borderColor: `${color}40`,
+              backgroundColor: `${color}08`,
             }
-          : {}),
-      }}
+          : {}
+      }
     >
       <Box
         sx={{
@@ -305,49 +302,70 @@ const LeadCard = memo(
               text={lead.budgetRange || "Budget N/A"}
               color={theme.palette.warning.main}
             />
+
             <Box
-              onClick={handleAssignedClick}
-              sx={{
-                border: `0.5px solid ${alpha(theme.palette.secondary.main, 0.25)}`,
-                borderRadius: 2,
-                width: 240,
-                px: 1,
-                py: 0.5,
-                boxSizing: "border-box",
-                background: alpha(theme.palette.secondary.main, 0.03),
-                display: "flex",
-                alignItems: "center",
-                cursor: "pointer",
-              }}
-            >
-              <InfoRow
-                icon={<PersonAdd sx={{ fontSize: 18 }} />}
-                text={
-                  <Box sx={{ display: "inline-block" }}>
-                    <Box
-                      component="span"
-                      sx={{ color: theme.palette.secondary.main }}
-                    >
-                      {assignedUser?.name ||
-                        assignedUser?.fullName ||
-                        "Unassigned"}
-                    </Box>
-                  </Box>
-                }
-                color={theme.palette.secondary.main}
+  onClick={handleAssignedClick}
+  sx={{
+    position: "relative",
+    borderRadius: 2,
+    width: 240,
+    ml: 1,
+    py: 0.5,
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    cursor: "pointer",
+
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      bottom: 0,
+      left: -4,   // 👈 border shifted from left
+      right: -4,  // 👈 border shifted from right
+      border: `0.5px solid ${alpha(theme.palette.secondary.main, 0.25)}`,
+      borderRadius: 2,
+      pointerEvents: "none",
+    },
+  }}
+>
+  <InfoRow
+    icon={<PersonAdd sx={{ fontSize: 18 }} />}
+    text={
+      <Box sx={{ display: "inline-block" }}>
+        <Box component="span" sx={{ color: "black" }}>
+          {assignedUser?.name ||
+            assignedUser?.fullName ||
+            "Unassigned"}
+        </Box>
+      </Box>
+    }
+    color={theme.palette.secondary.main}
+  />
+
+
+
+              {/* ✅ Dropdown Icon */}
+              <KeyboardArrowDown
+                sx={{
+                  fontSize: 20,
+                  color: alpha(theme.palette.secondary.main, 0.7),
+                }}
               />
             </Box>
-                  {/* AssignedDropdown rendered at root for proper closing */}
-                  {anchorEl && (
-                    <AssignedDropdown
-                      assignedTo={assignedUser}
-                      anchorEl={anchorEl}
-                      onClose={() => {
-                        setAnchorEl(null);
-                      }}
-                      onAssign={handleAssignUser}
-                    />
-                  )}
+
+            {/* AssignedDropdown rendered at root for proper closing */}
+            {anchorEl && (
+              <AssignedDropdown
+                assignedTo={assignedUser}
+                anchorEl={anchorEl}
+                onClose={() => {
+                  setAnchorEl(null);
+                }}
+                onAssign={handleAssignUser}
+              />
+            )}
           </Stack>
         </CardContent>
         {/* Footer / Actions */}
@@ -368,7 +386,7 @@ const LeadCard = memo(
                   ariaLabel="Actions"
                   sx={{
                     position: "absolute",
-                    bottom: 16,
+                    bottom: 24,
                     right: 0,
                     "& .MuiFab-root": {
                       width: 36,
