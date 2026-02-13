@@ -228,7 +228,16 @@ class LeadService extends Service {
     const loggedInUserId = req.employee?._id;
 
     try {
-      const lead = await Lead.findById(id);
+      // Support finding by _id or leadId (custom ID)
+      let query = {};
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        query = { _id: id };
+      } else {
+        query = { leadId: id };
+      }
+
+      const lead = await Lead.findOne(query);
+
       if (!lead) {
         return res .status(404).json({ success: false, error: "Lead not found" });
       }
@@ -245,8 +254,8 @@ class LeadService extends Service {
       const leadObj = lead.toObject();
       
       // Aggregating FollowUps
-      const count = await FollowUp.countDocuments({ leadId: id });
-      const latest = await FollowUp.findOne({ leadId: id }).sort({ createdAt: -1 }).lean();
+      const count = await FollowUp.countDocuments({ leadId: lead._id });
+      const latest = await FollowUp.findOne({ leadId: lead._id }).sort({ createdAt: -1 }).lean();
 
       leadObj.followUpCount = count;
       leadObj.nextFollowUp = latest ? latest.followUpDate : null;
@@ -260,31 +269,48 @@ class LeadService extends Service {
 
   async updateLeadDetails(req, res) {
     const { id } = req.query;
-    const { phone, ...updateFields } = req.body;
+    const { phone, leadType, ...otherUpdateFields } = req.body;
+    const updateFields = { ...otherUpdateFields };
     const loggedInUserId = req.employee?._id;
 
     try {
-      const originalLead = await Lead.findById(id);
+      // Support finding by _id or leadId (custom ID)
+      let query = {};
+      if (mongoose.Types.ObjectId.isValid(id)) {
+        query = { _id: id };
+      } else {
+        query = { leadId: id };
+      }
+
+      const originalLead = await Lead.findOne(query);
       if (!originalLead) {
         return res.status(404).json({ success: false, error: "Lead not found" });
+      }
+
+      // Explicitly handle leadType
+      if (leadType) {
+        const validLeadTypes = ["intake", "hot lead", "warm lead", "cold lead", "not interested"];
+        if (validLeadTypes.includes(leadType)) {
+          updateFields.leadType = leadType;
+        } else {
+           // Optional: throw error or ignore. Let's ignore invalid values but log it
+           console.warn(`Invalid leadType received: ${leadType}`);
+        }
       }
 
       if (updateFields.assignedTo === "") {
         updateFields.assignedTo = null;
       }
 
-      // REMOVED LOGIC: Integration with FollowUp collection is GONE.
-      // REMOVED LOGIC: Scheduling follow-up notifications is GONE (from this endpoint).
-      // Lead update is now strictly about Lead details (Status, Phone, Name, Assignee).
-
+      // Use _id from the found lead to ensure update works
       const updatedLead = await Lead.findByIdAndUpdate(
-        id,
+        originalLead._id,
         { $set: { ...updateFields, updatedBy: loggedInUserId } },
         { new: true }
       );
 
       if (!updatedLead) {
-        return res.status(404).json({ success: false, error: "Lead not found" });
+        return res.status(404).json({ success: false, error: "Lead not found during update" });
       }
 
       // Notifications (Status & Assign) logic kept the same...

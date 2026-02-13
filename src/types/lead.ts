@@ -23,13 +23,14 @@ export interface Lead {
   contact?: string; // Contact person name
   company?: string;
   status: string;
+  leadType?: string; // Lead type: intake, hot lead, warm lead, cold lead, not interested
   source?: string;
   managerId?: string; // ObjectId reference to Employee (lead manager)
   assignedTo?: {
-  _id: string;
-  fullName?: string;
-  name?: string;
-};
+    _id: string;
+    fullName?: string;
+    name?: string;
+  };
   value?: number;
   notes?: string;
   followUpNotes?: string[];
@@ -41,5 +42,5 @@ export interface Lead {
 }
 
 // Alias for consistency
-export interface APILead extends Lead {}
-export interface LeadDisplay extends Lead {}
+export interface APILead extends Lead { }
+export interface LeadDisplay extends Lead { }

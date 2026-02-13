@@ -31,6 +31,7 @@ import { Schedule, MoreVert, NoteAlt, Event } from "@mui/icons-material";
 
 import type { LeadDisplay as Lead } from "../../types/lead";
 import StatusDropdown from "./StatusDropdown";
+import LeadTypeDropdown from "./LeadTypeDropdown";
 import PermissionGuard from "../PermissionGuard";
 
 import AssignedDropdown from "./AssignedDropdown";
@@ -86,6 +87,7 @@ const InfoRow = ({
       </Box>
       <Typography
         variant="body2"
+        component="div"
         color="text.primary"
         fontWeight={500}
         sx={{
@@ -126,6 +128,7 @@ interface LeadCardProps {
   onScheduleSiteVisit: (leadId: string) => void;
   onOpenFeedback: (leadId: string) => void;
   onStatusChange: (leadId: string, newStatus: string) => Promise<void>;
+  onLeadTypeChange: (leadId: string, newLeadType: string) => Promise<void>;
 }
 
 const LeadCard = memo(
@@ -135,6 +138,7 @@ const LeadCard = memo(
     onScheduleSiteVisit,
     onOpenFeedback,
     onStatusChange,
+    onLeadTypeChange,
   }: LeadCardProps) => {
     const [actionsOpen, setActionsOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
@@ -219,19 +223,14 @@ const LeadCard = memo(
           },
         }}
       >
-        {/* Status Badge (Top-Left) */}
+        {/* Lead Type Dropdown (Top-Left) */}
         <Box sx={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}>
-          <Chip
-            label="Warm Lead"
+          <LeadTypeDropdown
+            leadId={lead._id || lead.id || lead.leadId || ""}
+            currentLeadType={lead.leadType || "intake"}
+            onLeadTypeChange={onLeadTypeChange}
+            variant="chip"
             size="small"
-            sx={{
-              fontWeight: 700,
-              fontSize: "0.75rem",
-              bgcolor: alpha(theme.palette.success.main, 0.1),
-              color: theme.palette.success.main,
-              borderRadius: 2,
-              height: 24,
-            }}
           />
         </Box>
 
