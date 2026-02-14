@@ -27,6 +27,8 @@ const leadStatuses = [
   "",
 ];
 
+const leadTypes = ["intake", "hot lead", "warm lead", "cold lead", "not interested"];
+
 const leadSchema = new mongoose.Schema(
   {
     leadId: {
@@ -90,6 +92,14 @@ const leadSchema = new mongoose.Schema(
       enum: leadStatuses,
       default: "new",
     },
+
+    leadType: {
+      type: String,
+      enum: leadTypes,
+      required: false,
+      default: "intake",
+    },
+
     source: {
       type: String,
       trim: true,

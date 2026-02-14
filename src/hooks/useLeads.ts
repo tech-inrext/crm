@@ -117,6 +117,34 @@ export function useLeads() {
     []
   );
 
+  const updateLeadType = useCallback(
+    async (leadId: string, newLeadType: string) => {
+      try {
+        await axios.patch(`${API_BASE}/${leadId}`, { leadType: newLeadType });
+
+        // Update local state immediately for better UX
+        setLeads((prevLeads) =>
+          prevLeads.map((lead) =>
+            lead.id === leadId || lead._id === leadId || lead.leadId === leadId
+              ? { ...lead, leadType: newLeadType }
+              : lead
+          )
+        );
+        setApiLeads((prevApiLeads) =>
+          prevApiLeads.map((lead) =>
+            lead.id === leadId || lead._id === leadId || lead.leadId === leadId
+              ? { ...lead, leadType: newLeadType }
+              : lead
+          )
+        );
+      } catch (error) {
+        console.error("Failed to update lead type:", error);
+        throw error;
+      }
+    },
+    []
+  );
+
   useEffect(() => {
     loadLeads(page + 1, rowsPerPage, search, selectedStatuses); // API expects 1-based page
   }, [loadLeads, page, rowsPerPage, search, selectedStatuses]);
@@ -143,6 +171,7 @@ export function useLeads() {
     loadLeads,
     saveLead,
     updateLeadStatus,
+    updateLeadType,
     selectedStatuses,
     setSelectedStatuses,
   };
