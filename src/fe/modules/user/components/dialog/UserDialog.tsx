@@ -120,8 +120,10 @@ const UserDialog: React.FC<UserDialogProps> = ({
       }
     };
 
-    fetchData();
-  }, []);
+    if (open) {
+      fetchData();
+    }
+  }, [open]);
 
   return (
     <Dialog
@@ -261,6 +263,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   departments={departments}
                   roles={roles}
                   setFieldValue={setFieldValue}
+                  currentRoles={values.roles}
                 />
               </DialogContent>
 

@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -73,7 +73,36 @@ const SectionCard = ({ title, icon: Icon, colorClass, children }: any) => (
   </div>
 );
 
+import { ROLES_API_BASE } from "@/fe/modules/user/constants/users";
+
 const UserDetailsDialog = ({ user, open, onClose }: any) => {
+  const [roleMap, setRoleMap] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    if (!open) return;
+
+    const fetchRoles = async () => {
+      try {
+        const res = await fetch(`${ROLES_API_BASE}/getAllRoleList`, {
+          method: "GET",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        });
+        const data = await res.json();
+        const roles = data?.data || [];
+        const map: Record<string, string> = {};
+        roles.forEach((r: any) => {
+          const id = r._id || r.id;
+          if (id) map[id] = r.name || r.label || "";
+        });
+        setRoleMap(map);
+      } catch (e) {
+        console.error("Failed to fetch roles for UserDetailsDialog:", e);
+      }
+    };
+
+    fetchRoles();
+  }, [open]);
   if (!user) return null;
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "-";
@@ -233,14 +262,23 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 </Typography>
                 <div className="flex gap-1 flex-wrap">
                   {user.roles?.length > 0 ? (
-                    user.roles.map((role: any, idx: number) => (
-                      <Chip
-                        key={idx}
-                        label={typeof role === "string" ? role : role.name}
-                        size="small"
-                        variant="outlined"
-                      />
-                    ))
+                    user.roles.map((role: any, idx: number) => {
+                      const displayName =
+                        typeof role === "string"
+                          ? roleMap[role] || role
+                          : role.name ||
+                            role.label ||
+                            role._id ||
+                            JSON.stringify(role);
+                      return (
+                        <Chip
+                          key={idx}
+                          label={displayName}
+                          size="small"
+                          variant="outlined"
+                        />
+                      );
+                    })
                   ) : (
                     <Typography variant="body2">-</Typography>
                   )}

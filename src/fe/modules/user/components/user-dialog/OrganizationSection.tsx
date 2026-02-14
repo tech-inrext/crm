@@ -15,6 +15,7 @@ interface OrganizationSectionProps {
   departments: any[];
   roles: any[];
   setFieldValue: (field: string, value: any) => void;
+  currentRoles?: any[];
 }
 
 const OrganizationSection: React.FC<OrganizationSectionProps> = ({
@@ -22,6 +23,7 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   departments,
   roles,
   setFieldValue,
+  currentRoles,
 }) => {
   const AutocompletePopper = (props: any) => (
     <Popper {...props} placement="bottom-start" />
@@ -81,6 +83,14 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
             multiple
             options={roles || []}
             getOptionLabel={(opt: any) => opt.name || opt.label || ""}
+            value={(roles || []).filter((r: any) => {
+              if (!currentRoles || currentRoles.length === 0) return false;
+              const id = r._id || r.id;
+              return currentRoles.some(
+                (cr: any) =>
+                  cr === id || cr === id?.toString() || (cr && cr._id === id),
+              );
+            })}
             onChange={(_, value) =>
               setFieldValue(
                 "roles",
