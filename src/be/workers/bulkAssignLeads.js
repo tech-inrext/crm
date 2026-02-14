@@ -39,7 +39,7 @@ async function bulkAssignLeads(job) {
     const leadsToAssign = await Lead.find(query)
       .sort({ createdAt: 1 }) 
       .limit(finalLimit)
-      .select('_id assignedTo')
+      .select('_id assignedTo fullName phone location propertyType budgetRange leadId')
       .lean(); 
 
     console.log(`Found ${leadsToAssign.length} leads to assign.`);
@@ -82,11 +82,11 @@ async function bulkAssignLeads(job) {
           sender: updatedById,
           type: "LEAD_ASSIGNED",
           title: `New Lead Assigned`,
-          message: `Lead "${lead.fullName || lead.phone}" has been assigned to you by ${assigner?.name || 'System'}.`,
+          message: `Lead "${lead.fullName || lead.phone || 'Unnamed Lead'}" has been assigned to you by ${assigner?.name || 'System'}.`,
           metadata: {
             leadId: lead._id,
-            leadName: lead.fullName || 'Unnamed Lead',
-            leadPhone: lead.phone,
+            leadName: lead.fullName || lead.phone || 'Unnamed Lead',
+            leadPhone: lead.phone || 'N/A',
             leadLocation: lead.location || 'N/A',
             leadPropertyType: lead.propertyType || 'N/A',
             leadBudget: lead.budgetRange || 'N/A',

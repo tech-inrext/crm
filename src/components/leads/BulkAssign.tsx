@@ -64,9 +64,10 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
   // Revert Confirmation Dialog State
   const [revertConfirmOpen, setRevertConfirmOpen] = useState(false);
   const [batchIdToRevert, setBatchIdToRevert] = useState<string | null>(null);
-  const [limit, setLimit] = useState<number>(10);
+  const [limit, setLimit] = useState<number | string>(10);
   const [assignTo, setAssignTo] = useState<string>("");
   const [status, setStatus] = useState<string>("new");
+  const [errors, setErrors] = useState<{ limit?: string; assignTo?: string }>({});
 
   // Pagination State
   const [page, setPage] = useState(0);
@@ -137,12 +138,23 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
   }, [open]);
 
   const handleAssign = async (bypassCheck = false) => {
+    // Reset errors
+    setErrors({});
+    let hasError = false;
+    const newErrors: { limit?: string; assignTo?: string } = {};
+
+    if (!limit || Number(limit) <= 0) {
+      newErrors.limit = "Please enter a valid number of leads (greater than 0)";
+      hasError = true;
+    }
+
     if (!assignTo) {
-      setSnackbar({
-        open: true,
-        message: "Please select an assignee",
-        severity: "error",
-      });
+      newErrors.assignTo = "Please select an assignee";
+      hasError = true;
+    }
+
+    if (hasError) {
+      setErrors(newErrors);
       return;
     }
 
@@ -158,17 +170,17 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
             setAvailabilityCheck({
               open: true,
               availableCount: 0,
-              requestedCount: limit,
+              requestedCount: Number(limit),
               type: "none",
             });
             setLoading(false);
             return;
           }
-          if (count < limit) {
+          if (count < Number(limit)) {
             setAvailabilityCheck({
               open: true,
               availableCount: count,
-              requestedCount: limit,
+              requestedCount: Number(limit),
               type: "partial",
             });
             setLoading(false);
@@ -184,7 +196,7 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
     setAvailabilityCheck((prev) => ({ ...prev, open: false }));
     try {
       const res = await axios.post("/api/v0/lead/bulk-assign", {
-        limit,
+        limit: Number(limit),
         assignTo,
         status,
       });
@@ -327,14 +339,28 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
               <TextField
                 label="Number of Leads"
                 type="number"
-                value={limit || ""}
-                onChange={(e) =>
-                  setLimit(e.target.value === "" ? 0 : Number(e.target.value))
-                }
+                value={limit}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setLimit(val);
+                  
+                  const numVal = Number(val);
+                  // Immediate validation
+                  // Check if empty, not a number, or <= 0
+                  if (val === "" || isNaN(numVal) || numVal <= 0) {
+                     setErrors((prev) => ({
+                      ...prev,
+                      limit: "Please enter a valid number of leads (greater than 0)",
+                    }));
+                  } else {
+                    setErrors((prev) => ({ ...prev, limit: undefined }));
+                  }
+                }}
                 fullWidth
                 placeholder="eg - 10"
                 InputLabelProps={{ shrink: true }}
-                helperText="How many leads to assign"
+                error={!!errors.limit}
+                helperText={errors.limit}
               />
 
               <FormControl fullWidth>
@@ -359,6 +385,9 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
                 value={employees.find((emp) => emp._id === assignTo) || null}
                 onChange={(event, newValue) => {
                   setAssignTo(newValue ? newValue._id : "");
+                  if (newValue) {
+                    setErrors((prev) => ({ ...prev, assignTo: undefined }));
+                  }
                 }}
                 renderInput={(params) => (
                   <TextField
@@ -366,6 +395,8 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
                     label="Assign To"
                     placeholder="Search employee..."
                     fullWidth
+                    error={!!errors.assignTo}
+                    helperText={errors.assignTo}
                   />
                 )}
                 isOptionEqualToValue={(option, value) =>
@@ -545,7 +576,7 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
             )}
           </Box>
 
-          {/* Right Aligned Buttons */}
+      {/* Right Aligned Buttons */}
           <Box
             sx={{
               flex: 1,
@@ -565,7 +596,7 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
             </Button>
             {tabIndex === 0 && (
               <Button
-                onClick={handleAssign}
+                onClick={() => handleAssign()}
                 variant="contained"
                 disabled={loading}
                 startIcon={
