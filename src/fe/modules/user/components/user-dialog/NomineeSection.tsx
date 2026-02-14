@@ -23,7 +23,7 @@ const NomineeSection: React.FC = () => {
         sx={{
           display: "grid",
           gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-          gap: 2,
+          gap: 1.5,
         }}
       >
         <Field name="nominee.name">
@@ -32,11 +32,16 @@ const NomineeSection: React.FC = () => {
               {...field}
               value={field.value ?? ""}
               label={FIELD_LABELS.NOMINEE_FULL_NAME}
+              size="small"
               fullWidth
-              margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
@@ -51,11 +56,16 @@ const NomineeSection: React.FC = () => {
               {...field}
               value={field.value ?? ""}
               label={FIELD_LABELS.NOMINEE_RELATION}
+              size="small"
               fullWidth
-              margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
@@ -70,11 +80,16 @@ const NomineeSection: React.FC = () => {
               {...field}
               value={field.value ?? ""}
               label={FIELD_LABELS.NOMINEE_PHONE}
+              size="small"
               fullWidth
-              margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
@@ -98,11 +113,16 @@ const NomineeSection: React.FC = () => {
               {...field}
               value={field.value ?? ""}
               label={FIELD_LABELS.NOMINEE_OCCUPATION}
+              size="small"
               fullWidth
-              margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);

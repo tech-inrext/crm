@@ -54,9 +54,9 @@ const PhotoUpload: React.FC = () => {
             <Box
               sx={{
                 position: "relative",
-                width: 120,
-                height: 120,
-                margin: "0 auto 16px auto",
+                width: 80,
+                height: 80,
+                margin: "0 auto 12px auto",
               }}
             >
               <Box
@@ -107,9 +107,9 @@ const PhotoUpload: React.FC = () => {
                   />
                 ) : (
                   <Box sx={{ textAlign: "center", color: "grey.600" }}>
-                    <CameraAlt sx={{ fontSize: "2.2rem" }} />
-                    <Typography sx={{ mt: 1, fontSize: "0.75rem" }}>
-                      Click to upload photo
+                    <CameraAlt sx={{ fontSize: "1.5rem" }} />
+                    <Typography sx={{ mt: 0.8, fontSize: "0.75rem" }}>
+                      Click to upload
                     </Typography>
                   </Box>
                 )}
@@ -163,7 +163,7 @@ const PhotoUpload: React.FC = () => {
               variant="caption"
               sx={{
                 color: "text.secondary",
-                fontSize: "0.75rem",
+                fontSize: "0.7rem",
                 textAlign: "center",
               }}
             >

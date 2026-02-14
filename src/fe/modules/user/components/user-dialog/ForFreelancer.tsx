@@ -71,6 +71,7 @@ const ForFreelancer: React.FC = () => {
       (BRANCH_LABELS as Record<string, string>)[selected] || selected || "";
     return (
       <span
+        title={text}
         style={{
           display: "block",
           fontSize: 13,
@@ -118,13 +119,18 @@ const ForFreelancer: React.FC = () => {
                     },
                   },
                 }}
+                size="small"
                 fullWidth
-                margin="normal"
                 error={Boolean(meta.touched && meta.error)}
                 helperText={
                   meta.touched && meta.error ? String(meta.error) : undefined
                 }
-                sx={{ bgcolor: "#fff", borderRadius: 1 }}
+                sx={{
+                  bgcolor: "#fff",
+                  borderRadius: 1,
+                  "& .MuiInputBase-root": { minHeight: 40 },
+                  "& .MuiInputBase-input": { py: 1 },
+                }}
               >
                 {slabOptions.map((opt) => (
                   <MenuItem key={opt} value={opt}>
@@ -171,13 +177,18 @@ const ForFreelancer: React.FC = () => {
                   },
                   renderValue: renderBranchValue,
                 }}
+                size="small"
                 fullWidth
-                margin="normal"
                 error={Boolean(meta.touched && meta.error)}
                 helperText={
                   meta.touched && meta.error ? String(meta.error) : undefined
                 }
-                sx={{ bgcolor: "#fff", borderRadius: 1 }}
+                sx={{
+                  bgcolor: "#fff",
+                  borderRadius: 1,
+                  "& .MuiInputBase-root": { minHeight: 40 },
+                  "& .MuiInputBase-input": { py: 1 },
+                }}
               >
                 <MenuItem value="Noida">
                   <Box

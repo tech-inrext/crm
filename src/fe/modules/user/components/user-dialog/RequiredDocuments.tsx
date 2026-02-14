@@ -75,7 +75,9 @@ const UploadBox: React.FC<{
 
         return (
           <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
-            <Typography sx={{ mb: 1, fontWeight: 600 }}>{label}</Typography>
+            <Typography sx={{ mb: 0.5, fontWeight: 500, fontSize: 14 }}>
+              {label}
+            </Typography>
             <input
               accept="image/*,application/pdf"
               style={{ display: "none" }}
@@ -108,14 +110,14 @@ const UploadBox: React.FC<{
               sx={{
                 border: "2px dashed rgba(100, 150, 255, 0.7)",
                 borderRadius: 1,
-                height: 110,
+                height: 90,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 flex: 1,
                 cursor: "pointer",
                 bgcolor: "transparent",
-                p: 1,
+                p: 0.75,
                 position: "relative",
               }}
             >

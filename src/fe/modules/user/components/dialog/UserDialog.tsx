@@ -80,9 +80,22 @@ const UserDialog: React.FC<UserDialogProps> = ({
       open={open}
       onClose={onClose}
       fullWidth
-      maxWidth="md"
+      maxWidth="sm"
       aria-labelledby="user-dialog-title"
-      PaperProps={{ sx: { maxHeight: "90vh", height: "auto" } }}
+      BackdropProps={{
+        sx: {
+          backdropFilter: "blur(1px)",
+          backgroundColor: "rgba(15, 23, 42, 0.4)",
+        },
+      }}
+      PaperProps={{
+        sx: {
+          maxHeight: "90vh",
+          height: "auto",
+          borderRadius: 3,
+          boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+        },
+      }}
     >
       <Formik
         initialValues={initialData}
@@ -191,7 +204,15 @@ const UserDialog: React.FC<UserDialogProps> = ({
             <Form>
               <DialogTitle
                 id="user-dialog-title"
-                sx={{ fontWeight: 700, color: "#1976d2", fontSize: 20 }}
+                sx={{
+                  fontWeight: 600,
+                  color: "#1f2937",
+                  fontSize: 18,
+                  px: 3,
+                  pt: 2.5,
+                  pb: 1.5,
+                  borderBottom: "1px solid #eef2f7",
+                }}
               >
                 {editId ? BUTTON_LABELS.EDIT_USER : BUTTON_LABELS.ADD_USER}
               </DialogTitle>
@@ -200,11 +221,13 @@ const UserDialog: React.FC<UserDialogProps> = ({
                 sx={{
                   display: "flex",
                   flexDirection: "column",
-                  gap: 1,
-                  mt: 1,
-                  maxHeight: "70vh",
+                  gap: 1.5,
+                  mt: 0,
+                  maxHeight: "72vh",
                   overflowY: "auto",
                   px: 3,
+                  py: 2,
+                  backgroundColor: "#f8fafc",
                 }}
               >
                 <BasicInformation editId={editId} />
@@ -217,18 +240,33 @@ const UserDialog: React.FC<UserDialogProps> = ({
                 />
               </DialogContent>
 
-              <DialogActions sx={{ p: 2 }}>
+              <DialogActions
+                sx={{
+                  p: 2,
+                  px: 3,
+                  borderTop: "1px solid #eef2f7",
+                  backgroundColor: "#fff",
+                }}
+              >
                 <Button
                   onClick={onClose}
                   disabled={saving}
-                  sx={{ fontWeight: 600 }}
+                  variant="text"
+                  sx={{ fontWeight: 500, color: "#475569" }}
                 >
                   {BUTTON_LABELS.CANCEL}
                 </Button>
                 <Button
                   type="button"
                   variant="contained"
-                  sx={{ fontWeight: 600, bgcolor: "#1976d2", color: "#fff" }}
+                  sx={{
+                    fontWeight: 600,
+                    bgcolor: "#2563eb",
+                    color: "#fff",
+                    px: 3,
+                    boxShadow: "none",
+                    "&:hover": { bgcolor: "#1d4ed8", boxShadow: "none" },
+                  }}
                   disabled={saving || (editId ? !dirty : false)}
                   onClick={() => {
                     const makeAllTouched = (obj) => {
@@ -257,7 +295,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   }}
                 >
                   {saving ? (
-                    <CircularProgress size={20} color="inherit" />
+                    <CircularProgress size={20} />
                   ) : editId ? (
                     BUTTON_LABELS.SAVE
                   ) : (

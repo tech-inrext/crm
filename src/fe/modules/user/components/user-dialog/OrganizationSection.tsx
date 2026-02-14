@@ -39,16 +39,24 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
         sx={{
           display: "grid",
           gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-          gap: 2,
+          gap: 1.5,
         }}
       >
         <Field name="managerId">
           {({ field }: FieldProps) => (
             <TextField
               select
+              size="small"
+              fullWidth
               label={FIELD_LABELS.MANAGER}
               {...field}
               onChange={(e) => setFieldValue("managerId", e.target.value)}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
             >
               <MenuItem value="">None</MenuItem>
               {managers.map((m: any) => (
@@ -64,9 +72,17 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
           {({ field }: FieldProps) => (
             <TextField
               select
+              size="small"
+              fullWidth
               label={FIELD_LABELS.DEPARTMENT}
               {...field}
               onChange={(e) => setFieldValue("departmentId", e.target.value)}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
             >
               <MenuItem value="">None</MenuItem>
               {departments.map((d: any) => (
@@ -99,7 +115,17 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
             }
             PopperComponent={AutocompletePopper}
             renderInput={(params) => (
-              <TextField {...params} label={FIELD_LABELS.ROLES} />
+              <TextField
+                {...params}
+                label={FIELD_LABELS.ROLES}
+                size="small"
+                sx={{
+                  bgcolor: "#fff",
+                  borderRadius: 1,
+                  "& .MuiInputBase-root": { minHeight: 40 },
+                  "& .MuiInputBase-input": { py: 1 },
+                }}
+              />
             )}
             disablePortal
           />
