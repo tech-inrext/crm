@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Paper, Typography } from "@/components/ui/Component";
-import UsersActionBar from "@/fe/modules/user/components/action/UsersActionBar";
+import UsersActionBar from "@/fe/modules/user/components/actionBar/UsersActionBar";
 
 interface Props {
   search: string;

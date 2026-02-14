@@ -14,9 +14,9 @@ import Alert from "@/components/ui/Component/Alert";
 import { Formik, Form } from "formik";
 import { BUTTON_LABELS } from "@/fe/modules/user/constants/users";
 import { useUserDialogData } from "@/fe/modules/user/hooks/useUserDialogData";
-import { userValidationSchema } from "../user-dialog/validation";
-import BasicInformation from "../user-dialog/BasicInformation";
-import OrganizationSection from "../user-dialog/OrganizationSection";
+import { userValidationSchema } from "./user-dialog/validation";
+import BasicInformation from "./user-dialog/BasicInformation";
+import OrganizationSection from "./user-dialog/OrganizationSection";
 
 export interface UserFormData {
   name: string;
