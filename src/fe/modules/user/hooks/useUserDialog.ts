@@ -25,7 +25,6 @@ export const useUserDialog = ({
   const [dialogMode, setDialogMode] = useState<"add" | "edit" | "view">("add");
   const [selectedUser, setSelectedUser] = useState<any>(null);
 
-  // Open dialog from URL params
   useEffect(() => {
     if (loading) return;
 
@@ -38,7 +37,7 @@ export const useUserDialog = ({
       setDialogMode(mode);
 
       const userToEdit = employees.find(
-        (u: any) => u.id === userIdParam || u._id === userIdParam
+        (u: any) => u.id === userIdParam || u._id === userIdParam,
       );
 
       if (userToEdit) {

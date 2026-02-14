@@ -9,7 +9,7 @@ import {
   Button,
   CircularProgress,
   Snackbar,
-} from "../Component";
+} from "@/components/ui/Component";
 import Alert from "@/components/ui/Component/Alert";
 import { Formik, Form } from "formik";
 import axios from "axios";
@@ -18,7 +18,7 @@ import {
   ROLES_API_BASE,
   DEPARTMENTS_API_BASE,
   BUTTON_LABELS,
-} from "@/constants/users";
+} from "@/fe/modules/user/constants/users";
 import { userValidationSchema } from "../user-dialog/validation";
 import BasicInformation from "../user-dialog/BasicInformation";
 import OrganizationSection from "../user-dialog/OrganizationSection";
@@ -85,7 +85,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
     const fetchData = async () => {
       const managerParams = new URLSearchParams({
         isCabVendor: "false",
-        limit: "1000", // so you don’t get only 5 due to API default
+        limit: "1000",
         page: "1",
       }).toString();
 
@@ -139,23 +139,19 @@ const UserDialog: React.FC<UserDialogProps> = ({
         enableReinitialize={true}
         onSubmit={async (
           values,
-          { setSubmitting, setErrors, setFieldError }
+          { setSubmitting, setErrors, setFieldError },
         ) => {
           setSubmitting(true);
           try {
             await onSave(values);
           } catch (e: any) {
-            // Try to map server validation errors (400) to Formik field errors
             const resp = e?.response?.data ?? e?.data ?? null;
             if (resp) {
-              // Common shapes: { message: '...', error: '...' },
-              // { field: 'phone', message: '...' }, or { errors: [{ field, message }] }
               try {
-                // If server sent structured field errors
                 if (resp.fieldErrors && typeof resp.fieldErrors === "object") {
                   setErrors(resp.fieldErrors);
                   setSnackbarMessage(
-                    "Please fix the highlighted errors before submitting"
+                    "Please fix the highlighted errors before submitting",
                   );
                   setSnackbarSeverity("error");
                   setSnackbarOpen(true);
@@ -171,7 +167,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   if (Object.keys(fieldErrs).length > 0) {
                     setErrors(fieldErrs);
                     setSnackbarMessage(
-                      "Please fix the highlighted errors before submitting"
+                      "Please fix the highlighted errors before submitting",
                     );
                     setSnackbarSeverity("error");
                     setSnackbarOpen(true);
@@ -179,18 +175,16 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   }
                 }
 
-                // If server returned single-field info like { field: 'phone', message: '...' }
                 if (resp.field && resp.message) {
                   setFieldError(resp.field, resp.message);
                   setSnackbarMessage(
-                    "Please fix the highlighted errors before submitting"
+                    "Please fix the highlighted errors before submitting",
                   );
                   setSnackbarSeverity("error");
                   setSnackbarOpen(true);
                   return;
                 }
 
-                // fallback: try to extract a usable message string
                 const extractMessage = (err: any) => {
                   if (!err) return "Failed to save user";
                   const r = err.response?.data ?? err.data ?? err;
@@ -216,7 +210,6 @@ const UserDialog: React.FC<UserDialogProps> = ({
                 setSnackbarOpen(true);
                 return;
               } catch (parseErr) {
-                // parsing error, show generic message
                 setSnackbarMessage("Failed to save user");
                 setSnackbarSeverity("error");
                 setSnackbarOpen(true);
@@ -224,7 +217,6 @@ const UserDialog: React.FC<UserDialogProps> = ({
               }
             }
 
-            // final fallback
             setSnackbarMessage(e?.message ?? "Failed to save user");
             setSnackbarSeverity("error");
             setSnackbarOpen(true);
@@ -270,7 +262,6 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   roles={roles}
                   setFieldValue={setFieldValue}
                 />
-                {/* debug removed */}
               </DialogContent>
 
               <DialogActions sx={{ p: 2 }}>
@@ -287,7 +278,6 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   sx={{ fontWeight: 600, bgcolor: "#1976d2", color: "#fff" }}
                   disabled={saving || (editId ? !dirty : false)}
                   onClick={() => {
-                    // Recursively mark all fields as touched so field-level errors show
                     const makeAllTouched = (obj) => {
                       if (obj === null || obj === undefined) return true;
                       if (typeof obj !== "object") return true;
@@ -303,15 +293,13 @@ const UserDialog: React.FC<UserDialogProps> = ({
                       const allTouched = makeAllTouched(values || {});
                       setTouched(allTouched);
                     } catch (_) {
-                      // fallback: mark top-level keys
                       const allTouched: any = {};
                       Object.keys(values || {}).forEach(
-                        (k) => (allTouched[k] = true)
+                        (k) => (allTouched[k] = true),
                       );
                       setTouched(allTouched);
                     }
 
-                    // always submit; Formik will validate and fill errors which will now be visible
                     submitForm();
                   }}
                 >

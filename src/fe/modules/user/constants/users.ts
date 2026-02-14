@@ -52,7 +52,7 @@ export const USERS_TABLE_HEADER = [
   { label: "Designation", dataKey: "designation" },
   {
     label: "Actions",
-    component: "action-buttons", // Will be handled in component
+    component: "action-buttons",
   },
 ];
 
@@ -100,8 +100,6 @@ export const FIELD_LABELS = {
   NOMINEE_PHONE: "Phone Number",
   NOMINEE_OCCUPATION: "Occupation",
   NOMINEE_RELATION: "Relation with Nominee",
-  NOMINEE_GENDER: "Gender",
-  AGE: "Age",
   JOINING_DATE: "Joining Date",
   DESIGNATION: "Designation *",
   MANAGER: "Manager *",
@@ -124,4 +122,3 @@ export const BUTTON_LABELS = {
 
 // Import shared constants from leads for consistency
 export { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
-

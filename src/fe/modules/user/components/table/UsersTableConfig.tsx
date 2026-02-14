@@ -1,5 +1,8 @@
 import { Box, Button } from "@/components/ui/Component";
-import { USERS_TABLE_HEADER, USERS_PERMISSION_MODULE } from "@/constants/users";
+import {
+  USERS_TABLE_HEADER,
+  USERS_PERMISSION_MODULE,
+} from "@/fe/modules/user/constants/users";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
 import PermissionGuard from "@/components/PermissionGuard";
@@ -62,6 +65,6 @@ export const getUsersTableHeader = ({
             </Box>
           ),
         }
-      : header
+      : header,
   );
 };

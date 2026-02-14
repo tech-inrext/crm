@@ -1,4 +1,4 @@
-import { DEFAULT_USER_FORM } from "@/constants/users";
+import { DEFAULT_USER_FORM } from "@/fe/modules/user/constants/users";
 
 /**
  * Check if current user can edit a specific employee
@@ -21,7 +21,9 @@ export const canEditEmployee = (currentUser: any, employee: any): boolean => {
  */
 export const getInitialUserForm = (form: any) => {
   const safeForm = Object.fromEntries(
-    Object.entries(form || {}).filter(([_, v]) => v !== undefined && v !== null)
+    Object.entries(form || {}).filter(
+      ([_, v]) => v !== undefined && v !== null,
+    ),
   );
 
   let joiningDate = safeForm.joiningDate || "";
@@ -40,7 +42,7 @@ export const getInitialUserForm = (form: any) => {
     departmentId: safeForm.departmentId || "",
     roles: Array.isArray(safeForm.roles)
       ? safeForm.roles.map((r: any) =>
-          typeof r === "string" ? r : r._id || r.id || ""
+          typeof r === "string" ? r : r._id || r.id || "",
         )
       : [],
     joiningDate,

@@ -1,5 +1,8 @@
 import * as Yup from "yup";
-import { GENDER_OPTIONS, VALIDATION_RULES } from "@/constants/users";
+import {
+  GENDER_OPTIONS,
+  VALIDATION_RULES,
+} from "@/fe/modules/user/constants/users";
 
 export const userValidationSchema = Yup.object({
   name: Yup.string()
@@ -13,7 +16,7 @@ export const userValidationSchema = Yup.object({
       (value) => {
         if (!value) return true;
         return !/^\d/.test(String(value).trim());
-      }
+      },
     ),
   fatherName: Yup.string()
     .min(3, "Father's Name must be at least 3 characters")
@@ -21,7 +24,7 @@ export const userValidationSchema = Yup.object({
     .required("Father's Name is required")
     .matches(
       /^[\p{L}\s'.-]+$/u,
-      "Father's name must not contain special characters"
+      "Father's name must not contain special characters",
     )
     .test(
       "father-no-leading-digit",
@@ -29,7 +32,7 @@ export const userValidationSchema = Yup.object({
       (value) => {
         if (!value) return true;
         return !/^\d/.test(String(value).trim());
-      }
+      },
     ),
   email: Yup.string().email().required("Email is required"),
   phone: Yup.string()
@@ -39,14 +42,6 @@ export const userValidationSchema = Yup.object({
     .min(VALIDATION_RULES.ADDRESS.min)
     .required("Address is required"),
   gender: Yup.string().oneOf(GENDER_OPTIONS).required("Gender is required"),
-  age: Yup.number()
-    .transform((value, originalValue) => {
-      // treat empty string as null so it's optional in the form
-      return originalValue === "" || originalValue === null ? null : value;
-    })
-    .min(VALIDATION_RULES.AGE.min)
-    .max(VALIDATION_RULES.AGE.max)
-    .nullable(),
   altPhone: Yup.string()
     .transform((value, originalValue) => (originalValue === "" ? null : value))
     .nullable()
@@ -56,17 +51,33 @@ export const userValidationSchema = Yup.object({
       (val) => {
         if (val === null || val === undefined || val === "") return true;
         return /^\d{10}$/.test(String(val));
-      }
+      },
     ),
+  dateOfBirth: Yup.string()
+    .nullable()
+    .required("Date of Birth is required")
+    .test("age-restriction", "Age should be atleast 21 years", (val) => {
+      if (!val) return false;
+      const dob = new Date(val);
+      const today = new Date();
+      const age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      const dayDiff = today.getDate() - dob.getDate();
+      if (
+        age > 21 ||
+        (age === 21 && (monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0)))
+      ) {
+        return true;
+      }
+      return false;
+    }),
   joiningDate: Yup.string()
     .nullable()
     .test("not-in-future", "Joining date cannot be a future date", (val) => {
       if (!val) return true;
-      // Parse the value; if invalid, don't block here (format checks can be separate)
       const d = new Date(val);
       if (isNaN(d.getTime())) return true;
       const today = new Date();
-      // Compare only dates (ignore time)
       today.setHours(0, 0, 0, 0);
       d.setHours(0, 0, 0, 0);
       return d <= today;
@@ -75,24 +86,21 @@ export const userValidationSchema = Yup.object({
     .min(VALIDATION_RULES.DESIGNATION.min)
     .max(VALIDATION_RULES.DESIGNATION.max)
     .required("Designation is required"),
-  // managerId: Yup.string().required("Manager is required"),
-  // departmentId: Yup.string().required("Department is required"),
   roles: Yup.array().test(
     "roles-required",
     "At least one role required",
-    (val) => Array.isArray(val) && val.filter(Boolean).length > 0
+    (val) => Array.isArray(val) && val.filter(Boolean).length > 0,
   ),
-  // nominee validation: only validate fields when a value is provided
   nominee: Yup.object()
     .shape({
       name: Yup.string()
         .transform((value, originalValue) =>
-          originalValue === "" ? null : value
+          originalValue === "" ? null : value,
         )
         .nullable()
         .matches(
           /^[\p{L}\s'-]+$/u,
-          "Nominee name must not contain special characters"
+          "Nominee name must not contain special characters",
         )
         .test(
           "nominee-name-min",
@@ -100,7 +108,7 @@ export const userValidationSchema = Yup.object({
           function (value) {
             if (value === null || value === undefined) return true;
             return String(value).trim().length >= 3;
-          }
+          },
         )
         .test(
           "nominee-no-leading-digit",
@@ -108,11 +116,11 @@ export const userValidationSchema = Yup.object({
           (value) => {
             if (!value) return true;
             return !/^\d/.test(String(value).trim());
-          }
+          },
         ),
       phone: Yup.string()
         .transform((value, originalValue) =>
-          originalValue === "" ? null : value
+          originalValue === "" ? null : value,
         )
         .nullable()
         .test(
@@ -121,21 +129,21 @@ export const userValidationSchema = Yup.object({
           (val) => {
             if (val === null || val === undefined || val === "") return true;
             return /^\d{10}$/.test(String(val));
-          }
+          },
         ),
       occupation: Yup.string()
         .transform((value, originalValue) =>
-          originalValue === "" ? null : value
+          originalValue === "" ? null : value,
         )
         .nullable(),
       relation: Yup.string()
         .transform((value, originalValue) =>
-          originalValue === "" ? null : value
+          originalValue === "" ? null : value,
         )
         .nullable(),
       gender: Yup.string()
         .transform((value, originalValue) =>
-          originalValue === "" ? null : value
+          originalValue === "" ? null : value,
         )
         .nullable()
         .test("nominee-gender-valid", "Invalid gender", function (value) {
@@ -144,19 +152,14 @@ export const userValidationSchema = Yup.object({
         }),
     })
     .nullable(),
-  // file placeholders - accept either a File object (new upload) or a non-empty URL (existing upload)
-  // Documents are optional now; when provided as File enforce size < 1MB
   aadharFile: Yup.mixed()
     .nullable()
     .test("aadhar-size", "Aadhar file must be less than 1MB", function (value) {
       const { aadharUrl } = this.parent || {};
-      // If a File is present, enforce size limit
       if (value && typeof value === "object" && value.size !== undefined) {
         return value.size <= 1024 * 1024;
       }
-      // If URL present, accept
       if (typeof aadharUrl === "string" && aadharUrl.trim() !== "") return true;
-      // No file/url -> allowed (optional)
       return true;
     }),
   panFile: Yup.mixed()
@@ -182,7 +185,7 @@ export const userValidationSchema = Yup.object({
         if (typeof bankProofUrl === "string" && bankProofUrl.trim() !== "")
           return true;
         return true;
-      }
+      },
     ),
   signatureFile: Yup.mixed()
     .nullable()
@@ -197,28 +200,43 @@ export const userValidationSchema = Yup.object({
         if (typeof signatureUrl === "string" && signatureUrl.trim() !== "")
           return true;
         return true;
-      }
+      },
     ),
-    photoFile: Yup.mixed()
+
+  dateOfBirth: Yup.string()
     .nullable()
-    .test(
-      "photo-size",
-      "Photo file must be less than 1MB",
-      function (value) {
-        const { photo } = this.parent || {};
-        if (value && typeof value === "object" && value.size !== undefined) {
-          return value.size <= 1024 * 1024;
-        }
-        if (typeof photo === "string" && photo.trim() !== "")
-          return true;
+    .required("Date of Birth is required")
+    .test("age-restriction", "Age should be atleast 21 years", (val) => {
+      if (!val) return false;
+      const dob = new Date(val);
+      const today = new Date();
+      const age = today.getFullYear() - dob.getFullYear();
+      const monthDiff = today.getMonth() - dob.getMonth();
+      const dayDiff = today.getDate() - dob.getDate();
+      if (
+        age > 21 ||
+        (age === 21 && (monthDiff > 0 || (monthDiff === 0 && dayDiff >= 0)))
+      ) {
         return true;
       }
-    ),
-    panNumber: Yup.string()
+      return false;
+    }),
+
+  photoFile: Yup.mixed()
+    .nullable()
+    .test("photo-size", "Photo file must be less than 1MB", function (value) {
+      const { photo } = this.parent || {};
+      if (value && typeof value === "object" && value.size !== undefined) {
+        return value.size <= 1024 * 1024;
+      }
+      if (typeof photo === "string" && photo.trim() !== "") return true;
+      return true;
+    }),
+  panNumber: Yup.string()
     .required("PAN Number is required")
     .matches(
       /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
-      "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)"
+      "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)",
     )
-    .transform((value) => value ? value.toUpperCase().trim() : value),
+    .transform((value) => (value ? value.toUpperCase().trim() : value)),
 });

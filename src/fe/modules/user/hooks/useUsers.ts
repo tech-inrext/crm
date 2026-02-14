@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { USERS_API_BASE, DEFAULT_PAGE_SIZE } from "@/constants/users";
+import {
+  USERS_API_BASE,
+  DEFAULT_PAGE_SIZE,
+} from "@/fe/modules/user/constants/users";
 
 export interface Employee {
   _id?: string;
@@ -29,7 +32,7 @@ export function useUsers(debouncedSearch: string) {
       page = 1,
       limit = DEFAULT_PAGE_SIZE,
       search = "",
-      isCabVendor: boolean | undefined = false // ← only non-vendors by default
+      isCabVendor: boolean | undefined = false,
     ) => {
       setLoading(true);
       try {
@@ -38,7 +41,7 @@ export function useUsers(debouncedSearch: string) {
             page,
             limit,
             search: search.trim() || undefined,
-            ...(typeof isCabVendor === "boolean" ? { isCabVendor } : {}), // ← sends ?isCabVendor=false
+            ...(typeof isCabVendor === "boolean" ? { isCabVendor } : {}),
           },
         });
 
@@ -53,11 +56,10 @@ export function useUsers(debouncedSearch: string) {
         setLoading(false);
       }
     },
-    []
+    [],
   );
 
   useEffect(() => {
-    // pass isCabVendor=false explicitly
     loadEmployees(page, rowsPerPage, debouncedSearch, false);
   }, [page, rowsPerPage, debouncedSearch, loadEmployees]);
 
@@ -65,29 +67,34 @@ export function useUsers(debouncedSearch: string) {
     async (userData: any) => {
       setSaving(true);
       try {
-        // If files are present, upload them to S3 first using presigned URL
         const uploadFile = async (file: File | null) => {
           if (!file) return null;
           const presignRes = await axios.post(
             "/api/v0/s3/upload-url",
             { fileName: file.name, fileType: file.type },
-            { headers: { "Content-Type": "application/json" } }
+            { headers: { "Content-Type": "application/json" } },
           );
           const { uploadUrl, fileUrl } = presignRes.data;
-          // PUT to uploadUrl
-          await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+          await fetch(uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type },
+            body: file,
+          });
           return fileUrl;
         };
 
         const payload = { ...userData };
-        console.debug("[addUser] payload before uploads:", payload);
-        if (userData.aadharFile) payload.aadharUrl = await uploadFile(userData.aadharFile);
-        if (userData.panFile) payload.panUrl = await uploadFile(userData.panFile);
-        if (userData.bankProofFile) payload.bankProofUrl = await uploadFile(userData.bankProofFile);
-        if (userData.signatureFile) payload.signatureUrl = await uploadFile(userData.signatureFile);
-        if (userData.photoFile) payload.photo = await uploadFile(userData.photoFile);
+        if (userData.aadharFile)
+          payload.aadharUrl = await uploadFile(userData.aadharFile);
+        if (userData.panFile)
+          payload.panUrl = await uploadFile(userData.panFile);
+        if (userData.bankProofFile)
+          payload.bankProofUrl = await uploadFile(userData.bankProofFile);
+        if (userData.signatureFile)
+          payload.signatureUrl = await uploadFile(userData.signatureFile);
+        if (userData.photoFile)
+          payload.photo = await uploadFile(userData.photoFile);
 
-        // Remove file objects before sending
         delete payload.aadharFile;
         delete payload.panFile;
         delete payload.bankProofFile;
@@ -95,17 +102,15 @@ export function useUsers(debouncedSearch: string) {
         delete payload.photoFile;
 
         await axios.post(USERS_API_BASE, payload);
-        console.debug("[addUser] POST completed");
         await loadEmployees(page, rowsPerPage, debouncedSearch, false);
       } catch (error) {
-        // Normalize axios errors so caller can show friendly messages
         console.error("Failed to add user:", error);
-        // If axios error with response, include status and message
         if (error && error.response) {
           const { status, data } = error.response;
-          const message = (data && data.message) || error.message || "Request failed";
+          const message =
+            (data && data.message) || error.message || "Request failed";
           const err = new Error(message);
-          // @ts-ignore attach status for callers that want to inspect it
+          // @ts-ignore
           err.status = status;
           throw err;
         }
@@ -114,32 +119,40 @@ export function useUsers(debouncedSearch: string) {
         setSaving(false);
       }
     },
-    [page, rowsPerPage, debouncedSearch, loadEmployees]
+    [page, rowsPerPage, debouncedSearch, loadEmployees],
   );
 
   const updateUser = useCallback(
     async (id: string, userData: any) => {
       setSaving(true);
       try {
-        // handle file uploads same as addUser
         const uploadFile = async (file: File | null) => {
           if (!file) return null;
           const presignRes = await axios.post(
             "/api/v0/s3/upload-url",
             { fileName: file.name, fileType: file.type },
-            { headers: { "Content-Type": "application/json" } }
+            { headers: { "Content-Type": "application/json" } },
           );
           const { uploadUrl, fileUrl } = presignRes.data;
-          await fetch(uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
+          await fetch(uploadUrl, {
+            method: "PUT",
+            headers: { "Content-Type": file.type },
+            body: file,
+          });
           return fileUrl;
         };
 
         const payload = { ...userData };
-        if (userData.aadharFile) payload.aadharUrl = await uploadFile(userData.aadharFile);
-        if (userData.panFile) payload.panUrl = await uploadFile(userData.panFile);
-        if (userData.bankProofFile) payload.bankProofUrl = await uploadFile(userData.bankProofFile);
-        if (userData.signatureFile) payload.signatureUrl = await uploadFile(userData.signatureFile);
-        if (userData.photoFile) payload.photo = await uploadFile(userData.photoFile);
+        if (userData.aadharFile)
+          payload.aadharUrl = await uploadFile(userData.aadharFile);
+        if (userData.panFile)
+          payload.panUrl = await uploadFile(userData.panFile);
+        if (userData.bankProofFile)
+          payload.bankProofUrl = await uploadFile(userData.bankProofFile);
+        if (userData.signatureFile)
+          payload.signatureUrl = await uploadFile(userData.signatureFile);
+        if (userData.photoFile)
+          payload.photo = await uploadFile(userData.photoFile);
         delete payload.aadharFile;
         delete payload.panFile;
         delete payload.bankProofFile;
@@ -155,7 +168,7 @@ export function useUsers(debouncedSearch: string) {
         setSaving(false);
       }
     },
-    [page, rowsPerPage, debouncedSearch, loadEmployees]
+    [page, rowsPerPage, debouncedSearch, loadEmployees],
   );
 
   const getUserById = useCallback(async (id: string) => {

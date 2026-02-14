@@ -1,4 +1,3 @@
-// src/components/ui/user-dialog/PhotoUpload.tsx
 import React, { useState } from "react";
 import { Box, Typography, IconButton } from "@/components/ui/Component";
 import { Field, FieldProps } from "formik";
@@ -16,12 +15,13 @@ const PhotoUpload: React.FC = () => {
         const photoUrl = form?.values?.photo || null;
         const isFile = fileValue instanceof File;
         const isUrl = typeof photoUrl === "string" && photoUrl.trim() !== "";
-        const previewIsImage = (v: string) => /\.(jpe?g|png|gif|webp|avif|svg)$/i.test(v);
+        const previewIsImage = (v: string) =>
+          /\.(jpe?g|png|gif|webp|avif|svg)$/i.test(v);
 
         const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
           const file = e.target.files?.[0];
           if (!file) return;
-          
+
           const maxBytes = 50 * 1024 * 1024;
           if (file.size > maxBytes) {
             form?.setFieldError("photoFile", "Photo must be less than 50MB");
@@ -51,7 +51,14 @@ const PhotoUpload: React.FC = () => {
               onChange={handleFileChange}
             />
 
-            <Box sx={{ position: "relative", width: 120, height: 120, margin: "0 auto 16px auto" }}>
+            <Box
+              sx={{
+                position: "relative",
+                width: 120,
+                height: 120,
+                margin: "0 auto 16px auto",
+              }}
+            >
               <Box
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}

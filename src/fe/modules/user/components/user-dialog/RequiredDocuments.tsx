@@ -5,10 +5,9 @@ import { Box, Typography, IconButton } from "@/components/ui/Component";
 import UploadFileIcon from "@/components/ui/Component/UploadFile";
 import CloseIcon from "@/components/ui/Component/CloseIcon";
 import { Field, FieldProps } from "formik";
-import { FIELD_LABELS } from "@/constants/users";
+import { FIELD_LABELS } from "@/fe/modules/user/constants/users";
 import ForFreelancer from "./ForFreelancer";
 
-/* -------------------- Local File Preview -------------------- */
 const LocalFilePreview: React.FC<{ file: File; alt?: string }> = ({
   file,
   alt,
@@ -37,7 +36,6 @@ const LocalFilePreview: React.FC<{ file: File; alt?: string }> = ({
         justifyContent: "center",
       }}
     >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={objectUrl}
         alt={alt || file.name}
@@ -52,7 +50,6 @@ const LocalFilePreview: React.FC<{ file: File; alt?: string }> = ({
   );
 };
 
-/* -------------------- Upload Box -------------------- */
 const UploadBox: React.FC<{
   id: string;
   label: string;
@@ -90,12 +87,14 @@ const UploadBox: React.FC<{
                 const maxBytes = 50 * 1024 * 1024; // 50 MB
                 if (f.size > maxBytes) {
                   if (form && typeof form.setFieldError === "function") {
-                    form.setFieldError(fieldName, "File must be less than 50MB");
+                    form.setFieldError(
+                      fieldName,
+                      "File must be less than 50MB",
+                    );
                   }
                   setLocalError("File must be less than 50MB");
-                  e.target.value = '';
+                  e.target.value = "";
                 } else {
-                  // ✅ Valid file
                   form?.setFieldValue(fieldName, f);
                   form?.setFieldValue(urlField, "");
                   form?.setFieldError(fieldName, undefined);
@@ -120,7 +119,6 @@ const UploadBox: React.FC<{
                 position: "relative",
               }}
             >
-              {/* 🖼️ Show existing URL or File Preview */}
               {isUrl ? (
                 previewIsImage(urlValue) ? (
                   <Box
@@ -132,7 +130,6 @@ const UploadBox: React.FC<{
                       justifyContent: "center",
                     }}
                   >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={urlValue}
                       alt={label}
@@ -194,7 +191,6 @@ const UploadBox: React.FC<{
               )}
             </Box>
 
-            {/* 🔔 Error message (local or Formik) */}
             {(localError || (meta?.touched && meta?.error)) && (
               <Typography color="error" sx={{ fontSize: 12, mt: 0.5 }}>
                 {localError || meta.error}
@@ -207,7 +203,6 @@ const UploadBox: React.FC<{
   );
 };
 
-/* -------------------- Main Component -------------------- */
 const RequiredDocuments: React.FC = () => {
   return (
     <>
@@ -251,5 +246,4 @@ const RequiredDocuments: React.FC = () => {
   );
 };
 
-/* ✅ Default Export Fix */
 export default RequiredDocuments;

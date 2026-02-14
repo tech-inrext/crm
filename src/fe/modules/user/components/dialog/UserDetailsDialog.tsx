@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import {
   Dialog,
   DialogTitle,
@@ -119,7 +119,6 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                   alt={user.name}
                   className="w-full h-full object-cover object-top rounded-full"
                   onError={(e) => {
-                    // Fallback to initials if image fails to load
                     const target = e.target as HTMLImageElement;
                     target.style.display = "none";
                     const parent = target.parentElement;
@@ -323,11 +322,6 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 icon={FamilyRestroom}
                 label="Relation"
                 value={user.nominee?.relation}
-              />
-              <DetailItem
-                icon={Person}
-                label="Gender"
-                value={user.nominee?.gender}
               />
             </SectionCard>
           </div>

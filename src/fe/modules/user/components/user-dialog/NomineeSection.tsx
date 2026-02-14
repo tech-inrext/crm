@@ -1,7 +1,15 @@
 import React from "react";
-import { Box, MenuItem, TextField, Typography } from "@/components/ui/Component";
+import {
+  Box,
+  MenuItem,
+  TextField,
+  Typography,
+} from "@/components/ui/Component";
 import { Field, FieldProps, useFormikContext } from "formik";
-import { FIELD_LABELS, GENDER_OPTIONS } from "@/constants/users";
+import {
+  FIELD_LABELS,
+  GENDER_OPTIONS,
+} from "@/fe/modules/user/constants/users";
 
 const NomineeSection: React.FC = () => {
   const { setFieldTouched } = useFormikContext();
@@ -72,7 +80,7 @@ const NomineeSection: React.FC = () => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 const v = (e.target as HTMLInputElement).value.replace(
                   /\D/g,
-                  ""
+                  "",
                 );
                 if (field.name && (field as any).onChange) {
                   (field as any).onChange({
@@ -81,32 +89,6 @@ const NomineeSection: React.FC = () => {
                 }
               }}
             />
-          )}
-        </Field>
-
-        <Field name="nominee.gender">
-          {({ field, meta }: FieldProps) => (
-            <TextField
-              {...field}
-              value={field.value ?? ""}
-              label={FIELD_LABELS.NOMINEE_GENDER}
-              select
-              fullWidth
-              margin="normal"
-              error={!!meta.touched && !!meta.error}
-              helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1 }}
-              onChange={(e) => {
-                if (field.name) setFieldTouched(field.name, true, true);
-                if ((field as any).onChange) (field as any).onChange(e);
-              }}
-            >
-              {GENDER_OPTIONS.map((option) => (
-                <MenuItem key={option} value={option}>
-                  {option}
-                </MenuItem>
-              ))}
-            </TextField>
           )}
         </Field>
 
@@ -120,7 +102,7 @@ const NomineeSection: React.FC = () => {
               margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, gridColumn: "1 / -1" }}
+              sx={{ bgcolor: "#fff", borderRadius: 1 }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);

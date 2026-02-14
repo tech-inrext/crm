@@ -1,7 +1,12 @@
 import React, { useRef, useState, useMemo, useEffect } from "react";
-import { Box, MenuItem, TextField, Typography } from "@/components/ui/Component";
+import {
+  Box,
+  MenuItem,
+  TextField,
+  Typography,
+} from "@/components/ui/Component";
 import { Field, FieldProps } from "formik";
-import { FIELD_LABELS } from "@/constants/users";
+import { FIELD_LABELS } from "@/fe/modules/user/constants/users";
 
 type BranchKey = "Noida" | "Lucknow" | "Patna" | "Delhi";
 
@@ -53,12 +58,12 @@ const ForFreelancer: React.FC = () => {
         "Patna: 4th floor, Pandey Plaza, Exhibition Road, Patna, Bihar 800001.",
       Delhi: "Plot No. 29, 4th Floor, Moti Nagar, New Delhi-110015",
     }),
-    []
+    [],
   );
 
   const slabOptions = useMemo(
     () => ["", "100", "95", "90", "80", "70", "60", "50"],
-    []
+    [],
   );
 
   const renderBranchValue = (selected: string) => {
@@ -129,16 +134,16 @@ const ForFreelancer: React.FC = () => {
                         (opt === "100"
                           ? " President"
                           : opt === "95"
-                          ? " V.P."
-                          : opt === "90"
-                          ? " A.V.P. (Core Member)"
-                          : opt === "80"
-                          ? " General Manager"
-                          : opt === "70"
-                          ? " Senior Manager"
-                          : opt === "60"
-                          ? " Manager"
-                          : " (Sales Executive)")}
+                            ? " V.P."
+                            : opt === "90"
+                              ? " A.V.P. (Core Member)"
+                              : opt === "80"
+                                ? " General Manager"
+                                : opt === "70"
+                                  ? " Senior Manager"
+                                  : opt === "60"
+                                    ? " Manager"
+                                    : " (Sales Executive)")}
                   </MenuItem>
                 ))}
               </TextField>

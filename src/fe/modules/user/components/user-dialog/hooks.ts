@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { USERS_API_BASE, ROLES_API_BASE, DEPARTMENTS_API_BASE } from "@/constants/users";
+import {
+  USERS_API_BASE,
+  ROLES_API_BASE,
+  DEPARTMENTS_API_BASE,
+} from "@/fe/modules/user/constants/users";
 
 export const useUserDialogData = (open: boolean) => {
   const [roles, setRoles] = useState<any[]>([]);

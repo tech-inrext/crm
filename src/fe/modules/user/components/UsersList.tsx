@@ -6,9 +6,12 @@ import {
   Paper,
   TableContainer,
 } from "@/components/ui/Component";
-import UserCard from "@/components/ui/card/UserCard";
+import UserCard from "@/fe/modules/user/components/card/UserCard";
 import dynamic from "next/dynamic";
-import { COMMON_STYLES, USERS_ROWS_PER_PAGE_OPTIONS } from "@/constants/users";
+import {
+  COMMON_STYLES,
+  USERS_ROWS_PER_PAGE_OPTIONS,
+} from "@/fe/modules/user/constants/users";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 
 const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
@@ -16,7 +19,7 @@ const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
 });
 const Pagination = dynamic(
   () => import("@/components/ui/Navigation/Pagination"),
-  { ssr: false }
+  { ssr: false },
 );
 
 interface UsersListProps {
@@ -125,3 +128,5 @@ export const UsersList: React.FC<UsersListProps> = ({
     </Box>
   );
 };
+
+export default UsersList;

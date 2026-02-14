@@ -1,4 +1,3 @@
-// src/components/ui/user-dialog/utils/formatters.ts
 export const toDateInputString = (value: any): string => {
   if (!value) return "";
   if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value))

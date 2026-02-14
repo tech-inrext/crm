@@ -13,25 +13,28 @@ import {
   Alert,
   AddIcon,
 } from "@/components/ui/Component";
-import { useUsers } from "@/hooks/useUsers";
+import { useUsers } from "@/fe/modules/user/hooks/useUsers";
 import PermissionGuard from "@/components/PermissionGuard";
-import UserDialog from "@/components/ui/dialog/UserDialog";
-import UserDetailsDialog from "@/components/ui/dialog/UserDetailsDialog";
+import UserDialog from "@/fe/modules/user/components/dialog/UserDialog";
+import UserDetailsDialog from "@/fe/modules/user/components/dialog/UserDetailsDialog";
 import { useAuth } from "@/contexts/AuthContext";
-import UsersActionBar from "@/components/ui/action/UsersActionBar";
+import UsersActionBar from "@/fe/modules/user/components/action/UsersActionBar";
 import {
   GRADIENTS,
   DEFAULT_USER_FORM,
   SEARCH_DEBOUNCE_DELAY,
   FAB_POSITION,
   USERS_PERMISSION_MODULE,
-} from "@/constants/users";
+} from "@/fe/modules/user/constants/users";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import { useDebounce } from "@/hooks/useDebounce";
-import { canEditEmployee, getInitialUserForm } from "@/utils/userHelpers";
-import { useUserDialog } from "@/hooks/useUserDialog";
-import { getUsersTableHeader } from "@/components/ui/table/UsersTableConfig";
-import { UsersList } from "@/components/ui/users/UsersList";
+import {
+  canEditEmployee,
+  getInitialUserForm,
+} from "@/fe/modules/user/utils/userHelpers";
+import { useUserDialog } from "@/fe/modules/user/hooks/useUserDialog";
+import { getUsersTableHeader } from "@/fe/modules/user/components/table/UsersTableConfig";
+import { UsersList } from "@/fe/modules/user/components/UsersList";
 
 const Users: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -40,7 +43,7 @@ const Users: React.FC = () => {
   const [search, setSearch] = useState("");
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<"success" | "error">(
-    "success"
+    "success",
   );
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
@@ -99,7 +102,7 @@ const Users: React.FC = () => {
       setSearch(e.target.value);
       setPage(1);
     },
-    [setPage]
+    [setPage],
   );
 
   const handlePageSizeChange = (newSize: number) => {
@@ -128,7 +131,7 @@ const Users: React.FC = () => {
       setSnackbarMessage(
         err?.status === 409
           ? message || "User with same email or phone exists"
-          : message
+          : message,
       );
       setSnackbarSeverity("error");
       setSnackbarOpen(true);

@@ -6,10 +6,13 @@ import {
   useMediaQuery,
   useTheme,
   Add,
-} from "../Component";
+} from "@/components/ui/Component";
 import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
-import { USERS_PERMISSION_MODULE, SEARCH_PLACEHOLDER } from "@/constants/users";
+import {
+  USERS_PERMISSION_MODULE,
+  SEARCH_PLACEHOLDER,
+} from "@/fe/modules/user/constants/users";
 
 interface UsersActionBarProps {
   search: string;

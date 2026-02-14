@@ -1,11 +1,13 @@
-// src/components/ui/user-dialog/ContactInfoSection.tsx
 import React from "react";
 import { Box } from "@/components/ui/Component";
 import FormField from "./FormField";
-import { FIELD_LABELS } from "@/constants/users";
+import { FIELD_LABELS } from "@/fe/modules/user/constants/users";
 
 const ContactInfoSection: React.FC = () => {
-  const handlePhoneChange = (field: any, e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhoneChange = (
+    field: any,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     const value = e.target.value.replace(/\D/g, "");
     if (field.onChange) {
       field.onChange({

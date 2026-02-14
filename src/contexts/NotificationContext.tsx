@@ -102,7 +102,7 @@ interface NotificationContextType {
 }
 
 const NotificationContext = createContext<NotificationContextType | undefined>(
-  undefined
+  undefined,
 );
 
 function urlBase64ToUint8Array(base64String: string) {
@@ -124,7 +124,7 @@ export const useNotifications = () => {
   const context = useContext(NotificationContext);
   if (context === undefined) {
     throw new Error(
-      "useNotifications must be used within a NotificationProvider"
+      "useNotifications must be used within a NotificationProvider",
     );
   }
   return context;
@@ -196,7 +196,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         });
 
         const response = await axios.get(
-          `/api/v0/notifications?${queryParams}`
+          `/api/v0/notifications?${queryParams}`,
         );
 
         if (response.data.success) {
@@ -213,14 +213,25 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           setTotalPages(pagination.pages);
           setHasMore(pagination.page < pagination.pages);
         }
-      } catch (error) {
-        console.error("Error fetching notifications:", error);
+      } catch (err) {
+        console.error("Error fetching notifications:", err);
+        try {
+          if (axios.isAxiosError(err)) {
+            console.error(
+              "Axios error response:",
+              err.response?.status,
+              err.response?.data,
+            );
+          }
+        } catch (logErr) {
+          console.error("Error while logging axios error:", logErr);
+        }
         setError("Failed to load notifications");
       } finally {
         setLoading(false);
       }
     },
-    [user, pendingRoleSelection, filters]
+    [user, pendingRoleSelection, filters],
   );
 
   // Load more notifications
@@ -278,24 +289,24 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
             prev.map((notification) =>
               notificationIds.includes(notification._id)
                 ? {
-                  ...notification,
-                  lifecycle: {
-                    ...notification.lifecycle,
-                    status: "READ" as const,
-                    readAt: new Date(),
-                  },
-                }
-                : notification
-            )
+                    ...notification,
+                    lifecycle: {
+                      ...notification.lifecycle,
+                      status: "READ" as const,
+                      readAt: new Date(),
+                    },
+                  }
+                : notification,
+            ),
           );
 
           // Update unread count
           const readUnreadNotifications = notifications.filter(
             (n) =>
-              notificationIds.includes(n._id) && n.lifecycle.status !== "READ"
+              notificationIds.includes(n._id) && n.lifecycle.status !== "READ",
           );
           setUnreadCount((prev) =>
-            Math.max(0, prev - readUnreadNotifications.length)
+            Math.max(0, prev - readUnreadNotifications.length),
           );
         }
       } catch (error) {
@@ -303,7 +314,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         setError("Failed to mark notifications as read");
       }
     },
-    [notifications]
+    [notifications],
   );
 
   // Mark all notifications as read
@@ -314,7 +325,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           "/api/v0/notifications/mark-all-read",
           {
             filters: { ...filters, ...customFilters },
-          }
+          },
         );
 
         if (response.data.success) {
@@ -327,7 +338,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
                 status: "READ" as const,
                 readAt: new Date(),
               },
-            }))
+            })),
           );
 
           setUnreadCount(0);
@@ -337,7 +348,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         setError("Failed to mark all notifications as read");
       }
     },
-    [filters]
+    [filters],
   );
 
   // Archive notifications
@@ -353,17 +364,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           // Remove from local state
           setNotifications((prev) =>
             prev.filter(
-              (notification) => !notificationIds.includes(notification._id)
-            )
+              (notification) => !notificationIds.includes(notification._id),
+            ),
           );
 
           // Update unread count
           const archivedUnreadNotifications = notifications.filter(
             (n) =>
-              notificationIds.includes(n._id) && n.lifecycle.status !== "READ"
+              notificationIds.includes(n._id) && n.lifecycle.status !== "READ",
           );
           setUnreadCount((prev) =>
-            Math.max(0, prev - archivedUnreadNotifications.length)
+            Math.max(0, prev - archivedUnreadNotifications.length),
           );
         }
       } catch (error) {
@@ -371,7 +382,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         setError("Failed to archive notifications");
       }
     },
-    [notifications]
+    [notifications],
   );
 
   // Delete notifications
@@ -387,17 +398,17 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
           // Remove from local state
           setNotifications((prev) =>
             prev.filter(
-              (notification) => !notificationIds.includes(notification._id)
-            )
+              (notification) => !notificationIds.includes(notification._id),
+            ),
           );
 
           // Update unread count
           const deletedUnreadNotifications = notifications.filter(
             (n) =>
-              notificationIds.includes(n._id) && n.lifecycle.status !== "READ"
+              notificationIds.includes(n._id) && n.lifecycle.status !== "READ",
           );
           setUnreadCount((prev) =>
-            Math.max(0, prev - deletedUnreadNotifications.length)
+            Math.max(0, prev - deletedUnreadNotifications.length),
           );
         }
       } catch (error) {
@@ -405,7 +416,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
         setError("Failed to delete notifications");
       }
     },
-    [notifications]
+    [notifications],
   );
 
   // Real-time subscription placeholders
@@ -430,7 +441,12 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Subscribe to Push Notifications
   const subscribeToPushNotifications = useCallback(async () => {
-    if (!user || pendingRoleSelection || !("serviceWorker" in navigator) || !("PushManager" in window)) {
+    if (
+      !user ||
+      pendingRoleSelection ||
+      !("serviceWorker" in navigator) ||
+      !("PushManager" in window)
+    ) {
       return;
     }
 

@@ -8,9 +8,9 @@ import {
   IconButton,
   Stack,
   EditIcon,
-} from "../Component";
+} from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
-import { USERS_PERMISSION_MODULE } from "@/constants/users";
+import { USERS_PERMISSION_MODULE } from "@/fe/modules/user/constants/users";
 
 interface UserCardProps {
   user: {
