@@ -3,7 +3,6 @@ import {
   Select,
   MenuItem,
   FormControl,
-  Box,
   CircularProgress,
 } from "@mui/material";
 import { alpha } from "@mui/material/styles";
@@ -57,6 +56,9 @@ const LeadTypeDropdown: React.FC<LeadTypeDropdownProps> = ({
     }
   };
 
+  const alphaBg = alpha(typeColor, 0.1);
+  const alphaHoverBg = alpha(typeColor, 0.15);
+
   return (
     <FormControl size={size} disabled={disabled || isUpdating}>
       <Select
@@ -67,99 +69,55 @@ const LeadTypeDropdown: React.FC<LeadTypeDropdownProps> = ({
             ? () => (
                 <CircularProgress
                   size={14}
-                  sx={{
-                    color: typeColor,
-                    mr: 1,
-                    opacity: 0.8,
-                  }}
+                  className="mr-2 opacity-80"
+                  style={{ color: typeColor }}
                 />
               )
-            : ExpandMore
+            : (props) => (
+                <ExpandMore
+                  {...props}
+                  style={{ color: typeColor }}
+                  className={`!top-1/2 !-translate-y-1/2 !right-1 !text-base ${props.className || ""}`}
+                />
+              )
         }
-        sx={{
-          minWidth: 70,
-          maxWidth: 150,
-          width: "fit-content",
-          height: 24,
-          backgroundColor: alpha(typeColor, 0.1),
+        style={{
+          backgroundColor: alphaBg,
           color: typeColor,
-          fontWeight: 700,
-          fontSize: "0.75rem",
-          borderRadius: 2,
-          cursor: disabled || isUpdating ? "default" : "pointer",
-          opacity: disabled || isUpdating ? 0.6 : 1,
-          "& .MuiSelect-select": {
-            padding: "4px 6px 4px 8px !important",
-            paddingRight: "28px !important",
-            minHeight: "auto !important",
-            display: "flex",
-            alignItems: "center",
-            lineHeight: 1,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis",
-          },
-          "& .MuiSelect-icon": {
-            color: typeColor,
-            right: 4,
-            top: "50%",
-            transform: "translateY(-50%)",
-            fontSize: "1rem",
-          },
-          "& .MuiOutlinedInput-notchedOutline": {
-            border: "none",
-          },
-          "&:hover": {
-            backgroundColor: alpha(typeColor, 0.15),
-            "& .MuiOutlinedInput-notchedOutline": {
-              border: "none",
-            },
-            opacity: disabled || isUpdating ? 0.6 : 0.9,
-          },
-          "&.Mui-focused": {
-            "& .MuiOutlinedInput-notchedOutline": {
-              border: "none",
-            },
-          },
+          ["--hover-bg" as any]: alphaHoverBg,
         }}
+        className={`
+          min-w-[70px] max-w-[150px] w-fit !h-6
+          !font-bold !text-xs !rounded-lg
+          ${disabled || isUpdating ? "!cursor-default !opacity-60" : "cursor-pointer"}
+          [&_.MuiSelect-select]:!flex [&_.MuiSelect-select]:!items-center
+          [&_.MuiSelect-select]:!p-[4px_6px_4px_8px] [&_.MuiSelect-select]:!pr-7
+          [&_.MuiSelect-select]:!min-h-0 [&_.MuiSelect-select]:leading-none
+          [&_.MuiSelect-select]:whitespace-nowrap [&_.MuiSelect-select]:overflow-hidden
+          [&_.MuiSelect-select]:text-ellipsis
+          [&_.MuiOutlinedInput-notchedOutline]:!border-none [&_.MuiOutlinedInput-notchedOutline]:!border-0
+          !outline-none !shadow-none
+          hover:!bg-[var(--hover-bg)]
+        `}
         MenuProps={{
           PaperProps: {
-            sx: {
-              maxHeight: 300,
-              borderRadius: 2,
-              boxShadow: "0 12px 24px rgba(0,0,0,0.12)",
-              "& .MuiMenuItem-root": {
-                padding: "6px 12px",
-                borderRadius: 1,
-                margin: "2px 6px",
-                minHeight: 34,
-              },
-            },
+            className: `
+              max-h-[300px] !rounded-lg !shadow-[0_12px_24px_rgba(0,0,0,0.12)]
+              [&_.MuiMenuItem-root]:!p-[6px_12px] [&_.MuiMenuItem-root]:!rounded
+              [&_.MuiMenuItem-root]:!m-[2px_6px] [&_.MuiMenuItem-root]:!min-h-[34px]
+            `,
           },
         }}
       >
         {LEAD_TYPES.map((leadType) => (
           <MenuItem key={leadType} value={leadType}>
-            <Box
-              sx={{
-                width: 10,
-                height: 10,
-                borderRadius: "50%",
-                backgroundColor: getLeadTypeColor(leadType),
-                boxShadow: "0 0 0 2px rgba(0,0,0,0.04)",
-              }}
+            <div
+              className="w-2.5 h-2.5 rounded-full shadow-[0_0_0_2px_rgba(0,0,0,0.04)]"
+              style={{ backgroundColor: getLeadTypeColor(leadType) }}
             />
-            <Box
-              component="span"
-              sx={{
-                ml: 1.25,
-                fontWeight: 600,
-                fontSize: "0.85rem",
-                textTransform: "capitalize",
-              }}
-            >
+            <span className="ml-2.5 font-semibold text-[0.85rem] capitalize">
               {leadType}
-            </Box>
+            </span>
           </MenuItem>
         ))}
       </Select>
