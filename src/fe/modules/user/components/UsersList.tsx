@@ -12,7 +12,7 @@ import {
   COMMON_STYLES,
   USERS_ROWS_PER_PAGE_OPTIONS,
 } from "@/fe/modules/user/constants/users";
-import { MODULE_STYLES } from "@/styles/moduleStyles";
+import { default as MODULE_STYLES } from "@/fe/modules/user/styles";
 
 const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
   ssr: false,

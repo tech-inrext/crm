@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -12,13 +12,8 @@ import {
 } from "@/components/ui/Component";
 import Alert from "@/components/ui/Component/Alert";
 import { Formik, Form } from "formik";
-import axios from "axios";
-import {
-  USERS_API_BASE,
-  ROLES_API_BASE,
-  DEPARTMENTS_API_BASE,
-  BUTTON_LABELS,
-} from "@/fe/modules/user/constants/users";
+import { BUTTON_LABELS } from "@/fe/modules/user/constants/users";
+import { useUserDialogData } from "@/fe/modules/user/hooks/useUserDialogData";
 import { userValidationSchema } from "../user-dialog/validation";
 import BasicInformation from "../user-dialog/BasicInformation";
 import OrganizationSection from "../user-dialog/OrganizationSection";
@@ -72,58 +67,13 @@ const UserDialog: React.FC<UserDialogProps> = ({
   onClose,
   onSave,
 }) => {
-  const [roles, setRoles] = useState<any[]>([]);
-  const [managers, setManagers] = useState<any[]>([]);
-  const [departments, setDepartments] = useState<any[]>([]);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
+  const { roles, managers, departments } = useUserDialogData(open);
+  const [snackbarMessage, setSnackbarMessage] = React.useState("");
   const [snackbarSeverity, setSnackbarSeverity] = useState<
     "success" | "error" | "info" | "warning"
   >("success");
   const [snackbarOpen, setSnackbarOpen] = useState(false);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      const managerParams = new URLSearchParams({
-        isCabVendor: "false",
-        limit: "1000",
-        page: "1",
-      }).toString();
-
-      try {
-        const [rolesRes, managersRes, departmentsRes] = await Promise.all([
-          fetch(`${ROLES_API_BASE}/getAllRoleList`, {
-            method: "GET",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-          }),
-          fetch(`${USERS_API_BASE}/getAllEmployeeList?${managerParams}`, {
-            method: "GET",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-          }),
-          fetch(DEPARTMENTS_API_BASE, {
-            method: "GET",
-            credentials: "include",
-            headers: { "Content-Type": "application/json" },
-          }),
-        ]);
-
-        const rolesData = await rolesRes.json();
-        const managersData = await managersRes.json();
-        const departmentsData = await departmentsRes.json();
-
-        setRoles(rolesData.data || []);
-        setManagers(managersData.data || []);
-        setDepartments(departmentsData.data || []);
-      } catch (error) {
-        console.error("Error fetching dialog data:", error);
-      }
-    };
-
-    if (open) {
-      fetchData();
-    }
-  }, [open]);
+  // roles/managers/departments are provided by `useUserDialogData`
 
   return (
     <Dialog

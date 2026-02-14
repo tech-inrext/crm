@@ -73,36 +73,21 @@ const SectionCard = ({ title, icon: Icon, colorClass, children }: any) => (
   </div>
 );
 
-import { ROLES_API_BASE } from "@/fe/modules/user/constants/users";
+import { useUserDialogData } from "@/fe/modules/user/hooks/useUserDialogData";
 
 const UserDetailsDialog = ({ user, open, onClose }: any) => {
   const [roleMap, setRoleMap] = useState<Record<string, string>>({});
+  const { roles } = useUserDialogData(open);
 
   useEffect(() => {
-    if (!open) return;
-
-    const fetchRoles = async () => {
-      try {
-        const res = await fetch(`${ROLES_API_BASE}/getAllRoleList`, {
-          method: "GET",
-          credentials: "include",
-          headers: { "Content-Type": "application/json" },
-        });
-        const data = await res.json();
-        const roles = data?.data || [];
-        const map: Record<string, string> = {};
-        roles.forEach((r: any) => {
-          const id = r._id || r.id;
-          if (id) map[id] = r.name || r.label || "";
-        });
-        setRoleMap(map);
-      } catch (e) {
-        console.error("Failed to fetch roles for UserDetailsDialog:", e);
-      }
-    };
-
-    fetchRoles();
-  }, [open]);
+    if (!roles || roles.length === 0) return;
+    const map: Record<string, string> = {};
+    roles.forEach((r: any) => {
+      const id = r._id || r.id;
+      if (id) map[id] = r.name || r.label || "";
+    });
+    setRoleMap(map);
+  }, [roles]);
   if (!user) return null;
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "-";

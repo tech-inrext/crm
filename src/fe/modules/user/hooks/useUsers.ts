@@ -1,9 +1,15 @@
+"use client";
+
 import { useEffect, useState, useCallback } from "react";
-import axios from "axios";
 import {
-  USERS_API_BASE,
-  DEFAULT_PAGE_SIZE,
-} from "@/fe/modules/user/constants/users";
+  fetchUsers,
+  createUser,
+  updateUserById,
+  fetchUserById,
+  getUploadUrl,
+  uploadFileToUrl,
+} from "@/fe/modules/user/services/userService";
+import { DEFAULT_PAGE_SIZE } from "@/fe/modules/user/constants/users";
 
 export interface Employee {
   _id?: string;
@@ -36,16 +42,11 @@ export function useUsers(debouncedSearch: string) {
     ) => {
       setLoading(true);
       try {
-        const response = await axios.get(USERS_API_BASE, {
-          params: {
-            page,
-            limit,
-            search: search.trim() || undefined,
-            ...(typeof isCabVendor === "boolean" ? { isCabVendor } : {}),
-          },
-        });
-
-        const { data, pagination } = response.data;
+        const params: any = { page, limit };
+        if (search && search.trim()) params.search = search.trim();
+        if (typeof isCabVendor === "boolean") params.isCabVendor = isCabVendor;
+        const response = await fetchUsers(params);
+        const { data, pagination } = response;
         setEmployees(data || []);
         setTotalItems(pagination?.totalItems || 0);
       } catch (error) {
@@ -69,17 +70,9 @@ export function useUsers(debouncedSearch: string) {
       try {
         const uploadFile = async (file: File | null) => {
           if (!file) return null;
-          const presignRes = await axios.post(
-            "/api/v0/s3/upload-url",
-            { fileName: file.name, fileType: file.type },
-            { headers: { "Content-Type": "application/json" } },
-          );
-          const { uploadUrl, fileUrl } = presignRes.data;
-          await fetch(uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": file.type },
-            body: file,
-          });
+          const presign = await getUploadUrl(file.name, file.type);
+          const { uploadUrl, fileUrl } = presign;
+          await uploadFileToUrl(uploadUrl, file);
           return fileUrl;
         };
 
@@ -101,19 +94,11 @@ export function useUsers(debouncedSearch: string) {
         delete payload.signatureFile;
         delete payload.photoFile;
 
-        await axios.post(USERS_API_BASE, payload);
+        await createUser(payload);
         await loadEmployees(page, rowsPerPage, debouncedSearch, false);
       } catch (error) {
         console.error("Failed to add user:", error);
-        if (error && error.response) {
-          const { status, data } = error.response;
-          const message =
-            (data && data.message) || error.message || "Request failed";
-          const err = new Error(message);
-          // @ts-ignore
-          err.status = status;
-          throw err;
-        }
+        // rethrow so callers can show errors
         throw error;
       } finally {
         setSaving(false);
@@ -128,17 +113,9 @@ export function useUsers(debouncedSearch: string) {
       try {
         const uploadFile = async (file: File | null) => {
           if (!file) return null;
-          const presignRes = await axios.post(
-            "/api/v0/s3/upload-url",
-            { fileName: file.name, fileType: file.type },
-            { headers: { "Content-Type": "application/json" } },
-          );
-          const { uploadUrl, fileUrl } = presignRes.data;
-          await fetch(uploadUrl, {
-            method: "PUT",
-            headers: { "Content-Type": file.type },
-            body: file,
-          });
+          const presign = await getUploadUrl(file.name, file.type);
+          const { uploadUrl, fileUrl } = presign;
+          await uploadFileToUrl(uploadUrl, file);
           return fileUrl;
         };
 
@@ -159,7 +136,7 @@ export function useUsers(debouncedSearch: string) {
         delete payload.signatureFile;
         delete payload.photoFile;
 
-        await axios.patch(`${USERS_API_BASE}/${id}`, payload);
+        await updateUserById(id, payload);
         await loadEmployees(page, rowsPerPage, debouncedSearch, false);
       } catch (error) {
         console.error("Failed to update user:", error);
@@ -173,8 +150,7 @@ export function useUsers(debouncedSearch: string) {
 
   const getUserById = useCallback(async (id: string) => {
     try {
-      const response = await axios.get(`${USERS_API_BASE}/${id}`);
-      return response.data.data || response.data;
+      return await fetchUserById(id);
     } catch (error) {
       console.error("Failed to fetch user:", error);
       return null;
