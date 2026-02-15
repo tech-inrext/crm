@@ -36,6 +36,7 @@ class InrextWorker extends Worker {
   async jobsMapper(job) {
     if (typeof this[job.name] === "function") {
       try {
+        await dbConnect(); // ✅ Ensure DB is connected before processing
         console.log(`Executing ${job.name}...`);
         await this[job.name](job);
         console.log(`${job.name} completed`);
