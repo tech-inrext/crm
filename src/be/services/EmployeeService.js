@@ -295,16 +295,30 @@ class EmployeeService extends Service {
           .status(404)
           .json({ success: false, error: "Employee not found" });
       }
+      /* ---------- SAFE MANAGER CHANGE DETECTION ---------- */
+      // Normalize old managerId
+      const oldManagerId = existingEmployee?.managerId
+        ? String(existingEmployee.managerId)
+        : null;
 
+      // Normalize new managerId from request
+      let newManagerId = null;
+
+      if ("managerId" in req.body) {
+        newManagerId = req.body.managerId ? String(req.body.managerId) : null;
+      }
+      const managerChanged = oldManagerId !== newManagerId;
+      // If manager changed → set MOU status
+      if (managerChanged) {
+        updateFields.mouStatus = "Pending";
+      }
       const oldRoles = existingEmployee.roles.map((r) => ({
         id: r._id.toString(),
         name: r.name,
       }));
-
       const updated = await Employee.findByIdAndUpdate(id, updateFields, {
         new: true,
       }).populate("roles");
-
       if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
         const newRoles = Array.isArray(updated.roles)
           ? updated.roles.map((r) => ({ id: r._id.toString(), name: r.name }))
