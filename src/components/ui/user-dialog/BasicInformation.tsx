@@ -9,6 +9,8 @@ import { Field, FieldProps, useFormikContext } from "formik";
 import { GENDER_OPTIONS, FIELD_LABELS } from "@/constants/users";
 import NomineeSection from "./NomineeSection";
 import RequiredDocuments from "./RequiredDocuments";
+import { Photo } from "@mui/icons-material";
+import PhotoUpload from "./PhotoUpload";
 
 const genderOptions = GENDER_OPTIONS.map((gender) => ({
   value: gender,
@@ -42,24 +44,12 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
         {FIELD_LABELS.BASIC_INFO}
       </Typography>
 
-      <Field name="name">
-        {({ field, meta }: FieldProps) => (
-          <TextField
-            {...field}
-            label={FIELD_LABELS.FULL_NAME}
-            autoFocus
-            fullWidth
-            margin="normal"
-            error={!!meta.touched && !!meta.error}
-            helperText={meta.touched && meta.error}
-            sx={{ bgcolor: "#fff", borderRadius: 1 }}
-            onChange={(e) => {
-              if (field.name) setFieldTouched(field.name, true, true);
-              if ((field as any).onChange) (field as any).onChange(e);
-            }}
-          />
-        )}
-      </Field>
+      <Box
+        sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
+          <Box sx={{width: "100%", maxWidth: 400}}>
+            <PhotoUpload/>
+          </Box>
+      </Box>
 
       <Box
         sx={{
@@ -68,23 +58,53 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
           flexDirection: { xs: "column", sm: "row" },
         }}
       >
+        {/* FULL NAME */}
+        <Field name="name">
+          {({ field, meta, form }: FieldProps) => (
+            <TextField
+              {...field}
+              label={FIELD_LABELS.FULL_NAME}
+              autoFocus
+              fullWidth
+              margin="normal"
+              error={meta.touched && Boolean(meta.error)}
+              helperText={meta.touched && meta.error}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              onChange={(e) => {
+                form.setFieldTouched(field.name, true, true);
+                form.setFieldValue(field.name, e.target.value);
+              }}
+            />
+          )}
+        </Field>
+
+        {/* EMAIL */}
         <Field name="email">
-          {({ field, meta }: FieldProps) => (
+          {({ field, meta, form }: FieldProps) => (
             <TextField
               {...field}
               label={FIELD_LABELS.EMAIL}
               fullWidth
               margin="normal"
-              error={!!meta.touched && !!meta.error}
+              error={meta.touched && Boolean(meta.error)}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }} // <-- same flex
               onChange={(e) => {
-                if (field.name) setFieldTouched(field.name, true, true);
-                if ((field as any).onChange) (field as any).onChange(e);
+                form.setFieldTouched(field.name, true, true);
+                form.setFieldValue(field.name, e.target.value);
               }}
             />
           )}
         </Field>
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          flexDirection: { xs: "column", sm: "row" },
+        }}
+      >
         <Field name="phone">
           {({ field, meta }: FieldProps) => (
             <TextField
@@ -101,7 +121,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 const v = (e.target as HTMLInputElement).value.replace(
                   /\D/g,
-                  ""
+                  "",
                 );
                 if (field.name && (field as any).onChange) {
                   (field as any).onChange({
@@ -112,16 +132,6 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
             />
           )}
         </Field>
-      </Box>
-
-      {/* Basic fields continued: Alt phone / Address */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: 2,
-          flexDirection: { xs: "column", sm: "row" },
-        }}
-      >
         <Field name="altPhone">
           {({ field, meta }: FieldProps) => (
             <TextField
@@ -138,7 +148,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 const v = (e.target as HTMLInputElement).value.replace(
                   /\D/g,
-                  ""
+                  "",
                 );
                 if (field.name && (field as any).onChange) {
                   (field as any).onChange({
@@ -149,6 +159,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
             />
           )}
         </Field>
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          flexDirection: { xs: "column", sm: "row" },
+        }}
+      >
         <Field name="fatherName">
           {({ field, meta }: FieldProps) => (
             <TextField
@@ -162,6 +181,32 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
+              }}
+            />
+          )}
+        </Field>
+        <Field name="panNumber">
+          {({ field, meta }: FieldProps) => (
+            <TextField
+              {...field}
+              label={FIELD_LABELS.PAN_NUMBER}
+              fullWidth
+              margin="normal"
+              error={!!meta.touched && !!meta.error}
+              helperText={(meta.touched && meta.error) || "Format: ABCDE1234F"}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              onChange={(e) => {
+                if (field.name) setFieldTouched(field.name, true, true);
+                const value = e.target.value.toUpperCase().trim();
+                if (field.name && (field as any).onChange) {
+                  (field as any).onChange({
+                    target: { name: field.name, value: value },
+                  });
+                }
+              }}
+              inputProps={{
+                maxLength: 10,
+                style: { textTransform: "uppercase" },
               }}
             />
           )}

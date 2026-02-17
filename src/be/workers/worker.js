@@ -1,6 +1,5 @@
 import dotenv from "dotenv";
 import path from "path";
-import { fileURLToPath } from "url";
 import { Worker } from "bullmq";
 import IORedis from "ioredis";
 import bulkUploadLeads from "./bulkupload.js";
@@ -14,9 +13,7 @@ import revertBulkAssign from "./revertBulkAssign.js";
 import dbConnect from "../../lib/mongodb.js";
 import checkFollowUpsJob from "./checkFollowUpsJob.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.resolve(__dirname, "../../.env") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 const redisUrl = process.env.REDIS_URL || "redis://localhost:6379";
 const connection = new IORedis(redisUrl, {
@@ -39,6 +36,7 @@ class InrextWorker extends Worker {
   async jobsMapper(job) {
     if (typeof this[job.name] === "function") {
       try {
+        await dbConnect(); // ✅ Ensure DB is connected before processing
         console.log(`Executing ${job.name}...`);
         await this[job.name](job);
         console.log(`${job.name} completed`);

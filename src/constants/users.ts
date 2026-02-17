@@ -34,6 +34,7 @@ export const DEFAULT_USER_FORM = {
   bankProofUrl: "",
   signatureUrl: "",
   photo: "",
+  panNumber: "",
   // Nominee details (optional)
   nominee: null,
   // Freelancer fields
@@ -96,13 +97,13 @@ export const FIELD_LABELS = {
   SPECIALIZATION: "Specialization",
   ADDRESS: "Address *",
   GENDER: "Gender *",
-  DATE_OF_BIRTH: "Date of Birth",
+  DATE_OF_BIRTH: "DateofBirth",
   NOMINEE_DETAILS: "Nominee Details",
   NOMINEE_FULL_NAME: "Full Name",
   NOMINEE_PHONE: "Phone Number",
   NOMINEE_OCCUPATION: "Occupation",
   NOMINEE_RELATION: "Relation with Nominee",
-  NOMINEE_GENDER: "Gender",
+  // NOMINEE_GENDER: "Gender",
   JOINING_DATE: "Joining Date",
   DESIGNATION: "Designation *",
   MANAGER: "Manager *",
@@ -111,7 +112,7 @@ export const FIELD_LABELS = {
   FOR_FREELANCER: "For Freelancer",
   SLAB_PERCENTAGE: "Slab Percentage",
   BRANCH: "Branch",
-  PAN_NUMBER: "PAN Number",
+  PAN_NUMBER: "PAN Number *",
 };
 
 // Button Labels

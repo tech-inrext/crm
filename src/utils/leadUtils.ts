@@ -119,9 +119,15 @@ export const transformAPILeadToForm = (apiLead: Lead): LeadFormData => {
     budgetRange: apiLead.budgetRange || "",
     status: apiLead.status || "new",
     source: apiLead.source || "",
-    manager: apiLead.managerId ? String(apiLead.managerId) : "",
-    managerId: apiLead.managerId ? String(apiLead.managerId) : "",
-    assignedTo: apiLead.assignedTo ? String(apiLead.assignedTo) : "",
+    manager: apiLead.managerId
+      ? (apiLead.managerId as any)._id || String(apiLead.managerId)
+      : "",
+    managerId: apiLead.managerId
+      ? (apiLead.managerId as any)._id || String(apiLead.managerId)
+      : "",
+    assignedTo: apiLead.assignedTo
+      ? (apiLead.assignedTo as any)._id || String(apiLead.assignedTo)
+      : "",
     // NO follow up fields
   };
 };

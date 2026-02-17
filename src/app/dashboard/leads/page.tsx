@@ -88,6 +88,7 @@ const Leads: React.FC = () => {
     handleEdit,
     saveLead,
     updateLeadStatus,
+    updateLeadType,
     loadLeads,
     dialogMode,
     handleCloseDialog,
@@ -214,6 +215,7 @@ const Leads: React.FC = () => {
               leads={leads}
               onEdit={handleEdit}
               onStatusChange={updateLeadStatus}
+              onLeadTypeChange={updateLeadType}
               onScheduleSiteVisit={(leadId) => {
                 setSelectedLeadForSiteVisit(leadId);
                 setSiteVisitOpen(true);

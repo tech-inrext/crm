@@ -47,6 +47,7 @@ export const getInitialUserForm = (form: any) => {
     aadharUrl: safeForm.aadharUrl || "",
     panUrl: safeForm.panUrl || "",
     bankProofUrl: safeForm.bankProofUrl || "",
+    panNumber: safeForm.panNumber || "",
     nominee: safeForm.nominee ?? DEFAULT_USER_FORM.nominee,
     slabPercentage: safeForm.slabPercentage || "",
     branch: safeForm.branch || "",
