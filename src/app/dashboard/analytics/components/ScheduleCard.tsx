@@ -78,26 +78,10 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
     };
 
     return (
-      <Card
-        sx={{
-          minHeight: 400,
-          height: "100%",
-          display: "flex",
-          flexDirection: "column",
-          justifyContent: "flex-start",
-          width: { xs: "100%", md: "175%" },
-          mr: { xs: 0, md: 1 },
-        }}
-      >
+      <Card className="min-h-[400px] h-full flex flex-col justify-start w-full md:w-[175%] md:mr-1">
         <CardContent>
           {/* Header */}
-          <Box
-            display="flex"
-            gap={1}
-            alignItems="center"
-            mb={2.25}
-            flexWrap={{ xs: "wrap", sm: "wrap", md: "nowrap" }}
-          >
+          <Box className="flex gap-1 items-center mb-[18px] flex-wrap md:flex-nowrap">
             <Typography
               sx={{
                 fontSize: "1.35rem",
@@ -109,14 +93,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
               Schedule In this
             </Typography>
 
-            <Box
-              display="flex"
-              alignItems="center"
-              gap={1}
-              flex={1}
-              minWidth={0}
-              sx={{ flexWrap: { xs: "wrap", sm: "wrap", md: "nowrap" } }}
-            >
+            <Box className="flex items-center gap-1 flex-1 min-w-0 flex-wrap md:flex-nowrap">
               <Select
                 value={filter === "overdue" ? "week" : filter}
                 onChange={(e) => setFilter(e.target.value as "day" | "week")}
@@ -188,18 +165,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                   {/* Scheduled Clickable */}
                   <Box
                     onClick={() => setFilter(filter === "day" ? "day" : "week")}
-                    sx={{
-                      background: "#e3f2fd",
-                      px: 3,
-                      py: 2,
-                      borderRadius: 2,
-                      fontSize: "0.85rem",
-                      fontWeight: 600,
-                      color: "#1976d2",
-                      cursor: "pointer",
-                      border:
-                        filter !== "overdue" ? "2px solid #1976d2" : "none",
-                    }}
+                    className={`bg-[#e3f2fd] px-3 py-2 rounded-lg text-[0.85rem] font-semibold text-[#1976d2] cursor-pointer ${filter !== "overdue" ? "border-2 border-[#1976d2]" : ""}`}
                   >
                     {filter === "day"
                       ? scheduleAnalytics.summary?.todayCount
@@ -210,33 +176,14 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                   {/* Overdue Clickable */}
                   <Box
                     onClick={() => setFilter("overdue")}
-                    sx={{
-                      background: "#ffebee",
-                      px: 3,
-                      py: 2,
-                      borderRadius: 2,
-                      fontSize: "0.85rem",
-                      fontWeight: 600,
-                      color: "#d32f2f",
-                      cursor: "pointer",
-                      border:
-                        filter === "overdue" ? "2px solid #d32f2f" : "none",
-                    }}
+                    className={`bg-[#ffebee] px-3 py-2 rounded-lg text-[0.85rem] font-semibold text-[#d32f2f] cursor-pointer ${filter === "overdue" ? "border-2 border-[#d32f2f]" : ""}`}
                   >
                     {scheduleAnalytics.summary?.overdueCount || 0} overdue
                   </Box>
                 </Box>
 
                 {/* Leads List */}
-                <Box
-                  sx={{
-                    position: "relative",
-                    height: 280,
-                    maxHeight: 280,
-                    overflowY: "auto",
-                    pb: 7,
-                  }}
-                >
+                <Box className="relative h-[280px] max-h-[280px] overflow-y-auto pb-7">
                   {filteredLeads.length > 0 ? (
                     paginatedLeads.map((item: any) => {
                       const followUpDate = new Date(item.followUpDate);
@@ -261,26 +208,13 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                       return (
                         <Box
                           key={item.id}
-                          display="flex"
-                          alignItems="center"
-                          p={1.5}
-                          mb={1}
-                          sx={{
-                            background:
-                              filter === "overdue"
-                                ? "#fff5f5"
-                                : isToday
-                                  ? "#fff3e0"
-                                  : "#f8f9fa",
-                            borderRadius: 2,
-                            border:
-                              filter === "overdue"
-                                ? "1px solid #f5c2c7"
-                                : isToday
-                                  ? "1px solid #ffcc02"
-                                  : "1px solid #e9ecef",
-                            cursor: "pointer",
-                          }}
+                          className={`flex items-center p-1.5 mb-1 rounded-lg cursor-pointer ${
+                            filter === "overdue"
+                              ? "bg-[#fff5f5] border border-[#f5c2c7]"
+                              : isToday
+                                ? "bg-[#fff3e0] border border-[#ffcc02]"
+                                : "bg-[#f8f9fa] border border-[#e9ecef]"
+                          }`}
                         >
                           <Box flex={1}>
                             <Typography
@@ -333,25 +267,15 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                             </Typography>
 
                             <div
-                              className="text-[0.7rem] px-2 py-1 rounded mt-2"
-                              style={{
-                                background:
-                                  item.lead?.status === "New"
-                                    ? "#e3f2fd"
-                                    : item.lead?.status === "Contacted"
-                                      ? "#e8f5e9"
-                                      : item.lead?.status === "Site Visit"
-                                        ? "#fff3e0"
-                                        : "#f3e5f5",
-                                color:
-                                  item.lead?.status === "New"
-                                    ? "#1976d2"
-                                    : item.lead?.status === "Contacted"
-                                      ? "#388e3c"
-                                      : item.lead?.status === "Site Visit"
-                                        ? "#f57c00"
-                                        : "#7b1fa2",
-                              }}
+                              className={`text-[0.7rem] px-2 py-1 rounded mt-2 ${
+                                item.lead?.status === "New"
+                                  ? "bg-[#e3f2fd] text-[#1976d2]"
+                                  : item.lead?.status === "Contacted"
+                                    ? "bg-[#e8f5e9] text-[#388e3c]"
+                                    : item.lead?.status === "Site Visit"
+                                      ? "bg-[#fff3e0] text-[#f57c00]"
+                                      : "bg-[#f3e5f5] text-[#7b1fa2]"
+                              }`}
                             >
                               {item.lead?.status}
                             </div>
@@ -410,18 +334,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
   }
 
   return (
-    <Card
-      sx={{
-        minHeight: 320,
-        height: "95%",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        width: "175%",
-        mr: 1,
-      }}
-    >
+    <Card className="min-h-[320px] h-[95%] flex flex-col justify-center items-center w-[175%] mr-1">
       <CardContent sx={{ textAlign: "center" }}>
         <Typography sx={{ fontSize: "1.2rem", fontWeight: 600 }}>
           🔒 Access Restricted
