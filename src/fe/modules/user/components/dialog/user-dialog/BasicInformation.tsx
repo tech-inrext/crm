@@ -1,4 +1,3 @@
-// src/components/ui/user-dialog/BasicInformation.tsx
 import React from "react";
 import {
   TextField,
@@ -13,7 +12,13 @@ import {
 } from "@/fe/modules/user/constants/users";
 import NomineeSection from "./NomineeSection";
 import RequiredDocuments from "./RequiredDocuments";
-import { FIELD_LABELS } from "@/constants/users";
+import { Photo } from "@mui/icons-material";
+import PhotoUpload from "./PhotoUpload";
+
+const genderOptions = GENDER_OPTIONS.map((gender) => ({
+  value: gender,
+  label: gender,
+}));
 
 interface BasicInformationProps {
   editId: string | null;
@@ -21,19 +26,24 @@ interface BasicInformationProps {
 
 const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
   const { setFieldTouched } = useFormikContext();
+  // Convert various date representations to a yyyy-mm-dd string suitable for
+  // an HTML date input. This preserves the local date instead of shifting
+  // across timezones (which toISOString() alone would do).
   const toDateInputString = (value: any): string => {
     if (!value) return "";
+    // already in yyyy-mm-dd form
     if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value))
       return value;
     const d = new Date(value);
     if (isNaN(d.getTime())) return "";
+    // adjust to local date by removing timezone offset
     const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
     return local.toISOString().slice(0, 10);
   };
 
   return (
     <>
-      <Typography variant="h6" sx={{ mt: 0.5, fontWeight: 600 }}>
+      <Typography variant="h6" sx={{ mt: 1, fontWeight: 600 }}>
         {FIELD_LABELS.BASIC_INFO}
       </Typography>
 
@@ -50,23 +60,18 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
           flexDirection: { xs: "column", sm: "row" },
         }}
       >
+        {/* FULL NAME */}
         <Field name="name">
           {({ field, meta, form }: FieldProps) => (
             <TextField
               {...field}
               label={FIELD_LABELS.FULL_NAME}
-              size="small"
               autoFocus
               fullWidth
+              margin="normal"
               error={meta.touched && Boolean(meta.error)}
               helperText={meta.touched && meta.error}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                flex: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
               onChange={(e) => {
                 form.setFieldTouched(field.name, true, true);
                 form.setFieldValue(field.name, e.target.value);
@@ -75,60 +80,77 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
           )}
         </Field>
 
+        {/* EMAIL */}
         <Field name="email">
-          {({ field, meta }: FieldProps) => (
+          {({ field, meta, form }: FieldProps) => (
             <TextField
               {...field}
               label={FIELD_LABELS.EMAIL}
-              size="small"
               fullWidth
-<<<<<<< HEAD
               margin="normal"
-              error={!!meta.touched && !!meta.error}
-              helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
-=======
               error={meta.touched && Boolean(meta.error)}
               helperText={meta.touched && meta.error}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                flex: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
->>>>>>> d489b44 (fix: fixed ui of add/edit user dialog)
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }} // <-- same flex
               onChange={(e) => {
-                if (field.name) setFieldTouched(field.name, true, true);
-                if ((field as any).onChange) (field as any).onChange(e);
+                form.setFieldTouched(field.name, true, true);
+                form.setFieldValue(field.name, e.target.value);
               }}
             />
           )}
         </Field>
+      </Box>
+
+      <Box
+        sx={{
+          display: "flex",
+          gap: 2,
+          flexDirection: { xs: "column", sm: "row" },
+        }}
+      >
         <Field name="phone">
           {({ field, meta }: FieldProps) => (
             <TextField
               {...field}
               value={field.value ?? ""}
               label={FIELD_LABELS.PHONE}
-              size="small"
               fullWidth
+              margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                flex: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
               inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 const v = (e.target as HTMLInputElement).value.replace(
                   /\D/g,
-                  ""
+                  "",
+                );
+                if (field.name && (field as any).onChange) {
+                  (field as any).onChange({
+                    target: { name: field.name, value: v },
+                  });
+                }
+              }}
+            />
+          )}
+        </Field>
+        <Field name="altPhone">
+          {({ field, meta }: FieldProps) => (
+            <TextField
+              {...field}
+              value={field.value ?? ""}
+              label={FIELD_LABELS.ALT_PHONE}
+              fullWidth
+              margin="normal"
+              error={!!meta.touched && !!meta.error}
+              helperText={meta.touched && meta.error}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
+              onChange={(e) => {
+                if (field.name) setFieldTouched(field.name, true, true);
+                const v = (e.target as HTMLInputElement).value.replace(
+                  /\D/g,
+                  "",
                 );
                 if (field.name && (field as any).onChange) {
                   (field as any).onChange({
@@ -141,7 +163,6 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
         </Field>
       </Box>
 
-      {/* Basic fields continued: Alt phone / Address */}
       <Box
         sx={{
           display: "flex",
@@ -149,55 +170,16 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
           flexDirection: { xs: "column", sm: "row" },
         }}
       >
-        <Field name="altPhone">
-          {({ field, meta }: FieldProps) => (
-            <TextField
-              {...field}
-              value={field.value ?? ""}
-              label={FIELD_LABELS.ALT_PHONE}
-              size="small"
-              fullWidth
-              error={!!meta.touched && !!meta.error}
-              helperText={meta.touched && meta.error}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                flex: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
-              inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
-              onChange={(e) => {
-                if (field.name) setFieldTouched(field.name, true, true);
-                const v = (e.target as HTMLInputElement).value.replace(
-                  /\D/g,
-                  ""
-                );
-                if (field.name && (field as any).onChange) {
-                  (field as any).onChange({
-                    target: { name: field.name, value: v },
-                  });
-                }
-              }}
-            />
-          )}
-        </Field>
         <Field name="fatherName">
           {({ field, meta }: FieldProps) => (
             <TextField
               {...field}
               label={FIELD_LABELS.FATHER_NAME}
-              size="small"
               fullWidth
+              margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                flex: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
@@ -205,24 +187,16 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
             />
           )}
         </Field>
-<<<<<<< HEAD
-=======
         <Field name="panNumber">
           {({ field, meta }: FieldProps) => (
             <TextField
               {...field}
               label={FIELD_LABELS.PAN_NUMBER}
-              size="small"
               fullWidth
+              margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={(meta.touched && meta.error) || "Format: ABCDE1234F"}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                flex: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 const value = e.target.value.toUpperCase().trim();
@@ -239,24 +213,17 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
             />
           )}
         </Field>
->>>>>>> d489b44 (fix: fixed ui of add/edit user dialog)
       </Box>
       <Field name="address">
         {({ field, meta }: FieldProps) => (
           <TextField
             {...field}
             label={FIELD_LABELS.ADDRESS}
-            size="small"
             fullWidth
+            margin="normal"
             error={!!meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
-            sx={{
-              bgcolor: "#fff",
-              borderRadius: 1,
-              flex: 1,
-              "& .MuiInputBase-root": { minHeight: 40 },
-              "& .MuiInputBase-input": { py: 1 },
-            }}
+            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
             onChange={(e) => {
               if (field.name) setFieldTouched(field.name, true, true);
               if ((field as any).onChange) (field as any).onChange(e);
@@ -277,17 +244,11 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               {...field}
               label={FIELD_LABELS.GENDER}
               select
-              size="small"
               fullWidth
+              margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                flex: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
@@ -308,8 +269,8 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               value={toDateInputString(field.value)}
               label={FIELD_LABELS.DATE_OF_BIRTH}
               type="date"
-              size="small"
               fullWidth
+              margin="normal"
               InputLabelProps={{ shrink: true }}
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
@@ -317,10 +278,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                 bgcolor: "#fff",
                 borderRadius: 1,
                 flex: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
+                height: 56,
                 '& input[type="date"]': {
+                  height: "56px",
+                  fontSize: "16px",
                   WebkitAppearance: "none",
+                  MozAppearance: "textfield",
+                  appearance: "none",
+                  lineHeight: "normal",
+                  padding: "0 14px",
                 },
               }}
               onChange={(e) => {
@@ -351,8 +317,8 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               value={toDateInputString(field.value)}
               label={FIELD_LABELS.JOINING_DATE}
               type="date"
-              size="small"
               fullWidth
+              margin="normal"
               InputLabelProps={{ shrink: true }}
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
@@ -360,10 +326,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                 bgcolor: "#fff",
                 borderRadius: 1,
                 flex: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
+                height: 56,
                 '& input[type="date"]': {
+                  height: "56px",
+                  fontSize: "16px",
                   WebkitAppearance: "none",
+                  MozAppearance: "textfield",
+                  appearance: "none",
+                  lineHeight: "normal",
+                  padding: "0 14px",
                 },
               }}
               onChange={(e) => {
@@ -383,17 +354,11 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
             <TextField
               {...field}
               label={FIELD_LABELS.DESIGNATION}
-              size="small"
               fullWidth
+              margin="normal"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                flex: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
+              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);

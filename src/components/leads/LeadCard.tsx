@@ -236,8 +236,6 @@ const LeadCard = memo(
 
         {/* Status Dropdown (Top-Right) */}
         <Box sx={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}>
-        {/* Status Dropdown (Top-Right) */}
-        <Box sx={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}>
           <StatusDropdown
             leadId={lead._id || lead.id || lead.leadId || ""}
             currentStatus={lead.status}
@@ -305,45 +303,47 @@ const LeadCard = memo(
             />
 
             <Box
-              onClick={handleAssignedClick}
-              sx={{
-                position: "relative",
-                borderRadius: 2,
-                width: 240,
-                ml: 1,
-                py: 0.5,
-                boxSizing: "border-box",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                cursor: "pointer",
+  onClick={handleAssignedClick}
+  sx={{
+    position: "relative",
+    borderRadius: 2,
+    width: 240,
+    ml: 1,
+    py: 0.5,
+    boxSizing: "border-box",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    cursor: "pointer",
 
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  bottom: 0,
-                  left: -4, // 👈 border shifted from left
-                  right: -4, // 👈 border shifted from right
-                  border: `0.5px solid ${alpha(theme.palette.secondary.main, 0.25)}`,
-                  borderRadius: 2,
-                  pointerEvents: "none",
-                },
-              }}
-            >
-              <InfoRow
-                icon={<PersonAdd sx={{ fontSize: 18 }} />}
-                text={
-                  <Box sx={{ display: "inline-block" }}>
-                    <Box component="span" sx={{ color: "black" }}>
-                      {assignedUser?.name ||
-                        assignedUser?.fullName ||
-                        "Unassigned"}
-                    </Box>
-                  </Box>
-                }
-                color={theme.palette.secondary.main}
-              />
+    "&::before": {
+      content: '""',
+      position: "absolute",
+      top: 0,
+      bottom: 0,
+      left: -4,   // 👈 border shifted from left
+      right: -4,  // 👈 border shifted from right
+      border: `0.5px solid ${alpha(theme.palette.secondary.main, 0.25)}`,
+      borderRadius: 2,
+      pointerEvents: "none",
+    },
+  }}
+>
+  <InfoRow
+    icon={<PersonAdd sx={{ fontSize: 18 }} />}
+    text={
+      <Box sx={{ display: "inline-block" }}>
+        <Box component="span" sx={{ color: "black" }}>
+          {assignedUser?.name ||
+            assignedUser?.fullName ||
+            "Unassigned"}
+        </Box>
+      </Box>
+    }
+    color={theme.palette.secondary.main}
+  />
+
+
 
               {/* ✅ Dropdown Icon */}
               <KeyboardArrowDown
@@ -385,7 +385,7 @@ const LeadCard = memo(
                   ariaLabel="Actions"
                   sx={{
                     position: "absolute",
-                    bottom: 16,
+                    bottom: 24,
                     right: 0,
                     "& .MuiFab-root": {
                       width: 36,
@@ -474,82 +474,8 @@ const LeadCard = memo(
             </ClickAwayListener>
           </PermissionGuard>
         </Box>
-                  }}
-                  icon={
-                    <SpeedDialIcon icon={<MoreVert sx={{ fontSize: 20 }} />} />
-                  }
-                  onClose={() => setActionsOpen(false)}
-                  onOpen={() => setActionsOpen(true)}
-                  open={actionsOpen}
-                  direction="up"
-                >
-                  <SpeedDialAction
-                    icon={
-                      <Edit
-                        sx={{ fontSize: 18, color: theme.palette.primary.main }}
-                      />
-                    }
-                    tooltipTitle="Edit"
-                    sx={{
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.primary.main, 0.2),
-                      },
-                    }}
-                    onClick={() => {
-                      setActionsOpen(false);
-                      onEdit();
-                    }}
-                  />
-                  <SpeedDialAction
-                    icon={
-                      <NoteAlt
-                        sx={{ fontSize: 18, color: theme.palette.warning.main }}
-                      />
-                    }
-                    tooltipTitle="Notes"
-                    sx={{
-                      bgcolor: alpha(theme.palette.warning.main, 0.1),
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.warning.main, 0.2),
-                      },
-                    }}
-                    onClick={() => {
-                      setActionsOpen(false);
-                      onOpenFeedback(lead._id || lead.id || lead.leadId || "");
-                    }}
-                  />
-                  <SpeedDialAction
-                    icon={
-                      <Event
-                        sx={{
-                          fontSize: 18,
-                          color: theme.palette.secondary.main,
-                        }}
-                      />
-                    }
-                    tooltipTitle="Site Visit"
-                    sx={{
-                      bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.secondary.main, 0.2),
-                      },
-                    }}
-                    onClick={() => {
-                      setActionsOpen(false);
-                      onScheduleSiteVisit(
-                        lead._id || lead.id || lead.leadId || "",
-                      );
-                    }}
-                  />
-                </SpeedDial>
-              </Box>
-            </ClickAwayListener>
-          </PermissionGuard>
-        </Box>
       </Card>
     );
-  },
   },
 );
 
