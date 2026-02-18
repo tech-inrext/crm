@@ -64,7 +64,7 @@ class InrextWorker extends Worker {
     this[jobName] = cb;
   }
 
-  async addCron(jobName, interval, id, param={}) {
+  async addCron(jobName, interval, id, param = {}) {
     if (leadQueue) {
       await leadQueue.add(
         jobName,
@@ -79,7 +79,7 @@ class InrextWorker extends Worker {
 }
 
 const worker = new InrextWorker();
-await worker.isStable();
+worker.isStable();
 worker.on("failed", (job, err) =>
   console.error(`Job ${job.name} failed:`, err)
 );
