@@ -1038,26 +1038,56 @@ class EmployeeService extends Service {
 
   async getAllEmployeeList(req, res) {
     try {
-      const { isCabVendor } = req.query;
+      const { isCabVendor, roles, role } = req.query;
 
-      // Normalize stringy booleans from query (?isCabVendor=true / 1 / yes / y ...)
+      /* ---------- BOOLEAN NORMALIZER ---------- */
       const normalizeBool = (v) => {
         if (typeof v === "boolean") return v;
         if (v == null) return undefined;
+
         const s = String(v).trim().toLowerCase();
+
         if (["true", "1", "yes", "y"].includes(s)) return true;
         if (["false", "0", "no", "n"].includes(s)) return false;
-        return undefined; // ignore invalid values
+
+        return undefined;
       };
 
-      const vendorVal = normalizeBool(isCabVendor);
-
       const filter = {};
+
+      /* ---------- CAB VENDOR FILTER ---------- */
+      const vendorVal = normalizeBool(isCabVendor);
       if (typeof vendorVal === "boolean") {
         filter.isCabVendor = vendorVal;
       }
 
+      /* ---------- ROLE FILTER ---------- */
+      const roleValue = roles || role;
+
+      if (roleValue) {
+        // 🔥 Step 1 → Find Role documents
+        const roleDocs = await Role.find({
+          name: new RegExp(`^${String(roleValue).trim()}$`, "i"),
+        }).select("_id");
+
+        const roleIds = roleDocs.map((r) => r._id);
+
+        if (roleIds.length > 0) {
+          filter.roles = { $in: roleIds };
+        } else {
+          // No role found → return empty
+          return res.status(200).json({
+            success: true,
+            count: 0,
+            data: [],
+            appliedFilter: {
+              role: roleValue,
+            },
+          });
+        }
+      }
       const employees = await Employee.find(filter)
+        .populate("roles")
         .sort({ createdAt: -1 })
         .lean();
 
@@ -1065,9 +1095,6 @@ class EmployeeService extends Service {
         success: true,
         count: employees.length,
         data: employees,
-        appliedFilter: {
-          isCabVendor: typeof vendorVal === "boolean" ? vendorVal : null,
-        },
       });
     } catch (error) {
       return res.status(500).json({
