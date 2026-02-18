@@ -1,4 +1,4 @@
-import mailer from "./mailer.js";
+import mailer from "../mailer.js";
 
 export async function sendOTPEmail(to, otp) {
   if (!to) {

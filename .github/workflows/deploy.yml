@@ -1,4 +1,4 @@
-name: Manual Deploy Next.js (Tag Based)
+name: Production Deployment (Tag Based)
 
 on:
   workflow_dispatch:
@@ -10,7 +10,6 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout tag
         uses: actions/checkout@v4
@@ -31,27 +30,58 @@ jobs:
         run: yarn install
 
       - name: Build (standalone)
+        env:
+          NODE_ENV: production
+          PORT: 80
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
+          REDIS_URL: redis://127.0.0.1:6379
+          QUEUE_NAME: default
+          QUEUE_PREFIX: bull
+          SMTP_EMAIL: tech.inrext@gmail.com
+          SMTP_PASS: ${{ secrets.SMTP_PASS }}
+          EMAIL_FROM: YourApp Support <tech.inrext@gmail.com>
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          AWS_REGION: ap-south-1
+          AWS_BUCKET_NAME: inrext
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
         run: yarn build
+
+      - name: Build worker
+        run: yarn worker:build
 
       - name: Prepare runtime bundle (standalone)
         run: |
           set -e
-
           rm -rf runtime
           mkdir runtime
+          cp -R .next/standalone/. runtime/
+          mkdir -p runtime/.next
+          cp -R .next/static runtime/.next/
+          mkdir -p runtime/worker
+          cp -R dist/worker/worker.cjs runtime/worker/worker.cjs
 
-          # 1️⃣ Copy EVERYTHING from standalone (creates .next, server.js, node_modules, package.json)
-          cp -R .next/standalone/* runtime/
-
-          echo "✅ Runtime bundle prepared:"
-          ls -la runtime
-          ls -la runtime/.next || true
-          ls -la runtime/.next/static || true
-      - name: Upload build to EC2
+      - name: Upload runtime to EC2
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.EC2_HOST }}
           username: ubuntu
           key: ${{ secrets.EC2_KEY }}
-          source: "runtime"
-          target: "/home/ubuntu/crm/${{ inputs.tag }}"
+          source: "runtime/**"
+          target: "/home/ubuntu/crm"
+
+      - name: Restart pm2 on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ubuntu
+          key: ${{ secrets.EC2_KEY }}
+          script: |
+            set -e
+            cd /home/ubuntu/crm/runtime
+            pm2 delete all
+            pm2 start server.js --update-env
+            cd /home/ubuntu/crm/runtime/worker
+            pm2 start worker.cjs --name "crm-worker" --restart-delay 10000 --max-restarts 10
+            pm2 save
+            pm2 status

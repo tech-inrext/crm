@@ -24,12 +24,12 @@ export interface UserFormData {
   phone: string;
   address: string;
   gender: string;
-  age?: number;
+  dateOfBirth?: string;
   altPhone?: string;
   fatherName?: string;
   specialization?: string;
   joiningDate?: string;
-  designation: string;
+  designation: string;  
   managerId: string;
   departmentId: string;
   roles: string[];
@@ -41,6 +41,7 @@ export interface UserFormData {
   bankProofUrl?: string;
   photoFile?: File | null;
   photoUrl?: string;
+  panNumber: string;
   nominee?: {
     name?: string;
     phone?: string;

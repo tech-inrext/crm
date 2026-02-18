@@ -1,4 +1,4 @@
-import mailer from "../../lib/mailer.js";
+import mailer from "../email-service/mailer.js";
 import Notification from "../models/Notification.js";
 import Employee from "../models/Employee.js";
 

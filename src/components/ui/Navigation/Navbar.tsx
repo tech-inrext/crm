@@ -28,13 +28,11 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
         zIndex: 1300,
         display: "flex",
         alignItems: "center",
-        px: { xs: 0.5, sm: 1, md: 2 },
-        py: { xs: 0.25, sm: 0.5, md: 1 },
         bgcolor: "#fff",
-        height: { xs: 64, sm: 72, md: 64 },
-        boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
-        borderBottom: "1px solid rgba(255,255,255,0.1)",
-        overflow: "hidden",
+        height: "auto",
+        borderBottom: "1px solid #E6EEF5",
+        overflow: "visible",
+        justifyContent: "space-between",
       }}
     >
       <Box
@@ -43,17 +41,27 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           alignItems: "center",
           gap: { xs: 0.3, sm: 1, md: 2 }, // reduce gap for xs
           minWidth: 0,
-          flex: 1,
           pl: { xs: 6, sm: 0 },
+          pr: { xs: 1, sm: 2 },
+          borderRight: {
+            xs: "none",
+            sm: "none",
+            md: "none",
+            lg: "1px solid #E6EEF5",
+          },
+          width: { xs: "auto", sm: "auto", md: "260px", lg: "260px" },
+          px: { xs: 0.5, sm: 1, md: 1.5, lg: 1 },
+          py: { xs: 0.5, sm: 1, md: 1 },
+          paddingLeft: { xs: "50px", sm: "20px", md: "30px", lg: "30px" },
         }}
       >
         <AvatarComponent
-          src="/Inrext logo.png"
+          src="https://inrext.s3.ap-south-1.amazonaws.com/Static+Assets/Inrext+logo.png"
           alt="Inrext"
           sx={{
             color: "#000",
-            width: { xs: 120, md: 185 },
-            height: { xs: 35, md: 50 },
+            width: "auto",
+            height: { xs: 35, md: 40, lg: 40 },
             borderRadius: "0px",
           }}
         />

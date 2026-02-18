@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -10,7 +10,12 @@ import {
   SpeedDialAction,
   SpeedDialIcon,
   ClickAwayListener,
+  Chip,
+  Avatar,
+  useTheme,
 } from "@mui/material";
+import { alpha } from "@mui/material/styles";
+import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
 
 import {
   Email,
@@ -22,16 +27,99 @@ import {
   PinIcon,
 } from "@/components/ui/Component";
 
-import { Schedule } from "@mui/icons-material";
-import { MoreVert, NoteAlt, Event } from "@mui/icons-material";
+import { Schedule, MoreVert, NoteAlt, Event } from "@mui/icons-material";
 
 import type { LeadDisplay as Lead } from "../../types/lead";
 import StatusDropdown from "./StatusDropdown";
+import LeadTypeDropdown from "./LeadTypeDropdown";
 import PermissionGuard from "../PermissionGuard";
 
-// Style constants
-const GRADIENTS = {
-  paper: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+import AssignedDropdown from "./AssignedDropdown";
+
+// Helper for row items with icons
+const InfoRow = ({
+  icon,
+  text,
+  color,
+  isLink = false,
+  href = "",
+}: {
+  icon: React.ReactNode;
+  text: string | React.ReactNode;
+  color: string;
+  isLink?: boolean;
+  href?: string;
+}) => {
+  // Only apply border for AssignedTo row
+  const isAssignedTo =
+    typeof text === "object" &&
+    text?.props?.children?.type === AssignedDropdown;
+  const content = (
+    <Box
+      className={`flex items-center w-full ${
+        isAssignedTo ? "border rounded-lg px-1 py-0.5 box-border" : ""
+      }`}
+      style={
+        isAssignedTo
+          ? {
+              borderColor: `${color}40`,
+              backgroundColor: `${color}08`,
+            }
+          : {}
+      }
+    >
+      <Box
+        sx={{
+          mr: 1.5,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          width: 32,
+          height: 32,
+          borderRadius: "50%",
+          bgcolor: alpha(color, 0.1),
+          color: color,
+          flexShrink: 0,
+          ...(isAssignedTo ? { border: `1px solid ${alpha(color, 0.4)}` } : {}),
+        }}
+      >
+        {icon}
+      </Box>
+      <Typography
+        variant="body2"
+        component="div"
+        color="text.primary"
+        fontWeight={500}
+        sx={{
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+          flex: 1,
+        }}
+      >
+        {text}
+      </Typography>
+    </Box>
+  );
+
+  if (isLink && href) {
+    return (
+      <Box
+        component="a"
+        href={href}
+        sx={{
+          textDecoration: "none",
+          display: "block",
+          "&:hover": {
+            "& p": { color: "primary.main" },
+          },
+        }}
+      >
+        {content}
+      </Box>
+    );
+  }
+  return content;
 };
 
 interface LeadCardProps {
@@ -40,6 +128,7 @@ interface LeadCardProps {
   onScheduleSiteVisit: (leadId: string) => void;
   onOpenFeedback: (leadId: string) => void;
   onStatusChange: (leadId: string, newStatus: string) => Promise<void>;
+  onLeadTypeChange: (leadId: string, newLeadType: string) => Promise<void>;
 }
 
 const LeadCard = memo(
@@ -49,63 +138,104 @@ const LeadCard = memo(
     onScheduleSiteVisit,
     onOpenFeedback,
     onStatusChange,
+    onLeadTypeChange,
   }: LeadCardProps) => {
     const [actionsOpen, setActionsOpen] = useState(false);
+    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
+    const theme = useTheme();
+
+    const [assignedUser, setAssignedUser] = useState<any>(
+      lead.assignedTo || null,
+    );
+    const [isManualAssign, setIsManualAssign] = useState(false);
+
+    const handleAssignedClick = (event: React.MouseEvent<HTMLElement>) => {
+      setAnchorEl(event.currentTarget);
+    };
+
+    const handleCloseMenu = () => {
+      setAnchorEl(null);
+    };
+
+    const handleAssignUser = async (user: any) => {
+      setAssignedUser(user);
+      setIsManualAssign(true);
+      try {
+        // Use query param for leadId as expected by backend
+        const response = await fetch(
+          `/api/v0/leads/${lead._id}/assign?leadId=${lead._id}`,
+          {
+            method: "PUT",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ assignedTo: user._id }),
+          },
+        );
+        if (!response.ok) {
+          throw new Error("Failed to update assignment");
+        }
+        const data = await response.json();
+        // If backend returns a populated user object, use it. If only id, keep previous user object.
+        if (
+          data?.data?.assignedTo &&
+          typeof data.data.assignedTo === "object"
+        ) {
+          setAssignedUser(data.data.assignedTo);
+        } else if (
+          data?.data?.assignedTo &&
+          typeof data.data.assignedTo === "string"
+        ) {
+          // fallback: keep the user object from dropdown
+          setAssignedUser(user);
+        }
+        console.log(`Assigned to: ${user.name || user.fullName}`);
+      } catch (error) {
+        console.error("Error updating assignment:", error);
+      }
+    };
+
+    useEffect(() => {
+      if (!isManualAssign) {
+        setAssignedUser(lead.assignedTo || null);
+      }
+    }, [lead.assignedTo, isManualAssign]);
+
+    const leadId = lead._id || lead.id || lead.leadId || "";
 
     return (
       <Card
-        elevation={2}
+        elevation={0}
         sx={{
-          borderRadius: 3,
-          transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-          "&:hover": {
-            elevation: 8,
-            transform: "translateY(-4px)",
-            boxShadow: "0 12px 24px rgba(0,0,0,0.1)",
-          },
-          border: "1px solid",
-          borderColor: "divider",
-          background: GRADIENTS.paper,
+          borderRadius: 4,
+          boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+          background: "#fff",
           position: "relative",
+          height: "100%",
+          minHeight: "340px",
+          display: "flex",
+          flexDirection: "column",
+          transition: "all 0.3s ease",
           overflow: "visible",
-          height: "266px",
-          mt: 1.5, // margin top to accommodate the floating badges
-          mb: 2, // margin bottom to accommodate the floating edit pill
+          "&:hover": {
+            boxShadow: "0 16px 32px rgba(0,0,0,0.12)",
+            transform: "translateY(-4px)",
+          },
         }}
       >
-        {/* Ribbon clip hanging over card edge - TOP LEFT */}
-        <Box
-          sx={{
-            position: "absolute",
-            top: -8,
-            left: -6,
-            backgroundColor: "#22c55e",
-            color: "white",
-            px: 1.5,
-            py: 0.5,
-            fontSize: "0.7rem",
-            fontWeight: 700,
-            letterSpacing: "0.5px",
-            whiteSpace: "nowrap",
-            borderRadius: "4px 4px 4px 0",
-            boxShadow: "0 2px 8px rgba(34, 197, 94, 0.4)",
-            // Folded corner effect on left side
-            "&::after": {
-              content: '""',
-              position: "absolute",
-              bottom: -6,
-              left: 0,
-              width: 0,
-              height: 0,
-              borderStyle: "solid",
-              borderWidth: "0 6px 6px 0",
-              borderColor: "transparent #16a34a transparent transparent",
-            },
-          }}
-        >
-          Warm Lead
+        {/* Lead Type Dropdown (Top-Left) */}
+        <Box sx={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}>
+          <LeadTypeDropdown
+            leadId={lead._id || lead.id || lead.leadId || ""}
+            currentLeadType={lead.leadType || "intake"}
+            onLeadTypeChange={onLeadTypeChange}
+            variant="chip"
+            size="small"
+          />
         </Box>
 
+        {/* Status Dropdown (Top-Right) */}
+        <Box sx={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}>
         {/* Status Dropdown (Top-Right) */}
         <Box sx={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}>
           <StatusDropdown
@@ -117,10 +247,12 @@ const LeadCard = memo(
           />
         </Box>
 
-        {/* Bottom Right Sticky Action Button */}
-        <PermissionGuard module="lead" action="write" fallback={<></>}>
-          <ClickAwayListener onClickAway={() => setActionsOpen(false)}>
-            <Box
+        <CardContent sx={{ p: 2.5, flexGrow: 1, pt: 6 }}>
+          {/* Header Section: Name & Project */}
+          <Box sx={{ mb: 2 }}>
+            <Typography
+              variant="h6"
+              fontWeight={700}
               sx={{
                 mb: 0.5,
                 lineHeight: 1.3,
@@ -342,8 +474,82 @@ const LeadCard = memo(
             </ClickAwayListener>
           </PermissionGuard>
         </Box>
+                  }}
+                  icon={
+                    <SpeedDialIcon icon={<MoreVert sx={{ fontSize: 20 }} />} />
+                  }
+                  onClose={() => setActionsOpen(false)}
+                  onOpen={() => setActionsOpen(true)}
+                  open={actionsOpen}
+                  direction="up"
+                >
+                  <SpeedDialAction
+                    icon={
+                      <Edit
+                        sx={{ fontSize: 18, color: theme.palette.primary.main }}
+                      />
+                    }
+                    tooltipTitle="Edit"
+                    sx={{
+                      bgcolor: alpha(theme.palette.primary.main, 0.1),
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.primary.main, 0.2),
+                      },
+                    }}
+                    onClick={() => {
+                      setActionsOpen(false);
+                      onEdit();
+                    }}
+                  />
+                  <SpeedDialAction
+                    icon={
+                      <NoteAlt
+                        sx={{ fontSize: 18, color: theme.palette.warning.main }}
+                      />
+                    }
+                    tooltipTitle="Notes"
+                    sx={{
+                      bgcolor: alpha(theme.palette.warning.main, 0.1),
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.warning.main, 0.2),
+                      },
+                    }}
+                    onClick={() => {
+                      setActionsOpen(false);
+                      onOpenFeedback(lead._id || lead.id || lead.leadId || "");
+                    }}
+                  />
+                  <SpeedDialAction
+                    icon={
+                      <Event
+                        sx={{
+                          fontSize: 18,
+                          color: theme.palette.secondary.main,
+                        }}
+                      />
+                    }
+                    tooltipTitle="Site Visit"
+                    sx={{
+                      bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                      "&:hover": {
+                        bgcolor: alpha(theme.palette.secondary.main, 0.2),
+                      },
+                    }}
+                    onClick={() => {
+                      setActionsOpen(false);
+                      onScheduleSiteVisit(
+                        lead._id || lead.id || lead.leadId || "",
+                      );
+                    }}
+                  />
+                </SpeedDial>
+              </Box>
+            </ClickAwayListener>
+          </PermissionGuard>
+        </Box>
       </Card>
     );
+  },
   },
 );
 
