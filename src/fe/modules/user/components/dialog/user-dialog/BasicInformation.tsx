@@ -47,17 +47,17 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
         {FIELD_LABELS.BASIC_INFO}
       </Typography>
 
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-        <Box sx={{ width: "100%", maxWidth: 400 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mt: 2, mb: 1 }}>
+        <Box sx={{ width: "100%", maxWidth: 140 }}>
           <PhotoUpload />
         </Box>
       </Box>
 
       <Box
         sx={{
-          display: "flex",
-          gap: 2,
-          flexDirection: { xs: "column", sm: "row" },
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+          gap: 1.5,
         }}
       >
         {/* FULL NAME */}
@@ -68,10 +68,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               label={FIELD_LABELS.FULL_NAME}
               autoFocus
               fullWidth
-              margin="normal"
+              size="small"
               error={meta.touched && Boolean(meta.error)}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               onChange={(e) => {
                 form.setFieldTouched(field.name, true, true);
                 form.setFieldValue(field.name, e.target.value);
@@ -87,10 +92,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               {...field}
               label={FIELD_LABELS.EMAIL}
               fullWidth
-              margin="normal"
+              size="small"
               error={meta.touched && Boolean(meta.error)}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }} // <-- same flex
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               onChange={(e) => {
                 form.setFieldTouched(field.name, true, true);
                 form.setFieldValue(field.name, e.target.value);
@@ -102,9 +112,9 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
 
       <Box
         sx={{
-          display: "flex",
-          gap: 2,
-          flexDirection: { xs: "column", sm: "row" },
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+          gap: 1.5,
         }}
       >
         <Field name="phone">
@@ -114,10 +124,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               value={field.value ?? ""}
               label={FIELD_LABELS.PHONE}
               fullWidth
-              margin="normal"
+              size="small"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
@@ -141,10 +156,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               value={field.value ?? ""}
               label={FIELD_LABELS.ALT_PHONE}
               fullWidth
-              margin="normal"
+              size="small"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
@@ -165,9 +185,9 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
 
       <Box
         sx={{
-          display: "flex",
-          gap: 2,
-          flexDirection: { xs: "column", sm: "row" },
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+          gap: 1.5,
         }}
       >
         <Field name="fatherName">
@@ -176,10 +196,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               {...field}
               label={FIELD_LABELS.FATHER_NAME}
               fullWidth
-              margin="normal"
+              size="small"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
@@ -193,10 +218,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               {...field}
               label={FIELD_LABELS.PAN_NUMBER}
               fullWidth
-              margin="normal"
+              size="small"
               error={!!meta.touched && !!meta.error}
               helperText={(meta.touched && meta.error) || "Format: ABCDE1234F"}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 const value = e.target.value.toUpperCase().trim();
@@ -220,10 +250,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
             {...field}
             label={FIELD_LABELS.ADDRESS}
             fullWidth
-            margin="normal"
+            size="small"
             error={!!meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
-            sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+            sx={{
+              bgcolor: "#fff",
+              borderRadius: 1,
+              "& .MuiInputBase-root": { minHeight: 40 },
+              "& .MuiInputBase-input": { py: 1 },
+            }}
             onChange={(e) => {
               if (field.name) setFieldTouched(field.name, true, true);
               if ((field as any).onChange) (field as any).onChange(e);
@@ -233,9 +268,9 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
       </Field>
       <Box
         sx={{
-          display: "flex",
-          gap: 2,
-          flexDirection: { xs: "column", sm: "row" },
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+          gap: 1.5,
         }}
       >
         <Field name="gender">
@@ -245,10 +280,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               label={FIELD_LABELS.GENDER}
               select
               fullWidth
-              margin="normal"
+              size="small"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
@@ -270,23 +310,22 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               label={FIELD_LABELS.DATE_OF_BIRTH}
               type="date"
               fullWidth
-              margin="normal"
+              size="small"
               InputLabelProps={{ shrink: true }}
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{
                 bgcolor: "#fff",
                 borderRadius: 1,
-                flex: 1,
-                height: 56,
+                "& .MuiInputBase-root": { minHeight: 40 },
                 '& input[type="date"]': {
-                  height: "56px",
-                  fontSize: "16px",
+                  height: "40px",
+                  fontSize: "14px",
                   WebkitAppearance: "none",
                   MozAppearance: "textfield",
                   appearance: "none",
                   lineHeight: "normal",
-                  padding: "0 14px",
+                  padding: "0 10px",
                 },
               }}
               onChange={(e) => {
@@ -305,9 +344,9 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
 
       <Box
         sx={{
-          display: "flex",
-          gap: 2,
-          flexDirection: { xs: "column", sm: "row" },
+          display: "grid",
+          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
+          gap: 1.5,
         }}
       >
         <Field name="joiningDate">
@@ -318,23 +357,22 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               label={FIELD_LABELS.JOINING_DATE}
               type="date"
               fullWidth
-              margin="normal"
+              size="small"
               InputLabelProps={{ shrink: true }}
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               sx={{
                 bgcolor: "#fff",
                 borderRadius: 1,
-                flex: 1,
-                height: 56,
+                "& .MuiInputBase-root": { minHeight: 40 },
                 '& input[type="date"]': {
-                  height: "56px",
-                  fontSize: "16px",
+                  height: "40px",
+                  fontSize: "14px",
                   WebkitAppearance: "none",
                   MozAppearance: "textfield",
                   appearance: "none",
                   lineHeight: "normal",
-                  padding: "0 14px",
+                  padding: "0 10px",
                 },
               }}
               onChange={(e) => {
@@ -355,10 +393,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               {...field}
               label={FIELD_LABELS.DESIGNATION}
               fullWidth
-              margin="normal"
+              size="small"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
