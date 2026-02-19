@@ -31,9 +31,7 @@ export const LEAD_STATUSES = [
 // Lead type values used across the leads feature
 // Lead type values used across the leads feature
 export const LEAD_TYPES = [
-	"intake",
 	"hot lead",
 	"warm lead",
 	"cold lead",
-	"not interested",
 ];

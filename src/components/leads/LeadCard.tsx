@@ -227,7 +227,7 @@ const LeadCard = memo(
         <Box sx={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}>
           <LeadTypeDropdown
             leadId={lead._id || lead.id || lead.leadId || ""}
-            currentLeadType={lead.leadType || "intake"}
+            currentLeadType={lead.leadType || ""}
             onLeadTypeChange={onLeadTypeChange}
             variant="chip"
             size="small"
