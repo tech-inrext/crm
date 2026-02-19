@@ -9,7 +9,10 @@ import {
   ListItemAvatar,
   ListItemText,
   ListItemButton,
+  TextField,
+  InputAdornment,
 } from "@mui/material";
+import SearchIcon from "@mui/icons-material/Search";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -28,6 +31,7 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
 }) => {
   const { user } = useAuth();
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
+  const [search, setSearch] = useState("");
 
   /* ---------- Fetch Team Members ---------- */
   useEffect(() => {
@@ -60,6 +64,15 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
     return flattened;
   }, [teamMembers]);
 
+  /* ---------- Filtered Members ---------- */
+  const filteredMembers = useMemo(() => {
+    if (!search.trim()) return allMembers;
+
+    return allMembers.filter((member) =>
+      member?.name?.toLowerCase().includes(search.toLowerCase())
+    );
+  }, [search, allMembers]);
+
   /* ---------- Assign Handler ---------- */
   const handleAssign = (member: any) => {
     onAssign(member);
@@ -68,7 +81,8 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
 
   /* ---------- Member Row ---------- */
   const MemberRow = ({ member }: { member: any }) => {
-    const isAssigned = assignedTo?._id?.toString() === member?._id?.toString();
+    const isAssigned =
+      assignedTo?._id?.toString() === member?._id?.toString();
 
     return (
       <ListItemButton
@@ -81,7 +95,9 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
           px: 1,
           transition: "all 0.2s ease",
           bgcolor: isAssigned ? "#F3E8FF" : "transparent",
-          border: isAssigned ? "1px solid #C4B5FD" : "1px solid transparent",
+          border: isAssigned
+            ? "1px solid #C4B5FD"
+            : "1px solid transparent",
           "&:hover": {
             bgcolor: isAssigned ? "#E9D5FF" : "#F9FAFB",
           },
@@ -124,15 +140,15 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
       transformOrigin={{ vertical: "top", horizontal: "center" }}
       PaperProps={{
         className: `
-      w-[240px]
-      mt-[2px]
-      rounded-xl
-      shadow-[0px_6px_18px_rgba(0,0,0,0.08)]
-      border border-gray-200
-      rounded-tl-none
-      rounded-tr-none
-      overflow-hidden
-    `,
+          w-[240px]
+          mt-[2px]
+          rounded-xl
+          shadow-[0px_6px_18px_rgba(0,0,0,0.08)]
+          border border-gray-200
+          rounded-tl-none
+          rounded-tr-none
+          overflow-hidden
+        `,
       }}
     >
       {/* ---------- Suggested ---------- */}
@@ -148,15 +164,47 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
 
       {/* ---------- All Agents ---------- */}
       <Box className="px-1.5 pt-[3.2px] pb-[2px]">
-        <Typography className="text-[10.5px] font-semibold text-gray-400 tracking-[0.7px] mb-[2px]">
+        <Typography className="text-[10.5px] font-semibold text-gray-400 tracking-[0.7px] mb-[4px]">
           ALL AGENTS
         </Typography>
+
+        {/* Search Field */}
+        <TextField
+          size="small"
+          fullWidth
+          placeholder="Search team member..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+         className="mb-1 [&_.MuiOutlinedInput-root]:rounded-lg 
+           [&_.MuiOutlinedInput-root]:text-[13px] 
+           [&_.MuiOutlinedInput-root]:h-[34px]"
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon fontSize="small" />
+              </InputAdornment>
+            ),
+          }}
+        />
       </Box>
 
-      <List className="max-h-[190px] overflow-y-auto px-1.5 pb-1.5">
-        {allMembers.map((member) => (
-          <MemberRow key={member?._id} member={member} />
-        ))}
+      <List className="max-h-[170px] overflow-y-auto px-1.5 pb-1.5">
+        {filteredMembers.length > 0 ? (
+          filteredMembers.map((member) => (
+            <MemberRow key={member?._id} member={member} />
+          ))
+        ) : (
+          <Typography
+            sx={{
+              fontSize: 12,
+              color: "#9CA3AF",
+              textAlign: "center",
+              py: 1,
+            }}
+          >
+            No members found
+          </Typography>
+        )}
       </List>
     </Menu>
   );
