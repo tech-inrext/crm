@@ -11,13 +11,13 @@ import { ExpandMore } from "@mui/icons-material";
 
 // Color mapping for lead types
 const LEAD_TYPE_COLORS = {
-  "intake": "#2e7d32", // Purple - Intake
   "hot lead": "#F44336", // Red - Hot
   "warm lead": "#FF9800", // Orange - Warm
   "cold lead": "#2196F3", // Blue - Cold
-  "not interested": "#9E9E9E", // Grey - Not interested
   default: "#757575",
 } as const;
+
+const PLACEHOLDER_VALUE = "";
 
 const getLeadTypeColor = (leadType: string): string =>
   LEAD_TYPE_COLORS[leadType.toLowerCase() as keyof typeof LEAD_TYPE_COLORS] ||
@@ -34,17 +34,28 @@ interface LeadTypeDropdownProps {
 
 const LeadTypeDropdown: React.FC<LeadTypeDropdownProps> = ({
   leadId,
-  currentLeadType = "intake",
+  currentLeadType = "",
   onLeadTypeChange,
   disabled = false,
   variant = "select",
   size = "small",
 }) => {
   const [isUpdating, setIsUpdating] = useState(false);
-  const typeColor = getLeadTypeColor(currentLeadType);
+
+  // Normalise: treat "Select Type", null, undefined as empty placeholder
+  const normalised =
+    !currentLeadType ||
+    currentLeadType.trim().toLowerCase() === "select type"
+      ? PLACEHOLDER_VALUE
+      : currentLeadType;
+
+  const isPlaceholder = normalised === PLACEHOLDER_VALUE;
+  const typeColor = isPlaceholder
+    ? LEAD_TYPE_COLORS.default
+    : getLeadTypeColor(normalised);
 
   const handleLeadTypeChange = async (newLeadType: string) => {
-    if (newLeadType === currentLeadType || isUpdating) return;
+    if (!newLeadType || newLeadType === normalised || isUpdating) return;
 
     setIsUpdating(true);
     try {
@@ -56,14 +67,41 @@ const LeadTypeDropdown: React.FC<LeadTypeDropdownProps> = ({
     }
   };
 
-  const alphaBg = alpha(typeColor, 0.1);
-  const alphaHoverBg = alpha(typeColor, 0.15);
+  const alphaBg = alpha(typeColor, isPlaceholder ? 0.06 : 0.1);
+  const alphaHoverBg = alpha(typeColor, isPlaceholder ? 0.1 : 0.15);
 
   return (
     <FormControl size={size} disabled={disabled || isUpdating}>
       <Select
-        value={currentLeadType}
+        value={normalised}
+        displayEmpty
         onChange={(e) => handleLeadTypeChange(e.target.value)}
+        renderValue={(val) => {
+          if (!val) {
+            return (
+              <span style={{ color: "#9E9E9E", fontStyle: "italic" }}>
+                Select type
+              </span>
+            );
+          }
+          const dotColor = getLeadTypeColor(val);
+          return (
+            <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <span
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: "50%",
+                  backgroundColor: dotColor,
+                  flexShrink: 0,
+                  display: "inline-block",
+                  boxShadow: `0 0 0 2px rgba(0,0,0,0.04)`,
+                }}
+              />
+              <span style={{ textTransform: "capitalize" }}>{val}</span>
+            </span>
+          );
+        }}
         IconComponent={
           isUpdating
             ? () => (
@@ -83,7 +121,7 @@ const LeadTypeDropdown: React.FC<LeadTypeDropdownProps> = ({
         }
         style={{
           backgroundColor: alphaBg,
-          color: typeColor,
+          color: isPlaceholder ? "#9E9E9E" : typeColor,
           ["--hover-bg" as any]: alphaHoverBg,
         }}
         className={`
@@ -109,6 +147,13 @@ const LeadTypeDropdown: React.FC<LeadTypeDropdownProps> = ({
           },
         }}
       >
+        {/* Placeholder option — visible in list but disabled */}
+        <MenuItem value="" disabled sx={{ display: "none" }}>
+          <span style={{ color: "#9E9E9E", fontStyle: "italic" }}>
+            Select type
+          </span>
+        </MenuItem>
+
         {LEAD_TYPES.map((leadType) => (
           <MenuItem key={leadType} value={leadType}>
             <div

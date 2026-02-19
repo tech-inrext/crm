@@ -227,7 +227,7 @@ const LeadCard = memo(
         <Box sx={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}>
           <LeadTypeDropdown
             leadId={lead._id || lead.id || lead.leadId || ""}
-            currentLeadType={lead.leadType || "intake"}
+            currentLeadType={lead.leadType || ""}
             onLeadTypeChange={onLeadTypeChange}
             variant="chip"
             size="small"
@@ -395,18 +395,21 @@ const LeadCard = memo(
                       border: `1px solid ${theme.palette.divider}`,
                       bgcolor: "transparent",
                       color: "text.secondary",
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.primary.main, 0.05),
-                        color: "primary.main",
-                        borderColor: "primary.main",
-                      },
                     },
                   }}
                   icon={
                     <SpeedDialIcon icon={<MoreVert sx={{ fontSize: 20 }} />} />
                   }
-                  onClose={() => setActionsOpen(false)}
-                  onOpen={() => setActionsOpen(true)}
+                  onClose={(_, reason) => {
+                    if (reason === "toggle" || reason === "escapeKeyDown" || reason === "blur") {
+                      setActionsOpen(false);
+                    }
+                  }}
+                  onOpen={(_, reason) => {
+                    if (reason === "toggle") {
+                      setActionsOpen(true);
+                    }
+                  }}
                   open={actionsOpen}
                   direction="up"
                 >

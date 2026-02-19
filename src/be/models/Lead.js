@@ -17,17 +17,14 @@ const propertyTypes = ["residential", "commercial", "plot", ""];
 // const status = ["New", "Contacted", "Site Visit", "Closed", "Dropped", ""];
 const leadStatuses = [
   "new",
-  "follow-up",
-  "call back",
-  "not connected",
+  "in progress",
   "details shared",
-  "site visit done",
   "closed",
   "not interested",
   "",
 ];
 
-const leadTypes = ["intake", "hot lead", "warm lead", "cold lead", "not interested"];
+const leadTypes = ["hot lead", "warm lead", "cold lead"];
 
 const leadSchema = new mongoose.Schema(
   {
@@ -97,7 +94,6 @@ const leadSchema = new mongoose.Schema(
       type: String,
       enum: leadTypes,
       required: false,
-      default: "intake",
     },
 
     source: {
@@ -106,7 +102,7 @@ const leadSchema = new mongoose.Schema(
     },
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Employee",   
+      ref: "Employee",
     },
   },
   { timestamps: true }

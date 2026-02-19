@@ -13,11 +13,8 @@ import { teamHierarchyService } from "@/services/team-hierarchy.service";
 
 const statusOptions = [
   { value: "new", label: "New" },
-  { value: "follow-up", label: "Follow-Up" },
-  { value: "call back", label: "Call Back" },
-  { value: "not connected", label: "Not Connected" },
+  { value: "in progress",label: "In Progress"},
   { value: "details shared", label: "Details Shared" },
-  { value: "site visit done", label: "Site Visit Done" },
   { value: "closed", label: "Closed" },
   { value: "not interested", label: "Not Interested" },
   // { value: "", label: "No Status" }, // optional placeholder for empty

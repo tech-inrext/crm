@@ -22,11 +22,8 @@ export const COMMON_STYLES = LEADS_COMMON_STYLES;
 export const LEAD_STATUSES = [
 	"",
 	"new",
-	"follow-up",
-	"call back",
-	"not connected",
+	"in progress",
 	"details shared",
-	"site visit done",
 	"closed",
 	"not interested",
 ];
@@ -34,9 +31,7 @@ export const LEAD_STATUSES = [
 // Lead type values used across the leads feature
 // Lead type values used across the leads feature
 export const LEAD_TYPES = [
-	"intake",
 	"hot lead",
 	"warm lead",
 	"cold lead",
-	"not interested",
 ];

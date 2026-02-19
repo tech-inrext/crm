@@ -23,7 +23,7 @@ export interface Lead {
   contact?: string; // Contact person name
   company?: string;
   status: string;
-  leadType?: string; // Lead type: intake, hot lead, warm lead, cold lead, not interested
+  leadType?: string; // Lead type: hot lead, warm lead, cold lead
   source?: string;
   managerId?: string; // ObjectId reference to Employee (lead manager)
   assignedTo?: {
