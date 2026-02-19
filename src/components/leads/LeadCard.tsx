@@ -395,18 +395,21 @@ const LeadCard = memo(
                       border: `1px solid ${theme.palette.divider}`,
                       bgcolor: "transparent",
                       color: "text.secondary",
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.primary.main, 0.05),
-                        color: "primary.main",
-                        borderColor: "primary.main",
-                      },
                     },
                   }}
                   icon={
                     <SpeedDialIcon icon={<MoreVert sx={{ fontSize: 20 }} />} />
                   }
-                  onClose={() => setActionsOpen(false)}
-                  onOpen={() => setActionsOpen(true)}
+                  onClose={(_, reason) => {
+                    if (reason === "toggle" || reason === "escapeKeyDown" || reason === "blur") {
+                      setActionsOpen(false);
+                    }
+                  }}
+                  onOpen={(_, reason) => {
+                    if (reason === "toggle") {
+                      setActionsOpen(true);
+                    }
+                  }}
                   open={actionsOpen}
                   direction="up"
                 >
