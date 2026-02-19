@@ -22,11 +22,8 @@ export const COMMON_STYLES = LEADS_COMMON_STYLES;
 export const LEAD_STATUSES = [
 	"",
 	"new",
-	"follow-up",
-	"call back",
-	"not connected",
+	"in progress",
 	"details shared",
-	"site visit done",
 	"closed",
 	"not interested",
 ];
