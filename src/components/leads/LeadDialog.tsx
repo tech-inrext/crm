@@ -28,7 +28,9 @@ export interface LeadFormData {
   budgetRange: string;
   status: string;
   source: string;
-  assignedTo?: string;
+  manager?: string;    // UI-only: refers to the selected manager's _id
+  managerId?: string;  // Backend field: ObjectId reference to Employee (manager)
+  assignedTo?: string; // ObjectId reference to Employee (assigned team member)
   nextFollowUp?: string;
   followUpNotes: Array<{ note: string }>;
 }

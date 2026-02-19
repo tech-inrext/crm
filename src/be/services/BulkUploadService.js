@@ -5,6 +5,7 @@ import mongoose from "mongoose";
 import { uploadToS3 } from "@/lib/s3";
 import xlsx from "xlsx";
 import { v4 as uuidv4 } from "uuid";
+import dbConnect from "../../lib/mongodb";
 
 class BulkUploadService extends Service {
   constructor() {
@@ -12,7 +13,8 @@ class BulkUploadService extends Service {
   }
   async bulkUploadLeads(req, res) {
     try {
-      const { fileUrl, fileName } = req.body;
+      await dbConnect();
+      const { fileUrl, fileName, assignedTo } = req.body;
       if (!fileUrl || !fileName) {
         return res
           .status(400) // bad request
@@ -47,6 +49,7 @@ class BulkUploadService extends Service {
           uploadId,
           fileUrl,
           uploadedBy: uploaderId,
+          assignedTo: assignedTo || null,
         },
         {
           attempts: 3, // optional: a bit more resilient
@@ -68,6 +71,7 @@ class BulkUploadService extends Service {
 
   async getUploadStatus(req, res) {
     try {
+      await dbConnect();
       const loggedInUserId = req.employee?._id;
 
       // Pagination query params
@@ -110,6 +114,7 @@ class BulkUploadService extends Service {
     const { id } = req.query;
 
     try {
+      await dbConnect();
       const upload = await BulkUpload.findById(id);
       if (!upload) {
         return res.status(404).json({ message: "Upload not found" });
