@@ -13,11 +13,8 @@ import { Chip } from "@/components/ui/Component";
 
 const STATUS_COLORS = {
   new: "#2196F3", // Blue
-  "follow-up": "#FFC107", // Amber
-  "call back": "#00BCD4", // Cyan
-  "not connected": "#9E9E9E", // Grey
+  "in progress":"#FF9800",
   "details shared": "#3F51B5", // Indigo
-  "site visit done": "#9C27B0", // Purple
   closed: "#4CAF50", // Green
   "not interested": "#F44336", // Red
   "": "#757575", // Default or empty status

@@ -25,6 +25,7 @@ export function useLeadsPage() {
     loadLeads,
     saveLead,
     updateLeadStatus,
+    updateLeadType,
     selectedStatuses,
     setSelectedStatuses,
     stats,
@@ -153,6 +154,7 @@ export function useLeadsPage() {
     handleCloseDialog,
     saveLead,
     updateLeadStatus,
+    updateLeadType,
     loadLeads,
     dialogMode,
   };

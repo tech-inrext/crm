@@ -120,9 +120,6 @@ export default function SiteVisitConversionChart() {
             <ToggleButton value="week">Week</ToggleButton>
             <ToggleButton value="month">Month</ToggleButton>
           </ToggleButtonGroup>
-          <Button variant="outlined" size="small">
-            Export
-          </Button>
         </Box>
       </Box>
 

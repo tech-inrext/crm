@@ -15,83 +15,85 @@ import {
   notifyRoleChange,
 } from "../../lib/notification-helpers";
 
-
 class EmployeeService extends Service {
   constructor() {
     super();
   }
-async getEmployeeById(req, res) { 
-  const { id } = req.query; 
-  try { 
-    // 1️⃣ Validate employee ID 
-    if (!id || id === "undefined" || id === "null") { 
-    return res.status(400).json({ 
-      success: false, 
-      error: "Employee ID is required", }); 
-    } 
-    // 2️⃣ Fetch employee from DB 
-    const employee = await Employee.findById(id).populate("roles"); 
-    if (!employee) 
-      { return res.status(404).json({ 
-        success: false, 
-        error: "Employee not found", }); 
-      } 
-      // 3️⃣ Check if user is fully authenticated (token + roleId) 
-      const token = req.cookies?.token; 
-      let isFullyAuthenticated = false; 
-      if (token) { 
-        try { 
-          const decoded = jwt.verify(token, process.env.JWT_SECRET); 
-          if (decoded?._id && decoded?.roleId) { 
-            isFullyAuthenticated = true; 
-          } } catch { 
-            // Invalid or expired token → treat as public user 
-            isFullyAuthenticated = false; 
-          } 
-        } 
-        // 4️⃣ If authenticated with role → return full employee data 
-        if (isFullyAuthenticated) { 
-          return res.status(200).json({ 
-            success: true, 
-            data: employee, 
-          }); 
-        } 
-        // 5️⃣ Otherwise → return public employee data only 
-        const publicData = { 
-          name: employee.name, 
-          email: employee.email, 
-          phone: employee.phone, 
-          altPhone: employee.altPhone, 
-          designation: employee.designation, 
-          photo: employee.photo, 
-          specialization: employee.specialization, 
-        }; 
-        // Remove null / undefined fields 
-        Object.entries(publicData).forEach(([key, value]) => { 
-          if (value == null) delete publicData[key]; 
+  async getEmployeeById(req, res) {
+    const { id } = req.query;
+    try {
+      // 1️⃣ Validate employee ID
+      if (!id || id === "undefined" || id === "null") {
+        return res.status(400).json({
+          success: false,
+          error: "Employee ID is required",
         });
-        
-          return res.status(200).json({ 
-            success: true, 
-            data: publicData, 
-          }); 
-        } catch (error) { 
-          console.error("Get Employee Error:", error); 
-          
-          // 6️⃣ Handle invalid MongoDB ObjectId 
-          if (error.name === "CastError") { 
-            return res.status(400).json({ 
-              success: false, 
-              error: "Invalid employee ID format", 
-            }); 
-          } 
-          
-          return res.status(500).json({ 
-            success: false, 
-            error: "Internal server error", 
-          }); 
-        } 
       }
+      // 2️⃣ Fetch employee from DB
+      const employee = await Employee.findById(id).populate("roles");
+      if (!employee) {
+        return res.status(404).json({
+          success: false,
+          error: "Employee not found",
+        });
+      }
+      // 3️⃣ Check if user is fully authenticated (token + roleId)
+      const token = req.cookies?.token;
+      let isFullyAuthenticated = false;
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          if (decoded?._id && decoded?.roleId) {
+            isFullyAuthenticated = true;
+          }
+        } catch {
+          // Invalid or expired token → treat as public user
+          isFullyAuthenticated = false;
+        }
+      }
+      // 4️⃣ If authenticated with role → return full employee data
+      if (isFullyAuthenticated) {
+        return res.status(200).json({
+          success: true,
+          data: employee,
+        });
+      }
+      // 5️⃣ Otherwise → return public employee data only
+      const publicData = {
+        name: employee.name,
+        email: employee.email,
+        phone: employee.phone,
+        altPhone: employee.altPhone,
+        designation: employee.designation,
+        photo: employee.photo,
+        specialization: employee.specialization,
+      };
+      // Remove null / undefined fields
+      Object.entries(publicData).forEach(([key, value]) => {
+        if (value == null) delete publicData[key];
+      });
+
+      return res.status(200).json({
+        success: true,
+        data: publicData,
+      });
+    } catch (error) {
+      console.error("Get Employee Error:", error);
+
+      // 6️⃣ Handle invalid MongoDB ObjectId
+      if (error.name === "CastError") {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid employee ID format",
+        });
+      }
+
+      return res.status(500).json({
+        success: false,
+        error: "Internal server error",
+      });
+    }
+  }
 
   async updateEmployeeDetails(req, res) {
     const { id } = req.query;
@@ -191,40 +193,41 @@ async getEmployeeById(req, res) {
     }
 
     // PAN Number validation (REQUIRED)
-  if (Object.prototype.hasOwnProperty.call(req.body, "panNumber")) {
-    if (!panNumber || panNumber.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "PAN Number is required",
+    if (Object.prototype.hasOwnProperty.call(req.body, "panNumber")) {
+      if (!panNumber || panNumber.trim() === "") {
+        return res.status(400).json({
+          success: false,
+          message: "PAN Number is required",
+        });
+      }
+
+      // Validate PAN format: 5 letters, 4 digits, 1 letter
+      const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+      const formattedPan = panNumber.toUpperCase().trim();
+
+      if (!panRegex.test(formattedPan)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)",
+        });
+      }
+
+      // Check if PAN already exists for another employee
+      const existingPanUser = await Employee.findOne({
+        panNumber: formattedPan,
+        _id: { $ne: id },
       });
+
+      if (existingPanUser) {
+        return res.status(409).json({
+          success: false,
+          message: "PAN Number already exists for another employee",
+        });
+      }
+
+      updateFields.panNumber = formattedPan;
     }
-    
-    // Validate PAN format: 5 letters, 4 digits, 1 letter
-    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-    const formattedPan = panNumber.toUpperCase().trim();
-    
-    if (!panRegex.test(formattedPan)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)",
-      });
-    }
-    
-    // Check if PAN already exists for another employee
-    const existingPanUser = await Employee.findOne({
-      panNumber: formattedPan,
-      _id: { $ne: id },
-    });
-    
-    if (existingPanUser) {
-      return res.status(409).json({
-        success: false,
-        message: "PAN Number already exists for another employee",
-      });
-    }
-    
-    updateFields.panNumber = formattedPan;
-  }
 
     // Allow joiningDate update
     if (Object.prototype.hasOwnProperty.call(req.body, "joiningDate")) {
@@ -243,21 +246,21 @@ async getEmployeeById(req, res) {
     setIfPresent("address", address);
     setIfPresent("gender", gender);
     // allow clearing dateOfBirth by sending null
-   // Allow dateOfBirth update (safe handling)
-if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
-  if (dateOfBirth === "" || dateOfBirth === null) {
-    updateFields.dateOfBirth = null;
-  } else {
-    const parsedDate = new Date(dateOfBirth);
-    if (isNaN(parsedDate.getTime())) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid dateOfBirth format",
-      });
+    // Allow dateOfBirth update (safe handling)
+    if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
+      if (dateOfBirth === "" || dateOfBirth === null) {
+        updateFields.dateOfBirth = null;
+      } else {
+        const parsedDate = new Date(dateOfBirth);
+        if (isNaN(parsedDate.getTime())) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid dateOfBirth format",
+          });
+        }
+        updateFields.dateOfBirth = parsedDate;
+      }
     }
-    updateFields.dateOfBirth = parsedDate;
-  }
-}
 
     setIfPresent("designation", designation);
     setIfPresent("managerId", managerId);
@@ -292,16 +295,30 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
           .status(404)
           .json({ success: false, error: "Employee not found" });
       }
+      /* ---------- SAFE MANAGER CHANGE DETECTION ---------- */
+      // Normalize old managerId
+      const oldManagerId = existingEmployee?.managerId
+        ? String(existingEmployee.managerId)
+        : null;
 
+      // Normalize new managerId from request
+      let newManagerId = null;
+
+      if ("managerId" in req.body) {
+        newManagerId = req.body.managerId ? String(req.body.managerId) : null;
+      }
+      const managerChanged = oldManagerId !== newManagerId;
+      // If manager changed → set MOU status
+      if (managerChanged) {
+        updateFields.mouStatus = "Pending";
+      }
       const oldRoles = existingEmployee.roles.map((r) => ({
         id: r._id.toString(),
         name: r.name,
       }));
-
       const updated = await Employee.findByIdAndUpdate(id, updateFields, {
         new: true,
       }).populate("roles");
-
       if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
         const newRoles = Array.isArray(updated.roles)
           ? updated.roles.map((r) => ({ id: r._id.toString(), name: r.name }))
@@ -341,7 +358,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
               updated.toObject(),
               addedRoles,
               removedRoles,
-              req.employee?._id
+              req.employee?._id,
             );
           } catch (error) {
             // Notification failed silently
@@ -353,7 +370,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
       try {
         // Exclude 'roles' from generic update check since it has its own notification
         const genericChanges = Object.keys(updateFields).filter(
-          (key) => key !== "roles"
+          (key) => key !== "roles",
         );
 
         if (genericChanges.length > 0) {
@@ -362,7 +379,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
             updated._id,
             updated.toObject(),
             updateFields,
-            updaterId
+            updaterId,
           );
         }
       } catch (error) {
@@ -422,56 +439,56 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
           .json({ success: false, message: "Invalid alternate phone number" });
       }
       // PAN Number validation (REQUIRED)
-    if (!panNumber || panNumber.trim() === "") {
-      return res.status(400).json({
-        success: false,
-        message: "PAN Number is required",
-      });
-    }
-    
-    // Validate PAN format: 5 letters, 4 digits, 1 letter
-    const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
-    const formattedPan = panNumber.toUpperCase().trim();
-    
-    if (!panRegex.test(formattedPan)) {
-      return res.status(400).json({
-        success: false,
-        message: "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)",
-      });
-    }
+      if (!panNumber || panNumber.trim() === "") {
+        return res.status(400).json({
+          success: false,
+          message: "PAN Number is required",
+        });
+      }
+
+      // Validate PAN format: 5 letters, 4 digits, 1 letter
+      const panRegex = /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/;
+      const formattedPan = panNumber.toUpperCase().trim();
+
+      if (!panRegex.test(formattedPan)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)",
+        });
+      }
 
       const isCabVendor = req.body.isCabVendor || false;
       const dummyPassword = "Inrext@123";
       const hashedPassword = await bcrypt.hash(dummyPassword, 10);
 
       // 🚫 Check duplicate email/phone
-      const exists = await Employee.findOne({ $or: [{ email }, { phone }, { panNumber: formattedPan }] });
+      const exists = await Employee.findOne({
+        $or: [{ email }, { phone }, { panNumber: formattedPan }],
+      });
       if (exists) {
-      if (exists.email === email) {
-        return res.status(409).json({
-          success: false,
-          message: `${
-            isCabVendor == true ? "Vendor's" : "Employee's"
-          } Email already exists`,
-        });
+        if (exists.email === email) {
+          return res.status(409).json({
+            success: false,
+            message: `${isCabVendor == true ? "Vendor's" : "Employee's"
+              } Email already exists`,
+          });
+        }
+        if (exists.phone === phone) {
+          return res.status(409).json({
+            success: false,
+            message: `${isCabVendor == true ? "Vendor's" : "Employee's"
+              } Phone No. already exists`,
+          });
+        }
+        if (exists.panNumber === formattedPan) {
+          return res.status(409).json({
+            success: false,
+            message: `${isCabVendor == true ? "Vendor's" : "Employee's"
+              } PAN Number already exists`,
+          });
+        }
       }
-      if (exists.phone === phone) {
-        return res.status(409).json({
-          success: false,
-          message: `${
-            isCabVendor == true ? "Vendor's" : "Employee's"
-          } Phone No. already exists`,
-        });
-      }
-      if (exists.panNumber === formattedPan) {
-        return res.status(409).json({
-          success: false,
-          message: `${
-            isCabVendor == true ? "Vendor's" : "Employee's"
-          } PAN Number already exists`,
-        });
-      }
-    }
 
       // ✅ Create new employee (only set optional fields if present)
       const employeeData = {
@@ -507,17 +524,17 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
         employeeData.roles = Array.isArray(roles)
           ? roles
           : roles
-          ? [roles]
-          : undefined;
+            ? [roles]
+            : undefined;
       }
       if (isCabVendor) {
         employeeData.roles = ["68b6904f3a3a9b850429e610"];
       }
       if (Object.prototype.hasOwnProperty.call(req.body, "specialization"))
-      employeeData.specialization = specialization;
+        employeeData.specialization = specialization;
       // documents
       if (Object.prototype.hasOwnProperty.call(req.body, "photo"))
-      employeeData.photo = photo;
+        employeeData.photo = photo;
       if (Object.prototype.hasOwnProperty.call(req.body, "aadharUrl"))
         employeeData.aadharUrl = aadharUrl;
       if (Object.prototype.hasOwnProperty.call(req.body, "panUrl"))
@@ -565,7 +582,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
         await notifyUserRegistration(
           newEmployee._id,
           newEmployee.toObject(),
-          managerId
+          managerId,
         );
       } catch (error) {
         // Notification failed silently
@@ -607,13 +624,13 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
       // Search filter
       const searchFilter = search
         ? {
-            $or: [
-              { name: { $regex: search, $options: "i" } },
-              { email: { $regex: search, $options: "i" } },
-              { phone: { $regex: search, $options: "i" } },
-              { panNumber: { $regex: search, $options: "i" } },
-            ],
-          }
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+            { panNumber: { $regex: search, $options: "i" } },
+          ],
+        }
         : {};
 
       // isCabVendor filter
@@ -632,11 +649,11 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
       // mouStatus filter (case-insensitive exact match)
       const mouFilter = mouStatus
         ? {
-            mouStatus: {
-              $regex: `^${String(mouStatus).trim()}$`,
-              $options: "i",
-            },
-          }
+          mouStatus: {
+            $regex: `^${String(mouStatus).trim()}$`,
+            $options: "i",
+          },
+        }
         : {};
 
       // slabPercentage requirement filter (only include employees where slabPercentage is set)
@@ -712,14 +729,14 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
       let managerName = null;
       if (employee.managerId) {
         const manager = await Employee.findById(employee.managerId).select(
-          "name"
+          "name",
         );
         if (manager) managerName = manager.name;
       }
 
       const isPasswordCorrect = await bcrypt.compare(
         password,
-        employee.password
+        employee.password,
       );
       if (!isPasswordCorrect) {
         return res
@@ -760,7 +777,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
           maxAge: 60 * 60 * 24 * 7, // 7 days
           sameSite: "strict",
           path: "/",
-        })
+        }),
       );
 
       // Convert to plain object before sending
@@ -790,7 +807,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
         expires: new Date(0),
         sameSite: "strict",
         path: "/",
-      })
+      }),
     );
 
     return res.status(200).json({ message: "Logged out successfully" });
@@ -869,7 +886,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
       // (some Employee documents may be missing required fields used by validation)
       const updateResult = await Employee.updateOne(
         { _id: employee._id },
-        { $set: { resetOTP: otp, resetOTPExpires: expiry } }
+        { $set: { resetOTP: otp, resetOTPExpires: expiry } },
       );
 
       if (updateResult.matchedCount === 0 && updateResult.modifiedCount === 0) {
@@ -966,7 +983,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
             passwordLastResetAt: new Date(),
           },
           $unset: { resetOTP: "", resetOTPExpires: "" },
-        }
+        },
       );
 
       if (!result || result.matchedCount === 0) {
@@ -1072,6 +1089,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
     }
   }
 
+
   async switchRole(req, res) {
     try {
       const employeeId = req.employee._id; // ✅ From loginAuth middleware
@@ -1095,7 +1113,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
 
       // ✅ Check if roleId exists in employee's roles
       const roleExists = employee.roles.some(
-        (role) => role._id.toString() === roleId
+        (role) => role._id.toString() === roleId,
       );
 
       if (!roleExists) {
@@ -1107,7 +1125,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
 
       //find selected role
       const selectedRole = employee.roles.find(
-        (role) => role._id.toString() === roleId
+        (role) => role._id.toString() === roleId,
       );
 
       // ✅ Create new token with selected role
@@ -1116,7 +1134,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
         process.env.JWT_SECRET,
         {
           expiresIn: "7d",
-        }
+        },
       );
 
       // ✅ Set new token in HttpOnly cookie
@@ -1128,7 +1146,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
           maxAge: 60 * 60 * 24 * 7,
           sameSite: "strict",
           path: "/",
-        })
+        }),
       );
 
       res.status(200).json({
@@ -1150,7 +1168,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
       .filter(
         (emp) =>
           String(emp.managerId) === String(managerId) &&
-          String(emp._id) !== String(managerId)
+          String(emp._id) !== String(managerId),
       )
       .forEach((emp) => {
         const children = this.buildHierarchy(employees, emp._id); // Recursively find employees under each employee
@@ -1184,7 +1202,7 @@ if (Object.prototype.hasOwnProperty.call(req.body, "dateOfBirth")) {
 
       // Fetch the manager details
       const manager = employees.find(
-        (emp) => String(emp._id) === String(managerId)
+        (emp) => String(emp._id) === String(managerId),
       );
 
       if (!manager) {

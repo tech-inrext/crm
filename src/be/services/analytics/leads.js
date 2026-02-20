@@ -1,6 +1,7 @@
 import { Service } from "@framework";
 import dbConnect from "@/lib/mongodb";
 import Lead from "../../models/Lead";
+import mongoose from "mongoose";
 
 class LeadAnalyticsService extends Service {
   async getLeadsAnalytics(req, res) {
@@ -9,10 +10,22 @@ class LeadAnalyticsService extends Service {
 
       const { period = "month" } = req.query;
       const employee = req.employee;
+      if (!employee?._id)
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized" });
 
-      const loggedInUserId = employee?._id;
-      const baseQuery = loggedInUserId ? { uploadedBy: loggedInUserId } : {};
-      const matchStage = loggedInUserId ? [{ $match: baseQuery }] : [];
+      const loggedInUserId = new mongoose.Types.ObjectId(employee._id);
+
+      // ✅ Include all user roles
+      const baseQuery = {
+        $or: [
+          { uploadedBy: loggedInUserId },
+          { managerId: loggedInUserId },
+          { assignedTo: loggedInUserId },
+        ],
+      };
+      const matchStage = [{ $match: baseQuery }];
 
       /* ---------------- Date Helpers ---------------- */
       const getDayRange = (offset = 0) => {
@@ -35,13 +48,7 @@ class LeadAnalyticsService extends Service {
         "follow up",
         "details shared",
       ];
-
-      const leadStatuses = [
-        "new",
-        "follow-up",
-        "call back",
-        "details shared",
-      ];
+      const leadStatuses = ["new", "follow-up", "call back", "details shared"];
 
       const getStatusTrend = (status) =>
         Promise.all([
@@ -105,42 +112,53 @@ class LeadAnalyticsService extends Service {
           ? Lead.aggregate([
               ...matchStage,
               { $match: { status: { $regex: /^site visit done$/i } } },
-              { $group: { _id: { $dayOfWeek: "$createdAt" }, count: { $sum: 1 } } },
+              {
+                $group: {
+                  _id: { $dayOfWeek: "$createdAt" },
+                  count: { $sum: 1 },
+                },
+              },
             ])
           : Promise.resolve([]),
 
+        // ✅ Group by Source with normalization
         Lead.aggregate([
           ...matchStage,
           {
+            $addFields: {
+              normalizedSource: { $ifNull: ["$source", "Unknown"] },
+              statusLower: { $toLower: "$status" },
+            },
+          },
+          {
             $group: {
-              _id: "$source",
+              _id: "$normalizedSource",
               count: { $sum: 1 },
               converted: {
                 $sum: {
-                  $cond: [
-                    { $in: [{ $toLower: "$status" }, CONVERTED_STATUSES] },
-                    1,
-                    0,
-                  ],
+                  $cond: [{ $in: ["$statusLower", CONVERTED_STATUSES] }, 1, 0],
                 },
               },
             },
           },
         ]),
 
+        // ✅ Group by Property with normalization
         Lead.aggregate([
           ...matchStage,
           {
+            $addFields: {
+              normalizedProperty: { $ifNull: ["$propertyName", "Unknown"] },
+              statusLower: { $toLower: "$status" },
+            },
+          },
+          {
             $group: {
-              _id: "$propertyName",
+              _id: "$normalizedProperty",
               count: { $sum: 1 },
               converted: {
                 $sum: {
-                  $cond: [
-                    { $in: [{ $toLower: "$status" }, CONVERTED_STATUSES] },
-                    1,
-                    0,
-                  ],
+                  $cond: [{ $in: ["$statusLower", CONVERTED_STATUSES] }, 1, 0],
                 },
               },
             },
@@ -153,7 +171,6 @@ class LeadAnalyticsService extends Service {
         callBackLeads = 0,
         followUpLeads = 0,
         detailsSharedLeads = 0;
-
       statusCounts.forEach((s) => {
         if (s._id === "new") newLeads = s.count;
         if (s._id === "call back") callBackLeads = s.count;
@@ -163,9 +180,21 @@ class LeadAnalyticsService extends Service {
 
       /* ---------------- Site Visit Chart ---------------- */
       let siteVisitDoneData = [];
-
       if (period === "month") {
-        const months = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+        const months = [
+          "Jan",
+          "Feb",
+          "Mar",
+          "Apr",
+          "May",
+          "Jun",
+          "Jul",
+          "Aug",
+          "Sep",
+          "Oct",
+          "Nov",
+          "Dec",
+        ];
         const map = {};
         (byMonth || []).forEach((m) => (map[m._id] = m.count));
         siteVisitDoneData = months.map((label, i) => ({
@@ -173,9 +202,8 @@ class LeadAnalyticsService extends Service {
           siteVisitDone: map[i + 1] || 0,
         }));
       }
-
       if (period === "week") {
-        const days = ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
+        const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
         const map = {};
         (byWeekday || []).forEach((d) => (map[d._id] = d.count));
         siteVisitDoneData = days.map((label, i) => ({
@@ -188,7 +216,6 @@ class LeadAnalyticsService extends Service {
       const map = {};
       const sourcesOrder = [];
       const slices = [];
-
       (bySource || []).forEach((s) => {
         const key = s._id || "Unknown";
         map[key] = s;
@@ -209,18 +236,15 @@ class LeadAnalyticsService extends Service {
         callBackLeads,
         followUpLeads,
         detailsSharedLeads,
-
         siteVisitConversions: siteVisitDoneData.reduce(
           (s, d) => s + d.siteVisitDone,
-          0
+          0,
         ),
-
         siteVisitDoneData,
         map,
         sourcesOrder,
         slices,
         propertyData,
-
         trend: {
           newLeads: newLeadsTrend,
           callBackLeads: callBackLeadsTrend,
