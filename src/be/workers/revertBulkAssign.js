@@ -51,9 +51,10 @@ async function revertBulkAssign(job) {
           filter: { _id: record.leadId },
           update: {
             $set: {
-                assignedTo: targetAssignedTo,
-                updatedBy: revertByObjectId,
-                updatedAt: timestamp
+              assignedTo: targetAssignedTo,
+              managerId: null, // ✅ Remove managerId on revert
+              updatedBy: revertByObjectId,
+              updatedAt: timestamp
             }
           }
         }
@@ -61,10 +62,10 @@ async function revertBulkAssign(job) {
 
       // Log the revert action
       newHistoryEntries.push({
-        batchId, 
+        batchId,
         leadId: record.leadId,
-        previousAssignedTo: record.newAssignedTo, 
-        newAssignedTo: targetAssignedTo, 
+        previousAssignedTo: record.newAssignedTo,
+        newAssignedTo: targetAssignedTo,
         updatedBy: revertByObjectId,
         actionType: "REVERT",
         timestamp
