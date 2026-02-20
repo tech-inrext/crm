@@ -28,7 +28,7 @@ interface Upload {
   uploaded: number;
   duplicates: number;
   invalidPhones: number;
-  uploadedBy?: {
+  assignedTo?: {
     name: string;
   };
 }
@@ -45,7 +45,7 @@ const tableHeaders = [
   { label: "Uploaded", align: "center" },
   { label: "Duplicates", align: "center" },
   { label: "Invalid Phones", align: "center" },
-  { label: "Uploader", align: "center" },
+  { label: "Assigned To", align: "center" },
   { label: "Status", align: "center" },
   { label: "Download", align: "center" },
 ];
@@ -323,7 +323,7 @@ export default function CheckUploadStatusDialog({
                       </TableCell>
                       <TableCell align="center">
                         <Typography variant="body2">
-                          {upload.uploadedBy?.name || "Unknown"}
+                          {upload.assignedTo?.name || "Unknown"}
                         </Typography>
                       </TableCell>
                       <TableCell align="center">

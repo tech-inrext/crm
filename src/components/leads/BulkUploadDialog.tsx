@@ -7,8 +7,6 @@ import {
   Button,
   CircularProgress,
   Snackbar,
-  Box,
-  Typography,
   Autocomplete,
   TextField,
   MenuItem,
@@ -182,240 +180,165 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
         fullWidth
         maxWidth="sm"
         BackdropProps={{
-          sx: {
-            backdropFilter: "blur(4px)",
-            backgroundColor: "rgba(15, 23, 42, 0.5)",
-          },
+          className: "backdrop-blur-[4px] !bg-slate-900/50",
         }}
         PaperProps={{
-          sx: {
-            borderRadius: 3,
-            overflow: "hidden",
-            boxShadow: "0 25px 60px rgba(0,0,0,0.18)",
-          },
+          className: "rounded-2xl overflow-hidden shadow-[0_25px_60px_rgba(0,0,0,0.18)]"
         }}
       >
         {/* Header */}
         <DialogTitle
-          sx={{
-            background: "linear-gradient(135deg, #1e40af 0%, #3b82f6 100%)",
-            color: "#fff",
-            px: 3,
-            pt: 2.5,
-            pb: 2,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-          }}
+          className="bg-gradient-to-br from-blue-800 to-blue-500 text-white px-6 pt-5 pb-4 flex items-center justify-between"
         >
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Box
-              sx={{
-                width: 36,
-                height: 36,
-                borderRadius: "10px",
-                background: "rgba(255,255,255,0.15)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
+          <div className="flex items-center gap-3">
+            <div
+              className="w-9 h-9 rounded-[10px] bg-white/15 flex items-center justify-center"
             >
-              <CloudUpload sx={{ fontSize: 20, color: "#fff" }} />
-            </Box>
-            <Box>
-              <Typography
-                sx={{ fontWeight: 700, fontSize: "1.05rem", color: "#fff" }}
+              <CloudUpload className="text-[20px] text-white" />
+            </div>
+            <div>
+              <h2
+                className="font-bold text-[1.05rem] text-white leading-normal"
               >
                 Bulk Upload Leads
-              </Typography>
-              <Typography sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.75)" }}>
+              </h2>
+              <p className="text-xs text-white/75 leading-none mt-0.5">
                 Upload an Excel file to import multiple leads at once
-              </Typography>
-            </Box>
-          </Box>
+              </p>
+            </div>
+          </div>
           <IconButton
             onClick={onClose}
             size="small"
-            sx={{ color: "rgba(255,255,255,0.8)", "&:hover": { color: "#fff", background: "rgba(255,255,255,0.1)" } }}
+            className="text-white/80 hover:text-white hover:bg-white/10"
           >
             <Close fontSize="small" />
           </IconButton>
         </DialogTitle>
 
-        <DialogContent sx={{ px: 3, py: 3, bgcolor: "#f8fafc" }}>
+        <DialogContent className="px-6 py-6 bg-slate-50">
           {/* Assign To Dropdown */}
-          <Box sx={{ mb: 3 }}>
-            <Typography
-              sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#374151", mb: 0.75 }}
+          <div className="mb-6">
+            <h3
+              className="text-sm font-semibold text-gray-700 mb-2 mt-2"
             >
               Assign To
-              <Typography
-                component="span"
-                sx={{ fontSize: "0.75rem", color: "#6b7280", fontWeight: 400, ml: 1 }}
+              <span
+                className="text-xs text-gray-500 font-normal ml-2"
               >
-                (Optional — assign all leads from this upload to a team member)
-              </Typography>
-            </Typography>
+                ( Assign all leads from this upload to a team member)
+              </span>
+            </h3>
             <Autocomplete
               options={users}
               getOptionLabel={(option) => option.name || ""}
               getOptionKey={(option) => option._id || option.id}
               value={assignedTo}
               onChange={(_, newValue) => setAssignedTo(newValue)}
+              className="bg-white rounded-xl"
               renderInput={(params) => (
                 <TextField
                   {...params}
                   placeholder="Search and select employee..."
                   size="small"
-                  sx={{
-                    bgcolor: "#fff",
-                    borderRadius: 1.5,
-                    "& .MuiOutlinedInput-root": {
-                      borderRadius: 1.5,
-                      "&:hover fieldset": { borderColor: "#3b82f6" },
-                      "&.Mui-focused fieldset": { borderColor: "#3b82f6" },
-                    },
-                  }}
+                  className="[&_.MuiOutlinedInput-root]:rounded-xl [&_.MuiOutlinedInput-root:hover_fieldset]:border-blue-500 [&_.MuiOutlinedInput-root.Mui-focused_fieldset]:border-blue-500"
                 />
               )}
               renderOption={(props, option) => {
                 const { key, ...rest } = props;
                 return (
-                  <Box
-                    component="li"
+                  <li
                     key={option._id || option.id || key}
-                    sx={{ display: "flex", alignItems: "center", gap: 1.5, py: 0.5 }}
                     {...rest}
+                    className={`${props.className} flex items-center gap-3 py-1`}
                   >
-                    <Box
-                      sx={{
-                        width: 28,
-                        height: 28,
-                        borderRadius: "50%",
-                        background: "linear-gradient(135deg, #3b82f6, #1e40af)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        fontSize: "0.7rem",
-                        fontWeight: 700,
-                        color: "#fff",
-                        flexShrink: 0,
-                      }}
+                    <div
+                      className="w-7 h-7 rounded-full bg-gradient-to-br from-blue-500 to-blue-800 flex items-center justify-center text-[0.7rem] font-bold text-white shrink-0"
                     >
                       {(option.name || "?")[0].toUpperCase()}
-                    </Box>
-                    <Box>
-                      <Typography sx={{ fontSize: "0.875rem", fontWeight: 600 }}>
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-gray-900 leading-tight">
                         {option.name}
-                      </Typography>
+                      </p>
                       {option.email && (
-                        <Typography sx={{ fontSize: "0.72rem", color: "#6b7280" }}>
+                        <p className="text-[0.72rem] text-gray-500 leading-tight">
                           {option.email}
-                        </Typography>
+                        </p>
                       )}
-                    </Box>
-                  </Box>
+                    </div>
+                  </li>
                 );
               }}
               noOptionsText="No employees found"
               clearOnBlur
               selectOnFocus
             />
-          </Box>
+          </div>
 
           {/* File Uploader */}
-          <Box>
-            <Typography
-              sx={{ fontSize: "0.82rem", fontWeight: 600, color: "#374151", mb: 0.75 }}
+          <div>
+            <h3
+              className="text-sm font-semibold text-gray-700 mb-2"
             >
               Upload Excel File
-              <Typography
-                component="span"
-                sx={{ fontSize: "0.75rem", color: "#ef4444", fontWeight: 500, ml: 0.5 }}
+              <span
+                className="text-xs text-red-500 font-medium ml-1"
               >
                 *
-              </Typography>
-            </Typography>
+              </span>
+            </h3>
 
             {/* Drop Zone */}
-            <Box
+            <div
               onDrop={handleDrop}
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onClick={() => !file && fileInputRef.current?.click()}
-              sx={{
-                border: `2px dashed ${dragging ? "#3b82f6" : file ? "#22c55e" : "#d1d5db"}`,
-                borderRadius: 2.5,
-                bgcolor: dragging
-                  ? "rgba(59,130,246,0.06)"
-                  : file
-                  ? "rgba(34,197,94,0.04)"
-                  : "#fff",
-                p: 3.5,
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: 1.5,
-                cursor: file ? "default" : "pointer",
-                transition: "all 0.2s ease",
-                minHeight: 160,
-                "&:hover": file
-                  ? {}
-                  : {
-                      border: "2px dashed #3b82f6",
-                      bgcolor: "rgba(59,130,246,0.04)",
-                    },
-              }}
+              className={`
+                border-2 dashed rounded-[10px] p-7 flex flex-col items-center justify-center gap-3 min-h-[160px] transition-all duration-200
+                ${dragging 
+                  ? "border-blue-500 bg-blue-500/5" 
+                  : file 
+                    ? "border-green-500 bg-green-500/5 cursor-default" 
+                    : "border-gray-300 bg-white cursor-pointer hover:border-blue-500 hover:bg-blue-500/5"
+                }
+              `}
             >
               <input
                 ref={fileInputRef}
                 type="file"
                 accept=".xlsx,.xls,.csv"
-                style={{ display: "none" }}
+                className="hidden"
                 onChange={handleInputChange}
               />
 
               {file ? (
                 // File selected state
                 <>
-                  <Box
-                    sx={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: "14px",
-                      background: "linear-gradient(135deg, #22c55e, #16a34a)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                    }}
+                  <div
+                    className="w-[52px] h-[52px] rounded-[14px] bg-gradient-to-br from-green-500 to-green-600 flex items-center justify-center"
                   >
-                    <CheckCircle sx={{ fontSize: 28, color: "#fff" }} />
-                  </Box>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Typography
-                      sx={{ fontWeight: 700, fontSize: "0.9rem", color: "#16a34a" }}
+                    <CheckCircle className="text-[28px] text-white" />
+                  </div>
+                  <div className="text-center">
+                    <p
+                      className="font-bold text-sm text-green-600"
                     >
                       File Ready
-                    </Typography>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 0.75,
-                        mt: 0.5,
-                        justifyContent: "center",
-                      }}
+                    </p>
+                    <div
+                      className="flex items-center gap-1.5 mt-1 justify-center"
                     >
-                      <InsertDriveFile sx={{ fontSize: 16, color: "#6b7280" }} />
-                      <Typography sx={{ fontSize: "0.82rem", color: "#4b5563" }}>
+                      <InsertDriveFile className="text-[16px] text-gray-500" />
+                      <p className="text-sm text-gray-600">
                         {file.name}
-                      </Typography>
-                      <Typography sx={{ fontSize: "0.75rem", color: "#9ca3af" }}>
+                      </p>
+                      <p className="text-xs text-gray-400">
                         ({fileSizeLabel(file.size)})
-                      </Typography>
-                    </Box>
-                  </Box>
+                      </p>
+                    </div>
+                  </div>
                   <Button
                     size="small"
                     variant="outlined"
@@ -424,15 +347,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
                       setFile(null);
                       if (fileInputRef.current) fileInputRef.current.value = "";
                     }}
-                    sx={{
-                      borderRadius: 1.5,
-                      fontSize: "0.78rem",
-                      fontWeight: 600,
-                      color: "#6b7280",
-                      borderColor: "#d1d5db",
-                      textTransform: "none",
-                      "&:hover": { borderColor: "#ef4444", color: "#ef4444", bgcolor: "rgba(239,68,68,0.04)" },
-                    }}
+                    className="rounded-lg text-xs font-semibold text-gray-500 border-gray-300 normal-case hover:border-red-500 hover:text-red-500 hover:bg-red-50"
                   >
                     Remove file
                   </Button>
@@ -440,120 +355,69 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
               ) : (
                 // Empty state
                 <>
-                  <Box
-                    sx={{
-                      width: 52,
-                      height: 52,
-                      borderRadius: "14px",
-                      background: dragging
-                        ? "linear-gradient(135deg, #3b82f6, #1e40af)"
-                        : "linear-gradient(135deg, #e0e7ff, #bfdbfe)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      transition: "all 0.2s ease",
-                    }}
+                  <div
+                    className={`
+                      w-[52px] h-[52px] rounded-[14px] flex items-center justify-center transition-all duration-200
+                      ${dragging ? "bg-gradient-to-br from-blue-500 to-blue-800" : "bg-gradient-to-br from-indigo-100 to-blue-200"}
+                    `}
                   >
                     <CloudUpload
-                      sx={{ fontSize: 26, color: dragging ? "#fff" : "#3b82f6" }}
+                      className={`text-[26px] ${dragging ? "text-white" : "text-blue-500"}`}
                     />
-                  </Box>
-                  <Box sx={{ textAlign: "center" }}>
-                    <Typography sx={{ fontWeight: 700, fontSize: "0.9rem", color: "#1f2937" }}>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-bold text-sm text-gray-800">
                       {dragging ? "Drop your file here" : "Drag & drop your file here"}
-                    </Typography>
-                    <Typography sx={{ fontSize: "0.8rem", color: "#6b7280", mt: 0.5 }}>
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
                       or{" "}
-                      <Typography
-                        component="span"
-                        sx={{
-                          color: "#3b82f6",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                          "&:hover": { textDecoration: "underline" },
-                        }}
+                      <span
+                        className="text-blue-500 font-semibold cursor-pointer hover:underline"
                         onClick={(e) => {
                           e.stopPropagation();
                           fileInputRef.current?.click();
                         }}
                       >
                         browse
-                      </Typography>{" "}
+                      </span>{" "}
                       to choose a file
-                    </Typography>
-                  </Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      gap: 1,
-                      flexWrap: "wrap",
-                      justifyContent: "center",
-                    }}
+                    </p>
+                  </div>
+                  <div
+                    className="flex gap-2 flex-wrap justify-center"
                   >
                     {[".xlsx", ".xls", ".csv"].map((ext) => (
-                      <Box
+                      <span
                         key={ext}
-                        sx={{
-                          px: 1.25,
-                          py: 0.3,
-                          borderRadius: 1,
-                          bgcolor: "#f3f4f6",
-                          border: "1px solid #e5e7eb",
-                          fontSize: "0.72rem",
-                          fontWeight: 600,
-                          color: "#6b7280",
-                          letterSpacing: "0.02em",
-                        }}
+                        className="px-2.5 py-1 rounded bg-gray-100 border border-gray-200 text-[0.72rem] font-semibold text-gray-500 tracking-wide"
                       >
                         {ext}
-                      </Box>
+                      </span>
                     ))}
-                  </Box>
+                  </div>
                 </>
               )}
-            </Box>
+            </div>
 
             {/* Info tip */}
-            <Box
-              sx={{
-                mt: 1.5,
-                p: 1.25,
-                borderRadius: 1.5,
-                bgcolor: "#eff6ff",
-                border: "1px solid #bfdbfe",
-                display: "flex",
-                alignItems: "flex-start",
-                gap: 1,
-              }}
+            <div
+              className="mt-3 p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-start gap-2"
             >
-              <Typography sx={{ fontSize: "0.72rem", color: "#1e40af", lineHeight: 1.5 }}>
-                💡 <strong>Required columns:</strong> phone. Optional: fullName, email, propertyType, location, budgetRange, status, source.
-              </Typography>
-            </Box>
-          </Box>
+              <p className="text-[0.72rem] text-blue-800 leading-relaxed">
+                💡 <span className="font-bold">Required columns:</span> phone. Optional: fullName, email, propertyType, location, budgetRange, status, source.
+              </p>
+            </div>
+          </div>
         </DialogContent>
 
         <DialogActions
-          sx={{
-            px: 3,
-            py: 2,
-            borderTop: "1px solid #e5e7eb",
-            bgcolor: "#fff",
-            gap: 1,
-          }}
+          className="px-6 py-4 border-t border-gray-200 bg-white gap-2"
         >
           <Button
             onClick={onClose}
             disabled={uploading}
             variant="outlined"
-            sx={{
-              fontWeight: 600,
-              color: "#6b7280",
-              borderColor: "#d1d5db",
-              borderRadius: 1.5,
-              textTransform: "none",
-              "&:hover": { borderColor: "#9ca3af", bgcolor: "#f9fafb" },
-            }}
+            className="font-semibold text-gray-500 border-gray-300 rounded-lg normal-case hover:border-gray-400 hover:bg-gray-50 disabled:bg-transparent"
           >
             Cancel
           </Button>
@@ -564,30 +428,15 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
             startIcon={
               uploading ? (
                 <CircularProgress size={16} color="inherit" />
-              ) : (
-                <CloudUpload sx={{ fontSize: 18 }} />
-              )
+              ) : file ? (
+                <CloudUpload className="text-[18px]" />
+              ) : null
             }
-            sx={{
-              fontWeight: 700,
-              borderRadius: 1.5,
-              textTransform: "none",
-              px: 3,
-              background: "linear-gradient(135deg, #2563eb, #3b82f6)",
-              boxShadow: "0 4px 12px rgba(37,99,235,0.3)",
-              "&:hover": {
-                background: "linear-gradient(135deg, #1d4ed8, #2563eb)",
-                boxShadow: "0 6px 16px rgba(37,99,235,0.4)",
-                transform: "translateY(-1px)",
-              },
-              "&:disabled": {
-                background: "#e5e7eb",
-                color: "#9ca3af",
-                boxShadow: "none",
-                transform: "none",
-              },
-              transition: "all 0.2s ease",
-            }}
+            className={`
+              font-bold rounded-lg normal-case px-6 bg-gradient-to-br from-blue-600 to-blue-500 shadow-lg shadow-blue-600/30 transition-all
+              hover:bg-gradient-to-br hover:from-blue-700 hover:to-blue-600 hover:shadow-blue-600/40 hover:-translate-y-px
+              disabled:bg-none disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed
+            `}
           >
             {uploading ? "Uploading..." : "Upload Leads"}
           </Button>

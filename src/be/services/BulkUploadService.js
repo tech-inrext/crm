@@ -27,6 +27,7 @@ class BulkUploadService extends Service {
       await BulkUpload.create({
         _id: uploadId,
         uploadedBy: uploaderId,
+        assignedTo: assignedTo || null,
         totalRecords: 0,
         uploaded: 0,
         duplicates: 0,
@@ -86,7 +87,12 @@ class BulkUploadService extends Service {
           .sort({ createdAt: -1 })
           .skip(skip)
           .limit(itemsPerPage)
-          .populate("uploadedBy", "name email"),
+          .populate("uploadedBy", "name email")
+          .populate({
+            path: "assignedTo",
+            select: "name email",
+            strictPopulate: false,
+          }),
         BulkUpload.countDocuments({ uploadedBy: loggedInUserId }),
       ]);
 

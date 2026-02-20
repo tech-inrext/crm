@@ -7,6 +7,10 @@ const BulkUploadSchema = new mongoose.Schema({
     ref: "Employee",
     required: true,
   },
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Employee",
+  },
   status: {
     type: String,
     enum: status,
