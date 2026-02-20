@@ -1,6 +1,9 @@
 import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
-import { USERS_API_BASE, DEFAULT_PAGE_SIZE } from "@/constants/users";
+import {
+  USERS_API_BASE,
+  DEFAULT_PAGE_SIZE,
+} from "@/fe/modules/user/constants/users";
 
 export interface Vendor {
   _id?: string;
@@ -19,7 +22,7 @@ export interface Vendor {
 export function useVendors(
   debouncedSearch: string,
   page: number,
-  rowsPerPage: number = DEFAULT_PAGE_SIZE
+  rowsPerPage: number = DEFAULT_PAGE_SIZE,
 ) {
   const [employees, setEmployees] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState(false);
@@ -52,12 +55,14 @@ export function useVendors(
         console.error("Failed to load vendors:", err);
         setEmployees([]);
         setTotalItems(0);
-        setError(err?.message || "Failed to load vendors. Please try again later.");
+        setError(
+          err?.message || "Failed to load vendors. Please try again later.",
+        );
       } finally {
         setLoading(false);
       }
     },
-    [page, rowsPerPage, debouncedSearch]
+    [page, rowsPerPage, debouncedSearch],
   );
 
   useEffect(() => {
@@ -76,7 +81,8 @@ export function useVendors(
           address: vendorData.address,
           isCabVendor: true,
         };
-        if (vendorData.roles && vendorData.roles.length) payload.roles = vendorData.roles;
+        if (vendorData.roles && vendorData.roles.length)
+          payload.roles = vendorData.roles;
 
         await axios.post(USERS_API_BASE, payload, { withCredentials: true });
         await loadVendors(page, rowsPerPage, debouncedSearch);
@@ -87,7 +93,7 @@ export function useVendors(
         setSaving(false);
       }
     },
-    [loadVendors, page, rowsPerPage, debouncedSearch]
+    [loadVendors, page, rowsPerPage, debouncedSearch],
   );
 
   const updateVendor = useCallback(
@@ -97,13 +103,19 @@ export function useVendors(
         // For updates, convert empty-string optional fields to undefined so Mongoose
         // doesn't validate minlength against "". Keep only fields present in vendorData.
         const payload: any = { ...vendorData, isCabVendor: true };
-        ["designation", "managerId", "departmentId", "altPhone", "joiningDate"].forEach(
-          (k) => {
-            if (payload[k] === "") delete payload[k];
-          }
-        );
+        [
+          "designation",
+          "managerId",
+          "departmentId",
+          "altPhone",
+          "joiningDate",
+        ].forEach((k) => {
+          if (payload[k] === "") delete payload[k];
+        });
 
-        await axios.patch(`${USERS_API_BASE}/${vendorId}`, payload, { withCredentials: true });
+        await axios.patch(`${USERS_API_BASE}/${vendorId}`, payload, {
+          withCredentials: true,
+        });
         await loadVendors(page, rowsPerPage, debouncedSearch);
       } catch (err) {
         console.error("Failed to update vendor:", err);
@@ -112,7 +124,7 @@ export function useVendors(
         setSaving(false);
       }
     },
-    [loadVendors, page, rowsPerPage, debouncedSearch]
+    [loadVendors, page, rowsPerPage, debouncedSearch],
   );
 
   return {
