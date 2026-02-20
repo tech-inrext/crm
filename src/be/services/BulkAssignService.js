@@ -84,6 +84,8 @@ class BulkAssignService extends Service {
         success: true,
         message: responseMessage,
         batchId,
+        count: actualLimit,
+        assigneeId: assignTo
       });
     } catch (error) {
       console.error("Bulk Assign Error:", error);
