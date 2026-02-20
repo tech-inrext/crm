@@ -1,8 +1,10 @@
 import Lead from "../models/Lead.js";
 import BulkUpload from "../models/BulkUpload.js";
 import FollowUp from "../models/FollowUp.js";
+import Employee from "../models/Employee.js";
 import dbConnect from "../../lib/mongodb.js";
 import xlsx from "xlsx";
+import mongoose from "mongoose";
 
 const parseExcelBuffer = (buffer) => {
   const workbook = xlsx.read(buffer, { type: "buffer" });
@@ -15,7 +17,7 @@ const sleep = () => new Promise((resolve) => setTimeout(resolve, 10_000));
 
 async function bulkUploadLeads(job) {
   console.log("App Started");
-  const { uploadId, fileUrl, uploadedBy } = job.data; // ✅ get uploader id here
+  const { uploadId, fileUrl, uploadedBy, assignedTo } = job.data; // ✅ get uploader id and assignedTo here
 
   // Fetch file from S3
   const response = await fetch(fileUrl);
@@ -24,6 +26,35 @@ async function bulkUploadLeads(job) {
 
   await dbConnect();
   console.log("Connected to the database successfully.");
+
+  // 🔍 Resolve managerId from the assignedTo employee (looked up once, reused for every row)
+  let leadsManagerId = null;
+  if (assignedTo) {
+    try {
+      const assignedEmployee = await Employee.findById(assignedTo)
+        .select("_id managerId")
+        .lean();
+
+      if (assignedEmployee) {
+        const rawManagerId = assignedEmployee.managerId; // stored as String in Employee model
+
+        if (rawManagerId && mongoose.Types.ObjectId.isValid(rawManagerId)) {
+          // The assigned employee reports to a manager — use that manager
+          leadsManagerId = new mongoose.Types.ObjectId(rawManagerId);
+          console.log(`👤 AssignedTo (${assignedTo}) → Manager resolved: ${leadsManagerId}`);
+        } else {
+          // The assigned employee has no manager above them — they ARE the manager
+          // Use their own _id as the managerId on the lead
+          leadsManagerId = assignedEmployee._id;
+          console.log(`👤 AssignedTo (${assignedTo}) has no managerId → using their own _id as manager: ${leadsManagerId}`);
+        }
+      } else {
+        console.warn(`⚠️ AssignedTo employee not found in DB: ${assignedTo}`);
+      }
+    } catch (err) {
+      console.warn(`⚠️ Could not fetch assignedTo employee (${assignedTo}):`, err.message);
+    }
+  }
 
   console.log(`\n👷 Started processing uploadId: ${uploadId}`);
   console.log(`📊 Total leads in job: ${leads.length}\n`);
@@ -48,10 +79,10 @@ async function bulkUploadLeads(job) {
   for (const row of leads) {
     const phone = String(
       row.phone ||
-        row.Phone ||
-        row["Mobile Number"] ||
-        row["Phone Number"] ||
-        ""
+      row.Phone ||
+      row["Mobile Number"] ||
+      row["Phone Number"] ||
+      ""
     ).trim();
 
     if (!phone) {
@@ -78,16 +109,17 @@ async function bulkUploadLeads(job) {
       budgetRange: row.budgetRange || "",
       status: row.status || "new",
       source: row.source || "",
-      assignedTo: row.assignedTo || null,
+      assignedTo: assignedTo || row.assignedTo || null,
+      managerId: leadsManagerId || null,
     });
 
     try {
       await lead.save();
-      
+
       // Sync with FollowUp collection
       const nextFollowUpDate = row.nextFollowUp ? new Date(row.nextFollowUp) : null;
       const followUpNote = row.followUpNote || row.followUpNotes || "N/A";
-      
+
       if (nextFollowUpDate || (followUpNote && followUpNote !== "N/A")) {
         const followUp = new FollowUp({
           leadId: lead._id,

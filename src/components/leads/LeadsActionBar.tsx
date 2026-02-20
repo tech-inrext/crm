@@ -26,9 +26,11 @@ import PermissionGuard from "@/components/PermissionGuard";
 import dynamic from "next/dynamic";
 import { LEAD_STATUSES } from "@/constants/leads";
 
-const BulkUpload = dynamic(() => import("@/components/leads/bulkUpload"), {
-  ssr: false,
-});
+const BulkUploadDialogDynamic = dynamic(
+  () => import("@/components/leads/BulkUploadDialog"),
+  { ssr: false }
+);
+
 const BulkAssign = dynamic(() => import("@/components/leads/BulkAssign"), {
   ssr: false,
 });
@@ -65,6 +67,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   const theme = useTheme();
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const [uploadStatusOpen, setUploadStatusOpen] = useState(false);
+  const [bulkUploadDialogOpen, setBulkUploadDialogOpen] = useState(false);
   const [mobileAnchor, setMobileAnchor] = useState<null | HTMLElement>(null);
   const [actionsAnchor, setActionsAnchor] = useState<null | HTMLElement>(null);
 
@@ -381,10 +384,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 <MenuItem
                   onClick={() => {
                     closeActionsMenu();
-                    const input = document.getElementById(
-                      "bulk-upload-excel"
-                    ) as HTMLInputElement | null;
-                    input?.click();
+                    setBulkUploadDialogOpen(true);
                   }}
                   sx={{
                     borderRadius: 1,
@@ -478,7 +478,6 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 overflow: "hidden",
               }}
             >
-              <BulkUpload loadLeads={loadLeads} hideButton />
               <BulkAssign
                 onSuccess={loadLeads}
                 hideButton
@@ -493,6 +492,13 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
       <CheckUploadStatusDialog
         open={uploadStatusOpen}
         onClose={() => setUploadStatusOpen(false)}
+      />
+
+      {/* Bulk Upload Dialog */}
+      <BulkUploadDialogDynamic
+        open={bulkUploadDialogOpen}
+        onClose={() => setBulkUploadDialogOpen(false)}
+        loadLeads={loadLeads}
       />
     </Box>
   );
