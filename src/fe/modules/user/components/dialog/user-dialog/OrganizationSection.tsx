@@ -43,29 +43,54 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
         }}
       >
         <Field name="managerId">
-          {({ field }: FieldProps) => (
-            <TextField
-              select
-              size="small"
-              fullWidth
-              label={FIELD_LABELS.MANAGER}
-              {...field}
-              onChange={(e) => setFieldValue("managerId", e.target.value)}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
-            >
-              <MenuItem value="">None</MenuItem>
-              {managers.map((m: any) => (
-                <MenuItem key={m._id || m.id} value={m._id || m.id}>
-                  {m.name}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
+          {({ field, form }: FieldProps) => {
+            const selectedManager =
+              managers.find((m: any) => (m._id || m.id) === field.value) ||
+              null;
+            return (
+              <Autocomplete
+                size="small"
+                options={managers || []}
+                getOptionLabel={(option: any) =>
+                  option.email
+                    ? `${option.name} (${option.email})`
+                    : option.name || ""
+                }
+                isOptionEqualToValue={(option: any, value: any) =>
+                  (option._id || option.id) === (value._id || value.id)
+                }
+                value={selectedManager}
+                onChange={(_, newValue) => {
+                  form.setFieldValue(
+                    "managerId",
+                    newValue ? newValue._id || newValue.id : "",
+                  );
+                }}
+                renderInput={(params) => (
+                  <TextField
+                    {...params}
+                    label={FIELD_LABELS.MANAGER}
+                    error={
+                      form.touched.managerId && Boolean(form.errors.managerId)
+                    }
+                    helperText={
+                      form.touched.managerId &&
+                      (form.errors.managerId as string)
+                    }
+                    sx={{
+                      bgcolor: "#fff",
+                      borderRadius: 1,
+                      "& .MuiInputBase-root": { minHeight: 40 },
+                      "& .MuiInputBase-input": { py: 1 },
+                    }}
+                  />
+                )}
+                PopperComponent={AutocompletePopper}
+                disablePortal
+                fullWidth
+              />
+            );
+          }}
         </Field>
 
         <Field name="departmentId">
