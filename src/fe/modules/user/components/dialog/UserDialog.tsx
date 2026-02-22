@@ -238,6 +238,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   roles={roles}
                   setFieldValue={setFieldValue}
                   currentRoles={values.roles}
+                  currentManagerId={values.managerId}
                 />
               </DialogContent>
 

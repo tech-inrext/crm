@@ -98,7 +98,7 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
 
   const fetchEmployees = async () => {
     try {
-      const res = await axios.get("/api/v0/employee/getAllEmployeeList");
+      const res = await axios.get("/api/v0/employee/getAllEmployeeList", { params: { isCabVendor: false } });
       if (res.data.success) {
         setEmployees(res.data.data);
       }
@@ -381,7 +381,7 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
 
               <Autocomplete
                 options={employees}
-                getOptionLabel={(option) => `${option.name} (${option.email})`}
+                getOptionLabel={(option) => option.name || ""}
                 value={employees.find((emp) => emp._id === assignTo) || null}
                 onChange={(event, newValue) => {
                   setAssignTo(newValue ? newValue._id : "");
@@ -393,15 +393,49 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
                   <TextField
                     {...params}
                     label="Assign To"
-                    placeholder="Search employee..."
+                    placeholder="Search by name or email..."
                     fullWidth
                     error={!!errors.assignTo}
                     helperText={errors.assignTo}
                   />
                 )}
+                renderOption={(props, option) => {
+                  const { key, ...rest } = props;
+                  return (
+                    <Box
+                      component="li"
+                      key={option._id || option.id || key}
+                      {...rest}
+                      sx={{
+                        display: "flex",
+                        flexDirection: "column",
+                        alignItems: "flex-start !important",
+                        py: 0.75,
+                      }}
+                    >
+                      <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.3 }}>
+                        {option.name}
+                      </Typography>
+                      {option.email && (
+                        <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.3 }}>
+                          {option.email}
+                        </Typography>
+                      )}
+                    </Box>
+                  );
+                }}
+                filterOptions={(options, { inputValue }) => {
+                  const query = inputValue.toLowerCase();
+                  return options.filter(
+                    (opt) =>
+                      (opt.name || "").toLowerCase().includes(query) ||
+                      (opt.email || "").toLowerCase().includes(query)
+                  );
+                }}
                 isOptionEqualToValue={(option, value) =>
                   option._id === value._id
                 }
+                noOptionsText="No employees found"
               />
             </Box>
           )}
