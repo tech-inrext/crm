@@ -370,10 +370,9 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
                   label="Status Filter"
                   onChange={(e) => setStatus(e.target.value)}
                 >
-                  <MenuItem value="new">New</MenuItem>
-                  {LEAD_STATUSES.map((s) => (
+                  {LEAD_STATUSES.filter((s) => s !== "").map((s) => (
                     <MenuItem key={s} value={s}>
-                      {s}
+                      {s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()}
                     </MenuItem>
                   ))}
                 </Select>
