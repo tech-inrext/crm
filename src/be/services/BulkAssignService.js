@@ -2,6 +2,7 @@ import { Service } from "@framework";
 import { leadQueue } from "../queue/leadQueue";
 import LeadAssignmentHistory from "../models/LeadAssignmentHistory";
 import Lead from "../models/Lead";
+import Employee from "../models/Employee"; // Added Employee import
 import { v4 as uuidv4 } from "uuid";
 import mongoose from "mongoose";
 
@@ -57,12 +58,32 @@ class BulkAssignService extends Service {
       const isPartial = availableCount < limit;
       const batchId = uuidv4();
 
+      // 🔍 Resolve managerId for the target assignee
+      let managerId = null;
+      try {
+        const assignedEmployee = await Employee.findById(assignTo)
+          .select("_id managerId")
+          .lean();
+
+        if (assignedEmployee) {
+          const rawManagerId = assignedEmployee.managerId;
+          if (rawManagerId && mongoose.Types.ObjectId.isValid(rawManagerId)) {
+            managerId = rawManagerId; // This is a String in Employee model
+          } else {
+            managerId = assignedEmployee._id.toString();
+          }
+        }
+      } catch (err) {
+        console.warn(`⚠️ Could not resolve managerId for BulkAssign:`, err.message);
+      }
+
       await leadQueue.add(
         "bulkAssignLeads",
         {
           batchId,
           limit: actualLimit,
           assignTo,
+          managerId, // ✅ Pass managerId to the worker
           status,
           updatedBy,
           availableCount, // Pass the count we found to the worker
@@ -77,7 +98,7 @@ class BulkAssignService extends Service {
       if (isPartial) {
         responseMessage = `You requested ${limit} leads, but only ${availableCount} unassigned leads with status "${status}" were found. Assigning all ${availableCount} leads.`;
       } else {
-          responseMessage = `Bulk assignment of ${limit} leads started.`;
+        responseMessage = `Bulk assignment of ${limit} leads started.`;
       }
 
       return res.status(200).json({
@@ -157,19 +178,19 @@ class BulkAssignService extends Service {
       });
 
       const data = historyRecords.map(record => {
-          const lead = record.leadId || {};
-          return {
-              "Lead Name": lead.fullName || "N/A",
-              "Phone": lead.phone || "N/A",
-              "Email": lead.email || "N/A",
-              "Location": lead.location || "N/A",
-              "Property Type": lead.propertyType || "N/A",
-              "Budget": lead.budgetRange || "N/A",
-              "Status": lead.status || "N/A",
-              "Assigned To": record.newAssignedTo?.name || "Unassigned",
-              "Previous Owner": record.previousAssignedTo?.name || "Unassigned",
-              "Assigned Date": record.createdAt ? new Date(record.createdAt).toLocaleString() : "N/A"
-          };
+        const lead = record.leadId || {};
+        return {
+          "Lead Name": lead.fullName || "N/A",
+          "Phone": lead.phone || "N/A",
+          "Email": lead.email || "N/A",
+          "Location": lead.location || "N/A",
+          "Property Type": lead.propertyType || "N/A",
+          "Budget": lead.budgetRange || "N/A",
+          "Status": lead.status || "N/A",
+          "Assigned To": record.newAssignedTo?.name || "Unassigned",
+          "Previous Owner": record.previousAssignedTo?.name || "Unassigned",
+          "Assigned Date": record.createdAt ? new Date(record.createdAt).toLocaleString() : "N/A"
+        };
       });
 
       const wb = xlsx.utils.book_new();
@@ -195,11 +216,11 @@ class BulkAssignService extends Service {
 
       // Get total count for pagination
       const totalCountAgg = await LeadAssignmentHistory.aggregate([
-        { 
-          $match: { 
+        {
+          $match: {
             actionType: "ASSIGN",
             updatedBy: new mongoose.Types.ObjectId(req.employee?._id)
-          } 
+          }
         },
         { $group: { _id: "$batchId" } },
         { $count: "total" }
@@ -208,11 +229,11 @@ class BulkAssignService extends Service {
 
       // Aggregate to group by batchId and get details
       const history = await LeadAssignmentHistory.aggregate([
-        { 
-          $match: { 
+        {
+          $match: {
             actionType: "ASSIGN",
             updatedBy: new mongoose.Types.ObjectId(req.employee?._id)
-          } 
+          }
         }, // Only show original assignments belonging to this user
         {
           $group: {
@@ -228,51 +249,51 @@ class BulkAssignService extends Service {
         { $limit: parseInt(limit) },
         // ... rest of lookups
         {
-            $lookup: {
-                from: "employees",
-                localField: "updatedBy",
-                foreignField: "_id",
-                as: "performer"
-            }
+          $lookup: {
+            from: "employees",
+            localField: "updatedBy",
+            foreignField: "_id",
+            as: "performer"
+          }
         },
         {
-            $lookup: {
-                from: "employees",
-                localField: "assignTo",
-                foreignField: "_id",
-                as: "assignee"
-            }
+          $lookup: {
+            from: "employees",
+            localField: "assignTo",
+            foreignField: "_id",
+            as: "assignee"
+          }
         },
         // Check if this batch has been reverted
         {
-            $lookup: {
-                from: "leadassignmenthistories",
-                let: { batchId: "$_id" },
-                pipeline: [
-                    {
-                        $match: {
-                            $expr: {
-                                $and: [
-                                    { $eq: ["$batchId", "$$batchId"] },
-                                    { $eq: ["$actionType", "REVERT"] }
-                                ]
-                            }
-                        }
-                    },
-                    { $limit: 1 }
-                ],
-                as: "revertInfo"
-            }
+          $lookup: {
+            from: "leadassignmenthistories",
+            let: { batchId: "$_id" },
+            pipeline: [
+              {
+                $match: {
+                  $expr: {
+                    $and: [
+                      { $eq: ["$batchId", "$$batchId"] },
+                      { $eq: ["$actionType", "REVERT"] }
+                    ]
+                  }
+                }
+              },
+              { $limit: 1 }
+            ],
+            as: "revertInfo"
+          }
         },
         {
-            $project: {
-                batchId: "$_id",
-                count: 1,
-                timestamp: 1,
-                performerName: { $arrayElemAt: ["$performer.name", 0] },
-                assigneeName: { $arrayElemAt: ["$assignee.name", 0] },
-                isReverted: { $gt: [{ $size: "$revertInfo" }, 0] }
-            }
+          $project: {
+            batchId: "$_id",
+            count: 1,
+            timestamp: 1,
+            performerName: { $arrayElemAt: ["$performer.name", 0] },
+            assigneeName: { $arrayElemAt: ["$assignee.name", 0] },
+            isReverted: { $gt: [{ $size: "$revertInfo" }, 0] }
+          }
         }
       ]);
 
