@@ -10,7 +10,8 @@
     "lint": "next lint",
     "worker:dev": "node src/be/workers/worker.js",
     "worker:build": "node scripts/build-worker.js",
-    "worker:start": "node dist/worker/worker.cjs"
+    "worker:start": "node dist/worker/worker.cjs",
+    "generate": "node src/be/generators/index.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.842.0",
