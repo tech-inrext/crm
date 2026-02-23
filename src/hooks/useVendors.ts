@@ -1,9 +1,9 @@
-import { useEffect, useState, useCallback } from "react";
+﻿import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import {
   USERS_API_BASE,
   DEFAULT_PAGE_SIZE,
-} from "@/fe/modules/user/constants/users";
+} from "@/fe/pages/user/constants/users";
 
 export interface Vendor {
   _id?: string;
