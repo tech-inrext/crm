@@ -93,7 +93,7 @@ class Generators {
       .replace(/^\/+/, "")
       .replace(/\.js$/, "");
 
-    // If user passes "vendor-booking/[id]" assume api/v0 by default
+    // If user passes  "vendor-booking/[id]" assume api/v0 by default
     if (!normalized.startsWith("api/")) {
       return path.posix.join("api", "v0", normalized);
     }
