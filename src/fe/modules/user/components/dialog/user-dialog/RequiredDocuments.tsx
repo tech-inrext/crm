@@ -39,12 +39,7 @@ const LocalFilePreview: React.FC<{ file: File; alt?: string }> = ({
       <img
         src={objectUrl}
         alt={alt || file.name}
-        style={{
-          maxHeight: 100,
-          maxWidth: "100%",
-          objectFit: "contain",
-          borderRadius: 6,
-        }}
+        className="max-h-[100px] w-full object-contain rounded-md"
       />
     </Box>
   );
@@ -80,7 +75,7 @@ const UploadBox: React.FC<{
             </Typography>
             <input
               accept="image/*,application/pdf"
-              style={{ display: "none" }}
+              className="hidden"
               id={id}
               type="file"
               onChange={(e) => {
@@ -135,12 +130,7 @@ const UploadBox: React.FC<{
                     <img
                       src={urlValue}
                       alt={label}
-                      style={{
-                        maxHeight: 100,
-                        maxWidth: "100%",
-                        objectFit: "contain",
-                        borderRadius: 6,
-                      }}
+                      className="max-h-[100px] w-full object-contain rounded-md"
                     />
                   </Box>
                 ) : (
