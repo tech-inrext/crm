@@ -128,26 +128,22 @@ class ${controllerName} extends Controller {
     this.skipAuth = [];
   }
   ${get ? "async get(req, res) {\n return this.service.get(req, res);\n }" : ""}
-    ${
-      post
+    ${post
         ? "async post(req, res) {\n return this.service.post(req, res);\n }"
         : ""
-    }
-    ${
-      put
+      }
+    ${put
         ? "async put(req, res) {\n return this.service.put(req, res);\n }"
         : ""
-    }
-    ${
-      patch
+      }
+    ${patch
         ? "async patch(req, res) {\n return this.service.patch(req, res);\n }"
         : ""
-    }
-    ${
-      del
+      }
+    ${del
         ? "async delete(req, res) {\n return this.service.delete(req, res);\n }"
         : ""
-    }
+      }
   }
   
   export default new ${controllerName}().handler;`;
