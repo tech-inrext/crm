@@ -42,92 +42,49 @@ const PhotoUpload: React.FC = () => {
         };
 
         return (
-          <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
+          <Box className="flex flex-col flex-1">
             <input
               accept="image/*"
-              style={{ display: "none" }}
+              className="hidden"
               id="photo-upload"
               type="file"
               onChange={handleFileChange}
             />
 
-            <Box
-              sx={{
-                position: "relative",
-                width: 80,
-                height: 80,
-                margin: "0 auto 12px auto",
-              }}
-            >
+            <Box className="relative w-20 h-20 mx-auto mb-3">
               <Box
                 onMouseEnter={() => setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
                 onClick={() => document.getElementById("photo-upload")?.click()}
-                sx={{
-                  width: "100%",
-                  height: "100%",
-                  borderRadius: "50%",
-                  overflow: "hidden",
-                  cursor: "pointer",
-                  border: "3px solid",
-                  borderColor: isUrl || isFile ? "primary.main" : "grey.300",
-                  backgroundColor: isUrl || isFile ? "transparent" : "grey.100",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  transition: "all 0.3s ease",
-                  "&:hover": {
-                    borderColor: "primary.main",
-                    transform: "scale(1.02)",
-                    boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                  },
-                }}
+                className={`w-full h-full rounded-full overflow-hidden cursor-pointer border-4 ${
+                  isUrl || isFile
+                    ? "border-primary bg-transparent"
+                    : "border-gray-300 bg-gray-100"
+                } flex items-center justify-center transition-all duration-300 ease-in-out hover:border-primary hover:scale-105 hover:shadow-md`}
               >
                 {isUrl && previewIsImage(photoUrl) ? (
                   <img
                     src={photoUrl}
                     alt="Profile"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      objectPosition: "top",
-                    }}
+                    className="w-full h-full object-cover object-top"
                   />
                 ) : isFile ? (
                   <img
                     src={URL.createObjectURL(fileValue)}
                     alt="Profile"
-                    style={{
-                      width: "100%",
-                      height: "100%",
-                      objectFit: "cover",
-                      objectPosition: "top",
-                    }}
+                    className="w-full h-full object-cover object-top"
                   />
                 ) : (
-                  <Box sx={{ textAlign: "center", color: "grey.600" }}>
-                    <CameraAlt sx={{ fontSize: "1.5rem" }} />
-                    <Typography sx={{ mt: 0.8, fontSize: "0.75rem" }}>
+                  <Box className="text-center text-gray-600">
+                    <CameraAlt className="text-[1.5rem]" />
+                    <Typography className="mt-1.5 text-xs">
                       Click to upload
                     </Typography>
                   </Box>
                 )}
 
                 {isHovered && (
-                  <Box
-                    sx={{
-                      position: "absolute",
-                      inset: 0,
-                      backgroundColor: "rgba(0,0,0,0.4)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "white",
-                      fontSize: "0.75rem",
-                      fontWeight: 500,
-                    }}
-                  >
+                  <Box className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center text-white text-xs font-medium">
                     {isUrl || isFile ? "Change Photo" : "Upload Photo"}
                   </Box>
                 )}
@@ -137,22 +94,7 @@ const PhotoUpload: React.FC = () => {
                 <IconButton
                   onClick={handleRemove}
                   size="small"
-                  sx={{
-                    position: "absolute",
-                    top: 0,
-                    right: 1,
-                    zIndex: 20,
-                    width: 28,
-                    height: 28,
-                    bgcolor: "white",
-                    color: "grey.900",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.35)",
-                    "&:hover": {
-                      bgcolor: "white",
-                      color: "error.main",
-                      transform: "scale(1.1)",
-                    },
-                  }}
+                  className="absolute top-0 right-1 z-20 w-7 h-7 bg-white text-gray-900 shadow-md hover:bg-white hover:text-red-500 transform transition-transform duration-150 hover:scale-110"
                 >
                   <CloseIcon fontSize="small" />
                 </IconButton>
@@ -161,20 +103,13 @@ const PhotoUpload: React.FC = () => {
 
             <Typography
               variant="caption"
-              sx={{
-                color: "text.secondary",
-                fontSize: "0.7rem",
-                textAlign: "center",
-              }}
+              className="text-center text-[0.7rem] text-gray-500"
             >
               JPG, PNG or WEBP (Max. 50MB)
             </Typography>
 
             {(localError || (meta?.touched && meta?.error)) && (
-              <Typography
-                color="error"
-                sx={{ fontSize: 12, mt: 0.5, textAlign: "center" }}
-              >
+              <Typography className="text-red-600 text-[12px] mt-1 text-center">
                 {localError || meta.error}
               </Typography>
             )}
