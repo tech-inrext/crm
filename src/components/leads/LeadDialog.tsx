@@ -64,7 +64,7 @@ const LeadDialog: React.FC<LeadDialogProps> = ({
   useEffect(() => {
     if (open) {
       axios
-        .get("/api/v0/employee/getAllEmployeeList")
+        .get("/api/v0/employee/getAllEmployeeList", { params: { isCabVendor: false } })
         .then((res) => setUsers(res.data.data || []));
     }
   }, [open]);

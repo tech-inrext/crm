@@ -140,7 +140,11 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
           {({ field, meta }: FieldProps) => (
             <Autocomplete
               options={users}
-              getOptionLabel={(option) => option.name || ""}
+              getOptionLabel={(option) =>
+                option.name
+                  ? `${option.name}${option.email ? ` (${option.email})` : ""}`
+                  : ""
+              }
               getOptionKey={(option) => option._id || option.id}
               value={
                 users.find((u) => u._id === (values.manager || user?._id)) ||
@@ -161,7 +165,7 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                   size="small"
                   error={meta.touched && !!meta.error}
                   helperText={meta.touched && meta.error}
-                  placeholder="Search and select employee"
+                  placeholder="Search by name or email"
                   sx={{
                     bgcolor: "#fff",
                     borderRadius: 1,
@@ -177,8 +181,16 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                     component="li"
                     key={option._id || option.id || key}
                     {...rest}
+                    sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start !important", py: 0.75 }}
                   >
-                    {option.name}
+                    <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.3 }}>
+                      {option.name}
+                    </Typography>
+                    {option.email && (
+                      <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.3 }}>
+                        {option.email}
+                      </Typography>
+                    )}
                   </Box>
                 );
               }}
@@ -251,7 +263,11 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                   ? teamMembers
                   : assignedToOptions
               }
-              getOptionLabel={(option) => option.name || ""}
+              getOptionLabel={(option) =>
+                option.name
+                  ? `${option.name}${option.email ? ` (${option.email})` : ""}`
+                  : ""
+              }
               getOptionKey={(option) => option._id || option.id}
               value={
                 users.find((user) => user._id === values.assignedTo) || null
@@ -267,7 +283,7 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                   size="small"
                   error={meta.touched && !!meta.error}
                   helperText={meta.touched && meta.error}
-                  placeholder="Search and select employee"
+                  placeholder="Search by name or email"
                   sx={{
                     bgcolor: "#fff",
                     borderRadius: 1,
@@ -283,8 +299,16 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                     component="li"
                     key={option._id || option.id || key}
                     {...rest}
+                    sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start !important", py: 0.75 }}
                   >
-                    {option.name}
+                    <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.3 }}>
+                      {option.name}
+                    </Typography>
+                    {option.email && (
+                      <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.3 }}>
+                        {option.email}
+                      </Typography>
+                    )}
                   </Box>
                 );
               }}

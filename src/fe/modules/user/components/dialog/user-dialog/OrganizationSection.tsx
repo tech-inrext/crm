@@ -16,6 +16,7 @@ interface OrganizationSectionProps {
   roles: any[];
   setFieldValue: (field: string, value: any) => void;
   currentRoles?: any[];
+  currentManagerId?: string;
 }
 
 const OrganizationSection: React.FC<OrganizationSectionProps> = ({
@@ -24,10 +25,18 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
   roles,
   setFieldValue,
   currentRoles,
+  currentManagerId,
 }) => {
   const AutocompletePopper = (props: any) => (
     <Popper {...props} placement="bottom-start" />
   );
+
+  // Find the currently selected manager object from the managers list
+  const selectedManager =
+    managers.find(
+      (m: any) =>
+        (m._id || m.id) === currentManagerId,
+    ) ?? null;
 
   return (
     <>
@@ -42,31 +51,55 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
           gap: 1.5,
         }}
       >
-        <Field name="managerId">
-          {({ field }: FieldProps) => (
+        {/* Searchable Manager Autocomplete */}
+        <Autocomplete
+          options={managers}
+          value={selectedManager}
+          getOptionLabel={(opt: any) =>
+            opt ? `${opt.name || ""}${opt.email ? ` (${opt.email})` : ""}` : ""
+          }
+          filterOptions={(options, { inputValue }) => {
+            const query = inputValue.toLowerCase();
+            return options.filter(
+              (opt: any) =>
+                (opt.name || "").toLowerCase().includes(query) ||
+                (opt.email || "").toLowerCase().includes(query),
+            );
+          }}
+          onChange={(_, value) => {
+            setFieldValue("managerId", value ? (value._id || value.id) : "");
+          }}
+          PopperComponent={AutocompletePopper}
+          disablePortal
+          renderOption={(props, opt: any) => (
+            <li {...props} key={opt._id || opt.id}>
+              <Box sx={{ display: "flex", flexDirection: "column" }}>
+                <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                  {opt.name}
+                </Typography>
+                {opt.email && (
+                  <Typography variant="caption" sx={{ color: "text.secondary" }}>
+                    {opt.email}
+                  </Typography>
+                )}
+              </Box>
+            </li>
+          )}
+          renderInput={(params) => (
             <TextField
-              select
-              size="small"
-              fullWidth
+              {...params}
               label={FIELD_LABELS.MANAGER}
-              {...field}
-              onChange={(e) => setFieldValue("managerId", e.target.value)}
+              size="small"
+              placeholder="Search by name or email"
               sx={{
                 bgcolor: "#fff",
                 borderRadius: 1,
                 "& .MuiInputBase-root": { minHeight: 40 },
                 "& .MuiInputBase-input": { py: 1 },
               }}
-            >
-              <MenuItem value="">None</MenuItem>
-              {managers.map((m: any) => (
-                <MenuItem key={m._id || m.id} value={m._id || m.id}>
-                  {m.name}
-                </MenuItem>
-              ))}
-            </TextField>
+            />
           )}
-        </Field>
+        />
 
         <Field name="departmentId">
           {({ field }: FieldProps) => (
