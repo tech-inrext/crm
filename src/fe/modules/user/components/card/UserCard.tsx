@@ -1,14 +1,5 @@
 import React from "react";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Avatar,
-  IconButton,
-  Stack,
-  EditIcon,
-} from "@/components/ui/Component";
+import { EditIcon } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
 import { USERS_PERMISSION_MODULE } from "@/fe/modules/user/constants/users";
 
@@ -23,90 +14,53 @@ interface UserCardProps {
 }
 
 const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
+  const initial = user.name?.[0]?.toUpperCase() ?? "?";
+
   return (
-    <Card
-      elevation={2}
-      sx={{
-        borderRadius: 3,
-        p: 2,
-        display: "flex",
-        alignItems: "center",
-        gap: 2,
-        minWidth: 0,
-        width: "100%",
-        boxShadow: "0 2px 8px rgba(25, 118, 210, 0.10)",
-        background: "linear-gradient(135deg, #fafdff 0%, #f1f5fa 100%)",
-      }}
-    >
-      <Avatar
-        src={user.avatarUrl}
-        alt={user.name}
-        sx={{
-          width: 56,
-          height: 56,
-          fontWeight: 700,
-          fontSize: 24,
-          bgcolor: "primary.main",
-          color: "white",
-          boxShadow: 1,
-        }}
-      >
-        {user.name?.[0]?.toUpperCase()}
-      </Avatar>
-      <CardContent sx={{ flex: 1, p: 0, minWidth: 0 }}>
-        <Stack spacing={0.5}>
-          <Typography
-            variant="h6"
-            fontWeight={700}
-            color="text.primary"
-            sx={{
-              lineHeight: 1.2,
-              fontSize: { xs: 16, sm: 18 },
-            }}
-            noWrap
-          >
+    <div className="w-full rounded-xl p-3 flex items-center gap-3 min-w-0 bg-gradient-to-br from-[#fafdff] to-[#f1f5fa] shadow-md">
+      {user.avatarUrl ? (
+        <img
+          src={user.avatarUrl}
+          alt={user.name}
+          className="w-14 h-14 rounded-full object-cover"
+        />
+      ) : (
+        <div className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl bg-blue-600 text-white shadow">
+          {initial}
+        </div>
+      )}
+
+      <div className="flex-1 min-w-0">
+        <div className="flex flex-col gap-0.5">
+          <p className="text-base sm:text-lg font-extrabold leading-tight truncate">
             {user.name}
-          </Typography>
-          <Typography
-            variant="body2"
-            color="text.secondary"
-            sx={{ fontSize: { xs: 13, sm: 14 }, wordBreak: "break-all" }}
-            noWrap
-          >
-            {user.email}
-          </Typography>
+          </p>
+          <p className="text-sm text-gray-500 truncate">{user.email}</p>
           {user.designation && (
-            <Typography
-              variant="caption"
-              color="primary"
-              sx={{
-                fontWeight: 600,
-                fontSize: { xs: 12, sm: 13 },
-              }}
-              noWrap
-            >
+            <p className="text-xs sm:text-sm text-blue-600 font-semibold truncate">
               {user.designation}
-            </Typography>
+            </p>
           )}
-        </Stack>
-      </CardContent>
+        </div>
+      </div>
+
       {onEdit && (
         <PermissionGuard
           module={USERS_PERMISSION_MODULE}
           action="write"
           fallback={null}
         >
-          <IconButton
-            size="small"
+          <button
+            type="button"
             onClick={onEdit}
             aria-label="edit user"
-            sx={{ ml: 1, color: "primary.main" }}
+            className="ml-2 p-1 text-blue-600 hover:text-blue-700 rounded focus:outline-none"
           >
             <EditIcon fontSize="small" />
-          </IconButton>
+          </button>
         </PermissionGuard>
       )}
-    </Card>
+    </div>
   );
 };
 

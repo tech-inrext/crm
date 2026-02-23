@@ -1,12 +1,5 @@
 import React from "react";
-import {
-  Box,
-  Button,
-  CircularProgress,
-  useMediaQuery,
-  useTheme,
-  Add,
-} from "@/components/ui/Component";
+import { CircularProgress, Add } from "@/components/ui/Component";
 import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import {
@@ -27,61 +20,41 @@ const UsersActionBar: React.FC<UsersActionBarProps> = ({
   onAdd,
   saving,
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
   return (
-    <Box
-      sx={{
-        display: "flex",
-        flexDirection: { xs: "column", md: "row" },
-        gap: { xs: 2, md: 3 },
-        alignItems: { xs: "stretch", md: "center" },
-        mb: { xs: 1, md: 2 },
-      }}
-    >
-      <Box sx={{ width: { xs: "100%", md: "auto" }, flex: 1 }}>
+    <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-2">
+      <div className="w-full md:w-auto flex-1">
         <SearchBar
-          sx={{ width: "100%", minWidth: 280 }}
+          className="w-full min-w-[280px]"
           value={search}
           onChange={onSearchChange}
           placeholder={SEARCH_PLACEHOLDER}
         />
-      </Box>
-      {!isMobile && (
+      </div>
+
+      <div className="hidden md:block">
         <PermissionGuard
           module={USERS_PERMISSION_MODULE}
           action="write"
           fallback={<></>}
         >
-          <Button
-            variant="contained"
-            startIcon={<Add />}
+          <button
+            type="button"
             onClick={onAdd}
             disabled={saving}
-            size="large"
-            sx={{
-              minWidth: { xs: "auto", sm: 150 },
-              height: { xs: 44, sm: 40 },
-              borderRadius: 2,
-              fontWeight: 600,
-              fontSize: { xs: "0.875rem", sm: "1rem" },
-              boxShadow: "0 4px 12px rgba(25, 118, 210, 0.3)",
-              "&:hover": {
-                boxShadow: "0 6px 16px rgba(25, 118, 210, 0.4)",
-                transform: "translateY(-1px)",
-              },
-            }}
+            className="flex items-center justify-center gap-2 px-4 py-2 min-w-[150px] h-10 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-transform disabled:opacity-60"
           >
             {saving ? (
               <CircularProgress size={20} color="inherit" />
             ) : (
-              "Add User"
+              <>
+                <Add />
+                <span>Add User</span>
+              </>
             )}
-          </Button>
+          </button>
         </PermissionGuard>
-      )}
-    </Box>
+      </div>
+    </div>
   );
 };
 
