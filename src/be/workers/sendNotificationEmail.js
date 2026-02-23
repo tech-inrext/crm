@@ -4,6 +4,7 @@ import Employee from "../models/Employee.js";
 
 // Job handler for sending notification emails
 export default async function sendNotificationEmail(job) {
+  console.log(`📥 [Worker] Processing email job for notification: ${job.data.notificationId}`);
   const timeoutDuration = 30000; // 30 seconds timeout
 
   try {
@@ -49,6 +50,7 @@ export default async function sendNotificationEmail(job) {
 async function sendEmailNotification(job) {
   try {
     const { notificationId } = job.data;
+    console.log(`📧 [EmailWorker] Fetching notification: ${notificationId}`);
 
     // Get notification with populated data
     const notification = await Notification.findById(notificationId)
@@ -217,33 +219,30 @@ function generateEmailContent(notification) {
           </span>
         </div>
         
-        <h3 style="color: #2c3e50; margin-bottom: 15px;">${
-          notification.title
-        }</h3>
+        <h3 style="color: #2c3e50; margin-bottom: 15px;">${notification.title
+    }</h3>
         
         <p style="font-size: 16px; line-height: 1.6; margin-bottom: 20px;">
           ${notification.message}
         </p>
         
-        ${
-          notification.sender
-            ? `
+        ${notification.sender
+      ? `
           <p style="font-size: 14px; color: #666; margin-bottom: 20px;">
             <strong>From:</strong> ${notification.sender.name} (${notification.sender.email})
           </p>
         `
-            : ""
-        }
+      : ""
+    }
         
-        ${
-          notification.metadata.actionUrl
-            ? `
+        ${notification.metadata.actionUrl
+      ? `
           <a href="${actionUrl}" class="action-button">
             View Details
           </a>
         `
-            : ""
-        }
+      : ""
+    }
         
         <div class="footer">
           <p>

@@ -1,6 +1,9 @@
 import FollowUp from "../models/FollowUp.js";
 import Notification from "../models/Notification.js";
 import Lead from "../models/Lead.js";
+import NotificationService from "../services/NotificationService.js";
+
+const notificationService = new NotificationService();
 
 /**
  * Process checks for due follow-up notifications.
@@ -149,13 +152,12 @@ async function processBatch(docs, config, tag) {
 
 async function sendNotification(lead, recipient, tag, config, fp) {
   try {
-    await Notification.create({
+    await notificationService._createSingleNotification({
       recipient: recipient,
       type: "LEAD_FOLLOWUP_DUE",
       title: config.title,
-      message: `${config.title} for lead: ${
-        lead.fullName || lead.phone
-      }. Type: ${fp.followUpType}`,
+      message: `${config.title} for lead: ${lead.fullName || lead.phone
+        }. Type: ${fp.followUpType}`,
       metadata: {
         leadId: lead._id,
         actionUrl: `/dashboard/leads?openDialog=true&leadId=${lead._id}`,
