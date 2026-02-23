@@ -80,11 +80,7 @@ const QuickInfoCard: React.FC<QuickInfoCardProps> = ({ property }) => {
   const formattedName = derivedName || "N/A";
 
   return (
-    <Card sx={{ 
-      borderRadius: 3, 
-      boxShadow: '0 8px 32px rgba(0,0,0,0.08)',
-      border: '1px solid rgba(0,0,0,0.05)'
-    }}>
+<Card className="rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-black/5">
       <CardContent sx={{ p: 2 }}>
         <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: "primary.main" }}>
           ℹ️ Quick Info
@@ -104,14 +100,7 @@ const QuickInfoCard: React.FC<QuickInfoCardProps> = ({ property }) => {
           </Box>
 
           {/* Payment Plan */}
-          <Box
-            sx={{ 
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              py: 1,
-            }}
-          >
+         <Box className="flex justify-between items-center py-1">
             <Typography variant="body2" color="text.secondary">
               Payment Plan
             </Typography>
@@ -121,14 +110,7 @@ const QuickInfoCard: React.FC<QuickInfoCardProps> = ({ property }) => {
           </Box>
 
           {/* Options */}
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              py: 1,
-            }}
-          >
+         <Box className="flex justify-between items-center py-1">
             <Typography variant="body2" color="text.secondary">
               Options
             </Typography>

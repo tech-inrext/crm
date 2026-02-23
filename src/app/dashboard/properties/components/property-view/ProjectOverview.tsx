@@ -35,27 +35,10 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ property }) => {
   const highlightsList = normalizeToArray(property?.projectHighlights);
 
   return (
-    <Card
-      sx={{
-        mb: 4,
-        borderRadius: 3,
-        boxShadow: "0 8px 32px rgba(0,0,0,0.08)",
-        border: "1px solid rgba(0,0,0,0.05)",
-        overflow: "visible",
-      }}
-    >
+    <Card className="mb-4 rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08)]  overflow-visible">
       <CardContent sx={{ p: 3 }}>
         {/* Header */}
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            mb: 3,
-            pb: 2,
-            borderBottom: "2px solid",
-            borderColor: "primary.100",
-          }}
-        >
+       <Box className="flex items-center mb-3 pb-2 border-b-2 border-blue-100">
           <Description
             sx={{ mr: 2, color: "primary.main", fontSize: 28 }}
           />
@@ -69,17 +52,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ property }) => {
         </Box>
         
         {/* ✅ Description (FIXED PROPERLY) */}
-        <Typography
-          variant="body1"
-          sx={{
-            color: "text.secondary",
-            lineHeight: 1.8,
-            fontSize: "1.1rem",
-            mb: 4,
-            whiteSpace: "pre-wrap", // 🔥 PRESERVES LINE BREAKS EXACTLY
-            wordBreak: "break-word",
-          }}
-        >
+        <Typography className="text-gray-500 leading-[1.8] text-[1.1rem] mb-4 whitespace-pre-wrap break-words">
           {formattedDescription}
         </Typography>
 
@@ -87,14 +60,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ property }) => {
           {/* Project Status */}
           {statusList.length > 0 && (
             <Grid item xs={12} md={6}>
-              <Paper
-                sx={{
-                  p: 3,
-                  borderRadius: 3,
-                  bgcolor: "primary.50",
-                  height: "100%",
-                }}
-              >
+             <Paper className="p-3 rounded-2xl bg-blue-50 h-full">
                 <Typography
                   variant="h6"
                   fontWeight={700}
@@ -108,14 +74,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ property }) => {
                       key={index}
                       sx={{ display: "flex", alignItems: "center", gap: 1 }}
                     >
-                      <Box
-                        sx={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          bgcolor: "primary.main",
-                        }}
-                      />
+                     <Box className="w-1.5 h-1.5 rounded-full bg-blue-600" />
                       <Typography variant="body2" sx={{ color: 'text.secondary' }}>
                         {item}
                       </Typography>
@@ -139,14 +98,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ property }) => {
                       key={index}
                       sx={{ display: "flex", alignItems: "center", gap: 1 }}
                     >
-                      <Box
-                        sx={{
-                          width: 6,
-                          height: 6,
-                          borderRadius: "50%",
-                          bgcolor: "success.main",
-                        }}
-                      />
+                      <Box className="w-1.5 h-1.5 rounded-full bg-green-600" />
                       <Typography
                         variant="body2"
                         sx={{ color: "text.secondary" }}
@@ -174,14 +126,7 @@ const ProjectOverview: React.FC<ProjectOverviewProps> = ({ property }) => {
                       <Box
                         sx={{ display: "flex", alignItems: "center", gap: 1 }}
                       >
-                        <Box
-                          sx={{
-                            width: 8,
-                            height: 8,
-                            borderRadius: "50%",
-                            bgcolor: "warning.main",
-                          }}
-                        />
+                       <Box className="w-2 h-2 rounded-full bg-yellow-500" />
                         <Typography
                           variant="body2"
                           sx={{ color: "text.secondary" }}

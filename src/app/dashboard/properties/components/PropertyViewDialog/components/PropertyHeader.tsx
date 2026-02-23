@@ -77,17 +77,7 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
         </IconButton>
       </Box>
 
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          mt: "auto",
-          zIndex: 2,
-          position: "relative",
-        }}
-      >
+      <Box className="flex items-end justify-between flex-wrap mt-auto relative z-2">
         <Box className="flex-1 min-w-full md:min-w-0 ml-auto">
   <h2 className="font-extrabold text-[1.8rem] sm:text-[2.5rem] md:text-[2.5rem] leading-[1.1]">
     {property.projectName}
