@@ -7,12 +7,7 @@ import {
   SEARCH_PLACEHOLDER,
 } from "@/fe/modules/user/constants/users";
 
-interface UsersActionBarProps {
-  search: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onAdd: () => void;
-  saving: boolean;
-}
+import type { UsersActionBarProps } from "@/fe/modules/user/types";
 
 const UsersActionBar: React.FC<UsersActionBarProps> = ({
   search,

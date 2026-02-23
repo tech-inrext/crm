@@ -21,62 +21,117 @@ import {
   Description,
   FamilyRestroom,
   Work,
+  Close,
 } from "@mui/icons-material";
 import { format } from "date-fns";
 
 const DetailItem = ({ icon: Icon, label, value, isLink = false }: any) => (
-  <div className="flex items-center gap-3">
-    <Icon className="text-gray-500 text-xl opacity-70" />
-    <div className="flex-1">
-      <Typography
-        variant="caption"
-        className="text-gray-500 block leading-none mb-1"
-      >
+  <div className="group flex items-start gap-3 p-3 rounded-lg bg-gray-50/50 hover:bg-blue-50/70 transition-all duration-200 border border-transparent hover:border-blue-100">
+    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200">
+      <Icon className="text-sm" />
+    </div>
+    <div className="flex-1 min-w-0">
+      <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-1">
         {label}
-      </Typography>
+      </div>
       {isLink ? (
         value && value !== "-" && value.trim() ? (
           <a
             href={value}
             target="_blank"
             rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 font-medium text-sm underline"
+            className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200 group"
           >
             View Document
+            <svg
+              className="w-3 h-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+              />
+            </svg>
           </a>
         ) : (
-          <Typography variant="body2" className="text-gray-500 font-medium">
-            N/A
-          </Typography>
+          <div className="text-sm text-gray-400 font-medium">Not Available</div>
         )
       ) : (
-        <Typography variant="body2" className="text-gray-900 font-medium">
+        <div className="text-sm text-gray-800 font-medium break-words">
           {value || "-"}
-        </Typography>
+        </div>
       )}
     </div>
   </div>
 );
 
-const SectionCard = ({ title, icon: Icon, colorClass, children }: any) => (
-  <div className="bg-white p-6 rounded-lg shadow-sm">
-    <div className={`flex items-center gap-2 mb-6 ${colorClass}`}>
-      <Icon className="text-sm" />
-      <Typography
-        variant="overline"
-        className="font-extrabold tracking-widest text-xs"
+const SectionCard = ({ title, icon: Icon, colorClass, children }: any) => {
+  const colorMap: Record<
+    string,
+    { bg: string; border: string; icon: string; text: string }
+  > = {
+    "text-blue-600": {
+      bg: "from-blue-50 to-blue-100/50",
+      border: "border-blue-200",
+      icon: "from-blue-500 to-blue-600",
+      text: "text-blue-700",
+    },
+    "text-purple-600": {
+      bg: "from-purple-50 to-purple-100/50",
+      border: "border-purple-200",
+      icon: "from-purple-500 to-purple-600",
+      text: "text-purple-700",
+    },
+    "text-orange-600": {
+      bg: "from-orange-50 to-orange-100/50",
+      border: "border-orange-200",
+      icon: "from-orange-500 to-orange-600",
+      text: "text-orange-700",
+    },
+    "text-green-600": {
+      bg: "from-green-50 to-green-100/50",
+      border: "border-green-200",
+      icon: "from-green-500 to-green-600",
+      text: "text-green-700",
+    },
+  };
+
+  const colors = colorMap[colorClass] || colorMap["text-blue-600"];
+
+  return (
+    <div className="bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 overflow-hidden">
+      <div
+        className={`bg-gradient-to-r ${colors.bg} px-5 py-4 border-b ${colors.border}`}
       >
-        {title}
-      </Typography>
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-8 h-8 rounded-lg bg-gradient-to-br ${colors.icon} flex items-center justify-center text-white shadow-sm`}
+          >
+            <Icon className="text-sm" />
+          </div>
+          <h3
+            className={`font-semibold text-sm uppercase tracking-wide ${colors.text}`}
+          >
+            {title}
+          </h3>
+        </div>
+      </div>
+      <div className="p-5">
+        <div className="space-y-3">{children}</div>
+      </div>
     </div>
-    <div className="flex flex-col gap-5">{children}</div>
-  </div>
-);
+  );
+};
 
 import { useUserDialogData } from "@/fe/modules/user/hooks/useUserDialogData";
 
 const UserDetailsDialog = ({ user, open, onClose }: any) => {
   const [roleMap, setRoleMap] = useState<Record<string, string>>({});
+  const [imageError, setImageError] = useState(false);
   const { roles } = useUserDialogData(open);
 
   useEffect(() => {
@@ -88,95 +143,106 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
     });
     setRoleMap(map);
   }, [roles]);
+
+  useEffect(() => {
+    setImageError(false);
+  }, [user?.photo]);
+
   if (!user) return null;
+
   const formatDate = (dateString: string | undefined) => {
     if (!dateString) return "-";
     try {
-      return format(new Date(dateString), "PP");
+      return format(new Date(dateString), "MMM dd, yyyy");
     } catch (e) {
       return dateString;
     }
   };
 
-  const hasPhoto = user.photo && user.photo.trim() !== "";
+  const hasPhoto = user.photo && user.photo.trim() !== "" && !imageError;
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
-      <DialogTitle className="bg-gradient-to-r from-blue-600 to-blue-800 text-white font-bold text-lg sm:text-xl py-5 px-6 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Person className="text-3xl" />
-          <span>User Details</span>
-        </div>
-        <IconButton
-          onClick={onClose}
-          className="text-white/80 hover:text-white hover:bg-white/15"
-          size="small"
-        >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            height="24"
-            viewBox="0 0 24 24"
-            width="24"
-            fill="currentColor"
-          >
-            <path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z" />
-          </svg>
-        </IconButton>
-      </DialogTitle>
-      <DialogContent dividers className="bg-gray-50 p-0">
-        <div className="p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center gap-6 mb-8 bg-white p-6 rounded-lg shadow-sm">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-br from-blue-600 to-blue-800 text-white flex items-center justify-center text-2xl sm:text-3xl font-bold shadow-lg">
-              {hasPhoto ? (
-                <img
-                  src={user.photo}
-                  alt={user.name}
-                  className="w-full h-full object-cover object-top rounded-full"
-                  onError={(e) => {
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = "none";
-                    const parent = target.parentElement;
-                    if (parent) {
-                      const initials = document.createElement("span");
-                      initials.textContent =
-                        user.name?.substring(0, 2).toUpperCase() || "";
-                      initials.className = "text-2xl sm:text-3xl font-bold";
-                      parent.appendChild(initials);
-                    }
-                  }}
-                />
-              ) : (
-                <span>{user.name?.substring(0, 2).toUpperCase()}</span>
-              )}
+    <Dialog open={open} onClose={onClose} maxWidth="md">
+      <DialogTitle className="p-0">
+        <div className="bg-gradient-to-r from-slate-800 to-blue-900 text-white relative overflow-hidden">
+          <div className="absolute inset-0 bg-white/5 opacity-20"></div>
+          <div className="relative z-10 flex items-center justify-between p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+                <Person className="text-white text-xl" />
+              </div>
+              <div>
+                <h1 className="text-lg font-semibold">User Profile</h1>
+                <p className="text-blue-200 text-sm opacity-90">
+                  View complete information
+                </p>
+              </div>
             </div>
-            <div className="flex-1 w-full">
-              <Typography
-                variant="h5"
-                className="font-extrabold text-gray-900 mb-2 text-xl sm:text-2xl"
-              >
-                {user.name}
-              </Typography>
-              <div className="flex gap-2 flex-wrap items-center">
-                <Chip
-                  label={user.designation || "No Designation"}
-                  size="small"
-                  color="primary"
-                  className="h-6 px-2 font-bold capitalize"
-                />
-                {user.isCabVendor && (
-                  <Chip
-                    label="Cab Vendor"
-                    size="small"
-                    color="warning"
-                    className="h-6"
-                  />
-                )}
+            <IconButton
+              onClick={onClose}
+              className="text-white/70 hover:text-white hover:bg-white/10 rounded-lg p-2 transition-all duration-200"
+              size="small"
+            >
+              <Close className="text-lg" />
+            </IconButton>
+          </div>
+        </div>
+      </DialogTitle>
+      <DialogContent className="p-0 bg-gray-50">
+        <div className="p-6">
+          {/* User Header */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+              <div className="flex-shrink-0">
+                <div className="w-16 h-16 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center text-xl font-bold shadow-lg">
+                  {hasPhoto ? (
+                    <img
+                      src={user.photo}
+                      alt={user.name}
+                      className="w-full h-full object-cover rounded-xl"
+                      onError={() => setImageError(true)}
+                    />
+                  ) : (
+                    <span>{user.name?.substring(0, 2).toUpperCase()}</span>
+                  )}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  {user.name}
+                </h2>
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                    {user.designation || "No Designation"}
+                  </span>
+                  {user.isCabVendor && (
+                    <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
+                      🚗 Cab Vendor
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-4 text-sm text-gray-600">
+                  {user.email && (
+                    <div className="flex items-center gap-1.5">
+                      <Email className="w-4 h-4 text-gray-400" />
+                      <span>{user.email}</span>
+                    </div>
+                  )}
+                  {user.phone && (
+                    <div className="flex items-center gap-1.5">
+                      <Phone className="w-4 h-4 text-gray-400" />
+                      <span>{user.phone}</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+          {/* Information Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <SectionCard
-              title="PRIVATE & CONTACT INFO"
+              title="Contact & Personal"
               icon={Badge}
               colorClass="text-blue-600"
             >
@@ -192,7 +258,7 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
               />
               <DetailItem
                 icon={Phone}
-                label="Whats App Number"
+                label="WhatsApp Number"
                 value={user.altPhone}
               />
               <DetailItem icon={Person} label="Gender" value={user.gender} />
@@ -208,18 +274,14 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
               />
               <DetailItem
                 icon={Person}
-                label="Father''s Name"
+                label="Father's Name"
                 value={user.fatherName}
-              />
-              <DetailItem
-                icon={Description}
-                label="PAN Number"
-                value={user.panNumber}
               />
               <DetailItem icon={Home} label="Address" value={user.address} />
             </SectionCard>
+
             <SectionCard
-              title="ORGANIZATION"
+              title="Organization"
               icon={Business}
               colorClass="text-purple-600"
             >
@@ -227,11 +289,6 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 icon={Work}
                 label="Designation"
                 value={user.designation}
-              />
-              <DetailItem
-                icon={Description}
-                label="PAN Number"
-                value={user.panNumber}
               />
               <DetailItem
                 icon={CalendarToday}
@@ -248,37 +305,6 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 label="Manager"
                 value={user.managerId?.name || "N/A"}
               />
-              <div>
-                <Typography
-                  variant="caption"
-                  className="text-gray-500 block mb-2"
-                >
-                  Roles
-                </Typography>
-                <div className="flex gap-1 flex-wrap">
-                  {user.roles?.length > 0 ? (
-                    user.roles.map((role: any, idx: number) => {
-                      const displayName =
-                        typeof role === "string"
-                          ? roleMap[role] || role
-                          : role.name ||
-                            role.label ||
-                            role._id ||
-                            JSON.stringify(role);
-                      return (
-                        <Chip
-                          key={idx}
-                          label={displayName}
-                          size="small"
-                          variant="outlined"
-                        />
-                      );
-                    })
-                  ) : (
-                    <Typography variant="body2">-</Typography>
-                  )}
-                </div>
-              </div>
               <DetailItem
                 icon={AccountBalance}
                 label="Branch"
@@ -289,15 +315,48 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 label="Slab Percentage"
                 value={`${user.slabPercentage || 0}%`}
               />
+
+              {/* Roles Section */}
+              <div className="p-3 rounded-lg bg-gray-50/50 border border-gray-100">
+                <div className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                  Assigned Roles
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  {user.roles?.length > 0 ? (
+                    user.roles.map((role: any, idx: number) => {
+                      const displayName =
+                        typeof role === "string"
+                          ? roleMap[role] || role
+                          : role.name ||
+                            role.label ||
+                            role._id ||
+                            JSON.stringify(role);
+                      return (
+                        <span
+                          key={idx}
+                          className="px-2 py-1 bg-purple-100 text-purple-700 rounded-md text-xs font-medium border border-purple-200"
+                        >
+                          {displayName}
+                        </span>
+                      );
+                    })
+                  ) : (
+                    <span className="text-sm text-gray-400">
+                      No roles assigned
+                    </span>
+                  )}
+                </div>
+              </div>
             </SectionCard>
+
             <SectionCard
-              title="DOCUMENTS"
+              title="Documents"
               icon={Description}
               colorClass="text-orange-600"
             >
               <DetailItem
                 icon={Description}
-                label="Pan Card Number"
+                label="PAN Number"
                 value={user.panNumber}
               />
               <DetailItem
@@ -331,19 +390,20 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 isLink
               />
             </SectionCard>
+
             <SectionCard
-              title="NOMINEE DETAILS"
+              title="Emergency Contact"
               icon={FamilyRestroom}
               colorClass="text-green-600"
             >
               <DetailItem
                 icon={Person}
-                label="Name"
+                label="Nominee Name"
                 value={user.nominee?.name}
               />
               <DetailItem
                 icon={Phone}
-                label="Phone"
+                label="Contact Number"
                 value={user.nominee?.phone}
               />
               <DetailItem
@@ -353,7 +413,7 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
               />
               <DetailItem
                 icon={FamilyRestroom}
-                label="Relation"
+                label="Relationship"
                 value={user.nominee?.relation}
               />
             </SectionCard>

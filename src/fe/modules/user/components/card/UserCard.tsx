@@ -2,16 +2,7 @@ import React from "react";
 import { EditIcon } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
 import { USERS_PERMISSION_MODULE } from "@/fe/modules/user/constants/users";
-
-interface UserCardProps {
-  user: {
-    name: string;
-    email: string;
-    designation?: string;
-    avatarUrl?: string;
-  };
-  onEdit?: () => void;
-}
+import type { UserCardProps } from "@/fe/modules/user/types";
 
 const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
   const initial = user.name?.[0]?.toUpperCase() ?? "?";

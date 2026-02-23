@@ -21,22 +21,7 @@ const Pagination = dynamic(
   () => import("@/components/ui/Navigation/Pagination"),
   { ssr: false },
 );
-
-interface UsersListProps {
-  loading: boolean;
-  employees: any[];
-  isMobile: boolean;
-  isClient: boolean;
-  windowWidth: number;
-  page: number;
-  rowsPerPage: number;
-  totalItems: number;
-  usersTableHeader: any[];
-  onPageChange: (page: number) => void;
-  onPageSizeChange: (size: number) => void;
-  onEditUser: (user: any) => void;
-  canEdit: (user: any) => boolean;
-}
+import type { UsersListProps } from "@/fe/modules/user/types";
 
 export const UsersList: React.FC<UsersListProps> = ({
   loading,

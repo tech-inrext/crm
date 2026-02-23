@@ -17,48 +17,7 @@ import { useUserDialogData } from "@/fe/modules/user/hooks/useUserDialogData";
 import { userValidationSchema } from "./user-dialog/validation";
 import BasicInformation from "./user-dialog/BasicInformation";
 import OrganizationSection from "./user-dialog/OrganizationSection";
-
-export interface UserFormData {
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  gender: string;
-  dateOfBirth?: string;
-  altPhone?: string;
-  fatherName?: string;
-  specialization?: string;
-  joiningDate?: string;
-  designation: string;  
-  managerId: string;
-  departmentId: string;
-  roles: string[];
-  aadharFile?: File | null;
-  panFile?: File | null;
-  bankProofFile?: File | null;
-  aadharUrl?: string;
-  panUrl?: string;
-  bankProofUrl?: string;
-  photoFile?: File | null;
-  photoUrl?: string;
-  panNumber: string;
-  nominee?: {
-    name?: string;
-    phone?: string;
-    occupation?: string;
-    relation?: string;
-    gender?: string;
-  };
-}
-
-interface UserDialogProps {
-  open: boolean;
-  editId: string | null;
-  initialData: UserFormData;
-  saving: boolean;
-  onClose: () => void;
-  onSave: (values: UserFormData) => void;
-}
+import type { UserFormData, UserDialogProps } from "@/fe/modules/user/types";
 
 const UserDialog: React.FC<UserDialogProps> = ({
   open,
