@@ -1,45 +1,26 @@
-import React, { useState } from "react";
+import React from "react";
 import { Box, Typography, IconButton } from "@/components/ui/Component";
 import { Field, FieldProps } from "formik";
+import { previewIsImage } from "@/fe/modules/user/helpers";
+import usePhotoUpload from "@/fe/modules/user/hooks/usePhotoUpload";
 import { CameraAlt } from "@mui/icons-material";
 import CloseIcon from "@/components/ui/Component/CloseIcon";
 
 const PhotoUpload: React.FC = () => {
-  const [localError, setLocalError] = useState<string | null>(null);
-  const [isHovered, setIsHovered] = useState(false);
-
   return (
     <Field name="photoFile">
       {({ form, meta }: FieldProps & { form?: any }) => {
+        const {
+          localError,
+          isHovered,
+          setIsHovered,
+          handleFileChange,
+          handleRemove,
+        } = usePhotoUpload();
         const fileValue = form?.values?.photoFile || null;
         const photoUrl = form?.values?.photo || null;
         const isFile = fileValue instanceof File;
         const isUrl = typeof photoUrl === "string" && photoUrl.trim() !== "";
-        const previewIsImage = (v: string) =>
-          /\.(jpe?g|png|gif|webp|avif|svg)$/i.test(v);
-
-        const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-          const file = e.target.files?.[0];
-          if (!file) return;
-
-          const maxBytes = 50 * 1024 * 1024;
-          if (file.size > maxBytes) {
-            form?.setFieldError("photoFile", "Photo must be less than 50MB");
-            setLocalError("Photo must be less than 50MB");
-            e.target.value = "";
-          } else {
-            form?.setFieldValue("photoFile", file);
-            form?.setFieldValue("photo", "");
-            form?.setFieldError("photoFile", undefined);
-            setLocalError(null);
-          }
-        };
-
-        const handleRemove = (e: React.MouseEvent) => {
-          e.stopPropagation();
-          form?.setFieldValue("photoFile", null);
-          form?.setFieldValue("photo", "");
-        };
 
         return (
           <Box className="flex flex-col flex-1">
@@ -48,7 +29,7 @@ const PhotoUpload: React.FC = () => {
               className="hidden"
               id="photo-upload"
               type="file"
-              onChange={handleFileChange}
+              onChange={(e) => handleFileChange(e, form)}
             />
 
             <Box className="relative w-20 h-20 mx-auto mb-3">
@@ -92,7 +73,7 @@ const PhotoUpload: React.FC = () => {
 
               {(isUrl || isFile) && (
                 <IconButton
-                  onClick={handleRemove}
+                  onClick={(e) => handleRemove(e, form)}
                   size="small"
                   className="absolute top-0 right-1 z-20 w-7 h-7 bg-white text-gray-900 shadow-md hover:bg-white hover:text-red-500 transform transition-transform duration-150 hover:scale-110"
                 >

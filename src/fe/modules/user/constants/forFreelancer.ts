@@ -19,24 +19,3 @@ export const SLAB_OPTIONS: string[] = [
   "60",
   "50",
 ];
-
-export const getSlabLabel = (opt: string) =>
-  opt === ""
-    ? "Select a slab"
-    : `${opt}%` +
-      (opt === "100"
-        ? " President"
-        : opt === "95"
-          ? " V.P."
-          : opt === "90"
-            ? " A.V.P. (Core Member)"
-            : opt === "80"
-              ? " General Manager"
-              : opt === "70"
-                ? " Senior Manager"
-                : opt === "60"
-                  ? " Manager"
-                  : " (Sales Executive)");
-
-export const formatBranchForMenu = (label: string) =>
-  label.split(", ").join(",\n");

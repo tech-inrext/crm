@@ -11,15 +11,7 @@ import {
 } from "@/fe/modules/user/services/userService";
 import { DEFAULT_PAGE_SIZE } from "@/fe/modules/user/constants/users";
 
-export interface Employee {
-  _id?: string;
-  name: string;
-  email: string;
-  designation?: string;
-  roles?: Array<{ _id: string; name: string }>;
-  isCabVendor?: boolean;
-  [key: string]: any;
-}
+import type { Employee } from "@/fe/modules/user/types";
 
 export function useUsers(debouncedSearch: string) {
   const [employees, setEmployees] = useState<Employee[]>([]);

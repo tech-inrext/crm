@@ -14,6 +14,7 @@ import Alert from "@/components/ui/Component/Alert";
 import { Formik, Form } from "formik";
 import { BUTTON_LABELS } from "@/fe/modules/user/constants/users";
 import { useUserDialogData } from "@/fe/modules/user/hooks/useUserDialogData";
+import { extractMessage, makeAllTouched } from "@/fe/modules/user/helpers";
 import { userValidationSchema } from "./user-dialog/validation";
 import BasicInformation from "./user-dialog/BasicInformation";
 import OrganizationSection from "./user-dialog/OrganizationSection";
@@ -109,25 +110,6 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   setSnackbarOpen(true);
                   return;
                 }
-
-                const extractMessage = (err: any) => {
-                  if (!err) return "Failed to save user";
-                  const r = err.response?.data ?? err.data ?? err;
-                  if (typeof r === "string") return r;
-                  if (r) {
-                    if (r.message) return r.message;
-                    if (r.msg) return r.msg;
-                    if (r.error) return r.error;
-                    if (r.data && typeof r.data === "string") return r.data;
-                    if (r.data && r.data.message) return r.data.message;
-                  }
-                  if (err.message) return err.message;
-                  try {
-                    return JSON.stringify(err);
-                  } catch (_) {
-                    return "Failed to save user";
-                  }
-                };
 
                 const msg = extractMessage(e);
                 setSnackbarMessage(msg);
@@ -230,17 +212,6 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   }}
                   disabled={saving || (editId ? !dirty : false)}
                   onClick={() => {
-                    const makeAllTouched = (obj) => {
-                      if (obj === null || obj === undefined) return true;
-                      if (typeof obj !== "object") return true;
-                      if (Array.isArray(obj)) return obj.map(() => true);
-                      const out: any = {};
-                      Object.keys(obj).forEach((k) => {
-                        out[k] = makeAllTouched(obj[k]);
-                      });
-                      return out;
-                    };
-
                     try {
                       const allTouched = makeAllTouched(values || {});
                       setTouched(allTouched);

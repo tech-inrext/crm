@@ -6,23 +6,16 @@ import UploadFileIcon from "@/components/ui/Component/UploadFile";
 import CloseIcon from "@/components/ui/Component/CloseIcon";
 import { Field, FieldProps } from "formik";
 import { FIELD_LABELS } from "@/fe/modules/user/constants/users";
+import { previewIsImage } from "@/fe/modules/user/helpers";
+import useLocalFilePreview from "@/fe/modules/user/hooks/useLocalFilePreview";
+import useUploadBox from "@/fe/modules/user/hooks/useUploadBox";
 import ForFreelancer from "./ForFreelancer";
 
 const LocalFilePreview: React.FC<{ file: File; alt?: string }> = ({
   file,
   alt,
 }) => {
-  const [objectUrl, setObjectUrl] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!file) return;
-    const url = URL.createObjectURL(file);
-    setObjectUrl(url);
-    return () => {
-      URL.revokeObjectURL(url);
-      setObjectUrl(null);
-    };
-  }, [file]);
+  const objectUrl = useLocalFilePreview(file);
 
   if (!objectUrl) return null;
 
@@ -45,12 +38,12 @@ const LocalFilePreview: React.FC<{ file: File; alt?: string }> = ({
   );
 };
 
-const UploadBox: React.FC<{
-  id: string;
-  label: string;
-  fieldName: string;
-}> = ({ id, label, fieldName }) => {
-  const [localError, setLocalError] = useState<string | null>(null);
+const UploadBox: React.FC<{ id: string; label: string; fieldName: string }> = ({
+  id,
+  label,
+  fieldName,
+}) => {
+  const { localError, handleFileChange, handleRemove } = useUploadBox();
 
   return (
     <Field name={fieldName}>
@@ -65,8 +58,7 @@ const UploadBox: React.FC<{
           fileValue instanceof File;
         const isUrl = typeof urlValue === "string" && urlValue.trim() !== "";
 
-        const previewIsImage = (v: string) =>
-          /\.(jpe?g|png|gif|webp|avif|svg)$/i.test(v);
+        // previewIsImage imported from helpers
 
         return (
           <Box sx={{ display: "flex", flexDirection: "column", flex: 1 }}>
@@ -78,26 +70,7 @@ const UploadBox: React.FC<{
               className="hidden"
               id={id}
               type="file"
-              onChange={(e) => {
-                const f = e.target.files?.[0] || null;
-                if (!f) return;
-                const maxBytes = 50 * 1024 * 1024; // 50 MB
-                if (f.size > maxBytes) {
-                  if (form && typeof form.setFieldError === "function") {
-                    form.setFieldError(
-                      fieldName,
-                      "File must be less than 50MB",
-                    );
-                  }
-                  setLocalError("File must be less than 50MB");
-                  e.target.value = "";
-                } else {
-                  form?.setFieldValue(fieldName, f);
-                  form?.setFieldValue(urlField, "");
-                  form?.setFieldError(fieldName, undefined);
-                  setLocalError(null);
-                }
-              }}
+              onChange={(e) => handleFileChange(e, form, fieldName)}
             />
 
             <Box
@@ -165,10 +138,7 @@ const UploadBox: React.FC<{
                 <IconButton
                   onClick={(e) => {
                     e.stopPropagation();
-                    form?.setFieldValue(fieldName, null);
-                    form?.setFieldValue(urlField, "");
-                    form?.setFieldError(fieldName, undefined);
-                    setLocalError(null);
+                    handleRemove(form, fieldName);
                   }}
                   size="small"
                   sx={{

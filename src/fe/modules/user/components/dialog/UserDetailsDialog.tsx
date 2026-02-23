@@ -1,11 +1,11 @@
-import React, { useEffect, useState } from "react";
+"use client";
+
+import React from "react";
 import {
   Dialog,
   DialogTitle,
   DialogContent,
   IconButton,
-  Chip,
-  Typography,
 } from "@/components/ui/Component";
 import {
   Person,
@@ -23,7 +23,8 @@ import {
   Work,
   Close,
 } from "@mui/icons-material";
-import { format } from "date-fns";
+import useUserDetails from "@/fe/modules/user/hooks/useUserDetails";
+import { formatDate, formatRoleDisplayName } from "@/fe/modules/user/helpers";
 
 const DetailItem = ({ icon: Icon, label, value, isLink = false }: any) => (
   <div className="group flex items-start gap-3 p-3 rounded-lg bg-gray-50/50 hover:bg-blue-50/70 transition-all duration-200 border border-transparent hover:border-blue-100">
@@ -127,39 +128,13 @@ const SectionCard = ({ title, icon: Icon, colorClass, children }: any) => {
   );
 };
 
-import { useUserDialogData } from "@/fe/modules/user/hooks/useUserDialogData";
-
 const UserDetailsDialog = ({ user, open, onClose }: any) => {
-  const [roleMap, setRoleMap] = useState<Record<string, string>>({});
-  const [imageError, setImageError] = useState(false);
-  const { roles } = useUserDialogData(open);
-
-  useEffect(() => {
-    if (!roles || roles.length === 0) return;
-    const map: Record<string, string> = {};
-    roles.forEach((r: any) => {
-      const id = r._id || r.id;
-      if (id) map[id] = r.name || r.label || "";
-    });
-    setRoleMap(map);
-  }, [roles]);
-
-  useEffect(() => {
-    setImageError(false);
-  }, [user?.photo]);
+  const { roleMap, imageError, setImageError, hasPhoto } = useUserDetails(
+    open,
+    user,
+  );
 
   if (!user) return null;
-
-  const formatDate = (dateString: string | undefined) => {
-    if (!dateString) return "-";
-    try {
-      return format(new Date(dateString), "MMM dd, yyyy");
-    } catch (e) {
-      return dateString;
-    }
-  };
-
-  const hasPhoto = user.photo && user.photo.trim() !== "" && !imageError;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md">
@@ -211,15 +186,8 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">
                   {user.name}
                 </h2>
-                <div className="flex flex-wrap gap-2 mb-3">
-                  <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
-                    {user.designation || "No Designation"}
-                  </span>
-                  {user.isCabVendor && (
-                    <span className="px-3 py-1 bg-amber-100 text-amber-700 rounded-full text-sm font-medium">
-                      🚗 Cab Vendor
-                    </span>
-                  )}
+                <div className="text-sm text-gray-600 mb-2">
+                  {user.designation || "No Designation"}
                 </div>
                 <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                   {user.email && (
@@ -324,13 +292,7 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 <div className="flex flex-wrap gap-1.5">
                   {user.roles?.length > 0 ? (
                     user.roles.map((role: any, idx: number) => {
-                      const displayName =
-                        typeof role === "string"
-                          ? roleMap[role] || role
-                          : role.name ||
-                            role.label ||
-                            role._id ||
-                            JSON.stringify(role);
+                      const displayName = formatRoleDisplayName(role, roleMap);
                       return (
                         <span
                           key={idx}
@@ -423,4 +385,5 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
     </Dialog>
   );
 };
+
 export default UserDetailsDialog;

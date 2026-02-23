@@ -121,4 +121,14 @@ export interface UserData {
   branch: string;
 }
 
+export interface Employee {
+  _id?: string;
+  name: string;
+  email: string;
+  designation?: string;
+  roles?: Array<{ _id: string; name: string }>;
+  isCabVendor?: boolean;
+  [key: string]: any;
+}
+
 export default {};

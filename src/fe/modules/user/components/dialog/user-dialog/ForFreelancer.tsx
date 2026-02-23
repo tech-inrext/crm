@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useCallback } from "react";
+import React, { useRef, useCallback } from "react";
 import {
   Box,
   MenuItem,
@@ -10,35 +10,10 @@ import { FIELD_LABELS } from "@/fe/modules/user/constants/users";
 import {
   BRANCH_LABELS,
   SLAB_OPTIONS,
-  getSlabLabel,
-  formatBranchForMenu,
   type BranchKey,
 } from "@/fe/modules/user/constants/forFreelancer";
-
-function useElementWidth<T extends HTMLElement>(ref: React.RefObject<T>) {
-  const [width, setWidth] = useState<number | undefined>(undefined);
-
-  useEffect(() => {
-    if (typeof ResizeObserver === "undefined") {
-      const measure = () => {
-        if (ref.current) setWidth(ref.current.getBoundingClientRect().width);
-      };
-      measure();
-      window.addEventListener("resize", measure);
-      return () => window.removeEventListener("resize", measure);
-    }
-
-    const obs = new ResizeObserver((entries) => {
-      for (const e of entries)
-        if (e.target === ref.current) setWidth(e.contentRect.width);
-    });
-
-    if (ref.current) obs.observe(ref.current);
-    return () => obs.disconnect();
-  }, [ref]);
-
-  return width;
-}
+import { getSlabLabel, formatBranchForMenu } from "@/fe/modules/user/helpers";
+import { useElementWidth } from "@/fe/modules/user/hooks/useElementWidth";
 
 const ForFreelancer: React.FC = () => {
   const slabRef = useRef<HTMLDivElement | null>(null);

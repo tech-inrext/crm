@@ -28,10 +28,7 @@ import {
 } from "@/fe/modules/user/constants/users";
 import { default as MODULE_STYLES } from "@/fe/modules/user/styles";
 import { useDebounce } from "@/hooks/useDebounce";
-import {
-  canEditEmployee,
-  getInitialUserForm,
-} from "@/fe/modules/user/utils/userHelpers";
+import { canEditEmployee, getInitialUserForm } from "@/fe/modules/user/helpers";
 import { useUserDialog } from "@/fe/modules/user/hooks/useUserDialog";
 import { getUsersTableHeader } from "@/fe/modules/user/components/table/UsersTableConfig";
 import UsersPageList from "@/fe/modules/user/components/UsersPageList";

@@ -14,6 +14,7 @@ import NomineeSection from "./NomineeSection";
 import RequiredDocuments from "./RequiredDocuments";
 import { Photo } from "@mui/icons-material";
 import PhotoUpload from "./PhotoUpload";
+import { toDateInputString } from "@/fe/modules/user/helpers";
 
 const genderOptions = GENDER_OPTIONS.map((gender) => ({
   value: gender,
@@ -26,20 +27,7 @@ interface BasicInformationProps {
 
 const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
   const { setFieldTouched } = useFormikContext();
-  // Convert various date representations to a yyyy-mm-dd string suitable for
-  // an HTML date input. This preserves the local date instead of shifting
-  // across timezones (which toISOString() alone would do).
-  const toDateInputString = (value: any): string => {
-    if (!value) return "";
-    // already in yyyy-mm-dd form
-    if (typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value))
-      return value;
-    const d = new Date(value);
-    if (isNaN(d.getTime())) return "";
-    // adjust to local date by removing timezone offset
-    const local = new Date(d.getTime() - d.getTimezoneOffset() * 60000);
-    return local.toISOString().slice(0, 10);
-  };
+  // date helper imported from centralized helpers
 
   return (
     <>
