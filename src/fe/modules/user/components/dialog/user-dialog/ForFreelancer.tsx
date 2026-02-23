@@ -1,4 +1,4 @@
-import React, { useRef, useState, useMemo, useEffect } from "react";
+import React, { useRef, useState, useEffect, useCallback } from "react";
 import {
   Box,
   MenuItem,
@@ -7,66 +7,47 @@ import {
 } from "@/components/ui/Component";
 import { Field, FieldProps } from "formik";
 import { FIELD_LABELS } from "@/fe/modules/user/constants/users";
+import {
+  BRANCH_LABELS,
+  SLAB_OPTIONS,
+  getSlabLabel,
+  formatBranchForMenu,
+  type BranchKey,
+} from "@/fe/modules/user/constants/forFreelancer";
 
-type BranchKey = "Noida" | "Lucknow" | "Patna" | "Delhi";
-
-const ForFreelancer: React.FC = () => {
-  const slabRef = useRef<HTMLDivElement | null>(null);
-  const branchRef = useRef<HTMLDivElement | null>(null);
-
-  const [slabWidth, setSlabWidth] = useState<number | undefined>(undefined);
-  const [branchWidth, setBranchWidth] = useState<number | undefined>(undefined);
+function useElementWidth<T extends HTMLElement>(ref: React.RefObject<T>) {
+  const [width, setWidth] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (typeof ResizeObserver === "undefined") {
       const measure = () => {
-        if (slabRef.current)
-          setSlabWidth(slabRef.current.getBoundingClientRect().width);
-        if (branchRef.current)
-          setBranchWidth(branchRef.current.getBoundingClientRect().width);
+        if (ref.current) setWidth(ref.current.getBoundingClientRect().width);
       };
       measure();
       window.addEventListener("resize", measure);
       return () => window.removeEventListener("resize", measure);
     }
 
-    const slabObs = new ResizeObserver((entries) => {
+    const obs = new ResizeObserver((entries) => {
       for (const e of entries)
-        if (e.target === slabRef.current) setSlabWidth(e.contentRect.width);
-    });
-    const branchObs = new ResizeObserver((entries) => {
-      for (const e of entries)
-        if (e.target === branchRef.current) setBranchWidth(e.contentRect.width);
+        if (e.target === ref.current) setWidth(e.contentRect.width);
     });
 
-    if (slabRef.current) slabObs.observe(slabRef.current);
-    if (branchRef.current) branchObs.observe(branchRef.current);
+    if (ref.current) obs.observe(ref.current);
+    return () => obs.disconnect();
+  }, [ref]);
 
-    return () => {
-      slabObs.disconnect();
-      branchObs.disconnect();
-    };
-  }, []);
+  return width;
+}
 
-  const BRANCH_LABELS: Record<BranchKey, string> = useMemo(
-    () => ({
-      Noida:
-        "Noida: 3rd floor, D4, Block -D, Sector -10, Noida, Uttar Pradesh 201301.",
-      Lucknow:
-        "Lucknow: 312, Felix, Square, Sushant Golf City, Lucknow 226030.",
-      Patna:
-        "Patna: 4th floor, Pandey Plaza, Exhibition Road, Patna, Bihar 800001.",
-      Delhi: "Plot No. 29, 4th Floor, Moti Nagar, New Delhi-110015",
-    }),
-    [],
-  );
+const ForFreelancer: React.FC = () => {
+  const slabRef = useRef<HTMLDivElement | null>(null);
+  const branchRef = useRef<HTMLDivElement | null>(null);
 
-  const slabOptions = useMemo(
-    () => ["", "100", "95", "90", "80", "70", "60", "50"],
-    [],
-  );
+  const slabWidth = useElementWidth(slabRef);
+  const branchWidth = useElementWidth(branchRef);
 
-  const renderBranchValue = (selected: string) => {
+  const renderBranchValue = useCallback((selected: string) => {
     const text =
       (BRANCH_LABELS as Record<string, string>)[selected] || selected || "";
     return (
@@ -83,7 +64,7 @@ const ForFreelancer: React.FC = () => {
         {text}
       </span>
     );
-  };
+  }, []);
 
   return (
     <>
@@ -132,24 +113,9 @@ const ForFreelancer: React.FC = () => {
                   "& .MuiInputBase-input": { py: 1 },
                 }}
               >
-                {slabOptions.map((opt) => (
+                {SLAB_OPTIONS.map((opt) => (
                   <MenuItem key={opt} value={opt}>
-                    {opt === ""
-                      ? "Select a slab"
-                      : `${opt}%` +
-                        (opt === "100"
-                          ? " President"
-                          : opt === "95"
-                            ? " V.P."
-                            : opt === "90"
-                              ? " A.V.P. (Core Member)"
-                              : opt === "80"
-                                ? " General Manager"
-                                : opt === "70"
-                                  ? " Senior Manager"
-                                  : opt === "60"
-                                    ? " Manager"
-                                    : " (Sales Executive)")}
+                    {getSlabLabel(opt)}
                   </MenuItem>
                 ))}
               </TextField>
@@ -190,26 +156,11 @@ const ForFreelancer: React.FC = () => {
                   "& .MuiInputBase-input": { py: 1 },
                 }}
               >
-                <MenuItem value="Noida">
-                  <Box
-                    sx={{ whiteSpace: "pre-line" }}
-                  >{`Noida: 3rd floor, D4, Block -D,\nSector-10, Noida, Uttar Pradesh 201301.`}</Box>
-                </MenuItem>
-                <MenuItem value="Lucknow">
-                  <Box
-                    sx={{ whiteSpace: "pre-line" }}
-                  >{`Lucknow: 312, Felix, Square,\nSushant Golf City, Lucknow 226030.`}</Box>
-                </MenuItem>
-                <MenuItem value="Patna">
-                  <Box
-                    sx={{ whiteSpace: "pre-line" }}
-                  >{`Patna: 4th floor, Pandey Plaza,\nExhibition Road, Patna, Bihar 800001.`}</Box>
-                </MenuItem>
-                <MenuItem value="Delhi">
-                  <Box
-                    sx={{ whiteSpace: "pre-line" }}
-                  >{`New Delhi: Plot No. 29, 4th Floor, Moti Nagar,\nNew Delhi-110015`}</Box>
-                </MenuItem>
+                {Object.entries(BRANCH_LABELS).map(([key, label]) => (
+                  <MenuItem key={key} value={key}>
+                    <Box sx={{ whiteSpace: "pre-line" }}>{label}</Box>
+                  </MenuItem>
+                ))}
               </TextField>
             </Box>
           )}
