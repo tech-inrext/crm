@@ -1,21 +1,21 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import BoxMUI from "@/components/ui/Component/Box";
 import Tabs from "@mui/material/Tabs";
 import Tab from "@mui/material/Tab";
 import { useAuth } from "@/contexts/AuthContext";
 import { Box, Typography, Card, CardContent } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
-import LeadGenerationChart from "../analytics/Charts/LeadGenerationChart";
 import { StatsCardsRow } from "../analytics/Statcard";
 import { VendorBreakdown } from "../analytics/Cab/Cabvendor";
+import LeadGenerationChart from "../analytics/Charts/LeadGenerationChart";
 import SiteVisitConversionChart from "./Charts/SiteVisitConversionChart";
 import { PropertyPieChart } from "./Charts/Propertychart";
 import LeadSourcesPieChart from "./components/LeadSourcesPieChart";
 import LeadsBySourceList from "./components/LeadsBySourceList";
 
-//  Types
+// ----- Types -----
 interface OverallAnalytics {
   siteVisitCount: number;
   totalUsers: number;
@@ -33,28 +33,7 @@ interface LeadsAnalytics {
   propertyData?: { name: string; value: number; color?: string }[];
 }
 
-// Custom Hook
-function useFetch<T>(url: string, deps: any[] = []) {
-  const [data, setData] = useState<T | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  React.useEffect(() => {
-    let isMounted = true;
-    setLoading(true);
-    fetch(url)
-      .then((res) => res.json())
-      .then((d) => isMounted && setData(d))
-      .finally(() => isMounted && setLoading(false));
-
-    return () => {
-      isMounted = false;
-    };
-  }, deps);
-
-  return { data, loading };
-}
-
-// Card Wrapper with Tailwind
+// ----- Card Wrapper -----
 const CardWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Card className="min-h-[400px] h-full rounded-none shadow-sm border border-gray-200 w-full flex flex-col flex-1">
     <CardContent className="p-0 h-full flex flex-col justify-start">
@@ -63,6 +42,7 @@ const CardWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </Card>
 );
 
+// ----- Main Dashboard -----
 export default function NewDashboardPage() {
   const { getAnalyticsAccess } = useAuth();
   const analyticsAccess = getAnalyticsAccess();
@@ -72,7 +52,7 @@ export default function NewDashboardPage() {
     "week" | "month"
   >("month");
 
-  // Tabs
+  // ----- Tabs -----
   const availableSections = useMemo(() => {
     const sections = ["Overview"];
     if (analyticsAccess.showCabBookingAnalytics)
@@ -81,24 +61,82 @@ export default function NewDashboardPage() {
     return sections;
   }, [analyticsAccess.showCabBookingAnalytics]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (section >= availableSections.length) setSection(0);
   }, [section, availableSections.length]);
 
-  // Fetch Data
-  const { data: overall, loading: overallLoading } = useFetch<OverallAnalytics>(
-    "/api/v0/analytics/overall",
-  );
-  const { data: scheduleAnalytics, loading: scheduleLoading } =
-    useFetch<ScheduleAnalytics>("/api/v0/analytics/schedule");
-  const { data: leadsAnalytics, loading: leadsLoading } =
-    useFetch<LeadsAnalytics>("/api/v0/analytics/leads", [
-      section === (analyticsAccess.showCabBookingAnalytics ? 2 : 1),
-    ]);
+  // ----- Overview Data (fetch once) -----
+  const [overall, setOverall] = useState<OverallAnalytics | null>(null);
+  const [overallLoading, setOverallLoading] = useState(true);
 
-  // Derived Metrics
+  const [scheduleAnalytics, setScheduleAnalytics] =
+    useState<ScheduleAnalytics | null>(null);
+  const [scheduleLoading, setScheduleLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    async function fetchOverview() {
+      try {
+        const [overallRes, scheduleRes] = await Promise.all([
+          fetch("/api/v0/analytics/overall"),
+          fetch("/api/v0/analytics/schedule"),
+        ]);
+
+        const overallData = await overallRes.json();
+        const scheduleData = await scheduleRes.json();
+
+        if (!isMounted) return;
+        setOverall(overallData);
+        setScheduleAnalytics(scheduleData);
+      } catch (err) {
+        console.error("Error fetching overview APIs:", err);
+      } finally {
+        if (isMounted) {
+          setOverallLoading(false);
+          setScheduleLoading(false);
+        }
+      }
+    }
+
+    fetchOverview();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []); // <-- empty dependency => fetch only once
+
+  // ----- Leads Data (fetch only once when Leads tab is active) -----
+  const [leadsAnalytics, setLeadsAnalytics] = useState<LeadsAnalytics | null>(
+    null,
+  );
+  const [leadsLoading, setLeadsLoading] = useState(false);
+
+  useEffect(() => {
+    const leadsTabIndex = analyticsAccess.showCabBookingAnalytics ? 2 : 1;
+    if (section !== leadsTabIndex) return;
+
+    let isMounted = true;
+    setLeadsLoading(true);
+
+    fetch("/api/v0/analytics/leads")
+      .then((res) => res.json())
+      .then((data) => {
+        if (!isMounted) return;
+        setLeadsAnalytics(data);
+      })
+      .finally(() => {
+        if (isMounted) setLeadsLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [section, analyticsAccess.showCabBookingAnalytics]);
+
+  // ----- Derived Metrics -----
   const leadsBySourceMetrics = useMemo(() => {
-    if (!leadsAnalytics) return { map: {}, sourcesOrder: [], slices: [] };
+    if (!leadsAnalytics) return { slices: [], sourcesOrder: [] };
     const palette = [
       "#08c4a6",
       "#4285f4",
@@ -112,13 +150,14 @@ export default function NewDashboardPage() {
       ...s,
       color: palette[idx % palette.length],
     }));
-    return { ...leadsAnalytics, slices };
+    const sourcesOrder = slices.map((s) => s.name);
+    return { ...leadsAnalytics, slices, sourcesOrder };
   }, [leadsAnalytics]);
 
   const propertyMetrics = useMemo(() => {
-    if (!leadsAnalytics || !leadsAnalytics.propertyData) return [];
+    if (!leadsAnalytics?.propertyData) return [];
     const palette = ["#4285f4", "#08c4a6", "#a259e6", "#ff7f4e", "#ffca28"];
-    return (leadsAnalytics.propertyData || []).map((p, idx) => ({
+    return leadsAnalytics.propertyData.map((p, idx) => ({
       ...p,
       color: palette[idx % palette.length],
     }));
@@ -151,7 +190,7 @@ export default function NewDashboardPage() {
           </Tabs>
         </BoxMUI>
 
-        {/* Overview - ONLY overall + schedule */}
+        {/* Overview */}
         {section === 0 && (
           <StatsCardsRow
             scheduleLoading={scheduleLoading}
@@ -171,9 +210,8 @@ export default function NewDashboardPage() {
         {/* Leads & Projects */}
         {((analyticsAccess.showCabBookingAnalytics && section === 2) ||
           (!analyticsAccess.showCabBookingAnalytics && section === 1)) && (
-          <div>
-            <div className="flex flex-wrap gap-6 my-8 w-full items-stretch">
-              {/* Lead Conversion */}
+          <div className="flex flex-col gap-6">
+            <div className="flex flex-wrap gap-6 w-full items-stretch">
               <CardWrapper>
                 <div className="flex justify-between items-center px-2 pt-4 pb-0">
                   <Typography
@@ -198,7 +236,6 @@ export default function NewDashboardPage() {
                 <LeadGenerationChart period={leadConversionPeriod} />
               </CardWrapper>
 
-              {/* Property On Demand */}
               <CardWrapper>
                 <div className="text-[1.3rem] font-bold text-[#333] mb-4 w-full text-center">
                   Property On Demand
@@ -207,8 +244,7 @@ export default function NewDashboardPage() {
               </CardWrapper>
             </div>
 
-            <div className="flex flex-wrap gap-6 my-8 w-full items-stretch">
-              {/* Leads by Source */}
+            <div className="flex flex-wrap gap-6 w-full items-stretch">
               <CardWrapper>
                 <div className="flex justify-between items-center mb-3">
                   <div className="text-[1.3rem] font-bold text-[#333] text-center">
@@ -228,7 +264,6 @@ export default function NewDashboardPage() {
                 </div>
               </CardWrapper>
 
-              {/* Site Visit Conversion */}
               <CardWrapper>
                 <SiteVisitConversionChart />
               </CardWrapper>
