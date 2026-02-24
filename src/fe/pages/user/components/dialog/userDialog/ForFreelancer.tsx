@@ -1,10 +1,5 @@
 ﻿import React, { useRef, useCallback } from "react";
-import {
-  Box,
-  MenuItem,
-  TextField,
-  Typography,
-} from "@/components/ui/Component";
+import { TextField, MenuItem } from "@/components/ui/Component";
 import { Field, FieldProps } from "formik";
 import { FIELD_LABELS } from "@/fe/pages/user/constants/users";
 import {
@@ -14,6 +9,7 @@ import {
 } from "@/fe/pages/user/constants/forFreelancer";
 import { getSlabLabel, formatBranchForMenu } from "@/fe/pages/user/utils";
 import { useElementWidth } from "@/fe/pages/user/hooks/useElementWidth";
+import { inputSx } from "./styles";
 
 const ForFreelancer: React.FC = () => {
   const slabRef = useRef<HTMLDivElement | null>(null);
@@ -23,18 +19,11 @@ const ForFreelancer: React.FC = () => {
   const branchWidth = useElementWidth(branchRef);
 
   const renderBranchValue = useCallback((selected: string) => {
-    const text =
-      (BRANCH_LABELS as Record<string, string>)[selected] || selected || "";
+    const text = (BRANCH_LABELS as Record<string, string>)[selected] || selected || "";
     return (
       <span
         title={text}
-        style={{
-          display: "block",
-          fontSize: 13,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-        }}
+        style={{ display: "block", fontSize: 13, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
       >
         {text}
       </span>
@@ -43,21 +32,12 @@ const ForFreelancer: React.FC = () => {
 
   return (
     <>
-      <Typography variant="h6" sx={{ mt: 2, fontWeight: 600 }}>
-        {FIELD_LABELS.FOR_FREELANCER}
-      </Typography>
+      <p className="text-base font-semibold text-slate-700 mt-2">{FIELD_LABELS.FOR_FREELANCER}</p>
 
-      <Box
-        sx={{
-          display: "flex",
-          gap: 2,
-          mt: 1,
-          flexDirection: { xs: "column", sm: "row" },
-        }}
-      >
+      <div className="flex flex-col sm:flex-row gap-3 mt-1">
         <Field name="slabPercentage">
           {({ field, meta }: FieldProps) => (
-            <Box ref={slabRef} sx={{ flex: 1 }}>
+            <div ref={slabRef} className="flex-1 min-w-0">
               <TextField
                 {...field}
                 label={FIELD_LABELS.SLAB_PERCENTAGE}
@@ -78,29 +58,20 @@ const ForFreelancer: React.FC = () => {
                 size="small"
                 fullWidth
                 error={Boolean(meta.touched && meta.error)}
-                helperText={
-                  meta.touched && meta.error ? String(meta.error) : undefined
-                }
-                sx={{
-                  bgcolor: "#fff",
-                  borderRadius: 1,
-                  "& .MuiInputBase-root": { minHeight: 40 },
-                  "& .MuiInputBase-input": { py: 1 },
-                }}
+                helperText={meta.touched && meta.error ? String(meta.error) : undefined}
+                sx={inputSx}
               >
                 {SLAB_OPTIONS.map((opt) => (
-                  <MenuItem key={opt} value={opt}>
-                    {getSlabLabel(opt)}
-                  </MenuItem>
+                  <MenuItem key={opt} value={opt}>{getSlabLabel(opt)}</MenuItem>
                 ))}
               </TextField>
-            </Box>
+            </div>
           )}
         </Field>
 
         <Field name="branch">
           {({ field, meta }: FieldProps) => (
-            <Box ref={branchRef} sx={{ flex: 1 }}>
+            <div ref={branchRef} className="flex-1 min-w-0 overflow-hidden">
               <TextField
                 {...field}
                 label={FIELD_LABELS.BRANCH}
@@ -121,26 +92,19 @@ const ForFreelancer: React.FC = () => {
                 size="small"
                 fullWidth
                 error={Boolean(meta.touched && meta.error)}
-                helperText={
-                  meta.touched && meta.error ? String(meta.error) : undefined
-                }
-                sx={{
-                  bgcolor: "#fff",
-                  borderRadius: 1,
-                  "& .MuiInputBase-root": { minHeight: 40 },
-                  "& .MuiInputBase-input": { py: 1 },
-                }}
+                helperText={meta.touched && meta.error ? String(meta.error) : undefined}
+                sx={inputSx}
               >
                 {Object.entries(BRANCH_LABELS).map(([key, label]) => (
                   <MenuItem key={key} value={key}>
-                    <Box sx={{ whiteSpace: "pre-line" }}>{label}</Box>
+                    <span style={{ whiteSpace: "pre-line" }}>{label}</span>
                   </MenuItem>
                 ))}
               </TextField>
-            </Box>
+            </div>
           )}
         </Field>
-      </Box>
+      </div>
     </>
   );
 };

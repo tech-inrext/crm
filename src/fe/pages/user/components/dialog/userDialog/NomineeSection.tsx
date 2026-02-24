@@ -1,31 +1,18 @@
 ﻿import React from "react";
-import {
-  Box,
-  MenuItem,
-  TextField,
-  Typography,
-} from "@/components/ui/Component";
+import { TextField } from "@/components/ui/Component";
 import { Field, FieldProps, useFormikContext } from "formik";
-import {
-  FIELD_LABELS,
-  GENDER_OPTIONS,
-} from "@/fe/pages/user/constants/users";
+import { FIELD_LABELS } from "@/fe/pages/user/constants/users";
+import { inputSx } from "./styles";
+
 
 const NomineeSection: React.FC = () => {
   const { setFieldTouched } = useFormikContext();
+
   return (
     <>
-      <Typography variant="h6" sx={{ mt: 2, fontWeight: 600 }}>
-        {FIELD_LABELS.NOMINEE_DETAILS}
-      </Typography>
+      <p className="text-base font-semibold text-slate-700 mt-2">{FIELD_LABELS.NOMINEE_DETAILS}</p>
 
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-          gap: 1.5,
-        }}
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field name="nominee.name">
           {({ field, meta }: FieldProps) => (
             <TextField
@@ -36,12 +23,7 @@ const NomineeSection: React.FC = () => {
               fullWidth
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
+              sx={inputSx}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
@@ -60,12 +42,7 @@ const NomineeSection: React.FC = () => {
               fullWidth
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
+              sx={inputSx}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
@@ -84,23 +61,13 @@ const NomineeSection: React.FC = () => {
               fullWidth
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
+              sx={inputSx}
               inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
-                const v = (e.target as HTMLInputElement).value.replace(
-                  /\D/g,
-                  "",
-                );
+                const v = (e.target as HTMLInputElement).value.replace(/\D/g, "");
                 if (field.name && (field as any).onChange) {
-                  (field as any).onChange({
-                    target: { name: field.name, value: v },
-                  });
+                  (field as any).onChange({ target: { name: field.name, value: v } });
                 }
               }}
             />
@@ -117,12 +84,7 @@ const NomineeSection: React.FC = () => {
               fullWidth
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{
-                bgcolor: "#fff",
-                borderRadius: 1,
-                "& .MuiInputBase-root": { minHeight: 40 },
-                "& .MuiInputBase-input": { py: 1 },
-              }}
+              sx={inputSx}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 if ((field as any).onChange) (field as any).onChange(e);
@@ -130,7 +92,7 @@ const NomineeSection: React.FC = () => {
             />
           )}
         </Field>
-      </Box>
+      </div>
     </>
   );
 };
