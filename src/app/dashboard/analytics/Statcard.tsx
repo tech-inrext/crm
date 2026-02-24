@@ -174,10 +174,11 @@ const StatCard: React.FC<StatCardProps & { onClick?: () => void; loading?: boole
 
 type StatsCardsRowProps = {
   newLeads?: number | null;
-  notconnectedLeads?: number | null;
-  callBackLeads?: number | null;
-  followUpLeads?: number | null;
-  detailsSharedLeads?: number | null;
+  // notconnectedLeads?: number | null;
+  // callBackLeads?: number | null;
+  // followUpLeads?: number | null;
+  activeLeads?: number | null;
+  // detailsSharedLeads?: number | null;
   loadingNewLeads?: boolean;
   siteVisitCount?: number | null;
   siteVisitLoading?: boolean;
@@ -202,7 +203,8 @@ type StatsCardsRowProps = {
 };
 
 export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
-  const router = useRouter();
+    const router = useRouter();      
+    const { user } = useAuth(); 
   // Extended type for team users to include all used properties
   type TeamUserType = {
     _id: string;
@@ -292,10 +294,10 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
   }, 0) : 0);
   const {
     newLeads = 0,
-    notconnectedLeads = 0,
-    callBackLeads = 0,
-    followUpLeads = 0,
-    detailsSharedLeads = 0,
+    // notconnectedLeads = 0,
+    // callBackLeads = 0,
+    // followUpLeads = 0,
+    // detailsSharedLeads = 0,
     loadingNewLeads = false,
     siteVisitCount = 0,
     siteVisitLoading = false,
@@ -367,7 +369,8 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
   const [selectedUserTeamMouStats, setSelectedUserTeamMouStats] = React.useState<{pending: number, approved: number} | null>(null);
   // State for selected user's direct reports (team members)
   const [selectedUserTeamUsers, setSelectedUserTeamUsers] = React.useState<any[]>([]);
-
+  const [myAnalytics, setMyAnalytics] = React.useState<any>(null);
+const [myLoading, setMyLoading] = React.useState(true);
   // Fetch team users (with team name and stats) and summary for 'All' when selection changes
   React.useEffect(() => {
     if (!selectedUser || selectedUser._id === 'all') {
@@ -403,7 +406,15 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
         });
     }
   }, [selectedUser]);
-
+   React.useEffect(() => {
+  setMyLoading(true);
+  fetch("/api/v0/analytics/overall")
+    .then((r) => r.json())
+    .then((data) => {
+      setMyAnalytics(data || {});
+    })
+    .finally(() => setMyLoading(false));
+}, []);
   // Fetch analytics for selected user
   React.useEffect(() => {
     if (selectedUser && selectedUser._id) {
@@ -452,12 +463,8 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
   }, [selectedUser]);
 
   // For logged-in user, use local sum; for selected user, use backend value
-  const activeLeads =
-    (followUpLeads ?? 0) +
-    (callBackLeads ?? 0) +
-    (detailsSharedLeads ?? 0) +
-    (siteVisitCount ?? 0);
-  const userActiveLeads = userAnalytics?.activeLeads ?? 0;
+const activeLeads = myAnalytics?.activeLeads ?? 0;
+const userActiveLeads = userAnalytics?.activeLeads ?? 0;
 
   // Helper to convert old trend object to array format
   function trendObjToArray(
@@ -506,24 +513,9 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
   const totalVendorsTrend = trendObjToArray(trend?.totalBilling);
   // For activeLeads, sum up trends for each status if available
   let activeLeadsTrend: TrendItem[] | undefined = undefined;
-  if (trendLeads?.activeLeads) {
-    // If already array, use as is
-    if (Array.isArray(trendLeads.activeLeads)) {
-      activeLeadsTrend = trendLeads.activeLeads;
-    } else {
-      // Otherwise, sum up only followUp, callBack, detailsShared, siteVisitDone for each day
-      const days = ["today", "yesterday", "beforeYesterday"];
-      activeLeadsTrend = days.map((day, idx) => {
-        const value =
-          (trendLeads?.followUpLeads?.[day] ?? 0) +
-          (trendLeads?.callBackLeads?.[day] ?? 0) +
-          (trendLeads?.detailsSharedLeads?.[day] ?? 0) +
-          (trendLeads?.siteVisitCount?.[day] ?? 0);
-        return { date: getDateNDaysAgo(idx), value };
-      });
-      
-    }
-  }
+if (trend?.activeLeads) {
+  activeLeadsTrend = trendObjToArray(trend.activeLeads);
+}
 
   // For selected user, prepare trends
   const userNewLeadsTrend = trendObjToArray(userTrend?.newLeads);
@@ -573,7 +565,13 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             value={totalTeamsCount ?? 0}
             icon={<FaUsers size={24} style={{ color: "#43a047" }} />}
             iconBg="#e8f5e9"
-            onClick={() => router.push("/dashboard/teams")}
+            onClick={() => {
+  if (user?._id) {
+    router.push(`/dashboard/teams?managerId=${user._id}`);
+  } else {
+    router.push("/dashboard/teams");
+  }
+}}
             loading={loadingNewLeads}
           />
           <StatCard
@@ -582,7 +580,7 @@ export const StatsCardsRow: React.FC<StatsCardsRowProps> = (props) => {
             icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
             iconBg="#e3f2fd"
             trend={activeLeadsTrend}
-            onClick={() => router.push("/dashboard/leads?status=follow-up%2Ccall+back%2Cdetails+shared%2Csite+visit+done")}
+            onClick={() => router.push("/dashboard/leads?status=in+progress%2Cdetails+shared")}
             loading={loadingNewLeads}
           />
           <StatCard

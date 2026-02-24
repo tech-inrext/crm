@@ -18,21 +18,17 @@ class OverallAnalyticsService {
         $or: [{ assignedTo: userId }, { uploadedBy: userId }],
       };
 
-      const activeLeadStatuses = [
-        "followup",
-        "follow up",
-        "callback",
-        "call back",
-        "details shared",
-        "site visit",
-        "site visit done",
-      ];
-
-      const activeLeadsCount = await Lead.countDocuments({
-        ...leadUserQuery,
-        status: { $in: activeLeadStatuses.map(s => new RegExp(`^${s}$`, "i")) },
-      });
-
+/* ---------- ACTIVE LEADS (ONLY IN PROGRESS + DETAILS SHARED) ---------- */
+const activeLeadsCount = await Lead.countDocuments({
+  ...leadUserQuery,
+  status: {
+    $in: [
+      "in progress",
+      "details shared"
+    ]
+  }
+});
+      /* ---------- NEW LEADS ---------- */
       const newLeadsList = await Lead.find({
         ...leadUserQuery,
         status: { $regex: "^new$", $options: "i" },
@@ -45,6 +41,7 @@ class OverallAnalyticsService {
         status: { $regex: "^new$", $options: "i" },
       });
 
+      /* ---------- SITE VISITS ---------- */
       const siteVisitCount = await Lead.countDocuments({
         ...leadUserQuery,
         status: { $regex: /site visit/i },
@@ -52,7 +49,9 @@ class OverallAnalyticsService {
 
       const totalLeads = await Lead.countDocuments(leadUserQuery);
 
+      /* ---------- MOU STATS ---------- */
       let mouStats = { pending: 0, approved: 0 };
+
       if (loggedInUserId) {
         mouStats.pending = await Employee.countDocuments({
           managerId: loggedInUserId.toString(),
@@ -71,9 +70,9 @@ class OverallAnalyticsService {
         totalLeads,
         activeLeads: activeLeadsCount,
         newLeads: newLeadsCount,
-        newLeadSection: newLeadsList.map(lead => ({
+        newLeadSection: newLeadsList.map((lead) => ({
           _id: lead._id,
-          name: lead.name,
+          name: lead.fullName || lead.name,
           status: lead.status,
           createdAt: lead.createdAt,
         })),
@@ -97,7 +96,6 @@ class OverallAnalyticsService {
         return res.status(401).json({ success: false, message: "Unauthorized" });
       }
 
-      const mongoose = (await import("mongoose")).default;
       const Lead = (await import("../../models/Lead")).default;
       const { getCabBooking } = await import("@/be/services/analytics/cabBooking");
 
@@ -112,53 +110,58 @@ class OverallAnalyticsService {
         teamName: 1,
       }).lean();
 
-      const userIds = users.map(u => u._id);
+      const userIds = users.map((u) => u._id);
 
       /* ---------- NEW LEADS ---------- */
       const newLeadsAgg = await Lead.aggregate([
         {
           $match: {
-            $or: [{ assignedTo: { $in: userIds } }, { uploadedBy: { $in: userIds } }],
+            $or: [
+              { assignedTo: { $in: userIds } },
+              { uploadedBy: { $in: userIds } },
+            ],
             status: { $regex: "^new$", $options: "i" },
           },
         },
         { $group: { _id: "$assignedTo", count: { $sum: 1 } } },
       ]);
-      const newLeadsMap = Object.fromEntries(newLeadsAgg.map(x => [x._id?.toString(), x.count]));
 
-      /* ---------- ACTIVE LEADS ---------- */
-      const activeStatuses = [
-        "follow-up",
-        "follow up",
-        "callback",
-        "call back",
-        "details shared",
-        "site visit",
-        "site visit done",
-      ];
+      const newLeadsMap = Object.fromEntries(
+        newLeadsAgg.map((x) => [x._id?.toString(), x.count])
+      );
 
+      /* ---------- ACTIVE LEADS (ONLY IN PROGRESS) ---------- */
       const activeLeadsAgg = await Lead.aggregate([
         {
           $match: {
             assignedTo: { $in: userIds },
-            status: { $in: activeStatuses.map(s => new RegExp(`^${s}$`, "i")) },
+            status: { $regex: "^in progress$", $options: "i" },
           },
         },
         { $group: { _id: "$assignedTo", count: { $sum: 1 } } },
       ]);
-      const activeLeadsMap = Object.fromEntries(activeLeadsAgg.map(x => [x._id?.toString(), x.count]));
+
+      const activeLeadsMap = Object.fromEntries(
+        activeLeadsAgg.map((x) => [x._id?.toString(), x.count])
+      );
 
       /* ---------- SITE VISITS ---------- */
       const siteVisitAgg = await Lead.aggregate([
         {
           $match: {
-            $or: [{ assignedTo: { $in: userIds } }, { uploadedBy: { $in: userIds } }],
+            $or: [
+              { assignedTo: { $in: userIds } },
+              { uploadedBy: { $in: userIds } },
+            ],
             status: { $regex: /site visit/i },
           },
         },
         { $group: { _id: "$assignedTo", count: { $sum: 1 } } },
       ]);
-      const siteVisitMap = Object.fromEntries(siteVisitAgg.map(x => [x._id?.toString(), x.count]));
+
+      const siteVisitMap = Object.fromEntries(
+        siteVisitAgg.map((x) => [x._id?.toString(), x.count])
+      );
 
       /* ---------- MOU ---------- */
       const mouAgg = await Employee.aggregate([
@@ -166,25 +169,56 @@ class OverallAnalyticsService {
         {
           $group: {
             _id: "$_id",
-            pending: { $sum: { $cond: [{ $regexMatch: { input: "$mouStatus", regex: /^Pending$/i } }, 1, 0] } },
-            approved: { $sum: { $cond: [{ $regexMatch: { input: "$mouStatus", regex: /^Approved$/i } }, 1, 0] } },
-            completed: { $sum: { $cond: [{ $regexMatch: { input: "$mouStatus", regex: /^Completed$/i } }, 1, 0] } },
+            pending: {
+              $sum: {
+                $cond: [
+                  { $regexMatch: { input: "$mouStatus", regex: /^Pending$/i } },
+                  1,
+                  0,
+                ],
+              },
+            },
+            approved: {
+              $sum: {
+                $cond: [
+                  { $regexMatch: { input: "$mouStatus", regex: /^Approved$/i } },
+                  1,
+                  0,
+                ],
+              },
+            },
+            completed: {
+              $sum: {
+                $cond: [
+                  { $regexMatch: { input: "$mouStatus", regex: /^Completed$/i } },
+                  1,
+                  0,
+                ],
+              },
+            },
           },
         },
       ]);
+
       const mouMap = Object.fromEntries(
-        mouAgg.map(x => [x._id?.toString(), { pending: x.pending, approved: x.approved, completed: x.completed }])
+        mouAgg.map((x) => [
+          x._id?.toString(),
+          { pending: x.pending, approved: x.approved, completed: x.completed },
+        ])
       );
 
       /* ---------- CAB ---------- */
-      const cabResults = await Promise.all(userIds.map(id => getCabBooking({ avpId: id })));
+      const cabResults = await Promise.all(
+        userIds.map((id) => getCabBooking({ avpId: id }))
+      );
 
       const usersStats = users.map((u, i) => ({
         ...u,
         newLeads: newLeadsMap[u._id.toString()] || 0,
         activeLeads: activeLeadsMap[u._id.toString()] || 0,
         siteVisitCount: siteVisitMap[u._id.toString()] || 0,
-        mouStats: mouMap[u._id.toString()] || { pending: 0, approved: 0, completed: 0 },
+        mouStats:
+          mouMap[u._id.toString()] || { pending: 0, approved: 0, completed: 0 },
         totalVendors: cabResults[i]?.totalVendors ?? 0,
         totalSpend: cabResults[i]?.totalSpend ?? 0,
       }));
