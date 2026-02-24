@@ -284,6 +284,59 @@ const LeadCard = memo(
 
           {/* Contact Details Grid */}
           <Stack spacing={1.5}>
+            <Box
+              onClick={handleAssignedClick}
+              sx={{
+                position: "relative",
+                borderRadius: 2,
+                width: 240,
+                ml: 1,
+                py: 0.5,
+                boxSizing: "border-box",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+
+                "&::before": {
+                  content: '""',
+                  position: "absolute",
+                  top: 0,
+                  bottom: 0,
+                  left: -4, // 👈 border shifted from left
+                  right: -4, // 👈 border shifted from right
+                  border: `0.5px solid ${alpha(
+                    theme.palette.secondary.main,
+                    0.25
+                  )}`,
+                  borderRadius: 2,
+                  pointerEvents: "none",
+                },
+              }}
+            >
+              <InfoRow
+                icon={<PersonAdd sx={{ fontSize: 18 }} />}
+                text={
+                  <Box sx={{ display: "inline-block" }}>
+                    <Box component="span" sx={{ color: "black" }}>
+                      {assignedUser?.name ||
+                        assignedUser?.fullName ||
+                        "Unassigned"}
+                    </Box>
+                  </Box>
+                }
+                color={theme.palette.secondary.main}
+              />
+
+              {/* ✅ Dropdown Icon */}
+              <KeyboardArrowDown
+                sx={{
+                  fontSize: 20,
+                  color: alpha(theme.palette.secondary.main, 0.7),
+                }}
+              />
+            </Box>
+
             <InfoRow
               icon={<Email sx={{ fontSize: 18 }} />}
               text={lead.email || "Not provided"}
@@ -301,58 +354,6 @@ const LeadCard = memo(
               text={lead.budgetRange || "Budget N/A"}
               color={theme.palette.warning.main}
             />
-
-            <Box
-  onClick={handleAssignedClick}
-  sx={{
-    position: "relative",
-    borderRadius: 2,
-    width: 240,
-    ml: 1,
-    py: 0.5,
-    boxSizing: "border-box",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    cursor: "pointer",
-
-    "&::before": {
-      content: '""',
-      position: "absolute",
-      top: 0,
-      bottom: 0,
-      left: -4,   // 👈 border shifted from left
-      right: -4,  // 👈 border shifted from right
-      border: `0.5px solid ${alpha(theme.palette.secondary.main, 0.25)}`,
-      borderRadius: 2,
-      pointerEvents: "none",
-    },
-  }}
->
-  <InfoRow
-    icon={<PersonAdd sx={{ fontSize: 18 }} />}
-    text={
-      <Box sx={{ display: "inline-block" }}>
-        <Box component="span" sx={{ color: "black" }}>
-          {assignedUser?.name ||
-            assignedUser?.fullName ||
-            "Unassigned"}
-        </Box>
-      </Box>
-    }
-    color={theme.palette.secondary.main}
-  />
-
-
-
-              {/* ✅ Dropdown Icon */}
-              <KeyboardArrowDown
-                sx={{
-                  fontSize: 20,
-                  color: alpha(theme.palette.secondary.main, 0.7),
-                }}
-              />
-            </Box>
 
             {/* AssignedDropdown rendered at root for proper closing */}
             {anchorEl && (
