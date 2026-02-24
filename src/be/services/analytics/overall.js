@@ -1,16 +1,46 @@
 import dbConnect from "@/lib/mongodb";
 import Employee from "../../models/Employee";
+import Lead from "../../models/Lead";
 
 class OverallAnalyticsService {
   /**
    * Dashboard analytics (self)
    */
+
+  getActiveLeadsCount(filters) {
+    return Lead.countDocuments({
+      ...filters,
+      status: {
+        $in: ["in progress", "details shared"],
+      },
+    });
+  }
+
+  getNewLeadsCount(filters) {
+    return Lead.find({
+      ...filters,
+      status: "new",
+    });
+  }
+
+  getActiveMOUCount(filters) {
+    return Employee.countDocuments({
+      ...filters,
+      mouStatus: { $regex: "^Pending$", $options: "i" },
+    });
+  }
+
+  getApprovedMOUCount(filters) {
+    return Employee.countDocuments({
+      ...filters,
+      mouStatus: { $regex: "^Approved$", $options: "i" },
+    });
+  }
+
   async getOverall(req, res) {
     await dbConnect();
 
     try {
-      const Lead = (await import("../../models/Lead")).default;
-
       const loggedInUserId = req.employee?._id;
       let userId = req.query.userId || loggedInUserId;
 
@@ -18,51 +48,31 @@ class OverallAnalyticsService {
         $or: [{ assignedTo: userId }, { uploadedBy: userId }],
       };
 
-/* ---------- ACTIVE LEADS (ONLY IN PROGRESS + DETAILS SHARED) ---------- */
-const activeLeadsCount = await Lead.countDocuments({
-  ...leadUserQuery,
-  status: {
-    $in: [
-      "in progress",
-      "details shared"
-    ]
-  }
-});
-      /* ---------- NEW LEADS ---------- */
-      const newLeadsList = await Lead.find({
-        ...leadUserQuery,
-        status: { $regex: "^new$", $options: "i" },
-      })
-        .sort({ createdAt: -1 })
-        .limit(10);
+      const fetchAllDetailsPromise = [];
+      /* ---------- ACTIVE LEADS (ONLY IN PROGRESS + DETAILS SHARED) ---------- */
+      const activeLeadsCount = this.getActiveLeadsCount(leadUserQuery);
+      fetchAllDetailsPromise.push(activeLeadsCount);
 
-      const newLeadsCount = await Lead.countDocuments({
-        ...leadUserQuery,
-        status: { $regex: "^new$", $options: "i" },
-      });
+      const newLeadsCount = this.getNewLeadsCount(leadUserQuery);
+      fetchAllDetailsPromise.push(newLeadsCount);
 
-      /* ---------- SITE VISITS ---------- */
-      const siteVisitCount = await Lead.countDocuments({
-        ...leadUserQuery,
-        status: { $regex: /site visit/i },
-      });
-
-      const totalLeads = await Lead.countDocuments(leadUserQuery);
+      // Add site visit count
 
       /* ---------- MOU STATS ---------- */
       let mouStats = { pending: 0, approved: 0 };
 
       if (loggedInUserId) {
-        mouStats.pending = await Employee.countDocuments({
+        const activeMOUCount = this.getActiveMOUCount({
           managerId: loggedInUserId.toString(),
-          mouStatus: { $regex: "^Pending$", $options: "i" },
         });
-
-        mouStats.approved = await Employee.countDocuments({
+        fetchAllDetailsPromise.push(activeMOUCount);
+        const approvedMOUCount = this.getApprovedMOUCount({
           managerId: loggedInUserId.toString(),
-          mouStatus: { $regex: "^Approved$", $options: "i" },
         });
+        fetchAllDetailsPromise.push(approvedMOUCount);
       }
+
+      const allDetails = await Promise.all(fetchAllDetailsPromise);
 
       return res.status(200).json({
         success: true,
@@ -93,11 +103,15 @@ const activeLeadsCount = await Lead.countDocuments({
     try {
       let managerId = req.query.managerId || req.employee?._id;
       if (!managerId) {
-        return res.status(401).json({ success: false, message: "Unauthorized" });
+        return res
+          .status(401)
+          .json({ success: false, message: "Unauthorized" });
       }
 
       const Lead = (await import("../../models/Lead")).default;
-      const { getCabBooking } = await import("@/be/services/analytics/cabBooking");
+      const { getCabBooking } = await import(
+        "@/be/services/analytics/cabBooking"
+      );
 
       if (Array.isArray(managerId)) managerId = managerId[0];
 
@@ -181,7 +195,9 @@ const activeLeadsCount = await Lead.countDocuments({
             approved: {
               $sum: {
                 $cond: [
-                  { $regexMatch: { input: "$mouStatus", regex: /^Approved$/i } },
+                  {
+                    $regexMatch: { input: "$mouStatus", regex: /^Approved$/i },
+                  },
                   1,
                   0,
                 ],
@@ -190,7 +206,9 @@ const activeLeadsCount = await Lead.countDocuments({
             completed: {
               $sum: {
                 $cond: [
-                  { $regexMatch: { input: "$mouStatus", regex: /^Completed$/i } },
+                  {
+                    $regexMatch: { input: "$mouStatus", regex: /^Completed$/i },
+                  },
                   1,
                   0,
                 ],
@@ -217,8 +235,11 @@ const activeLeadsCount = await Lead.countDocuments({
         newLeads: newLeadsMap[u._id.toString()] || 0,
         activeLeads: activeLeadsMap[u._id.toString()] || 0,
         siteVisitCount: siteVisitMap[u._id.toString()] || 0,
-        mouStats:
-          mouMap[u._id.toString()] || { pending: 0, approved: 0, completed: 0 },
+        mouStats: mouMap[u._id.toString()] || {
+          pending: 0,
+          approved: 0,
+          completed: 0,
+        },
         totalVendors: cabResults[i]?.totalVendors ?? 0,
         totalSpend: cabResults[i]?.totalSpend ?? 0,
       }));
