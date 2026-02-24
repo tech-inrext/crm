@@ -54,7 +54,7 @@ function useFetch<T>(url: string, deps: any[] = []) {
   return { data, loading };
 }
 
-// Card Wrapper
+// Card Wrapper with Tailwind
 const CardWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <Card className="min-h-[400px] h-full rounded-none shadow-sm border border-gray-200 w-full flex flex-col flex-1">
     <CardContent className="p-0 h-full flex flex-col justify-start">
@@ -63,7 +63,6 @@ const CardWrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   </Card>
 );
 
-// Main Component
 export default function NewDashboardPage() {
   const { getAnalyticsAccess } = useAuth();
   const analyticsAccess = getAnalyticsAccess();
@@ -125,7 +124,6 @@ export default function NewDashboardPage() {
     }));
   }, [leadsAnalytics]);
 
-  // Render
   return (
     <PermissionGuard module="analytics" action="read">
       <Box className="p-3 sm:p-6 md:p-8 overflow-hidden">
@@ -153,22 +151,19 @@ export default function NewDashboardPage() {
           </Tabs>
         </BoxMUI>
 
-        {/* Overview */}
+        {/* Overview - ONLY overall + schedule */}
         {section === 0 && (
           <StatsCardsRow
-            siteVisitCount={overall?.siteVisitCount}
-            siteVisitLoading={overallLoading}
-            totalUsers={overall?.totalUsers}
-            usersLoading={overallLoading}
-            totalTeams={overall?.totalTeams}
-            teamsLoading={overallLoading}
             scheduleLoading={scheduleLoading}
             scheduleAnalytics={scheduleAnalytics}
             analyticsAccess={analyticsAccess}
+            siteVisitCount={overall?.siteVisitCount}
+            totalUsers={overall?.totalUsers}
+            totalTeams={overall?.totalTeams}
           />
         )}
 
-        {/* Cab Booking */}
+        {/* Cab Booking Analytics */}
         {analyticsAccess.showCabBookingAnalytics && section === 1 && (
           <VendorBreakdown />
         )}

@@ -32,47 +32,23 @@ const StatCard: React.FC<StatCardProps> = ({
 }) => (
   <Card
     elevation={0}
-    sx={{
-      borderRadius: 2,
-      border: "1px solid #f0f0f0",
-      background: "#fff",
-      minHeight: 130,
-      px: 2,
-      py: 2,
-      boxShadow: "0 2px 8px rgba(99,99,99,0.04)",
-      cursor: onClick ? "pointer" : "default",
-      transition: "0.2s",
-      "&:hover": onClick
-        ? { boxShadow: "0 4px 16px rgba(33,150,243,0.1)" }
-        : {},
-    }}
+    className={`rounded-2xl border border-gray-200 bg-white min-h-[130px] p-4 shadow-sm transition cursor-${onClick ? "pointer" : "default"} hover:shadow-md`}
     onClick={onClick}
   >
-    <CardContent sx={{ p: 0 }}>
-      <Box display="flex" justifyContent="space-between">
+    <CardContent className="p-0">
+      <Box className="flex justify-between items-center">
         <Box>
-          <Typography variant="body2" color="text.secondary">
+          <Typography variant="body2" className="text-gray-500">
             {loading ? <Skeleton width={60} /> : title}
           </Typography>
-          <Typography
-            variant="h5"
-            fontWeight={700}
-            sx={{ mt: 0.5, color: "#1a1a1a" }}
-          >
+          <Typography variant="h5" className="mt-1 font-bold text-gray-900">
             {loading ? <Skeleton width={70} height={32} /> : value}
           </Typography>
         </Box>
 
         <Box
-          sx={{
-            borderRadius: "50%",
-            bgcolor: iconBg,
-            width: 40,
-            height: 40,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
+          className={`rounded-full w-10 h-10 flex items-center justify-center`}
+          style={{ backgroundColor: iconBg }}
         >
           {loading ? (
             <Skeleton variant="circular" width={32} height={32} />
@@ -204,24 +180,12 @@ export const StatsCardsRow: React.FC<{
 
   // ---------------- JSX ----------------
   return (
-    <Box sx={{ width: "100%", mb: 4 }}>
+    <Box className="w-full mb-8">
       {/* YOU Section */}
       <div className="text-blue-500 m-2 font-semibold">YOU</div>
 
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-          gap: 3,
-        }}
-      >
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-            gap: 3,
-          }}
-        >
+      <Box className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <Box className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <StatCard
             title="My Teams (All Levels)"
             value={teamCount}
@@ -281,15 +245,7 @@ export const StatsCardsRow: React.FC<{
           />
         </Box>
 
-        <Box
-          sx={{
-            bgcolor: "#fafbfc",
-            borderRadius: 2,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
+        <Box className="bg-gray-50 rounded-2xl flex items-center justify-center p-4">
           <ScheduleCard
             analyticsAccess={analyticsAccess}
             scheduleLoading={scheduleLoading}
@@ -307,11 +263,11 @@ export const StatsCardsRow: React.FC<{
             variant="rectangular"
             width={280}
             height={40}
-            sx={{ ml: 2, borderRadius: 1 }}
+            className="ml-2 rounded"
           />
         ) : (
           <Autocomplete
-            sx={{ minWidth: 280, ml: 2 }}
+            className="ml-2 min-w-[280px]"
             options={teamUsersWithAll}
             getOptionLabel={(option) =>
               option._id === "all"
@@ -374,52 +330,36 @@ export const StatsCardsRow: React.FC<{
       </div>
 
       {/* Team Stats Cards */}
-      <Box
-        sx={{
-          display: "grid",
-          gridTemplateColumns: { xs: "1fr", md: "1fr 1fr" },
-          gap: 3,
-          width: "100%",
-        }}
-      >
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" },
-            gap: 3,
-            alignItems: "stretch",
-            width: "100%",
-            mt: 2,
-          }}
-        >
+      <Box className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full mt-2">
+        <Box className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
           {userLoading ? (
             <>
               <StatCard
                 loading
                 title="Active Leads"
                 value={0}
-                icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
+                icon={<FaUsers size={24} className="text-blue-500" />}
                 iconBg="#e3f2fd"
               />
               <StatCard
                 loading
                 title="New Leads"
                 value={0}
-                icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
+                icon={<FaUsers size={24} className="text-blue-500" />}
                 iconBg="#e3f2fd"
               />
               <StatCard
                 loading
                 title="Site Visits Scheduled"
                 value={0}
-                icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
+                icon={<FaDollarSign size={24} className="text-purple-700" />}
                 iconBg="#f3f5f5"
               />
               <StatCard
                 loading
                 title="MoUs (Pending / Completed)"
                 value={0}
-                icon={<FaUsers size={24} style={{ color: "#3949ab" }} />}
+                icon={<FaUsers size={24} className="text-indigo-900" />}
                 iconBg="#e8eaf6"
               />
             </>
@@ -428,7 +368,7 @@ export const StatsCardsRow: React.FC<{
               <StatCard
                 title="Active Leads"
                 value={overallTeamActiveLeads}
-                icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
+                icon={<FaUsers size={24} className="text-blue-500" />}
                 iconBg="#e3f2fd"
                 onClick={() =>
                   router.push(
@@ -439,14 +379,14 @@ export const StatsCardsRow: React.FC<{
               <StatCard
                 title="New Leads"
                 value={overallTeamNewLeads}
-                icon={<FaUsers size={24} style={{ color: "#2196f3" }} />}
+                icon={<FaUsers size={24} className="text-blue-500" />}
                 iconBg="#e3f2fd"
                 onClick={() => router.push("/dashboard/leads?status=new")}
               />
               <StatCard
                 title="Site Visits Scheduled"
                 value={overallTeamSiteVisits}
-                icon={<FaDollarSign size={24} style={{ color: "#8e24aa" }} />}
+                icon={<FaDollarSign size={24} className="text-purple-700" />}
                 iconBg="#f3f5f5"
                 onClick={() =>
                   router.push("/dashboard/leads?status=site+visit+done")
@@ -455,7 +395,7 @@ export const StatsCardsRow: React.FC<{
               <StatCard
                 title="MoUs (Pending / Completed)"
                 value={`${overallTeamMouPending} / ${overallTeamMouApproved}`}
-                icon={<FaUsers size={24} style={{ color: "#3949ab" }} />}
+                icon={<FaUsers size={24} className="text-indigo-900" />}
                 iconBg="#e8eaf6"
                 onClick={() => router.push("/dashboard/mou")}
               />
@@ -463,7 +403,7 @@ export const StatsCardsRow: React.FC<{
                 <StatCard
                   title="Total Vendors & Billing amount"
                   value={`${overallTeamTotalVendors} / ₹${overallTeamTotalSpend.toLocaleString()}`}
-                  icon={<FaBuilding size={24} style={{ color: "#ffb300" }} />}
+                  icon={<FaBuilding size={24} className="text-yellow-500" />}
                   iconBg="#fffde7"
                 />
               )}
