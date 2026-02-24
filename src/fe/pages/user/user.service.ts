@@ -1,91 +1,99 @@
-﻿import BaseService from "@/fe/service/BaseService";
+﻿import axios from "axios";
+import BaseService from "@/fe/service/BaseService";
 import {
   USERS_API_BASE,
   ROLES_API_BASE,
   DEPARTMENTS_API_BASE,
 } from "@/fe/pages/user/constants/users";
-import axios from "axios";
+import type {
+  Employee,
+  FetchUsersParams,
+  PaginatedResponse,
+  UploadPresignResponse,
+  UserFormData,
+  RoleItem,
+  ManagerItem,
+  DepartmentItem,
+} from "@/fe/pages/user/types";
 
-/**
- * UserService – all HTTP calls for the user/employee domain.
- * Extends BaseService so axios config is centralised.
- */
+
+
 class UserService extends BaseService {
   constructor() {
     super(USERS_API_BASE);
   }
 
-  async getUsers(params?: any) {
+  /** Paginated employee list */
+  async getUsers(params: FetchUsersParams): Promise<PaginatedResponse<Employee>> {
     return this.get("/", { params });
   }
 
-  async getUserById(id: string) {
-    return this.get(`/${id}`);
+  /** Single employee by ID */
+  async getUserById(id: string): Promise<Employee> {
+    const resp = await this.get<{ data?: Employee } | Employee>(`/${id}`);
+    return (resp as { data?: Employee }).data ?? (resp as Employee);
   }
 
-  async createUser(payload: any) {
+  /** Create a new employee */
+  async createUser(payload: Omit<UserFormData, "aadharFile" | "panFile" | "bankProofFile" | "signatureFile" | "photoFile">): Promise<Employee> {
     return this.post("/", payload);
   }
 
-  async updateUserById(id: string, payload: any) {
+  /** Update an existing employee */
+  async updateUser(id: string, payload: Partial<UserFormData>): Promise<Employee> {
     return this.patch(`/${id}`, payload);
+  }
+
+  /** All roles – direct axios call (different API root from employee base) */
+  async getRoles(): Promise<RoleItem[]> {
+    const resp = await axios.get<{ data?: RoleItem[] } | RoleItem[]>(
+      `${ROLES_API_BASE}/getAllRoleList`,
+      { withCredentials: true },
+    );
+    const payload = resp.data;
+    return (payload as { data?: RoleItem[] }).data ?? (payload as RoleItem[]);
+  }
+
+  /** Employee list used as manager options */
+  async getManagers(params: Record<string, unknown> = {}): Promise<ManagerItem[]> {
+    const resp = await this.get<{ data?: ManagerItem[] } | ManagerItem[]>(
+      "/getAllEmployeeList",
+      { params },
+    );
+    return (resp as { data?: ManagerItem[] }).data ?? (resp as ManagerItem[]);
+  }
+
+  /** All departments – direct axios call (different API root from employee base) */
+  async getDepartments(): Promise<DepartmentItem[]> {
+    const resp = await axios.get<{ data?: DepartmentItem[] } | DepartmentItem[]>(
+      DEPARTMENTS_API_BASE,
+      { withCredentials: true },
+    );
+    const payload = resp.data;
+    return (payload as { data?: DepartmentItem[] }).data ?? (payload as DepartmentItem[]);
+  }
+
+  /** Request a pre-signed S3 upload URL – direct axios call (different API root) */
+  async getUploadUrl(fileName: string, fileType: string): Promise<UploadPresignResponse> {
+    const resp = await axios.post<UploadPresignResponse>(
+      "/api/v0/s3/upload-url",
+      { fileName, fileType },
+      { withCredentials: true },
+    );
+    return resp.data;
+  }
+
+  /** Upload a file directly to S3 using a pre-signed URL */
+  async uploadFileToUrl(uploadUrl: string, file: File): Promise<void> {
+    await fetch(uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
   }
 }
 
-// ---------------------------------------------------------------------------
-// Standalone helpers – kept for backwards compatibility with existing hooks
-// ---------------------------------------------------------------------------
-
-export async function fetchUsers(params: any) {
-  const resp = await axios.get(USERS_API_BASE, { params });
-  return resp.data;
-}
-
-export async function fetchUserById(id: string) {
-  const resp = await axios.get(`${USERS_API_BASE}/${id}`);
-  return resp.data?.data || resp.data;
-}
-
-export async function createUser(payload: any) {
-  const resp = await axios.post(USERS_API_BASE, payload);
-  return resp.data;
-}
-
-export async function updateUserById(id: string, payload: any) {
-  const resp = await axios.patch(`${USERS_API_BASE}/${id}`, payload);
-  return resp.data;
-}
-
-export async function fetchRoles() {
-  const resp = await axios.get(`${ROLES_API_BASE}/getAllRoleList`);
-  return resp.data?.data || [];
-}
-
-export async function fetchManagers(params: any = {}) {
-  const resp = await axios.get(`${USERS_API_BASE}/getAllEmployeeList`, { params });
-  return resp.data?.data || [];
-}
-
-export async function fetchDepartments() {
-  const resp = await axios.get(DEPARTMENTS_API_BASE, { withCredentials: true });
-  return resp.data?.data || [];
-}
-
-export async function getUploadUrl(fileName: string, fileType: string) {
-  const resp = await axios.post(
-    "/api/v0/s3/upload-url",
-    { fileName, fileType },
-    { headers: { "Content-Type": "application/json" } },
-  );
-  return resp.data;
-}
-
-export async function uploadFileToUrl(uploadUrl: string, file: File) {
-  await fetch(uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": file.type },
-    body: file,
-  });
-}
+/** Singleton – import this everywhere instead of `new UserService()` */
+export const userService = new UserService();
 
 export default UserService;

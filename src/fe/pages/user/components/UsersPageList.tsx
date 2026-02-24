@@ -2,25 +2,17 @@
 
 import React from "react";
 import { UsersList } from "@/fe/pages/user/components/UsersList";
+import type { UsersListProps } from "@/fe/pages/user/types";
 
-interface Props {
-  loading: boolean;
-  employees: any[];
-  isMobile: boolean;
-  isClient: boolean;
-  windowWidth: number;
-  page: number;
-  rowsPerPage: number;
-  totalItems: number;
-  usersTableHeader: any;
-  onPageChange: (p: number) => void;
-  onPageSizeChange: (n: number) => void;
-  onEditUser: (id: string) => void;
-  canEdit: (user: any) => boolean;
-}
-
-const UsersPageList: React.FC<Props> = (props) => {
-  return <UsersList {...props} />;
-};
+/**
+ * UsersPageList – thin layout wrapper around UsersList.
+ * Keeps the page's JSX clean by encapsulating any future layout
+ * decoration (e.g. container padding, surface cards) in one place.
+ */
+const UsersPageList: React.FC<UsersListProps> = (props) => (
+  <div className="mt-2">
+    <UsersList {...props} />
+  </div>
+);
 
 export default UsersPageList;

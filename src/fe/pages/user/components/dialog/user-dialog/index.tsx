@@ -15,9 +15,9 @@ import { Formik, Form } from "formik";
 import { BUTTON_LABELS } from "@/fe/pages/user/constants/users";
 import { useUserDialogData } from "@/fe/pages/user/hooks/useUserDialogData";
 import { extractMessage, makeAllTouched } from "@/fe/pages/user/utils";
-import { userValidationSchema } from "./user-dialog/validation";
-import BasicInformation from "./user-dialog/BasicInformation";
-import OrganizationSection from "./user-dialog/OrganizationSection";
+import { userValidationSchema } from "./validation";
+import BasicInformation from "./BasicInformation";
+import OrganizationSection from "./OrganizationSection";
 import type { UserFormData, UserDialogProps } from "@/fe/pages/user/types";
 
 const UserDialog: React.FC<UserDialogProps> = ({

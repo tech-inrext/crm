@@ -1,31 +1,55 @@
 "use client";
 
 import React from "react";
-import {
-    Box,
-    Fab,
-    CircularProgress,
-    useTheme,
-    useMediaQuery,
-    Snackbar,
-    Alert,
-    AddIcon,
-} from "@/components/ui/Component";
+import { useTheme, useMediaQuery, AddIcon, CircularProgress } from "@/components/ui/Component";
 import useUsersPage from "@/fe/pages/user/hooks/useUsersPage";
 import PermissionGuard from "@/components/PermissionGuard";
-import UserDialog from "@/fe/pages/user/components/dialog/UserDialog";
+import UserDialog from "@/fe/pages/user/components/dialog/user-dialog";
 import UserDetailsDialog from "@/fe/pages/user/components/dialog/UserDetailsDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import UsersPageActionBar from "@/fe/pages/user/components/UsersPageActionBar";
-import {
-    GRADIENTS,
-    FAB_POSITION,
-    USERS_PERMISSION_MODULE,
-} from "@/fe/pages/user/constants/users";
-import { default as MODULE_STYLES } from "@/fe/pages/user/styles";
+import { GRADIENTS, FAB_POSITION, USERS_PERMISSION_MODULE } from "@/fe/pages/user/constants/users";
 import { canEditEmployee, getInitialUserForm } from "@/fe/pages/user/utils";
-import { getUsersTableHeader } from "@/fe/pages/user/components/table/UsersTableConfig";
+import { getUsersTableHeader } from "@/fe/pages/user/components/UserTable";
 import UsersPageList from "@/fe/pages/user/components/UsersPageList";
+import type { Employee } from "@/fe/pages/user/types";
+
+// ─── Inline toast ─────────────────────────────────────────────────────────────
+
+interface ToastProps {
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+    onClose: () => void;
+}
+
+const Toast: React.FC<ToastProps> = ({ open, message, severity, onClose }) => {
+    if (!open) return null;
+
+    const colourClass =
+        severity === "success"
+            ? "bg-green-600 text-white"
+            : "bg-red-600 text-white";
+
+    return (
+        <div
+            role="alert"
+            className={`fixed top-4 right-4 z-[1400] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm font-medium transition-all ${colourClass}`}
+        >
+            <span>{message}</span>
+            <button
+                type="button"
+                onClick={onClose}
+                aria-label="Dismiss"
+                className="ml-1 opacity-70 hover:opacity-100 transition-opacity text-lg leading-none"
+            >
+                ×
+            </button>
+        </div>
+    );
+};
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 const UsersPage: React.FC = () => {
     const { user: currentUser } = useAuth();
@@ -33,48 +57,32 @@ const UsersPage: React.FC = () => {
     const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
     const {
-        employees,
-        loading,
-        page,
-        setPage,
-        rowsPerPage,
-        setRowsPerPage,
+        employees, loading,
+        page, setPage,
+        rowsPerPage, setRowsPerPage,
         totalItems,
-        saving,
-        setOpen,
-        open,
+        saving, setOpen, open,
         editId,
-        setEditId,
-        addUser,
-        updateUser,
-        setForm,
-        loadEmployees,
+        setForm, loadEmployees,
         getUserById,
-        dialogMode,
-        selectedUser,
-        handleCloseDialog,
-        openViewDialog,
-        openEditDialog,
-        isClient,
-        windowWidth,
-        search,
-        handleSearchChange,
+        dialogMode, selectedUser,
+        handleCloseDialog, openViewDialog, openEditDialog,
+        isClient, windowWidth,
+        search, handleSearchChange,
         handlePageSizeChange,
-        snackbarOpen,
-        snackbarSeverity,
-        snackbarMessage,
-        setSnackbarOpen,
+        snackbarOpen, snackbarSeverity, snackbarMessage, setSnackbarOpen,
         handleUserSave,
     } = useUsersPage();
 
     const usersTableHeader = getUsersTableHeader({
-        canEditEmployee: (employee) => canEditEmployee(currentUser, employee),
+        canEditEmployee: (employee: Employee) => canEditEmployee(currentUser, employee),
         onView: openViewDialog,
         onEdit: openEditDialog,
     });
 
     return (
-        <Box sx={MODULE_STYLES.users.usersContainer}>
+        <div className="p-4 sm:p-6">
+            {/* Header + search/add bar */}
             <UsersPageActionBar
                 search={search}
                 onSearchChange={handleSearchChange}
@@ -82,6 +90,7 @@ const UsersPage: React.FC = () => {
                 saving={saving}
             />
 
+            {/* Table / card list */}
             <UsersPageList
                 loading={loading}
                 employees={employees}
@@ -95,43 +104,26 @@ const UsersPage: React.FC = () => {
                 onPageChange={setPage}
                 onPageSizeChange={handlePageSizeChange}
                 onEditUser={openEditDialog}
-                canEdit={(user) => canEditEmployee(currentUser, user)}
+                canEdit={(user: Employee) => canEditEmployee(currentUser, user)}
             />
 
-            <PermissionGuard
-                module={USERS_PERMISSION_MODULE}
-                action="write"
-                fallback={<></>}
-            >
-                <Fab
-                    color="primary"
-                    aria-label="add user"
+            {/* Floating action button – mobile only */}
+            <PermissionGuard module={USERS_PERMISSION_MODULE} action="write" fallback={<></>}>
+                <button
+                    type="button"
+                    aria-label="Add user"
                     onClick={() => setOpen(true)}
                     disabled={saving}
-                    sx={{
-                        position: "fixed",
-                        bottom: FAB_POSITION.bottom,
-                        right: FAB_POSITION.right,
-                        background: GRADIENTS.button,
-                        display: { xs: "flex", md: "none" },
-                        zIndex: FAB_POSITION.zIndex,
-                        boxShadow: 3,
-                        "&:hover": { background: GRADIENTS.buttonHover },
-                    }}
+                    style={{ bottom: FAB_POSITION.bottom, right: FAB_POSITION.right, zIndex: FAB_POSITION.zIndex }}
+                    className="fixed md:hidden flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95 disabled:opacity-60"
+                    style={{ background: GRADIENTS.button }}
                 >
-                    {saving ? (
-                        <CircularProgress size={24} color="inherit" />
-                    ) : (
-                        <AddIcon />
-                    )}
-                </Fab>
+                    {saving ? <CircularProgress size={24} color="inherit" /> : <AddIcon />}
+                </button>
 
+                {/* Dialogs */}
                 {dialogMode === "view" ? (
-                    <UserDetailsDialog
-                        open={open}
-                        user={selectedUser}
-                        onClose={handleCloseDialog}
-                    />
+                    <UserDetailsDialog open={open} user={selectedUser} onClose={handleCloseDialog} />
                 ) : (
                     <UserDialog
                         open={open}
@@ -144,23 +136,14 @@ const UsersPage: React.FC = () => {
                 )}
             </PermissionGuard>
 
-            <Snackbar
+            {/* Toast notification */}
+            <Toast
                 open={snackbarOpen}
-                autoHideDuration={4000}
-                onClose={(_, reason) =>
-                    reason !== "clickaway" && setSnackbarOpen(false)
-                }
-                anchorOrigin={{ vertical: "top", horizontal: "right" }}
-            >
-                <Alert
-                    onClose={() => setSnackbarOpen(false)}
-                    severity={snackbarSeverity}
-                    variant="filled"
-                >
-                    {snackbarMessage}
-                </Alert>
-            </Snackbar>
-        </Box>
+                message={snackbarMessage}
+                severity={snackbarSeverity}
+                onClose={() => setSnackbarOpen(false)}
+            />
+        </div>
     );
 };
 

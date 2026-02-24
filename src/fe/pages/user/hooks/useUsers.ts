@@ -1,17 +1,46 @@
 ﻿"use client";
 
 import { useEffect, useState, useCallback } from "react";
-import {
-  fetchUsers,
-  createUser,
-  updateUserById,
-  fetchUserById,
-  getUploadUrl,
-  uploadFileToUrl,
-} from "@/fe/pages/user/user.service";
+import { userService } from "@/fe/pages/user/user.service";
+import { uploadFile } from "@/fe/pages/user/utils/uploadFile";
 import { DEFAULT_PAGE_SIZE } from "@/fe/pages/user/constants/users";
+import type { Employee, FetchUsersParams, UserFormData } from "@/fe/pages/user/types";
 
-import type { Employee } from "@/fe/pages/user/types";
+// Files that need to be uploaded before sending to the API
+type FileKeys = "aadharFile" | "panFile" | "bankProofFile" | "signatureFile" | "photoFile";
+type UrlKeys = "aadharUrl" | "panUrl" | "bankProofUrl" | "signatureUrl" | "photo";
+
+const FILE_TO_URL_MAP: Record<FileKeys, UrlKeys> = {
+  aadharFile: "aadharUrl",
+  panFile: "panUrl",
+  bankProofFile: "bankProofUrl",
+  signatureFile: "signatureUrl",
+  photoFile: "photo",
+};
+
+/**
+ * Uploads any File fields in the form and returns a clean payload
+ * (file objects removed, URLs populated).
+ */
+async function resolveFileUploads(
+  formData: UserFormData,
+): Promise<Omit<UserFormData, FileKeys>> {
+  const payload = { ...formData } as Record<string, unknown>;
+
+  await Promise.all(
+    (Object.entries(FILE_TO_URL_MAP) as [FileKeys, UrlKeys][]).map(
+      async ([fileKey, urlKey]) => {
+        const file = formData[fileKey];
+        if (file instanceof File) {
+          payload[urlKey] = await uploadFile(file);
+        }
+        delete payload[fileKey];
+      },
+    ),
+  );
+
+  return payload as Omit<UserFormData, FileKeys>;
+}
 
 export function useUsers(debouncedSearch: string) {
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -20,29 +49,24 @@ export function useUsers(debouncedSearch: string) {
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
   const [totalItems, setTotalItems] = useState(0);
-  const [search, setSearch] = useState("");
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
-  const [form, setForm] = useState({});
+  const [form, setForm] = useState<Partial<UserFormData>>({});
 
   const loadEmployees = useCallback(
-    async (
-      page = 1,
-      limit = DEFAULT_PAGE_SIZE,
-      search = "",
-      isCabVendor: boolean | undefined = false,
-    ) => {
+    async (params: FetchUsersParams = {}) => {
       setLoading(true);
       try {
-        const params: any = { page, limit };
-        if (search && search.trim()) params.search = search.trim();
-        if (typeof isCabVendor === "boolean") params.isCabVendor = isCabVendor;
-        const response = await fetchUsers(params);
-        const { data, pagination } = response;
-        setEmployees(data || []);
-        setTotalItems(pagination?.totalItems || 0);
+        const response = await userService.getUsers({
+          page: params.page ?? 1,
+          limit: params.limit ?? DEFAULT_PAGE_SIZE,
+          search: params.search?.trim() || undefined,
+          isCabVendor: params.isCabVendor ?? false,
+        });
+        setEmployees(response.data ?? []);
+        setTotalItems(response.pagination?.totalItems ?? 0);
       } catch (error) {
-        console.error("Failed to load employees:", error);
+        console.error("[useUsers] Failed to load employees:", error);
         setEmployees([]);
         setTotalItems(0);
       } finally {
@@ -53,98 +77,53 @@ export function useUsers(debouncedSearch: string) {
   );
 
   useEffect(() => {
-    loadEmployees(page, rowsPerPage, debouncedSearch, false);
+    loadEmployees({ page, limit: rowsPerPage, search: debouncedSearch });
   }, [page, rowsPerPage, debouncedSearch, loadEmployees]);
 
+  const reload = useCallback(
+    () => loadEmployees({ page, limit: rowsPerPage, search: debouncedSearch }),
+    [page, rowsPerPage, debouncedSearch, loadEmployees],
+  );
+
   const addUser = useCallback(
-    async (userData: any) => {
+    async (formData: UserFormData) => {
       setSaving(true);
       try {
-        const uploadFile = async (file: File | null) => {
-          if (!file) return null;
-          const presign = await getUploadUrl(file.name, file.type);
-          const { uploadUrl, fileUrl } = presign;
-          await uploadFileToUrl(uploadUrl, file);
-          return fileUrl;
-        };
-
-        const payload = { ...userData };
-        if (userData.aadharFile)
-          payload.aadharUrl = await uploadFile(userData.aadharFile);
-        if (userData.panFile)
-          payload.panUrl = await uploadFile(userData.panFile);
-        if (userData.bankProofFile)
-          payload.bankProofUrl = await uploadFile(userData.bankProofFile);
-        if (userData.signatureFile)
-          payload.signatureUrl = await uploadFile(userData.signatureFile);
-        if (userData.photoFile)
-          payload.photo = await uploadFile(userData.photoFile);
-
-        delete payload.aadharFile;
-        delete payload.panFile;
-        delete payload.bankProofFile;
-        delete payload.signatureFile;
-        delete payload.photoFile;
-
-        await createUser(payload);
-        await loadEmployees(page, rowsPerPage, debouncedSearch, false);
+        const payload = await resolveFileUploads(formData);
+        await userService.createUser(payload);
+        await reload();
       } catch (error) {
-        console.error("Failed to add user:", error);
-        // rethrow so callers can show errors
+        console.error("[useUsers] Failed to create user:", error);
         throw error;
       } finally {
         setSaving(false);
       }
     },
-    [page, rowsPerPage, debouncedSearch, loadEmployees],
+    [reload],
   );
 
   const updateUser = useCallback(
-    async (id: string, userData: any) => {
+    async (id: string, formData: UserFormData) => {
       setSaving(true);
       try {
-        const uploadFile = async (file: File | null) => {
-          if (!file) return null;
-          const presign = await getUploadUrl(file.name, file.type);
-          const { uploadUrl, fileUrl } = presign;
-          await uploadFileToUrl(uploadUrl, file);
-          return fileUrl;
-        };
-
-        const payload = { ...userData };
-        if (userData.aadharFile)
-          payload.aadharUrl = await uploadFile(userData.aadharFile);
-        if (userData.panFile)
-          payload.panUrl = await uploadFile(userData.panFile);
-        if (userData.bankProofFile)
-          payload.bankProofUrl = await uploadFile(userData.bankProofFile);
-        if (userData.signatureFile)
-          payload.signatureUrl = await uploadFile(userData.signatureFile);
-        if (userData.photoFile)
-          payload.photo = await uploadFile(userData.photoFile);
-        delete payload.aadharFile;
-        delete payload.panFile;
-        delete payload.bankProofFile;
-        delete payload.signatureFile;
-        delete payload.photoFile;
-
-        await updateUserById(id, payload);
-        await loadEmployees(page, rowsPerPage, debouncedSearch, false);
+        const payload = await resolveFileUploads(formData);
+        await userService.updateUser(id, payload);
+        await reload();
       } catch (error) {
-        console.error("Failed to update user:", error);
+        console.error("[useUsers] Failed to update user:", error);
         throw error;
       } finally {
         setSaving(false);
       }
     },
-    [page, rowsPerPage, debouncedSearch, loadEmployees],
+    [reload],
   );
 
-  const getUserById = useCallback(async (id: string) => {
+  const getUserById = useCallback(async (id: string): Promise<Employee | null> => {
     try {
-      return await fetchUserById(id);
+      return await userService.getUserById(id);
     } catch (error) {
-      console.error("Failed to fetch user:", error);
+      console.error("[useUsers] Failed to fetch user by id:", error);
       return null;
     }
   }, []);
@@ -153,23 +132,16 @@ export function useUsers(debouncedSearch: string) {
     employees,
     loading,
     saving,
-    search,
-    setSearch,
-    page,
-    setPage,
-    rowsPerPage,
-    setRowsPerPage,
+    page, setPage,
+    rowsPerPage, setRowsPerPage,
     totalItems,
-    open,
-    setOpen,
-    editId,
-    setEditId,
-    form,
-    setForm,
+    open, setOpen,
+    editId, setEditId,
+    form, setForm,
     addUser,
     updateUser,
-    loadEmployees,
     getUserById,
-    reload: loadEmployees,
+    loadEmployees: reload,
+    reload,
   };
 }

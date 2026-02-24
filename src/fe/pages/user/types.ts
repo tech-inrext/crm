@@ -1,4 +1,5 @@
-// Centralized types for the user module
+// ─── Shared primitives ───────────────────────────────────────────────────────
+
 export interface RoleObject {
   _id: string;
   name: string;
@@ -6,12 +7,21 @@ export interface RoleObject {
   write?: string[];
   delete?: string[];
   isSystemAdmin?: boolean;
-  // optional analytics flags
   showTotalUsers?: boolean;
   showTotalVendorsBilling?: boolean;
   showCabBookingAnalytics?: boolean;
   showScheduleThisWeek?: boolean;
 }
+
+export interface NomineeDetails {
+  name?: string;
+  phone?: string;
+  occupation?: string;
+  relation?: string;
+  gender?: string;
+}
+
+// ─── Domain models ────────────────────────────────────────────────────────────
 
 export interface User {
   _id: string;
@@ -35,6 +45,66 @@ export interface User {
   address?: string;
 }
 
+export interface Employee {
+  _id?: string;
+  id?: string;
+  name: string;
+  email: string;
+  phone?: string;
+  designation?: string;
+  avatarUrl?: string;
+  roles?: RoleObject[];
+  isSystemAdmin?: boolean;
+  departmentId?: string;
+  managerId?: string;
+  isCabVendor?: boolean;
+}
+
+// ─── API types ────────────────────────────────────────────────────────────────
+
+export interface FetchUsersParams {
+  page?: number;
+  limit?: number;
+  search?: string;
+  isCabVendor?: boolean;
+}
+
+export interface PaginationMeta {
+  totalItems: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface PaginatedResponse<T> {
+  data: T[];
+  pagination: PaginationMeta;
+}
+
+export interface UploadPresignResponse {
+  uploadUrl: string;
+  fileUrl: string;
+}
+
+export interface RoleItem {
+  _id: string;
+  name: string;
+}
+
+export interface ManagerItem {
+  _id: string;
+  name: string;
+  email?: string;
+  designation?: string;
+}
+
+export interface DepartmentItem {
+  _id: string;
+  name: string;
+}
+
+// ─── Form types ───────────────────────────────────────────────────────────────
+
 export interface UserFormData {
   name: string;
   email: string;
@@ -50,23 +120,33 @@ export interface UserFormData {
   managerId: string;
   departmentId: string;
   roles: string[];
+  panNumber: string;
+  slabPercentage?: string;
+  branch?: string;
+  // Files – present before upload
   aadharFile?: File | null;
   panFile?: File | null;
   bankProofFile?: File | null;
+  signatureFile?: File | null;
+  photoFile?: File | null;
+  // URLs – present after upload
   aadharUrl?: string;
   panUrl?: string;
   bankProofUrl?: string;
-  photoFile?: File | null;
-  photoUrl?: string;
-  panNumber: string;
-  nominee?: {
-    name?: string;
-    phone?: string;
-    occupation?: string;
-    relation?: string;
-    gender?: string;
-  };
+  signatureUrl?: string;
+  photo?: string;
+  nominee?: NomineeDetails | null;
 }
+
+// ─── Table ────────────────────────────────────────────────────────────────────
+
+export interface TableHeaderItem {
+  label: string;
+  dataKey?: string;
+  component?: string | ((row: Employee) => React.ReactNode);
+}
+
+// ─── Component prop types ─────────────────────────────────────────────────────
 
 export interface UserDialogProps {
   open: boolean;
@@ -78,29 +158,24 @@ export interface UserDialogProps {
 }
 
 export interface UserCardProps {
-  user: {
-    name: string;
-    email: string;
-    designation?: string;
-    avatarUrl?: string;
-  };
+  user: Pick<Employee, "name" | "email" | "designation" | "avatarUrl">;
   onEdit?: () => void;
 }
 
 export interface UsersListProps {
   loading: boolean;
-  employees: any[];
+  employees: Employee[];
   isMobile: boolean;
   isClient: boolean;
   windowWidth: number;
   page: number;
   rowsPerPage: number;
   totalItems: number;
-  usersTableHeader: any[];
+  usersTableHeader: TableHeaderItem[];
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
-  onEditUser: (user: any) => void;
-  canEdit: (user: any) => boolean;
+  onEditUser: (user: Employee) => void;
+  canEdit: (user: Employee) => boolean;
 }
 
 export interface UsersActionBarProps {
@@ -109,26 +184,3 @@ export interface UsersActionBarProps {
   onAdd: () => void;
   saving: boolean;
 }
-
-export interface UserData {
-  name: string;
-  phone: string;
-  email: string;
-  altPhone: string;
-  photo: string;
-  designation: string;
-  specialization: string;
-  branch: string;
-}
-
-export interface Employee {
-  _id?: string;
-  name: string;
-  email: string;
-  designation?: string;
-  roles?: Array<{ _id: string; name: string }>;
-  isCabVendor?: boolean;
-  [key: string]: any;
-}
-
-export default {};
