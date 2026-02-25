@@ -78,6 +78,12 @@ const Leads: React.FC = () => {
     setViewMode,
     searchInput,
     selectedStatuses,
+    selectedLeadTypes,
+    selectedProperties,
+    selectedBudgets,
+    selectedAssignedTo,
+    teamMembers,
+    hierarchyLoading,
     page,
     setPage,
     rowsPerPage,
@@ -85,6 +91,11 @@ const Leads: React.FC = () => {
     total,
     handleSearchChange,
     handleStatusChange,
+    handleLeadTypeChange,
+    handlePropertyChange,
+    handleBudgetChange,
+    handleAssignedToChange,
+    handleClearAllFilters,
     handleEdit,
     saveLead,
     updateLeadStatus,
@@ -203,6 +214,17 @@ const Leads: React.FC = () => {
           loadLeads={loadLeads}
           selectedStatuses={selectedStatuses}
           onStatusesChange={handleStatusChange}
+          selectedLeadTypes={selectedLeadTypes}
+          onLeadTypesChange={handleLeadTypeChange}
+          selectedProperties={selectedProperties}
+          onPropertiesChange={handlePropertyChange}
+          selectedBudgets={selectedBudgets}
+          onBudgetsChange={handleBudgetChange}
+          selectedAssignedTo={selectedAssignedTo}
+          onAssignedToChange={handleAssignedToChange}
+          onClearAllFilters={handleClearAllFilters}
+          teamMembers={teamMembers}
+          leads={leads}
         />
       </Paper>
 
