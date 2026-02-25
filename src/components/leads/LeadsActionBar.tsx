@@ -1,16 +1,4 @@
-import React, { useState } from "react";
-import {
-  Box,
-  Button,
-  MenuItem,
-  Menu,
-  CircularProgress,
-  IconButton,
-  Stack,
-  Tooltip,
-  useMediaQuery,
-  useTheme,
-} from "@/components/ui/Component";
+import React, { useState, useMemo } from "react";
 import {
   Add,
   PersonAdd,
@@ -19,12 +7,37 @@ import {
   DownloadIcon,
   UploadFile,
   AssignmentInd,
+  Box,
+  Button,
+  Chip,
+  IconButton,
+  Stack,
+  Tooltip,
+  useMediaQuery,
+  useTheme,
+  Checkbox,
+  FormControlLabel,
+  Divider,
+  Badge,
+  Typography,
+  MenuItem,
+  Menu,
+  CircularProgress,
+  ExpandMore,
+  Clear,
+  Info as InfoIcon,
+  TrendingUp as TrendingUpIcon,
+  HomeIcon,
+  MonetizationOn as MoneyIcon,
+  People as PeopleIcon,
+  alpha,
 } from "@/components/ui/Component";
 import { MoreVert } from "@mui/icons-material";
 import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import dynamic from "next/dynamic";
-import { LEAD_STATUSES } from "@/constants/leads";
+import { LEAD_STATUSES, LEAD_TYPES, budgetRanges } from "@/constants/leads";
+import { Popover, Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
 
 const BulkUploadDialogDynamic = dynamic(
   () => import("@/components/leads/BulkUploadDialog"),
@@ -51,6 +64,17 @@ interface LeadsActionBarProps {
   loadLeads: () => void;
   selectedStatuses: string[];
   onStatusesChange: (statuses: string[]) => void;
+  selectedLeadTypes: string[];
+  onLeadTypesChange: (types: string[]) => void;
+  selectedProperties: string[];
+  onPropertiesChange: (properties: string[]) => void;
+  selectedBudgets: string[];
+  onBudgetsChange: (budgets: string[]) => void;
+  selectedAssignedTo: string[];
+  onAssignedToChange: (ids: string[]) => void;
+  onClearAllFilters?: () => void;
+  teamMembers: any[];
+  leads: any[];
 }
 
 const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
@@ -63,24 +87,50 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   loadLeads,
   selectedStatuses = [],
   onStatusesChange,
+  selectedLeadTypes = [],
+  onLeadTypesChange,
+  selectedProperties = [],
+  onPropertiesChange,
+  selectedBudgets = [],
+  onBudgetsChange,
+  selectedAssignedTo = [],
+  onAssignedToChange,
+  onClearAllFilters,
+  teamMembers = [],
+  leads = [],
 }) => {
   const theme = useTheme();
   const isTablet = useMediaQuery(theme.breakpoints.down("md"));
   const [uploadStatusOpen, setUploadStatusOpen] = useState(false);
   const [bulkUploadDialogOpen, setBulkUploadDialogOpen] = useState(false);
-  const [mobileAnchor, setMobileAnchor] = useState<null | HTMLElement>(null);
   const [actionsAnchor, setActionsAnchor] = useState<null | HTMLElement>(null);
+  const [filterAnchor, setFilterAnchor] = useState<null | HTMLElement>(null);
 
-  const openMobileMenu = (e: React.MouseEvent<HTMLElement>) =>
-    setMobileAnchor(e.currentTarget);
-  const closeMobileMenu = () => setMobileAnchor(null);
-
-  const mobileMenuOpen = Boolean(mobileAnchor);
   const actionsMenuOpen = Boolean(actionsAnchor);
+  const filterOpen = Boolean(filterAnchor);
 
-  const openActionsMenu = (e: React.MouseEvent<HTMLElement>) =>
-    setActionsAnchor(e.currentTarget);
+  const openActionsMenu = (e: React.MouseEvent<HTMLElement>) => setActionsAnchor(e.currentTarget);
   const closeActionsMenu = () => setActionsAnchor(null);
+
+  const openFilter = (e: React.MouseEvent<HTMLElement>) => setFilterAnchor(e.currentTarget);
+  const closeFilter = () => setFilterAnchor(null);
+
+  const activeFilterCount = 
+    selectedStatuses.length + 
+    selectedLeadTypes.length + 
+    selectedProperties.length + 
+    selectedBudgets.length +
+    selectedAssignedTo.length;
+
+  const uniqueProperties = useMemo(() => {
+    const props = leads
+      .map((l) => l.propertyName || l.property)
+      .filter(Boolean)
+      .filter((v, i, a) => a.indexOf(v) === i);
+    return props.sort();
+  }, [leads]);
+
+
 
   return (
     <Box
@@ -111,7 +161,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
             maxWidth: "300px",
             flexGrow: 1,
             order: { xs: 1, sm: 1 },
-            minWidth: 0, // allow child to shrink below its intrinsic width
+            minWidth: 0, 
           }}
         >
           <SearchBar
@@ -142,123 +192,204 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
             ml: 1,
           }}
         >
-          <Tooltip title="Filter status">
+          <Tooltip title="Filter leads">
             <IconButton
               size="small"
-              onClick={openMobileMenu}
+              onClick={openFilter}
               sx={{
-                backgroundColor:
-                  selectedStatuses.length > 0 ? "primary.main" : "#fff",
-                color: selectedStatuses.length > 0 ? "white" : "inherit",
+                backgroundColor: activeFilterCount > 0 ? "primary.main" : "#fff",
+                color: activeFilterCount > 0 ? "white" : "inherit",
                 boxShadow: 1,
+                padding: "8px",
                 "&:hover": {
-                  backgroundColor:
-                    selectedStatuses.length > 0 ? "primary.dark" : "#f5f5f5",
+                  backgroundColor: activeFilterCount > 0 ? "primary.dark" : "#f5f5f5",
                 },
               }}
-              aria-controls={mobileMenuOpen ? "mobile-status-menu" : undefined}
-              aria-haspopup="true"
-              aria-expanded={mobileMenuOpen ? "true" : undefined}
             >
-              <FilterAltIcon fontSize="small" />
+              <Badge badgeContent={activeFilterCount} color="error" overlap="circular" 
+                sx={{ "& .MuiBadge-badge": { right: -2, top: -2, border: `2px solid ${activeFilterCount > 0 ? theme.palette.primary.main : "#fff"}` } }}>
+                <FilterAltIcon fontSize="small" />
+              </Badge>
             </IconButton>
           </Tooltip>
 
-          <Menu
-            id="mobile-status-menu"
-            anchorEl={mobileAnchor}
-            open={mobileMenuOpen}
-            onClose={closeMobileMenu}
-            MenuListProps={{
-              sx: {
-                minWidth: 220,
-                py: 0.5,
-              },
+          <Popover
+            open={filterOpen}
+            anchorEl={filterAnchor}
+            onClose={closeFilter}
+            anchorOrigin={{
+              vertical: "bottom",
+              horizontal: "left",
+            }}
+            transformOrigin={{
+              vertical: "top",
+              horizontal: "left",
             }}
             PaperProps={{
               sx: {
-                borderRadius: 2,
-                boxShadow: "0 12px 24px rgba(0,0,0,0.12)",
+                width: 320,
+                maxHeight: 500,
+                mt: 1,
+                borderRadius: 3,
+                boxShadow: "0 10px 40px rgba(0,0,0,0.1)",
                 overflow: "hidden",
+                display: "flex",
+                flexDirection: "column"
               },
             }}
           >
-            <MenuItem
-              onClick={() => {
-                onStatusesChange([]);
-                closeMobileMenu();
-              }}
-              sx={{
-                fontWeight: 700,
-                fontSize: "0.95rem",
-                borderBottom: "1px solid rgba(0,0,0,0.08)",
-                py: 1,
-                px: 1.5,
-                "&:hover": { backgroundColor: "transparent" },
-              }}
-            >
-              All Statuses
-            </MenuItem>
-            {LEAD_STATUSES.filter(Boolean).map((s) => (
-              <MenuItem
-                key={s}
-                onClick={() => {
-                  const newStatuses = selectedStatuses.includes(s)
-                    ? selectedStatuses.filter((st) => st !== s)
-                    : [...selectedStatuses, s];
-                  onStatusesChange(newStatuses);
-                }}
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1.5,
-                  py: 0.75,
-                  px: 1.5,
-                  borderRadius: 1,
-                  mx: 0.75,
-                  my: 0.25,
-                  "&:hover": {
-                    backgroundColor: "action.hover",
-                  },
-                }}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedStatuses.includes(s)}
-                  readOnly
-                  style={{ cursor: "pointer" }}
-                />
-                <Box
-                  component="span"
-                  sx={{
-                    textTransform: "capitalize",
-                    fontWeight: 600,
-                    fontSize: "0.9rem",
-                  }}
+            <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#f8faff" }}>
+              <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "#1a2027" }}>
+                Filter Leads
+              </Typography>
+              {activeFilterCount > 0 && (
+                <Button 
+                  size="small" 
+                  onClick={onClearAllFilters}
+                  sx={{ textTransform: "none", color: "error.main", fontWeight: 600 }}
+                  startIcon={<Clear sx={{ fontSize: 16 }} />}
                 >
-                  {s}
-                </Box>
-              </MenuItem>
-            ))}
-            {selectedStatuses.length > 0 && (
-              <MenuItem
-                onClick={() => {
-                  onStatusesChange([]);
-                  closeMobileMenu();
-                }}
-                sx={{
-                  color: "error.main",
-                  justifyContent: "center",
-                  borderTop: "1px solid rgba(0,0,0,0.08)",
-                  mt: 0.5,
-                  py: 1,
-                  fontWeight: 600,
+                  Clear All
+                </Button>
+              )}
+            </Box>
+            
+            <Divider />
+
+            <Box sx={{ overflowY: "auto", flexGrow: 1 }}>
+              {[
+                { label: "Lead Status", icon: <InfoIcon />, items: LEAD_STATUSES, selected: selectedStatuses, onChange: onStatusesChange, color: "primary.main" },
+                { label: "Lead Type", icon: <TrendingUpIcon />, items: LEAD_TYPES, selected: selectedLeadTypes, onChange: onLeadTypesChange, color: "warning.main" },
+                { label: "Property", icon: <HomeIcon />, items: uniqueProperties, selected: selectedProperties, onChange: onPropertiesChange, color: "success.main", scrollable: true },
+                { label: "Budget Range", icon: <MoneyIcon />, items: budgetRanges, selected: selectedBudgets, onChange: onBudgetsChange, color: "error.main" },
+                { label: "Team Members", icon: <PeopleIcon />, items: teamMembers, selected: selectedAssignedTo, onChange: onAssignedToChange, color: "info.main", isTeam: true }
+              ].map((section, idx) => (
+                <React.Fragment key={section.label}>
+                  <Accordion 
+                    elevation={0} 
+                    disableGutters
+                    defaultExpanded={idx === 0}
+                    sx={{ 
+                      "&:before": { display: "none" },
+                      "&.Mui-expanded": { m: 0 },
+                      "& .MuiAccordionSummary-root": {
+                        minHeight: 52,
+                        transition: "background-color 0.2s",
+                        "&.Mui-expanded": { minHeight: 52 },
+                        "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.04) },
+                        "& .MuiAccordionSummary-content": { m: "12px 0", "&.Mui-expanded": { m: "12px 0" } },
+                        "& .MuiAccordionSummary-expandIconWrapper": { color: "text.disabled" },
+                        // Remove focus ring
+                        "&.Mui-focusVisible": { bgcolor: alpha(theme.palette.primary.main, 0.08), outline: "none" }
+                      }
+                    }}
+                  >
+                    <AccordionSummary expandIcon={<ExpandMore fontSize="small" />}>
+                      <Stack direction="row" spacing={1.5} alignItems="center" sx={{ width: "100%" }}>
+                        {React.cloneElement(section.icon as React.ReactElement, { sx: { fontSize: 20, color: section.color } })}
+                        <Typography sx={{ fontWeight: 700, fontSize: "0.75rem", color: "text.primary", textTransform: "uppercase", letterSpacing: 1.2, flexGrow: 1 }}>
+                          {section.label}
+                        </Typography>
+                        {section.selected.length > 0 && (
+                          <Chip 
+                            label={section.selected.length} 
+                            size="small" 
+                            sx={{ 
+                              height: 20, 
+                              minWidth: 20,
+                              fontSize: "0.7rem", 
+                              fontWeight: 800,
+                              bgcolor: alpha(theme.palette.primary.main, 0.1),
+                              color: "primary.main",
+                              border: `1px solid ${alpha(theme.palette.primary.main, 0.2)}`
+                            }} 
+                          />
+                        )}
+                      </Stack>
+                    </AccordionSummary>
+                    <AccordionDetails sx={{ pt: 0, pb: 2, px: 3 }}>
+                      <Stack 
+                        spacing={0} 
+                        sx={section.scrollable || section.isTeam ? { 
+                          maxHeight: 200, 
+                          overflowY: "auto",
+                          pr: 1,
+                          "&::-webkit-scrollbar": { width: "4px" },
+                          "&::-webkit-scrollbar-thumb": { background: alpha(theme.palette.divider, 0.1), borderRadius: "4px" }
+                        } : {}}
+                      >
+                        {section.items.length > 0 ? (
+                          section.items.map((item: any) => {
+                            const isString = typeof item === "string";
+                            const id = isString ? item : item._id;
+                            const label = isString ? item : (
+                              <Box>
+                                <Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{item.name}</Typography>
+                                <Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>{item.designation}</Typography>
+                              </Box>
+                            );
+
+                            return (
+                              <FormControlLabel
+                                key={id}
+                                sx={{ 
+                                  ml: -0.5, 
+                                  mr: 0,
+                                  "&:hover .MuiCheckbox-root": { color: "primary.main" } 
+                                }}
+                                control={
+                                  <Checkbox 
+                                    size="small" 
+                                    checked={section.selected.includes(id)}
+                                    onChange={() => {
+                                      const newVal = section.selected.includes(id)
+                                        ? section.selected.filter((v: any) => v !== id)
+                                        : [...section.selected, id];
+                                      section.onChange(newVal);
+                                    }}
+                                    sx={{ py: 0.6 }}
+                                  />
+                                }
+                                label={<Box sx={{ fontSize: "0.85rem", color: section.selected.includes(id) ? "text.primary" : "text.secondary", fontWeight: section.selected.includes(id) ? 600 : 400, transform: "translateY(1px)", transition: "all 0.2s" }}>{label}</Box>}
+                              />
+                            );
+                          })
+                        ) : (
+                          <Typography sx={{ fontSize: "0.8rem", color: "text.disabled", py: 1, textAlign: "center", fontStyle: "italic" }}>
+                            No options available
+                          </Typography>
+                        )}
+                      </Stack>
+                    </AccordionDetails>
+                  </Accordion>
+                  {idx < 4 && <Divider sx={{ opacity: 0.6 }} />}
+                </React.Fragment>
+              ))}
+            </Box>
+
+            <Box sx={{ p: 2, bgcolor: "#fff", borderTop: `1px solid ${theme.palette.divider}` }}>
+              <Button 
+                fullWidth 
+                variant="contained" 
+                onClick={closeFilter}
+                sx={{ 
+                  borderRadius: 2.5, 
+                  textTransform: "none", 
+                  fontWeight: 700,
+                  py: 1.2,
+                  fontSize: "0.95rem",
+                  boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.25)}`,
+                  "&:hover": { 
+                    boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.35)}`,
+                    transform: "translateY(-1px)"
+                  },
+                  transition: "all 0.2s ease"
                 }}
               >
-                Clear All
-              </MenuItem>
-            )}
-          </Menu>
+                Apply Filters
+              </Button>
+            </Box>
+          </Popover>
         </Box>
 
         {/* Action Menu */}

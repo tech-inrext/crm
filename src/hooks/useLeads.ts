@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, useRef } from "react";
 import axios from "axios";
 import {
   transformAPILead,
@@ -14,14 +14,27 @@ import type {
   LeadFormData,
 } from "@/types/lead";
 
-export function useLeads() {
+export interface LeadFilters {
+  status?: string[];
+  leadType?: string[];
+  propertyName?: string[];
+  budgetRange?: string[];
+  assignedTo?: string[];
+  search?: string;
+}
+
+export function useLeads(initialFilters: LeadFilters = {}) {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [apiLeads, setApiLeads] = useState<APILead[]>([]);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [search, setSearch] = useState("");
-  const [selectedStatuses, setSelectedStatuses] = useState<string[]>([]);
+  const [search, setSearch] = useState(initialFilters.search || "");
+  const [selectedStatuses, setSelectedStatuses] = useState<string[]>(initialFilters.status || []);
+  const [selectedLeadTypes, setSelectedLeadTypes] = useState<string[]>(initialFilters.leadType || []);
+  const [selectedProperties, setSelectedProperties] = useState<string[]>(initialFilters.propertyName || []);
+  const [selectedBudgets, setSelectedBudgets] = useState<string[]>(initialFilters.budgetRange || []);
+  const [selectedAssignedTo, setSelectedAssignedTo] = useState<string[]>(initialFilters.assignedTo || []);
   const [page, setPage] = useState(0); // 0-based for UI
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [open, setOpen] = useState(false);
@@ -30,6 +43,9 @@ export function useLeads() {
     getDefaultLeadFormData()
   );
 
+  // To prevent race conditions
+  const requestVersionRef = useRef(0);
+
   const stats = useMemo(() => calculateLeadStats(leads), [leads]);
 
   const loadLeads = useCallback(
@@ -37,8 +53,13 @@ export function useLeads() {
       page = 1,
       limit = 8,
       search = "",
-      statusParams: string[] = []
+      statusParams: string[] = [],
+      leadTypeParams: string[] = [],
+      propertyParams: string[] = [],
+      budgetParams: string[] = [],
+      assignedToParams: string[] = []
     ) => {
+      const currentVersion = ++requestVersionRef.current;
       setLoading(true);
       try {
         const response = await axios.get(`${API_BASE}`, {
@@ -47,21 +68,33 @@ export function useLeads() {
             limit,
             search,
             ...(statusParams.length > 0 ? { status: statusParams.join(",") } : {}),
+            ...(leadTypeParams.length > 0 ? { leadType: leadTypeParams.join(",") } : {}),
+            ...(propertyParams.length > 0 ? { propertyName: propertyParams.join(",") } : {}),
+            ...(budgetParams.length > 0 ? { budgetRange: budgetParams.join(",") } : {}),
+            ...(assignedToParams.length > 0 ? { assignedTo: assignedToParams.join(",") } : {}),
           },
         });
 
-        const apiLeadsData = response.data.data || [];
-        const transformedLeads = apiLeadsData.map(transformAPILead);
+        // Only update if this is still the latest request
+        if (currentVersion === requestVersionRef.current) {
+          const apiLeadsData = response.data.data || [];
+          const transformedLeads = apiLeadsData.map(transformAPILead);
 
-        setApiLeads(apiLeadsData);
-        setLeads(transformedLeads);
-        setTotal(response.data.pagination?.totalItems || 0);
+          setApiLeads(apiLeadsData);
+          setLeads(transformedLeads);
+          setTotal(response.data.pagination?.totalItems || 0);
+        }
       } catch (error) {
-        setApiLeads([]);
-        setLeads([]);
-        setTotal(0);
+        if (currentVersion === requestVersionRef.current) {
+          console.error("Error loading leads:", error);
+          setApiLeads([]);
+          setLeads([]);
+          setTotal(0);
+        }
       } finally {
-        setLoading(false);
+        if (currentVersion === requestVersionRef.current) {
+          setLoading(false);
+        }
       }
     },
     []
@@ -79,14 +112,14 @@ export function useLeads() {
         } else {
           await axios.post(API_BASE, payload);
         }
-        await loadLeads(page + 1, rowsPerPage, search, selectedStatuses);
+        await loadLeads(page + 1, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo);
       } catch (error) {
         throw error;
       } finally {
         setSaving(false);
       }
     },
-    [loadLeads, page, rowsPerPage, search, selectedStatuses] // Added status to the dependency array
+    [loadLeads, page, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo]
   );
 
   const updateLeadStatus = useCallback(
@@ -146,8 +179,8 @@ export function useLeads() {
   );
 
   useEffect(() => {
-    loadLeads(page + 1, rowsPerPage, search, selectedStatuses); // API expects 1-based page
-  }, [loadLeads, page, rowsPerPage, search, selectedStatuses]);
+    loadLeads(page + 1, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo); // API expects 1-based page
+  }, [loadLeads, page, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo]);
 
   return {
     leads,
@@ -174,5 +207,13 @@ export function useLeads() {
     updateLeadType,
     selectedStatuses,
     setSelectedStatuses,
+    selectedLeadTypes,
+    setSelectedLeadTypes,
+    selectedProperties,
+    setSelectedProperties,
+    selectedBudgets,
+    setSelectedBudgets,
+    selectedAssignedTo,
+    setSelectedAssignedTo,
   };
 }
