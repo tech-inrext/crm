@@ -1,3 +1,3 @@
-import Users from "@/fe/modules/user";
+import Users from "@/fe/pages/user";
 
 export default Users;
