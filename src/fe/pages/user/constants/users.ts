@@ -15,7 +15,7 @@ export const DEFAULT_USER_FORM = {
   address: "",
   gender: "Male",
   dateOfBirth: "",
-  altPhone: "",
+  whatsapp: "",
   fatherName: "",
   specialization: "",
   joiningDate: "",

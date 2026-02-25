@@ -13,17 +13,10 @@ import { canEditEmployee, getInitialUserForm } from "@/fe/pages/user/utils";
 import { getUsersTableHeader } from "@/fe/pages/user/components/UserTable";
 import UsersPageList from "@/fe/pages/user/components/UsersPageList";
 import type { Employee } from "@/fe/pages/user/types";
+import type {TostProps} from "@/fe/pages/user/types";
 
-// ─── Inline toast ─────────────────────────────────────────────────────────────
 
-interface ToastProps {
-    open: boolean;
-    message: string;
-    severity: "success" | "error";
-    onClose: () => void;
-}
-
-const Toast: React.FC<ToastProps> = ({ open, message, severity, onClose }) => {
+const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {
     if (!open) return null;
 
     const colourClass =
@@ -49,7 +42,6 @@ const Toast: React.FC<ToastProps> = ({ open, message, severity, onClose }) => {
     );
 };
 
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 const UsersPage: React.FC = () => {
     const { user: currentUser } = useAuth();

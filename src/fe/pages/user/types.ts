@@ -112,7 +112,7 @@ export interface UserFormData {
   address: string;
   gender: string;
   dateOfBirth?: string;
-  altPhone?: string;
+  whatsapp?: string;
   fatherName?: string;
   specialization?: string;
   joiningDate?: string;
@@ -183,4 +183,12 @@ export interface UsersActionBarProps {
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAdd: () => void;
   saving: boolean;
+}
+
+
+interface ToastProps {
+    open: boolean;
+    message: string;
+    severity: "success" | "error";
+    onClose: () => void;
 }

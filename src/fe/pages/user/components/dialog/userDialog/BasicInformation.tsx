@@ -8,7 +8,10 @@ import PhotoUpload from "./PhotoUpload";
 import { toDateInputString } from "@/fe/pages/user/utils";
 import { inputSx, dateInputSx } from "./styles";
 
-const genderOptions = GENDER_OPTIONS.map((gender) => ({ value: gender, label: gender }));
+const genderOptions = GENDER_OPTIONS.map((gender) => ({
+  value: gender,
+  label: gender,
+}));
 
 interface BasicInformationProps {
   editId: string | null;
@@ -19,14 +22,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
 
   return (
     <>
-
       {/* Photo upload centred */}
       <div className="flex justify-center my-2">
         <div className="w-36">
           <PhotoUpload />
         </div>
       </div>
-      <p className="text-base font-semibold text-slate-700 mt-1">{FIELD_LABELS.BASIC_INFO}</p>
+      <p className="text-base font-semibold text-slate-700 mt-1">
+        {FIELD_LABELS.BASIC_INFO}
+      </p>
 
       {/* Name + Email */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -68,7 +72,7 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
         </Field>
       </div>
 
-      {/* Phone + Alt Phone */}
+      {/* Phone */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field name="phone">
           {({ field, meta }: FieldProps) => (
@@ -84,16 +88,21 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
-                const v = (e.target as HTMLInputElement).value.replace(/\D/g, "");
+                const v = (e.target as HTMLInputElement).value.replace(
+                  /\D/g,
+                  "",
+                );
                 if (field.name && (field as any).onChange) {
-                  (field as any).onChange({ target: { name: field.name, value: v } });
+                  (field as any).onChange({
+                    target: { name: field.name, value: v },
+                  });
                 }
               }}
             />
           )}
         </Field>
 
-        <Field name="altPhone">
+        <Field name="whatsapp">
           {({ field, meta }: FieldProps) => (
             <TextField
               {...field}
@@ -107,9 +116,14 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               onChange={(e) => {
                 if (field.name) setFieldTouched(field.name, true, true);
-                const v = (e.target as HTMLInputElement).value.replace(/\D/g, "");
+                const v = (e.target as HTMLInputElement).value.replace(
+                  /\D/g,
+                  "",
+                );
                 if (field.name && (field as any).onChange) {
-                  (field as any).onChange({ target: { name: field.name, value: v } });
+                  (field as any).onChange({
+                    target: { name: field.name, value: v },
+                  });
                 }
               }}
             />
@@ -151,10 +165,15 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                 if (field.name) setFieldTouched(field.name, true, true);
                 const value = e.target.value.toUpperCase().trim();
                 if (field.name && (field as any).onChange) {
-                  (field as any).onChange({ target: { name: field.name, value } });
+                  (field as any).onChange({
+                    target: { name: field.name, value },
+                  });
                 }
               }}
-              inputProps={{ maxLength: 10, style: { textTransform: "uppercase" } }}
+              inputProps={{
+                maxLength: 10,
+                style: { textTransform: "uppercase" },
+              }}
             />
           )}
         </Field>
@@ -199,7 +218,9 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
               }}
             >
               {genderOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>{opt.label}</MenuItem>
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
               ))}
             </TextField>
           )}
@@ -222,7 +243,9 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                 const v = e.target.value || "";
                 if (field.name) setFieldTouched(field.name, true, true);
                 if (field.name && (field as any).onChange) {
-                  (field as any).onChange({ target: { name: field.name, value: v } });
+                  (field as any).onChange({
+                    target: { name: field.name, value: v },
+                  });
                 }
               }}
             />
@@ -249,7 +272,9 @@ const BasicInformation: React.FC<BasicInformationProps> = ({ editId }) => {
                 const v = e.target.value || "";
                 if (field.name) setFieldTouched(field.name, true, true);
                 if (field.name && (field as any).onChange) {
-                  (field as any).onChange({ target: { name: field.name, value: v } });
+                  (field as any).onChange({
+                    target: { name: field.name, value: v },
+                  });
                 }
               }}
             />

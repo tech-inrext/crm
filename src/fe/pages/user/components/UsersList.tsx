@@ -47,7 +47,7 @@ export const UsersList: React.FC<UsersListProps> = ({
   if (employees.length === 0) return <EmptyState />;
 
   const paginationBar = (
-    <div className="flex justify-end mt-4">
+    <div className="flex justify-center mt-4">
       <Pagination
         page={page}
         pageSize={rowsPerPage}

@@ -42,11 +42,11 @@ export const userValidationSchema = Yup.object({
     .min(VALIDATION_RULES.ADDRESS.min)
     .required("Address is required"),
   gender: Yup.string().oneOf(GENDER_OPTIONS).required("Gender is required"),
-  altPhone: Yup.string()
+  whatsapp: Yup.string()
     .transform((value, originalValue) => (originalValue === "" ? null : value))
     .nullable()
     .test(
-      "alt-phone-format",
+      "whatsapp-format",
       "Phone must contain only digits and 10 digits long",
       (val) => {
         if (val === null || val === undefined || val === "") return true;
