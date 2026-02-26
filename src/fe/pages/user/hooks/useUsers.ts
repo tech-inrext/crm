@@ -1,14 +1,28 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useState, useCallback } from "react";
 import { userService } from "@/fe/pages/user/user.service";
 import { uploadFile } from "@/fe/pages/user/utils/uploadFile";
 import { DEFAULT_PAGE_SIZE } from "@/fe/pages/user/constants/users";
-import type { Employee, FetchUsersParams, UserFormData } from "@/fe/pages/user/types";
+import type {
+  Employee,
+  FetchUsersParams,
+  UserFormData,
+} from "@/fe/pages/user/types";
 
 // Files that need to be uploaded before sending to the API
-type FileKeys = "aadharFile" | "panFile" | "bankProofFile" | "signatureFile" | "photoFile";
-type UrlKeys = "aadharUrl" | "panUrl" | "bankProofUrl" | "signatureUrl" | "photo";
+type FileKeys =
+  | "aadharFile"
+  | "panFile"
+  | "bankProofFile"
+  | "signatureFile"
+  | "photoFile";
+type UrlKeys =
+  | "aadharUrl"
+  | "panUrl"
+  | "bankProofUrl"
+  | "signatureUrl"
+  | "photo";
 
 const FILE_TO_URL_MAP: Record<FileKeys, UrlKeys> = {
   aadharFile: "aadharUrl",
@@ -23,7 +37,7 @@ const FILE_TO_URL_MAP: Record<FileKeys, UrlKeys> = {
  * (file objects removed, URLs populated).
  */
 async function resolveFileUploads(
-  formData: UserFormData,
+  formData: UserFormData
 ): Promise<Omit<UserFormData, FileKeys>> {
   const payload = { ...formData } as Record<string, unknown>;
 
@@ -35,16 +49,14 @@ async function resolveFileUploads(
           payload[urlKey] = await uploadFile(file);
         }
         delete payload[fileKey];
-      },
-    ),
+      }
+    )
   );
 
   return payload as Omit<UserFormData, FileKeys>;
 }
 
 export function useUsers(debouncedSearch: string) {
-  const [employees, setEmployees] = useState<Employee[]>([]);
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [page, setPage] = useState(1);
   const [rowsPerPage, setRowsPerPage] = useState(DEFAULT_PAGE_SIZE);
@@ -53,95 +65,55 @@ export function useUsers(debouncedSearch: string) {
   const [editId, setEditId] = useState<string | null>(null);
   const [form, setForm] = useState<Partial<UserFormData>>({});
 
-  const loadEmployees = useCallback(
-    async (params: FetchUsersParams = {}) => {
-      setLoading(true);
-      try {
-        const response = await userService.getUsers({
-          page: params.page ?? 1,
-          limit: params.limit ?? DEFAULT_PAGE_SIZE,
-          search: params.search?.trim() || undefined,
-          isCabVendor: params.isCabVendor ?? false,
-        });
-        setEmployees(response.data ?? []);
-        setTotalItems(response.pagination?.totalItems ?? 0);
-      } catch (error) {
-        console.error("[useUsers] Failed to load employees:", error);
-        setEmployees([]);
-        setTotalItems(0);
-      } finally {
-        setLoading(false);
-      }
-    },
-    [],
-  );
-
-  useEffect(() => {
-    loadEmployees({ page, limit: rowsPerPage, search: debouncedSearch });
-  }, [page, rowsPerPage, debouncedSearch, loadEmployees]);
-
-  const reload = useCallback(
-    () => loadEmployees({ page, limit: rowsPerPage, search: debouncedSearch }),
-    [page, rowsPerPage, debouncedSearch, loadEmployees],
-  );
-
-  const addUser = useCallback(
-    async (formData: UserFormData) => {
-      setSaving(true);
-      try {
-        const payload = await resolveFileUploads(formData);
-        await userService.createUser(payload);
-        await reload();
-      } catch (error) {
-        console.error("[useUsers] Failed to create user:", error);
-        throw error;
-      } finally {
-        setSaving(false);
-      }
-    },
-    [reload],
-  );
-
-  const updateUser = useCallback(
-    async (id: string, formData: UserFormData) => {
-      setSaving(true);
-      try {
-        const payload = await resolveFileUploads(formData);
-        await userService.updateUser(id, payload);
-        await reload();
-      } catch (error) {
-        console.error("[useUsers] Failed to update user:", error);
-        throw error;
-      } finally {
-        setSaving(false);
-      }
-    },
-    [reload],
-  );
-
-  const getUserById = useCallback(async (id: string): Promise<Employee | null> => {
+  const addUser = useCallback(async (formData: UserFormData) => {
+    setSaving(true);
     try {
-      return await userService.getUserById(id);
+      const payload = await resolveFileUploads(formData);
+      await userService.createUser(payload);
+      await reload();
     } catch (error) {
-      console.error("[useUsers] Failed to fetch user by id:", error);
-      return null;
+      console.error("[useUsers] Failed to create user:", error);
+      throw error;
+    } finally {
+      setSaving(false);
     }
   }, []);
 
+  const updateUser = useCallback(async (id: string, formData: UserFormData) => {
+    setSaving(true);
+    try {
+      const payload = await resolveFileUploads(formData);
+      await userService.updateUser(id, payload);
+      // await reload();
+    } catch (error) {
+      console.error("[useUsers] Failed to update user:", error);
+      throw error;
+    } finally {
+      setSaving(false);
+    }
+  }, []);
+
+  const getUserById = useCallback(
+    async (id: string): Promise<Employee | null> => {
+      try {
+        return await userService.getUserById(id);
+      } catch (error) {
+        console.error("[useUsers] Failed to fetch user by id:", error);
+        return null;
+      }
+    },
+    []
+  );
+
   return {
-    employees,
-    loading,
-    saving,
-    page, setPage,
-    rowsPerPage, setRowsPerPage,
-    totalItems,
-    open, setOpen,
-    editId, setEditId,
-    form, setForm,
+    open,
+    setOpen,
+    editId,
+    setEditId,
+    form,
+    setForm,
     addUser,
     updateUser,
     getUserById,
-    loadEmployees: reload,
-    reload,
   };
 }

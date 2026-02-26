@@ -16,16 +16,9 @@ import type {
   DepartmentItem,
 } from "@/fe/pages/user/types";
 
-
-
 class UserService extends BaseService {
   constructor() {
     super(USERS_API_BASE);
-  }
-
-  /** Paginated employee list */
-  async getUsers(params: FetchUsersParams): Promise<PaginatedResponse<Employee>> {
-    return this.get("/", { params });
   }
 
   /** Single employee by ID */
@@ -35,12 +28,20 @@ class UserService extends BaseService {
   }
 
   /** Create a new employee */
-  async createUser(payload: Omit<UserFormData, "aadharFile" | "panFile" | "bankProofFile" | "signatureFile" | "photoFile">): Promise<Employee> {
+  async createUser(
+    payload: Omit<
+      UserFormData,
+      "aadharFile" | "panFile" | "bankProofFile" | "signatureFile" | "photoFile"
+    >
+  ): Promise<Employee> {
     return this.post("/", payload);
   }
 
   /** Update an existing employee */
-  async updateUser(id: string, payload: Partial<UserFormData>): Promise<Employee> {
+  async updateUser(
+    id: string,
+    payload: Partial<UserFormData>
+  ): Promise<Employee> {
     return this.patch(`/${id}`, payload);
   }
 
@@ -48,37 +49,44 @@ class UserService extends BaseService {
   async getRoles(): Promise<RoleItem[]> {
     const resp = await axios.get<{ data?: RoleItem[] } | RoleItem[]>(
       `${ROLES_API_BASE}/getAllRoleList`,
-      { withCredentials: true },
+      { withCredentials: true }
     );
     const payload = resp.data;
     return (payload as { data?: RoleItem[] }).data ?? (payload as RoleItem[]);
   }
 
   /** Employee list used as manager options */
-  async getManagers(params: Record<string, unknown> = {}): Promise<ManagerItem[]> {
+  async getManagers(
+    params: Record<string, unknown> = {}
+  ): Promise<ManagerItem[]> {
     const resp = await this.get<{ data?: ManagerItem[] } | ManagerItem[]>(
       "/getAllEmployeeList",
-      { params },
+      { params }
     );
     return (resp as { data?: ManagerItem[] }).data ?? (resp as ManagerItem[]);
   }
 
   /** All departments – direct axios call (different API root from employee base) */
   async getDepartments(): Promise<DepartmentItem[]> {
-    const resp = await axios.get<{ data?: DepartmentItem[] } | DepartmentItem[]>(
-      DEPARTMENTS_API_BASE,
-      { withCredentials: true },
-    );
+    const resp = await axios.get<
+      { data?: DepartmentItem[] } | DepartmentItem[]
+    >(DEPARTMENTS_API_BASE, { withCredentials: true });
     const payload = resp.data;
-    return (payload as { data?: DepartmentItem[] }).data ?? (payload as DepartmentItem[]);
+    return (
+      (payload as { data?: DepartmentItem[] }).data ??
+      (payload as DepartmentItem[])
+    );
   }
 
   /** Request a pre-signed S3 upload URL – direct axios call (different API root) */
-  async getUploadUrl(fileName: string, fileType: string): Promise<UploadPresignResponse> {
+  async getUploadUrl(
+    fileName: string,
+    fileType: string
+  ): Promise<UploadPresignResponse> {
     const resp = await axios.post<UploadPresignResponse>(
       "/api/v0/s3/upload-url",
       { fileName, fileType },
-      { withCredentials: true },
+      { withCredentials: true }
     );
     return resp.data;
   }
@@ -96,4 +104,4 @@ class UserService extends BaseService {
 /** Singleton – import this everywhere instead of `new UserService()` */
 export const userService = new UserService();
 
-export default UserService;
+export default userService;
