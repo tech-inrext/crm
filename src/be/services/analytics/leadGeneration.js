@@ -2,28 +2,42 @@ import { Service } from "@framework";
 import dbConnect from "@/lib/mongodb";
 import Lead from "../../models/Lead";
 
-const CONVERTED_STATUSES = [
-  "site visit done",
-  "call back",
-  "follow up",
-  "details shared",
-];
+const CONVERTED_STATUS = "details shared";
 
 class LeadAnalyticsService extends Service {
+  // Reusable Mongo status normalization
+  normalizeStatusExpression() {
+    return {
+      $trim: {
+        input: {
+          $toLower: {
+            $replaceAll: {
+              input: { $ifNull: ["$status", ""] },
+              find: "-",
+              replacement: " ",
+            },
+          },
+        },
+      },
+    };
+  }
+
   async getLeadGeneration(req, res) {
     try {
       await dbConnect();
 
       const period = (req.query.period || "month").toString();
-      const employee = req.employee;
+      const loggedInUserId = req.employee?._id;
 
-      const loggedInUserId = employee?._id;
       const baseMatch = {};
-      if (loggedInUserId) baseMatch.uploadedBy = loggedInUserId;
+      if (loggedInUserId) {
+        baseMatch.uploadedBy = loggedInUserId;
+      }
 
-      /* -------- WEEK -------- */
+      const now = new Date();
+
+      /* ================= WEEK (BASED ON updatedAt) ================= */
       if (period === "week") {
-        const now = new Date();
         const day = now.getDay();
         const diffToMonday = day === 0 ? 6 : day - 1;
 
@@ -35,49 +49,57 @@ class LeadAnalyticsService extends Service {
         sunday.setDate(monday.getDate() + 6);
         sunday.setHours(23, 59, 59, 999);
 
-        const weekMatch = { createdAt: { $gte: monday, $lte: sunday } };
-        if (loggedInUserId) weekMatch.uploadedBy = loggedInUserId;
+        const results = await Lead.aggregate([
+          {
+            $match: {
+              ...baseMatch,
+              updatedAt: { $gte: monday, $lte: sunday }, // ✅ changed
+            },
+          },
+          {
+            $project: {
+              dayOfWeek: { $dayOfWeek: "$updatedAt" }, // ✅ changed
+              statusNorm: this.normalizeStatusExpression(),
+            },
+          },
+          { $match: { statusNorm: CONVERTED_STATUS } },
+          {
+            $group: {
+              _id: "$dayOfWeek",
+              count: { $sum: 1 },
+            },
+          },
+        ]);
 
-        const allWeekLeads = await Lead.find(weekMatch).lean();
+        const counts = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
 
-        const convertedLeads = allWeekLeads.filter((lead) => {
-          const statusNorm = (lead.status || "")
-            .toLowerCase()
-            .replace(/-/g, " ")
-            .trim();
-          return CONVERTED_STATUSES.includes(statusNorm);
-        });
-
-        const countsByDay = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-
-        convertedLeads.forEach((lead) => {
-          const dayOfWeek = new Date(lead.createdAt).getDay();
-          countsByDay[dayOfWeek]++;
+        results.forEach((r) => {
+          counts[r._id] = r.count;
         });
 
         return res.status(200).json({
           success: true,
           labels: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
           data: [
-            countsByDay[1],
-            countsByDay[2],
-            countsByDay[3],
-            countsByDay[4],
-            countsByDay[5],
-            countsByDay[6],
-            countsByDay[0],
+            counts[2],
+            counts[3],
+            counts[4],
+            counts[5],
+            counts[6],
+            counts[7],
+            counts[1],
           ],
         });
       }
 
-      /* -------- MONTH (LAST 6) -------- */
-      const now = new Date();
+      /* ================= MONTH (LAST 6 MONTHS BASED ON updatedAt) ================= */
+
       const monthsToReturn = 6;
 
       const startMonth = new Date(
         now.getFullYear(),
         now.getMonth() - (monthsToReturn - 1),
-        1
+        1,
       );
       startMonth.setHours(0, 0, 0, 0);
 
@@ -88,29 +110,17 @@ class LeadAnalyticsService extends Service {
         {
           $match: {
             ...baseMatch,
-            createdAt: { $gte: startMonth, $lte: endMonth },
+            updatedAt: { $gte: startMonth, $lte: endMonth },  
           },
         },
         {
           $project: {
-            year: { $year: "$createdAt" },
-            month: { $month: "$createdAt" },
-            statusNorm: {
-              $trim: {
-                input: {
-                  $toLower: {
-                    $replaceAll: {
-                      input: { $ifNull: ["$status", ""] },
-                      find: "-",
-                      replacement: " ",
-                    },
-                  },
-                },
-              },
-            },
+            year: { $year: "$updatedAt" },  
+            month: { $month: "$updatedAt" },  
+            statusNorm: this.normalizeStatusExpression(),
           },
         },
-        { $match: { statusNorm: { $in: CONVERTED_STATUSES } } },
+        { $match: { statusNorm: CONVERTED_STATUS } },
         {
           $group: {
             _id: { year: "$year", month: "$month" },
@@ -122,17 +132,18 @@ class LeadAnalyticsService extends Service {
 
       const labels = [];
       const data = [];
-      const map = {};
+      const resultMap = {};
 
       results.forEach((r) => {
-        map[`${r._id.year}-${r._id.month}`] = r.count;
+        resultMap[`${r._id.year}-${r._id.month}`] = r.count;
       });
 
       for (let i = monthsToReturn - 1; i >= 0; i--) {
         const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
         const key = `${d.getFullYear()}-${d.getMonth() + 1}`;
+
         labels.push(d.toLocaleString("en-US", { month: "short" }));
-        data.push(map[key] || 0);
+        data.push(resultMap[key] || 0);
       }
 
       return res.status(200).json({
