@@ -1,236 +1,186 @@
 "use client";
-import React from "react";
-import Box from "@/components/ui/Component/Box";
-import Typography from "@/components/ui/Component/Typography";
-import Paper from "@/components/ui/Component/Paper";
 
-// ----------------------
-// Shared Helpers
-// ----------------------
-function polarToCartesian(cx: number, cy: number, r: number, angle: number) {
+import React, { useMemo } from "react";
+import { Card, CardContent, Typography } from "@mui/material";
+
+// ======================================================
+// Types
+// ======================================================
+
+interface PieItem {
+  label: string;
+  value: number;
+  color: string;
+}
+
+interface DonutChartProps {
+  data: PieItem[];
+  centerLabel: string;
+}
+
+// ======================================================
+// Helper Functions
+// ======================================================
+
+const polarToCartesian = (cx: number, cy: number, r: number, angle: number) => {
   const rad = ((angle - 90) * Math.PI) / 180;
   return {
     x: cx + r * Math.cos(rad),
     y: cy + r * Math.sin(rad),
   };
-}
+};
 
-function describeArc(x: number, y: number, r: number, start: number, end: number) {
-  const startPoint = polarToCartesian(x, y, r, end);
-  const endPoint = polarToCartesian(x, y, r, start);
+const describeArc = (
+  cx: number,
+  cy: number,
+  r: number,
+  start: number,
+  end: number,
+) => {
+  const startPoint = polarToCartesian(cx, cy, r, end);
+  const endPoint = polarToCartesian(cx, cy, r, start);
   const largeArc = end - start <= 180 ? "0" : "1";
-  return `M ${x} ${y} L ${startPoint.x} ${startPoint.y} A ${r} ${r} 0 ${largeArc} 0 ${endPoint.x} ${endPoint.y} Z`;
-}
 
-// =============================================================
-// PROPERTY PIE CHART
-// =============================================================
-export const PropertyPieChart: React.FC<{
-  propertyData: Array<{ label: string; count: number; color: string }>;
-}> = ({ propertyData = [] }) => {
-  const total = propertyData.reduce((a, b) => a + (b.count || 0), 0) || 1;
+  return `
+    M ${cx} ${cy}
+    L ${startPoint.x} ${startPoint.y}
+    A ${r} ${r} 0 ${largeArc} 0 ${endPoint.x} ${endPoint.y}
+    Z
+  `;
+};
 
-  const cx = 160,
-    cy = 160,
-    r = 140;
+// ======================================================
+// Reusable Donut Chart Component
+// ======================================================
+
+const DonutChart: React.FC<DonutChartProps> = ({ data, centerLabel }) => {
+  const total = useMemo(
+    () => data.reduce((acc, curr) => acc + curr.value, 0),
+    [data],
+  );
+
+  const cx = 160;
+  const cy = 160;
+  const r = 130;
+
   let angle = 0;
 
-  const arcs = propertyData.map((p, idx) => {
-    const value = p.count || 0;
-    let path = '';
-    if (propertyData.length === 1 && value > 0) {
-      // Draw a full circle using two arcs (SVG limitation)
-      path = [
-        `M ${cx} ${cy}`,
-        `L ${cx + r} ${cy}`,
-        `A ${r} ${r} 0 1 0 ${cx - r} ${cy}`,
-        `A ${r} ${r} 0 1 0 ${cx + r} ${cy}`,
-        'Z'
-      ].join(' ');
-    } else {
-      const portion = (value / total) * 360;
-      path = describeArc(cx, cy, r, angle, angle + portion);
-      angle += portion;
-    }
-    return { ...p, path };
+  const arcs = data.map((item) => {
+    const portion = (item.value / total) * 360;
+    const path = describeArc(cx, cy, r, angle, angle + portion);
+    angle += portion;
+    return { ...item, path };
   });
 
-  if (!propertyData.length) {
+  if (!data.length) {
     return (
-      <Paper sx={{ p: 5, textAlign: "center", color: "#666" }}>
-        <Typography>No property data available</Typography>
-      </Paper>
+      <Card className="h-[380px] flex items-center justify-center">
+        <Typography color="text.secondary">No data available</Typography>
+      </Card>
     );
   }
 
   return (
-    <Paper
+    <Card
       elevation={0}
-      sx={{
-        display: "flex",
-        flexWrap: "wrap",
-        p: 2,
-        borderRadius: 3,
-        border: "1px solid #e5e7eb",
-        background: "#fff",
-      }}
+      className="h-[390px] border border-gray-200 rounded-2xl shadow-sm"
     >
-      {/* Left — Chart */}
-      <Box flex={1} display="flex" alignItems="center" justifyContent="center">
-        <svg width={320} height={320} viewBox="0 0 320 320">
-          <g>
-            {arcs.map((a, i) => (
-              <path key={i} d={a.path} fill={a.color} stroke="#fff" strokeWidth={1} />
+      <CardContent className="h-full flex flex-col md:flex-row items-center justify-between p-6 gap-6">
+        {/* ================= LEFT — CHART ================= */}
+        <div className="flex-1 flex items-center justify-center">
+          <svg
+            width="320"
+            height="375"
+            viewBox="0 0 320 320"
+            className="max-w-[280px]"
+          >
+            {arcs.map((arc, index) => (
+              <path
+                key={index}
+                d={arc.path}
+                fill={arc.color}
+                stroke="#fff"
+                strokeWidth={2}
+              />
             ))}
-          </g>
 
-          {/* Donut center */}
-          <circle cx={cx} cy={cy} r={85} fill="#fff" />
-          <text
-            x={cx}
-            y={cy - 12}
-            textAnchor="middle"
-            style={{ fontSize: 28, fontWeight: 700, fill: "#222" }}
-          >
-            {total}
-          </text>
-          <text
-            x={cx}
-            y={cy + 22}
-            textAnchor="middle"
-            style={{ fontSize: 16, fill: "#666" }}
-          >
-            leads
-          </text>
-        </svg>
-      </Box>
+            {/* Donut Center */}
+            <circle cx={cx} cy={cy} r={85} fill="#fff" />
 
-      {/* Right — Legend */}
-      <Box
-        flex={1}
-        display="flex"
-        flexDirection="column"
-        justifyContent="center"
-        gap={1}
-        sx={{ p: 1 }}
-      >
-        {propertyData.map((p) => (
-          <Box
-            key={p.label}
-            display="flex"
-            alignItems="center"
-            gap={1}
-            sx={{
-              background: "#f8f9fa",
-              px: 1,
-              py: 1,
-              borderRadius: 2,
-            }}
-          >
-            <Box
-              sx={{
-                width: 20,
-                height: 20,
-                borderRadius: 1,
-                backgroundColor: p.color,
-              }}
-            />
-            <Typography sx={{ fontWeight: 600 }}>{p.label}</Typography>
-            <Typography sx={{ ml: "auto", color: "#666" }}>
-              {((p.count / total) * 100).toFixed(1)}%
-            </Typography>
-          </Box>
-        ))}
-      </Box>
-    </Paper>
+            <text
+              x={cx}
+              y={cy - 10}
+              textAnchor="middle"
+              className="fill-gray-900 font-bold text-2xl"
+            >
+              {total}
+            </text>
+
+            <text
+              x={cx}
+              y={cy + 20}
+              textAnchor="middle"
+              className="fill-gray-500 text-sm"
+            >
+              {centerLabel}
+            </text>
+          </svg>
+        </div>
+
+        {/* ================= RIGHT — LEGEND ================= */}
+        <div className="flex-1 flex flex-col justify-center gap-3 w-full">
+          {data.map((item) => (
+            <div
+              key={item.label}
+              className="flex items-center gap-3 bg-gray-50 hover:bg-gray-100 transition rounded-lg px-3 py-2"
+            >
+              <div
+                className="w-4 h-4 rounded"
+                style={{ backgroundColor: item.color }}
+              />
+
+              <Typography className="font-semibold text-gray-700">
+                {item.label}
+              </Typography>
+
+              <Typography className="ml-auto text-gray-500 text-sm">
+                {((item.value / total) * 100).toFixed(1)}%
+              </Typography>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
   );
 };
 
-// =============================================================
+// ======================================================
+// PROPERTY PIE CHART
+// ======================================================
+
+export const PropertyPieChart: React.FC<{
+  propertyData: { label: string; count: number; color: string }[];
+}> = ({ propertyData = [] }) => {
+  const formatted = propertyData.map((item) => ({
+    label: item.label,
+    value: item.count,
+    color: item.color,
+  }));
+
+  return <DonutChart data={formatted} centerLabel="Leads" />;
+};
+
+// ======================================================
 // PROJECT PIE CHART
-// =============================================================
+// ======================================================
+
 export const ProjectPieChart: React.FC = () => {
-  const PROJECTS = [
-    { name: "Migsun", value: 35, color: "#4285f4" },
-    { name: "Dholera", value: 25, color: "#08c4a6" },
-    { name: "KW-6", value: 20, color: "#ffca28" },
-    { name: "Eco-village", value: 20, color: "#a259e6" },
+  const PROJECTS: PieItem[] = [
+    { label: "Migsun", value: 35, color: "#4285f4" },
+    { label: "Dholera", value: 25, color: "#08c4a6" },
+    { label: "KW-6", value: 20, color: "#ffca28" },
+    { label: "Eco-village", value: 20, color: "#a259e6" },
   ];
 
-  const total = PROJECTS.reduce((a, b) => a + b.value, 0);
-
-  const cx = 160,
-    cy = 160,
-    r = 140;
-  let angle = 0;
-
-  const arcs = PROJECTS.map((p) => {
-    const portion = (p.value / total) * 360;
-    const path = describeArc(cx, cy, r, angle, angle + portion);
-    angle += portion;
-
-    return { ...p, path };
-  });
-
-  return (
-    <Paper
-      elevation={0}
-      sx={{
-        display: "flex",
-        flexWrap: "wrap",
-        p: 2,
-        borderRadius: 3,
-        border: "1px solid #e5e7eb",
-        background: "#fff",
-      }}
-    >
-      {/* Chart */}
-      <Box flex={1} display="flex" alignItems="center" justifyContent="center">
-        <svg width={120} height={120} viewBox="0 0 320 320">
-          <g>
-            {arcs.map((a, i) => (
-              <path key={i} d={a.path} fill={a.color} stroke="#fff" strokeWidth={1} />
-            ))}
-          </g>
-
-          <circle cx={cx} cy={cy} r={85} fill="#fff" />
-          <text
-            x={cx}
-            y={cy - 12}
-            textAnchor="middle"
-            style={{ fontSize: 20, fontWeight: 500, fill: "#222" }}
-          >
-            {total}
-          </text>
-          <text
-            x={cx}
-            y={cy + 22}
-            textAnchor="middle"
-            style={{ fontSize: 16, fill: "#666" }}
-          >
-            projects
-          </text>
-        </svg>
-      </Box>
-
-      {/* Legend */}
-      <Box flex={1} display="flex" flexDirection="column" justifyContent="center" gap={2} sx={{ p: 1 }}>
-        {PROJECTS.map((p) => (
-          <Box
-            key={p.name}
-            display="flex"
-            alignItems="center"
-            gap={1.5}
-            sx={{ px: 1.5, py: 1, borderRadius: 2 }}
-          >
-            <Box sx={{ width: 20, height: 20, background: p.color, borderRadius: 1 }} />
-            <Typography sx={{ fontWeight: 600 }}>{p.name}</Typography>
-            <Typography sx={{ ml: "auto", color: "#666" }}>
-              {((p.value / total) * 100).toFixed(1)}%
-            </Typography>
-          </Box>
-        ))}
-      </Box>
-    </Paper>
-  );
+  return <DonutChart data={PROJECTS} centerLabel="Projects" />;
 };
