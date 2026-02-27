@@ -1,3 +1,7 @@
+import dotenv from "dotenv";
+dotenv.config();
+
+import { worker } from './WorkerDT.js';
 import bulkUploadLeads from "./bulkupload.js";
 import sendOTPJob from "./sendOTPJob.js";
 import sendNotificationEmail from "./sendNotificationEmail.js";
@@ -6,7 +10,6 @@ import sendLeadFollowUpNotification from "./sendLeadFollowUpNotification.js";
 import bulkAssignLeads from "./bulkAssignLeads.js";
 import revertBulkAssign from "./revertBulkAssign.js";
 import checkFollowUpsJob from "./checkFollowUpsJob.js";
-import { worker } from './WorkerDT.js'
 
 
 // Attach different workers here

@@ -1,6 +1,7 @@
 import { Service } from "@framework";
 import dbConnect from "@/lib/mongodb";
 import Lead from "../../models/Lead";
+import FollowUp from "../../models/FollowUp";
 import mongoose from "mongoose";
 
 class LeadAnalyticsService extends Service {
@@ -10,14 +11,16 @@ class LeadAnalyticsService extends Service {
 
       const { period = "month" } = req.query;
       const employee = req.employee;
-      if (!employee?._id)
+
+      if (!employee?._id) {
         return res
           .status(401)
           .json({ success: false, message: "Unauthorized" });
+      }
 
       const loggedInUserId = new mongoose.Types.ObjectId(employee._id);
 
-      // ✅ Include all user roles
+      //  USER VISIBILITY
       const baseQuery = {
         $or: [
           { uploadedBy: loggedInUserId },
@@ -25,22 +28,6 @@ class LeadAnalyticsService extends Service {
           { assignedTo: loggedInUserId },
         ],
       };
-      const matchStage = [{ $match: baseQuery }];
-
-      /* ---------------- Date Helpers ---------------- */
-      const getDayRange = (offset = 0) => {
-        const now = new Date();
-        now.setHours(0, 0, 0, 0);
-        const start = new Date(now);
-        start.setDate(now.getDate() - offset);
-        const end = new Date(start);
-        end.setHours(23, 59, 59, 999);
-        return { start, end };
-      };
-
-      const { start: todayStart, end: todayEnd } = getDayRange(0);
-      const { start: yestStart, end: yestEnd } = getDayRange(1);
-      const { start: beforeYestStart, end: beforeYestEnd } = getDayRange(2);
 
       const CONVERTED_STATUSES = [
         "site visit done",
@@ -48,138 +35,115 @@ class LeadAnalyticsService extends Service {
         "follow up",
         "details shared",
       ];
-      const leadStatuses = ["new", "follow-up", "call back", "details shared"];
 
-      const getStatusTrend = (status) =>
-        Promise.all([
+      // PARALLEL QUERIES
+      const [detailsSharedLeads, siteVisitRaw, bySource, byProperty] =
+        await Promise.all([
+          // DETAILS SHARED COUNT
           Lead.countDocuments({
             ...baseQuery,
-            status: new RegExp(`^${status}$`, "i"),
-            createdAt: { $gte: todayStart, $lte: todayEnd },
+            status: { $regex: /^details shared$/i },
           }),
-          Lead.countDocuments({
-            ...baseQuery,
-            status: new RegExp(`^${status}$`, "i"),
-            createdAt: { $gte: yestStart, $lte: yestEnd },
-          }),
-          Lead.countDocuments({
-            ...baseQuery,
-            status: new RegExp(`^${status}$`, "i"),
-            createdAt: { $gte: beforeYestStart, $lte: beforeYestEnd },
-          }),
-        ]).then(([today, yesterday, beforeYesterday]) => ({
-          today,
-          yesterday,
-          beforeYesterday,
-        }));
 
-      /* ---------------- Parallel Queries ---------------- */
-      const [
-        totalLeads,
-        statusCounts,
-        newLeadsTrend,
-        callBackLeadsTrend,
-        followUpLeadsTrend,
-        detailsSharedLeadsTrend,
-        byMonth,
-        byWeekday,
-        bySource,
-        byProperty,
-      ] = await Promise.all([
-        Lead.countDocuments(baseQuery),
-
-        Lead.aggregate([
-          ...matchStage,
-          { $addFields: { statusLower: { $toLower: "$status" } } },
-          { $match: { statusLower: { $in: leadStatuses } } },
-          { $group: { _id: "$statusLower", count: { $sum: 1 } } },
-        ]),
-
-        getStatusTrend("new"),
-        getStatusTrend("call back"),
-        getStatusTrend("follow-up"),
-        getStatusTrend("details shared"),
-
-        period === "month"
-          ? Lead.aggregate([
-              ...matchStage,
-              { $match: { status: { $regex: /^site visit done$/i } } },
-              { $group: { _id: { $month: "$createdAt" }, count: { $sum: 1 } } },
-            ])
-          : Promise.resolve([]),
-
-        period === "week"
-          ? Lead.aggregate([
-              ...matchStage,
-              { $match: { status: { $regex: /^site visit done$/i } } },
-              {
-                $group: {
-                  _id: { $dayOfWeek: "$createdAt" },
-                  count: { $sum: 1 },
-                },
+          // SITE VISIT DONE (DISTINCT LEADS)
+          FollowUp.aggregate([
+            {
+              $match: {
+                followUpType: "site visit",
+                leadId: { $exists: true },
               },
-            ])
-          : Promise.resolve([]),
-
-        // ✅ Group by Source with normalization
-        Lead.aggregate([
-          ...matchStage,
-          {
-            $addFields: {
-              normalizedSource: { $ifNull: ["$source", "Unknown"] },
-              statusLower: { $toLower: "$status" },
             },
-          },
-          {
-            $group: {
-              _id: "$normalizedSource",
-              count: { $sum: 1 },
-              converted: {
-                $sum: {
-                  $cond: [{ $in: ["$statusLower", CONVERTED_STATUSES] }, 1, 0],
+            {
+              $lookup: {
+                from: "leads",
+                localField: "leadId",
+                foreignField: "_id",
+                as: "lead",
+              },
+            },
+            { $unwind: "$lead" },
+            {
+              $match: {
+                $or: [
+                  { "lead.uploadedBy": loggedInUserId },
+                  { "lead.managerId": loggedInUserId },
+                  { "lead.assignedTo": loggedInUserId },
+                ],
+              },
+            },
+            {
+              $group: {
+                _id:
+                  period === "month"
+                    ? { $month: "$followUpDate" }
+                    : { $dayOfWeek: "$followUpDate" },
+                leadIds: { $addToSet: "$leadId" },
+              },
+            },
+            {
+              $project: {
+                count: { $size: "$leadIds" },
+              },
+            },
+          ]),
+
+          // SOURCE DATA
+          Lead.aggregate([
+            { $match: baseQuery },
+            {
+              $addFields: {
+                normalizedSource: { $ifNull: ["$source", "Unknown"] },
+                statusLower: { $toLower: "$status" },
+              },
+            },
+            {
+              $group: {
+                _id: "$normalizedSource",
+                count: { $sum: 1 },
+                converted: {
+                  $sum: {
+                    $cond: [
+                      { $in: ["$statusLower", CONVERTED_STATUSES] },
+                      1,
+                      0,
+                    ],
+                  },
                 },
               },
             },
-          },
-        ]),
+          ]),
 
-        // ✅ Group by Property with normalization
-        Lead.aggregate([
-          ...matchStage,
-          {
-            $addFields: {
-              normalizedProperty: { $ifNull: ["$propertyName", "Unknown"] },
-              statusLower: { $toLower: "$status" },
+          // PROPERTY DATA
+          Lead.aggregate([
+            { $match: baseQuery },
+            {
+              $addFields: {
+                normalizedProperty: { $ifNull: ["$propertyName", "Unknown"] },
+                statusLower: { $toLower: "$status" },
+              },
             },
-          },
-          {
-            $group: {
-              _id: "$normalizedProperty",
-              count: { $sum: 1 },
-              converted: {
-                $sum: {
-                  $cond: [{ $in: ["$statusLower", CONVERTED_STATUSES] }, 1, 0],
+            {
+              $group: {
+                _id: "$normalizedProperty",
+                count: { $sum: 1 },
+                converted: {
+                  $sum: {
+                    $cond: [
+                      { $in: ["$statusLower", CONVERTED_STATUSES] },
+                      1,
+                      0,
+                    ],
+                  },
                 },
               },
             },
-          },
-        ]),
-      ]);
+          ]),
+        ]);
 
-      /* ---------------- Status Normalize ---------------- */
-      let newLeads = 0,
-        callBackLeads = 0,
-        followUpLeads = 0,
-        detailsSharedLeads = 0;
-      statusCounts.forEach((s) => {
-        if (s._id === "new") newLeads = s.count;
-        if (s._id === "call back") callBackLeads = s.count;
-        if (s._id === "follow-up") followUpLeads = s.count;
-        if (s._id === "details shared") detailsSharedLeads = s.count;
-      });
+      // FORMAT SITE VISIT CHART
 
-      /* ---------------- Site Visit Chart ---------------- */
       let siteVisitDoneData = [];
+
       if (period === "month") {
         const months = [
           "Jan",
@@ -195,27 +159,43 @@ class LeadAnalyticsService extends Service {
           "Nov",
           "Dec",
         ];
+
         const map = {};
-        (byMonth || []).forEach((m) => (map[m._id] = m.count));
+        siteVisitRaw.forEach((m) => {
+          map[m._id] = m.count;
+        });
+
         siteVisitDoneData = months.map((label, i) => ({
           label,
           siteVisitDone: map[i + 1] || 0,
         }));
       }
+
       if (period === "week") {
         const days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
         const map = {};
-        (byWeekday || []).forEach((d) => (map[d._id] = d.count));
+        siteVisitRaw.forEach((d) => {
+          map[d._id] = d.count;
+        });
+
         siteVisitDoneData = days.map((label, i) => ({
           label,
           siteVisitDone: map[i + 1] || 0,
         }));
       }
 
-      /* ---------------- Source & Property ---------------- */
+      const siteVisitConversions = siteVisitDoneData.reduce(
+        (sum, item) => sum + item.siteVisitDone,
+        0,
+      );
+
+      /* ---------------- SOURCE FORMAT ---------------- */
+
       const map = {};
       const sourcesOrder = [];
       const slices = [];
+
       (bySource || []).forEach((s) => {
         const key = s._id || "Unknown";
         map[key] = s;
@@ -223,37 +203,32 @@ class LeadAnalyticsService extends Service {
         slices.push({ label: key, value: s.count });
       });
 
+      /* ---------------- PROPERTY FORMAT ---------------- */
+
       const propertyData = (byProperty || []).map((p) => ({
         value: p._id || "Unknown",
-        count: p.count,
         label: p._id || "Unknown",
+        count: p.count,
         converted: p.converted,
       }));
 
+      /* ---------------- FINAL RESPONSE ---------------- */
+
       return res.status(200).json({
-        totalLeads,
-        newLeads,
-        callBackLeads,
-        followUpLeads,
+        success: true,
         detailsSharedLeads,
-        siteVisitConversions: siteVisitDoneData.reduce(
-          (s, d) => s + d.siteVisitDone,
-          0,
-        ),
+        siteVisitConversions,
         siteVisitDoneData,
         map,
-        sourcesOrder,
         slices,
+        sourcesOrder,
         propertyData,
-        trend: {
-          newLeads: newLeadsTrend,
-          callBackLeads: callBackLeadsTrend,
-          followUpLeads: followUpLeadsTrend,
-          detailsSharedLeads: detailsSharedLeadsTrend,
-        },
       });
     } catch (err) {
-      return res.status(500).json({ success: false, message: err.message });
+      return res.status(500).json({
+        success: false,
+        message: err.message,
+      });
     }
   }
 }

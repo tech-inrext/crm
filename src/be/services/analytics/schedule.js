@@ -9,16 +9,17 @@ class ScheduleAnalyticsService {
 
       const employee = req.employee;
       const loggedInUserId = employee?._id;
-      const baseQuery = loggedInUserId
-        ? { submittedBy: loggedInUserId }
-        : {};
+      const baseQuery = loggedInUserId ? { submittedBy: loggedInUserId } : {};
+
       const now = new Date();
-      // TODAY RANGE
+
+      // ===== TODAY RANGE =====
       const startOfToday = new Date();
       startOfToday.setHours(0, 0, 0, 0);
       const endOfToday = new Date();
       endOfToday.setHours(23, 59, 59, 999);
-      // WEEK RANGE (Monday - Sunday)
+
+      // ===== WEEK RANGE (Monday - Sunday) =====
       const day = now.getDay();
       const diffToMonday = (day === 0 ? -6 : 1) - day;
       const monday = new Date(now);
@@ -28,57 +29,47 @@ class ScheduleAnalyticsService {
       const sunday = new Date(monday);
       sunday.setDate(monday.getDate() + 6);
       sunday.setHours(23, 59, 59, 999);
-      // COMMON FILTER
+
+      // ===== COMMON FILTER =====
       const commonFilter = {
         followUpDate: { $exists: true, $ne: null },
         ...baseQuery,
       };
-      // TODAY FOLLOWUPS
+
+      // ===== POPULATION CONFIG =====
+      const populateLeadAssignedTo = {
+        path: "leadId",
+        model: Lead,
+        select: "leadId fullName phone status source location assignedTo",
+        populate: {
+          path: "assignedTo",
+          select: "firstName lastName fullName email name",
+        },
+      };
+
+      // ===== FETCH FOLLOWUPS =====
       const todays = await FollowUp.find({
         ...commonFilter,
         followUpDate: { $gte: startOfToday, $lte: endOfToday },
       })
-        .populate({
-          path: "leadId",
-          model: Lead,
-          select: "leadId fullName phone status source location assignedTo",
-          populate: {
-            path: "assignedTo",
-            select: "firstName lastName email",
-          },
-        })
+        .populate(populateLeadAssignedTo)
         .lean();
-      // WEEK FOLLOWUPS
+
       const weekly = await FollowUp.find({
         ...commonFilter,
         followUpDate: { $gte: monday, $lte: sunday },
       })
-        .populate({
-          path: "leadId",
-          model: Lead,
-          select: "leadId fullName phone status source location assignedTo",
-          populate: {
-            path: "assignedTo",
-            select: "firstName lastName email",
-          },
-        })
+        .populate(populateLeadAssignedTo)
         .lean();
-      // OVERDUE FOLLOWUPS
+
       const overdue = await FollowUp.find({
         ...commonFilter,
         followUpDate: { $lt: startOfToday },
       })
-        .populate({
-          path: "leadId",
-          model: Lead,
-          select: "leadId fullName phone status source location assignedTo",
-          populate: {
-            path: "assignedTo",
-            select: "firstName lastName email",
-          },
-        })
+        .populate(populateLeadAssignedTo)
         .lean();
-      // FORMAT FUNCTION
+
+      // ===== FORMAT FUNCTION =====
       const format = (items) =>
         items.map((doc) => ({
           id: doc._id,
@@ -94,7 +85,6 @@ class ScheduleAnalyticsService {
           ),
           note: doc.note,
           followUpType: doc.followUpType,
-
           lead: doc.leadId
             ? {
                 id: doc.leadId._id,
@@ -104,16 +94,30 @@ class ScheduleAnalyticsService {
                 status: doc.leadId.status,
                 source: doc.leadId.source,
                 location: doc.leadId.location,
-                assignedTo: doc.leadId.assignedTo
-                  ? {
-                      name: `${doc.leadId.assignedTo.firstName} ${doc.leadId.assignedTo.lastName}`,
-                      email: doc.leadId.assignedTo.email,
-                    }
-                  : null,
+                assignedTo: (() => {
+                  const user = Array.isArray(doc.leadId.assignedTo)
+                    ? doc.leadId.assignedTo[0]
+                    : doc.leadId.assignedTo;
+
+                  if (!user) return { name: "Unassigned", email: null };
+
+                  const name =
+                    user.name?.trim() ||
+                    `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim() ||
+                    user.fullName?.trim() ||
+                    user.email ||
+                    "Unassigned";
+
+                  return {
+                    name,
+                    email: user.email ?? null,
+                  };
+                })(),
               }
             : null,
         }));
-      // FINAL RESPONSE
+
+      // ===== FINAL RESPONSE =====
       return res.status(200).json({
         success: true,
         summary: {
