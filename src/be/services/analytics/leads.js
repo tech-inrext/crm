@@ -29,12 +29,13 @@ class LeadAnalyticsService extends Service {
         ],
       };
 
-      const CONVERTED_STATUSES = [
-        "site visit done",
-        "call back",
-        "follow up",
-        "details shared",
+       const CONVERTED_STATUSES = [
+        Lead.siteVisitConversions,
+        // Lead.callback,
+        // Lead.FollowUp,
+        Lead.detailsShared,
       ];
+
 
       // PARALLEL QUERIES
       const [detailsSharedLeads, siteVisitRaw, bySource, byProperty] =
