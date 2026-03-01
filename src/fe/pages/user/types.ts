@@ -11,6 +11,7 @@ export interface RoleObject {
   showTotalVendorsBilling?: boolean;
   showCabBookingAnalytics?: boolean;
   showScheduleThisWeek?: boolean;
+  isAVP?: boolean;
 }
 
 export interface NomineeDetails {
@@ -187,8 +188,8 @@ export interface UsersActionBarProps {
 
 
 interface ToastProps {
-    open: boolean;
-    message: string;
-    severity: "success" | "error";
-    onClose: () => void;
+  open: boolean;
+  message: string;
+  severity: "success" | "error";
+  onClose: () => void;
 }
