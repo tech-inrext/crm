@@ -681,6 +681,7 @@ class EmployeeService extends Service {
 
       const [employees, totalEmployees] = await Promise.all([
         Employee.find(query)
+          .select("-password")
           .skip(skip)
           .limit(itemsPerPage)
           .sort({ createdAt: -1 })
@@ -1286,6 +1287,40 @@ class EmployeeService extends Service {
       return res.status(500).json({
         success: false,
         message: "Failed to fetch MoU stats for manager",
+        error: error.message,
+      });
+    }
+  }
+
+  async getAllAVPEmployees(req, res) {
+    try {
+      // Find all roles where isAVP is true
+      const avpRoles = await Role.find({ isAVP: true }, "_id");
+      const avpRoleIds = avpRoles.map(role => role._id);
+
+      if (avpRoleIds.length === 0) {
+        return res.status(200).json({
+          success: true,
+          count: 0,
+          data: [],
+        });
+      }
+
+      // Fetch employees who have any of these roles
+      const employees = await Employee.find({ roles: { $in: avpRoleIds } })
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .lean();
+
+      return res.status(200).json({
+        success: true,
+        count: employees.length,
+        data: employees,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch AVP employees",
         error: error.message,
       });
     }
