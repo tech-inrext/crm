@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Skeleton from "@/components/ui/Component/Skeleton";
 import Pagination from "@mui/material/Pagination";
 import Select from "@mui/material/Select";
@@ -37,311 +37,234 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
   scheduleLoading,
   scheduleAnalytics,
 }) => {
-  const [filter, setFilter] = React.useState<"day" | "week" | "overdue">(
-    "week",
+  const [filter, setFilter] = useState<"day" | "week" | "overdue">("week");
+  const [page, setPage] = useState(1);
+
+  const leadsPerPage = 2; // ✅ Fixed 2 items per page
+
+  /* RESET PAGE WHEN DATA CHANGES */
+  useEffect(() => {
+    setPage(1);
+  }, [filter, scheduleAnalytics]);
+
+  /* FILTERED DATA */
+  const filteredLeads = useMemo(() => {
+    if (!scheduleAnalytics?.data) return [];
+
+    switch (filter) {
+      case "day":
+        return scheduleAnalytics.data.today || [];
+      case "week":
+        return scheduleAnalytics.data.week || [];
+      case "overdue":
+        return scheduleAnalytics.data.overdue || [];
+      default:
+        return [];
+    }
+  }, [filter, scheduleAnalytics]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredLeads.length / leadsPerPage),
   );
-  const [page, setPage] = React.useState(1);
-  const [leadsPerPage, setLeadsPerPage] = React.useState(2);
 
-  if (analyticsAccess.showScheduleThisWeek) {
-    // ✅ Use backend grouped data
-    const filteredLeads =
-      filter === "day"
-        ? scheduleAnalytics?.data?.today || []
-        : filter === "week"
-          ? scheduleAnalytics?.data?.week || []
-          : scheduleAnalytics?.data?.overdue || [];
+  const paginatedLeads = useMemo(() => {
+    return filteredLeads.slice((page - 1) * leadsPerPage, page * leadsPerPage);
+  }, [filteredLeads, page]);
 
-    const totalPages = Math.max(
-      1,
-      Math.ceil(filteredLeads.length / leadsPerPage),
-    );
-
-    const paginatedLeads = filteredLeads.slice(
-      (page - 1) * leadsPerPage,
-      page * leadsPerPage,
-    );
-
-    React.useEffect(() => {
-      setPage(1);
-    }, [filter, scheduleAnalytics, leadsPerPage]);
-
-    const handleChangePage = (_: any, value: number) => {
-      setPage(value);
-    };
-
-    const handleChangeRowsPerPage = (
-      event: React.ChangeEvent<{ value: unknown }>,
-    ) => {
-      setLeadsPerPage(Number(event.target.value));
-      setPage(1);
-    };
-
+  /* ACCESS CONTROL */
+  if (!analyticsAccess.showScheduleThisWeek) {
     return (
-      <Card className="min-h-[400px] h-full flex flex-col justify-start w-full md:w-[175%] md:mr-1">
-        <CardContent>
-          {/* Header */}
-          <Box className="flex gap-1 items-center mb-[18px] flex-wrap md:flex-nowrap">
-            <Typography
-              sx={{
-                fontSize: "1.35rem",
-                fontWeight: 600,
-                color: "#222",
-                mb: { xs: 1, sm: 1, md: 0 },
-              }}
-            >
-              Schedule In this
-            </Typography>
-
-            <Box className="flex items-center gap-1 flex-1 min-w-0 flex-wrap md:flex-nowrap">
-              <Select
-                value={filter === "overdue" ? "week" : filter}
-                onChange={(e) => setFilter(e.target.value as "day" | "week")}
-                size="small"
-                sx={{ minWidth: 140, width: "auto", maxWidth: "100%" }}
-                displayEmpty
-              >
-                <MenuItem value="day">Day Wise</MenuItem>
-                <MenuItem value="week">Week Wise</MenuItem>
-              </Select>
-
-              <a
-                href="/dashboard/leads"
-                className="text-[#0792fa] font-medium text-base no-underline hover:underline"
-                style={{
-                  marginLeft: 0,
-                  whiteSpace: "nowrap",
-                  ...(typeof window !== "undefined" && window.innerWidth >= 900
-                    ? { marginLeft: "10rem" }
-                    : {}),
-                }}
-              >
-                View All
-              </a>
-            </Box>
-          </Box>
-
-          <Box>
-            {/* Loading */}
-            {scheduleLoading && (
-              <Box sx={{ py: 2.5 }}>
-                <Skeleton
-                  variant="rectangular"
-                  width="100%"
-                  height={40}
-                  sx={{ mb: 2, borderRadius: 2 }}
-                />
-                <Skeleton
-                  variant="text"
-                  width="60%"
-                  height={32}
-                  sx={{ mb: 1 }}
-                />
-                <Skeleton
-                  variant="text"
-                  width="40%"
-                  height={24}
-                  sx={{ mb: 1 }}
-                />
-                {[...Array(2)].map((_, i) => (
-                  <Box key={i} sx={{ mb: 2 }}>
-                    <Skeleton
-                      variant="rectangular"
-                      width="100%"
-                      height={60}
-                      sx={{ borderRadius: 2 }}
-                    />
-                  </Box>
-                ))}
-              </Box>
-            )}
-
-            {/* Success */}
-            {!scheduleLoading && scheduleAnalytics?.success && (
-              <Box>
-                {/* Summary */}
-                <Box display="flex" gap={2} mb={2} flexWrap="wrap">
-                  {/* Today/Week Count */}
-                  {/* Scheduled Clickable */}
-                  <Box
-                    onClick={() => setFilter(filter === "day" ? "day" : "week")}
-                    className={`bg-[#e3f2fd] px-3 py-2 rounded-lg text-[0.85rem] font-semibold text-[#1976d2] cursor-pointer ${filter !== "overdue" ? "border-2 border-[#1976d2]" : ""}`}
-                  >
-                    {filter === "day"
-                      ? scheduleAnalytics.summary?.todayCount
-                      : scheduleAnalytics.summary?.weekCount}{" "}
-                    scheduled
-                  </Box>
-
-                  {/* Overdue Clickable */}
-                  <Box
-                    onClick={() => setFilter("overdue")}
-                    className={`bg-[#ffebee] px-3 py-2 rounded-lg text-[0.85rem] font-semibold text-[#d32f2f] cursor-pointer ${filter === "overdue" ? "border-2 border-[#d32f2f]" : ""}`}
-                  >
-                    {scheduleAnalytics.summary?.overdueCount || 0} overdue
-                  </Box>
-                </Box>
-
-                {/* Leads List */}
-                <Box className="relative h-[280px] max-h-[280px] overflow-y-auto pb-7">
-                  {filteredLeads.length > 0 ? (
-                    paginatedLeads.map((item: any) => {
-                      const followUpDate = new Date(item.followUpDate);
-
-                      const isToday =
-                        followUpDate.toDateString() ===
-                        new Date().toDateString();
-
-                      const isTomorrow =
-                        followUpDate.toDateString() ===
-                        new Date(Date.now() + 86400000).toDateString();
-
-                      let dateLabel = followUpDate.toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      });
-
-                      if (isToday) dateLabel = "Today";
-                      else if (isTomorrow) dateLabel = "Tomorrow";
-
-                      return (
-                        <Box
-                          key={item.id}
-                          className={`flex items-center p-1.5 mb-1 rounded-lg cursor-pointer ${
-                            filter === "overdue"
-                              ? "bg-[#fff5f5] border border-[#f5c2c7]"
-                              : isToday
-                                ? "bg-[#fff3e0] border border-[#ffcc02]"
-                                : "bg-[#f8f9fa] border border-[#e9ecef]"
-                          }`}
-                        >
-                          <Box flex={1}>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                color: "#222",
-                                fontSize: "0.95rem",
-                                mb: 0.25,
-                              }}
-                            >
-                              {item.lead?.fullName || "Unknown"}
-                            </Typography>
-
-                            <Typography
-                              sx={{
-                                fontSize: "0.8rem",
-                                color: "#666",
-                                mb: 0.5,
-                              }}
-                            >
-                              {item.lead?.phone} •{" "}
-                              {item.lead?.source || "No source"}
-                            </Typography>
-
-                            <Typography
-                              sx={{ fontSize: "0.75rem", color: "#888" }}
-                            >
-                              {item.lead?.assignedTo
-                                ? `Assigned to: ${item.lead.assignedTo.name}`
-                                : "Unassigned"}
-                            </Typography>
-                          </Box>
-
-                          <Box textAlign="right" minWidth={80}>
-                            <Typography
-                              sx={{
-                                fontSize: "0.8rem",
-                                fontWeight: 600,
-                                color: "#666",
-                                mb: 0.25,
-                              }}
-                            >
-                              {dateLabel}
-                            </Typography>
-
-                            <Typography
-                              sx={{ fontSize: "0.75rem", color: "#888" }}
-                            >
-                              {item.followUpTime}
-                            </Typography>
-
-                            <div
-                              className={`text-[0.7rem] px-2 py-1 rounded mt-2 ${
-                                item.lead?.status === "New"
-                                  ? "bg-[#e3f2fd] text-[#1976d2]"
-                                  : item.lead?.status === "Contacted"
-                                    ? "bg-[#e8f5e9] text-[#388e3c]"
-                                    : item.lead?.status === "Site Visit"
-                                      ? "bg-[#fff3e0] text-[#f57c00]"
-                                      : "bg-[#f3e5f5] text-[#7b1fa2]"
-                              }`}
-                            >
-                              {item.lead?.status}
-                            </div>
-                          </Box>
-                        </Box>
-                      );
-                    })
-                  ) : (
-                    <Box sx={{ color: "#666", textAlign: "center", py: 5 }}>
-                      📅 No follow-ups scheduled for this{" "}
-                      {filter === "day"
-                        ? "day"
-                        : filter === "week"
-                          ? "week"
-                          : "overdue"}
-                    </Box>
-                  )}
-
-                  {/* Pagination */}
-                  <Box className="flex items-center justify-center gap-5 absolute left-0 right-0 bottom-0 bg-white border-t border-[#eee] py-3 z-[2]">
-                    <Typography className="text-[#666] text-[0.95rem]">
-                      Page
-                    </Typography>
-                    <Pagination
-                      count={totalPages}
-                      page={page}
-                      onChange={handleChangePage}
-                      color="primary"
-                      size="small"
-                    />
-                    <Typography className="text-[#666] text-[0.95rem]">
-                      Rows:
-                    </Typography>
-                    <Select
-                      value={leadsPerPage}
-                      onChange={handleChangeRowsPerPage}
-                      size="small"
-                    >
-                      <MenuItem value={2}>2</MenuItem>
-                    </Select>
-                  </Box>
-                </Box>
-              </Box>
-            )}
-
-            {!scheduleLoading &&
-              (!scheduleAnalytics || !scheduleAnalytics.success) && (
-                <Box sx={{ color: "#d32f2f", textAlign: "center", py: 2.5 }}>
-                  Failed to load schedule data
-                </Box>
-              )}
-          </Box>
+      <Card>
+        <CardContent className="text-center space-y-2 py-6">
+          <Typography className="text-lg font-semibold">
+            🔒 Access Restricted
+          </Typography>
+          <Typography className="text-gray-600 text-sm">
+            You don't have permission to view Schedule This Week.
+          </Typography>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="min-h-[320px] h-[95%] flex flex-col justify-center items-center w-[175%] mr-1">
-      <CardContent sx={{ textAlign: "center" }}>
-        <Typography sx={{ fontSize: "1.2rem", fontWeight: 600 }}>
-          🔒 Access Restricted
-        </Typography>
-        <Typography>
-          You don't have permission to view Schedule This Week.
-        </Typography>
+    <Card className="min-h-[400px] h-full flex flex-col w-full md:w-[180%] overflow-hidden">
+      <CardContent className="flex flex-col h-full">
+        {/* HEADER */}
+        <Box className="flex flex-wrap md:flex-nowrap items-center gap-2 mb-4">
+          <Typography className="text-xl font-semibold text-gray-800">
+            Schedule In This
+          </Typography>
+
+          <div className="flex items-center gap-2 flex-1 flex-wrap md:flex-nowrap">
+            <Select
+              value={filter === "overdue" ? "week" : filter}
+              onChange={(e) => setFilter(e.target.value as "day" | "week")}
+              size="small"
+              className="min-w-[100px]"
+            >
+              <MenuItem value="day">Day Wise</MenuItem>
+              <MenuItem value="week">Week Wise</MenuItem>
+            </Select>
+
+            <a
+              href="/dashboard/leads"
+              className="text-[#0792fa] text-sm font-medium hover:underline whitespace-nowrap md:ml-auto"
+            >
+              View All
+            </a>
+          </div>
+        </Box>
+
+        {/* BODY */}
+        <Box className="flex-1 flex flex-col">
+          {/* LOADING */}
+          {scheduleLoading && (
+            <div className="space-y-3">
+              {[...Array(2)].map((_, i) => (
+                <Skeleton
+                  key={i}
+                  variant="rectangular"
+                  width="100%"
+                  height={60}
+                  className="rounded-lg"
+                />
+              ))}
+            </div>
+          )}
+
+          {/* SUCCESS */}
+          {!scheduleLoading && scheduleAnalytics?.success && (
+            <>
+              {/* SUMMARY */}
+              <div className="flex flex-wrap gap-3 mb-4">
+                <div
+                  onClick={() => setFilter(filter === "day" ? "day" : "week")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition ${
+                    filter !== "overdue"
+                      ? "bg-blue-100 text-blue-700 border border-blue-600"
+                      : "bg-blue-100 text-blue-700"
+                  }`}
+                >
+                  {filter === "day"
+                    ? scheduleAnalytics.summary?.todayCount
+                    : scheduleAnalytics.summary?.weekCount}{" "}
+                  scheduled
+                </div>
+
+                <div
+                  onClick={() => setFilter("overdue")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer transition ${
+                    filter === "overdue"
+                      ? "bg-red-100 text-red-600 border border-red-600"
+                      : "bg-red-100 text-red-600"
+                  }`}
+                >
+                  {scheduleAnalytics.summary?.overdueCount || 0} overdue
+                </div>
+              </div>
+
+              {/* LEADS LIST */}
+              <div className="flex-1 space-y-2">
+                {filteredLeads.length > 0 ? (
+                  paginatedLeads.map((item: any) => {
+                    const followUpDate = new Date(item.followUpDate);
+
+                    const isToday =
+                      followUpDate.toDateString() === new Date().toDateString();
+
+                    const isTomorrow =
+                      followUpDate.toDateString() ===
+                      new Date(Date.now() + 86400000).toDateString();
+
+                    let dateLabel = followUpDate.toLocaleDateString("en-US", {
+                      weekday: "short",
+                      month: "short",
+                      day: "numeric",
+                    });
+
+                    if (isToday) dateLabel = "Today";
+                    else if (isTomorrow) dateLabel = "Tomorrow";
+
+                    return (
+                      <div
+                        key={item.id}
+                        className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${
+                          filter === "overdue"
+                            ? "bg-red-50 border-red-200"
+                            : isToday
+                              ? "bg-orange-50 border-orange-200"
+                              : "bg-gray-50 border-gray-200"
+                        } hover:shadow-sm`}
+                      >
+                        {/* LEFT */}
+                        <div>
+                          <Typography className="font-semibold text-gray-800 text-xs">
+                            {item.lead?.fullName || "Unknown"}
+                          </Typography>
+
+                          <Typography className="text-[11px] text-gray-500">
+                            {item.lead?.phone} •{" "}
+                            {item.lead?.source || "No source"}
+                          </Typography>
+
+                          <Typography className="text-[11px] text-gray-400">
+                            {item.lead?.assignedTo
+                              ? `Assigned to: ${item.lead.assignedTo.name}`
+                              : "Unassigned"}
+                          </Typography>
+                        </div>
+
+                        {/* RIGHT */}
+                        <div className="text-right min-w-[80px]">
+                          <Typography className="text-xs font-semibold text-gray-600">
+                            {dateLabel}
+                          </Typography>
+
+                          <Typography className="text-[11px] text-gray-400">
+                            {item.followUpTime}
+                          </Typography>
+
+                          <div className="text-[10px] px-2 py-0.5 rounded mt-1 bg-purple-100 text-purple-700 capitalize">
+                            {item.followUpType && item.followUpType !== "note"
+                              ? item.followUpType
+                              : item.lead?.status || "N/A"}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="text-center text-gray-500 text-sm py-10">
+                    📅 No follow-ups scheduled for this {filter}
+                  </div>
+                )}
+              </div>
+
+              {/* PAGINATION */}
+              {totalPages > 1 && (
+                <div className="border-t py-2 flex items-center justify-center mt-3">
+                  <Pagination
+                    count={totalPages}
+                    page={page}
+                    onChange={(_, value) => setPage(value)}
+                    color="primary"
+                    size="small"
+                  />
+                </div>
+              )}
+            </>
+          )}
+
+          {/* ERROR */}
+          {!scheduleLoading &&
+            (!scheduleAnalytics || !scheduleAnalytics.success) && (
+              <div className="text-red-600 text-center py-6 text-sm">
+                Failed to load schedule data
+              </div>
+            )}
+        </Box>
       </CardContent>
     </Card>
   );
