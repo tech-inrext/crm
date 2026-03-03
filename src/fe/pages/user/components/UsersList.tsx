@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import type {
   UsersListProps,
   Employee,
@@ -7,13 +7,14 @@ import type {
 import UserCard from "@/fe/pages/user/components/UserCard";
 import dynamic from "next/dynamic";
 import { useGetUsersQuery, useGetUserByIdQuery } from "@/fe/pages/user/userApi";
+import { debounce } from "@mui/material";
 
 const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
   ssr: false,
 });
 const Pagination = dynamic(
   () => import("@/components/ui/Navigation/Pagination"),
-  { ssr: false }
+  { ssr: false },
 );
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -48,6 +49,18 @@ const EmptyState: React.FC = () => (
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 
+const Search = (onSearch) => {
+  const [searchKey, setSearchKey] = useState("");
+
+  const handleChange = (value) => {
+    setSearchKey(value);
+  };
+
+  return (
+    <input value={searchKey} onChange={(e) => handleChange(e.target.value)} />
+  );
+};
+
 export const UsersList: React.FC<UsersListProps> = ({
   isMobile,
   isClient,
@@ -57,6 +70,16 @@ export const UsersList: React.FC<UsersListProps> = ({
   onEditUser,
   canEdit,
 }) => {
+  const [filters, setFilters] = React.useState({
+    search: "",
+    isCabAdmin: false,
+  });
+
+  const handleFilter = (key, value) => {
+    const newFilter = { ...filters, [key]: value };
+    setFilters(newFilter);
+  };
+
   const {
     data,
     loading,
@@ -66,7 +89,7 @@ export const UsersList: React.FC<UsersListProps> = ({
     setPage,
     setRowsPerPage,
     refetch,
-  } = useGetUsersQuery({ search, isCabVendor: false });
+  } = useGetUsersQuery(filters);
 
   const { data: user } = useGetUserByIdQuery({
     id: "699df4c0de3bfbc734e8491e",

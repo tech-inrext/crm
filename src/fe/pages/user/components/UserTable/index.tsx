@@ -16,7 +16,7 @@ export function getUsersTableHeader({
   onView,
   onEdit,
 }: GetUsersTableHeaderProps): TableHeaderItem[] {
-  return [...USERS_TABLE_HEADER].map((header) =>
+  return USERS_TABLE_HEADER.map((header) =>
     header.label === "Actions"
       ? {
         ...header,

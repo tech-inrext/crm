@@ -1,34 +1,47 @@
 ﻿"use client";
 
-import { useEffect, useState } from "react";
-import { userService } from "@/fe/pages/user/user.service";
-import type { RoleItem, ManagerItem, DepartmentItem } from "@/fe/pages/user/types";
+import { useMemo } from "react";
+import {
+  useGetRolesQuery,
+  useGetManagersQuery,
+  useGetDepartmentsQuery,
+} from "@/fe/pages/user/userApi";
+import type {
+  RoleItem,
+  ManagerItem,
+  DepartmentItem,
+} from "@/fe/pages/user/types";
 
-export const useUserDialogData = (open: boolean) => {
-  const [roles, setRoles] = useState<RoleItem[]>([]);
-  const [managers, setManagers] = useState<ManagerItem[]>([]);
-  const [departments, setDepartments] = useState<DepartmentItem[]>([]);
-  const [loading, setLoading] = useState(false);
+// Stable empty arrays — reused across renders so array references never change
+const EMPTY_ROLES: RoleItem[] = [];
+const EMPTY_MANAGERS: ManagerItem[] = [];
+const EMPTY_DEPTS: DepartmentItem[] = [];
 
-  useEffect(() => {
-    if (open) {
-      setLoading(true);
-      Promise.all([
-        userService.getRoles(),
-        userService.getManagers({ isCabVendor: false, limit: 1000, page: 1 }),
-        userService.getDepartments(),
-      ])
-        .then(([r, m, d]) => {
-          setRoles(r || []);
-          setManagers(m || []);
-          setDepartments(d || []);
-        })
-        .catch((err) => {
-          console.error("Error loading dialog data:", err);
-        })
-        .finally(() => setLoading(false));
-    }
-  }, [open]);
+export const useUserDialogData = (_open: boolean) => {
+  const { data: rolesData, loading: rolesLoading } = useGetRolesQuery();
+  const { data: managersData, loading: managersLoading } = useGetManagersQuery({
+    isCabVendor: false,
+    limit: 1000,
+    page: 1,
+  });
+  const { data: departmentsData, loading: departmentsLoading } =
+    useGetDepartmentsQuery();
+
+  // useMemo so derived arrays only get a new reference when the raw data changes
+  const roles = useMemo<RoleItem[]>(
+    () => (rolesData as any)?.data ?? rolesData ?? EMPTY_ROLES,
+    [rolesData],
+  );
+  const managers = useMemo<ManagerItem[]>(
+    () => (managersData as any)?.data ?? managersData ?? EMPTY_MANAGERS,
+    [managersData],
+  );
+  const departments = useMemo<DepartmentItem[]>(
+    () => (departmentsData as any)?.data ?? departmentsData ?? EMPTY_DEPTS,
+    [departmentsData],
+  );
+
+  const loading = rolesLoading || managersLoading || departmentsLoading;
 
   return { roles, managers, departments, loading };
 };

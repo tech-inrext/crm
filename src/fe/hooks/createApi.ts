@@ -6,8 +6,9 @@ const useQuery = (
     url: string;
     isPaginated: boolean;
     defaultPageSize: number;
+    shouldCache: true;
   },
-  params = {}
+  params = {},
 ) => {
   const config = useMemo(() => getConfig(params), [params]);
   const [data, setData] = useState(null);
@@ -40,7 +41,7 @@ const useQuery = (
       }
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    []
+    [],
   );
 
   const goToPage = (newPage: number) => {
@@ -56,7 +57,7 @@ const useQuery = (
       fetchData();
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [config.url, serializedParams, page, rowsPerPage]
+    [config.url, serializedParams, page, rowsPerPage],
   );
 
   return {

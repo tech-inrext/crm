@@ -3,6 +3,22 @@ export const USERS_API_BASE = "/api/v0/employee";
 export const ROLES_API_BASE = "/api/v0/role";
 export const DEPARTMENTS_API_BASE = "/api/v0/department";
 
+/**
+ * Cache invalidation keys — match the URL prefixes used by useMutation's cache.
+ * Pass these in `invalidateKeys` so a successful POST/PATCH/DELETE automatically
+ * evicts all related GET cache entries.
+ */
+export const USER_CACHE_KEYS = {
+  /** Invalidates entire employee list (all pages / searches) */
+  EMPLOYEES: USERS_API_BASE,
+  /** Invalidates a single employee entry — pass the full URL: `${USERS_API_BASE}/${id}` */
+  EMPLOYEE_BY_ID: (id: string) => `${USERS_API_BASE}/${id}`,
+  /** Invalidates all role-list cache entries */
+  ROLES: "/api/v0/role",
+  /** Invalidates all department cache entries */
+  DEPARTMENTS: DEPARTMENTS_API_BASE,
+} as const;
+
 // ─── Pagination ───────────────────────────────────────────────────────────────
 export const USERS_ROWS_PER_PAGE_OPTIONS = [5, 10, 15, 25] as const;
 export const DEFAULT_PAGE_SIZE = 10;
