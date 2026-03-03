@@ -6,8 +6,8 @@ const departmentSchema = new mongoose.Schema(
   {
     departmentId: {
       type: String,
-      required: true,
       unique: true,
+      sparse: true,
       trim: true,
     },
     name: {
@@ -32,7 +32,7 @@ const departmentSchema = new mongoose.Schema(
     },
     attachments: [
       {
-        filename: String, 
+        filename: String,
         url: String,
         uploadedAt: {
           type: Date,
@@ -41,8 +41,8 @@ const departmentSchema = new mongoose.Schema(
       },
     ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-
-export default mongoose.models.Department || mongoose.model("Department", departmentSchema);
+export default mongoose.models.Department ||
+  mongoose.model("Department", departmentSchema);

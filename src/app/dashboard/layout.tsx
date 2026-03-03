@@ -127,6 +127,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
   },
   {
+    label: "Departments",
+    href: "/dashboard/department",
+    module: "department",
+    icon: <GroupIcon sx={{ color: "#3785FF" }} />,
+  },
+  {
     label: "Notifications",
     href: "/dashboard/notifications",
     icon: <Notifications sx={{ color: "#3785FF" }} />,
