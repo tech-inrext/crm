@@ -96,6 +96,7 @@ const Roles: React.FC = () => {
     showTotalVendorsBilling?: boolean;
     showCabBookingAnalytics?: boolean;
     showScheduleThisWeek?: boolean;
+    isAVP?: boolean;
   }) => {
     try {
       await submitRole(roleData);
