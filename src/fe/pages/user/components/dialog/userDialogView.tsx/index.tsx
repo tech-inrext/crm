@@ -196,22 +196,6 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
                 </div>
               </div>
             </SectionCard>
-
-            <SectionCard title="Documents" icon={Description} colorClass="text-orange-600">
-              <DetailItem icon={Description} label="PAN Number" value={user.panNumber} />
-              <DetailItem icon={Fingerprint} label="Aadhar Card" value={user.aadharUrl} isLink />
-              <DetailItem icon={Description} label="PAN Card" value={user.panUrl} isLink />
-              <DetailItem icon={AccountBalance} label="Bank Proof" value={user.bankProofUrl} isLink />
-              <DetailItem icon={Description} label="Signature" value={user.signatureUrl} isLink />
-              <DetailItem icon={Description} label="Photo" value={user.photo} isLink />
-            </SectionCard>
-
-            <SectionCard title="Emergency Contact" icon={FamilyRestroom} colorClass="text-green-600">
-              <DetailItem icon={Person} label="Nominee Name" value={user.nominee?.name} />
-              <DetailItem icon={Phone} label="Contact Number" value={user.nominee?.phone} />
-              <DetailItem icon={Work} label="Occupation" value={user.nominee?.occupation} />
-              <DetailItem icon={FamilyRestroom} label="Relationship" value={user.nominee?.relation} />
-            </SectionCard>
           </div>
         </div>
       </DialogContent>
