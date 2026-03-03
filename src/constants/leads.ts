@@ -20,7 +20,7 @@ export const COMMON_STYLES = LEADS_COMMON_STYLES;
 
 // Lead status values used across the leads feature
 export const LEAD_STATUSES = [
-	"",
+	// "",
 	"new",
 	"in progress",
 	"details shared",
@@ -34,4 +34,14 @@ export const LEAD_TYPES = [
 	"hot lead",
 	"warm lead",
 	"cold lead",
+];
+
+export const budgetRanges = [
+	"<1 Lakh",
+	"1 Lakh to 10 Lakh",
+	"10 Lakh to 20 Lakh",
+	"20 Lakh to 30 Lakh",
+	"30 Lakh to 50 Lakh",
+	"50 Lakh to 1 Crore",
+	">1 Crore",
 ];

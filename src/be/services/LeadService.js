@@ -139,7 +139,7 @@ class LeadService extends Service {
 
   async getAllLeads(req, res) {
     try {
-      const { page = 1, limit = 5, search = "", status } = req.query;
+      const { page = 1, limit = 5, search = "", status, leadType, propertyName, budgetRange, assignedTo } = req.query;
       const currentPage = parseInt(page);
       const itemsPerPage = parseInt(limit);
       const skip = (currentPage - 1) * itemsPerPage;
@@ -176,9 +176,65 @@ class LeadService extends Service {
         }
       }
 
+      let leadTypeQuery = {};
+      if (leadType) {
+        const types = Array.isArray(leadType)
+          ? leadType
+          : String(leadType).split(",").map((s) => s.trim()).filter(Boolean);
+
+        if (types.length) {
+          leadTypeQuery = {
+            leadType: { $in: types.map((t) => new RegExp(`^${t}$`, "i")) },
+          };
+        }
+      }
+
+      let propertyQuery = {};
+      if (propertyName) {
+        const properties = Array.isArray(propertyName)
+          ? propertyName
+          : String(propertyName).split(",").map((s) => s.trim()).filter(Boolean);
+
+        if (properties.length) {
+          propertyQuery = {
+            propertyName: { $in: properties.map((p) => new RegExp(`^${p}$`, "i")) },
+          };
+        }
+      }
+
+      let budgetQuery = {};
+      if (budgetRange) {
+        const budgets = Array.isArray(budgetRange)
+          ? budgetRange
+          : String(budgetRange).split(",").map((s) => s.trim()).filter(Boolean);
+
+        if (budgets.length) {
+          budgetQuery = {
+            budgetRange: { $in: budgets.map((b) => new RegExp(`^${b}$`, "i")) },
+          };
+        }
+      }
+
+      let assignedToQuery = {};
+      if (assignedTo) {
+        const userIds = Array.isArray(assignedTo)
+          ? assignedTo
+          : String(assignedTo).split(",").map((s) => s.trim()).filter(Boolean);
+
+        if (userIds.length) {
+          assignedToQuery = {
+            assignedTo: { $in: userIds },
+          };
+        }
+      }
+
       const queryParts = [baseQuery];
       if (Object.keys(searchQuery).length) queryParts.push(searchQuery);
       if (Object.keys(statusQuery).length) queryParts.push(statusQuery);
+      if (Object.keys(leadTypeQuery).length) queryParts.push(leadTypeQuery);
+      if (Object.keys(propertyQuery).length) queryParts.push(propertyQuery);
+      if (Object.keys(budgetQuery).length) queryParts.push(budgetQuery);
+      if (Object.keys(assignedToQuery).length) queryParts.push(assignedToQuery);
 
       const query = queryParts.length > 1 ? { $and: queryParts } : baseQuery;
 
