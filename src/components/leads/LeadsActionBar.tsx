@@ -319,39 +319,84 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                         } : {}}
                       >
                         {section.items.length > 0 ? (
-                          section.items.map((item: any) => {
+                          section.items.map((item: any, itemIdx: number) => {
                             const isString = typeof item === "string";
                             const id = isString ? item : item._id;
-                            const label = isString ? item : (
-                              <Box>
-                                <Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{item.name}</Typography>
-                                <Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>{item.designation}</Typography>
-                              </Box>
-                            );
+                            const isSelected = section.selected.includes(id);
+                            const name = isString ? item : item.name;
+                            const designation = isString ? null : item.designation;
 
                             return (
-                              <FormControlLabel
-                                key={id}
-                                sx={{ 
-                                  ml: -0.5, 
-                                  mr: 0,
-                                  "&:hover .MuiCheckbox-root": { color: "primary.main" } 
-                                }}
-                                control={
-                                  <Checkbox 
-                                    size="small" 
-                                    checked={section.selected.includes(id)}
-                                    onChange={() => {
-                                      const newVal = section.selected.includes(id)
-                                        ? section.selected.filter((v: any) => v !== id)
-                                        : [...section.selected, id];
-                                      section.onChange(newVal);
-                                    }}
-                                    sx={{ py: 0.6 }}
-                                  />
-                                }
-                                label={<Box sx={{ fontSize: "0.85rem", color: section.selected.includes(id) ? "text.primary" : "text.secondary", fontWeight: section.selected.includes(id) ? 600 : 400, transform: "translateY(1px)", transition: "all 0.2s" }}>{label}</Box>}
-                              />
+                              <React.Fragment key={id}>
+                                <Box
+                                  onClick={() => {
+                                    const newVal = isSelected
+                                      ? section.selected.filter((v: any) => v !== id)
+                                      : [...section.selected, id];
+                                    section.onChange(newVal);
+                                  }}
+                                  sx={{
+                                    py: 0.8,
+                                    px: 1,
+                                    my: 0.1,
+                                    borderRadius: 1.5,
+                                    cursor: "pointer",
+                                    transition: "all 0.2s",
+                                    "&:hover": {
+                                      bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                    },
+                                    ...(isSelected && {
+                                      bgcolor: alpha(theme.palette.primary.main, 0.03),
+                                    }),
+                                  }}
+                                >
+                                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                                    <Checkbox
+                                      size="small"
+                                      checked={isSelected}
+                                      sx={{
+                                        p: 0,
+                                        mr: 1.5,
+                                        color: alpha(theme.palette.text.secondary, 0.4),
+                                        "&.Mui-checked": {
+                                          color: section.color || "primary.main",
+                                        },
+                                      }}
+                                    />
+                                    <Typography
+                                      sx={{
+                                        fontSize: "0.85rem",
+                                        fontWeight: isSelected ? 600 : 500,
+                                        color: isSelected
+                                          ? section.color || "primary.main"
+                                          : "text.primary",
+                                        lineHeight: 1.4,
+                                      }}
+                                    >
+                                      {name}
+                                    </Typography>
+                                  </Box>
+                                  {designation && (
+                                    <Typography
+                                      sx={{
+                                        fontSize: "0.72rem",
+                                        color: isSelected
+                                          ? alpha(theme.palette.primary.main, 0.6)
+                                          : "text.secondary",
+                                        ml: 4.1, // Aligns exactly below the start of the name text (Checkbox width + margin)
+                                        lineHeight: 1,
+                                        mt: -0.2, // Tweak to pull closer to name
+                                        fontWeight: 400,
+                                      }}
+                                    >
+                                      {designation}
+                                    </Typography>
+                                  )}
+                                </Box>
+                                {itemIdx < section.items.length - 1 && (
+                                  <Divider sx={{ mx: 0.5, opacity: 0.3 }} />
+                                )}
+                              </React.Fragment>
                             );
                           })
                         ) : (

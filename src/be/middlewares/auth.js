@@ -100,6 +100,11 @@ export async function userAuth(req, res, next) {
     req.isSystemAdmin = isSystemAdminFlag;
     res.locals.isSystemAdmin = isSystemAdminFlag;
 
+    // Attach isAVP flag to request and locals
+    const isAVPFlag = Boolean(role.isAVP);
+    req.isAVP = isAVPFlag;
+    res.locals.isAVP = isAVPFlag;
+
     // 🔍 Determine moduleName from URL
     const url = req.url.toLowerCase();
     const moduleName = MODULES.find((mod) => url.includes(mod));

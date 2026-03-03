@@ -1,5 +1,6 @@
 import { Service } from "@framework";
 import Lead from "../models/Lead";
+import Employee from "../models/Employee";
 import FollowUp from "../models/FollowUp";
 import { NotificationHelper } from "../../lib/notification-helpers";
 import mongoose from "mongoose";
@@ -30,7 +31,7 @@ class LeadService extends Service {
       }
 
       const leadId = `LD-${Date.now().toString().slice(-6)}-${Math.floor(
-        100 + Math.random() * 900
+        100 + Math.random() * 900,
       )}`;
 
       let loggedInUserId = req.employee?._id || req.employee?.id;
@@ -67,10 +68,13 @@ class LeadService extends Service {
               name: newLead.name,
               phone: newLead.phone,
               priority: "HIGH",
-            }
+            },
           );
         } catch (notificationError) {
-          console.error("Failed to send new lead notification:", notificationError);
+          console.error(
+            "Failed to send new lead notification:",
+            notificationError,
+          );
         }
       }
 
@@ -105,9 +109,11 @@ class LeadService extends Service {
 
     const previousAssignee = lead.assignedTo?.toString();
 
-    lead.assignedTo = assignedTo;
-    lead.updatedBy = loggedInUserId;
-    await lead.save();
+    // Use updateOne to avoid full-document validation on non-assignedTo fields
+    await Lead.updateOne(
+      { _id: leadId },
+      { $set: { assignedTo, updatedBy: loggedInUserId } },
+    );
 
     // 🔔 Notify ONLY if assignee changed
     if (previousAssignee !== assignedTo) {
@@ -122,52 +128,111 @@ class LeadService extends Service {
             name: lead.name,
             phone: lead.phone,
             priority: "HIGH",
-          }
+          },
         );
       } catch (e) {
         console.error("Assign notification failed", e);
       }
     }
 
+    // Fetch updated lead to return
+    const updatedLead = await Lead.findById(leadId);
+
     return res.status(200).json({
       success: true,
-      data: lead,
+      data: updatedLead,
       message: "Lead assigned successfully",
     });
   }
 
+  // 🔹 Helper to fetch all subordinates in a hierarchy (downline)
+  async getDownlineIds(managerId) {
+    if (!managerId) return [];
+    try {
+      const allEmployees = await Employee.find({})
+        .select("_id managerId")
+        .lean();
+      const ids = [managerId.toString()];
+
+      const findSubordinates = (mId) => {
+        const subs = allEmployees.filter(
+          (e) => String(e.managerId) === String(mId),
+        );
+        subs.forEach((s) => {
+          ids.push(s._id.toString());
+          findSubordinates(s._id);
+        });
+      };
+
+      findSubordinates(managerId);
+      // Return as ObjectIds for reliable matching in MongoDB
+      return ids.map((id) => new mongoose.Types.ObjectId(id));
+    } catch (error) {
+      console.error("Error fetching downline IDs:", error);
+      return [new mongoose.Types.ObjectId(managerId)];
+    }
+  }
 
   async getAllLeads(req, res) {
     try {
-      const { page = 1, limit = 5, search = "", status, leadType, propertyName, budgetRange, assignedTo } = req.query;
+      const {
+        page = 1,
+        limit = 5,
+        search = "",
+        status,
+        leadType,
+        propertyName,
+        budgetRange,
+        assignedTo,
+      } = req.query;
       const currentPage = parseInt(page);
       const itemsPerPage = parseInt(limit);
       const skip = (currentPage - 1) * itemsPerPage;
 
+      console.log("req.isAVP", req.isAVP);
+      console.log("req.isSystemAdmin", req.isSystemAdmin);
+
       const loggedInUserId = req.employee?._id;
-      const baseQuery = {
-        $or: [
-          { uploadedBy: loggedInUserId },
-          { managerId: loggedInUserId },
-          { assignedTo: loggedInUserId },
-        ],
-      };
+
+      // 🛡️ Determine visibility based on role and hierarchy
+      let baseQuery = {};
+      if (req.isSystemAdmin) {
+        // System Admins see all leads across the entire system
+        baseQuery = {};
+      } else if (req.isAVP) {
+        baseQuery = {
+          $or: [{ managerId: { $in: loggedInUserId } }],
+        };
+      } else {
+        // Managers and Agents see leads from their entire downline hierarchy
+        const downlineIds = await this.getDownlineIds(loggedInUserId);
+        baseQuery = {
+          $or: [
+            // { uploadedBy: { $in: downlineIds } },
+            // { managerId: { $in: loggedInUserId } },
+            { assignedTo: { $in: downlineIds } },
+          ],
+        };
+      }
 
       const searchQuery = search
         ? {
-          $or: [
-            { fullName: { $regex: search, $options: "i" } },
-            { email: { $regex: search, $options: "i" } },
-            { phone: { $regex: search, $options: "i" } },
-          ],
-        }
+            $or: [
+              { fullName: { $regex: search, $options: "i" } },
+              { email: { $regex: search, $options: "i" } },
+              { phone: { $regex: search, $options: "i" } },
+            ],
+          }
         : {};
 
       let statusQuery = {};
       if (status) {
         const statuses = Array.isArray(status)
           ? status
-          : String(status).split(",").map((s) => s.trim()).filter(Boolean);
+          : String(status)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
 
         if (statuses.length) {
           statusQuery = {
@@ -180,7 +245,10 @@ class LeadService extends Service {
       if (leadType) {
         const types = Array.isArray(leadType)
           ? leadType
-          : String(leadType).split(",").map((s) => s.trim()).filter(Boolean);
+          : String(leadType)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
 
         if (types.length) {
           leadTypeQuery = {
@@ -193,11 +261,16 @@ class LeadService extends Service {
       if (propertyName) {
         const properties = Array.isArray(propertyName)
           ? propertyName
-          : String(propertyName).split(",").map((s) => s.trim()).filter(Boolean);
+          : String(propertyName)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
 
         if (properties.length) {
           propertyQuery = {
-            propertyName: { $in: properties.map((p) => new RegExp(`^${p}$`, "i")) },
+            propertyName: {
+              $in: properties.map((p) => new RegExp(`^${p}$`, "i")),
+            },
           };
         }
       }
@@ -206,7 +279,10 @@ class LeadService extends Service {
       if (budgetRange) {
         const budgets = Array.isArray(budgetRange)
           ? budgetRange
-          : String(budgetRange).split(",").map((s) => s.trim()).filter(Boolean);
+          : String(budgetRange)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
 
         if (budgets.length) {
           budgetQuery = {
@@ -219,12 +295,32 @@ class LeadService extends Service {
       if (assignedTo) {
         const userIds = Array.isArray(assignedTo)
           ? assignedTo
-          : String(assignedTo).split(",").map((s) => s.trim()).filter(Boolean);
+          : String(assignedTo)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
 
         if (userIds.length) {
-          assignedToQuery = {
-            assignedTo: { $in: userIds },
-          };
+          // If the special "unassigned" token is present we want leads
+          // where assignedTo is `null`/absent as well as any valid ids.
+          const includeUnassigned = userIds.includes("unassigned");
+          const validIds = userIds.filter((id) => id !== "unassigned");
+          const clauses = [];
+
+          if (validIds.length) {
+            clauses.push({ assignedTo: { $in: validIds } });
+          }
+          if (includeUnassigned) {
+            // Match documents where assignedTo is null or does not exist
+            clauses.push({ assignedTo: { $exists: false } });
+            clauses.push({ assignedTo: null });
+          }
+
+          if (clauses.length === 1) {
+            assignedToQuery = clauses[0];
+          } else if (clauses.length > 1) {
+            assignedToQuery = { $or: clauses };
+          }
         }
       }
 
@@ -239,26 +335,37 @@ class LeadService extends Service {
       const query = queryParts.length > 1 ? { $and: queryParts } : baseQuery;
 
       const [leads, totalLeads] = await Promise.all([
-        Lead.find(query).populate("assignedTo", "fullName name email").populate("uploadedBy", "fullName name").populate("managerId", "fullName name").skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }).lean(),
+        Lead.find(query)
+          .populate("assignedTo", "fullName name email")
+          .populate("uploadedBy", "fullName name")
+          .populate("managerId", "fullName name")
+          .skip(skip)
+          .limit(itemsPerPage)
+          .sort({ createdAt: -1 })
+          .lean(),
         Lead.countDocuments(query),
       ]);
 
       // Merge follow-up data for each lead (AGGREGATING NEW SCHEMA)
-      const mergedLeads = await Promise.all(leads.map(async (lead) => {
-        // 1. Get Count
-        const count = await FollowUp.countDocuments({ leadId: lead._id });
+      const mergedLeads = await Promise.all(
+        leads.map(async (lead) => {
+          // 1. Get Count
+          const count = await FollowUp.countDocuments({ leadId: lead._id });
 
-        // 2. Get Latest
-        const latest = await FollowUp.findOne({ leadId: lead._id }).sort({ createdAt: -1 }).lean();
+          // 2. Get Latest
+          const latest = await FollowUp.findOne({ leadId: lead._id })
+            .sort({ createdAt: -1 })
+            .lean();
 
-        return {
-          ...lead,
-          followUpCount: count, // Used for Badge
-          nextFollowUp: latest ? latest.followUpDate : null,
-          // Providing empty arrays as notes are no longer on Lead object
-          followUpNotes: latest ? [latest.note] : []
-        };
-      }));
+          return {
+            ...lead,
+            followUpCount: count, // Used for Badge
+            nextFollowUp: latest ? latest.followUpDate : null,
+            // Providing empty arrays as notes are no longer on Lead object
+            followUpNotes: latest ? [latest.note] : [],
+          };
+        }),
+      );
 
       return res.status(200).json({
         success: true,
@@ -295,7 +402,9 @@ class LeadService extends Service {
       const lead = await Lead.findOne(query);
 
       if (!lead) {
-        return res.status(404).json({ success: false, error: "Lead not found" });
+        return res
+          .status(404)
+          .json({ success: false, error: "Lead not found" });
       }
 
       const hasAccess =
@@ -311,7 +420,9 @@ class LeadService extends Service {
 
       // Aggregating FollowUps
       const count = await FollowUp.countDocuments({ leadId: lead._id });
-      const latest = await FollowUp.findOne({ leadId: lead._id }).sort({ createdAt: -1 }).lean();
+      const latest = await FollowUp.findOne({ leadId: lead._id })
+        .sort({ createdAt: -1 })
+        .lean();
 
       leadObj.followUpCount = count;
       leadObj.nextFollowUp = latest ? latest.followUpDate : null;
@@ -319,7 +430,9 @@ class LeadService extends Service {
       return res.status(200).json({ success: true, data: leadObj });
     } catch (error) {
       console.error("Error fetching lead:", error);
-      return res.status(500).json({ success: false, error: "Error: " + error.message });
+      return res
+        .status(500)
+        .json({ success: false, error: "Error: " + error.message });
     }
   }
 
@@ -340,7 +453,9 @@ class LeadService extends Service {
 
       const originalLead = await Lead.findOne(query);
       if (!originalLead) {
-        return res.status(404).json({ success: false, error: "Lead not found" });
+        return res
+          .status(404)
+          .json({ success: false, error: "Lead not found" });
       }
 
       // Explicitly handle leadType
@@ -362,11 +477,13 @@ class LeadService extends Service {
       const updatedLead = await Lead.findByIdAndUpdate(
         originalLead._id,
         { $set: { ...updateFields, updatedBy: loggedInUserId } },
-        { new: true }
+        { new: true },
       );
 
       if (!updatedLead) {
-        return res.status(404).json({ success: false, error: "Lead not found during update" });
+        return res
+          .status(404)
+          .json({ success: false, error: "Lead not found during update" });
       }
 
       // Notifications (Status & Assign) logic kept the same...
@@ -377,19 +494,33 @@ class LeadService extends Service {
             updatedLead.assignedTo || req.employee._id,
             originalLead.status,
             updateFields.status,
-            { leadId: updatedLead.leadId, company: updatedLead.company, name: updatedLead.name, phone: updatedLead.phone }
+            {
+              leadId: updatedLead.leadId,
+              company: updatedLead.company,
+              name: updatedLead.name,
+              phone: updatedLead.phone,
+            },
           );
-        } catch (e) { }
+        } catch (e) {}
       }
-      if (updateFields.assignedTo && originalLead.assignedTo?.toString() !== updateFields.assignedTo) {
+      if (
+        updateFields.assignedTo &&
+        originalLead.assignedTo?.toString() !== updateFields.assignedTo
+      ) {
         try {
           await NotificationHelper.notifyLeadAssigned(
             updatedLead._id,
             updateFields.assignedTo,
             req.employee._id,
-            { leadId: updatedLead.leadId, company: updatedLead.company, name: updatedLead.name, phone: updatedLead.phone, priority: "HIGH" }
+            {
+              leadId: updatedLead.leadId,
+              company: updatedLead.company,
+              name: updatedLead.name,
+              phone: updatedLead.phone,
+              priority: "HIGH",
+            },
           );
-        } catch (e) { }
+        } catch (e) {}
       }
 
       return res.status(200).json({ success: true, data: updatedLead });
