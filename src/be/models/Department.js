@@ -29,9 +29,20 @@ const departmentSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
-    }
+    },
+    attachments: [
+      {
+        filename: String, 
+        url: String,
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
   { timestamps: true }
 );
+
 
 export default mongoose.models.Department || mongoose.model("Department", departmentSchema);

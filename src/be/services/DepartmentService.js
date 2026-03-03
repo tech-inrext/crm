@@ -8,7 +8,7 @@ class DepartmentService extends Service {
 
   async createDepartment(req, res) {
     try {
-      const { name, description, managerId, departmentId } = req.body;
+      const { name, description, managerId, departmentId, attachments } = req.body;
 
       if (!name) {
         return res
@@ -21,6 +21,7 @@ class DepartmentService extends Service {
         description,
         managerId,
         departmentId,
+        attachments: req.body.attachments || [],
       });
       await newDept.save();
 
