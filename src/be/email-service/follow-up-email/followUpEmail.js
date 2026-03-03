@@ -3,54 +3,55 @@ import Lead from "../../models/Lead.js";
 import FollowUp from "../../models/FollowUp.js";
 
 export async function sendFollowUpEmail(recipientEmail, notification) {
-    try {
-        const leadId = notification.metadata.leadId;
-        if (!leadId) {
-            throw new Error("No leadId found in notification metadata");
-        }
-
-        // Fetch lead and follow-up details for a rich email
-        const lead = await Lead.findById(leadId);
-        const followUpDoc = await FollowUp.findOne({ leadId }).sort({ createdAt: -1 });
-
-        if (!lead) {
-            throw new Error(`Lead not found: ${leadId}`);
-        }
-
-        const type = followUpDoc?.followUpType || "follow-up";
-        const note = followUpDoc?.note || notification.message;
-        const date = followUpDoc?.followUpDate ? new Date(followUpDoc.followUpDate).toLocaleString() : notification.scheduledFor ? new Date(notification.scheduledFor).toLocaleString() : "Now";
-
-        const emailContent = generateFollowUpTemplate({
-            leadName: lead.fullName || "Valued Client",
-            leadPhone: lead.phone || "N/A",
-            leadEmail: lead.email || "N/A",
-            propertyName: lead.propertyName || "N/A",
-            followUpType: type,
-            followUpDate: date,
-            notes: note,
-            notificationTitle: notification.title,
-            priority: notification.metadata.priority || "MEDIUM",
-            actionUrl: notification.metadata.actionUrl
-        });
-
-        await mailer.sendEmail(recipientEmail, emailContent.subject, emailContent.html);
-    } catch (error) {
-        console.error("Error sending follow-up email:", error);
-        // Fallback to basic notification email if data fetching fails
-        throw error;
+  try {
+    const leadId = notification.metadata.leadId;
+    if (!leadId) {
+      throw new Error("No leadId found in notification metadata");
     }
+
+    // Fetch lead and follow-up details for a rich email
+    const lead = await Lead.findById(leadId);
+    const followUpDoc = await FollowUp.findOne({ leadId }).sort({ createdAt: -1 });
+
+    if (!lead) {
+      throw new Error(`Lead not found: ${leadId}`);
+    }
+
+    const type = followUpDoc?.followUpType || "follow-up";
+    const note = followUpDoc?.note || notification.message;
+    const dateOptions = { timeZone: 'Asia/Kolkata' };
+    const date = followUpDoc?.followUpDate ? new Date(followUpDoc.followUpDate).toLocaleString('en-US', dateOptions) : notification.scheduledFor ? new Date(notification.scheduledFor).toLocaleString('en-US', dateOptions) : "Now";
+
+    const emailContent = generateFollowUpTemplate({
+      leadName: lead.fullName || "Valued Client",
+      leadPhone: lead.phone || "N/A",
+      leadEmail: lead.email || "N/A",
+      propertyName: lead.propertyName || "N/A",
+      followUpType: type,
+      followUpDate: date,
+      notes: note,
+      notificationTitle: notification.title,
+      priority: notification.metadata.priority || "MEDIUM",
+      actionUrl: notification.metadata.actionUrl
+    });
+
+    await mailer.sendEmail(recipientEmail, emailContent.subject, emailContent.html);
+  } catch (error) {
+    console.error("Error sending follow-up email:", error);
+    // Fallback to basic notification email if data fetching fails
+    throw error;
+  }
 }
 
 function generateFollowUpTemplate(data) {
-    const baseUrl = process.env.APP_URL || "http://localhost:3000";
-    const actionUrl = data.actionUrl ? `${baseUrl}${data.actionUrl}` : `${baseUrl}/dashboard`;
-    const subject = `📅 ${data.followUpType.toUpperCase()} Reminder: ${data.leadName} - Inrext CRM`;
+  const baseUrl = process.env.APP_URL || "http://localhost:3000";
+  const actionUrl = data.actionUrl ? `${baseUrl}${data.actionUrl}` : `${baseUrl}/dashboard`;
+  const subject = `📅 ${data.followUpType.toUpperCase()} Reminder: ${data.leadName} - Inrext CRM`;
 
-    const typeColor = data.followUpType === "site visit" ? "#4f46e5" : data.followUpType === "call back" ? "#0891b2" : "#71717a";
-    const priorityColor = data.priority === "URGENT" ? "#dc2626" : data.priority === "HIGH" ? "#ea580c" : "#2563eb";
+  const typeColor = data.followUpType === "site visit" ? "#4f46e5" : data.followUpType === "call back" ? "#0891b2" : "#71717a";
+  const priorityColor = data.priority === "URGENT" ? "#dc2626" : data.priority === "HIGH" ? "#ea580c" : "#2563eb";
 
-    const html = `
+  const html = `
     <!DOCTYPE html>
     <html lang="en">
     <head>
@@ -125,5 +126,5 @@ function generateFollowUpTemplate(data) {
     </html>
   `;
 
-    return { subject, html };
+  return { subject, html };
 }

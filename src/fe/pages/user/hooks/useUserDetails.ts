@@ -1,16 +1,15 @@
 ﻿"use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useUserDialogData } from "@/fe/pages/user/hooks/useUserDialogData";
 import { mapRolesToNameMap } from "@/fe/pages/user/utils";
 
 export const useUserDetails = (open: boolean, user: any) => {
   const { roles } = useUserDialogData(open);
-  const [roleMap, setRoleMap] = useState<Record<string, string>>({});
   const [imageError, setImageError] = useState(false);
 
-  useEffect(() => {
-    setRoleMap(mapRolesToNameMap(roles));
-  }, [roles]);
+  // useMemo instead of useEffect+setState — avoids infinite loop caused by
+  // roles being a new array reference on every render from createApi
+  const roleMap = useMemo(() => mapRolesToNameMap(roles), [roles]);
 
   useEffect(() => {
     setImageError(false);

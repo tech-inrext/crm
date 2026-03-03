@@ -14,7 +14,7 @@ class BulkUploadService extends Service {
   async bulkUploadLeads(req, res) {
     try {
       await dbConnect();
-      const { fileUrl, fileName, assignedTo } = req.body;
+      const { fileUrl, fileName, managerId } = req.body;
       if (!fileUrl || !fileName) {
         return res
           .status(400) // bad request
@@ -27,7 +27,9 @@ class BulkUploadService extends Service {
       await BulkUpload.create({
         _id: uploadId,
         uploadedBy: uploaderId,
-        assignedTo: assignedTo || null,
+        // Since we are no longer assigning directly via UI to an employee,
+        // we can set assignedTo to null or a placeholder. The model doesn't strictly require it.
+        assignedTo: null,
         totalRecords: 0,
         uploaded: 0,
         duplicates: 0,
@@ -50,7 +52,7 @@ class BulkUploadService extends Service {
           uploadId,
           fileUrl,
           uploadedBy: uploaderId,
-          assignedTo: assignedTo || null,
+          managerId: managerId || null,
         },
         {
           attempts: 3, // optional: a bit more resilient
