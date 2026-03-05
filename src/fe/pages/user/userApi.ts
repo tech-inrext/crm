@@ -3,7 +3,7 @@ import createApi from "@/fe/hooks/createApi";
 const userApi = createApi({
   endpoints: {
     // List of employees (paginated)
-    getUsers: () => ({
+    getUsers: (params) => ({
       url: "/api/v0/employee",
       isPaginated: true,
     }),

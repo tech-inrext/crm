@@ -27,11 +27,11 @@ const useQuery = (
   };
 
   const fetchData = useCallback(
-    async () => {
+    async (params) => {
       setLoading(true);
       try {
         const response = await axios.get(config.url, {
-          params: getRequestParams(),
+          params,
         });
         setData(response.data);
       } catch (err) {
@@ -54,7 +54,8 @@ const useQuery = (
 
   useEffect(
     () => {
-      fetchData();
+      const params = getRequestParams();
+      fetchData(params);
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [config.url, serializedParams, page, rowsPerPage],
