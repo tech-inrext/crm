@@ -36,7 +36,6 @@ class LeadAnalyticsService extends Service {
         Lead.detailsShared,
       ];
 
-
       // PARALLEL QUERIES
       const [detailsSharedLeads, siteVisitRaw, bySource, byProperty] =
         await Promise.all([
