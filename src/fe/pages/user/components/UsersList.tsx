@@ -71,9 +71,14 @@ export const UsersList: React.FC<UsersListProps> = ({
   canEdit,
 }) => {
   const [filters, setFilters] = React.useState({
-    search: "",
+    search: search,
     isCabAdmin: false,
   });
+
+  // Update filters when search prop changes
+  React.useEffect(() => {
+    setFilters((prev) => ({ ...prev, search }));
+  }, [search]);
 
   const handleFilter = (key, value) => {
     const newFilter = { ...filters, [key]: value };
@@ -81,7 +86,7 @@ export const UsersList: React.FC<UsersListProps> = ({
   };
 
   const {
-    data,
+    data: employees,
     loading,
     page,
     rowsPerPage,
@@ -95,11 +100,11 @@ export const UsersList: React.FC<UsersListProps> = ({
     id: "699df4c0de3bfbc734e8491e",
   });
 
-  const employees = data?.data ?? [];
-  const totalItems = data?.pagination?.totalItems ?? 0;
+  const employeeList = employees?.data || [];
+  const totalItems = employees?.pagination?.totalItems ?? 0;
 
   if (loading) return <LoadingSpinner />;
-  if (employees.length === 0) return <EmptyState />;
+  if (employeeList.length === 0) return <EmptyState />;
 
   const paginationBar = (
     <div className="flex justify-center mt-4">
@@ -117,7 +122,7 @@ export const UsersList: React.FC<UsersListProps> = ({
     return (
       <div>
         <div className="grid grid-cols-1 gap-3 mb-2">
-          {employees.map((user: Employee) => (
+          {employeeList.map((user: Employee) => (
             <UserCard
               key={user.id ?? user._id}
               user={{
@@ -139,7 +144,7 @@ export const UsersList: React.FC<UsersListProps> = ({
     <div className="w-full">
       <div className="rounded-xl overflow-hidden shadow-lg bg-white">
         <TableMap
-          data={employees}
+          data={employeeList}
           header={usersTableHeader}
           onEdit={() => {}}
           onDelete={() => {}}
