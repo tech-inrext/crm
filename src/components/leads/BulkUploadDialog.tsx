@@ -42,7 +42,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
   useEffect(() => {
     if (open) {
       axios
-        .get("/api/v0/employee/getAllEmployeeList")
+        .get("/api/v0/employee/getAllAVPEmployees")
         .then((res) => setUsers(res.data.data || []))
         .catch(() => setUsers([]));
     } else {
@@ -140,7 +140,7 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
         body: JSON.stringify({
           fileUrl,
           fileName,
-          assignedTo: assignedTo?._id || null,
+          managerId: assignedTo?._id || null,
         }),
       });
 
@@ -222,11 +222,11 @@ const BulkUploadDialog: React.FC<BulkUploadDialogProps> = ({
             <h3
               className="text-sm font-semibold text-gray-700 mb-2 mt-2"
             >
-              Assign To
+              Manager (AVP)
               <span
                 className="text-xs text-gray-500 font-normal ml-2"
               >
-                ( Assign all leads from this upload to a team member)
+                ( Assign all leads from this upload to an AVP Manager )
               </span>
             </h3>
             <Autocomplete

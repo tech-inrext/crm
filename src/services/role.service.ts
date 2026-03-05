@@ -9,6 +9,7 @@ interface RoleSubmissionData {
   showTotalVendorsBilling?: boolean;
   showCabBookingAnalytics?: boolean;
   showScheduleThisWeek?: boolean;
+  isAVP?: boolean;
 }
 
 interface RolePermissions {
@@ -104,6 +105,7 @@ export const createRole = async (
     showTotalVendorsBilling: !!roleData.showTotalVendorsBilling,
     showCabBookingAnalytics: !!roleData.showCabBookingAnalytics,
     showScheduleThisWeek: !!roleData.showScheduleThisWeek,
+    isAVP: !!roleData.isAVP,
   };
 
   try {
@@ -142,6 +144,7 @@ export const updateRole = async (
     showTotalVendorsBilling: !!roleData.showTotalVendorsBilling,
     showCabBookingAnalytics: !!roleData.showCabBookingAnalytics,
     showScheduleThisWeek: !!roleData.showScheduleThisWeek,
+    isAVP: !!roleData.isAVP,
   };
 
   try {

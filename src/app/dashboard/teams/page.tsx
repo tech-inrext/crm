@@ -17,18 +17,21 @@ import {
   ErrorState,
   EmptyState,
 } from "@/components/team-hierarchy";
+import { useSearchParams, useRouter } from "next/navigation";
 
 export default function TeamsPage() {
   const [employees, setEmployees] = useState<Employee[]>([]);
-  const [selectedManager, setSelectedManager] = useState<string | null>(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem(STORAGE_KEYS.SELECTED_MANAGER) || null;
-    }
-    return null;
-  });
+ const searchParams = useSearchParams();
+const router = useRouter();
+
+const initialManager = searchParams.get("managerId");
+
+const [selectedManager, setSelectedManager] = useState<string | null>(
+  initialManager
+);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 300);
-
+  
   const {
     hierarchy,
     loading,
@@ -46,7 +49,15 @@ export default function TeamsPage() {
     () => filterHierarchy(hierarchy, debouncedSearch),
     [hierarchy, debouncedSearch]
   );
-
+  useEffect(() => {
+  const managerFromUrl = searchParams.get("managerId");
+  setSelectedManager(managerFromUrl);
+}, [searchParams]);
+  useEffect(() => {
+  if (selectedManager) {
+    fetchHierarchy(selectedManager);
+  }
+}, [selectedManager, fetchHierarchy]);
   useEffect(() => {
     const loadEmployees = async () => {
       try {
@@ -59,14 +70,18 @@ export default function TeamsPage() {
     loadEmployees();
   }, []);
 
-  const handleManagerChange = useCallback((managerId: string | null) => {
+ const handleManagerChange = useCallback(
+  (managerId: string | null) => {
     setSelectedManager(managerId);
+
     if (managerId) {
-      localStorage.setItem(STORAGE_KEYS.SELECTED_MANAGER, managerId);
+      router.push(`/dashboard/teams?managerId=${managerId}`);
     } else {
-      localStorage.removeItem(STORAGE_KEYS.SELECTED_MANAGER);
+      router.push(`/dashboard/teams`);
     }
-  }, []);
+  },
+  [router]
+);
 
   const handleExpandAll = useCallback(() => {
     if (filteredHierarchy) {

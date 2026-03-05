@@ -31,6 +31,7 @@ interface AddRoleDialogProps {
     showTotalVendorsBilling?: boolean;
     showCabBookingAnalytics?: boolean;
     showScheduleThisWeek?: boolean;
+    isAVP?: boolean;
   }) => void;
   onClose: () => void;
 }
@@ -54,6 +55,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
   const [showTotalVendorsBilling, setShowTotalVendorsBilling] = useState(false);
   const [showCabBookingAnalytics, setShowCabBookingAnalytics] = useState(false);
   const [showScheduleThisWeek, setShowScheduleThisWeek] = useState(false);
+  const [isAVP, setIsAVP] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [windowWidth, setWindowWidth] = useState(1200); // Default width for SSR
   useEffect(() => {
@@ -96,6 +98,11 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
           typeof (role as any).showScheduleThisWeek === "string"
             ? (role as any).showScheduleThisWeek.toLowerCase() === "true"
             : Boolean((role as any).showScheduleThisWeek)
+        );
+        setIsAVP(
+          typeof (role as any).isAVP === "string"
+            ? (role as any).isAVP.toLowerCase() === "true"
+            : Boolean((role as any).isAVP)
         );
         let read = role.read;
         let write = role.write;
@@ -210,6 +217,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
         setShowTotalVendorsBilling(false);
         setShowCabBookingAnalytics(false);
         setShowScheduleThisWeek(false);
+        setIsAVP(false);
         setModulePerms(
           Object.fromEntries(
             modules.map((m) => [
@@ -255,6 +263,7 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
       showTotalVendorsBilling,
       showCabBookingAnalytics,
       showScheduleThisWeek,
+      isAVP,
     });
   };
 
@@ -520,6 +529,22 @@ const AddRoleDialog: React.FC<AddRoleDialogProps> = ({
               sx={{ color: "#1976d2", "&.Mui-checked": { color: "#1976d2" } }}
             />
             <Typography>Schedule In This Week</Typography>
+          </Box>
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              gap: 1,
+              flexWrap: "wrap",
+              mt: 1,
+            }}
+          >
+            <Checkbox
+              checked={isAVP}
+              onChange={(e) => setIsAVP(e.target.checked)}
+              sx={{ color: "#1976d2", "&.Mui-checked": { color: "#1976d2" } }}
+            />
+            <Typography>isAVP</Typography>
           </Box>
         </Box>
       </DialogContent>

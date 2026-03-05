@@ -21,7 +21,7 @@ try {
 
   // Handle Redis connection events
   connection.on("error", (error) => {
-    // console.warn("Redis connection error (non-blocking):", error.message);
+    console.warn("❌ Redis connection error (non-blocking):", error.message);
     // Don't throw error, just log it
   });
 
@@ -47,7 +47,7 @@ try {
   });
 } catch (error) {
   console.warn(
-    "Redis/Queue initialization failed, running without queue:",
+    "❌ Redis/Queue initialization failed:",
     error.message
   );
   leadQueue = null;

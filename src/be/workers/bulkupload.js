@@ -17,7 +17,7 @@ const sleep = () => new Promise((resolve) => setTimeout(resolve, 10_000));
 
 async function bulkUploadLeads(job) {
   console.log("App Started");
-  const { uploadId, fileUrl, uploadedBy, assignedTo } = job.data; // ✅ get uploader id and assignedTo here
+  const { uploadId, fileUrl, uploadedBy, managerId } = job.data; // ✅ get uploader id and managerId here
 
   // Fetch file from S3
   const response = await fetch(fileUrl);
@@ -27,32 +27,14 @@ async function bulkUploadLeads(job) {
   await dbConnect();
   console.log("Connected to the database successfully.");
 
-  // 🔍 Resolve managerId from the assignedTo employee (looked up once, reused for every row)
   let leadsManagerId = null;
-  if (assignedTo) {
-    try {
-      const assignedEmployee = await Employee.findById(assignedTo)
-        .select("_id managerId")
-        .lean();
-
-      if (assignedEmployee) {
-        const rawManagerId = assignedEmployee.managerId; // stored as String in Employee model
-
-        if (rawManagerId && mongoose.Types.ObjectId.isValid(rawManagerId)) {
-          // The assigned employee reports to a manager — use that manager
-          leadsManagerId = new mongoose.Types.ObjectId(rawManagerId);
-          console.log(`👤 AssignedTo (${assignedTo}) → Manager resolved: ${leadsManagerId}`);
-        } else {
-          // The assigned employee has no manager above them — they ARE the manager
-          // Use their own _id as the managerId on the lead
-          leadsManagerId = assignedEmployee._id;
-          console.log(`👤 AssignedTo (${assignedTo}) has no managerId → using their own _id as manager: ${leadsManagerId}`);
-        }
-      } else {
-        console.warn(`⚠️ AssignedTo employee not found in DB: ${assignedTo}`);
-      }
-    } catch (err) {
-      console.warn(`⚠️ Could not fetch assignedTo employee (${assignedTo}):`, err.message);
+  if (managerId) {
+    // Ensure it's a valid ObjectId
+    if (mongoose.Types.ObjectId.isValid(managerId)) {
+      leadsManagerId = new mongoose.Types.ObjectId(managerId);
+      console.log(`👤 Using ManagerId directly from job: ${leadsManagerId}`);
+    } else {
+      console.warn(`⚠️ Provided managerId is invalid: ${managerId}`);
     }
   }
 
@@ -109,7 +91,7 @@ async function bulkUploadLeads(job) {
       budgetRange: row.budgetRange || "",
       status: row.status || "new",
       source: row.source || "",
-      assignedTo: assignedTo || row.assignedTo || null,
+      assignedTo: row.assignedTo || null,
       managerId: leadsManagerId || null,
     });
 

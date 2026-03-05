@@ -1,7 +1,5 @@
-import React from 'react';
-import Box from '@/components/ui/Component/Box';
-import Typography from '@/components/ui/Component/Typography';
-import Paper from '@/components/ui/Component/Paper';
+import React, { FC, useMemo } from "react";
+import { Paper, Typography, Box } from "@mui/material";
 
 interface Slice {
   label: string;
@@ -9,71 +7,152 @@ interface Slice {
   color?: string;
 }
 
-const LeadSourcesPieChart: React.FC<{ slices?: Slice[] }> = ({ slices = [] }) => {
-  if (!slices || slices.length === 0) {
-    return (
-      <Paper sx={{ p: 2, color: '#666', textAlign: 'center' }}>
-        <Typography>No overview data</Typography>
-      </Paper>
-    );
-  }
+interface LeadSourcesPieChartProps {
+  slices?: Slice[];
+}
 
-  const total = slices.reduce((acc, s) => acc + (Number(s.value) || 0), 0) || 1;
+const LeadSourcesPieChart: FC<LeadSourcesPieChartProps> = ({ slices = [] }) => {
   const cx = 140;
   const cy = 140;
   const r = 120;
 
-  const polarToCartesian = (centerX: number, centerY: number, radius: number, angleInDegrees: number) => {
-    const angleInRadians = (angleInDegrees - 90) * Math.PI / 180.0;
+  /**
+   * Calculate total safely
+   */
+  const total = useMemo(() => {
+    return slices.reduce((acc, slice) => acc + (Number(slice.value) || 0), 0);
+  }, [slices]);
+
+  /**
+   * Convert polar to cartesian
+   */
+  const polarToCartesian = (
+    centerX: number,
+    centerY: number,
+    radius: number,
+    angleInDegrees: number,
+  ) => {
+    const angleInRadians = ((angleInDegrees - 90) * Math.PI) / 180;
     return {
-      x: centerX + (radius * Math.cos(angleInRadians)),
-      y: centerY + (radius * Math.sin(angleInRadians))
+      x: centerX + radius * Math.cos(angleInRadians),
+      y: centerY + radius * Math.sin(angleInRadians),
     };
   };
 
-  const describeArc = (x: number, y: number, radius: number, startAngle: number, endAngle: number) => {
+  /**
+   * Create arc path
+   */
+  const describeArc = (
+    x: number,
+    y: number,
+    radius: number,
+    startAngle: number,
+    endAngle: number,
+  ) => {
     const start = polarToCartesian(x, y, radius, endAngle);
     const end = polarToCartesian(x, y, radius, startAngle);
-    const largeArcFlag = endAngle - startAngle <= 180 ? '0' : '1';
-    return `M ${x} ${y} L ${start.x} ${start.y} A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y} Z`;
+    const largeArcFlag = endAngle - startAngle <= 180 ? "0" : "1";
+
+    return `
+      M ${x} ${y}
+      L ${start.x} ${start.y}
+      A ${radius} ${radius} 0 ${largeArcFlag} 0 ${end.x} ${end.y}
+      Z
+    `;
   };
 
- 
-  let angle = 0;
-  const arcs = slices.map((s, idx) => {
-    const value = Number(s.value) || 0;
-    let path = '';
-    if (slices.length === 1 && value > 0) {
-      // Draw a full circle using two arcs (SVG limitation)
-      path = [
-        `M ${cx} ${cy}`,
-        `L ${cx + r} ${cy}`,
-        `A ${r} ${r} 0 1 0 ${cx - r} ${cy}`,
-        `A ${r} ${r} 0 1 0 ${cx + r} ${cy}`,
-        'Z'
-      ].join(' ');
-    } else {
-      const portion = (value / total) * 360;
-      const startAngle = angle;
-      const endAngle = angle + portion;
-      path = describeArc(cx, cy, r, startAngle, endAngle);
-      angle += portion;
-    }
-    return { path, color: s.color || '#ddd', label: s.label, value };
-  });
+  /**
+   * Generate arcs
+   */
+  const arcs = useMemo(() => {
+    if (!slices.length || total === 0) return [];
+
+    let currentAngle = 0;
+
+    return slices.map((slice) => {
+      const portion = (slice.value / total) * 360;
+      const startAngle = currentAngle;
+      const endAngle = currentAngle + portion;
+
+      const path =
+        slices.length === 1
+          ? `
+            M ${cx} ${cy}
+            m -${r}, 0
+            a ${r},${r} 0 1,0 ${r * 2},0
+            a ${r},${r} 0 1,0 -${r * 2},0
+          `
+          : describeArc(cx, cy, r, startAngle, endAngle);
+
+      currentAngle += portion;
+
+      return {
+        path,
+        color: slice.color || "#e5e7eb",
+      };
+    });
+  }, [slices, total]);
+
+  /**
+   * Empty State
+   */
+  if (!slices.length || total === 0) {
+    return (
+      <Paper
+        elevation={0}
+        className="p-6 rounded-2xl border border-gray-200 text-center"
+      >
+        <Typography className="text-gray-500">No overview data</Typography>
+      </Paper>
+    );
+  }
 
   return (
-    <Paper sx={{ display: 'flex', flexDirection: 'column', gap: 1, alignItems: 'center', p: 2 }}>
-      <Box>
-        <svg width={280} height={280} viewBox="0 0 280 280" role="img" aria-label="Leads by source pie chart">
-          <g>
-            {arcs.map((a, idx) => (
-              <path key={idx} d={a.path} fill={a.color} stroke="#fff" strokeWidth={0.5} />
-            ))}
-          </g>
-          <circle cx={cx} cy={cy} r={70} fill="#fff" />
-          <text x={cx} y={cy - 10} textAnchor="middle" style={{ fontSize: 20, fontWeight: 700, fill: '#222' }}>{total}</text>
-          <text x={cx} y={cy + 22} textAnchor="middle" style={{ fontSize: 14, fill: '#666' }}>leads</text>
+    <Paper
+      elevation={0}
+      className="p-6 rounded-2xl border border-gray-200 flex flex-col items-center gap-4 shadow-sm"
+    >
+      <Box className="relative flex items-center justify-center">
+        <svg
+          width={280}
+          height={280}
+          viewBox="0 0 280 280"
+          role="img"
+          aria-label="Leads by source pie chart"
+          className="transition-all duration-300"
+        >
+          {arcs.map((arc, index) => (
+            <path
+              key={index}
+              d={arc.path}
+              fill={arc.color}
+              stroke="#fff"
+              strokeWidth={1}
+              className="hover:opacity-80 transition-opacity duration-200 cursor-pointer"
+            />
+          ))}
+
+          {/* Inner white circle */}
+          <circle cx={cx} cy={cy} r={70} fill="#ffffff" />
+
+          {/* Total Count */}
+          <text
+            x={cx}
+            y={cy - 5}
+            textAnchor="middle"
+            className="font-bold text-[22px] fill-gray-900"
+          >
+            {total}
+          </text>
+
+          <text
+            x={cx}
+            y={cy + 20}
+            textAnchor="middle"
+            className="text-[14px] fill-gray-500"
+          >
+            Leads
+          </text>
         </svg>
       </Box>
     </Paper>

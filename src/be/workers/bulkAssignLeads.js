@@ -4,9 +4,9 @@ import dbConnect from "../../lib/mongodb.js";
 import mongoose from "mongoose";
 
 async function bulkAssignLeads(job) {
-  const { batchId, assignTo, status, limit, updatedBy, availableCount } = job.data;
+  const { batchId, assignTo, status, limit, updatedBy, availableCount, managerId } = job.data;
   console.log(`\n🚀 Starting Bulk Assign Job: ${batchId}`);
-  console.log(`Params: limit=${limit}, status=${status}, assignTo=${assignTo}, availableCount=${availableCount}`);
+  console.log(`Params: limit=${limit}, status=${status}, assignTo=${assignTo}, availableCount=${availableCount}, managerId=${managerId}`);
 
   try {
     // 🛠️ FIX 1: Explicitly await the connection.
@@ -19,7 +19,7 @@ async function bulkAssignLeads(job) {
 
     // Step 1: Filter leads (Status + Unassigned + Uploaded by Me)
     const query = {
-      status: status, 
+      status: status,
       uploadedBy: updatedBy, // CRITICAL FIX: Only select leads uploaded by the user performing the assignment
       $or: [{ assignedTo: null }, { assignedTo: { $exists: false } }]
     };
@@ -27,6 +27,7 @@ async function bulkAssignLeads(job) {
     // 🛠️ FIX 3: Cast IDs
     const assignToId = new mongoose.Types.ObjectId(assignTo);
     const updatedById = new mongoose.Types.ObjectId(updatedBy);
+    const leadsManagerId = managerId ? new mongoose.Types.ObjectId(managerId) : null;
 
     // Use the minimum of requested limit and known availability to keep things consistent
     // If availableCount is missing (legacy jobs), fallback to limit
@@ -35,10 +36,10 @@ async function bulkAssignLeads(job) {
     // Step 2: Fetch Leads
     // Added sort({ createdAt: 1 }) for FIFO assignment (oldest leads first)
     const leadsToAssign = await Lead.find(query)
-      .sort({ createdAt: 1 }) 
+      .sort({ createdAt: 1 })
       .limit(finalLimit)
       .select('_id assignedTo')
-      .lean(); 
+      .lean();
 
     console.log(`Found ${leadsToAssign.length} leads to assign.`);
 
@@ -70,6 +71,7 @@ async function bulkAssignLeads(job) {
         update: {
           $set: {
             assignedTo: assignToId, // Ensure ObjectId is stored
+            managerId: leadsManagerId, // ✅ Set managerId passed from service
             updatedBy: updatedById,
             updatedAt: timestamp
           }
@@ -81,7 +83,7 @@ async function bulkAssignLeads(job) {
       // 🛠️ FIX 3: Added a dedicated catch for the DB writes
       // to prevent a "buffering timeout" from killing the whole worker process.
       await Lead.bulkWrite(bulkOps);
-      console.log(`✅ Successfully updated ${bulkOps.length} leads.`);
+      console.log(`✅ Successfully updated ${bulkOps.length} leads (with managerId: ${leadsManagerId}).`);
     }
 
     // Step 5: Save History
@@ -97,7 +99,7 @@ async function bulkAssignLeads(job) {
     console.error("❌ Error in bulkAssignLeads execution context:");
     console.error(`- Error Name: ${error.name}`);
     console.error(`- Message: ${error.message}`);
-    
+
     // We re-throw so BullMQ knows the job failed and can retry if configured
     throw error;
   }
