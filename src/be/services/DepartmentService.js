@@ -1,12 +1,6 @@
 import { Service } from "@framework";
 import Department from "../models/Department";
 
-function generateDepartmentId() {
-  const ts = Date.now().toString(36).toUpperCase();
-  const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
-  return `DEPT-${ts}-${rand}`;
-}
-
 class DepartmentService extends Service {
   constructor() {
     super();
@@ -22,11 +16,19 @@ class DepartmentService extends Service {
           .json({ success: false, message: "Department name is required" });
       }
 
+      const existing = await Department.findOne({
+        name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+      });
+      if (existing) {
+        return res
+          .status(409)
+          .json({ success: false, message: "Department name already exists" });
+      }
+
       const newDept = new Department({
         name,
         description,
         managerId,
-        departmentId: generateDepartmentId(),
         attachments: attachments || [],
       });
       await newDept.save();
@@ -86,6 +88,22 @@ class DepartmentService extends Service {
     const { id } = req.query;
     try {
       const update = req.body;
+
+      if (update.name) {
+        const existing = await Department.findOne({
+          name: { $regex: new RegExp(`^${update.name.trim()}$`, "i") },
+          _id: { $ne: id },
+        });
+        if (existing) {
+          return res
+            .status(409)
+            .json({
+              success: false,
+              message: "Department name already exists",
+            });
+        }
+      }
+
       const updated = await Department.findByIdAndUpdate(
         id,
         { $set: update },

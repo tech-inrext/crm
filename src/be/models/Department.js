@@ -4,12 +4,6 @@ import mongoose from "mongoose";
 
 const departmentSchema = new mongoose.Schema(
   {
-    departmentId: {
-      type: String,
-      unique: true,
-      sparse: true,
-      trim: true,
-    },
     name: {
       type: String,
       required: [true, "Department name is required"],
