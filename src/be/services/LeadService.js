@@ -293,6 +293,7 @@ class LeadService extends Service {
 
       let assignedToQuery = {};
       if (assignedTo) {
+        const { assignedToMode = "direct" } = req.query;
         const userIds = Array.isArray(assignedTo)
           ? assignedTo
           : String(assignedTo)
@@ -301,17 +302,19 @@ class LeadService extends Service {
             .filter(Boolean);
 
         if (userIds.length) {
-          // If the special "unassigned" token is present we want leads
-          // where assignedTo is `null`/absent as well as any valid ids.
           const includeUnassigned = userIds.includes("unassigned");
           const validIds = userIds.filter((id) => id !== "unassigned");
           const clauses = [];
 
           if (validIds.length) {
-            clauses.push({ assignedTo: { $in: validIds } });
+            if (assignedToMode === "hierarchy" && validIds.length === 1) {
+              const downlineIds = await this.getDownlineIds(validIds[0]);
+              clauses.push({ assignedTo: { $in: downlineIds } });
+            } else {
+              clauses.push({ assignedTo: { $in: validIds } });
+            }
           }
           if (includeUnassigned) {
-            // Match documents where assignedTo is null or does not exist
             clauses.push({ assignedTo: { $exists: false } });
             clauses.push({ assignedTo: null });
           }

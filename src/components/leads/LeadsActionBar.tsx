@@ -72,6 +72,8 @@ interface LeadsActionBarProps {
   onBudgetsChange: (budgets: string[]) => void;
   selectedAssignedTo: string[];
   onAssignedToChange: (ids: string[]) => void;
+  assignedToMode: "direct" | "hierarchy";
+  onAssignedToModeChange: (mode: "direct" | "hierarchy") => void;
   onClearAllFilters?: () => void;
   onClearPanelFilters?: () => void;
   teamMembers: any[];
@@ -96,6 +98,8 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   onBudgetsChange,
   selectedAssignedTo = [],
   onAssignedToChange,
+  assignedToMode,
+  onAssignedToModeChange,
   onClearAllFilters,
   onClearPanelFilters,
   teamMembers = [],
@@ -118,9 +122,13 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   const closeFilter = () => setFilterAnchor(null);
 
   const [teamAnchor, setTeamAnchor] = useState<null | HTMLElement>(null);
+  const [modeAnchor, setModeAnchor] = useState<null | HTMLElement>(null);
   const teamOpen = Boolean(teamAnchor);
+  const modeOpen = Boolean(modeAnchor);
   const openTeamFilter = (e: React.MouseEvent<HTMLElement>) => setTeamAnchor(e.currentTarget);
   const closeTeamFilter = () => setTeamAnchor(null);
+  const openModeFilter = (e: React.MouseEvent<HTMLElement>) => setModeAnchor(e.currentTarget);
+  const closeModeFilter = () => setModeAnchor(null);
 
   const activeFilterCount = 
     selectedStatuses.length + 
@@ -328,6 +336,99 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
             </Box>
           </Popover>
         </Box>
+
+        {/* Assigned Mode Dropdown */}
+        {selectedAssignedTo.length > 0 && selectedAssignedTo[0] !== "unassigned" && (
+          <Box sx={{ order: { xs: 2, sm: 2 } }}>
+            <Button
+              onClick={openModeFilter}
+              endIcon={<ExpandMore sx={{ transform: modeOpen ? "rotate(180deg)" : "none", transition: "0.2s" }} />}
+              sx={{
+                height: 40,
+                px: 2,
+                borderRadius: 2,
+                bgcolor: "#fff",
+                border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                color: "text.primary",
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                whiteSpace: "nowrap",
+                ml: { xs: 0, sm: -1 }, // pull closer to name if on desktop
+                "&:hover": {
+                  bgcolor: alpha(theme.palette.divider, 0.05),
+                  borderColor: alpha(theme.palette.divider, 1),
+                },
+              }}
+            >
+              <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, mr: 0.5, opacity: 0.6 }}>→</Typography>
+              {assignedToMode === "hierarchy" ? "Incl. Team Members" : "Directly Assigned"}
+            </Button>
+
+            <Popover
+              open={modeOpen}
+              anchorEl={modeAnchor}
+              onClose={closeModeFilter}
+              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+              transformOrigin={{ vertical: "top", horizontal: "left" }}
+              PaperProps={{
+                sx: {
+                  width: 220,
+                  mt: 1,
+                  borderRadius: 2.5,
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
+                },
+              }}
+            >
+              <Box sx={{ py: 1 }}>
+                <MenuItem
+                  selected={assignedToMode === "direct"}
+                  onClick={() => {
+                    onAssignedToModeChange("direct");
+                    closeModeFilter();
+                  }}
+                  sx={{
+                    px: 2,
+                    py: 1.2,
+                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
+                    "&.Mui-selected": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                  }}
+                >
+                  <Stack>
+                    <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", color: "text.primary" }}>
+                      Directly Assigned
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+                      Only leads assigned to this person
+                    </Typography>
+                  </Stack>
+                </MenuItem>
+                <MenuItem
+                  selected={assignedToMode === "hierarchy"}
+                  onClick={() => {
+                    onAssignedToModeChange("hierarchy");
+                    closeModeFilter();
+                  }}
+                  sx={{
+                    px: 2,
+                    py: 1.2,
+                    "&.Mui-selected": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                  }}
+                >
+                  <Stack>
+                    <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", color: "text.primary" }}>
+                      Incl. Team Members
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+                      All leads assigned to their hierarchy
+                    </Typography>
+                  </Stack>
+                </MenuItem>
+              </Box>
+            </Popover>
+          </Box>
+        )}
+
 
         <Box
           sx={{
