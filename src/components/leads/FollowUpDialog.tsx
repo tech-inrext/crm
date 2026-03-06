@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   Dialog,
   DialogTitle,
@@ -54,10 +54,18 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
   onSaved,
 }) => {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const leadIdentifierFromUrl = searchParams.get("leadIdentifier");
+
   const [note, setNote] = useState("");
   const [followUpType, setFollowUpType] = useState<"call back" | "note">(
     "call back"
   );
+  const handleDialogClose = () => {
+    router.replace("/dashboard/leads");
+    onClose();
+  };
+  const finalLeadIdentifier = leadIdentifier || leadIdentifierFromUrl || "";
   const [followUpDate, setFollowUpDate] = useState<Date | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [items, setItems] = useState<Array<any>>([]);
@@ -79,7 +87,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
     setSubmitting(true);
     try {
       const payload = {
-        leadIdentifier,
+        leadIdentifier: finalLeadIdentifier,
         note,
         followUpType,
         followUpDate: followUpType === "call back" ? followUpDate : null,
@@ -91,7 +99,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
       // refresh list after save
       try {
         const res = await axios.get(`/api/v0/lead/follow-up`, {
-          params: { leadIdentifier },
+          params: { leadIdentifier: finalLeadIdentifier },
           withCredentials: true,
         });
         setItems(res.data.data || []);
@@ -109,6 +117,11 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
       setSubmitting(false);
     }
   };
+  useEffect(() => {
+    if (open && finalLeadIdentifier) {
+      router.replace(`/dashboard/leads?leadIdentifier=${finalLeadIdentifier}`);
+    }
+  }, [open, finalLeadIdentifier, router]);
 
   useEffect(() => {
     let mounted = true;
@@ -118,7 +131,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
       setLoadingItems(true);
       try {
         const res = await axios.get(`/api/v0/lead/follow-up`, {
-          params: { leadIdentifier },
+          params: { leadIdentifier: finalLeadIdentifier },
           withCredentials: true,
         });
         if (mounted) {
@@ -140,7 +153,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
     return () => {
       mounted = false;
     };
-  }, [open, leadIdentifier]);
+  }, [open, finalLeadIdentifier]);
 
   const isSubmitDisabled =
     submitting ||
@@ -158,7 +171,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
   return (
     <Dialog
       open={open}
-      onClose={onClose}
+      onClose={handleDialogClose}
       fullWidth
       maxWidth="sm"
       fullScreen={isMobile}
@@ -185,7 +198,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
       >
         Daily Updates & Reminders
         <IconButton
-          onClick={onClose}
+          onClick={handleDialogClose}
           size="small"
           sx={{ color: "text.secondary" }}
         >
@@ -678,7 +691,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
         }}
       >
         <Button
-          onClick={onClose}
+          onClick={handleDialogClose}
           disabled={submitting}
           sx={{
             color: "text.secondary",
