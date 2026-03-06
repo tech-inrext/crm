@@ -7,6 +7,7 @@ import Card from "@/components/ui/Component/Card";
 import CardContent from "@/components/ui/Component/CardContent";
 import Box from "@/components/ui/Component/Box";
 import Typography from "@/components/ui/Component/Typography";
+import { useRouter } from "next/navigation";
 
 interface AnalyticsAccess {
   showScheduleThisWeek: boolean;
@@ -37,10 +38,12 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
   scheduleLoading,
   scheduleAnalytics,
 }) => {
+  const router = useRouter();
+
   const [filter, setFilter] = useState<"day" | "week" | "overdue">("week");
   const [page, setPage] = useState(1);
 
-  const leadsPerPage = 2; // ✅ Fixed 2 items per page
+  const leadsPerPage = 2;
 
   /* RESET PAGE WHEN DATA CHANGES */
   useEffect(() => {
@@ -65,12 +68,23 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
 
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredLeads.length / leadsPerPage),
+    Math.ceil(filteredLeads.length / leadsPerPage)
   );
 
   const paginatedLeads = useMemo(() => {
     return filteredLeads.slice((page - 1) * leadsPerPage, page * leadsPerPage);
   }, [filteredLeads, page]);
+
+  /* CLICK HANDLER */
+  const handleCardClick = (item: any) => {
+    const leadId = item?.lead?._id || item?.lead?.id;
+
+    if (leadId) {
+      router.push(`/dashboard/leads?leadIdentifier=${leadId}`);
+    } else {
+      router.push("/dashboard/leads");
+    }
+  };
 
   /* ACCESS CONTROL */
   if (!analyticsAccess.showScheduleThisWeek) {
@@ -172,7 +186,8 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                     const followUpDate = new Date(item.followUpDate);
 
                     const isToday =
-                      followUpDate.toDateString() === new Date().toDateString();
+                      followUpDate.toDateString() ===
+                      new Date().toDateString();
 
                     const isTomorrow =
                       followUpDate.toDateString() ===
@@ -190,13 +205,14 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                     return (
                       <div
                         key={item.id}
-                        className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 ${
+                        onClick={() => handleCardClick(item)}
+                        className={`flex items-center justify-between p-3 rounded-lg border transition-all duration-200 cursor-pointer ${
                           filter === "overdue"
                             ? "bg-red-50 border-red-200"
                             : isToday
-                              ? "bg-orange-50 border-orange-200"
-                              : "bg-gray-50 border-gray-200"
-                        } hover:shadow-sm`}
+                            ? "bg-orange-50 border-orange-200"
+                            : "bg-gray-50 border-gray-200"
+                        } hover:shadow-md`}
                       >
                         {/* LEFT */}
                         <div>
