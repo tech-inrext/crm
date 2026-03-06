@@ -1,11 +1,9 @@
-name: Staging Deployment (Tag Based)
+name: Staging Deployment
 
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: "Git tag to deploy (e.g. v1.0.2)"
-        required: true
+  push:
+    branches:
+      - staging
 
 jobs:
   deploy:
@@ -15,7 +13,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
-          ref: refs/tags/${{ inputs.tag }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
