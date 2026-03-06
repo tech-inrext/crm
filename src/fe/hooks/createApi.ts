@@ -52,7 +52,6 @@ const useQuery = (
     setRowsPerPage(size);
   };
 
-  
   useEffect(
     () => {
       const params = getRequestParams();
