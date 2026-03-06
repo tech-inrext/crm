@@ -20,6 +20,7 @@ export interface LeadFilters {
   propertyName?: string[];
   budgetRange?: string[];
   assignedTo?: string[];
+  assignedToMode?: "direct" | "hierarchy";
   search?: string;
 }
 
@@ -35,6 +36,7 @@ export function useLeads(initialFilters: LeadFilters = {}) {
   const [selectedProperties, setSelectedProperties] = useState<string[]>(initialFilters.propertyName || []);
   const [selectedBudgets, setSelectedBudgets] = useState<string[]>(initialFilters.budgetRange || []);
   const [selectedAssignedTo, setSelectedAssignedTo] = useState<string[]>(initialFilters.assignedTo || []);
+  const [assignedToMode, setAssignedToMode] = useState<"direct" | "hierarchy">(initialFilters.assignedToMode || "direct");
   const [page, setPage] = useState(0); // 0-based for UI
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [open, setOpen] = useState(false);
@@ -57,7 +59,8 @@ export function useLeads(initialFilters: LeadFilters = {}) {
       leadTypeParams: string[] = [],
       propertyParams: string[] = [],
       budgetParams: string[] = [],
-      assignedToParams: string[] = []
+      assignedToParams: string[] = [],
+      assignedToModeParam: "direct" | "hierarchy" = "direct"
     ) => {
       const currentVersion = ++requestVersionRef.current;
       setLoading(true);
@@ -72,6 +75,7 @@ export function useLeads(initialFilters: LeadFilters = {}) {
             ...(propertyParams.length > 0 ? { propertyName: propertyParams.join(",") } : {}),
             ...(budgetParams.length > 0 ? { budgetRange: budgetParams.join(",") } : {}),
             ...(assignedToParams.length > 0 ? { assignedTo: assignedToParams.join(",") } : {}),
+            assignedToMode: assignedToModeParam,
           },
         });
 
@@ -112,7 +116,7 @@ export function useLeads(initialFilters: LeadFilters = {}) {
         } else {
           await axios.post(API_BASE, payload);
         }
-        await loadLeads(page + 1, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo);
+        await loadLeads(page + 1, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo, assignedToMode);
       } catch (error) {
         throw error;
       } finally {
@@ -179,8 +183,8 @@ export function useLeads(initialFilters: LeadFilters = {}) {
   );
 
   useEffect(() => {
-    loadLeads(page + 1, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo); // API expects 1-based page
-  }, [loadLeads, page, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo]);
+    loadLeads(page + 1, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo, assignedToMode); // API expects 1-based page
+  }, [loadLeads, page, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo, assignedToMode]);
 
   return {
     leads,
@@ -215,5 +219,7 @@ export function useLeads(initialFilters: LeadFilters = {}) {
     setSelectedBudgets,
     selectedAssignedTo,
     setSelectedAssignedTo,
+    assignedToMode,
+    setAssignedToMode,
   };
 }

@@ -30,6 +30,7 @@ export function useLeadsPage() {
       propertyName: searchParams.get("propertyName")?.split(",").filter(Boolean) || [],
       budgetRange: searchParams.get("budgetRange")?.split(",").filter(Boolean) || [],
       assignedTo: defaultAssignedTo,
+      assignedToMode: (searchParams.get("assignedToMode") as "direct" | "hierarchy") || "direct",
       search: searchParams.get("search") || "",
     };
   }, [searchParams, user?._id]);
@@ -60,6 +61,8 @@ export function useLeadsPage() {
     setSelectedBudgets,
     selectedAssignedTo,
     setSelectedAssignedTo,
+    assignedToMode,
+    setAssignedToMode,
     open: internalOpen,
     setOpen: setInternalOpen,
     editId: internalEditId,
@@ -138,6 +141,11 @@ export function useLeadsPage() {
       setSelectedAssignedTo(ids);
     }
 
+    const assignedToModeParam = searchParams.get("assignedToMode") as "direct" | "hierarchy" | null;
+    if (assignedToModeParam) {
+      setAssignedToMode(assignedToModeParam);
+    }
+
     // Check for openDialog param
     const openDialog = searchParams.get("openDialog");
     const leadId = searchParams.get("leadId");
@@ -148,7 +156,7 @@ export function useLeadsPage() {
       setDialogMode(mode || "view");
       setOpen(true);
     }
-  }, [searchParams, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo]);
+  }, [searchParams, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setAssignedToMode]);
 
   // Sync debounced search
   useEffect(() => {
@@ -248,10 +256,24 @@ export function useLeadsPage() {
         params.set("assignedTo", ids.join(","));
       } else {
         params.delete("assignedTo");
+        params.delete("assignedToMode"); // Clear mode if no one is selected
+        setAssignedToMode("direct");
       }
       router.push(`?${params.toString()}`, { scroll: false });
     },
-    [searchParams, router, setSelectedAssignedTo, setPage]
+    [searchParams, router, setSelectedAssignedTo, setAssignedToMode, setPage]
+  );
+
+  const handleAssignedToModeChange = useCallback(
+    (mode: "direct" | "hierarchy") => {
+      setAssignedToMode(mode);
+      setPage(0);
+
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("assignedToMode", mode);
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, router, setAssignedToMode, setPage]
   );
 
   const handleClearAllFilters = useCallback(() => {
@@ -261,6 +283,7 @@ export function useLeadsPage() {
     setSelectedBudgets([]);
     const defaultAssignedTo = user?._id ? [user._id] : [];
     setSelectedAssignedTo(defaultAssignedTo);
+    setAssignedToMode("direct");
     setSearchInput("");
     setPage(0);
 
@@ -274,10 +297,11 @@ export function useLeadsPage() {
     } else {
       params.delete("assignedTo");
     }
+    params.delete("assignedToMode");
     params.delete("search");
 
     router.push(`?${params.toString()}`, { scroll: false });
-  }, [searchParams, router, user?._id, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setSearchInput, setPage]);
+  }, [searchParams, router, user?._id, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setAssignedToMode, setSearchInput, setPage]);
 
   const handleClearPanelFilters = useCallback(() => {
     setSelectedStatuses([]);
@@ -339,6 +363,7 @@ export function useLeadsPage() {
     selectedProperties,
     selectedBudgets,
     selectedAssignedTo,
+    assignedToMode,
     teamMembers,
     hierarchyLoading,
     page,
@@ -354,6 +379,7 @@ export function useLeadsPage() {
     handlePropertyChange,
     handleBudgetChange,
     handleAssignedToChange,
+    handleAssignedToModeChange,
     handleClearAllFilters,
     handleClearPanelFilters,
     handleEdit,
