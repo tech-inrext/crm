@@ -217,12 +217,12 @@ class LeadService extends Service {
 
       const searchQuery = search
         ? {
-            $or: [
-              { fullName: { $regex: search, $options: "i" } },
-              { email: { $regex: search, $options: "i" } },
-              { phone: { $regex: search, $options: "i" } },
-            ],
-          }
+          $or: [
+            { fullName: { $regex: search, $options: "i" } },
+            { email: { $regex: search, $options: "i" } },
+            { phone: { $regex: search, $options: "i" } },
+          ],
+        }
         : {};
 
       let statusQuery = {};
@@ -230,9 +230,9 @@ class LeadService extends Service {
         const statuses = Array.isArray(status)
           ? status
           : String(status)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
 
         if (statuses.length) {
           statusQuery = {
@@ -246,9 +246,9 @@ class LeadService extends Service {
         const types = Array.isArray(leadType)
           ? leadType
           : String(leadType)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
 
         if (types.length) {
           leadTypeQuery = {
@@ -262,9 +262,9 @@ class LeadService extends Service {
         const properties = Array.isArray(propertyName)
           ? propertyName
           : String(propertyName)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
 
         if (properties.length) {
           propertyQuery = {
@@ -280,9 +280,9 @@ class LeadService extends Service {
         const budgets = Array.isArray(budgetRange)
           ? budgetRange
           : String(budgetRange)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
 
         if (budgets.length) {
           budgetQuery = {
@@ -296,9 +296,9 @@ class LeadService extends Service {
         const userIds = Array.isArray(assignedTo)
           ? assignedTo
           : String(assignedTo)
-              .split(",")
-              .map((s) => s.trim())
-              .filter(Boolean);
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
 
         if (userIds.length) {
           // If the special "unassigned" token is present we want leads
@@ -501,7 +501,7 @@ class LeadService extends Service {
               phone: updatedLead.phone,
             },
           );
-        } catch (e) {}
+        } catch (e) { }
       }
       if (
         updateFields.assignedTo &&
@@ -520,7 +520,7 @@ class LeadService extends Service {
               priority: "HIGH",
             },
           );
-        } catch (e) {}
+        } catch (e) { }
       }
 
       return res.status(200).json({ success: true, data: updatedLead });
