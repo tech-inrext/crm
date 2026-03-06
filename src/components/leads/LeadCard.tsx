@@ -364,6 +364,7 @@ const LeadCard = memo(
                   setAnchorEl(null);
                 }}
                 onAssign={handleAssignUser}
+                managerId={lead.managerId}
               />
             )}
           </Stack>

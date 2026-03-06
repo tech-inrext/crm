@@ -161,7 +161,7 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
               renderInput={(params) => (
                 <TextField
                   {...params}
-                  label="Manager"
+                  label="Lead Manager (AVP)"
                   size="small"
                   error={meta.touched && !!meta.error}
                   helperText={meta.touched && meta.error}

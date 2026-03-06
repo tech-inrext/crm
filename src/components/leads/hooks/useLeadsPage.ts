@@ -13,17 +13,26 @@ export function useLeadsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
+  // Get the logged-in user to fetch their hierarchy
+  const { user } = useAuth();
+
   // Initialize filters from URL search parameters
   const initialFilters = useMemo(() => {
+    const assignedToParam = searchParams.get("assignedTo");
+    // If no assignedTo in URL, default to the current user (Assigned to me)
+    const defaultAssignedTo = assignedToParam
+      ? assignedToParam.split(",").filter(Boolean).slice(0, 1)
+      : (user?._id ? [user._id] : []);
+
     return {
       status: searchParams.get("status")?.split(",").filter(Boolean) || [],
       leadType: searchParams.get("leadType")?.split(",").filter(Boolean) || [],
       propertyName: searchParams.get("propertyName")?.split(",").filter(Boolean) || [],
       budgetRange: searchParams.get("budgetRange")?.split(",").filter(Boolean) || [],
-      assignedTo: searchParams.get("assignedTo")?.split(",").filter(Boolean) || [],
+      assignedTo: defaultAssignedTo,
       search: searchParams.get("search") || "",
     };
-  }, [searchParams]);
+  }, [searchParams, user?._id]);
 
   const {
     leads,
@@ -67,17 +76,23 @@ export function useLeadsPage() {
   const [searchInput, setSearchInput] = useState(initialFilters.search);
   const debouncedSearch = useDebounce(searchInput, 500);
 
-  // Get the logged-in user to fetch their hierarchy
-  const { user } = useAuth();
   const { hierarchy, loading: hierarchyLoading } = useTeamHierarchy(user?._id || null);
 
   // Flatten hierarchy for the filter dropdown
   const teamMembers = useMemo(() => {
-    if (!hierarchy) return [];
+    // always offer an "Unassigned" option at the top of the filters
+    const unassignedEntry = { _id: "unassigned", name: "Unassigned" };
+
+    if (!hierarchy) return [unassignedEntry];
 
     const members: any[] = [];
     const flatten = (node: any) => {
-      members.push({ _id: node._id, name: node.name, designation: node.designation });
+      const isMe = node._id === user?._id;
+      members.push({
+        _id: node._id,
+        name: isMe ? "Assigned to me" : node.name,
+        designation: isMe ? null : node.designation,
+      });
       if (node.children && node.children.length > 0) {
         node.children.forEach((child: any) => flatten(child));
       }
@@ -86,7 +101,9 @@ export function useLeadsPage() {
     flatten(hierarchy);
     // Exclude the manager themselves if you want only subordinates, 
     // but usually include them to allow filtering "my own leads"
-    return members;
+
+    // prepend unassigned entry so it appears first in the filter list
+    return [unassignedEntry, ...members];
   }, [hierarchy]);
 
   // Sync with URL for back/forward navigation or initial load after mount
@@ -117,7 +134,7 @@ export function useLeadsPage() {
 
     const assignedToParam = searchParams.get("assignedTo");
     if (assignedToParam) {
-      const ids = assignedToParam.split(",").filter(Boolean);
+      const ids = assignedToParam.split(",").filter(Boolean).slice(0, 1);
       setSelectedAssignedTo(ids);
     }
 
@@ -242,7 +259,8 @@ export function useLeadsPage() {
     setSelectedLeadTypes([]);
     setSelectedProperties([]);
     setSelectedBudgets([]);
-    setSelectedAssignedTo([]);
+    const defaultAssignedTo = user?._id ? [user._id] : [];
+    setSelectedAssignedTo(defaultAssignedTo);
     setSearchInput("");
     setPage(0);
 
@@ -251,11 +269,31 @@ export function useLeadsPage() {
     params.delete("leadType");
     params.delete("propertyName");
     params.delete("budgetRange");
-    params.delete("assignedTo");
+    if (user?._id) {
+      params.set("assignedTo", user._id);
+    } else {
+      params.delete("assignedTo");
+    }
     params.delete("search");
 
     router.push(`?${params.toString()}`, { scroll: false });
-  }, [searchParams, router, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setSearchInput, setPage]);
+  }, [searchParams, router, user?._id, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setSearchInput, setPage]);
+
+  const handleClearPanelFilters = useCallback(() => {
+    setSelectedStatuses([]);
+    setSelectedLeadTypes([]);
+    setSelectedProperties([]);
+    setSelectedBudgets([]);
+    setPage(0);
+
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("status");
+    params.delete("leadType");
+    params.delete("propertyName");
+    params.delete("budgetRange");
+
+    router.push(`?${params.toString()}`, { scroll: false });
+  }, [searchParams, router, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setPage]);
 
   const handleEdit = useCallback((leadId: string, mode: "edit" | "view" = "edit") => {
     setEditId(leadId);
@@ -317,6 +355,7 @@ export function useLeadsPage() {
     handleBudgetChange,
     handleAssignedToChange,
     handleClearAllFilters,
+    handleClearPanelFilters,
     handleEdit,
     handleCloseDialog,
     saveLead,

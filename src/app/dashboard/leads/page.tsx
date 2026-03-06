@@ -98,6 +98,7 @@ const Leads: React.FC = () => {
     handleBudgetChange,
     handleAssignedToChange,
     handleClearAllFilters,
+    handleClearPanelFilters,
     handleEdit,
     saveLead,
     updateLeadStatus,
@@ -231,6 +232,7 @@ const Leads: React.FC = () => {
           selectedAssignedTo={selectedAssignedTo}
           onAssignedToChange={handleAssignedToChange}
           onClearAllFilters={handleClearAllFilters}
+          onClearPanelFilters={handleClearPanelFilters}
           teamMembers={teamMembers}
           leads={leads}
         />
