@@ -6,7 +6,6 @@ import type {
 } from "@/fe/pages/user/types";
 import UserCard from "@/fe/pages/user/components/UserCard";
 import dynamic from "next/dynamic";
-import { useGetUsersQuery, useGetUserByIdQuery } from "@/fe/pages/user/userApi";
 import { debounce } from "@mui/material";
 
 const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
@@ -62,6 +61,13 @@ const Search = (onSearch) => {
 };
 
 export const UsersList: React.FC<UsersListProps> = ({
+  loading,
+  employees,
+  page,
+  rowsPerPage,
+  totalItems,
+  onPageChange,
+  onPageSizeChange,
   isMobile,
   isClient,
   windowWidth,
@@ -70,38 +76,7 @@ export const UsersList: React.FC<UsersListProps> = ({
   onEditUser,
   canEdit,
 }) => {
-  const [filters, setFilters] = React.useState({
-    search: search,
-    isCabAdmin: false,
-  });
-
-  // Update filters when search prop changes
-  React.useEffect(() => {
-    setFilters((prev) => ({ ...prev, search }));
-  }, [search]);
-
-  const handleFilter = (key, value) => {
-    const newFilter = { ...filters, [key]: value };
-    setFilters(newFilter);
-  };
-
-  const {
-    data: employees,
-    loading,
-    page,
-    rowsPerPage,
-    goToPage,
-    setPage,
-    setRowsPerPage,
-    refetch,
-  } = useGetUsersQuery(filters);
-
-  const { data: user } = useGetUserByIdQuery({
-    id: "699df4c0de3bfbc734e8491e",
-  });
-
-  const employeeList = employees?.data || [];
-  const totalItems = employees?.pagination?.totalItems ?? 0;
+  const employeeList = employees || [];
 
   if (loading) return <LoadingSpinner />;
   if (employeeList.length === 0) return <EmptyState />;
@@ -112,8 +87,8 @@ export const UsersList: React.FC<UsersListProps> = ({
         page={page}
         pageSize={rowsPerPage ?? 10}
         total={totalItems}
-        onPageChange={goToPage}
-        onPageSizeChange={setRowsPerPage}
+        onPageChange={onPageChange}
+        onPageSizeChange={onPageSizeChange}
       />
     </div>
   );

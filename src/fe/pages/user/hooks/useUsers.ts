@@ -104,6 +104,8 @@ export function useUsers(debouncedSearch: string) {
       ? (usersData as Employee[])
       : [];
 
+  const totalItems = (usersData as any)?.pagination?.totalItems ?? 0;
+
   // ── CREATE mutation ──────────────────────────────────────────────────────
   const {
     mutate: createMutate,
@@ -241,6 +243,7 @@ export function useUsers(debouncedSearch: string) {
     loading,
     page,
     rowsPerPage,
+    totalItems,
     setPage,
     setRowsPerPage,
     loadEmployees,

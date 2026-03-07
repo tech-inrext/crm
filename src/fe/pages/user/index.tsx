@@ -61,6 +61,13 @@ const UsersPage: React.FC = () => {
     open,
     editId,
     setForm,
+    employees,
+    loading,
+    page,
+    rowsPerPage,
+    totalItems,
+    setPage,
+    setRowsPerPage,
     loadEmployees,
     getUserById,
     dialogMode,
@@ -99,6 +106,13 @@ const UsersPage: React.FC = () => {
 
       {/* Table / card list */}
       <UsersPageList
+        loading={loading}
+        employees={employees}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalItems={totalItems}
+        onPageChange={setPage}
+        onPageSizeChange={setRowsPerPage}
         search={search}
         isMobile={isMobile}
         isClient={isClient}
