@@ -88,22 +88,14 @@ export function useUsers(debouncedSearch: string) {
   const [form, setForm] = useState<Partial<UserFormData>>({});
 
   // ── READ: paginated employee list ────────────────────────────────────────
+  const queryState = useGetUsersQuery({ search: debouncedSearch });
   const {
-    data: usersData,
+    items: employees,
     loading,
-    page,
-    rowsPerPage,
     refetch: loadEmployees,
-    goToPage: setPage,
+    setPage,
     setPageSize: setRowsPerPage,
-  } = useGetUsersQuery({ search: debouncedSearch });
-
-  const employees: Employee[] = Array.isArray((usersData as any)?.data)
-    ? (usersData as any).data
-    : Array.isArray(usersData)
-      ? (usersData as Employee[])
-      : [];
-
+  } = queryState;
   // ── CREATE mutation ──────────────────────────────────────────────────────
   const {
     mutate: createMutate,
@@ -155,11 +147,7 @@ export function useUsers(debouncedSearch: string) {
     ) => {
       const payload = await resolveFileUploads(formData);
       return createMutate(payload, {
-        // Bust the employee list cache so the query refetches fresh data
-        invalidateKeys: [USER_CACHE_KEYS.EMPLOYEES],
         onSuccess: options?.onSuccess,
-        // Refetch the list after mutation succeeds
-        refetch: loadEmployees,
       });
     },
     [createMutate, loadEmployees],
@@ -175,14 +163,7 @@ export function useUsers(debouncedSearch: string) {
       const payload = await resolveFileUploads(formData);
       return updateMutate(payload, {
         url: `${USERS_API_BASE}/${id}`,
-        // Bust both the list AND the individual employee cache entry
-        invalidateKeys: [
-          USER_CACHE_KEYS.EMPLOYEES,
-          USER_CACHE_KEYS.EMPLOYEE_BY_ID(id),
-        ],
         onSuccess: options?.onSuccess,
-        // Refetch the list after mutation succeeds
-        refetch: loadEmployees,
       });
     },
     [updateMutate, loadEmployees],
@@ -193,14 +174,7 @@ export function useUsers(debouncedSearch: string) {
     async (id: string, options?: { onSuccess?: () => void }) => {
       return deleteMutate({} as Record<string, never>, {
         url: `${USERS_API_BASE}/${id}`,
-        // Invalidate both the employee list and the specific entry
-        invalidateKeys: [
-          USER_CACHE_KEYS.EMPLOYEES,
-          USER_CACHE_KEYS.EMPLOYEE_BY_ID(id),
-        ],
         onSuccess: options?.onSuccess,
-        // Refetch the list after mutation succeeds
-        refetch: loadEmployees,
       });
     },
     [deleteMutate, loadEmployees],
@@ -237,23 +211,30 @@ export function useUsers(debouncedSearch: string) {
   }, [abortCreate, abortUpdate, abortDelete]);
 
   return {
+    // Query state from createApi
+    queryState: {
+      loading,
+      page: queryState.page,
+      rowsPerPage: queryState.rowsPerPage,
+      totalItems: queryState.totalItems,
+      setPage,
+      setPageSize: setRowsPerPage,
+    },
     employees,
-    loading,
-    page,
-    rowsPerPage,
-    setPage,
-    setRowsPerPage,
     loadEmployees,
+    // Dialog state
     open,
     setOpen,
     editId,
     setEditId,
     form,
     setForm,
+    // Mutation state
     saving,
     createError,
     updateError,
     deleteError,
+    // Actions
     addUser,
     updateUser,
     deleteUser,
