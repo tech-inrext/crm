@@ -18,6 +18,7 @@ export const canEditEmployee = (currentUser: any, employee: any): boolean => {
 
 /**
  * Transform user data to form-compatible format
+ * Maps backend field names to frontend field names (e.g., altPhone → whatsapp)
  */
 export const getInitialUserForm = (form: any) => {
   const safeForm = Object.fromEntries(
@@ -37,6 +38,8 @@ export const getInitialUserForm = (form: any) => {
   return {
     ...DEFAULT_USER_FORM,
     ...safeForm,
+    // Map backend altPhone to frontend whatsapp field
+    whatsapp: safeForm.altPhone || safeForm.whatsapp || "",
     gender: safeForm.gender ?? DEFAULT_USER_FORM.gender,
     managerId: safeForm.managerId || "",
     departmentId: safeForm.departmentId || "",
