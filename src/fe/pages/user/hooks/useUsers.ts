@@ -51,6 +51,7 @@ const MUTATION_CONFIG = {
 /**
  * Converts any File fields in the form data to S3 URLs in parallel.
  * Non-file fields are passed through unchanged.
+ * Also maps frontend field names to backend field names (e.g., whatsapp → altPhone).
  */
 async function resolveFileUploads(
   formData: UserFormData,
@@ -72,7 +73,9 @@ async function resolveFileUploads(
         }),
       );
     } else {
-      payload[key as string] = value;
+      // Map frontend field names to backend field names
+      const backendKey = key === "whatsapp" ? "altPhone" : key;
+      payload[backendKey as string] = value;
     }
   }
 
