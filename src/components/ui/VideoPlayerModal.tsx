@@ -1,22 +1,24 @@
-import React, { useRef, useEffect, useState } from "react";
+// components/ui/VideoPlayerModal.tsx
+"use client";
+
+import React, { useRef, useEffect, useState, useCallback } from "react";
 import {
   Dialog,
   DialogContent,
   IconButton,
   Typography,
   Box,
-  Chip,
-  LinearProgress,
 } from "@mui/material";
-import {
-  Close,
-  PlayArrow,
-  Pause,
-  VolumeUp,
-  VolumeOff,
-  Fullscreen,
-} from "@mui/icons-material";
+import { Close, YouTube as YouTubeIcon } from "@mui/icons-material";
 import { TrainingVideo } from "@/types/trainingVideo";
+import { YouTubePlayer } from "./YouTubePlayer";
+import { LocalVideoPlayer } from "./LocalVideoPlayer";
+import { VideoControls } from "./VideoControls";
+import { VideoInfo } from "./VideoInfo";
+import { 
+  isYouTubeUrl, 
+  PLAYER_STATES
+} from "./constants";
 
 interface VideoPlayerModalProps {
   open: boolean;
@@ -24,79 +26,166 @@ interface VideoPlayerModalProps {
   onClose: () => void;
 }
 
+interface PlayerState {
+  isPlaying: boolean;
+  isMuted: boolean;
+  volume: number;
+  progress: number;
+  bufferProgress: number;
+  isLoading: boolean;
+  isFullscreen: boolean;
+  showControls: boolean;
+  currentTime: number;
+  duration: number;
+  playbackRate: number;
+  hasError: boolean;
+}
+
 const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
   open,
   video,
   onClose,
 }) => {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [isPlaying, setIsPlaying] = useState<boolean>(false);
-  const [isMuted, setIsMuted] = useState<boolean>(false);
-  const [progress, setProgress] = useState<number>(0);
+  const containerRef = useRef<HTMLDivElement>(null);
+  
+  const [isYouTube, setIsYouTube] = useState<boolean>(false);
+  const [playerState, setPlayerState] = useState<PlayerState>({
+    isPlaying: false,
+    isMuted: false,
+    volume: 100,
+    progress: 0,
+    bufferProgress: 0,
+    isLoading: false,
+    isFullscreen: false,
+    showControls: true,
+    currentTime: 0,
+    duration: 0,
+    playbackRate: 1,
+    hasError: false,
+  });
+  
+  const [settingsAnchorEl, setSettingsAnchorEl] = useState<null | HTMLElement>(null);
+  const controlsTimeoutRef = useRef<NodeJS.Timeout>();
 
   useEffect(() => {
-    if (open && videoRef.current) {
-      videoRef.current
-        .play()
-        .then(() => {
-          setIsPlaying(true);
-        })
-        .catch(console.error);
+    if (open && video) {
+      setIsYouTube(isYouTubeUrl(video.videoUrl));
+      setPlayerState(prev => ({
+        ...prev,
+        hasError: false,
+        isLoading: true,
+      }));
     }
-  }, [open]);
+  }, [open, video]);
 
-  const handlePlayPause = (): void => {
-    if (videoRef.current) {
-      if (isPlaying) {
-        videoRef.current.pause();
-      } else {
-        videoRef.current.play();
+  const handleMouseMove = () => {
+    setPlayerState(prev => ({ ...prev, showControls: true }));
+    
+    if (controlsTimeoutRef.current) {
+      clearTimeout(controlsTimeoutRef.current);
+    }
+    
+    controlsTimeoutRef.current = setTimeout(() => {
+      if (playerState.isPlaying) {
+        setPlayerState(prev => ({ ...prev, showControls: false }));
       }
-      setIsPlaying(!isPlaying);
+    }, 3000);
+  };
+
+  const handleYouTubeStateChange = (state: number) => {
+    switch (state) {
+      case PLAYER_STATES.PLAYING:
+        setPlayerState(prev => ({ ...prev, isPlaying: true, isLoading: false }));
+        break;
+      case PLAYER_STATES.PAUSED:
+        setPlayerState(prev => ({ ...prev, isPlaying: false }));
+        break;
+      case PLAYER_STATES.ENDED:
+        setPlayerState(prev => ({ ...prev, isPlaying: false, progress: 100 }));
+        break;
+      case PLAYER_STATES.BUFFERING:
+        setPlayerState(prev => ({ ...prev, isLoading: true }));
+        break;
     }
   };
 
-  const handleVolumeToggle = (): void => {
-    if (videoRef.current) {
-      videoRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+  const handleLocalPlayerEvent = (event: string) => {
+    switch (event) {
+      case 'loaded':
+        setPlayerState(prev => ({ ...prev, isLoading: false }));
+        break;
+      case 'waiting':
+        setPlayerState(prev => ({ ...prev, isLoading: true }));
+        break;
+      case 'playing':
+        setPlayerState(prev => ({ ...prev, isLoading: false, isPlaying: true }));
+        break;
+      case 'pause':
+        setPlayerState(prev => ({ ...prev, isPlaying: false }));
+        break;
+      case 'ended':
+        setPlayerState(prev => ({ ...prev, isPlaying: false, progress: 100 }));
+        break;
     }
   };
 
-  const handleTimeUpdate = (): void => {
-    if (videoRef.current) {
-      const currentProgress =
-        (videoRef.current.currentTime / videoRef.current.duration) * 100;
-      setProgress(currentProgress);
+  const updatePlayerState = (updates: Partial<PlayerState>) => {
+    setPlayerState(prev => ({ ...prev, ...updates }));
+  };
+
+  const handleVolumeChange = (event: Event, newValue: number | number[]) => {
+    const newVolume = newValue as number;
+    updatePlayerState({ volume: newVolume, isMuted: newVolume === 0 });
+  };
+
+  const handleVolumeToggle = () => {
+    updatePlayerState(prev => ({ 
+      ...prev, 
+      isMuted: !prev.isMuted,
+      volume: prev.isMuted ? 100 : 0 
+    }));
+  };
+
+  const handleProgressChange = (event: Event, newValue: number | number[]) => {
+    const newProgress = newValue as number;
+    updatePlayerState({ progress: newProgress });
+  };
+
+  const handleFullscreen = async () => {
+    if (!containerRef.current) return;
+
+    try {
+      if (!document.fullscreenElement) {
+        await containerRef.current.requestFullscreen();
+        updatePlayerState({ isFullscreen: true });
+      } else {
+        await document.exitFullscreen();
+        updatePlayerState({ isFullscreen: false });
+      }
+    } catch (error) {
+      console.error("Fullscreen error:", error);
     }
   };
 
-  const handleProgressClick = (
-    event: React.MouseEvent<HTMLDivElement>
-  ): void => {
-    if (videoRef.current) {
-      const rect = event.currentTarget.getBoundingClientRect();
-      const percent = (event.clientX - rect.left) / rect.width;
-      videoRef.current.currentTime = percent * videoRef.current.duration;
-    }
+  const handlePlaybackRateChange = (rate: number) => {
+    updatePlayerState({ playbackRate: rate });
+    setSettingsAnchorEl(null);
   };
 
-  const formatTime = (seconds: number): string => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, "0")}`;
+  const handleSettingsClick = (event: React.MouseEvent<HTMLElement>) => {
+    setSettingsAnchorEl(event.currentTarget);
   };
 
-  const getCategoryLabel = (category: string): string => {
-    const categoryLabels: { [key: string]: string } = {
-      "basic-sales-training-fundamentals": "Basic Sales Training Fundamentals",
-      "team-building": "Team Building",
-      "growth-model": "Growth Model",
-      "basic-fundamentals-of-real-estate": "Basic Fundamentals of Real Estate",
-      "company-code-of-conduct-rules-compliances":
-        "Company Code of Conduct, Rules & Compliances (RERA)",
-    };
-    return categoryLabels[category] || category;
+  const handleSettingsClose = () => {
+    setSettingsAnchorEl(null);
+  };
+
+  const handleVideoError = () => {
+    updatePlayerState({ isLoading: false, hasError: true });
+  };
+
+  const handleRetry = () => {
+    updatePlayerState({ hasError: false, isLoading: true });
   };
 
   if (!video) return null;
@@ -107,166 +196,155 @@ const VideoPlayerModal: React.FC<VideoPlayerModalProps> = ({
       onClose={onClose}
       maxWidth="lg"
       fullWidth
-      sx={{
-        "& .MuiDialog-paper": {
-          borderRadius: 2,
-          bgcolor: "black",
-          maxHeight: "90vh",
-        },
-      }}
+      fullScreen={playerState.isFullscreen}
+      onMouseMove={handleMouseMove}
+      sx={styles.dialog}
     >
-      <DialogContent sx={{ p: 0, position: "relative" }}>
+      <DialogContent 
+        ref={containerRef}
+        sx={styles.dialogContent}
+      >
         <IconButton
           onClick={onClose}
-          sx={{
-            position: "absolute",
-            top: 8,
-            right: 8,
-            zIndex: 10,
-            color: "white",
-            bgcolor: "rgba(0,0,0,0.5)",
-            "&:hover": {
-              bgcolor: "rgba(0,0,0,0.7)",
-            },
-          }}
+          sx={styles.closeButton(playerState.showControls)}
         >
           <Close />
         </IconButton>
 
-        {/* Video Player */}
-        <Box sx={{ position: "relative", paddingTop: "56.25%" }}>
-          <video
-            ref={videoRef}
-            controls={false}
-            autoPlay
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: "100%",
-              height: "100%",
-              backgroundColor: "black",
-            }}
-            poster={video.thumbnailUrl}
-            onTimeUpdate={handleTimeUpdate}
-            onEnded={() => setIsPlaying(false)}
-            onPlay={() => setIsPlaying(true)}
-            onPause={() => setIsPlaying(false)}
-          >
-            <source src={video.videoUrl} type="video/mp4" />
-            Your browser does not support the video tag.
-          </video>
-
-          {/* Custom Controls */}
-          <Box
-            sx={{
-              position: "absolute",
-              bottom: 0,
-              left: 0,
-              right: 0,
-              background: "linear-gradient(transparent, rgba(0,0,0,0.7))",
-              p: 2,
-              opacity: 0,
-              transition: "opacity 0.3s ease",
-              "&:hover": {
-                opacity: 1,
-              },
-            }}
-          >
-            {/* Progress Bar */}
-            <Box
-              sx={{
-                width: "100%",
-                height: 4,
-                bgcolor: "rgba(255,255,255,0.3)",
-                borderRadius: 2,
-                mb: 2,
-                cursor: "pointer",
-              }}
-              onClick={handleProgressClick}
-            >
-              <LinearProgress
-                variant="determinate"
-                value={progress}
-                sx={{
-                  height: "100%",
-                  borderRadius: 2,
-                  "& .MuiLinearProgress-bar": {
-                    backgroundColor: "#FF0000",
-                  },
-                }}
-              />
-            </Box>
-
-            {/* Control Buttons */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <IconButton onClick={handlePlayPause} sx={{ color: "white" }}>
-                {isPlaying ? <Pause /> : <PlayArrow />}
-              </IconButton>
-
-              <IconButton onClick={handleVolumeToggle} sx={{ color: "white" }}>
-                {isMuted ? <VolumeOff /> : <VolumeUp />}
-              </IconButton>
-
-              <Typography variant="body2" sx={{ color: "white", flexGrow: 1 }}>
-                {formatTime(videoRef.current?.currentTime || 0)} /{" "}
-                {formatTime(videoRef.current?.duration || 0)}
-              </Typography>
-
-              <IconButton sx={{ color: "white" }}>
-                <Fullscreen />
-              </IconButton>
-            </Box>
-          </Box>
-        </Box>
-
-        {/* Video Info */}
-        <Box sx={{ p: 3, color: "white" }}>
-          <Typography variant="h4" sx={{ mb: 2, fontWeight: 600 }}>
-            {video.title}
-          </Typography>
-
-          <Box sx={{ display: "flex", gap: 1, mb: 2, flexWrap: "wrap" }}>
-            <Chip
-              label={getCategoryLabel(video.category)}
-              color="primary"
-              size="small"
-            />
-          </Box>
-
-          <Typography
-            variant="body1"
-            sx={{ mb: 2, opacity: 0.9, lineHeight: 1.6 }}
-          >
-            {video.description}
-          </Typography>
-
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 2,
-            }}
-          >
-            <Box>
-              <Typography variant="body2" sx={{ opacity: 0.7 }}>
-                Uploaded by: {video.createdBy?.name || "Unknown"}
-              </Typography>
-            </Box>
-
-            <Typography variant="body2" sx={{ opacity: 0.7 }}>
-              Uploaded:{" "}
-              {typeof window !== "undefined"
-                ? new Date(video.uploadDate).toLocaleDateString()
-                : "Recently"}
+        {isYouTube && (
+          <Box sx={styles.youtubeBadge}>
+            <YouTubeIcon sx={{ fontSize: 20, color: "white", mr: 0.5 }} />
+            <Typography variant="caption" sx={{ color: "white", fontWeight: 600 }}>
+              YouTube
             </Typography>
           </Box>
+        )}
+
+        <Box sx={styles.videoContainer}>
+          {isYouTube ? (
+            <YouTubePlayer
+              videoUrl={video.videoUrl}
+              isPlaying={playerState.isPlaying}
+              isLoading={playerState.isLoading}
+              hasError={playerState.hasError}
+              onStateChange={handleYouTubeStateChange}
+              onError={handleVideoError}
+              onPlayPause={() => updatePlayerState(prev => ({ ...prev, isPlaying: !prev.isPlaying }))}
+              onRetry={handleRetry}
+              onClose={onClose}
+            />
+          ) : (
+            <LocalVideoPlayer
+              videoUrl={video.videoUrl}
+              thumbnailUrl={video.thumbnailUrl}
+              isPlaying={playerState.isPlaying}
+              isLoading={playerState.isLoading}
+              hasError={playerState.hasError}
+              currentTime={playerState.currentTime}
+              duration={playerState.duration}
+              progress={playerState.progress}
+              bufferProgress={playerState.bufferProgress}
+              volume={playerState.volume}
+              isMuted={playerState.isMuted}
+              playbackRate={playerState.playbackRate}
+              showControls={playerState.showControls}
+              onTimeUpdate={() => {}}
+              onProgress={() => {}}
+              onEnded={() => handleLocalPlayerEvent('ended')}
+              onLoaded={() => handleLocalPlayerEvent('loaded')}
+              onWaiting={() => handleLocalPlayerEvent('waiting')}
+              onPlaying={() => handleLocalPlayerEvent('playing')}
+              onPause={() => handleLocalPlayerEvent('pause')}
+              onError={handleVideoError}
+              onPlayPause={() => updatePlayerState(prev => ({ ...prev, isPlaying: !prev.isPlaying }))}
+              onRetry={handleRetry}
+              onClose={onClose}
+            />
+          )}
+
+          {!isYouTube && !playerState.isLoading && !playerState.hasError && (
+            <VideoControls
+              {...playerState}
+              isYouTube={isYouTube}
+              onPlayPause={() => updatePlayerState(prev => ({ ...prev, isPlaying: !prev.isPlaying }))}
+              onVolumeToggle={handleVolumeToggle}
+              onVolumeChange={handleVolumeChange}
+              onProgressChange={handleProgressChange}
+              onFullscreen={handleFullscreen}
+              onPlaybackRateChange={handlePlaybackRateChange}
+              onMouseEnter={() => updatePlayerState({ showControls: true })}
+              onMouseLeave={() => {
+                if (controlsTimeoutRef.current) {
+                  clearTimeout(controlsTimeoutRef.current);
+                }
+                if (playerState.isPlaying) {
+                  controlsTimeoutRef.current = setTimeout(() => {
+                    updatePlayerState({ showControls: false });
+                  }, 2000);
+                }
+              }}
+              settingsAnchorEl={settingsAnchorEl}
+              onSettingsClick={handleSettingsClick}
+              onSettingsClose={handleSettingsClose}
+            />
+          )}
         </Box>
+
+        <VideoInfo video={video} />
       </DialogContent>
     </Dialog>
   );
+};
+
+const styles = {
+  dialog: {
+    "& .MuiDialog-paper": {
+      borderRadius: (isFullscreen: boolean) => isFullscreen ? 0 : 2,
+      bgcolor: "black",
+      maxHeight: (isFullscreen: boolean) => isFullscreen ? '100vh' : '90vh',
+      height: (isFullscreen: boolean) => isFullscreen ? '100vh' : 'auto',
+      overflow: 'hidden',
+    },
+  },
+  dialogContent: { 
+    p: 0, 
+    position: "relative" as const, 
+    height: '100%',
+    display: 'flex',
+    flexDirection: 'column' as const,
+    overflow: 'hidden',
+  },
+  closeButton: (showControls: boolean) => ({
+    position: "absolute" as const,
+    top: 16,
+    right: 16,
+    zIndex: 100,
+    color: "white",
+    bgcolor: "rgba(0,0,0,0.5)",
+    "&:hover": { bgcolor: "rgba(0,0,0,0.7)" },
+    opacity: showControls ? 1 : 0,
+    transition: 'opacity 0.3s ease',
+  }),
+  youtubeBadge: {
+    position: "absolute" as const,
+    top: 16,
+    left: 16,
+    zIndex: 100,
+    display: "flex",
+    alignItems: "center",
+    bgcolor: "rgba(255, 0, 0, 0.8)",
+    borderRadius: "4px",
+    padding: "4px 8px",
+  },
+  videoContainer: { 
+    flex: 1,
+    position: "relative" as const,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    overflow: 'hidden',
+    backgroundColor: 'black',
+  },
 };
 
 export default VideoPlayerModal;

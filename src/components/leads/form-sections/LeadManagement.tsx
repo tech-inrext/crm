@@ -7,19 +7,14 @@ import {
   Autocomplete,
 } from "@/components/ui/Component";
 
-
-
 import { Field, FieldProps } from "formik";
 import { useAuth } from "@/contexts/AuthContext";
 import { teamHierarchyService } from "@/services/team-hierarchy.service";
 
 const statusOptions = [
   { value: "new", label: "New" },
-  { value: "follow-up", label: "Follow-Up" },
-  { value: "call back", label: "Call Back" },
-  { value: "not connected", label: "Not Connected" },
+  { value: "in progress",label: "In Progress"},
   { value: "details shared", label: "Details Shared" },
-  { value: "site visit done", label: "Site Visit Done" },
   { value: "closed", label: "Closed" },
   { value: "not interested", label: "Not Interested" },
   // { value: "", label: "No Status" }, // optional placeholder for empty
@@ -102,14 +97,14 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
 
   return (
     <>
-      <Typography variant="h6" sx={{ mt: 2, mb: 1, fontWeight: 600 }}>
+      <Typography variant="h6" sx={{ mt: 1.5, mb: 0.75, fontWeight: 600 }}>
         Lead Management
       </Typography>
 
       <Box
         sx={{
           display: "flex",
-          gap: 2,
+          gap: 1.5,
           flexDirection: { xs: "column", sm: "row" },
         }}
       >
@@ -118,11 +113,18 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
             <TextField
               {...field}
               label="Status"
+              size="small"
               select
               value={values.status}
               onChange={(e) => setFieldValue("status", e.target.value)}
               inputProps={{ "aria-label": "Lead status" }}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                flex: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
             >
               <MenuItem value="">Select status...</MenuItem>
               {statusOptions.map((option) => (
@@ -138,7 +140,11 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
           {({ field, meta }: FieldProps) => (
             <Autocomplete
               options={users}
-              getOptionLabel={(option) => option.name || ""}
+              getOptionLabel={(option) =>
+                option.name
+                  ? `${option.name}${option.email ? ` (${option.email})` : ""}`
+                  : ""
+              }
               getOptionKey={(option) => option._id || option.id}
               value={
                 users.find((u) => u._id === (values.manager || user?._id)) ||
@@ -156,10 +162,16 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                 <TextField
                   {...params}
                   label="Manager"
+                  size="small"
                   error={meta.touched && !!meta.error}
                   helperText={meta.touched && meta.error}
-                  placeholder="Search and select employee"
-                  sx={{ bgcolor: "#fff", borderRadius: 1 }}
+                  placeholder="Search by name or email"
+                  sx={{
+                    bgcolor: "#fff",
+                    borderRadius: 1,
+                    "& .MuiInputBase-root": { minHeight: 40 },
+                    "& .MuiInputBase-input": { py: 1 },
+                  }}
                 />
               )}
               renderOption={(props, option) => {
@@ -169,8 +181,16 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                     component="li"
                     key={option._id || option.id || key}
                     {...rest}
+                    sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start !important", py: 0.75 }}
                   >
-                    {option.name}
+                    <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.3 }}>
+                      {option.name}
+                    </Typography>
+                    {option.email && (
+                      <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.3 }}>
+                        {option.email}
+                      </Typography>
+                    )}
                   </Box>
                 );
               }}
@@ -185,7 +205,7 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
       <Box
         sx={{
           display: "flex",
-          gap: 2,
+          gap: 1.5,
           flexDirection: { xs: "column", sm: "row" },
         }}
       >
@@ -194,13 +214,20 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
             <TextField
               {...field}
               label="Source"
+              size="small"
               select
               value={values.source}
               onChange={(e) => setFieldValue("source", e.target.value)}
               error={meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
               inputProps={{ "aria-label": "Lead source" }}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1, height: 56 }}
+              sx={{
+                bgcolor: "#fff",
+                borderRadius: 1,
+                flex: 1,
+                "& .MuiInputBase-root": { minHeight: 40 },
+                "& .MuiInputBase-input": { py: 1 },
+              }}
               SelectProps={{
                 MenuProps: {
                   PaperProps: {
@@ -220,13 +247,11 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
             </TextField>
           )}
         </Field>
-
-
       </Box>
       <Box
         sx={{
           display: "flex",
-          gap: 2,
+          gap: 1.5,
           flexDirection: { xs: "column", sm: "row" },
         }}
       >
@@ -238,7 +263,11 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                   ? teamMembers
                   : assignedToOptions
               }
-              getOptionLabel={(option) => option.name || ""}
+              getOptionLabel={(option) =>
+                option.name
+                  ? `${option.name}${option.email ? ` (${option.email})` : ""}`
+                  : ""
+              }
               getOptionKey={(option) => option._id || option.id}
               value={
                 users.find((user) => user._id === values.assignedTo) || null
@@ -251,10 +280,16 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                 <TextField
                   {...params}
                   label="Assigned To"
+                  size="small"
                   error={meta.touched && !!meta.error}
                   helperText={meta.touched && meta.error}
-                  placeholder="Search and select employee"
-                  sx={{ bgcolor: "#fff", borderRadius: 1 }}
+                  placeholder="Search by name or email"
+                  sx={{
+                    bgcolor: "#fff",
+                    borderRadius: 1,
+                    "& .MuiInputBase-root": { minHeight: 40 },
+                    "& .MuiInputBase-input": { py: 1 },
+                  }}
                 />
               )}
               renderOption={(props, option) => {
@@ -264,8 +299,16 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                     component="li"
                     key={option._id || option.id || key}
                     {...rest}
+                    sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start !important", py: 0.75 }}
                   >
-                    {option.name}
+                    <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.3 }}>
+                      {option.name}
+                    </Typography>
+                    {option.email && (
+                      <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.3 }}>
+                        {option.email}
+                      </Typography>
+                    )}
                   </Box>
                 );
               }}

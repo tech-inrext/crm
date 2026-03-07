@@ -12,6 +12,9 @@ interface LeadsCardsViewProps {
   leads: any[];
   onEdit: (leadId: string) => void;
   onStatusChange: (leadId: string, status: string) => Promise<void>;
+  onLeadTypeChange: (leadId: string, leadType: string) => Promise<void>;
+  onScheduleSiteVisit: (leadId: string) => void;
+  onOpenFeedback: (leadId: string) => void;
   page: number;
   total: number;
   rowsPerPage: number;
@@ -23,6 +26,9 @@ const LeadsCardsView: React.FC<LeadsCardsViewProps> = ({
   leads,
   onEdit,
   onStatusChange,
+  onLeadTypeChange,
+  onScheduleSiteVisit,
+  onOpenFeedback,
   page,
   total,
   rowsPerPage,
@@ -30,15 +36,17 @@ const LeadsCardsView: React.FC<LeadsCardsViewProps> = ({
   onPageSizeChange,
 }) => {
   return (
-    <Box>
+    <Box className="p-2 h-[calc(100%-168px)] ">
       <Box sx={MODULE_STYLES.leads.cardsGrid}>
         {leads.map((lead) => (
           <LeadCard
             key={lead.id}
             lead={lead}
-            onEdit={() => onEdit(lead._id)}
-            onDelete={() => {}}
+            onEdit={() => onEdit(lead._id || lead.leadId || lead.id)}
             onStatusChange={onStatusChange}
+            onLeadTypeChange={onLeadTypeChange}
+            onScheduleSiteVisit={onScheduleSiteVisit}
+            onOpenFeedback={onOpenFeedback}
           />
         ))}
       </Box>
@@ -52,7 +60,7 @@ const LeadsCardsView: React.FC<LeadsCardsViewProps> = ({
             onPageSizeChange(size);
             onPageChange(0);
           }}
-          pageSizeOptions={[5, 10, 15, 25]}
+          pageSizeOptions={[8, 16, 32, 48]}
         />
       </Box>
     </Box>

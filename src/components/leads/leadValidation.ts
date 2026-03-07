@@ -41,7 +41,7 @@ export const leadValidationSchema = Yup.object({
     .trim(),
   status: Yup.string().oneOf(
     // ["New", "Contacted", "Site Visit", "Closed", "Dropped", ""],
-    ["new", "follow-up", "call back", "not connected", "details shared", "site visit done", "closed", "not interested", ""],
+    ["new", "in progress", "details shared", "closed", "not interested", ""],
     "Invalid status"
   ),
   source: Yup.string()

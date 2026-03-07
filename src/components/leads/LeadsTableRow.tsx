@@ -36,16 +36,10 @@ const LeadsTableRow: React.FC<LeadsTableRowProps> = ({
         return "#2196F3";
       case "not interested":
         return "#F44336";
-      case "not connected":
-        return "#FF5722";
-      case "follow-up":
+      case "in progress":
         return "#FF9800";
-      case "call back":
-        return "#FFC107";
       case "details shared":
         return "#9C27B0";
-      case "site visit done":
-        return "#673AB7";
       case "closed":
         return "#4CAF50";
       default:

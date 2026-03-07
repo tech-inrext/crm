@@ -1,7 +1,7 @@
-import { Service } from "@framework";
-import Notification from "../../models/Notification.js";
-import Employee from "../../models/Employee.js";
-import { leadQueue } from "../../queue/leadQueue.js";
+import { Service } from "../framework/service.js";
+import Notification from "../models/Notification.js";
+import Employee from "../models/Employee.js";
+import { leadQueue } from "../queue/leadQueue.js";
 
 const UNREAD_STATUS = ["PENDING", "DELIVERED"];
 
@@ -487,9 +487,9 @@ class NotificationService extends Service {
     const notifications = await Notification.find(query).select("_id");
     return notifications.length > 0
       ? this._markNotificationsAsRead(
-          notifications.map((n) => n._id.toString()),
-          userId
-        )
+        notifications.map((n) => n._id.toString()),
+        userId
+      )
       : { modifiedCount: 0 };
   }
 
@@ -560,9 +560,13 @@ class NotificationService extends Service {
   }
 
   async _scheduleEmailNotification(notification) {
-    if (!leadQueue) return;
+    if (!leadQueue) {
+      console.warn("⚠️ NotificationService: Email queue not available, skipping email for:", notification._id);
+      return;
+    }
 
     try {
+      console.log("📧 Scheduling email for notification:", notification._id);
       await Promise.race([
         leadQueue.add("sendNotificationEmail", {
           notificationId: notification._id.toString(),
@@ -572,7 +576,7 @@ class NotificationService extends Service {
         ),
       ]);
     } catch (error) {
-      console.error("Email scheduling failed (non-blocking):", error.message);
+      console.error("❌ Email scheduling failed (non-blocking):", error.message);
     }
   }
 

@@ -5,7 +5,6 @@ import {
   FormControl,
   Box,
   CircularProgress,
-  Chip,
 } from "@mui/material";
 import { LEAD_STATUSES } from "@/constants/leads";
 import { getStatusColor } from "./StatusChip";
@@ -67,7 +66,7 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
         }
         sx={{
           minWidth: 70,
-          maxWidth: 110,
+          maxWidth: 150,
           width: "fit-content",
           height: 24,
           backgroundColor: getStatusColor(currentStatus),
@@ -79,7 +78,7 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
           opacity: disabled || isUpdating ? 0.6 : 1,
           "& .MuiSelect-select": {
             padding: "4px 6px 4px 8px !important",
-            paddingRight: "20px !important",
+            paddingRight: "28px !important",
             minHeight: "auto !important",
             display: "flex",
             alignItems: "center",
@@ -114,8 +113,13 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
           PaperProps: {
             sx: {
               maxHeight: 300,
+              borderRadius: 2,
+              boxShadow: "0 12px 24px rgba(0,0,0,0.12)",
               "& .MuiMenuItem-root": {
-                padding: "8px 16px",
+                padding: "6px 12px",
+                borderRadius: 1,
+                margin: "2px 6px",
+                minHeight: 34,
               },
             },
           },
@@ -123,21 +127,26 @@ const StatusDropdown: React.FC<StatusDropdownProps> = ({
       >
         {statusOptions.map((status) => (
           <MenuItem key={status} value={status}>
-            <Chip
-              label={status}
-              size="small"
+            <Box
               sx={{
+                width: 10,
+                height: 10,
+                borderRadius: "50%",
                 backgroundColor: getStatusColor(status),
-                color: "white",
-                fontWeight: 600,
-                fontSize: "0.75rem",
-                minWidth: "100px",
-                height: 24,
-                "& .MuiChip-label": {
-                  padding: "0 8px",
-                },
+                boxShadow: "0 0 0 2px rgba(0,0,0,0.04)",
               }}
             />
+            <Box
+              component="span"
+              sx={{
+                ml: 1.25,
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                textTransform: "capitalize",
+              }}
+            >
+              {status}
+            </Box>
           </MenuItem>
         ))}
       </Select>

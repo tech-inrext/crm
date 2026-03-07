@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Box,
   Paper,
@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/Component";
 import { useDebounce } from "@/hooks/useDebounce";
 import dynamic from "next/dynamic";
+import { useSearchParams } from "next/navigation";
 import { GRADIENTS } from "@/constants/leads";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
 import { leadsTableHeader } from "@/components/leads/LeadsTableHeaderConfig";
@@ -38,32 +39,33 @@ const LeadDialog = dynamic(() => import("@/components/leads/LeadDialog"), {
 });
 const LoadingSkeleton = dynamic(
   () => import("@/components/leads/LoadingSkeleton"),
-  { ssr: false }
+  { ssr: false },
 );
 const LeadsActionBar = dynamic(
   () => import("@/components/leads/LeadsActionBar"),
-  { ssr: false }
+  { ssr: false },
 );
 const FollowUpDialog = dynamic(
   () => import("@/components/leads/FollowUpDialog"),
-  { ssr: false }
+  { ssr: false },
 );
 const SiteVisitDialog = dynamic(
   () => import("@/components/leads/SiteVisitDialog"),
-  { ssr: false }
+  { ssr: false },
 );
 const LeadsTableView = dynamic(
   () => import("@/components/leads/LeadsTableView"),
-  { ssr: false }
+  { ssr: false },
 );
 const LeadsCardsView = dynamic(
   () => import("@/components/leads/LeadsCardsView"),
-  { ssr: false }
+  { ssr: false },
 );
 
 const Leads: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const searchParams = useSearchParams();
 
   const {
     leads,
@@ -78,6 +80,12 @@ const Leads: React.FC = () => {
     setViewMode,
     searchInput,
     selectedStatuses,
+    selectedLeadTypes,
+    selectedProperties,
+    selectedBudgets,
+    selectedAssignedTo,
+    teamMembers,
+    hierarchyLoading,
     page,
     setPage,
     rowsPerPage,
@@ -85,9 +93,15 @@ const Leads: React.FC = () => {
     total,
     handleSearchChange,
     handleStatusChange,
+    handleLeadTypeChange,
+    handlePropertyChange,
+    handleBudgetChange,
+    handleAssignedToChange,
+    handleClearAllFilters,
     handleEdit,
     saveLead,
     updateLeadStatus,
+    updateLeadType,
     loadLeads,
     dialogMode,
     handleCloseDialog,
@@ -108,7 +122,13 @@ const Leads: React.FC = () => {
   const [selectedLeadForSiteVisit, setSelectedLeadForSiteVisit] = useState<
     string | null
   >(null);
+  const leadIdentifierFromUrl = searchParams.get("leadIdentifier");
 
+  useEffect(() => {
+    if (leadIdentifierFromUrl && !feedbackOpen) {
+      openFeedback(leadIdentifierFromUrl);
+    }
+  }, [leadIdentifierFromUrl]);
   const leadsTableHeaderWithActions = leadsTableHeader.map((col) =>
     col.label === "Actions"
       ? {
@@ -135,7 +155,7 @@ const Leads: React.FC = () => {
                   size="small"
                   onClick={() => {
                     setSelectedLeadForSiteVisit(
-                      row.leadId || row._id || row.id
+                      row.leadId || row._id || row.id,
                     );
                     setSiteVisitOpen(true);
                   }}
@@ -166,7 +186,7 @@ const Leads: React.FC = () => {
             </Box>
           ),
         }
-      : col
+      : col,
   );
 
   const handleSaveLead = async (data: any) => {
@@ -174,7 +194,7 @@ const Leads: React.FC = () => {
       await saveLead(data, editId);
       showSnackbar(
         editId ? "Lead updated successfully" : "Lead created successfully",
-        "success"
+        "success",
       );
       setOpen(false);
       setEditId(null);
@@ -202,38 +222,48 @@ const Leads: React.FC = () => {
           loadLeads={loadLeads}
           selectedStatuses={selectedStatuses}
           onStatusesChange={handleStatusChange}
+          selectedLeadTypes={selectedLeadTypes}
+          onLeadTypesChange={handleLeadTypeChange}
+          selectedProperties={selectedProperties}
+          onPropertiesChange={handlePropertyChange}
+          selectedBudgets={selectedBudgets}
+          onBudgetsChange={handleBudgetChange}
+          selectedAssignedTo={selectedAssignedTo}
+          onAssignedToChange={handleAssignedToChange}
+          onClearAllFilters={handleClearAllFilters}
+          teamMembers={teamMembers}
+          leads={leads}
         />
       </Paper>
 
       {loading ? (
         <LoadingSkeleton />
-      ) : isMobile || viewMode === "cards" ? (
-        <LeadsCardsView
-          leads={leads}
-          onEdit={handleEdit}
-          onStatusChange={updateLeadStatus}
-          page={page}
-          total={total}
-          rowsPerPage={rowsPerPage}
-          onPageChange={setPage}
-          onPageSizeChange={setRowsPerPage}
-        />
       ) : (
-        <LeadsTableView
-          leads={leads}
-          header={leadsTableHeaderWithActions}
-          selectedStatuses={selectedStatuses}
-          onStatusesChange={handleStatusChange}
-          onEdit={handleEdit}
-          onStatusChange={updateLeadStatus}
-          page={page}
-          total={total}
-          rowsPerPage={rowsPerPage}
-          onPageChange={setPage}
-          onPageSizeChange={setRowsPerPage}
-        />
+        <>
+          {leads.length > 0 ? (
+            <LeadsCardsView
+              leads={leads}
+              onEdit={handleEdit}
+              onStatusChange={updateLeadStatus}
+              onLeadTypeChange={updateLeadType}
+              onScheduleSiteVisit={(leadId) => {
+                setSelectedLeadForSiteVisit(leadId);
+                setSiteVisitOpen(true);
+              }}
+              onOpenFeedback={openFeedback}
+              page={page}
+              total={total}
+              rowsPerPage={rowsPerPage}
+              onPageChange={setPage}
+              onPageSizeChange={setRowsPerPage}
+            />
+          ) : (
+            <div className="flex justify-center items-center h-full">
+              No matching leads found
+            </div>
+          )}
+        </>
       )}
-
       {dialogMode === "view" ? (
         <LeadDetailsDialog
           open={open}
@@ -277,20 +307,20 @@ const Leads: React.FC = () => {
             leadId={selectedLeadForSiteVisit}
             initialClientName={
               leads.find(
-                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit
+                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit,
               )?.fullName ||
               leads.find(
-                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit
+                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit,
               )?.name
             }
             initialProject={
               leads.find(
-                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit
+                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit,
               )?.propertyName
             }
             clientPhone={
               leads.find(
-                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit
+                (l) => (l.leadId || l._id || l.id) === selectedLeadForSiteVisit,
               )?.phone
             }
             onSaved={async () => {

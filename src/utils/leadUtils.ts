@@ -119,9 +119,15 @@ export const transformAPILeadToForm = (apiLead: Lead): LeadFormData => {
     budgetRange: apiLead.budgetRange || "",
     status: apiLead.status || "new",
     source: apiLead.source || "",
-    manager: apiLead.managerId ? String(apiLead.managerId) : "",
-    managerId: apiLead.managerId ? String(apiLead.managerId) : "",
-    assignedTo: apiLead.assignedTo ? String(apiLead.assignedTo) : "",
+    manager: apiLead.managerId
+      ? (apiLead.managerId as any)._id || String(apiLead.managerId)
+      : "",
+    managerId: apiLead.managerId
+      ? (apiLead.managerId as any)._id || String(apiLead.managerId)
+      : "",
+    assignedTo: apiLead.assignedTo
+      ? (apiLead.assignedTo as any)._id || String(apiLead.assignedTo)
+      : "",
     // NO follow up fields
   };
 };
@@ -261,6 +267,7 @@ export const transformAPIRole = (apiRole: any): any => {
     showTotalVendorsBilling: Boolean(apiRole.showTotalVendorsBilling || false),
     showCabBookingAnalytics: Boolean(apiRole.showCabBookingAnalytics || false),
     showScheduleThisWeek: Boolean(apiRole.showScheduleThisWeek || false),
+    isAVP: Boolean(apiRole.isAVP || false),
   };
 };
 
@@ -281,7 +288,7 @@ export const transformToAPIRole = (role: any) => {
       showTotalVendorsBilling: Boolean((role as any).showTotalVendorsBilling || false),
       showCabBookingAnalytics: Boolean((role as any).showCabBookingAnalytics || false),
       showScheduleThisWeek: Boolean((role as any).showScheduleThisWeek || false),
-
+      isAVP: Boolean((role as any).isAVP || false),
     };
   }
 
@@ -328,6 +335,6 @@ export const transformToAPIRole = (role: any) => {
     showTotalVendorsBilling: Boolean((role as any).showTotalVendorsBilling || false),
     showCabBookingAnalytics: Boolean((role as any).showCabBookingAnalytics || false),
     showScheduleThisWeek: Boolean((role as any).showScheduleThisWeek || false),
-
+    isAVP: Boolean((role as any).isAVP || false),
   };
 };

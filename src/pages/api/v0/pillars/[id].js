@@ -1,7 +1,5 @@
 import { Controller } from "@framework";
 import PillarService from "../../../../be/services/PillarService";
-import * as cookie from "cookie";
-import { userAuth } from "../../../../middlewares/auth";
 
 class PillarByIdController extends Controller {
   constructor() {
@@ -25,3 +23,5 @@ class PillarByIdController extends Controller {
 }
 
 export default new PillarByIdController().handler;
+
+

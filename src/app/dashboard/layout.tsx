@@ -127,6 +127,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
   },
   {
+    label: "Departments",
+    href: "/dashboard/department",
+    module: "department",
+    icon: <GroupIcon sx={{ color: "#3785FF" }} />,
+  },
+  {
     label: "Notifications",
     href: "/dashboard/notifications",
     icon: <Notifications sx={{ color: "#3785FF" }} />,
@@ -209,7 +215,8 @@ export default function DashboardLayout({
                 pl: { xs: 0, lg: "260px" },
                 pr: { xs: 0 },
                 transition: "padding-left 0.3s ease",
-                minHeight: "100vh",
+                height: "calc(100vh - 64px)",
+                backgroundColor: "#f9f9f9",
                 width: "100%",
               }}
             >

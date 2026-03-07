@@ -1,5 +1,5 @@
 import { Service } from "@framework";
-import Role from "../../models/Role";
+import Role from "../models/Role";
 import { NotificationHelper } from "../../lib/notification-helpers";
 
 class RoleService extends Service {
@@ -18,14 +18,14 @@ class RoleService extends Service {
       // Optional search filter
       const query = search
         ? {
-            $or: [{ name: { $regex: search, $options: "i" } }],
-          }
+          $or: [{ name: { $regex: search, $options: "i" } }],
+        }
         : {};
 
       const [roles, totalRoles] = await Promise.all([
         Role.find(query)
           .select(
-            "name read write delete isSystemAdmin showTotalUsers showTotalVendorsBilling showCabBookingAnalytics showScheduleThisWeek createdAt updatedAt"
+            "name read write delete isSystemAdmin showTotalUsers showTotalVendorsBilling showCabBookingAnalytics showScheduleThisWeek isAVP createdAt updatedAt"
           )
           .skip(skip)
           .limit(itemsPerPage)
@@ -64,6 +64,7 @@ class RoleService extends Service {
         showTotalVendorsBilling,
         showCabBookingAnalytics,
         showScheduleThisWeek,
+        isAVP,
       } = req.body;
 
       if (!name) {
@@ -83,6 +84,7 @@ class RoleService extends Service {
         showTotalVendorsBilling: !!showTotalVendorsBilling,
         showCabBookingAnalytics: !!showCabBookingAnalytics,
         showScheduleThisWeek: !!showScheduleThisWeek,
+        isAVP: !!isAVP,
       });
 
       await newRole.save();
@@ -146,6 +148,7 @@ class RoleService extends Service {
       showTotalVendorsBilling,
       showCabBookingAnalytics,
       showScheduleThisWeek,
+      isAVP,
     } = req.body;
 
     try {
@@ -219,6 +222,14 @@ class RoleService extends Service {
             ? showScheduleThisWeek.toLowerCase() === "true"
             : Boolean(showScheduleThisWeek);
         setObj.showScheduleThisWeek = flag;
+      }
+
+      if (typeof isAVP !== "undefined") {
+        const flag =
+          typeof isAVP === "string"
+            ? isAVP.toLowerCase() === "true"
+            : Boolean(isAVP);
+        setObj.isAVP = flag;
       }
 
       if (Object.keys(setObj).length === 0) {

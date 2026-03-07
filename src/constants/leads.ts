@@ -11,8 +11,8 @@ export const ROLE_PERMISSIONS = ["read", "write", "delete"];
 // Import visual constants from existing styles
 import { VISUAL_CONSTANTS } from "@/styles/moduleStyles";
 import {
-  COMMON_STYLES as LEADS_COMMON_STYLES,
-  GRADIENTS as LEADS_GRADIENTS,
+	COMMON_STYLES as LEADS_COMMON_STYLES,
+	GRADIENTS as LEADS_GRADIENTS,
 } from "@/components/leads/styles";
 
 export const GRADIENTS = LEADS_GRADIENTS;
@@ -20,13 +20,28 @@ export const COMMON_STYLES = LEADS_COMMON_STYLES;
 
 // Lead status values used across the leads feature
 export const LEAD_STATUSES = [
-	"",
-	"new", 
-	"follow-up", 
-	"call back", 
-	"not connected", 
-	"details shared", 
-	"site visit done", 
-	"closed", 
+	// "",
+	"new",
+	"in progress",
+	"details shared",
+	"closed",
 	"not interested",
+];
+
+// Lead type values used across the leads feature
+// Lead type values used across the leads feature
+export const LEAD_TYPES = [
+	"hot lead",
+	"warm lead",
+	"cold lead",
+];
+
+export const budgetRanges = [
+	"<1 Lakh",
+	"1 Lakh to 10 Lakh",
+	"10 Lakh to 20 Lakh",
+	"20 Lakh to 30 Lakh",
+	"30 Lakh to 50 Lakh",
+	"50 Lakh to 1 Crore",
+	">1 Crore",
 ];

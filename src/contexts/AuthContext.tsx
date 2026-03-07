@@ -143,6 +143,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           _id: profile._id || profile.id || undefined,
           isSystemAdmin:
             Boolean(profile.isSystemAdmin) || isSystemAdminFromRoles,
+            photo: profile.photo || "",
         } as User;
 
         setUser(normalized);

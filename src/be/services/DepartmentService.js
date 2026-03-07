@@ -1,5 +1,5 @@
 import { Service } from "@framework";
-import Department from "../../models/Department";
+import Department from "../models/Department";
 
 class DepartmentService extends Service {
   constructor() {
@@ -8,7 +8,7 @@ class DepartmentService extends Service {
 
   async createDepartment(req, res) {
     try {
-      const { name, description, managerId, departmentId } = req.body;
+      const { name, description, managerId, attachments } = req.body;
 
       if (!name) {
         return res
@@ -16,11 +16,20 @@ class DepartmentService extends Service {
           .json({ success: false, message: "Department name is required" });
       }
 
+      const existing = await Department.findOne({
+        name: { $regex: new RegExp(`^${name.trim()}$`, "i") },
+      });
+      if (existing) {
+        return res
+          .status(409)
+          .json({ success: false, message: "Department name already exists" });
+      }
+
       const newDept = new Department({
         name,
         description,
         managerId,
-        departmentId,
+        attachments: attachments || [],
       });
       await newDept.save();
 
@@ -32,11 +41,44 @@ class DepartmentService extends Service {
 
   async getAllDepartment(req, res) {
     try {
-      const departments = await Department.find({ isActive: true }).populate(
-        "managerId",
-        "name email"
-      );
-      return res.status(200).json({ success: true, data: departments });
+      const { search, page = 1, limit = 10 } = req.query;
+
+      // Build query
+      let query = { isActive: true };
+
+      // Add search functionality
+      if (search && search.trim()) {
+        query.$or = [
+          { name: { $regex: search, $options: "i" } },
+          { description: { $regex: search, $options: "i" } },
+        ];
+      }
+
+      // Calculate pagination
+      const pageNum = parseInt(page) || 1;
+      const limitNum = parseInt(limit) || 10;
+      const skip = (pageNum - 1) * limitNum;
+
+      // Get total count for pagination
+      const totalItems = await Department.countDocuments(query);
+
+      // Fetch departments with pagination
+      const departments = await Department.find(query)
+        .populate("managerId", "name email")
+        .skip(skip)
+        .limit(limitNum)
+        .sort({ createdAt: -1 });
+
+      return res.status(200).json({
+        success: true,
+        data: departments,
+        pagination: {
+          currentPage: pageNum,
+          totalItems,
+          totalPages: Math.ceil(totalItems / limitNum),
+          pageSize: limitNum,
+        },
+      });
     } catch (error) {
       return res.status(500).json({ success: false, message: error.message });
     }
@@ -46,10 +88,26 @@ class DepartmentService extends Service {
     const { id } = req.query;
     try {
       const update = req.body;
+
+      if (update.name) {
+        const existing = await Department.findOne({
+          name: { $regex: new RegExp(`^${update.name.trim()}$`, "i") },
+          _id: { $ne: id },
+        });
+        if (existing) {
+          return res
+            .status(409)
+            .json({
+              success: false,
+              message: "Department name already exists",
+            });
+        }
+      }
+
       const updated = await Department.findByIdAndUpdate(
         id,
         { $set: update },
-        { new: true }
+        { new: true },
       );
       if (!updated) {
         return res
@@ -69,7 +127,7 @@ class DepartmentService extends Service {
       const deleted = await Department.findByIdAndUpdate(
         id,
         { isActive: false },
-        { new: true }
+        { new: true },
       );
       if (!deleted) {
         return res
@@ -90,7 +148,7 @@ class DepartmentService extends Service {
     try {
       const department = await Department.findById(id).populate(
         "managerId",
-        "name email"
+        "name email",
       );
 
       if (!department) {
