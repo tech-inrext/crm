@@ -61,6 +61,13 @@ const UsersPage: React.FC = () => {
     open,
     editId,
     setForm,
+    employees,
+    loading,
+    page,
+    rowsPerPage,
+    totalItems,
+    setPage,
+    setRowsPerPage,
     loadEmployees,
     getUserById,
     dialogMode,
@@ -80,12 +87,16 @@ const UsersPage: React.FC = () => {
     handleUserSave,
   } = useUsersPage();
 
-  const usersTableHeader = getUsersTableHeader({
-    canEditEmployee: (employee: Employee) =>
-      canEditEmployee(currentUser, employee),
-    onView: openViewDialog,
-    onEdit: openEditDialog,
-  });
+  const usersTableHeader = React.useMemo(
+    () =>
+      getUsersTableHeader({
+        canEditEmployee: (employee: Employee) =>
+          canEditEmployee(currentUser, employee),
+        onView: openViewDialog,
+        onEdit: openEditDialog,
+      }),
+    [currentUser, openViewDialog, openEditDialog],
+  );
 
   return (
     <div className="p-4 sm:p-6">
@@ -99,6 +110,13 @@ const UsersPage: React.FC = () => {
 
       {/* Table / card list */}
       <UsersPageList
+        loading={loading}
+        employees={employees}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalItems={totalItems}
+        onPageChange={setPage}
+        onPageSizeChange={setRowsPerPage}
         search={search}
         isMobile={isMobile}
         isClient={isClient}
