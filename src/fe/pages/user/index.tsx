@@ -56,20 +56,12 @@ const UsersPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const {
+    queryState, // All createApi props: loading, page, rowsPerPage, totalItems, setPage, setPageSize
+    employees,
     saving,
     setOpen,
     open,
     editId,
-    setForm,
-    employees,
-    loading,
-    page,
-    rowsPerPage,
-    totalItems,
-    setPage,
-    setRowsPerPage,
-    loadEmployees,
-    getUserById,
     dialogMode,
     selectedUser,
     handleCloseDialog,
@@ -79,7 +71,6 @@ const UsersPage: React.FC = () => {
     windowWidth,
     search,
     handleSearchChange,
-    handlePageSizeChange,
     snackbarOpen,
     snackbarSeverity,
     snackbarMessage,
@@ -110,13 +101,13 @@ const UsersPage: React.FC = () => {
 
       {/* Table / card list */}
       <UsersPageList
-        loading={loading}
+        loading={queryState.loading}
         employees={employees}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        totalItems={totalItems}
-        onPageChange={setPage}
-        onPageSizeChange={setRowsPerPage}
+        page={queryState.page}
+        rowsPerPage={queryState.rowsPerPage}
+        totalItems={queryState.totalItems}
+        onPageChange={queryState.setPage}
+        onPageSizeChange={queryState.setPageSize}
         search={search}
         isMobile={isMobile}
         isClient={isClient}
