@@ -14,7 +14,10 @@ import type { UserFormData } from "@/fe/pages/user/types";
 type SnackbarSeverity = "success" | "error";
 
 /** Extracts a human-readable message from a MutationError or unknown thrown value. */
-function resolveErrorMessage(err: unknown, fallback = "An error occurred"): { message: string; status?: number } {
+function resolveErrorMessage(
+  err: unknown,
+  fallback = "An error occurred",
+): { message: string; status?: number } {
   if (err && typeof err === "object" && "message" in err) {
     const e = err as MutationError;
     return { message: e.message ?? fallback, status: e.status };
@@ -37,7 +40,7 @@ export function useUsersPage() {
   const users = useUsers(debouncedSearch);
   // Destructure stable references upfront so TypeScript can resolve
   // their types without going through the wide `users` object union
-  const { loadEmployees } = users;
+  const { loadEmployees, queryState } = users;
 
   const {
     dialogMode,
@@ -47,7 +50,7 @@ export function useUsersPage() {
     openEditDialog,
   } = useUserDialog({
     employees: users.employees,
-    loading: users.loading,
+    loading: queryState.loading,
     getUserById: users.getUserById,
     setEditId: users.setEditId,
     setOpen: users.setOpen,
@@ -79,18 +82,18 @@ export function useUsersPage() {
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
-      users.setPage(1);
+      queryState.setPage(1);
     },
-    [users],
+    [queryState],
   );
 
   // ── Pagination ───────────────────────────────────────────────────────────
   const handlePageSizeChange = useCallback(
     (newSize: number) => {
-      users.setRowsPerPage(newSize);
-      users.setPage(1);
+      queryState.setPageSize(newSize);
+      queryState.setPage(1);
     },
-    [users],
+    [queryState],
   );
 
   // ── Save (create / update) ───────────────────────────────────────────────
@@ -110,13 +113,15 @@ export function useUsersPage() {
           showSnackbar("User created successfully");
         }
         handleCloseDialog();
-        users.setPage(1);
+        queryState.setPage(1);
         setSearch("");
-        // Trigger an explicit refetch so the list reflects the new data
-        // (invalidation evicts the cache; refetch repopulates it)
+        // Force a fresh fetch to get the updated list (bypasses cache)
         await loadEmployees();
       } catch (err) {
-        const { message, status } = resolveErrorMessage(err, "Failed to save user");
+        const { message, status } = resolveErrorMessage(
+          err,
+          "Failed to save user",
+        );
         showSnackbar(
           status === 409
             ? message || "User with same email or phone already exists"
@@ -134,7 +139,8 @@ export function useUsersPage() {
       try {
         await users.deleteUser(id);
         showSnackbar("User deleted successfully");
-        users.setPage(1);
+        queryState.setPage(1);
+        // Force a fresh fetch to get the updated list (bypasses cache)
         await loadEmployees();
       } catch (err) {
         const { message } = resolveErrorMessage(err, "Failed to delete user");
@@ -145,9 +151,29 @@ export function useUsersPage() {
   );
 
   return {
-    // users hook exports
-    ...users,
-    // dialog exports
+    // Query state from createApi (grouped)
+    queryState,
+    // Data
+    employees: users.employees,
+    // Actions
+    addUser: users.addUser,
+    updateUser: users.updateUser,
+    deleteUser: users.deleteUser,
+    getUserById: users.getUserById,
+    // Dialog state
+    open: users.open,
+    setOpen: users.setOpen,
+    editId: users.editId,
+    setEditId: users.setEditId,
+    form: users.form,
+    setForm: users.setForm,
+    // Mutation state
+    saving: users.saving,
+    createError: users.createError,
+    updateError: users.updateError,
+    deleteError: users.deleteError,
+    abortAll: users.abortAll,
+    // Dialog exports
     dialogMode,
     selectedUser,
     handleCloseDialog,

@@ -36,39 +36,55 @@ const StatCard: React.FC<StatCardProps> = ({
   onClick,
   loading = false,
 }) => (
-  <Card
-    elevation={0}
-    sx={{ height: 140 }}
-    className={`rounded-lg border border-gray-200 bg-white min-h-[85px] p-2 shadow-sm transition cursor-${
-      onClick ? "pointer" : "default"
-    } hover:shadow`}
-    onClick={onClick}
-  >
-    <CardContent className="p-0">
-      <Box className="flex justify-between items-center">
-        <Box>
-          <Typography className="text-[10px] text-gray-500">
-            {loading ? <Skeleton width={60} /> : title}
-          </Typography>
+<Card
+      elevation={0}
+      onClick={onClick}
+      className={`rounded-xl border border-gray-200 bg-white min-h-[120px] p-4 shadow-sm
+        transition-all duration-200 flex items-center justify-between
+        ${
+          onClick
+            ? "cursor-pointer hover:shadow-md hover:-translate-y-[2px]"
+            : "cursor-default"
+        }`}
+    >
+      <CardContent className="p-0 w-full">
+        <Box className="flex items-center gap-3">
+          
+          {/* Icon */}
+          <Box
+            className="flex items-center justify-center w-8 h-8 rounded-full"
+            sx={{ backgroundColor: iconBg }}
+          >
+            {loading ? (
+              <Skeleton variant="circular" width={24} height={24} />
+            ) : (
+              icon
+            )}
+          </Box>
 
-          <Typography className="mt-2 font-semibold text-gray-900 text-sm">
-            {loading ? <Skeleton width={70} height={18} /> : value}
-          </Typography>
-        </Box>
+          {/* Text Content */}
+          <Box className="flex flex-col">
+            
+            {/* Title */}
+            <Typography
+              sx={{ fontSize: "12px", fontWeight: 500 }}
+              className="uppercase text-black tracking-wide"
+            >
+              {loading ? <Skeleton width={80} /> : title}
+            </Typography>
 
-        <Box
-          className="rounded-full w-13 h-13 flex items-center justify-center"
-          style={{ backgroundColor: iconBg }}
-        >
-          {loading ? (
-            <Skeleton variant="circular" width={20} height={20} />
-          ) : (
-            icon
-          )}
+            {/* Value */}
+            <Typography
+              sx={{ fontSize: "2rem", fontWeight: 500, lineHeight: 1 }}
+              className="text-gray-900"
+            >
+              {loading ? <Skeleton width={70} height={40} /> : value}
+            </Typography>
+
+          </Box>
         </Box>
-      </Box>
-    </CardContent>
-  </Card>
+      </CardContent>
+    </Card>
 );
 
 export const StatsCardsRow: React.FC<{
@@ -163,16 +179,17 @@ export const StatsCardsRow: React.FC<{
   const totalEarnings = analytics?.totalEarnings ?? 0;
 
   return (
-    <Box className="w-full mb-8">
+    <Box className="w-full mb-6">
       {/* YOU SECTION */}
       <div className="text-blue-500 text-xl m-4 font-semibold">YOU</div>
 
-      <Box className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <Box className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Box className="grid grid-cols-1 md:grid-cols-2 gap-1">
+        {/* Stat Cards */}
+        <Box className="grid grid-cols-1 sm:grid-cols-2 gap-1">
           <StatCard
             title="My Teams (All Levels)"
             value={teamCount}
-            icon={<FaUserFriends size={20} color="#43a047" />}
+            icon={<FaUserFriends size={17} color="#43a047" />}
             iconBg="#e8f5e9"
             onClick={() =>
               user?._id
@@ -181,10 +198,11 @@ export const StatsCardsRow: React.FC<{
             }
             loading={loading}
           />
+
           <StatCard
             title="Active Leads"
             value={activeLeads}
-            icon={<FaPhoneAlt size={20} color="#2196f3" />}
+            icon={<FaPhoneAlt size={17} color="#2196f3" />}
             iconBg="#e3f2fd"
             onClick={() =>
               router.push(
@@ -193,18 +211,20 @@ export const StatsCardsRow: React.FC<{
             }
             loading={loading}
           />
+
           <StatCard
             title="New Leads"
             value={newLeads}
-            icon={<FaUserPlus size={20} color="#2196f3" />}
+            icon={<FaUserPlus size={17} color="#2196f3" />}
             iconBg="#e3f2fd"
             onClick={() => router.push("/dashboard/leads?status=new")}
             loading={loading}
           />
+
           <StatCard
             title="Upcoming Site Visits"
             value={siteVisitCount}
-            icon={<FaHandshake size={20} color="#8e24aa" />}
+            icon={<FaHandshake size={17} color="#8e24aa" />}
             iconBg="#f3e5f5"
             loading={loading}
             onClick={() => {
@@ -217,24 +237,27 @@ export const StatsCardsRow: React.FC<{
               }
             }}
           />
+
           <StatCard
             title="MoUs (Pending / Approved)"
             value={`${mouPending} / ${mouApproved}`}
-            icon={<FaFileSignature size={20} color="#3949ab" />}
+            icon={<FaFileSignature size={17} color="#3949ab" />}
             iconBg="#e8eaf6"
             onClick={() => router.push("/dashboard/mou")}
             loading={loading}
           />
+
           <StatCard
             title="Total Vendors & Billing amount"
             value={`${totalCabVendors} / ₹${totalEarnings.toLocaleString()}`}
-            icon={<FaRupeeSign size={20} color="#ffb300" />}
+            icon={<FaRupeeSign size={17} color="#ffb300" />}
             iconBg="#fffde7"
             loading={loading}
           />
         </Box>
 
-        <Box className="bg-gray-50 rounded-2xl flex items-center justify-center p-4">
+        {/* Schedule Section */}
+        <Box className="bg-gray-50 rounded-xl flex items-center justify-center p-3">
           <ScheduleCard
             analyticsAccess={analyticsAccess}
             scheduleLoading={scheduleLoading}
@@ -242,7 +265,6 @@ export const StatsCardsRow: React.FC<{
           />
         </Box>
       </Box>
-
       {/* YOUR TEAMS SECTION */}
       <div className="flex flex-row mt-8 items-center">
         <div className="text-blue-500 m-2 font-semibold">YOUR TEAMS</div>
@@ -299,7 +321,7 @@ export const StatsCardsRow: React.FC<{
                 "/dashboard/leads?status=in+progress%2Cdetails+shared",
               )
             }
-            icon={<FaPhoneAlt size={24} className="text-blue-500" />}
+            icon={<FaPhoneAlt size={17} className="text-blue-500" />}
             iconBg="#e3f2fd"
           />
           <StatCard
@@ -307,14 +329,14 @@ export const StatsCardsRow: React.FC<{
             title="New Leads"
             value={teamStats.newLeads}
             onClick={() => router.push("/dashboard/leads?status=new")}
-            icon={<FaUserPlus size={24} className="text-blue-500" />}
+            icon={<FaUserPlus size={17} className="text-blue-500" />}
             iconBg="#e3f2fd"
           />
           <StatCard
             loading={usersLoading}
             title="Site Visits Scheduled"
             value={teamStats.siteVisitCount}
-            icon={<FaHandshake size={24} className="text-purple-700" />}
+            icon={<FaHandshake size={17} className="text-purple-700" />}
             iconBg="#f3e5f5"
           />
           <StatCard
@@ -322,7 +344,7 @@ export const StatsCardsRow: React.FC<{
             title="MoUs (Pending / Completed)"
             value={`${teamStats.mouPending} / ${teamStats.mouApproved}`}
             onClick={() => router.push("/dashboard/mou")}
-            icon={<FaFileSignature size={24} className="text-indigo-900" />}
+            icon={<FaFileSignature size={17} className="text-indigo-900" />}
             iconBg="#e8eaf6"
           />
           {showVendorBilling && (
@@ -330,7 +352,7 @@ export const StatsCardsRow: React.FC<{
               loading={usersLoading}
               title="Total Vendors & Billing amount"
               value={`${teamStats.totalVendors} / ₹${teamStats.totalSpend.toLocaleString()}`}
-              icon={<FaRupeeSign size={24} className="text-yellow-500" />}
+              icon={<FaRupeeSign size={17} className="text-yellow-500" />}
               iconBg="#fffde7"
             />
           )}

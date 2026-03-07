@@ -56,13 +56,12 @@ const UsersPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const {
+    queryState, // All createApi props: loading, page, rowsPerPage, totalItems, setPage, setPageSize
+    employees,
     saving,
     setOpen,
     open,
     editId,
-    setForm,
-    loadEmployees,
-    getUserById,
     dialogMode,
     selectedUser,
     handleCloseDialog,
@@ -72,7 +71,6 @@ const UsersPage: React.FC = () => {
     windowWidth,
     search,
     handleSearchChange,
-    handlePageSizeChange,
     snackbarOpen,
     snackbarSeverity,
     snackbarMessage,
@@ -80,12 +78,16 @@ const UsersPage: React.FC = () => {
     handleUserSave,
   } = useUsersPage();
 
-  const usersTableHeader = getUsersTableHeader({
-    canEditEmployee: (employee: Employee) =>
-      canEditEmployee(currentUser, employee),
-    onView: openViewDialog,
-    onEdit: openEditDialog,
-  });
+  const usersTableHeader = React.useMemo(
+    () =>
+      getUsersTableHeader({
+        canEditEmployee: (employee: Employee) =>
+          canEditEmployee(currentUser, employee),
+        onView: openViewDialog,
+        onEdit: openEditDialog,
+      }),
+    [currentUser, openViewDialog, openEditDialog],
+  );
 
   return (
     <div className="p-4 sm:p-6">
@@ -99,6 +101,13 @@ const UsersPage: React.FC = () => {
 
       {/* Table / card list */}
       <UsersPageList
+        loading={queryState.loading}
+        employees={employees}
+        page={queryState.page}
+        rowsPerPage={queryState.rowsPerPage}
+        totalItems={queryState.totalItems}
+        onPageChange={queryState.setPage}
+        onPageSizeChange={queryState.setPageSize}
         search={search}
         isMobile={isMobile}
         isClient={isClient}
