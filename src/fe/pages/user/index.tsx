@@ -87,12 +87,16 @@ const UsersPage: React.FC = () => {
     handleUserSave,
   } = useUsersPage();
 
-  const usersTableHeader = getUsersTableHeader({
-    canEditEmployee: (employee: Employee) =>
-      canEditEmployee(currentUser, employee),
-    onView: openViewDialog,
-    onEdit: openEditDialog,
-  });
+  const usersTableHeader = React.useMemo(
+    () =>
+      getUsersTableHeader({
+        canEditEmployee: (employee: Employee) =>
+          canEditEmployee(currentUser, employee),
+        onView: openViewDialog,
+        onEdit: openEditDialog,
+      }),
+    [currentUser, openViewDialog, openEditDialog],
+  );
 
   return (
     <div className="p-4 sm:p-6">
