@@ -73,8 +73,11 @@ export const UsersList: React.FC<UsersListProps> = ({
 }) => {
   const employeeList = employees || [];
 
-  if (loading)
+  // Show skeleton while loading OR if employees hasn't been populated yet
+  if (loading || !employees) {
     return <UsersSkeleton isMobile={isMobile} rows={rowsPerPage || 10} />;
+  }
+
   if (employeeList.length === 0) return <EmptyState />;
 
   const paginationBar = (

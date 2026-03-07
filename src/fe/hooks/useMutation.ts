@@ -5,6 +5,7 @@ import axios, {
   Method,
   CancelTokenSource,
 } from "axios";
+import { invalidateQueryCache } from "./createApi";
 
 // ─── Module-level cache (shared across all instances) ──────────────────────
 
@@ -249,7 +250,10 @@ function useMutation<TPayload = unknown, TResponse = unknown>(
           // ── Cache invalidation ──────────────────────────────────────────
           // Invalidate provided keys, or default to the resolved URL prefix
           const keysToInvalidate = options?.invalidateKeys ?? [resolvedUrl];
-          keysToInvalidate.forEach(invalidateCacheByPrefix);
+          keysToInvalidate.forEach((key) => {
+            invalidateCacheByPrefix(key); // Invalidate mutation cache
+            invalidateQueryCache(key); // Invalidate query cache
+          });
 
           if (mountedRef.current) {
             setData(responseData);
