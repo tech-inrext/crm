@@ -207,6 +207,15 @@ export const StatsCardsRow: React.FC<{
             icon={<FaHandshake size={20} color="#8e24aa" />}
             iconBg="#f3e5f5"
             loading={loading}
+            onClick={() => {
+              const leadId = analytics?.siteVisitLeadIds?.[0];
+
+              if (leadId) {
+                router.push(`/dashboard/leads?leadIdentifier=${leadId}`);
+              } else {
+                router.push("/dashboard/leads");
+              }
+            }}
           />
           <StatCard
             title="MoUs (Pending / Approved)"
