@@ -21,6 +21,7 @@ interface AssignedDropdownProps {
   anchorEl: HTMLElement | null;
   onClose: () => void;
   onAssign: (user: any) => void;
+  managerId?: any; // Added managerId prop
 }
 
 const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
@@ -28,6 +29,7 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
   anchorEl,
   onClose,
   onAssign,
+  managerId,
 }) => {
   const { user } = useAuth();
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
@@ -37,9 +39,14 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
   useEffect(() => {
     const fetchTeamMembers = async () => {
       try {
-        const res = await axios.get("/api/v0/employee/teams");
-        if (res?.data?.success) {
-          setTeamMembers(res.data.team || []);
+        // Use the new hierarchy endpoint with managerId
+        const mid = managerId?._id || managerId || user?._id;
+        if (!mid) return;
+
+        const res = await axios.get(`/api/v0/employee/hierarchy?managerId=${mid}`);
+        if (res?.data?.success && res.data.data) {
+          // Wrap the root manager in an array so the traverse logic works
+          setTeamMembers([res.data.data]);
         }
       } catch (error) {
         console.error("Failed to fetch team members:", error);
@@ -47,7 +54,7 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
     };
 
     if (anchorEl) fetchTeamMembers();
-  }, [anchorEl]);
+  }, [anchorEl, managerId, user?._id]);
 
   /* ---------- Flatten Hierarchy ---------- */
   const allMembers = useMemo(() => {

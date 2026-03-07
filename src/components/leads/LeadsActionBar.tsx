@@ -72,7 +72,10 @@ interface LeadsActionBarProps {
   onBudgetsChange: (budgets: string[]) => void;
   selectedAssignedTo: string[];
   onAssignedToChange: (ids: string[]) => void;
+  assignedToMode: "direct" | "hierarchy";
+  onAssignedToModeChange: (mode: "direct" | "hierarchy") => void;
   onClearAllFilters?: () => void;
+  onClearPanelFilters?: () => void;
   teamMembers: any[];
   leads: any[];
 }
@@ -95,7 +98,10 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   onBudgetsChange,
   selectedAssignedTo = [],
   onAssignedToChange,
+  assignedToMode,
+  onAssignedToModeChange,
   onClearAllFilters,
+  onClearPanelFilters,
   teamMembers = [],
   leads = [],
 }) => {
@@ -115,12 +121,20 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   const openFilter = (e: React.MouseEvent<HTMLElement>) => setFilterAnchor(e.currentTarget);
   const closeFilter = () => setFilterAnchor(null);
 
+  const [teamAnchor, setTeamAnchor] = useState<null | HTMLElement>(null);
+  const [modeAnchor, setModeAnchor] = useState<null | HTMLElement>(null);
+  const teamOpen = Boolean(teamAnchor);
+  const modeOpen = Boolean(modeAnchor);
+  const openTeamFilter = (e: React.MouseEvent<HTMLElement>) => setTeamAnchor(e.currentTarget);
+  const closeTeamFilter = () => setTeamAnchor(null);
+  const openModeFilter = (e: React.MouseEvent<HTMLElement>) => setModeAnchor(e.currentTarget);
+  const closeModeFilter = () => setModeAnchor(null);
+
   const activeFilterCount = 
     selectedStatuses.length + 
     selectedLeadTypes.length + 
     selectedProperties.length + 
-    selectedBudgets.length +
-    selectedAssignedTo.length;
+    selectedBudgets.length;
 
   const uniqueProperties = useMemo(() => {
     const props = leads
@@ -185,6 +199,237 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
           />
         </Box>
 
+        {/* Team Members Dropdown */}
+        <Box sx={{ order: { xs: 2, sm: 2 } }}>
+          <Button
+            onClick={openTeamFilter}
+            endIcon={<ExpandMore sx={{ transform: teamOpen ? "rotate(180deg)" : "none", transition: "0.2s" }} />}
+            startIcon={<PeopleIcon sx={{ color: selectedAssignedTo.length > 0 ? "primary.main" : "text.secondary" }} />}
+            sx={{
+              height: 40,
+              px: 2,
+              borderRadius: 2,
+              bgcolor: selectedAssignedTo.length > 0 ? alpha(theme.palette.primary.main, 0.08) : "#fff",
+              border: `1px solid ${selectedAssignedTo.length > 0 ? theme.palette.primary.main : alpha(theme.palette.divider, 0.8)}`,
+              color: selectedAssignedTo.length > 0 ? "primary.main" : "text.primary",
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "0.85rem",
+              whiteSpace: "nowrap",
+              "&:hover": {
+                bgcolor: selectedAssignedTo.length > 0 ? alpha(theme.palette.primary.main, 0.12) : alpha(theme.palette.divider, 0.05),
+                borderColor: selectedAssignedTo.length > 0 ? "primary.main" : alpha(theme.palette.divider, 1),
+              },
+            }}
+          >
+            {selectedAssignedTo.length > 0 
+              ? (teamMembers.find(m => m._id === selectedAssignedTo[0])?.name || `${selectedAssignedTo.length} Team Member${selectedAssignedTo.length > 1 ? "s" : ""}`)
+              : "Team Members"}
+          </Button>
+
+          <Popover
+            open={teamOpen}
+            anchorEl={teamAnchor}
+            onClose={closeTeamFilter}
+            anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+            transformOrigin={{ vertical: "top", horizontal: "left" }}
+            PaperProps={{
+              sx: {
+                width: 280,
+                maxHeight: 400,
+                mt: 1,
+                borderRadius: 2.5,
+                boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
+                overflow: "hidden",
+                display: "flex",
+                flexDirection: "column"
+              },
+            }}
+          >
+            <Box sx={{ py: 1.5, px: 2, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#f8faff" }}>
+              <Typography sx={{ fontWeight: 700, fontSize: "0.85rem", color: "text.primary", textTransform: "uppercase", letterSpacing: 0.5 }}>
+                Select Team
+              </Typography>
+              {selectedAssignedTo.length > 0 && (
+                <Typography 
+                  onClick={() => onAssignedToChange([])}
+                  sx={{ 
+                    fontSize: "0.75rem", 
+                    color: "primary.main", 
+                    cursor: "pointer", 
+                    fontWeight: 700,
+                    "&:hover": { textDecoration: "underline" } 
+                  }}
+                >
+                  Clear
+                </Typography>
+              )}
+            </Box>
+            <Divider />
+            <Box sx={{ p: 1, overflowY: "auto", flexGrow: 1 }}>
+              <Stack spacing={0.5}>
+                {teamMembers.length > 0 ? (
+                  teamMembers.map((item: any) => {
+                    const id = item._id;
+                    const isSelected = selectedAssignedTo.includes(id);
+                    return (
+                      <Box
+                        key={id}
+                        onClick={() => {
+                          // Single selection logic
+                          const isSelected = selectedAssignedTo.includes(id);
+                          const newVal = isSelected ? [] : [id];
+                          onAssignedToChange(newVal);
+                          // Auto-close on selection for better single-select UX
+                          if (!isSelected) closeTeamFilter();
+                        }}
+                        sx={{
+                          display: "flex",
+                          flexDirection: "column",
+                          py: 0.8,
+                          px: 1,
+                          borderRadius: 2,
+                          cursor: "pointer",
+                          transition: "0.2s",
+                          bgcolor: isSelected ? alpha(theme.palette.primary.main, 0.05) : "transparent",
+                          "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.03) }
+                        }}
+                      >
+                        <Stack direction="row" alignItems="center" spacing={1.5}>
+                          <Checkbox
+                            size="small"
+                            checked={isSelected}
+                            sx={{ p: 0, color: alpha(theme.palette.text.secondary, 0.4) }}
+                          />
+                          <Box sx={{ flexGrow: 1 }}>
+                            <Typography sx={{ fontSize: "0.85rem", fontWeight: isSelected ? 600 : 500, color: "text.primary", lineHeight: 1.2 }}>
+                              {item.name}
+                            </Typography>
+                            {item.designation && (
+                              <Typography sx={{ fontSize: "0.72rem", color: "text.secondary", mt: 0.2 }}>
+                                {item.designation}
+                              </Typography>
+                            )}
+                          </Box>
+                        </Stack>
+                      </Box>
+                    );
+                  })
+                ) : (
+                  <Typography sx={{ p: 2, fontSize: "0.85rem", color: "text.secondary", textAlign: "center", fontStyle: "italic" }}>
+                    No team members found
+                  </Typography>
+                )}
+              </Stack>
+            </Box>
+            <Divider />
+            <Box sx={{ p: 1.5 }}>
+              <Button
+                fullWidth
+                variant="contained"
+                size="small"
+                onClick={closeTeamFilter}
+                sx={{ borderRadius: 1.5, textTransform: "none", fontWeight: 700 }}
+              >
+                Apply
+              </Button>
+            </Box>
+          </Popover>
+        </Box>
+
+        {/* Assigned Mode Dropdown */}
+        {selectedAssignedTo.length > 0 && selectedAssignedTo[0] !== "unassigned" && (
+          <Box sx={{ order: { xs: 2, sm: 2 } }}>
+            <Button
+              onClick={openModeFilter}
+              endIcon={<ExpandMore sx={{ transform: modeOpen ? "rotate(180deg)" : "none", transition: "0.2s" }} />}
+              sx={{
+                height: 40,
+                px: 2,
+                borderRadius: 2,
+                bgcolor: "#fff",
+                border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                color: "text.primary",
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "0.85rem",
+                whiteSpace: "nowrap",
+                ml: { xs: 0, sm: -1 }, // pull closer to name if on desktop
+                "&:hover": {
+                  bgcolor: alpha(theme.palette.divider, 0.05),
+                  borderColor: alpha(theme.palette.divider, 1),
+                },
+              }}
+            >
+              <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, mr: 0.5, opacity: 0.6 }}>→</Typography>
+              {assignedToMode === "hierarchy" ? "Incl. Team Members" : "Directly Assigned"}
+            </Button>
+
+            <Popover
+              open={modeOpen}
+              anchorEl={modeAnchor}
+              onClose={closeModeFilter}
+              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+              transformOrigin={{ vertical: "top", horizontal: "left" }}
+              PaperProps={{
+                sx: {
+                  width: 220,
+                  mt: 1,
+                  borderRadius: 2.5,
+                  boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
+                },
+              }}
+            >
+              <Box sx={{ py: 1 }}>
+                <MenuItem
+                  selected={assignedToMode === "direct"}
+                  onClick={() => {
+                    onAssignedToModeChange("direct");
+                    closeModeFilter();
+                  }}
+                  sx={{
+                    px: 2,
+                    py: 1.2,
+                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
+                    "&.Mui-selected": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                  }}
+                >
+                  <Stack>
+                    <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", color: "text.primary" }}>
+                      Directly Assigned
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+                      Only leads assigned to this person
+                    </Typography>
+                  </Stack>
+                </MenuItem>
+                <MenuItem
+                  selected={assignedToMode === "hierarchy"}
+                  onClick={() => {
+                    onAssignedToModeChange("hierarchy");
+                    closeModeFilter();
+                  }}
+                  sx={{
+                    px: 2,
+                    py: 1.2,
+                    "&.Mui-selected": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                  }}
+                >
+                  <Stack>
+                    <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", color: "text.primary" }}>
+                      Incl. Team Members
+                    </Typography>
+                    <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+                      All leads assigned to their hierarchy
+                    </Typography>
+                  </Stack>
+                </MenuItem>
+              </Box>
+            </Popover>
+          </Box>
+        )}
+
+
         <Box
           sx={{
             display: "flex",
@@ -245,7 +490,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               {activeFilterCount > 0 && (
                 <Button 
                   size="small" 
-                  onClick={onClearAllFilters}
+                  onClick={onClearPanelFilters}
                   sx={{ textTransform: "none", color: "error.main", fontWeight: 600 }}
                   startIcon={<Clear sx={{ fontSize: 16 }} />}
                 >
@@ -262,7 +507,6 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 { label: "Lead Type", icon: <TrendingUpIcon />, items: LEAD_TYPES, selected: selectedLeadTypes, onChange: onLeadTypesChange, color: "warning.main" },
                 { label: "Property", icon: <HomeIcon />, items: uniqueProperties, selected: selectedProperties, onChange: onPropertiesChange, color: "success.main", scrollable: true },
                 { label: "Budget Range", icon: <MoneyIcon />, items: budgetRanges, selected: selectedBudgets, onChange: onBudgetsChange, color: "error.main" },
-                { label: "Team Members", icon: <PeopleIcon />, items: teamMembers, selected: selectedAssignedTo, onChange: onAssignedToChange, color: "info.main", isTeam: true }
               ].map((section, idx) => (
                 <React.Fragment key={section.label}>
                   <Accordion 
@@ -319,39 +563,84 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                         } : {}}
                       >
                         {section.items.length > 0 ? (
-                          section.items.map((item: any) => {
+                          section.items.map((item: any, itemIdx: number) => {
                             const isString = typeof item === "string";
                             const id = isString ? item : item._id;
-                            const label = isString ? item : (
-                              <Box>
-                                <Typography sx={{ fontSize: "0.85rem", fontWeight: 500 }}>{item.name}</Typography>
-                                <Typography sx={{ fontSize: "0.7rem", color: "text.secondary" }}>{item.designation}</Typography>
-                              </Box>
-                            );
+                            const isSelected = section.selected.includes(id);
+                            const name = isString ? item : item.name;
+                            const designation = isString ? null : item.designation;
 
                             return (
-                              <FormControlLabel
-                                key={id}
-                                sx={{ 
-                                  ml: -0.5, 
-                                  mr: 0,
-                                  "&:hover .MuiCheckbox-root": { color: "primary.main" } 
-                                }}
-                                control={
-                                  <Checkbox 
-                                    size="small" 
-                                    checked={section.selected.includes(id)}
-                                    onChange={() => {
-                                      const newVal = section.selected.includes(id)
-                                        ? section.selected.filter((v: any) => v !== id)
-                                        : [...section.selected, id];
-                                      section.onChange(newVal);
-                                    }}
-                                    sx={{ py: 0.6 }}
-                                  />
-                                }
-                                label={<Box sx={{ fontSize: "0.85rem", color: section.selected.includes(id) ? "text.primary" : "text.secondary", fontWeight: section.selected.includes(id) ? 600 : 400, transform: "translateY(1px)", transition: "all 0.2s" }}>{label}</Box>}
-                              />
+                              <React.Fragment key={id}>
+                                <Box
+                                  onClick={() => {
+                                    const newVal = isSelected
+                                      ? section.selected.filter((v: any) => v !== id)
+                                      : [...section.selected, id];
+                                    section.onChange(newVal);
+                                  }}
+                                  sx={{
+                                    py: 0.8,
+                                    px: 1,
+                                    my: 0.1,
+                                    borderRadius: 1.5,
+                                    cursor: "pointer",
+                                    transition: "all 0.2s",
+                                    "&:hover": {
+                                      bgcolor: alpha(theme.palette.primary.main, 0.05),
+                                    },
+                                    ...(isSelected && {
+                                      bgcolor: alpha(theme.palette.primary.main, 0.03),
+                                    }),
+                                  }}
+                                >
+                                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                                    <Checkbox
+                                      size="small"
+                                      checked={isSelected}
+                                      sx={{
+                                        p: 0,
+                                        mr: 1.5,
+                                        color: alpha(theme.palette.text.secondary, 0.4),
+                                        "&.Mui-checked": {
+                                          color: section.color || "primary.main",
+                                        },
+                                      }}
+                                    />
+                                    <Typography
+                                      sx={{
+                                        fontSize: "0.85rem",
+                                        fontWeight: isSelected ? 600 : 500,
+                                        color: isSelected
+                                          ? section.color || "primary.main"
+                                          : "text.primary",
+                                        lineHeight: 1.4,
+                                      }}
+                                    >
+                                      {name}
+                                    </Typography>
+                                  </Box>
+                                  {designation && (
+                                    <Typography
+                                      sx={{
+                                        fontSize: "0.72rem",
+                                        color: isSelected
+                                          ? alpha(theme.palette.primary.main, 0.6)
+                                          : "text.secondary",
+                                        ml: 4.1, // Aligns exactly below the start of the name text (Checkbox width + margin)
+                                        lineHeight: 1,
+                                        mt: -0.2, // Tweak to pull closer to name
+                                        fontWeight: 400,
+                                      }}
+                                    >
+                                      {designation}
+                                    </Typography>
+                                  )}
+                                </Box>
+                                {itemIdx < section.items.length - 1 && (
+                                  <Divider sx={{ mx: 0.5, opacity: 0.3 }} />
+                                )}
+                              </React.Fragment>
                             );
                           })
                         ) : (
@@ -362,7 +651,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                       </Stack>
                     </AccordionDetails>
                   </Accordion>
-                  {idx < 4 && <Divider sx={{ opacity: 0.6 }} />}
+                  {idx < 3 && <Divider sx={{ opacity: 0.6 }} />}
                 </React.Fragment>
               ))}
             </Box>
