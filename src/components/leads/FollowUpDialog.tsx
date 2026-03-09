@@ -27,6 +27,8 @@ import {
   useTheme,
   Notes,
   CloseIcon,
+  Check,
+  Clear,
 } from "@/components/ui/Component";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
@@ -117,6 +119,22 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
       setSubmitting(false);
     }
   };
+
+  const handleUpdateOutcome = async (followUpId: string, outcome: string) => {
+    try {
+      await axios.patch(`/api/v0/lead/follow-up`, { followUpId, outcome }, {
+        withCredentials: true,
+      });
+      // Refresh list
+      const res = await axios.get(`/api/v0/lead/follow-up`, {
+        params: { leadIdentifier: finalLeadIdentifier },
+        withCredentials: true,
+      });
+      setItems(res.data.data || []);
+    } catch (err) {
+      console.error("Failed to update outcome", err);
+    }
+  };
   useEffect(() => {
     if (open && finalLeadIdentifier) {
       router.replace(`/dashboard/leads?leadIdentifier=${finalLeadIdentifier}`);
@@ -128,6 +146,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
     const load = async () => {
       if (!open) return;
       setLoadError(null);
+      setLeadInfo(null);
       setLoadingItems(true);
       try {
         const res = await axios.get(`/api/v0/lead/follow-up`, {
@@ -194,9 +213,45 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
           bgcolor: "#fff",
           py: 1,
           px: 2.5,
+          gap: 2,
         }}
       >
-        Daily Updates & Reminders
+        <Stack
+          direction="row"
+          alignItems="center"
+          spacing={1.5}
+          sx={{ overflow: "hidden", flexGrow: 1 }}
+        >
+          <Typography
+            variant="inherit"
+            sx={{ fontWeight: 600, color: "text.primary", whiteSpace: "nowrap" }}
+          >
+            Daily Updates & Reminders
+          </Typography>
+          {leadInfo && (
+            <Chip
+              label={
+                leadInfo.fullName ||
+                (leadInfo.phone ? `${leadInfo.phone}` : "")
+              }
+              size="small"
+              color="primary"
+              variant="outlined"
+              sx={{
+                fontWeight: 600,
+                fontSize: isMobile ? "0.7rem" : "0.75rem",
+                height: 24,
+                maxWidth: isMobile ? "120px" : "200px",
+                borderColor: "primary.200",
+                bgcolor: "primary.50",
+                color: "primary.700",
+                "& .MuiChip-label": {
+                  px: 1,
+                },
+              }}
+            />
+          )}
+        </Stack>
         <IconButton
           onClick={handleDialogClose}
           size="small"
@@ -552,6 +607,78 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                             </Tooltip>
                           )}
                         </Stack>
+
+                        {/* Outcome Section: Show ONLY if date is passed OR outcome is already recorded */}
+                        {(isCallBack || isSiteVisit) && it.followUpDate && (new Date() > new Date(it.followUpDate) || (it.outcome && it.outcome !== "pending")) && (
+                          <Box sx={{ mt: 1.5, pt: 1.25, borderTop: "1px solid #f1f5f9" }}>
+                            {new Date() > new Date(it.followUpDate) && (it.outcome === "pending" || !it.outcome) ? (
+                              <Stack direction="row" alignItems="center" spacing={1.5}>
+                                <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", flexGrow: 1 }}>
+                                  Was the {isCallBack ? "call" : "site visit"} completed?
+                                </Typography>
+                                <Stack direction="row" spacing={1}>
+                                  <Button
+                                    size="small"
+                                    variant="contained"
+                                    color="success"
+                                    startIcon={<Check sx={{ fontSize: "14px !important" }} />}
+                                    onClick={() => handleUpdateOutcome(it._id, "completed")}
+                                    sx={{ 
+                                      height: 24, 
+                                      fontSize: "0.65rem", 
+                                      fontWeight: 700, 
+                                      textTransform: "none",
+                                      borderRadius: "6px",
+                                      boxShadow: "none",
+                                      "&:hover": { boxShadow: "none", bgcolor: "#059669" }
+                                    }}
+                                  >
+                                    Yes, Done
+                                  </Button>
+                                  <Button
+                                    size="small"
+                                    variant="outlined"
+                                    color="error"
+                                    startIcon={<Clear sx={{ fontSize: "14px !important" }} />}
+                                    onClick={() => handleUpdateOutcome(it._id, "missed")}
+                                    sx={{ 
+                                      height: 24, 
+                                      fontSize: "0.65rem", 
+                                      fontWeight: 700, 
+                                      textTransform: "none",
+                                      borderRadius: "6px",
+                                      borderWidth: 1.5,
+                                      "&:hover": { borderWidth: 1.5, bgcolor: "#fef2f2" }
+                                    }}
+                                  >
+                                    No, Missed
+                                  </Button>
+                                </Stack>
+                              </Stack>
+                            ) : it.outcome && it.outcome !== "pending" ? (
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+                                <Chip
+                                  label={it.outcome === "completed" ? (isCallBack ? "Call Completed" : "Visit Done") : (isCallBack ? "Call Missed" : "Visit Missed")}
+                                  size="small"
+                                  icon={it.outcome === "completed" ? <Check sx={{ fontSize: "12px !important", color: "white !important" }} /> : <Clear sx={{ fontSize: "12px !important", color: "white !important" }} />}
+                                  sx={{
+                                    height: 22,
+                                    fontSize: "0.65rem",
+                                    fontWeight: 700,
+                                    bgcolor: it.outcome === "completed" ? "#10b981" : "#ef4444",
+                                    color: "#fff",
+                                    "& .MuiChip-label": { px: 1 }
+                                  }}
+                                />
+                                <Typography variant="caption" sx={{ color: "text.secondary", fontStyle: "italic" }}>
+                                  {it.outcome === "completed" 
+                                    ? `This ${isCallBack ? "call" : "visit"} was successfully conducted.` 
+                                    : `The scheduled ${isCallBack ? "call" : "site visit"} was marked as not done.`}
+                                </Typography>
+                              </Box>
+                            ) : null}
+                          </Box>
+                        )}
                       </Box>
                     </Box>
                   );
