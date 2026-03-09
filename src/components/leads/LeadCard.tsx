@@ -145,7 +145,7 @@ const LeadCard = memo(
     const theme = useTheme();
 
     const [assignedUser, setAssignedUser] = useState<any>(
-      lead.assignedTo || null,
+      lead.assignedTo || null
     );
     const [isManualAssign, setIsManualAssign] = useState(false);
 
@@ -170,7 +170,7 @@ const LeadCard = memo(
               "Content-Type": "application/json",
             },
             body: JSON.stringify({ assignedTo: user._id }),
-          },
+          }
         );
         if (!response.ok) {
           throw new Error("Failed to update assignment");
@@ -206,6 +206,7 @@ const LeadCard = memo(
     return (
       <Card
         elevation={0}
+        onClick={() => onOpenFeedback(leadId)}
         sx={{
           borderRadius: 4,
           boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
@@ -217,6 +218,7 @@ const LeadCard = memo(
           flexDirection: "column",
           transition: "all 0.3s ease",
           overflow: "visible",
+          cursor: "pointer",
           "&:hover": {
             boxShadow: "0 16px 32px rgba(0,0,0,0.12)",
             transform: "translateY(-4px)",
@@ -224,7 +226,10 @@ const LeadCard = memo(
         }}
       >
         {/* Lead Type Dropdown (Top-Left) */}
-        <Box sx={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}>
+        <Box
+          sx={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <LeadTypeDropdown
             leadId={lead._id || lead.id || lead.leadId || ""}
             currentLeadType={lead.leadType || ""}
@@ -235,7 +240,10 @@ const LeadCard = memo(
         </Box>
 
         {/* Status Dropdown (Top-Right) */}
-        <Box sx={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}>
+        <Box
+          sx={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <StatusDropdown
             leadId={lead._id || lead.id || lead.leadId || ""}
             currentStatus={lead.status}
@@ -285,7 +293,7 @@ const LeadCard = memo(
           {/* Contact Details Grid */}
           <Stack spacing={1.5}>
             <Box
-              onClick={handleAssignedClick}
+              onClick={(e) => { e.stopPropagation(); handleAssignedClick(e); }}
               sx={{
                 position: "relative",
                 borderRadius: 2,
@@ -382,7 +390,10 @@ const LeadCard = memo(
         >
           <PermissionGuard module="lead" action="write" fallback={<></>}>
             <ClickAwayListener onClickAway={() => setActionsOpen(false)}>
-              <Box sx={{ position: "relative", zIndex: 20 }}>
+              <Box
+                sx={{ position: "relative", zIndex: 20 }}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <SpeedDial
                   ariaLabel="Actions"
                   sx={{
@@ -403,7 +414,11 @@ const LeadCard = memo(
                     <SpeedDialIcon icon={<MoreVert sx={{ fontSize: 20 }} />} />
                   }
                   onClose={(_, reason) => {
-                    if (reason === "toggle" || reason === "escapeKeyDown" || reason === "blur") {
+                    if (
+                      reason === "toggle" ||
+                      reason === "escapeKeyDown" ||
+                      reason === "blur"
+                    ) {
                       setActionsOpen(false);
                     }
                   }}
@@ -470,7 +485,7 @@ const LeadCard = memo(
                     onClick={() => {
                       setActionsOpen(false);
                       onScheduleSiteVisit(
-                        lead._id || lead.id || lead.leadId || "",
+                        lead._id || lead.id || lead.leadId || ""
                       );
                     }}
                   />
@@ -481,7 +496,7 @@ const LeadCard = memo(
         </Box>
       </Card>
     );
-  },
+  }
 );
 
 LeadCard.displayName = "LeadCard";
