@@ -1,13 +1,10 @@
 import axios from "axios";
 import { useState, useCallback, useEffect, useMemo } from "react";
+import { buildCacheKey } from "./helpers";
+import queryCache from "./cache";
+import useMutation from "./createMutation";
 
-// Query cache: stores GET request responses
-const queryCache = new Map<string, { data: any; timestamp: number }>();
 const CACHE_TTL_MS = 30_000; // 30 seconds
-
-function buildCacheKey(url: string, params: any): string {
-  return `${url}::${JSON.stringify(params)}`;
-}
 
 const useQuery = (
   getConfig: (params: Record<string, unknown>) => {
@@ -29,19 +26,21 @@ const useQuery = (
 
   const getRequestParams = () => {
     if (config.isPaginated) {
-      return { ...params, page, rowsPerPage };
+    const pageToUse = params.page !== undefined ? params.page : page;
+    const rowsPerPageToUse = params.rowsPerPage !== undefined ? params.rowsPerPage : rowsPerPage;
+      return { ...params, page: pageToUse, rowsPerPage: rowsPerPageToUse };
     }
     return params;
   };
 
   const fetchData = useCallback(
     async (params, forceRefresh = false) => {
-      const cacheKey = buildCacheKey(config.url, params);
-
-      // Check cache first (unless force refresh)
       if (!forceRefresh && config.shouldCache) {
+        const cacheKey = buildCacheKey(config.url, params);
+
         const cached = queryCache.get(cacheKey);
-        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        // If has cache and not expired
+        if (cached) {
           setData(cached.data);
           setLoading(false);
           return;
@@ -57,10 +56,8 @@ const useQuery = (
 
         // Store in cache
         if (config.shouldCache) {
-          queryCache.set(cacheKey, {
-            data: response.data,
-            timestamp: Date.now(),
-          });
+          const cacheKey = buildCacheKey(config.url, params);
+          queryCache.set(cacheKey, response, CACHE_TTL_MS);
         }
       } catch (err) {
         setError(err);
@@ -122,8 +119,17 @@ const useQuery = (
 
 const createApi = ({
   endpoints,
+  mutations,
 }: {
   endpoints: Record<
+    string,
+    (params: Record<string, unknown>) => {
+      url: string;
+      isPaginated: boolean;
+      defaultPageSize?: number;
+    }
+  >;
+  mutations: Record<
     string,
     (params: Record<string, unknown>) => {
       url: string;
@@ -138,17 +144,17 @@ const createApi = ({
     const hookName = `use${key.charAt(0).toUpperCase() + key.slice(1)}Query`;
     hooks[hookName] = useQuery.bind(null, value);
   });
+  Object.entries(mutations).forEach(([key, value]) => {
+    const hookName = `use${key.charAt(0).toUpperCase() + key.slice(1)}Mutation`;
+    hooks[hookName] = useMutation.bind(null, value);
+  });
 
   return hooks;
 };
 
 // Export cache invalidation function for use by mutations
 export function invalidateQueryCache(urlPrefix: string): void {
-  for (const key of queryCache.keys()) {
-    if (key.startsWith(urlPrefix)) {
-      queryCache.delete(key);
-    }
-  }
+  queryCache.invalidate(urlPrefix);
 }
 
 export default createApi;

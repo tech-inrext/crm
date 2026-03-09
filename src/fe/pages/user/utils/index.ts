@@ -1,11 +1,77 @@
 ﻿import { DEFAULT_USER_FORM } from "@/fe/pages/user/constants/users";
+import { uploadFile } from "@/fe/pages/user/utils/uploadFile";
+import type { UserFormData } from "@/fe/pages/user/types";
+
+// ─── Types ─────────────────────────────────────────────────────────────────
+
+type FileKeys =
+  | "aadharFile"
+  | "panFile"
+  | "bankProofFile"
+  | "signatureFile"
+  | "photoFile";
+
+type UrlKeys =
+  | "aadharUrl"
+  | "panUrl"
+  | "bankProofUrl"
+  | "signatureUrl"
+  | "photo";
+
+export type UserPayload = Omit<UserFormData, FileKeys>;
+
+// ─── File → URL map ────────────────────────────────────────────────────────
+
+const FILE_TO_URL_MAP: Record<FileKeys, UrlKeys> = {
+  aadharFile: "aadharUrl",
+  panFile: "panUrl",
+  bankProofFile: "bankProofUrl",
+  signatureFile: "signatureUrl",
+  photoFile: "photo",
+};
+
+// ─── Utilities ──────────────────────────────────────────────────────────────
+
+/**
+ * Converts any File fields in the form data to S3 URLs in parallel.
+ * Non-file fields are passed through unchanged.
+ * Also maps frontend field names to backend field names (e.g., whatsapp → altPhone).
+ */
+export async function resolveFileUploads(
+  formData: UserFormData,
+): Promise<UserPayload> {
+  const payload: Record<string, unknown> = {};
+  const uploads: Promise<void>[] = [];
+
+  for (const [key, value] of Object.entries(formData) as [
+    keyof UserFormData,
+    unknown,
+  ][]) {
+    const urlKey = FILE_TO_URL_MAP[key as FileKeys];
+
+    if (urlKey && value instanceof File) {
+      // Fan out all uploads in parallel — resolved below with Promise.all
+      uploads.push(
+        uploadFile(value).then((url) => {
+          if (url) payload[urlKey] = url;
+        }),
+      );
+    } else {
+      // Map frontend field names to backend field names
+      const backendKey = key === "whatsapp" ? "altPhone" : key;
+      payload[backendKey as string] = value;
+    }
+  }
+
+  await Promise.all(uploads);
+  return payload as UserPayload;
+}
 
 /**
  * Check if current user can edit a specific employee
  * System admins can edit everyone, managers can only edit their direct reports
  */
 export const canEditEmployee = (currentUser: any, employee: any): boolean => {
-  if (!currentUser || !employee) return false;
   if (currentUser.isSystemAdmin) return true;
 
   const currentUserId = currentUser._id;
