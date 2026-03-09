@@ -28,8 +28,13 @@ import {
   Info as InfoIcon,
   TrendingUp as TrendingUpIcon,
   HomeIcon,
-  MonetizationOn as MoneyIcon,
+  CurrencyRupee as RupeeIcon,
   People as PeopleIcon,
+  ArrowForward,
+  Avatar,
+  Check,
+  SearchIcon,
+  TextField,
   alpha,
 } from "@/components/ui/Component";
 import { MoreVert } from "@mui/icons-material";
@@ -123,9 +128,23 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
 
   const [teamAnchor, setTeamAnchor] = useState<null | HTMLElement>(null);
   const [modeAnchor, setModeAnchor] = useState<null | HTMLElement>(null);
+  const [teamSearch, setTeamSearch] = useState("");
   const teamOpen = Boolean(teamAnchor);
   const modeOpen = Boolean(modeAnchor);
-  const openTeamFilter = (e: React.MouseEvent<HTMLElement>) => setTeamAnchor(e.currentTarget);
+  
+  const filteredTeamMembers = useMemo(() => {
+    if (!teamSearch.trim()) return teamMembers;
+    const searchLow = teamSearch.toLowerCase();
+    return teamMembers.filter(m => 
+      m.name?.toLowerCase().includes(searchLow) || 
+      m.designation?.toLowerCase().includes(searchLow)
+    );
+  }, [teamMembers, teamSearch]);
+
+  const openTeamFilter = (e: React.MouseEvent<HTMLElement>) => {
+    setTeamAnchor(e.currentTarget);
+    setTeamSearch(""); // Reset search on open
+  };
   const closeTeamFilter = () => setTeamAnchor(null);
   const openModeFilter = (e: React.MouseEvent<HTMLElement>) => setModeAnchor(e.currentTarget);
   const closeModeFilter = () => setModeAnchor(null);
@@ -265,167 +284,212 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 </Typography>
               )}
             </Box>
-            <Divider />
-            <Box sx={{ p: 1, overflowY: "auto", flexGrow: 1 }}>
-              <Stack spacing={0.5}>
-                {teamMembers.length > 0 ? (
-                  teamMembers.map((item: any) => {
+            <Box sx={{ p: 1.5, borderBottom: `1px solid ${alpha(theme.palette.divider, 0.4)}` }}>
+              <TextField
+                fullWidth
+                size="small"
+                placeholder="Search team..."
+                value={teamSearch}
+                onChange={(e: any) => setTeamSearch(e.target.value)}
+                autoFocus
+                InputProps={{
+                  startAdornment: <SearchIcon sx={{ fontSize: 18, color: "text.secondary", mr: 1 }} />,
+                  sx: { 
+                    borderRadius: 2,
+                    fontSize: "0.85rem",
+                    bgcolor: alpha(theme.palette.divider, 0.03)
+                  }
+                }}
+              />
+            </Box>
+            
+            <Box sx={{ p: 0.8, overflowY: "auto", flexGrow: 1, minHeight: 100 }}>
+              <Stack spacing={0.2}>
+                {filteredTeamMembers.length > 0 ? (
+                  filteredTeamMembers.map((item: any) => {
                     const id = item._id;
                     const isSelected = selectedAssignedTo.includes(id);
+                    const initials = item.name?.split(" ").map((n: string) => n[0]).join("").toUpperCase().substring(0, 2) || "?";
+                    
                     return (
                       <Box
                         key={id}
                         onClick={() => {
-                          // Single selection logic
-                          const isSelected = selectedAssignedTo.includes(id);
                           const newVal = isSelected ? [] : [id];
                           onAssignedToChange(newVal);
-                          // Auto-close on selection for better single-select UX
                           if (!isSelected) closeTeamFilter();
                         }}
                         sx={{
                           display: "flex",
-                          flexDirection: "column",
-                          py: 0.8,
-                          px: 1,
+                          alignItems: "center",
+                          py: 1,
+                          px: 1.2,
                           borderRadius: 2,
                           cursor: "pointer",
-                          transition: "0.2s",
+                          transition: "0.2s all",
                           bgcolor: isSelected ? alpha(theme.palette.primary.main, 0.05) : "transparent",
-                          "&:hover": { bgcolor: alpha(theme.palette.primary.main, 0.03) }
+                          "&:hover": { 
+                            bgcolor: isSelected ? alpha(theme.palette.primary.main, 0.08) : alpha(theme.palette.divider, 0.05),
+                            "& .arrow-icon": { transform: "translateX(2px)", opacity: 1 }
+                          }
                         }}
                       >
-                        <Stack direction="row" alignItems="center" spacing={1.5}>
-                          <Checkbox
-                            size="small"
-                            checked={isSelected}
-                            sx={{ p: 0, color: alpha(theme.palette.text.secondary, 0.4) }}
-                          />
-                          <Box sx={{ flexGrow: 1 }}>
-                            <Typography sx={{ fontSize: "0.85rem", fontWeight: isSelected ? 600 : 500, color: "text.primary", lineHeight: 1.2 }}>
-                              {item.name}
+                        <Avatar 
+                          sx={{ 
+                            width: 32, 
+                            height: 32, 
+                            fontSize: "0.75rem", 
+                            fontWeight: 700,
+                            bgcolor: isSelected ? "primary.main" : alpha(theme.palette.primary.main, 0.1),
+                            color: isSelected ? "#fff" : "primary.main",
+                            mr: 1.5
+                          }}
+                        >
+                          {initials}
+                        </Avatar>
+                        
+                        <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+                          <Typography sx={{ 
+                            fontSize: "0.85rem", 
+                            fontWeight: isSelected ? 700 : 500, 
+                            color: isSelected ? "primary.main" : "text.primary", 
+                            lineHeight: 1.2,
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis"
+                          }}>
+                            {item.name}
+                          </Typography>
+                          {item.designation && (
+                            <Typography sx={{ 
+                              fontSize: "0.7rem", 
+                              color: isSelected ? alpha(theme.palette.primary.main, 0.7) : "text.secondary", 
+                              mt: 0.2,
+                              whiteSpace: "nowrap",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis"
+                            }}>
+                              {item.designation}
                             </Typography>
-                            {item.designation && (
-                              <Typography sx={{ fontSize: "0.72rem", color: "text.secondary", mt: 0.2 }}>
-                                {item.designation}
-                              </Typography>
-                            )}
-                          </Box>
-                        </Stack>
+                          )}
+                        </Box>
+                        
+                        {isSelected && (
+                          <Check sx={{ fontSize: 18, color: "primary.main", ml: 1 }} />
+                        )}
                       </Box>
                     );
                   })
                 ) : (
-                  <Typography sx={{ p: 2, fontSize: "0.85rem", color: "text.secondary", textAlign: "center", fontStyle: "italic" }}>
-                    No team members found
-                  </Typography>
+                  <Box sx={{ py: 4, textAlign: "center" }}>
+                    <Typography sx={{ fontSize: "0.85rem", color: "text.secondary", fontStyle: "italic" }}>
+                      No results for "{teamSearch}"
+                    </Typography>
+                  </Box>
                 )}
               </Stack>
-            </Box>
-            <Divider />
-            <Box sx={{ p: 1.5 }}>
-              <Button
-                fullWidth
-                variant="contained"
-                size="small"
-                onClick={closeTeamFilter}
-                sx={{ borderRadius: 1.5, textTransform: "none", fontWeight: 700 }}
-              >
-                Apply
-              </Button>
             </Box>
           </Popover>
         </Box>
 
         {/* Assigned Mode Dropdown */}
         {selectedAssignedTo.length > 0 && selectedAssignedTo[0] !== "unassigned" && (
-          <Box sx={{ order: { xs: 2, sm: 2 } }}>
-            <Button
-              onClick={openModeFilter}
-              endIcon={<ExpandMore sx={{ transform: modeOpen ? "rotate(180deg)" : "none", transition: "0.2s" }} />}
-              sx={{
-                height: 40,
-                px: 2,
-                borderRadius: 2,
-                bgcolor: "#fff",
-                border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-                color: "text.primary",
-                textTransform: "none",
-                fontWeight: 600,
-                fontSize: "0.85rem",
-                whiteSpace: "nowrap",
-                ml: { xs: 0, sm: -1 }, // pull closer to name if on desktop
-                "&:hover": {
-                  bgcolor: alpha(theme.palette.divider, 0.05),
-                  borderColor: alpha(theme.palette.divider, 1),
-                },
-              }}
-            >
-              <Typography sx={{ fontSize: "0.85rem", fontWeight: 700, mr: 0.5, opacity: 0.6 }}>→</Typography>
-              {assignedToMode === "hierarchy" ? "Incl. Team Members" : "Directly Assigned"}
-            </Button>
+          <Box 
+            sx={{ 
+              display: "flex", 
+              flexDirection: "row", 
+              alignItems: "center",
+              order: { xs: 2, sm: 2 },
+              gap: 1.5
+            }}
+          >
+            <ArrowForward sx={{ color: "text.secondary", fontSize: 20, opacity: 0.6 }} />
+            <Box>
+              <Button
+                onClick={openModeFilter}
+                endIcon={<ExpandMore sx={{ transform: modeOpen ? "rotate(180deg)" : "none", transition: "0.2s" }} />}
+                sx={{
+                  height: 40,
+                  px: 2,
+                  borderRadius: 2,
+                  bgcolor: "#fff",
+                  border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                  color: "text.primary",
+                  textTransform: "none",
+                  fontWeight: 600,
+                  fontSize: "0.85rem",
+                  whiteSpace: "nowrap",
+                  "&:hover": {
+                    bgcolor: alpha(theme.palette.divider, 0.05),
+                    borderColor: alpha(theme.palette.divider, 1),
+                  },
+                }}
+              >
+                {assignedToMode === "hierarchy" ? "Incl. Team Members" : "Directly Assigned"}
+              </Button>
 
-            <Popover
-              open={modeOpen}
-              anchorEl={modeAnchor}
-              onClose={closeModeFilter}
-              anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
-              transformOrigin={{ vertical: "top", horizontal: "left" }}
-              PaperProps={{
-                sx: {
-                  width: 220,
-                  mt: 1,
-                  borderRadius: 2.5,
-                  boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
-                },
-              }}
-            >
-              <Box sx={{ py: 1 }}>
-                <MenuItem
-                  selected={assignedToMode === "direct"}
-                  onClick={() => {
-                    onAssignedToModeChange("direct");
-                    closeModeFilter();
-                  }}
-                  sx={{
-                    px: 2,
-                    py: 1.2,
-                    borderBottom: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
-                    "&.Mui-selected": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
-                  }}
-                >
-                  <Stack>
-                    <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", color: "text.primary" }}>
-                      Directly Assigned
-                    </Typography>
-                    <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
-                      Only leads assigned to this person
-                    </Typography>
-                  </Stack>
-                </MenuItem>
-                <MenuItem
-                  selected={assignedToMode === "hierarchy"}
-                  onClick={() => {
-                    onAssignedToModeChange("hierarchy");
-                    closeModeFilter();
-                  }}
-                  sx={{
-                    px: 2,
-                    py: 1.2,
-                    "&.Mui-selected": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
-                  }}
-                >
-                  <Stack>
-                    <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", color: "text.primary" }}>
-                      Incl. Team Members
-                    </Typography>
-                    <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
-                      All leads assigned to their hierarchy
-                    </Typography>
-                  </Stack>
-                </MenuItem>
-              </Box>
-            </Popover>
+              <Popover
+                open={modeOpen}
+                anchorEl={modeAnchor}
+                onClose={closeModeFilter}
+                anchorOrigin={{ vertical: "bottom", horizontal: "left" }}
+                transformOrigin={{ vertical: "top", horizontal: "left" }}
+                PaperProps={{
+                  sx: {
+                    width: 220,
+                    mt: 1,
+                    borderRadius: 2.5,
+                    boxShadow: "0 12px 40px rgba(0,0,0,0.12)",
+                  },
+                }}
+              >
+                <Box sx={{ py: 1 }}>
+                  <MenuItem
+                    selected={assignedToMode === "direct"}
+                    onClick={() => {
+                      onAssignedToModeChange("direct");
+                      closeModeFilter();
+                    }}
+                    sx={{
+                      px: 2,
+                      py: 1.2,
+                      borderBottom: `1px solid ${alpha(theme.palette.divider, 0.4)}`,
+                      "&.Mui-selected": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                    }}
+                  >
+                    <Stack>
+                      <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", color: "text.primary" }}>
+                        Directly Assigned
+                      </Typography>
+                      <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+                        Only leads assigned to this person
+                      </Typography>
+                    </Stack>
+                  </MenuItem>
+                  <MenuItem
+                    selected={assignedToMode === "hierarchy"}
+                    onClick={() => {
+                      onAssignedToModeChange("hierarchy");
+                      closeModeFilter();
+                    }}
+                    sx={{
+                      px: 2,
+                      py: 1.2,
+                      "&.Mui-selected": { bgcolor: alpha(theme.palette.primary.main, 0.08) },
+                    }}
+                  >
+                    <Stack>
+                      <Typography sx={{ fontWeight: 600, fontSize: "0.85rem", color: "text.primary" }}>
+                        Incl. Team Members
+                      </Typography>
+                      <Typography sx={{ fontSize: "0.72rem", color: "text.secondary" }}>
+                        All leads assigned to their hierarchy
+                      </Typography>
+                    </Stack>
+                  </MenuItem>
+                </Box>
+              </Popover>
+            </Box>
           </Box>
         )}
 
@@ -506,7 +570,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 { label: "Lead Status", icon: <InfoIcon />, items: LEAD_STATUSES, selected: selectedStatuses, onChange: onStatusesChange, color: "primary.main" },
                 { label: "Lead Type", icon: <TrendingUpIcon />, items: LEAD_TYPES, selected: selectedLeadTypes, onChange: onLeadTypesChange, color: "warning.main" },
                 { label: "Property", icon: <HomeIcon />, items: uniqueProperties, selected: selectedProperties, onChange: onPropertiesChange, color: "success.main", scrollable: true },
-                { label: "Budget Range", icon: <MoneyIcon />, items: budgetRanges, selected: selectedBudgets, onChange: onBudgetsChange, color: "error.main" },
+                { label: "Budget Range", icon: <RupeeIcon />, items: budgetRanges, selected: selectedBudgets, onChange: onBudgetsChange, color: "error.main" },
               ].map((section, idx) => (
                 <React.Fragment key={section.label}>
                   <Accordion 
@@ -656,28 +720,6 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               ))}
             </Box>
 
-            <Box sx={{ p: 2, bgcolor: "#fff", borderTop: `1px solid ${theme.palette.divider}` }}>
-              <Button 
-                fullWidth 
-                variant="contained" 
-                onClick={closeFilter}
-                sx={{ 
-                  borderRadius: 2.5, 
-                  textTransform: "none", 
-                  fontWeight: 700,
-                  py: 1.2,
-                  fontSize: "0.95rem",
-                  boxShadow: `0 4px 12px ${alpha(theme.palette.primary.main, 0.25)}`,
-                  "&:hover": { 
-                    boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.35)}`,
-                    transform: "translateY(-1px)"
-                  },
-                  transition: "all 0.2s ease"
-                }}
-              >
-                Apply Filters
-              </Button>
-            </Box>
           </Popover>
         </Box>
 

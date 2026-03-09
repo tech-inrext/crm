@@ -90,6 +90,7 @@ export { default as LockReset } from "./LockReset";
 export { default as Logout } from "./Logout";
 export { default as MenuIcon } from "./MenuIcon";
 export { default as MonetizationOn } from "./MonetizationOn";
+export { default as CurrencyRupee } from "./CurrencyRupee";
 export { default as Notes } from "./Notes";
 export { default as Person } from "./Person";
 export { default as People } from "./People";
