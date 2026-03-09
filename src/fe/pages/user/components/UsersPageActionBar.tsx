@@ -2,7 +2,7 @@
 
 import React from "react";
 import PageHeader from "@/fe/framework/components/PageHeader";
-import { CircularProgress, Add } from "@/components/ui/Component";
+import { Add } from "@/components/ui/Component";
 import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import {
@@ -14,14 +14,12 @@ interface Props {
   search: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAdd: () => void;
-  saving: boolean;
 }
 
 const UsersPageActionBar: React.FC<Props> = ({
   search,
   onSearchChange,
   onAdd,
-  saving,
 }) => {
   return (
     <PageHeader title="Users">
@@ -44,17 +42,10 @@ const UsersPageActionBar: React.FC<Props> = ({
             <button
               type="button"
               onClick={onAdd}
-              disabled={saving}
-              className="flex items-center justify-center gap-2 px-4 py-2 min-w-[150px] h-10 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-transform disabled:opacity-60"
+              className="flex items-center justify-center gap-2 px-4 py-2 min-w-[150px] h-10 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-transform"
             >
-              {saving ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <>
-                  <Add />
-                  <span>Add User</span>
-                </>
-              )}
+              <Add />
+              <span>Add User</span>
             </button>
           </PermissionGuard>
         </div>

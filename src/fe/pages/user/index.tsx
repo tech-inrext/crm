@@ -1,13 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  useTheme,
-  useMediaQuery,
-  AddIcon,
-  CircularProgress,
-} from "@/components/ui/Component";
-import useUsersPage from "@/fe/pages/user/hooks/useUsersPage";
+import { useTheme, useMediaQuery, AddIcon } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
 import UserDialog from "@/fe/pages/user/components/dialog/userDialog";
 import UserDetailsDialog from "@/fe/pages/user/components/dialog/userDialogView.tsx";
@@ -21,6 +15,7 @@ import {
 import { canEditEmployee, getInitialUserForm } from "@/fe/pages/user/utils";
 import { getUsersTableHeader } from "@/fe/pages/user/components/UserTable";
 import UsersPageList from "@/fe/pages/user/components/UsersPageList";
+import useUsersPage from "@/fe/pages/user/hooks/useUsersPage";
 import type { Employee } from "@/fe/pages/user/types";
 import type { TostProps } from "@/fe/pages/user/types";
 
@@ -56,26 +51,30 @@ const UsersPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const {
-    queryState, // All createApi props: loading, page, rowsPerPage, totalItems, setPage, setPageSize
+    page,
+    setPage,
+    rowsPerPage,
+    handlePageSizeChange,
     employees,
-    saving,
-    setOpen,
+    loading,
+    totalItems,
+    search,
+    handleSearchChange,
     open,
+    setOpen,
     editId,
     dialogMode,
     selectedUser,
     handleCloseDialog,
     openViewDialog,
     openEditDialog,
+    snackbarOpen,
+    setSnackbarOpen,
+    snackbarMessage,
+    snackbarSeverity,
     isClient,
     windowWidth,
-    search,
-    handleSearchChange,
-    snackbarOpen,
-    snackbarSeverity,
-    snackbarMessage,
-    setSnackbarOpen,
-    handleUserSave,
+    handleMutationSuccess,
   } = useUsersPage();
 
   const usersTableHeader = React.useMemo(
@@ -86,7 +85,7 @@ const UsersPage: React.FC = () => {
         onView: openViewDialog,
         onEdit: openEditDialog,
       }),
-    [currentUser, openViewDialog, openEditDialog],
+    [currentUser],
   );
 
   return (
@@ -96,18 +95,17 @@ const UsersPage: React.FC = () => {
         search={search}
         onSearchChange={handleSearchChange}
         onAdd={() => setOpen(true)}
-        saving={saving}
       />
 
       {/* Table / card list */}
       <UsersPageList
-        loading={queryState.loading}
+        loading={loading}
         employees={employees}
-        page={queryState.page}
-        rowsPerPage={queryState.rowsPerPage}
-        totalItems={queryState.totalItems}
-        onPageChange={queryState.setPage}
-        onPageSizeChange={queryState.setPageSize}
+        page={page}
+        rowsPerPage={rowsPerPage}
+        totalItems={totalItems}
+        onPageChange={setPage}
+        onPageSizeChange={handlePageSizeChange}
         search={search}
         isMobile={isMobile}
         isClient={isClient}
@@ -127,7 +125,7 @@ const UsersPage: React.FC = () => {
           type="button"
           aria-label="Add user"
           onClick={() => setOpen(true)}
-          disabled={saving}
+          disabled={false}
           style={{
             bottom: FAB_POSITION.bottom,
             right: FAB_POSITION.right,
@@ -136,11 +134,7 @@ const UsersPage: React.FC = () => {
           className="fixed md:hidden flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95 disabled:opacity-60"
           style={{ background: GRADIENTS.button }}
         >
-          {saving ? (
-            <CircularProgress size={24} color="inherit" />
-          ) : (
-            <AddIcon />
-          )}
+          <AddIcon />
         </button>
 
         {/* Dialogs */}
@@ -155,9 +149,8 @@ const UsersPage: React.FC = () => {
             open={open}
             editId={editId}
             initialData={getInitialUserForm(selectedUser)}
-            saving={saving}
             onClose={handleCloseDialog}
-            onSave={handleUserSave}
+            onMutationSuccess={handleMutationSuccess}
           />
         )}
       </PermissionGuard>

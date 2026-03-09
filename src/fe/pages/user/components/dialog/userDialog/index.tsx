@@ -1,25 +1,46 @@
 ﻿"use client";
 
+import Button from "@/components/ui/Button";
 import React, { useState } from "react";
 import { Formik, Form } from "formik";
 import { BUTTON_LABELS } from "@/fe/pages/user/constants/users";
 import { useUserDialogData } from "@/fe/pages/user/hooks/useUserDialogData";
-import { extractMessage, makeAllTouched } from "@/fe/pages/user/utils";
+import {
+  extractMessage,
+  makeAllTouched,
+  resolveFileUploads,
+} from "@/fe/pages/user/utils";
 import { userValidationSchema } from "./validation";
 import BasicInformation from "./BasicInformation";
 import OrganizationSection from "./OrganizationSection";
 import type { UserFormData, UserDialogProps } from "@/fe/pages/user/types";
+import {
+  useCreateUserMutation,
+  useUpdateUserMutation,
+} from "@/fe/pages/user/userApi";
+import { invalidateQueryCache } from "@/fe/hooks/createApi";
 
 const UserDialog: React.FC<UserDialogProps> = ({
   open,
   editId,
   initialData,
-  saving,
   onClose,
-  onSave,
+  onMutationSuccess,
 }) => {
   const { roles, managers, departments } = useUserDialogData(open);
-  const [toast, setToast] = useState<{ msg: string; type: "error" | "success" } | null>(null);
+  const createMutation = useCreateUserMutation();
+  const updateMutation = useUpdateUserMutation();
+
+  const {
+    mutate: handleUserSave,
+    loading: saving = false,
+    error,
+  } = editId ? updateMutation : createMutation;
+
+  const [toast, setToast] = useState<{
+    msg: string;
+    type: "error" | "success";
+  } | null>(null);
 
   if (!open) return null;
 
@@ -28,6 +49,23 @@ const UserDialog: React.FC<UserDialogProps> = ({
     setTimeout(() => setToast(null), 4000);
   };
 
+  const handleSubmit = async (values) => {
+    try {
+      const payload = await resolveFileUploads(values);
+      if (editId) {
+        await handleUserSave({ ...payload, id: editId }, onMutationSuccess);
+      } else {
+        await handleUserSave(payload, onMutationSuccess);
+      }
+      onClose();
+      showToast(
+        editId ? "User updated successfully!" : "User created successfully!",
+        "success",
+      );
+    } catch (e: any) {
+      showToast(extractMessage(e));
+    }
+  };
   return (
     <>
       {/* Dim layer — only catches outside-panel clicks to close */}
@@ -55,8 +93,18 @@ const UserDialog: React.FC<UserDialogProps> = ({
               className="text-slate-400 hover:text-slate-600 transition-colors rounded-full p-1 hover:bg-slate-100"
               aria-label="Close dialog"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -67,52 +115,15 @@ const UserDialog: React.FC<UserDialogProps> = ({
             validationSchema={userValidationSchema}
             validateOnMount={false}
             enableReinitialize={true}
-            onSubmit={async (values, { setSubmitting, setErrors, setFieldError }) => {
-              setSubmitting(true);
-              try {
-                await onSave(values);
-              } catch (e: any) {
-                const resp = e?.response?.data ?? e?.data ?? null;
-                if (resp) {
-                  try {
-                    if (resp.fieldErrors && typeof resp.fieldErrors === "object") {
-                      setErrors(resp.fieldErrors);
-                      showToast("Please fix the highlighted errors before submitting");
-                      return;
-                    }
-                    if (Array.isArray(resp.errors) && resp.errors.length > 0) {
-                      const fieldErrs: Record<string, string> = {};
-                      resp.errors.forEach((it: any) => {
-                        if (it.field && it.message) fieldErrs[it.field] = it.message;
-                      });
-                      if (Object.keys(fieldErrs).length > 0) {
-                        setErrors(fieldErrs);
-                        showToast("Please fix the highlighted errors before submitting");
-                        return;
-                      }
-                    }
-                    if (resp.field && resp.message) {
-                      setFieldError(resp.field, resp.message);
-                      showToast("Please fix the highlighted errors before submitting");
-                      return;
-                    }
-                    showToast(extractMessage(e));
-                    return;
-                  } catch {
-                    showToast("Failed to save user");
-                    return;
-                  }
-                }
-                showToast(e?.message ?? "Failed to save user");
-              } finally {
-                setSubmitting(false);
-              }
-            }}
+            onSubmit={handleSubmit}
           >
             {({ setFieldValue, dirty, values, submitForm, setTouched }) => (
               <Form className="flex flex-col min-h-0">
                 {/* Scrollable body */}
-                <div className="overflow-y-auto px-6 py-4 bg-slate-50 flex flex-col gap-4" style={{ maxHeight: "calc(90vh - 130px)" }}>
+                <div
+                  className="overflow-y-auto px-6 py-4 bg-slate-50 flex flex-col gap-4"
+                  style={{ maxHeight: "calc(90vh - 130px)" }}
+                >
                   <BasicInformation editId={editId} />
                   <OrganizationSection
                     managers={managers}
@@ -142,7 +153,9 @@ const UserDialog: React.FC<UserDialogProps> = ({
                         setTouched(makeAllTouched(values || {}));
                       } catch {
                         const touched: Record<string, boolean> = {};
-                        Object.keys(values || {}).forEach((k) => (touched[k] = true));
+                        Object.keys(values || {}).forEach(
+                          (k) => (touched[k] = true),
+                        );
                         setTouched(touched);
                       }
                       submitForm();
@@ -151,9 +164,24 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   >
                     {saving ? (
                       <>
-                        <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
+                        <svg
+                          className="animate-spin w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          />
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v8z"
+                          />
                         </svg>
                         Saving…
                       </>
@@ -167,19 +195,6 @@ const UserDialog: React.FC<UserDialogProps> = ({
               </Form>
             )}
           </Formik>
-
-          {/* Toast */}
-          {toast && (
-            <div
-              className={`absolute top-4 right-4 left-4 z-10 flex items-center gap-3 px-4 py-3 rounded-xl shadow-lg text-sm font-medium transition-all ${toast.type === "error"
-                ? "bg-red-50 text-red-700 border border-red-200"
-                : "bg-green-50 text-green-700 border border-green-200"
-                }`}
-            >
-              <span className="flex-1">{toast.msg}</span>
-              <button onClick={() => setToast(null)} className="opacity-60 hover:opacity-100">✕</button>
-            </div>
-          )}
         </div>
       </div>
     </>

@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useDepartments } from "@/fe/pages/department/hooks/useDepartments";
 import { useDepartmentDialog } from "@/fe/pages/department/hooks/useDepartmentDialog";
-import type { MutationError } from "@/fe/hooks/useMutation";
+import type { MutationError } from "@/fe/hooks/createMutation";
 import {
   SEARCH_DEBOUNCE_DELAY,
   DEFAULT_DEPARTMENT_FORM,
@@ -39,20 +39,16 @@ export function useDepartmentsPage() {
   const depts = useDepartments(debouncedSearch);
   const { loadDepartments } = depts;
 
-  const {
-    dialogMode,
-    selectedDepartment,
-    handleCloseDialog,
-    openEditDialog,
-  } = useDepartmentDialog({
-    departments: depts.departments,
-    loading: depts.loading,
-    getDepartmentById: depts.getDepartmentById,
-    setEditId: depts.setEditId,
-    setOpen: depts.setOpen,
-    setForm: depts.setForm,
-    defaultForm: DEFAULT_DEPARTMENT_FORM,
-  });
+  const { dialogMode, selectedDepartment, handleCloseDialog, openEditDialog } =
+    useDepartmentDialog({
+      departments: depts.departments,
+      loading: depts.loading,
+      getDepartmentById: depts.getDepartmentById,
+      setEditId: depts.setEditId,
+      setOpen: depts.setOpen,
+      setForm: depts.setForm,
+      defaultForm: DEFAULT_DEPARTMENT_FORM,
+    });
 
   // ── Window / client-side setup ───────────────────────────────────────────
   useEffect(() => {

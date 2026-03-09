@@ -6,7 +6,7 @@ import {
   DEPARTMENTS_API_BASE,
   DEPARTMENT_CACHE_KEYS,
 } from "@/fe/pages/department/constants/departments";
-import useMutation from "@/fe/hooks/useMutation";
+import useMutation from "@/fe/hooks/createMutation";
 import { useGetDepartmentsQuery } from "@/fe/pages/department/departmentApi";
 import type {
   Department,
