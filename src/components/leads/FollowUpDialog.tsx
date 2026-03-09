@@ -122,9 +122,13 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
 
   const handleUpdateOutcome = async (followUpId: string, outcome: string) => {
     try {
-      await axios.patch(`/api/v0/lead/follow-up`, { followUpId, outcome }, {
-        withCredentials: true,
-      });
+      await axios.patch(
+        `/api/v0/lead/follow-up`,
+        { followUpId, outcome },
+        {
+          withCredentials: true,
+        }
+      );
       // Refresh list
       const res = await axios.get(`/api/v0/lead/follow-up`, {
         params: { leadIdentifier: finalLeadIdentifier },
@@ -224,15 +228,18 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
         >
           <Typography
             variant="inherit"
-            sx={{ fontWeight: 600, color: "text.primary", whiteSpace: "nowrap" }}
+            sx={{
+              fontWeight: 600,
+              color: "text.primary",
+              whiteSpace: "nowrap",
+            }}
           >
             Daily Updates & Reminders
           </Typography>
           {leadInfo && (
             <Chip
               label={
-                leadInfo.fullName ||
-                (leadInfo.phone ? `${leadInfo.phone}` : "")
+                leadInfo.fullName || (leadInfo.phone ? `${leadInfo.phone}` : "")
               }
               size="small"
               color="primary"
@@ -365,69 +372,160 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                           alignItems="flex-start"
                           sx={{ mb: 0.75 }}
                         >
+                          {/* Footer: Actionable Info */}
                           <Stack
                             direction="row"
                             alignItems="center"
-                            spacing={1}
+                            justifyContent="space-between"
+                            sx={{ mt: "auto", gap: 1 }}
                           >
-                            <Avatar
-                              sx={{
-                                width: 28,
-                                height: 28,
-                                fontSize: "0.75rem",
-                                fontWeight: 600,
-                                bgcolor: bgColor,
-                                color: accentColor,
-                                border: `1px solid ${accentColor}15`,
-                              }}
-                            >
-                              {getInitials(it.submittedByName)}
-                            </Avatar>
-                            <Box>
-                              <Typography
-                                variant="subtitle2"
-                                sx={{
-                                  fontWeight: 600,
-                                  color: "#111827",
-                                  lineHeight: 1.2,
-                                }}
+                            {isCallBack && leadInfo?.phone && (
+                              <Tooltip
+                                title={`Initiate Call to ${leadInfo.phone}`}
                               >
-                                {it.submittedByName || "System User"}
-                              </Typography>
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  color: "text.secondary",
-                                  fontWeight: 400,
-                                }}
-                              >
-                                {it.createdAt
-                                  ? new Date(it.createdAt).toLocaleString([], {
-                                      month: "short",
-                                      day: "numeric",
-                                      year: "numeric",
-                                      hour: "2-digit",
-                                      minute: "2-digit",
-                                    })
-                                  : ""}
-                              </Typography>
-                            </Box>
-                          </Stack>
+                                <IconButton
+                                  size="small"
+                                  component="a"
+                                  href={`tel:${leadInfo.phone}`}
+                                  sx={{
+                                    bgcolor: "#2563eb",
+                                    color: "#fff",
+                                    "&:hover": {
+                                      bgcolor: "#1e40af",
+                                      transform: "scale(1.03)",
+                                    },
+                                    transition: "all 0.2s",
+                                  }}
+                                >
+                                  <PhoneIcon sx={{ fontSize: "0.95rem" }} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
 
-                          <Chip
-                            label={it.followUpType}
-                            size="small"
+                            {isSiteVisit && it.cabBookingId && (
+                              <Tooltip title="Cab Booked - View Details">
+                                <IconButton
+                                  size="small"
+                                  onClick={() =>
+                                    router.push(
+                                      `/dashboard/cab-booking?bookingId=${it.cabBookingId}`
+                                    )
+                                  }
+                                  sx={{
+                                    bgcolor: "#7c3aed",
+                                    color: "#fff",
+                                    "&:hover": {
+                                      bgcolor: "#570ad3ff",
+                                      transform: "scale(1.03)",
+                                    },
+                                    transition: "all 0.2s",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                    }}
+                                  >
+                                    <svg
+                                      width="18"
+                                      height="18"
+                                      viewBox="0 0 24 24"
+                                      fill="currentColor"
+                                    >
+                                      <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
+                                    </svg>
+                                  </div>
+                                </IconButton>
+                              </Tooltip>
+                            )}
+
+                            {isSiteVisit && !it.cabBookingId && (
+                              <Tooltip title="No Cab Requested">
+                                <IconButton
+                                  size="small"
+                                  sx={{
+                                    bgcolor: "#94a3b8",
+                                    color: "#fff",
+                                    opacity: 0.8,
+                                    "&:hover": {
+                                      bgcolor: "#64748b",
+                                      transform: "scale(1.03)",
+                                      opacity: 1,
+                                    },
+                                    transition: "all 0.2s",
+                                  }}
+                                >
+                                  <div
+                                    style={{
+                                      display: "flex",
+                                      alignItems: "center",
+                                      justifyContent: "center",
+                                      position: "relative",
+                                    }}
+                                  >
+                                    <svg
+                                      width="18"
+                                      height="18"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                      fill="none"
+                                      strokeWidth="2"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    >
+                                      <path
+                                        d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"
+                                        fill="currentColor"
+                                        stroke="none"
+                                      />
+                                      <line
+                                        x1="2"
+                                        y1="2"
+                                        x2="22"
+                                        y2="22"
+                                        stroke="white"
+                                        strokeWidth="2.5"
+                                      />
+                                    </svg>
+                                  </div>
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            <Chip
+                              label={it.followUpType}
+                              size="small"
+                              sx={{
+                                height: 18,
+                                fontSize: "0.5rem",
+                                fontWeight: 700,
+                                textTransform: "uppercase",
+                                bgcolor: chipBg,
+                                color: chipColor,
+                                letterSpacing: "0.05em",
+                                borderRadius: "6px",
+                              }}
+                            />
+                          </Stack>
+                          <Typography
+                            variant="caption"
                             sx={{
-                              height: 18,
+                              color: "text.secondary",
                               fontSize: "0.5rem",
-                              fontWeight: 700,
-                              textTransform: "uppercase",
-                              bgcolor: chipBg,
-                              color: chipColor,
-                              letterSpacing: "0.05em",
-                              borderRadius: "6px",
                             }}
-                          />
+                          >
+                            Created At :{" "}
+                            {it.createdAt
+                              ? new Date(it.createdAt).toLocaleString([], {
+                                  month: "short",
+                                  day: "numeric",
+                                  year: "numeric",
+                                  hour: "2-digit",
+                                  minute: "2-digit",
+                                })
+                              : ""}
+                          </Typography>
                         </Stack>
 
                         {/* Middle: Note Content */}
@@ -451,13 +549,11 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                             </span>
                           )}
                         </Typography>
-
-                        {/* Footer: Actionable Info */}
                         <Stack
                           direction="row"
-                          alignItems="center"
+                          alignItems="space-between"
                           justifyContent="space-between"
-                          sx={{ mt: "auto" }}
+                          spacing={1}
                         >
                           <Box sx={{ display: "flex", gap: 1 }}>
                             {it.followUpDate && it.followUpType !== "note" && (
@@ -470,7 +566,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                     }}
                                   />
                                 }
-                                label={`Reminder: ${new Date(
+                                label={`Scheduled At : ${new Date(
                                   it.followUpDate
                                 ).toLocaleString([], {
                                   month: "short",
@@ -491,194 +587,203 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               />
                             )}
                           </Box>
-
-                          {isCallBack && leadInfo?.phone && (
-                            <Tooltip
-                              title={`Initiate Call to ${leadInfo.phone}`}
+                          {/* User Info */}
+                          <Stack
+                            direction="row"
+                            alignItems="center"
+                            justifyContent="end"
+                            spacing={1}
+                          >
+                            <Typography
+                              variant="caption"
+                              sx={{
+                                color: "text.secondary",
+                                fontSize: "0.5rem",
+                              }}
                             >
-                              <IconButton
-                                size="small"
-                                component="a"
-                                href={`tel:${leadInfo.phone}`}
+                              By:{" "}
+                            </Typography>
+                            <Avatar
+                              sx={{
+                                width: 18,
+                                height: 18,
+                                fontSize: "0.5rem",
+                                bgcolor: bgColor,
+                                color: accentColor,
+                                border: `1px solid ${accentColor}15`,
+                              }}
+                            >
+                              {getInitials(it.submittedByName)}
+                            </Avatar>
+                            <Box>
+                              <Typography
+                                variant="subtitle2"
                                 sx={{
-                                  bgcolor: "#2563eb",
-                                  color: "#fff",
-                                  "&:hover": {
-                                    bgcolor: "#1e40af",
-                                    transform: "scale(1.03)",
-                                  },
-                                  transition: "all 0.2s",
+                                  color: "#111827",
+                                  fontSize: "0.6rem",
+                                  lineHeight: 1.2,
                                 }}
                               >
-                                <PhoneIcon sx={{ fontSize: "0.95rem" }} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-
-                          {isSiteVisit && it.cabBookingId && (
-                            <Tooltip title="Cab Booked - View Details">
-                              <IconButton
-                                size="small"
-                                onClick={() =>
-                                  router.push(
-                                    `/dashboard/cab-booking?bookingId=${it.cabBookingId}`
-                                  )
-                                }
-                                sx={{
-                                  bgcolor: "#7c3aed",
-                                  color: "#fff",
-                                  "&:hover": {
-                                    bgcolor: "#570ad3ff",
-                                    transform: "scale(1.03)",
-                                  },
-                                  transition: "all 0.2s",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                  }}
-                                >
-                                  <svg
-                                    width="18"
-                                    height="18"
-                                    viewBox="0 0 24 24"
-                                    fill="currentColor"
-                                  >
-                                    <path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z" />
-                                  </svg>
-                                </div>
-                              </IconButton>
-                            </Tooltip>
-                          )}
-
-                          {isSiteVisit && !it.cabBookingId && (
-                            <Tooltip title="No Cab Requested">
-                              <IconButton
-                                size="small"
-                                sx={{
-                                  bgcolor: "#94a3b8",
-                                  color: "#fff",
-                                  opacity: 0.8,
-                                  "&:hover": {
-                                    bgcolor: "#64748b",
-                                    transform: "scale(1.03)",
-                                    opacity: 1,
-                                  },
-                                  transition: "all 0.2s",
-                                }}
-                              >
-                                <div
-                                  style={{
-                                    display: "flex",
-                                    alignItems: "center",
-                                    justifyContent: "center",
-                                    position: "relative",
-                                  }}
-                                >
-                                  <svg
-                                    width="18"
-                                    height="18"
-                                    viewBox="0 0 24 24"
-                                    stroke="currentColor"
-                                    fill="none"
-                                    strokeWidth="2"
-                                    strokeLinecap="round"
-                                    strokeLinejoin="round"
-                                  >
-                                    <path
-                                      d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99z"
-                                      fill="currentColor"
-                                      stroke="none"
-                                    />
-                                    <line
-                                      x1="2"
-                                      y1="2"
-                                      x2="22"
-                                      y2="22"
-                                      stroke="white"
-                                      strokeWidth="2.5"
-                                    />
-                                  </svg>
-                                </div>
-                              </IconButton>
-                            </Tooltip>
-                          )}
+                                {it.submittedByName || "System User"}
+                              </Typography>
+                            </Box>
+                          </Stack>
                         </Stack>
 
                         {/* Outcome Section: Show ONLY if date is passed OR outcome is already recorded */}
-                        {(isCallBack || isSiteVisit) && it.followUpDate && (new Date() > new Date(it.followUpDate) || (it.outcome && it.outcome !== "pending")) && (
-                          <Box sx={{ mt: 1.5, pt: 1.25, borderTop: "1px solid #f1f5f9" }}>
-                            {new Date() > new Date(it.followUpDate) && (it.outcome === "pending" || !it.outcome) ? (
-                              <Stack direction="row" alignItems="center" spacing={1.5}>
-                                <Typography variant="caption" sx={{ fontWeight: 600, color: "text.secondary", flexGrow: 1 }}>
-                                  Was the {isCallBack ? "call" : "site visit"} completed?
-                                </Typography>
-                                <Stack direction="row" spacing={1}>
-                                  <Button
-                                    size="small"
-                                    variant="contained"
-                                    color="success"
-                                    startIcon={<Check sx={{ fontSize: "14px !important" }} />}
-                                    onClick={() => handleUpdateOutcome(it._id, "completed")}
-                                    sx={{ 
-                                      height: 24, 
-                                      fontSize: "0.65rem", 
-                                      fontWeight: 700, 
-                                      textTransform: "none",
-                                      borderRadius: "6px",
-                                      boxShadow: "none",
-                                      "&:hover": { boxShadow: "none", bgcolor: "#059669" }
+                        {(isCallBack || isSiteVisit) &&
+                          it.followUpDate &&
+                          (new Date() > new Date(it.followUpDate) ||
+                            (it.outcome && it.outcome !== "pending")) && (
+                            <Box
+                              sx={{
+                                mt: 1.5,
+                                pt: 1.25,
+                                borderTop: "1px solid #f1f5f9",
+                              }}
+                            >
+                              {new Date() > new Date(it.followUpDate) &&
+                              (it.outcome === "pending" || !it.outcome) ? (
+                                <Stack
+                                  direction="row"
+                                  alignItems="center"
+                                  spacing={1.5}
+                                >
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      fontWeight: 600,
+                                      color: "text.secondary",
+                                      flexGrow: 1,
                                     }}
                                   >
-                                    Yes, Done
-                                  </Button>
-                                  <Button
-                                    size="small"
-                                    variant="outlined"
-                                    color="error"
-                                    startIcon={<Clear sx={{ fontSize: "14px !important" }} />}
-                                    onClick={() => handleUpdateOutcome(it._id, "missed")}
-                                    sx={{ 
-                                      height: 24, 
-                                      fontSize: "0.65rem", 
-                                      fontWeight: 700, 
-                                      textTransform: "none",
-                                      borderRadius: "6px",
-                                      borderWidth: 1.5,
-                                      "&:hover": { borderWidth: 1.5, bgcolor: "#fef2f2" }
-                                    }}
-                                  >
-                                    No, Missed
-                                  </Button>
+                                    Was the {isCallBack ? "call" : "site visit"}{" "}
+                                    completed?
+                                  </Typography>
+                                  <Stack direction="row" spacing={1}>
+                                    <Button
+                                      size="small"
+                                      variant="contained"
+                                      color="success"
+                                      startIcon={
+                                        <Check
+                                          sx={{ fontSize: "14px !important" }}
+                                        />
+                                      }
+                                      onClick={() =>
+                                        handleUpdateOutcome(it._id, "completed")
+                                      }
+                                      sx={{
+                                        height: 24,
+                                        fontSize: "0.65rem",
+                                        fontWeight: 700,
+                                        textTransform: "none",
+                                        borderRadius: "6px",
+                                        boxShadow: "none",
+                                        "&:hover": {
+                                          boxShadow: "none",
+                                          bgcolor: "#059669",
+                                        },
+                                      }}
+                                    >
+                                      Yes, Done
+                                    </Button>
+                                    <Button
+                                      size="small"
+                                      variant="outlined"
+                                      color="error"
+                                      startIcon={
+                                        <Clear
+                                          sx={{ fontSize: "14px !important" }}
+                                        />
+                                      }
+                                      onClick={() =>
+                                        handleUpdateOutcome(it._id, "missed")
+                                      }
+                                      sx={{
+                                        height: 24,
+                                        fontSize: "0.65rem",
+                                        fontWeight: 700,
+                                        textTransform: "none",
+                                        borderRadius: "6px",
+                                        borderWidth: 1.5,
+                                        "&:hover": {
+                                          borderWidth: 1.5,
+                                          bgcolor: "#fef2f2",
+                                        },
+                                      }}
+                                    >
+                                      No, Missed
+                                    </Button>
+                                  </Stack>
                                 </Stack>
-                              </Stack>
-                            ) : it.outcome && it.outcome !== "pending" ? (
-                              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                                <Chip
-                                  label={it.outcome === "completed" ? (isCallBack ? "Call Completed" : "Visit Done") : (isCallBack ? "Call Missed" : "Visit Missed")}
-                                  size="small"
-                                  icon={it.outcome === "completed" ? <Check sx={{ fontSize: "12px !important", color: "white !important" }} /> : <Clear sx={{ fontSize: "12px !important", color: "white !important" }} />}
+                              ) : it.outcome && it.outcome !== "pending" ? (
+                                <Box
                                   sx={{
-                                    height: 22,
-                                    fontSize: "0.65rem",
-                                    fontWeight: 700,
-                                    bgcolor: it.outcome === "completed" ? "#10b981" : "#ef4444",
-                                    color: "#fff",
-                                    "& .MuiChip-label": { px: 1 }
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: 1,
                                   }}
-                                />
-                                <Typography variant="caption" sx={{ color: "text.secondary", fontStyle: "italic" }}>
-                                  {it.outcome === "completed" 
-                                    ? `This ${isCallBack ? "call" : "visit"} was successfully conducted.` 
-                                    : `The scheduled ${isCallBack ? "call" : "site visit"} was marked as not done.`}
-                                </Typography>
-                              </Box>
-                            ) : null}
-                          </Box>
-                        )}
+                                >
+                                  <Chip
+                                    label={
+                                      it.outcome === "completed"
+                                        ? isCallBack
+                                          ? "Call Completed"
+                                          : "Visit Done"
+                                        : isCallBack
+                                        ? "Call Missed"
+                                        : "Visit Missed"
+                                    }
+                                    size="small"
+                                    icon={
+                                      it.outcome === "completed" ? (
+                                        <Check
+                                          sx={{
+                                            fontSize: "12px !important",
+                                            color: "white !important",
+                                          }}
+                                        />
+                                      ) : (
+                                        <Clear
+                                          sx={{
+                                            fontSize: "12px !important",
+                                            color: "white !important",
+                                          }}
+                                        />
+                                      )
+                                    }
+                                    sx={{
+                                      height: 22,
+                                      fontSize: "0.65rem",
+                                      fontWeight: 700,
+                                      bgcolor:
+                                        it.outcome === "completed"
+                                          ? "#10b981"
+                                          : "#ef4444",
+                                      color: "#fff",
+                                      "& .MuiChip-label": { px: 1 },
+                                    }}
+                                  />
+                                  <Typography
+                                    variant="caption"
+                                    sx={{
+                                      color: "text.secondary",
+                                      fontStyle: "italic",
+                                    }}
+                                  >
+                                    {it.outcome === "completed"
+                                      ? `This ${
+                                          isCallBack ? "call" : "visit"
+                                        } was successfully conducted.`
+                                      : `The scheduled ${
+                                          isCallBack ? "call" : "site visit"
+                                        } was marked as not done.`}
+                                  </Typography>
+                                </Box>
+                              ) : null}
+                            </Box>
+                          )}
                       </Box>
                     </Box>
                   );
