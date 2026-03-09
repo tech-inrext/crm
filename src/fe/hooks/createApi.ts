@@ -2,7 +2,7 @@ import axios from "axios";
 import { useState, useCallback, useEffect, useMemo } from "react";
 import { buildCacheKey } from "./helpers";
 import queryCache from "./cache";
-import useMutation from "./createMutation";
+import useMutation from "./useMutation";
 
 const CACHE_TTL_MS = 30_000; // 30 seconds
 
@@ -26,8 +26,9 @@ const useQuery = (
 
   const getRequestParams = () => {
     if (config.isPaginated) {
-    const pageToUse = params.page !== undefined ? params.page : page;
-    const rowsPerPageToUse = params.rowsPerPage !== undefined ? params.rowsPerPage : rowsPerPage;
+      const pageToUse = params.page !== undefined ? params.page : page;
+      const rowsPerPageToUse =
+        params.rowsPerPage !== undefined ? params.rowsPerPage : rowsPerPage;
       return { ...params, page: pageToUse, rowsPerPage: rowsPerPageToUse };
     }
     return params;
