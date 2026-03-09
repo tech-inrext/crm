@@ -39,8 +39,8 @@ const StatCard: React.FC<StatCardProps> = ({
 <Card
       elevation={0}
       onClick={onClick}
-      className={`rounded-xl border border-gray-200 bg-white min-h-[120px] p-4 shadow-sm
-        transition-all duration-200 flex items-center justify-between
+      className={`rounded-2xl border border-gray-200 h-full p-4 shadow-sm
+        transition-all duration-200 flex items-center  justify-between
         ${
           onClick
             ? "cursor-pointer hover:shadow-md hover:-translate-y-[2px]"
@@ -48,11 +48,11 @@ const StatCard: React.FC<StatCardProps> = ({
         }`}
     >
       <CardContent className="p-0 w-full">
-        <Box className="flex items-center gap-3">
+        <Box className="flex items-center gap-5">
           
           {/* Icon */}
           <Box
-            className="flex items-center justify-center w-8 h-8 rounded-full"
+            className="flex items-center justify-center w-8 h-8 mb-2 rounded-full"
             sx={{ backgroundColor: iconBg }}
           >
             {loading ? (
@@ -75,7 +75,7 @@ const StatCard: React.FC<StatCardProps> = ({
 
             {/* Value */}
             <Typography
-              sx={{ fontSize: "2rem", fontWeight: 500, lineHeight: 1 }}
+              sx={{ fontSize: "2rem", fontWeight: 500, lineHeight: 1.2 }}
               className="text-gray-900"
             >
               {loading ? <Skeleton width={70} height={40} /> : value}
@@ -179,11 +179,11 @@ export const StatsCardsRow: React.FC<{
   const totalEarnings = analytics?.totalEarnings ?? 0;
 
   return (
-    <Box className="w-full mb-6">
+    <Box className="w-full h-full  mb-6">
       {/* YOU SECTION */}
-      <div className="text-blue-500 text-xl m-4 font-semibold">YOU</div>
+      <div className="text-blue-500 text-lg m-4 font-medium">YOU</div>
 
-      <Box className="grid grid-cols-1 md:grid-cols-2 gap-1">
+      <Box className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {/* Stat Cards */}
         <Box className="grid grid-cols-1 sm:grid-cols-2 gap-1">
           <StatCard
@@ -257,7 +257,7 @@ export const StatsCardsRow: React.FC<{
         </Box>
 
         {/* Schedule Section */}
-        <Box className="bg-gray-50 rounded-xl flex items-center justify-center p-3">
+        <Box className="bg-gray-50 rounded-xl flex items-center justify-center">
           <ScheduleCard
             analyticsAccess={analyticsAccess}
             scheduleLoading={scheduleLoading}
@@ -266,52 +266,58 @@ export const StatsCardsRow: React.FC<{
         </Box>
       </Box>
       {/* YOUR TEAMS SECTION */}
-      <div className="flex flex-row mt-8 items-center">
-        <div className="text-blue-500 m-2 font-semibold">YOUR TEAMS</div>
+    <Box className="bg-white border border-gray-200 rounded-xl shadow-xs p-5 mt-6 flex flex-col md:flex-row md:items-center gap-18">
 
-        {usersLoading ? (
-          <Skeleton
-            variant="rectangular"
-            width={280}
-            height={40}
-            sx={{ ml: 2, borderRadius: 1 }}
-          />
-        ) : (
-          <Autocomplete
-            sx={{ minWidth: 280, ml: 2 }}
-            options={teamUsersWithAll}
-            disableClearable
-            value={selectedUser ?? allOption}
-            onChange={(_, value) => {
-              if (value?._id === "all") {
-                setSelectedUser(null);
-              } else {
-                setSelectedUser(value);
-              }
-            }}
-            getOptionLabel={(option) =>
-              option._id === "all"
-                ? option.name
-                : option.teamName
-                  ? `${option.name} (${option.teamName})`
-                  : option.name
-            }
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="Select Team User"
-                placeholder="Search user or team..."
-                size="small"
-              />
-            )}
-            isOptionEqualToValue={(option, value) => option._id === value._id}
-          />
-        )}
-      </div>
+  {/* Title */}
+  <Typography className="text-blue-600 font-semibold text-xl">
+    YOUR TEAMS
+  </Typography>
+
+  {/* Dropdown */}
+  {usersLoading ? (
+    <Skeleton
+      variant="rectangular"
+      width={280}
+      height={40}
+      className="rounded-md"
+    />
+  ) : (
+    <Autocomplete
+      className="w-[280px]"
+      options={teamUsersWithAll}
+      disableClearable
+      value={selectedUser ?? allOption}
+      onChange={(_, value) => {
+        if (value?._id === "all") {
+          setSelectedUser(null);
+        } else {
+          setSelectedUser(value);
+        }
+      }}
+      getOptionLabel={(option) =>
+        option._id === "all"
+          ? option.name
+          : option.teamName
+          ? `${option.name} (${option.teamName})`
+          : option.name
+      }
+      isOptionEqualToValue={(option, value) => option._id === value._id}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Select Team User"
+          placeholder="Search user or team..."
+          size="small"
+        />
+      )}
+    />
+  )}
+
+</Box>
 
       {/* TEAM STAT CARDS */}
-      <Box className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full mt-4">
-        <Box className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+      <Box className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full mt-2">
+        <Box className="grid grid-cols-1 sm:grid-cols-2 gap-1 w-full">
           <StatCard
             loading={usersLoading}
             title="Active Leads"
