@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/Component";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
+import LeadActivity from "./LeadActivity";
 
 // Helper to get initials for avatar
 const getInitials = (name: string) => {
@@ -72,7 +73,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [items, setItems] = useState<Array<any>>([]);
   const [historyFilter, setHistoryFilter] = useState<
-    "all" | "call back" | "site visit" | "note"
+    "all" | "call back" | "site visit" | "note" | "history"
   >("all");
   const [leadInfo, setLeadInfo] = useState<{
     phone?: string;
@@ -113,7 +114,6 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
       }
       setNote("");
       setFollowUpDate(null);
-      setFollowUpType("call back");
 
       if (onSaved) onSaved();
     } catch (err) {
@@ -336,6 +336,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                 { key: "call back", label: "Calls" },
                 { key: "site visit", label: "Visits" },
                 { key: "note", label: "Notes" },
+                { key: "history", label: "Activity" },
               ] as const
             ).map(({ key, label }) => (
               <Box
@@ -416,22 +417,27 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                   .map((it) => {
                     const isCallBack = it.followUpType === "call back";
                     const isSiteVisit = it.followUpType === "site visit";
+                    const isHistory = it.followUpType === "history";
 
                     let accentColor = "#059669"; // default note (green)
                     if (isCallBack) accentColor = "#2563eb"; // blue
                     if (isSiteVisit) accentColor = "#7c3aed"; // violet/purple
+                    if (isHistory) accentColor = "#f59e0b"; // amber for history
 
                     let bgColor = "#ecfdf5";
                     if (isCallBack) bgColor = "#eff6ff";
                     if (isSiteVisit) bgColor = "#f5f3ff";
+                    if (isHistory) bgColor = "#fffbeb";
 
                     let chipColor = "#065f46";
                     if (isCallBack) chipColor = "#1e40af";
                     if (isSiteVisit) chipColor = "#5b21b6";
+                    if (isHistory) chipColor = "#92400e";
 
                     let chipBg = "#d1fae5";
                     if (isCallBack) chipBg = "#dbeafe";
                     if (isSiteVisit) chipBg = "#ede9fe";
+                    if (isHistory) chipBg = "#fef3c7";
 
                     const isPendingAction =
                       (isCallBack || isSiteVisit) &&
@@ -589,7 +595,11 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                 </Tooltip>
                               )}
                               <Chip
-                                label={it.followUpType}
+                                label={
+                                  it.followUpType === "history"
+                                    ? "activity"
+                                    : it.followUpType
+                                }
                                 size="small"
                                 sx={{
                                   height: 18,
@@ -626,6 +636,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                           {/* Middle: Note Content */}
                           <Typography
                             variant="body2"
+                            component="div"
                             sx={{
                               color: "#374151",
                               fontSize: "0.85rem",
@@ -634,7 +645,9 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               mb: 1,
                             }}
                           >
-                            {it.note !== "N/A" ? (
+                            {isHistory && it.change ? (
+                              <LeadActivity change={it.change} />
+                            ) : it.note !== "N/A" ? (
                               it.note
                             ) : (
                               <span
