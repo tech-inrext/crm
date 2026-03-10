@@ -212,7 +212,7 @@ const LeadCard = memo(
           boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
           background: "#fff",
           position: "relative",
-          height: "100%",
+          height: "340px",
           minHeight: "340px",
           display: "flex",
           flexDirection: "column",
@@ -293,7 +293,10 @@ const LeadCard = memo(
           {/* Contact Details Grid */}
           <Stack spacing={1.5}>
             <Box
-              onClick={(e) => { e.stopPropagation(); handleAssignedClick(e); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAssignedClick(e);
+              }}
               sx={{
                 position: "relative",
                 borderRadius: 2,
