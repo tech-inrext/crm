@@ -154,7 +154,7 @@ export interface UserDialogProps {
   editId: string | null;
   initialData: UserFormData;
   onClose: () => void;
-  onMutationSuccess: (responseData: any, body: any) => Promise<void>;
+  onSave: (responseData: any, body: any) => Promise<void>;
 }
 
 export interface UserCardProps {

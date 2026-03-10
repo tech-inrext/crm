@@ -25,7 +25,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
   editId,
   initialData,
   onClose,
-  onMutationSuccess,
+  onSave,
 }) => {
   const { roles, managers, departments } = useUserDialogData(open);
   const createMutation = useCreateUserMutation();
@@ -53,9 +53,9 @@ const UserDialog: React.FC<UserDialogProps> = ({
     try {
       const payload = await resolveFileUploads(values);
       if (editId) {
-        await handleUserSave({ ...payload, id: editId }, onMutationSuccess);
+        await handleUserSave({ ...payload, id: editId }, onSave);
       } else {
-        await handleUserSave(payload, onMutationSuccess);
+        await handleUserSave(payload, onSave);
       }
       onClose();
       showToast(

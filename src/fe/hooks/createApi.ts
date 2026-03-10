@@ -26,10 +26,7 @@ const useQuery = (
 
   const getRequestParams = () => {
     if (config.isPaginated) {
-      const pageToUse = params.page !== undefined ? params.page : page;
-      const rowsPerPageToUse =
-        params.rowsPerPage !== undefined ? params.rowsPerPage : rowsPerPage;
-      return { ...params, page: pageToUse, rowsPerPage: rowsPerPageToUse };
+      return { ...params, page, rowsPerPage };
     }
     return params;
   };
