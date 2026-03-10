@@ -1,3 +1,5 @@
+import { width } from "@mui/system";
+
 /** Shared MUI TextField sx prop used across all user-dialog sub-components */
 export const inputSx = {
     bgcolor: "#fff",
