@@ -37,54 +37,46 @@ const StatCard: React.FC<StatCardProps> = ({
   loading = false,
 }) => (
 <Card
-      elevation={0}
-      onClick={onClick}
-      className={`rounded-2xl border border-gray-200 h-full p-4 shadow-sm
-        transition-all duration-200 flex items-center  justify-between
-        ${
-          onClick
-            ? "cursor-pointer hover:shadow-md hover:-translate-y-[2px]"
-            : "cursor-default"
-        }`}
+  elevation={0}
+  onClick={onClick}
+  className={`rounded-2xl border border-gray-200 h-full p-4 shadow-sm
+    transition-all duration-200 flex items-center justify-center relative
+    ${
+      onClick
+        ? "cursor-pointer hover:shadow-md hover:-translate-y-[2px]"
+        : "cursor-default"
+    }`}
+>
+  {/* Icon */}
+  <Box
+    className="absolute left-5 mt-3  flex items-center justify-center w-10 h-10 rounded-full"
+    sx={{ backgroundColor: iconBg }}
+  >
+    {loading ? (
+      <Skeleton variant="circular" width={24} height={24} />
+    ) : (
+      icon
+    )}
+  </Box>
+
+  <CardContent className="p-0 w-full text-center">
+    {/* Value */}
+    <Typography
+      sx={{ fontSize: "2.25rem", fontWeight: 550, lineHeight: 1.2 }}
+      className="text-gray-900"
     >
-      <CardContent className="p-0 w-full">
-        <Box className="flex items-center gap-5">
-          
-          {/* Icon */}
-          <Box
-            className="flex items-center justify-center w-8 h-8 mb-2 rounded-full"
-            sx={{ backgroundColor: iconBg }}
-          >
-            {loading ? (
-              <Skeleton variant="circular" width={24} height={24} />
-            ) : (
-              icon
-            )}
-          </Box>
+      {loading ? <Skeleton width={70} height={40} /> : value}
+    </Typography>
 
-          {/* Text Content */}
-          <Box className="flex flex-col">
-            
-            {/* Title */}
-            <Typography
-              sx={{ fontSize: "12px", fontWeight: 500 }}
-              className="uppercase text-black tracking-wide"
-            >
-              {loading ? <Skeleton width={80} /> : title}
-            </Typography>
-
-            {/* Value */}
-            <Typography
-              sx={{ fontSize: "2rem", fontWeight: 500, lineHeight: 1.2 }}
-              className="text-gray-900"
-            >
-              {loading ? <Skeleton width={70} height={40} /> : value}
-            </Typography>
-
-          </Box>
-        </Box>
-      </CardContent>
-    </Card>
+    {/* Title */}
+    <Typography
+      sx={{ fontSize: "11px", fontWeight: 350 }}
+      className="uppercase text-black tracking-wide"
+    >
+      {loading ? <Skeleton width={80} /> : title}
+    </Typography>
+  </CardContent>
+</Card>
 );
 
 export const StatsCardsRow: React.FC<{
@@ -266,54 +258,52 @@ export const StatsCardsRow: React.FC<{
         </Box>
       </Box>
       {/* YOUR TEAMS SECTION */}
-    <Box className="bg-white border border-gray-200 rounded-xl shadow-xs p-5 mt-6 flex flex-col md:flex-row md:items-center gap-18">
+      <Box className="bg-white border border-gray-200 rounded-xl shadow-xs p-5 mt-6 flex flex-col md:flex-row md:items-center gap-18">
+        {/* Title */}
+        <Typography className="text-blue-600 font-semibold text-xl">
+          YOUR TEAMS
+        </Typography>
 
-  {/* Title */}
-  <Typography className="text-blue-600 font-semibold text-xl">
-    YOUR TEAMS
-  </Typography>
-
-  {/* Dropdown */}
-  {usersLoading ? (
-    <Skeleton
-      variant="rectangular"
-      width={280}
-      height={40}
-      className="rounded-md"
-    />
-  ) : (
-    <Autocomplete
-      className="w-[280px]"
-      options={teamUsersWithAll}
-      disableClearable
-      value={selectedUser ?? allOption}
-      onChange={(_, value) => {
-        if (value?._id === "all") {
-          setSelectedUser(null);
-        } else {
-          setSelectedUser(value);
-        }
-      }}
-      getOptionLabel={(option) =>
-        option._id === "all"
-          ? option.name
-          : option.teamName
-          ? `${option.name} (${option.teamName})`
-          : option.name
-      }
-      isOptionEqualToValue={(option, value) => option._id === value._id}
-      renderInput={(params) => (
-        <TextField
-          {...params}
-          label="Select Team User"
-          placeholder="Search user or team..."
-          size="small"
-        />
-      )}
-    />
-  )}
-
-</Box>
+        {/* Dropdown */}
+        {usersLoading ? (
+          <Skeleton
+            variant="rectangular"
+            width={280}
+            height={40}
+            className="rounded-md"
+          />
+        ) : (
+          <Autocomplete
+            className="w-[280px]"
+            options={teamUsersWithAll}
+            disableClearable
+            value={selectedUser ?? allOption}
+            onChange={(_, value) => {
+              if (value?._id === "all") {
+                setSelectedUser(null);
+              } else {
+                setSelectedUser(value);
+              }
+            }}
+            getOptionLabel={(option) =>
+              option._id === "all"
+                ? option.name
+                : option.teamName
+                  ? `${option.name} (${option.teamName})`
+                  : option.name
+            }
+            isOptionEqualToValue={(option, value) => option._id === value._id}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Select Team User"
+                placeholder="Search user or team..."
+                size="small"
+              />
+            )}
+          />
+        )}
+      </Box>
 
       {/* TEAM STAT CARDS */}
       <Box className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full mt-2">

@@ -8,11 +8,13 @@ import CardContent from "@/components/ui/Component/CardContent";
 import Box from "@/components/ui/Component/Box";
 import Typography from "@/components/ui/Component/Typography";
 import { useRouter } from "next/navigation";
+
 import CallIcon from "@mui/icons-material/Call";
 import HomeIcon from "@mui/icons-material/Home";
 import EventIcon from "@mui/icons-material/Event";
 import DescriptionIcon from "@mui/icons-material/Description";
 import TaskAltIcon from "@mui/icons-material/TaskAlt";
+
 interface AnalyticsAccess {
   showScheduleThisWeek: boolean;
 }
@@ -47,7 +49,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
   const [filter, setFilter] = useState<"day" | "week" | "overdue">("week");
   const [page, setPage] = useState(1);
 
-  const leadsPerPage = 4;
+  const leadsPerPage = 10;
 
   useEffect(() => {
     setPage(1);
@@ -62,7 +64,6 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
     if (filter === "week") data = scheduleAnalytics.data.week || [];
     if (filter === "overdue") data = scheduleAnalytics.data.overdue || [];
 
-    // Remove notes from schedule
     return data.filter(
       (item) =>
         item?.followUpType && item.followUpType.toLowerCase() !== "note",
@@ -111,6 +112,40 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
     });
   };
 
+  /* ICON + COLOR CONFIG */
+  const getIconConfig = (type: string) => {
+    const t = type?.toLowerCase() || "";
+
+    if (t.includes("call"))
+      return {
+        icon: <CallIcon fontSize="small" />,
+        style: "bg-blue-100 text-blue-600",
+      };
+
+    if (t.includes("visit"))
+      return {
+        icon: <HomeIcon fontSize="small" />,
+        style: "bg-green-100 text-green-400",
+      };
+
+    if (t.includes("meeting"))
+      return {
+        icon: <EventIcon fontSize="small" />,
+        style: "bg-yellow-100 text-yellow-400",
+      };
+
+    if (t.includes("proposal"))
+      return {
+        icon: <DescriptionIcon fontSize="small" />,
+        style: "bg-purple-100 text-purple-400",
+      };
+
+    return {
+      icon: <TaskAltIcon fontSize="small" />,
+      style: "bg-gray-100 text-gray-400",
+    };
+  };
+
   if (!analyticsAccess.showScheduleThisWeek) {
     return (
       <Card>
@@ -129,6 +164,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
   return (
     <Card className="h-[420px] w-full overflow-hidden flex flex-col">
       <CardContent className="flex flex-col h-full">
+
         {/* HEADER */}
         <Box className="flex flex-wrap items-center gap-2 mb-3">
           <Typography className="text-xl font-semibold text-gray-800">
@@ -159,6 +195,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
         </Box>
 
         <Box className="flex-1 flex flex-col">
+
           {/* LOADING */}
           {scheduleLoading && (
             <div className="space-y-3">
@@ -179,6 +216,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
             <>
               {/* SUMMARY */}
               <div className="flex gap-2 mb-2">
+
                 <div
                   onClick={() => setFilter("day")}
                   className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer
@@ -212,12 +250,15 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                       : "border border-gray-300 text-red-600"
                   }`}
                 >
-                  {scheduleAnalytics.summary?.overdueCount || 0} Overdue
+                  {filter === "overdue"
+                    ? filteredLeads.length
+                    : scheduleAnalytics.summary?.overdueCount || 0} Overdue
                 </div>
               </div>
 
               {/* LIST */}
-              <div className="flex-1 space-y-3 overflow-y-auto pr-1 min-h-0">
+              <div className="flex-1 space-y-3 overflow-y-auto pr-1 min-h-0 max-h-[260px]">
+
                 {filteredLeads.length > 0 ? (
                   paginatedLeads.map((item: any) => {
                     const title =
@@ -227,8 +268,9 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                       }`;
 
                     const dateLabel = getDateLabel(item.followUpDate);
-
                     const type = item.followUpType || "task";
+
+                    const { icon, style } = getIconConfig(type);
 
                     return (
                       <div
@@ -236,35 +278,18 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                         onClick={() => handleCardClick(item)}
                         className="flex items-center justify-between p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition"
                       >
+
                         {/* LEFT */}
                         <div className="flex items-center gap-3">
+
                           <div
-                            className={`w-8 h-8 flex items-center justify-center rounded-full
-                            ${
-                              type === "call"
-                                ? "bg-blue-100 text-blue-600"
-                                : type === "visit"
-                                  ? "bg-green-100 text-green-600"
-                                  : type === "meeting"
-                                    ? "bg-yellow-100 text-yellow-700"
-                                    : "bg-purple-100 text-purple-700"
-                            }`}
+                            className={`w-8 h-8 flex items-center justify-center rounded-full ${style}`}
                           >
-                            {type?.toLowerCase().includes("call") ? (
-                              <CallIcon fontSize="small" />
-                            ) : type?.toLowerCase().includes("visit") ? (
-                              <HomeIcon fontSize="small" />
-                            ) : type?.toLowerCase().includes("meeting") ? (
-                              <EventIcon fontSize="small" />
-                            ) : type?.toLowerCase().includes("proposal") ? (
-                              <DescriptionIcon fontSize="small" />
-                            ) : (
-                              <TaskAltIcon fontSize="small" />
-                            )}
+                            {icon}
                           </div>
 
                           <div>
-                            <Typography className="font-semibold text-black !text-[14px]">
+                            <Typography className="font-medium text-black !text-[15px]">
                               {title}
                             </Typography>
 
@@ -274,10 +299,6 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                           </div>
                         </div>
 
-                        {/* RIGHT MENU */}
-                        <div className="text-gray-400 text-lg cursor-pointer">
-                          ⋯
-                        </div>
                       </div>
                     );
                   })
@@ -286,10 +307,11 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                     📅 No activities for this {filter}
                   </div>
                 )}
+
               </div>
 
               {/* PAGINATION */}
-              <div className=" pb-1  mt-1.5 flex justify-center shrink-0">
+              <div className="mt-4 flex justify-center shrink-0">
                 <Pagination
                   count={totalPages}
                   page={page}
@@ -298,6 +320,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                   color="primary"
                 />
               </div>
+
             </>
           )}
 
@@ -307,6 +330,7 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
                 Failed to load schedule data
               </div>
             )}
+
         </Box>
       </CardContent>
     </Card>
