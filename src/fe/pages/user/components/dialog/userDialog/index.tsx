@@ -1,6 +1,6 @@
 ﻿"use client";
 
-import Button from "@/components/ui/Button";
+import { Button } from "@/components/ui";
 import React, { useState } from "react";
 import { Formik, Form } from "formik";
 import { BUTTON_LABELS } from "@/fe/pages/user/constants/users";
@@ -137,16 +137,26 @@ const UserDialog: React.FC<UserDialogProps> = ({
 
                 {/* Footer */}
                 <div className="flex items-center justify-end gap-3 px-6 py-3 border-t border-slate-100 bg-white rounded-b-2xl">
-                  <button
+                  <Button
                     type="button"
                     onClick={onClose}
                     disabled={saving}
-                    className="px-4 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors disabled:opacity-50"
+                    variant="text"
+                    sx={{ fontWeight: 500, color: "#475569" }}
                   >
                     {BUTTON_LABELS.CANCEL}
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     type="button"
+                    variant="contained"
+                    sx={{
+                      fontWeight: 600,
+                      bgcolor: "#2563eb",
+                      color: "#fff",
+                      px: 3,
+                      boxShadow: "none",
+                      "&:hover": { bgcolor: "#1d4ed8", boxShadow: "none" },
+                    }}
                     disabled={saving || (editId ? !dirty : false)}
                     onClick={() => {
                       try {
@@ -160,7 +170,6 @@ const UserDialog: React.FC<UserDialogProps> = ({
                       }
                       submitForm();
                     }}
-                    className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     {saving ? (
                       <>
@@ -190,7 +199,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                     ) : (
                       BUTTON_LABELS.ADD
                     )}
-                  </button>
+                  </Button>
                 </div>
               </Form>
             )}
