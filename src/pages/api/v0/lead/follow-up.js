@@ -14,6 +14,10 @@ class FollowUpController extends Controller {
   post(req, res) {
     return this.service.handleFollowUpRequest(req, res);
   }
+
+  patch(req, res) {
+    return this.service.updateFollowUpOutcome(req, res);
+  }
 }
 
 export default new FollowUpController().handler;
