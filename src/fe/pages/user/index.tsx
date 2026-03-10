@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback, useEffect } from "react";
 import { useTheme, useMediaQuery, AddIcon } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
 import UserDialog from "@/fe/pages/user/components/dialog/userDialog";
@@ -16,8 +16,9 @@ import { canEditEmployee, getInitialUserForm } from "@/fe/pages/user/utils";
 import { getUsersTableHeader } from "@/fe/pages/user/components/UserTable";
 import UsersPageList from "@/fe/pages/user/components/UsersPageList";
 import useUsersPage from "@/fe/pages/user/hooks/useUsersPage";
-import type { Employee } from "@/fe/pages/user/types";
-import type { TostProps } from "@/fe/pages/user/types";
+import { useGetUsersQuery } from "@/fe/pages/user/userApi";
+import { invalidateQueryCache } from "@/fe/hooks/createApi";
+import type { Employee, TostProps } from "@/fe/pages/user/types";
 
 const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {
   if (!open) return null;
@@ -51,14 +52,8 @@ const UsersPage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
   const {
-    page,
-    setPage,
-    rowsPerPage,
-    handlePageSizeChange,
-    employees,
-    loading,
-    totalItems,
     search,
+    debouncedSearch,
     handleSearchChange,
     open,
     setOpen,
@@ -71,11 +66,52 @@ const UsersPage: React.FC = () => {
     snackbarOpen,
     setSnackbarOpen,
     snackbarMessage,
+    setSnackbarMessage,
     snackbarSeverity,
+    setSnackbarSeverity,
     isClient,
     windowWidth,
-    handleMutationSuccess,
   } = useUsersPage();
+
+  const {
+    items: employees,
+    loading,
+    page,
+    rowsPerPage,
+    totalItems,
+    refetch,
+    setPage,
+    setPageSize,
+  } = useGetUsersQuery({ search: debouncedSearch });
+
+  // Reset to page 1 whenever search changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
+  const handlePageSizeChange = useCallback(
+    (newSize: number) => {
+      setPageSize(newSize);
+      setPage(1);
+    },
+    [setPageSize, setPage],
+  );
+
+  const handleMutationSuccess = useCallback(async () => {
+    invalidateQueryCache("/api/v0/employee");
+    await refetch();
+    handleCloseDialog();
+    setSnackbarMessage("User saved successfully!");
+    setSnackbarSeverity("success");
+    setSnackbarOpen(true);
+    setTimeout(() => setSnackbarOpen(false), 2000);
+  }, [
+    refetch,
+    handleCloseDialog,
+    setSnackbarMessage,
+    setSnackbarSeverity,
+    setSnackbarOpen,
+  ]);
 
   const usersTableHeader = React.useMemo(
     () =>
@@ -125,14 +161,13 @@ const UsersPage: React.FC = () => {
           type="button"
           aria-label="Add user"
           onClick={() => setOpen(true)}
-          disabled={false}
           style={{
             bottom: FAB_POSITION.bottom,
             right: FAB_POSITION.right,
             zIndex: FAB_POSITION.zIndex,
+            background: GRADIENTS.button,
           }}
-          className="fixed md:hidden flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95 disabled:opacity-60"
-          style={{ background: GRADIENTS.button }}
+          className="fixed md:hidden flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95"
         >
           <AddIcon />
         </button>
@@ -150,7 +185,7 @@ const UsersPage: React.FC = () => {
             editId={editId}
             initialData={getInitialUserForm(selectedUser)}
             onClose={handleCloseDialog}
-            onMutationSuccess={handleMutationSuccess}
+            onSave={handleMutationSuccess}
           />
         )}
       </PermissionGuard>

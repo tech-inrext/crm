@@ -35,8 +35,6 @@ function useMutation<TPayload = unknown, TResponse = unknown>(
   const mutate = useCallback(
     async (body: TPayload, onSuccess): Promise<TResponse> => {
       const { url, method } = getConfig(body);
-      console.log("Inside mutate");
-
       // ── Setup ────────────────────────────────────────────────────────────
       cancelSourceRef.current = axios.CancelToken.source();
 

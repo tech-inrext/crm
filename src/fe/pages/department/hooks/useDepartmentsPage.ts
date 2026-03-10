@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useDepartments } from "@/fe/pages/department/hooks/useDepartments";
 import { useDepartmentDialog } from "@/fe/pages/department/hooks/useDepartmentDialog";
-import type { MutationError } from "@/fe/hooks/createMutation";
+import type { MutationError } from "@/fe/hooks/useMutation";
 import {
   SEARCH_DEBOUNCE_DELAY,
   DEFAULT_DEPARTMENT_FORM,

@@ -2,8 +2,6 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useGetUsersQuery } from "@/fe/pages/user/userApi";
-import { invalidateQueryCache } from "@/fe/hooks/createApi";
 import { SEARCH_DEBOUNCE_DELAY } from "@/fe/pages/user/constants/users";
 import type { Employee } from "@/fe/pages/user/types";
 
@@ -11,9 +9,7 @@ type SnackbarSeverity = "success" | "error";
 type DialogMode = "create" | "edit" | "view";
 
 export function useUsersPage() {
-  // ─── Pagination & Search ────────────────────────────────────────────────
-  const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  // ─── Search ─────────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
 
@@ -32,18 +28,6 @@ export function useUsersPage() {
   // ─── UI ──────────────────────────────────────────────────────────────────
   const [isClient, setIsClient] = useState(false);
   const [windowWidth, setWindowWidth] = useState(1200);
-
-  // ─── Query (direct createApi usage) ──────────────────────────────────────
-  const {
-    items: employees,
-    loading,
-    totalItems,
-    refetch,
-  } = useGetUsersQuery({
-    page,
-    rowsPerPage,
-    search: debouncedSearch,
-  });
 
   // ─── Window setup ────────────────────────────────────────────────────────
   useEffect(() => {
@@ -79,39 +63,14 @@ export function useUsersPage() {
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
-      setPage(1);
     },
     [],
   );
 
-  // ─── Pagination handler ─────────────────────────────────────────────────
-  const handlePageSizeChange = useCallback((newSize: number) => {
-    setRowsPerPage(newSize);
-    setPage(1);
-  }, []);
-
-  // ─── Mutation success handler ────────────────────────────────────────────
-  const handleMutationSuccess = useCallback(async () => {
-    invalidateQueryCache("/api/v0/employee");
-    await refetch();
-    handleCloseDialog();
-    setSnackbarMessage("User saved successfully!");
-    setSnackbarSeverity("success");
-    setSnackbarOpen(true);
-  }, [refetch, handleCloseDialog]);
-
   return {
-    // Pagination & Data
-    page,
-    setPage,
-    rowsPerPage,
-    handlePageSizeChange,
-    employees,
-    loading,
-    totalItems,
-
     // Search
     search,
+    debouncedSearch,
     handleSearchChange,
 
     // Dialog
@@ -128,14 +87,13 @@ export function useUsersPage() {
     snackbarOpen,
     setSnackbarOpen,
     snackbarMessage,
+    setSnackbarMessage,
     snackbarSeverity,
+    setSnackbarSeverity,
 
     // UI
     isClient,
     windowWidth,
-
-    // Refetch
-    handleMutationSuccess,
   } as const;
 }
 
