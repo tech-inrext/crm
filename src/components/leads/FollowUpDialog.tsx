@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/Component";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
+import LeadActivity from "./LeadActivity";
 
 // Helper to get initials for avatar
 const getInitials = (name: string) => {
@@ -594,7 +595,11 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                 </Tooltip>
                               )}
                               <Chip
-                                label={it.followUpType === "history" ? "activity" : it.followUpType}
+                                label={
+                                  it.followUpType === "history"
+                                    ? "activity"
+                                    : it.followUpType
+                                }
                                 size="small"
                                 sx={{
                                   height: 18,
@@ -641,22 +646,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                             }}
                           >
                             {isHistory && it.change ? (
-                              Object.entries(it.change).map(([field, vals]: any) => (
-                                <Box key={field} sx={{ mb: 0.5, display: "flex", gap: 1, flexWrap: "wrap", alignItems: "center" }}>
-                                  <Typography variant="body2" component="span" sx={{ fontWeight: 600, textTransform: "capitalize" }}>
-                                    {field.replace(/([A-Z])/g, ' $1').trim()}:
-                                  </Typography>
-                                  <Box component="span" sx={{ color: "#ef4444", textDecoration: "line-through", bgcolor: "#fee2e2", px: 0.5, borderRadius: 1 }}>
-                                    {vals.prev || "None"}
-                                  </Box>
-                                  <Typography variant="body2" component="span" sx={{ color: "#6b7280" }}>
-                                    ➔
-                                  </Typography>
-                                  <Box component="span" sx={{ color: "#10b981", bgcolor: "#d1fae5", px: 0.5, borderRadius: 1 }}>
-                                    {vals.new || "None"}
-                                  </Box>
-                                </Box>
-                              ))
+                              <LeadActivity change={it.change} />
                             ) : it.note !== "N/A" ? (
                               it.note
                             ) : (
