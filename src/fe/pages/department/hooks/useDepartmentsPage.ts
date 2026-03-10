@@ -39,20 +39,16 @@ export function useDepartmentsPage() {
   const depts = useDepartments(debouncedSearch);
   const { loadDepartments } = depts;
 
-  const {
-    dialogMode,
-    selectedDepartment,
-    handleCloseDialog,
-    openEditDialog,
-  } = useDepartmentDialog({
-    departments: depts.departments,
-    loading: depts.loading,
-    getDepartmentById: depts.getDepartmentById,
-    setEditId: depts.setEditId,
-    setOpen: depts.setOpen,
-    setForm: depts.setForm,
-    defaultForm: DEFAULT_DEPARTMENT_FORM,
-  });
+  const { dialogMode, selectedDepartment, handleCloseDialog, openEditDialog } =
+    useDepartmentDialog({
+      departments: depts.departments,
+      loading: depts.loading,
+      getDepartmentById: depts.getDepartmentById,
+      setEditId: depts.setEditId,
+      setOpen: depts.setOpen,
+      setForm: depts.setForm,
+      defaultForm: DEFAULT_DEPARTMENT_FORM,
+    });
 
   // ── Window / client-side setup ───────────────────────────────────────────
   useEffect(() => {

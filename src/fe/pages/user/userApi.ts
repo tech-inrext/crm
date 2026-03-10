@@ -6,6 +6,7 @@ const userApi = createApi({
     getUsers: (params) => ({
       url: "/api/v0/employee",
       isPaginated: true,
+      shouldCache: true, // Cache the employee list for better performance
     }),
     // Single employee by ID
     getUserById: (params) => ({
@@ -26,33 +27,27 @@ const userApi = createApi({
       isPaginated: false,
     }),
   },
+  mutations: {
+    // Create a new employee
+    createUser: () => ({
+      url: "/api/v0/employee",
+      method: "post",
+    }),
+    updateUser: (params) => ({
+      url: `/api/v0/employee/${params.id}`,
+      method: "patch",
+    }),
+  },
 });
 
-const {
+export const {
   useGetUsersQuery,
   useGetUserByIdQuery,
   useGetRolesQuery,
   useGetManagersQuery,
   useGetDepartmentsQuery,
-} = userApi as {
-  useGetUsersQuery: (
-    params?: Record<string, unknown>,
-  ) => ReturnType<
-    typeof import("@/fe/hooks/createApi").default extends infer T
-      ? never
-      : never
-  > &
-    any;
-  useGetUserByIdQuery: (params?: Record<string, unknown>) => any;
-  useGetRolesQuery: (params?: Record<string, unknown>) => any;
-  useGetManagersQuery: (params?: Record<string, unknown>) => any;
-  useGetDepartmentsQuery: (params?: Record<string, unknown>) => any;
-};
 
-export {
-  useGetUsersQuery,
-  useGetUserByIdQuery,
-  useGetRolesQuery,
-  useGetManagersQuery,
-  useGetDepartmentsQuery,
-};
+  // Mutations
+  useCreateUserMutation,
+  useUpdateUserMutation,
+} = userApi;

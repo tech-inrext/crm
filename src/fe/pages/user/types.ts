@@ -153,9 +153,8 @@ export interface UserDialogProps {
   open: boolean;
   editId: string | null;
   initialData: UserFormData;
-  saving: boolean;
   onClose: () => void;
-  onSave: (values: UserFormData) => void;
+  onSave: (responseData: any, body: any) => Promise<void>;
 }
 
 export interface UserCardProps {
@@ -183,9 +182,7 @@ export interface UsersActionBarProps {
   search: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAdd: () => void;
-  saving: boolean;
 }
-
 
 interface ToastProps {
   open: boolean;
