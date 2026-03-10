@@ -45,7 +45,7 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
             size="small"
             onClick={onEdit}
             aria-label="edit user"
-            sx={{ ml: 1, color: "#2563eb", "&:hover": { color: "#1d4ed8" } }}
+            className="ml-1 text-blue-600 hover:text-blue-700"
           >
             <EditIcon fontSize="small" />
           </Button>
