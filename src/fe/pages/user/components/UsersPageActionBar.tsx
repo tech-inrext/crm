@@ -2,7 +2,7 @@
 
 import React from "react";
 import PageHeader from "@/fe/framework/components/PageHeader";
-import { Add } from "@/components/ui/Component";
+import { Button, Add } from "@/components/ui/Component";
 import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import {
@@ -14,12 +14,18 @@ interface Props {
   search: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAdd: () => void;
+  showAllEmployees?: boolean;
+  onToggleAllEmployees?: () => void;
+  isSystemAdmin?: boolean;
 }
 
 const UsersPageActionBar: React.FC<Props> = ({
   search,
   onSearchChange,
   onAdd,
+  showAllEmployees,
+  onToggleAllEmployees,
+  isSystemAdmin,
 }) => {
   return (
     <PageHeader title="Users">
@@ -32,6 +38,19 @@ const UsersPageActionBar: React.FC<Props> = ({
             placeholder={SEARCH_PLACEHOLDER}
           />
         </div>
+
+        {/* All Employees toggle – system admin only */}
+        {isSystemAdmin && (
+          <Button
+            variant={showAllEmployees ? "contained" : "outlined"}
+            color="primary"
+            onClick={onToggleAllEmployees}
+            className="hidden md:flex"
+            sx={{ minWidth: 150, textTransform: "none", fontWeight: 600 }}
+          >
+            {showAllEmployees ? "My Team" : "All Employees"}
+          </Button>
+        )}
 
         <div className="hidden md:block">
           <PermissionGuard
