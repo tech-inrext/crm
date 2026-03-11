@@ -1,4 +1,4 @@
-﻿import React from "react";
+﻿import React, { useRef } from "react";
 import { IconButton, CloseIcon } from "@/components/ui/Component";
 import { Field, FieldProps } from "formik";
 import { previewIsImage } from "@/fe/pages/user/utils";
@@ -8,6 +8,7 @@ import { CameraAlt } from "@mui/icons-material";
 const PhotoUpload: React.FC = () => (
   <Field name="photoFile">
     {({ form, meta }: FieldProps) => {
+      const fileInputRef = useRef<HTMLInputElement>(null);
       const {
         localError,
         isHovered,
@@ -23,9 +24,9 @@ const PhotoUpload: React.FC = () => (
       return (
         <div className="flex flex-col flex-1">
           <input
+            ref={fileInputRef}
             accept="image/*"
             className="hidden"
-            id="photo-upload"
             type="file"
             onChange={(e) => handleFileChange(e, form)}
           />
@@ -34,7 +35,7 @@ const PhotoUpload: React.FC = () => (
             <div
               onMouseEnter={() => setIsHovered(true)}
               onMouseLeave={() => setIsHovered(false)}
-              onClick={() => document.getElementById("photo-upload")?.click()}
+              onClick={() => fileInputRef.current?.click()}
               className={`w-full h-full rounded-full overflow-hidden cursor-pointer border-4 flex items-center justify-center transition-all duration-300 hover:scale-105 hover:shadow-md ${
                 isUrl || isFile
                   ? "border-blue-500 bg-transparent"

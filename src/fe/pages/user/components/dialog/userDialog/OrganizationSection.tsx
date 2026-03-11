@@ -98,9 +98,9 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
               SelectProps={{ MenuProps: { disablePortal: true } }}
             >
               <MenuItem value="">None</MenuItem>
-              {departments.map((d) => (
-                <MenuItem key={d._id} value={d._id}>
-                  {d.name}
+              {departments.map((department) => (
+                <MenuItem key={department._id} value={department._id}>
+                  {department.name}
                 </MenuItem>
               ))}
             </TextField>

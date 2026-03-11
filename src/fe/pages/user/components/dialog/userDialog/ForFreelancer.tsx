@@ -1,5 +1,6 @@
 ﻿import React, { useRef, useState } from "react";
 import { TextField, MenuItem } from "@/components/ui/Component";
+import { Typography } from "@mui/material";
 import { Field, FieldProps } from "formik";
 import { FIELD_LABELS } from "@/fe/pages/user/constants/users";
 import {
@@ -21,9 +22,9 @@ const ForFreelancer: React.FC = () => {
 
   return (
     <>
-      <p className="text-base font-semibold text-slate-700 mt-2">
+      <Typography variant="subtitle1" sx={{ fontWeight: 600, mt: 2 }}>
         {FIELD_LABELS.FOR_FREELANCER}
-      </p>
+      </Typography>
 
       <div className="flex flex-col sm:flex-row gap-3 mt-1">
         <Field name="slabPercentage">

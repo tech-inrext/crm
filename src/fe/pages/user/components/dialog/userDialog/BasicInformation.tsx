@@ -153,9 +153,9 @@ const BasicInformation: React.FC<BasicInformationProps> = ({
             sx={inputSx}
             SelectProps={{ MenuProps: { disablePortal: true } }}
           >
-            {GENDER_OPTIONS.map((g) => (
-              <MenuItem key={g} value={g}>
-                {g}
+            {GENDER_OPTIONS.map((gender) => (
+              <MenuItem key={gender} value={gender}>
+                {gender}
               </MenuItem>
             ))}
           </TextField>
