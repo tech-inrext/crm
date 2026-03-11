@@ -14,7 +14,16 @@ import { departmentValidationSchema } from "./validation";
 import { SavedAttachmentRow, PendingFileRow } from "./AttachmentRows";
 import type { DepartmentDialogProps, DepartmentAttachment } from "@/fe/pages/department/types";
 
-interface PendingFile { id: string; file: File; customName: string; }
+import {
+  useCreateDepartmentMutation,
+  useUpdateDepartmentMutation,
+} from "@/fe/pages/department/departmentApi";
+
+interface PendingFile {
+  id: string;
+  file: File;
+  customName: string;
+}
 
 async function uploadToS3(file: File): Promise<string> {
   const { data } = await axios.post<{ uploadUrl: string; fileUrl: string }>(
@@ -22,41 +31,77 @@ async function uploadToS3(file: File): Promise<string> {
     { fileName: file.name, fileType: file.type },
     { withCredentials: true },
   );
-  await axios.put(data.uploadUrl, file, { headers: { "Content-Type": file.type }, withCredentials: false });
+  await axios.put(data.uploadUrl, file, {
+    headers: { "Content-Type": file.type },
+    withCredentials: false,
+  });
   return data.fileUrl;
 }
 
-const DepartmentDialog: React.FC<DepartmentDialogProps> = ({ open, editId, initialData, saving, onClose, onSave }) => {
+const DepartmentDialog: React.FC<DepartmentDialogProps> = ({
+  open,
+  editId,
+  initialData,
+  onClose,
+  onSave,
+}) => {
   const { managers } = useDepartmentDialogData(open);
+  const createMutation = useCreateDepartmentMutation();
+  const updateMutation = useUpdateDepartmentMutation();
+
+  const {
+    mutate: handleDepartmentSave,
+    loading: saving = false,
+  } = editId ? updateMutation : createMutation;
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
   const [uploading, setUploading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"error" | "success">("error");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"error" | "success">(
+    "error",
+  );
   const [renamingUrl, setRenamingUrl] = useState<string | null>(null);
 
   const notify = (msg: string, type: "error" | "success" = "error") => {
-    setSnackbarMsg(msg); setSnackbarSeverity(type); setSnackbarOpen(true);
+    setSnackbarMsg(msg);
+    setSnackbarSeverity(type);
+    setSnackbarOpen(true);
   };
+
+  if (!open) return null;
 
   const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
-    setPendingFiles((prev) => [...prev, ...files.map((f) => ({
-      id: `${f.name}-${Date.now()}-${Math.random()}`,
-      file: f,
-      customName: f.name.replace(/\.[^.]+$/, ""),
-    }))]);
+    setPendingFiles((prev) => [
+      ...prev,
+      ...files.map((f) => ({
+        id: `${f.name}-${Date.now()}-${Math.random()}`,
+        file: f,
+        customName: f.name.replace(/\.[^.]+$/, ""),
+      })),
+    ]);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   return (
     <>
       <Dialog
-        open={open} onClose={onClose} fullWidth maxWidth="sm"
-        BackdropProps={{ sx: { backdropFilter: "blur(1px)", backgroundColor: "rgba(15,23,42,0.4)" } }}
-        PaperProps={{ sx: { borderRadius: 3, boxShadow: "0 10px 30px rgba(0,0,0,0.12)" } }}
+        open={open}
+        onClose={onClose}
+        fullWidth
+        maxWidth="sm"
+        BackdropProps={{
+          sx: {
+            backdropFilter: "blur(1px)",
+            backgroundColor: "rgba(15,23,42,0.4)",
+          },
+        }}
+        PaperProps={{
+          sx: { borderRadius: 3, boxShadow: "0 10px 30px rgba(0,0,0,0.12)" },
+        }}
       >
         <Formik
           initialValues={initialData}
@@ -67,10 +112,27 @@ const DepartmentDialog: React.FC<DepartmentDialogProps> = ({ open, editId, initi
             try {
               setUploading(true);
               const newAttachments: DepartmentAttachment[] = await Promise.all(
-                pendingFiles.map(async (p) => ({ filename: p.customName.trim() || p.file.name, url: await uploadToS3(p.file) })),
+                pendingFiles.map(async (p) => ({
+                  filename: p.customName.trim() || p.file.name,
+                  url: await uploadToS3(p.file),
+                })),
               );
               setUploading(false);
-              await onSave({ ...values, attachments: [...(values.attachments ?? []), ...newAttachments] });
+
+              const payload = {
+                ...values,
+                attachments: [
+                  ...(values.attachments ?? []),
+                  ...newAttachments,
+                ],
+              };
+
+              if (editId) {
+                await handleDepartmentSave({ ...payload, id: editId }, onSave);
+              } else {
+                await handleDepartmentSave(payload, onSave);
+              }
+
               setPendingFiles([]);
             } catch (e: any) {
               setUploading(false);

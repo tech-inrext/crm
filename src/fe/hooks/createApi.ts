@@ -143,7 +143,7 @@ const createApi = ({
     const hookName = `use${key.charAt(0).toUpperCase() + key.slice(1)}Query`;
     hooks[hookName] = useQuery.bind(null, value);
   });
-  Object.entries(mutations).forEach(([key, value]) => {
+  Object.entries(mutations || {}).forEach(([key, value]) => {
     const hookName = `use${key.charAt(0).toUpperCase() + key.slice(1)}Mutation`;
     hooks[hookName] = useMutation.bind(null, value);
   });
