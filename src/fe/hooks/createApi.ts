@@ -117,7 +117,7 @@ const useQuery = (
 
 const createApi = ({
   endpoints,
-  mutations,
+  mutations = {},
 }: {
   endpoints: Record<
     string,
@@ -127,7 +127,7 @@ const createApi = ({
       defaultPageSize?: number;
     }
   >;
-  mutations: Record<
+  mutations?: Record<
     string,
     (params: Record<string, unknown>) => {
       url: string;
