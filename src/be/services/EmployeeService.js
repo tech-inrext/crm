@@ -1174,13 +1174,7 @@ class EmployeeService extends Service {
       .forEach((emp) => {
         const children = this.buildHierarchy(employees, emp._id); // Recursively find employees under each employee
         tree.push({
-          _id: emp._id,
-          name: emp.name,
-          designation: emp.designation,
-          branch: emp.branch,
-          managerId: emp.managerId,
-          employeeProfileId: emp.employeeProfileId,
-          children: children.length ? children : [], // If no subordinates, return empty array
+         ...emp
         });
       });
     return tree;
@@ -1199,7 +1193,9 @@ class EmployeeService extends Service {
       }
 
       // Fetch all employees
-      const employees = await Employee.find({}).lean();
+      const employees = await Employee.find({})
+        .select("-password -resetOTP -resetOTPExpires")
+        .lean();
 
       // Fetch the manager details
       const manager = employees.find(
@@ -1215,12 +1211,7 @@ class EmployeeService extends Service {
 
       // Build hierarchy starting from the manager themselves
       const hierarchy = {
-        _id: manager._id,
-        name: manager.name,
-        designation: manager.designation,
-        branch: manager.branch,
-        managerId: manager.managerId,
-        employeeProfileId: manager.employeeProfileId,
+        ...manager,
         children: this.buildHierarchy(employees, manager._id), // Recursively find subordinates
       };
 

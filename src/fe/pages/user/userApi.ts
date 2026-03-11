@@ -26,6 +26,11 @@ const userApi = createApi({
       url: "/api/v0/department",
       isPaginated: false,
     }),
+    getMyTeamHierarchy: (params) => ({
+      url: "/api/v0/employee/hierarchy",
+      isPaginated: false,
+      shouldCache: true,
+    }),
   },
   mutations: {
     // Create a new employee
@@ -46,6 +51,7 @@ export const {
   useGetRolesQuery,
   useGetManagersQuery,
   useGetDepartmentsQuery,
+  useGetMyTeamHierarchyQuery,
 
   // Mutations
   useCreateUserMutation,
