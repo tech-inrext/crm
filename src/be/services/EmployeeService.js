@@ -1176,6 +1176,7 @@ class EmployeeService extends Service {
         tree.push({
           _id: emp._id,
           name: emp.name,
+          email: emp.email,
           designation: emp.designation,
           branch: emp.branch,
           managerId: emp.managerId,
@@ -1217,6 +1218,7 @@ class EmployeeService extends Service {
       const hierarchy = {
         _id: manager._id,
         name: manager.name,
+        email: manager.email,
         designation: manager.designation,
         branch: manager.branch,
         managerId: manager.managerId,
