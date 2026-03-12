@@ -100,10 +100,10 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
 
   // Generate visiting card URL using userId (MongoDB _id)
   const getVisitingCardUrl = () => {
-    if (!userId) return "https://staging.inrext.com/";
+    if (!userId) return "https://inrext.com/";
     
     // Use userId for the URL parameter
-    return `https://staging.inrext.com//visiting-card/${userId}`;
+    return `https://inrext.com//visiting-card/${userId}`;
   };
 
   const handleCopyLink = async () => {
@@ -189,7 +189,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
   };
 
   const handleWebsite = () => {
-    window.open("https://staging.inrext.com", '_blank');
+    window.open("https://inrext.com", '_blank');
     onClose();
   };
 
