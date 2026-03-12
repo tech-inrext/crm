@@ -165,7 +165,7 @@ export default function NewDashboardPage() {
 
   return (
     <PermissionGuard module="analytics" action="read">
-      <Box className="p-3 sm:p-6 md:p-8 overflow-hidden">
+      <Box className="p-3 sm:p-6 md:p-8 overflow-hidden min-h-screen bg-[#f7f9fb]">
         <Typography
           variant="h4"
           className="font-bold text-[#1a1a1a] mb-4 text-2xl sm:text-3xl md:text-4xl"
