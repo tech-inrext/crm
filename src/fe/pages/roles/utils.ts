@@ -30,7 +30,6 @@ const BACKEND_MODULES = [
   "cab-booking",
   "cab-vendor",
   "vendor",
-  "branch",
   "property",
   "booking-login",
   "training-videos",
@@ -163,4 +162,40 @@ export const capitalizeFriendly = (str: string): string => {
   if (str === "BookingLogin") return "Booking Login";
   if (str === "TrainingVideos") return "Training Videos";
   return str.charAt(0).toUpperCase() + str.slice(1);
+};
+
+/**
+ * Builds a map of { [module]: string[] } listing which actions (read/write/delete)
+ * are granted for each module. Supports both the current read/write/delete arrays
+ * and the legacy permissions[] "module:action" format.
+ */
+export const buildGroupedPermissions = (
+  role: any,
+): Record<string, string[]> => {
+  const grouped: Record<string, string[]> = {};
+
+  const add = (arr: string[] | undefined, action: string) =>
+    arr?.forEach((mod) => {
+      if (!grouped[mod]) grouped[mod] = [];
+      grouped[mod].push(action);
+    });
+
+  const hasRWD =
+    (role.read && role.read.length > 0) ||
+    (role.write && role.write.length > 0) ||
+    (role.delete && role.delete.length > 0);
+
+  if (hasRWD) {
+    add(role.read, "read");
+    add(role.write, "write");
+    add(role.delete, "delete");
+  } else {
+    (role.permissions ?? []).forEach((perm: string) => {
+      const [module, action] = perm.split(":");
+      if (!grouped[module]) grouped[module] = [];
+      grouped[module].push(action);
+    });
+  }
+
+  return grouped;
 };

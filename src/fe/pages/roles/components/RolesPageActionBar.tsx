@@ -2,21 +2,17 @@
 
 import React from "react";
 import PageHeader from "@/fe/framework/components/PageHeader";
-import { Add } from "@/components/ui/Component";
+import { Add, Button } from "@/components/ui/Component";
 import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import {
   ROLES_PERMISSION_MODULE,
   SEARCH_PLACEHOLDER,
 } from "@/fe/pages/roles/constants/roles";
+import { addRoleButtonSx } from "@/fe/pages/roles/styles";
+import { RolesPageActionBarProps } from "@/fe/pages/roles/types";
 
-interface Props {
-  search: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onAdd: () => void;
-}
-
-const RolesPageActionBar: React.FC<Props> = ({
+const RolesPageActionBar: React.FC<RolesPageActionBarProps> = ({
   search,
   onSearchChange,
   onAdd,
@@ -39,14 +35,14 @@ const RolesPageActionBar: React.FC<Props> = ({
             action="write"
             fallback={<></>}
           >
-            <button
-              type="button"
+            <Button
+              variant="contained"
               onClick={onAdd}
-              className="flex items-center justify-center gap-2 px-4 py-2 min-w-[150px] h-10 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-transform"
+              startIcon={<Add />}
+              sx={addRoleButtonSx}
             >
-              <Add />
-              <span>Add Role</span>
-            </button>
+              Add Role
+            </Button>
           </PermissionGuard>
         </div>
       </div>

@@ -1,3 +1,5 @@
+import React from "react";
+
 // ─── Domain models ────────────────────────────────────────────────────────────
 
 export interface Role {
@@ -45,9 +47,40 @@ export interface PaginatedResponse<T> {
 
 // ─── UI types ─────────────────────────────────────────────────────────────────
 
-export interface TostProps {
+export interface ToastProps {
   open: boolean;
   message: string;
   severity: "success" | "error";
   onClose: () => void;
+}
+
+export interface RoleDialogProps {
+  open: boolean;
+  role?: Role | null;
+  onSubmit: (data: RoleFormData) => void;
+  onClose: () => void;
+}
+
+export interface RolePermissionsDialogProps {
+  open: boolean;
+  onClose: () => void;
+  role: Role | null;
+}
+
+export interface RolesPageActionBarProps {
+  search: string;
+  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onAdd: () => void;
+}
+
+export interface RolesListProps {
+  loading: boolean;
+  roles: Role[];
+  page: number;
+  rowsPerPage: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  onEditRole: (role: Role) => void;
+  onViewPermissions: (role: Role) => void;
 }

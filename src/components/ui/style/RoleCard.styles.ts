@@ -1,4 +1,4 @@
-import { SxProps, Theme } from '@/components/ui/Component';
+import { SxProps, Theme } from "@/components/ui/Component";
 
 export const roleCardStyles = {
   card: {
@@ -105,26 +105,13 @@ export const permissionColors = {
 
 export const rolePermissionsDialogStyles = {
   dialog: {
-    borderRadius: 3,
+    borderRadius: { xs: 2, sm: 3 },
     background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)",
-    minWidth: { xs: "unset", sm: "400px", md: "500px" },
-    maxWidth: { xs: "100%", sm: "90vw", md: "600px" },
-    width: { xs: "100%", sm: "auto" },
-  } as SxProps<Theme>,
-
-  dialogMobile: {
-    minWidth: "unset",
-    maxWidth: "95vw",
-    width: "95vw",
-    maxHeight: "90vh",
-    margin: 1,
-    borderRadius: 2,
-  } as SxProps<Theme>,
-
-  dialogTablet: {
-    minWidth: "320px",
-    maxWidth: "90vw",
-    margin: 1,
+    minWidth: { xs: "unset", sm: "320px", md: "500px" },
+    maxWidth: { xs: "95vw", sm: "90vw", md: "600px" },
+    width: { xs: "95vw", sm: "auto" },
+    maxHeight: { xs: "90vh", sm: "none" },
+    margin: { xs: 1, sm: 1, md: "auto" },
   } as SxProps<Theme>,
 
   dialogTitle: {
@@ -132,15 +119,12 @@ export const rolePermissionsDialogStyles = {
     alignItems: "center",
     justifyContent: "space-between",
     gap: 2,
-    pb: 1,
+    pb: { xs: 1.5, sm: 1 },
+    pt: { xs: 1.5, sm: 2 },
+    px: { xs: 2, sm: 3 },
     background: "linear-gradient(135deg, #1976d2, #42a5f5)",
     color: "white",
     m: 0,
-  } as SxProps<Theme>,
-
-  dialogTitleMobile: {
-    px: 2,
-    py: 1.5,
   } as SxProps<Theme>,
 
   titleBox: {
@@ -151,15 +135,8 @@ export const rolePermissionsDialogStyles = {
 
   titleText: {
     fontWeight: 700,
-  } as SxProps<Theme>,
-
-  titleTextMobile: {
-    fontSize: "1rem",
-    lineHeight: 1.2,
-  } as SxProps<Theme>,
-
-  titleTextDesktop: {
-    fontSize: "1.25rem",
+    fontSize: { xs: "1rem", sm: "1.25rem" },
+    lineHeight: { xs: 1.2, sm: "normal" },
   } as SxProps<Theme>,
 
   securityIcon: {
@@ -172,34 +149,19 @@ export const rolePermissionsDialogStyles = {
   } as SxProps<Theme>,
 
   dialogContent: {
-    p: { xs: 2, sm: 2, md: 3 },
-    maxHeight: { xs: "calc(100vh - 120px)", sm: "70vh" },
+    px: { xs: 2, md: 3 },
+    py: { xs: 2, md: 3 },
+    maxHeight: { xs: "60vh", sm: "70vh" },
     overflow: "auto",
-  } as SxProps<Theme>,
-
-  dialogContentMobile: {
-    px: 2,
-    py: 2,
-    maxHeight: "60vh",
-    overflow: "auto",
-  } as SxProps<Theme>,
-
-  dialogContentTablet: {
-    px: 2,
-    py: 2,
   } as SxProps<Theme>,
 
   noPermissionsBox: {
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    py: 4,
+    py: { xs: 3, sm: 4 },
+    px: { xs: 1, sm: 0 },
     textAlign: "center",
-  } as SxProps<Theme>,
-
-  noPermissionsBoxMobile: {
-    py: 3,
-    px: 1,
   } as SxProps<Theme>,
 
   noPermissionsIcon: {
@@ -225,8 +187,8 @@ export const rolePermissionsDialogStyles = {
   modulePaper: {
     p: { xs: 1.5, sm: 2 },
     borderRadius: { xs: 1.5, sm: 2 },
-    border: "1px solid rgba(25, 118, 210, 0.12)",
-    background: "rgba(25, 118, 210, 0.02)",
+    border: "1.5px solid rgba(25, 118, 210, 0.35)",
+    background: "rgba(25, 118, 210, 0.07)",
     height: "100%",
   } as SxProps<Theme>,
 
@@ -265,19 +227,10 @@ export const rolePermissionsDialogStyles = {
   } as SxProps<Theme>,
 
   dialogActions: {
-    p: { xs: 2, sm: 2, md: 3 },
-    pt: { xs: 1, sm: 1, md: 0 },
+    px: { xs: 2, md: 3 },
+    pb: { xs: 1.5, sm: 2, md: 3 },
+    pt: { xs: 1.5, sm: 2, md: 0 },
     justifyContent: { xs: "stretch", sm: "flex-end" },
-  } as SxProps<Theme>,
-
-  dialogActionsMobile: {
-    px: 2,
-    py: 1.5,
-  } as SxProps<Theme>,
-
-  dialogActionsTablet: {
-    px: 2,
-    py: 2,
   } as SxProps<Theme>,
 
   closeActionButton: {
@@ -285,10 +238,8 @@ export const rolePermissionsDialogStyles = {
     "&:hover": {
       background: "linear-gradient(135deg, #1565c0, #1976d2)",
     },
-  } as SxProps<Theme>,
-
-  closeActionButtonMobile: {
-    minHeight: "44px",
-    fontSize: "1rem",
+    width: { xs: "100%", sm: "auto" },
+    minHeight: { xs: "44px", sm: "36px" },
+    fontSize: { xs: "1rem", sm: "0.875rem" },
   } as SxProps<Theme>,
 };

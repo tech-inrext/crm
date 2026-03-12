@@ -42,6 +42,5 @@ export const ROLE_MODULES = [
   "BookingLogin",
   "TrainingVideos",
   "Pillar",
-  "Branch",
   "Analytics",
 ] as const;

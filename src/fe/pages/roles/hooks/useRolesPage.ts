@@ -2,8 +2,21 @@
 
 import { useCallback, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { SEARCH_DEBOUNCE_DELAY } from "@/fe/pages/roles/constants/roles";
-import type { Role } from "@/fe/pages/roles/types";
+import {
+  SEARCH_DEBOUNCE_DELAY,
+  ROLE_CACHE_KEYS,
+} from "@/fe/pages/roles/constants/roles";
+import {
+  useGetRolesQuery,
+  useCreateRoleMutation,
+  useUpdateRoleMutation,
+} from "@/fe/pages/roles/roleApi";
+import { invalidateQueryCache } from "@/fe/hooks/createApi";
+import {
+  buildCreateRolePayload,
+  buildUpdateRolePayload,
+} from "@/fe/pages/roles/utils";
+import type { Role, RoleFormData } from "@/fe/pages/roles/types";
 
 type SnackbarSeverity = "success" | "error";
 
@@ -58,6 +71,59 @@ export function useRolesPage() {
     setSelectedRoleForPermissions(null);
   }, []);
 
+  // ─── Query & mutations ────────────────────────────────────────────────────
+  const {
+    items: roles,
+    loading,
+    page,
+    rowsPerPage,
+    totalItems,
+    refetch,
+    setPage,
+    setPageSize,
+  } = useGetRolesQuery({ search: debouncedSearch });
+
+  const { mutate: createRole } = useCreateRoleMutation();
+  const { mutate: updateRole } = useUpdateRoleMutation();
+
+  const showSnackbar = useCallback(
+    (message: string, severity: SnackbarSeverity, duration = 2000) => {
+      setSnackbarMessage(message);
+      setSnackbarSeverity(severity);
+      setSnackbarOpen(true);
+      setTimeout(() => setSnackbarOpen(false), duration);
+    },
+    [setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen],
+  );
+
+  const handleMutationSuccess = useCallback(async () => {
+    invalidateQueryCache(ROLE_CACHE_KEYS.ROLES);
+    await refetch();
+    handleCloseDialog();
+    showSnackbar("Role saved successfully!", "success");
+  }, [refetch, handleCloseDialog, showSnackbar]);
+
+  const handleRoleSubmit = useCallback(
+    async (formData: RoleFormData) => {
+      try {
+        if (formData.editId) {
+          await updateRole(
+            buildUpdateRolePayload(formData),
+            handleMutationSuccess,
+          );
+        } else {
+          await createRole(
+            buildCreateRolePayload(formData),
+            handleMutationSuccess,
+          );
+        }
+      } catch {
+        showSnackbar("Failed to save role.", "error", 3000);
+      }
+    },
+    [createRole, updateRole, handleMutationSuccess, showSnackbar],
+  );
+
   return {
     // Search
     search,
@@ -82,9 +148,19 @@ export function useRolesPage() {
     snackbarOpen,
     setSnackbarOpen,
     snackbarMessage,
-    setSnackbarMessage,
     snackbarSeverity,
-    setSnackbarSeverity,
+
+    // Query data
+    roles,
+    loading,
+    page,
+    rowsPerPage,
+    totalItems,
+    setPage,
+    setPageSize,
+
+    // Submit
+    handleRoleSubmit,
   } as const;
 }
 
