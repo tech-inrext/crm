@@ -40,7 +40,7 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
     const fetchTeamMembers = async () => {
       try {
         // Use the new hierarchy endpoint with managerId
-        const mid = managerId?._id || managerId || user?._id;
+        const mid = user?._id;
         if (!mid) return;
 
         const res = await axios.get(`/api/v0/employee/hierarchy?managerId=${mid}`);

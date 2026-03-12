@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useCallback } from "react";
 import { AddIcon, CircularProgress } from "@/components/ui/Component";
 import useDepartmentsPage from "@/fe/pages/department/hooks/useDepartmentsPage";
 import PermissionGuard from "@/components/PermissionGuard";
@@ -12,8 +12,15 @@ import {
   FAB_POSITION,
   DEPARTMENTS_PERMISSION_MODULE,
   DEFAULT_DEPARTMENT_FORM,
+  DEPARTMENTS_API_BASE,
 } from "@/fe/pages/department/constants/departments";
 import type { TostProps } from "@/fe/pages/department/types";
+
+import {
+  useGetDepartmentsQuery,
+  useDeleteDepartmentMutation,
+} from "@/fe/pages/department/departmentApi";
+import { invalidateQueryCache } from "@/fe/hooks/createApi";
 
 const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {
   if (!open) return null;
@@ -43,34 +50,74 @@ const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {
 
 const DepartmentsPage: React.FC = () => {
   const {
-    saving,
-    setOpen,
     open,
+    setOpen,
     editId,
     selectedDepartment,
     handleCloseDialog,
     openEditDialog,
     search,
     handleSearchChange,
+    debouncedSearch,
     snackbarOpen,
     snackbarSeverity,
     snackbarMessage,
     setSnackbarOpen,
-    handleDepartmentSave,
+    setSnackbarMessage,
+    setSnackbarSeverity,
   } = useDepartmentsPage();
+
+  const {
+    data: departmentsData,
+    loading,
+    refetch,
+    page,
+    rowsPerPage,
+    setPage,
+    setPageSize,
+  } = useGetDepartmentsQuery({ search: debouncedSearch });
+
+  const handlePageSizeChange = useCallback(
+    (newSize: number) => {
+      setPageSize(newSize);
+      setPage(1);
+    },
+    [setPageSize, setPage],
+  );
+
+  const { mutate: deleteMutate, loading: deleteLoading } =
+    useDeleteDepartmentMutation();
+
+  const handleMutationSuccess = useCallback(async () => {
+    invalidateQueryCache(DEPARTMENTS_API_BASE);
+    await refetch();
+    handleCloseDialog();
+    setSnackbarMessage("Departments updated successfully");
+    setSnackbarSeverity("success");
+    setSnackbarOpen(true);
+    setTimeout(() => setSnackbarOpen(false), 2000);
+  }, [refetch, handleCloseDialog, setSnackbarMessage, setSnackbarOpen]);
 
   const initialData = selectedDepartment
     ? {
-        name: selectedDepartment.name ?? "",
-        description: selectedDepartment.description ?? "",
-        managerId:
-          typeof selectedDepartment.managerId === "object" &&
+      name: selectedDepartment.name ?? "",
+      description: selectedDepartment.description ?? "",
+      managerId:
+        typeof selectedDepartment.managerId === "object" &&
           selectedDepartment.managerId !== null
-            ? ((selectedDepartment.managerId as any)._id ?? "")
-            : ((selectedDepartment.managerId as string) ?? ""),
-        attachments: selectedDepartment.attachments ?? [],
-      }
+          ? ((selectedDepartment.managerId as any)._id ?? "")
+          : ((selectedDepartment.managerId as string) ?? ""),
+      attachments: selectedDepartment.attachments ?? [],
+    }
     : DEFAULT_DEPARTMENT_FORM;
+
+  const departments: any[] = Array.isArray((departmentsData as any)?.data)
+    ? (departmentsData as any).data
+    : Array.isArray(departmentsData)
+      ? (departmentsData as any[])
+      : [];
+  const totalItems =
+    (departmentsData as any)?.pagination?.totalItems ?? departments.length;
 
   return (
     <div className="p-4 sm:p-6">
@@ -79,12 +126,21 @@ const DepartmentsPage: React.FC = () => {
         search={search}
         onSearchChange={handleSearchChange}
         onAdd={() => setOpen(true)}
-        saving={saving}
+        saving={loading}
       />
 
       {/* Card list */}
       <div className="mt-2">
-        <DepartmentsList search={search} onEditDepartment={openEditDialog} />
+        <DepartmentsList
+          loading={loading}
+          departments={departments}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalItems={totalItems}
+          onPageChange={setPage}
+          onPageSizeChange={handlePageSizeChange}
+          onEditDepartment={openEditDialog}
+        />
       </div>
 
       {/* Floating action button – mobile only */}
@@ -97,7 +153,7 @@ const DepartmentsPage: React.FC = () => {
           type="button"
           aria-label="Add department"
           onClick={() => setOpen(true)}
-          disabled={saving}
+          disabled={loading}
           style={{
             bottom: FAB_POSITION.bottom,
             right: FAB_POSITION.right,
@@ -106,7 +162,7 @@ const DepartmentsPage: React.FC = () => {
           }}
           className="fixed md:hidden flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95 disabled:opacity-60"
         >
-          {saving ? (
+          {loading ? (
             <CircularProgress size={24} color="inherit" />
           ) : (
             <AddIcon />
@@ -118,9 +174,8 @@ const DepartmentsPage: React.FC = () => {
           open={open}
           editId={editId}
           initialData={initialData}
-          saving={saving}
           onClose={handleCloseDialog}
-          onSave={handleDepartmentSave}
+          onSave={handleMutationSuccess}
         />
       </PermissionGuard>
 

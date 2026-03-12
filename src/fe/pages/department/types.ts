@@ -83,8 +83,15 @@ export interface DepartmentCardProps {
 }
 
 export interface DepartmentsListProps {
-  search?: string;
+  loading: boolean;
+  departments: Department[];
+  page: number;
+  rowsPerPage: number;
+  totalItems: number;
+  onPageChange: (newPage: number) => void;
+  onPageSizeChange: (newSize: number) => void;
   onEditDepartment: (dept: Department) => void;
+  search?: string;
 }
 
 export interface DepartmentsActionBarProps {

@@ -45,40 +45,17 @@ const EmptyState: React.FC = () => (
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export const DepartmentsList: React.FC<DepartmentsListProps> = ({
-  search = "",
+  loading,
+  departments,
+  page,
+  rowsPerPage,
+  totalItems,
+  onPageChange,
+  onPageSizeChange,
   onEditDepartment,
 }) => {
-  const {
-    data,
-    loading,
-    page,
-    rowsPerPage,
-    goToPage,
-    setPageSize: setRowsPerPage,
-  } = useGetDepartmentsQuery({ search });
-
-  const departments: Department[] = Array.isArray((data as any)?.data)
-    ? (data as any).data
-    : Array.isArray(data)
-      ? (data as Department[])
-      : [];
-  const totalItems =
-    (data as any)?.pagination?.totalItems ?? departments.length;
-
   if (loading) return <LoadingSpinner />;
   if (departments.length === 0) return <EmptyState />;
-
-  const paginationBar = (
-    <div className="flex justify-center mt-4">
-      <Pagination
-        page={page}
-        pageSize={rowsPerPage ?? 10}
-        total={totalItems}
-        onPageChange={goToPage}
-        onPageSizeChange={setRowsPerPage}
-      />
-    </div>
-  );
 
   return (
     <div>
@@ -91,7 +68,15 @@ export const DepartmentsList: React.FC<DepartmentsListProps> = ({
           />
         ))}
       </div>
-      {paginationBar}
+      <div className="flex justify-center mt-4">
+        <Pagination
+          page={page}
+          pageSize={rowsPerPage ?? 10}
+          total={totalItems}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+        />
+      </div>
     </div>
   );
 };

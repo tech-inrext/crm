@@ -1174,7 +1174,14 @@ class EmployeeService extends Service {
       .forEach((emp) => {
         const children = this.buildHierarchy(employees, emp._id); // Recursively find employees under each employee
         tree.push({
-         ...emp
+          _id: emp._id,
+          name: emp.name,
+          email: emp.email,
+          designation: emp.designation,
+          branch: emp.branch,
+          managerId: emp.managerId,
+          employeeProfileId: emp.employeeProfileId,
+          children: children.length ? children : [], // If no subordinates, return empty array
         });
       });
     return tree;
@@ -1211,7 +1218,13 @@ class EmployeeService extends Service {
 
       // Build hierarchy starting from the manager themselves
       const hierarchy = {
-        ...manager,
+        _id: manager._id,
+        name: manager.name,
+        email: manager.email,
+        designation: manager.designation,
+        branch: manager.branch,
+        managerId: manager.managerId,
+        employeeProfileId: manager.employeeProfileId,
         children: this.buildHierarchy(employees, manager._id), // Recursively find subordinates
       };
 

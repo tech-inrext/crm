@@ -80,10 +80,23 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
         const res = await teamHierarchyService.fetchHierarchy(
           String(selectedManagerId)
         );
-        // The API returns an object with nested employees; if it returns array use it directly
-        const members =
-          res?.employees || res?.team || (Array.isArray(res) ? res : []);
-        if (mounted) setTeamMembers(members || []);
+        
+        // Flatten the hierarchy (res is a single Employee root object)
+        const flattened: any[] = [];
+        const traverse = (item: any) => {
+          if (!item) return;
+          const { children, ...rest } = item;
+          flattened.push(rest);
+          if (children && Array.isArray(children)) {
+            children.forEach(traverse);
+          }
+        };
+
+        if (res) {
+          traverse(res);
+        }
+
+        if (mounted) setTeamMembers(flattened);
       } catch (err) {
         // on error fallback to client-side filtering
         if (mounted) setTeamMembers([]);
@@ -174,26 +187,20 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                   }}
                 />
               )}
-              renderOption={(props, option) => {
-                const { key, ...rest } = props;
-                return (
-                  <Box
-                    component="li"
-                    key={option._id || option.id || key}
-                    {...rest}
-                    sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start !important", py: 0.75 }}
-                  >
-                    <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.3 }}>
+              renderOption={(props, option) => (
+                <li {...props} key={option._id || option.id}>
+                  <Box sx={{ display: "flex", flexDirection: "column", py: 0.5 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {option.name}
                     </Typography>
                     {option.email && (
-                      <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.3 }}>
+                      <Typography variant="caption" color="text.secondary">
                         {option.email}
                       </Typography>
                     )}
                   </Box>
-                );
-              }}
+                </li>
+              )}
               noOptionsText="No employees found"
               clearOnBlur
               selectOnFocus
@@ -270,7 +277,9 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
               }
               getOptionKey={(option) => option._id || option.id}
               value={
-                users.find((user) => user._id === values.assignedTo) || null
+                [...(teamMembers || []), ...users].find(
+                  (u) => (u._id || u.id) === values.assignedTo
+                ) || null
               }
               onChange={(_, newValue) => {
                 setFieldValue("assignedTo", newValue ? newValue._id : "");
@@ -292,26 +301,20 @@ const LeadManagement: React.FC<LeadManagementProps> = ({
                   }}
                 />
               )}
-              renderOption={(props, option) => {
-                const { key, ...rest } = props;
-                return (
-                  <Box
-                    component="li"
-                    key={option._id || option.id || key}
-                    {...rest}
-                    sx={{ display: "flex", flexDirection: "column", alignItems: "flex-start !important", py: 0.75 }}
-                  >
-                    <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.3 }}>
+              renderOption={(props, option) => (
+                <li {...props} key={option._id || option.id}>
+                  <Box sx={{ display: "flex", flexDirection: "column", py: 0.5 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600 }}>
                       {option.name}
                     </Typography>
                     {option.email && (
-                      <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.3 }}>
+                      <Typography variant="caption" color="text.secondary">
                         {option.email}
                       </Typography>
                     )}
                   </Box>
-                );
-              }}
+                </li>
+              )}
               noOptionsText="No employees found"
               clearOnBlur
               selectOnFocus

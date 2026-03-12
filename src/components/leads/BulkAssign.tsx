@@ -380,7 +380,11 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
 
               <Autocomplete
                 options={employees}
-                getOptionLabel={(option) => option.name || ""}
+                getOptionLabel={(option) => 
+                  option.name 
+                    ? `${option.name}${option.email ? ` (${option.email})` : ''}` 
+                    : ""
+                }
                 value={employees.find((emp) => emp._id === assignTo) || null}
                 onChange={(event, newValue) => {
                   setAssignTo(newValue ? newValue._id : "");
@@ -398,31 +402,20 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
                     helperText={errors.assignTo}
                   />
                 )}
-                renderOption={(props, option) => {
-                  const { key, ...rest } = props;
-                  return (
-                    <Box
-                      component="li"
-                      key={option._id || option.id || key}
-                      {...rest}
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        alignItems: "flex-start !important",
-                        py: 0.75,
-                      }}
-                    >
-                      <Typography variant="body2" sx={{ fontWeight: 500, lineHeight: 1.3 }}>
+                renderOption={(props, option) => (
+                  <li {...props} key={option._id || option.id}>
+                    <Box sx={{ display: "flex", flexDirection: "column", py: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
                         {option.name}
                       </Typography>
                       {option.email && (
-                        <Typography variant="caption" sx={{ color: "text.secondary", lineHeight: 1.3 }}>
+                        <Typography variant="caption" color="text.secondary">
                           {option.email}
                         </Typography>
                       )}
                     </Box>
-                  );
-                }}
+                  </li>
+                )}
                 filterOptions={(options, { inputValue }) => {
                   const query = inputValue.toLowerCase();
                   return options.filter(
