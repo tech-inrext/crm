@@ -1174,7 +1174,7 @@ class EmployeeService extends Service {
       .forEach((emp) => {
         const children = this.buildHierarchy(employees, emp._id); // Recursively find employees under each employee
         tree.push({
-         ...emp
+          ...emp
         });
       });
     return tree;
