@@ -32,18 +32,16 @@ export function useTeamsPage() {
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [selectedNode, setSelectedNodeState] = useState<string | null>(null);
 
-  // ─── RTK Query hooks ─────────────────────────────────────────────────────
+  // ─── Query hooks ─────────────────────────────────────────────────────────
   const {
     data: hierarchyData,
-    isLoading: hierarchyLoading,
+    loading: hierarchyLoading,
     error: hierarchyError,
-  } = useGetHierarchyQuery(
-    { managerId: selectedManager || "" },
-    { skip: !selectedManager },
-  );
+    refetch: refetchHierarchy,
+  } = useGetHierarchyQuery({ managerId: selectedManager || "" });
 
-  const { data: employeesData, isLoading: employeesLoading } =
-    useGetAllEmployeesQuery();
+  const { data: employeesData, loading: employeesLoading } =
+    useGetAllEmployeesQuery({});
 
   // ─── Hierarchy ────────────────────────────────────────────────────────────
   const hierarchy = hierarchyData?.data as Employee | undefined;
@@ -75,9 +73,8 @@ export function useTeamsPage() {
   );
 
   const handleRefresh = useCallback(() => {
-    // Refresh is handled automatically by RTK Query
-    // Optionally, you can trigger a re-fetch by changing selectedManager
-  }, []);
+    refetchHierarchy();
+  }, [refetchHierarchy]);
 
   const toggleNode = useCallback(
     (id: string) => {

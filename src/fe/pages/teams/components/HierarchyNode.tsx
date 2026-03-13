@@ -11,29 +11,26 @@ import {
   IconButton,
   Tooltip,
   Collapse,
-  alpha,
-} from "@/components/ui/Component";
-import {
   ExpandLess,
-  ChevronRight as ChevronRightIcon,
-  People as PeopleIcon,
-  Work as WorkIcon,
-  LocationOn as LocationOnIcon,
-  Person as PersonIcon,
+  ChevronRight,
+  People,
+  Work,
+  LocationOn,
+  Person,
 } from "@/components/ui/Component";
-import { Employee } from "@/types/team-hierarchy";
-import { HIERARCHY_COLORS } from "@/constants/team-hierarchy";
-import { getNodeColor } from "@/utils/hierarchy.utils";
-
-interface HierarchyNodeProps {
-  node: Employee;
-  depth: number;
-  isOpen: boolean;
-  isSelected: boolean;
-  onToggle: (id: string) => void;
-  onSelect: (id: string) => void;
-  renderChildren: (node: Employee, depth: number) => React.ReactNode;
-}
+import { Employee , HeirarcyNodeProps} from "../types";
+import { HIERARCHY_COLORS, getNodeColor} from "../constants/teams";
+import {
+  nodeWrapperSx,
+  nodeNameSx,
+  nodeChipsStackSx,
+  nodeChipSx,
+  nodeCardSx,
+  expandButtonSx,
+  avatarSx,
+  childrenCollapseWrapper1Sx,
+  childrenCollapseWrapper2Sx,
+} from "./styles";
 
 export const HierarchyNode: React.FC<HierarchyNodeProps> = ({
   node,
@@ -48,20 +45,10 @@ export const HierarchyNode: React.FC<HierarchyNodeProps> = ({
   const nodeColor = getNodeColor(depth, HIERARCHY_COLORS);
 
   return (
-    <Box sx={{ mb: 0.5 }}>
+    <Box sx={nodeWrapperSx}>
       <Card
         variant="outlined"
-        sx={{
-          borderLeft: `4px solid ${nodeColor}`,
-          cursor: "pointer",
-          transition: "all 0.2s ease-in-out",
-          bgcolor: isSelected ? alpha(nodeColor, 0.1) : "transparent",
-          "&:hover": {
-            bgcolor: alpha(nodeColor, 0.05),
-            transform: "translateX(4px)",
-            boxShadow: 1,
-          },
-        }}
+        sx={nodeCardSx(nodeColor, isSelected)}
         onClick={() => onSelect(node._id)}
       >
         <CardContent sx={{ p: 1.5, "&:last-child": { pb: 1.5 } }}>
@@ -74,12 +61,9 @@ export const HierarchyNode: React.FC<HierarchyNodeProps> = ({
                     e.stopPropagation();
                     onToggle(node._id);
                   }}
-                  sx={{
-                    bgcolor: alpha(nodeColor, 0.1),
-                    "&:hover": { bgcolor: alpha(nodeColor, 0.2) },
-                  }}
+                  sx={expandButtonSx(nodeColor)}
                 >
-                  {isOpen ? <ExpandLess /> : <ChevronRightIcon />}
+                  {isOpen ? <ExpandLess /> : <ChevronRight />}
                 </IconButton>
               </Tooltip>
             ) : (
@@ -92,62 +76,43 @@ export const HierarchyNode: React.FC<HierarchyNodeProps> = ({
               invisible={!hasChildren}
             >
               <Avatar
-                sx={{
-                  bgcolor: nodeColor,
-                  width: 40,
-                  height: 40,
-                  fontSize: 16,
-                  fontWeight: 600,
-                }}
+                sx={avatarSx(nodeColor)}
               >
                 {node.name ? node.name.charAt(0).toUpperCase() : "?"}
               </Avatar>
             </Badge>
 
             <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography
-                variant="subtitle1"
-                sx={{
-                  fontWeight: 600,
-                  color: "text.primary",
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
+              <Typography variant="subtitle1" sx={nodeNameSx}>
                 {node.name || "Unknown"}
               </Typography>
 
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ mt: 0.5, flexWrap: "wrap" }}
-              >
+              <Stack direction="row" spacing={1} sx={nodeChipsStackSx}>
                 {node.designation && (
                   <Chip
-                    icon={<WorkIcon />}
+                    icon={<Work />}
                     label={node.designation}
                     size="small"
                     variant="outlined"
-                    sx={{ fontSize: 11, height: 20 }}
+                    sx={nodeChipSx}
                   />
                 )}
                 {node.branch && (
                   <Chip
-                    icon={<LocationOnIcon />}
+                    icon={<LocationOn />}
                     label={node.branch}
                     size="small"
                     variant="outlined"
-                    sx={{ fontSize: 11, height: 20 }}
+                    sx={nodeChipSx}
                   />
                 )}
                 {node.employeeProfileId && (
                   <Chip
-                    icon={<PersonIcon />}
+                    icon={<Person />}
                     label={node.employeeProfileId}
                     size="small"
                     variant="outlined"
-                    sx={{ fontSize: 11, height: 20 }}
+                    sx={nodeChipSx}
                   />
                 )}
               </Stack>
@@ -156,7 +121,7 @@ export const HierarchyNode: React.FC<HierarchyNodeProps> = ({
             {hasChildren && (
               <Tooltip title={`${node.children?.length} direct reports`}>
                 <Chip
-                  icon={<PeopleIcon />}
+                  icon={<People />}
                   label={node.children?.length}
                   size="small"
                   color="primary"
@@ -170,16 +135,9 @@ export const HierarchyNode: React.FC<HierarchyNodeProps> = ({
 
       {hasChildren && (
         <Collapse in={isOpen} timeout="auto" unmountOnExit>
-          <Box sx={{ pl: 3, mt: 1, position: "relative" }}>
+          <Box sx={childrenCollapseWrapper1Sx}>
             <Box
-              sx={{
-                position: "absolute",
-                left: 12,
-                top: 0,
-                bottom: 0,
-                width: 2,
-                bgcolor: alpha(nodeColor, 0.2),
-              }}
+              sx={childrenCollapseWrapper2Sx(nodeColor)}
             />
             {renderChildren(node, depth)}
           </Box>
@@ -187,4 +145,4 @@ export const HierarchyNode: React.FC<HierarchyNodeProps> = ({
       )}
     </Box>
   );
-};
+};

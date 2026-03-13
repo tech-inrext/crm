@@ -10,9 +10,10 @@ import {
   LoadingState,
   ErrorState,
   EmptyState,
-} from "@/components/team-hierarchy";
+} from "./components";
 import useTeamsPage from "@/fe/pages/teams/hooks/useTeamsPage";
 import { TEAMS_PERMISSION_MODULE } from "@/fe/pages/teams/constants/teams";
+import { mainBoxSx } from "./components/styles";
 
 const TeamsPage: React.FC = () => {
   const {
@@ -39,17 +40,9 @@ const TeamsPage: React.FC = () => {
     <PermissionGuard
       module={TEAMS_PERMISSION_MODULE}
       action="read"
-      fallback={<Unauthorized />}
     >
       <Box
-        sx={{
-          p: { xs: 1, sm: 2, md: 3 },
-          pt: { xs: 2, sm: 3, md: 4 },
-          minHeight: "100vh",
-          bgcolor: "background.default",
-          width: "100%",
-          overflow: "hidden",
-        }}
+        sx={mainBoxSx}
       >
         <HierarchyHeader>
           <HierarchyControls

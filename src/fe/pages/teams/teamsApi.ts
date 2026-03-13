@@ -6,11 +6,13 @@ const teamsApi = createApi({
     getHierarchy: (params) => ({
       url: `/api/v0/employee/hierarchy?managerId=${params.managerId}`,
       isPaginated: false,
+      shouldCache: true,
     }),
     // Get all employees for dropdown/autocomplete
     getAllEmployees: () => ({
       url: "/api/v0/employee/getAllEmployeeList",
       isPaginated: false,
+      shouldCache: true,
     }),
   },
 });

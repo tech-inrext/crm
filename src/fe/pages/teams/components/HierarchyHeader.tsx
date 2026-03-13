@@ -1,33 +1,25 @@
 import React from "react";
-import { Paper, Box, Stack, Typography } from "@/components/ui/Component";
-import { People as PeopleIcon } from "@/components/ui/Component";
-
-interface HierarchyHeaderProps {
-  children: React.ReactNode;
-}
+import { Paper, Box, Stack, Typography, People } from "@/components/ui/Component";
+import { HierarchyHeaderProps } from "../types";
+import {
+  hierarchyHeaderSx,
+  headerStackSx,
+  headerIconSx,
+  headerTitleSx,
+  headerSubtitleSx,
+} from "./styles";
 
 export const HierarchyHeader: React.FC<HierarchyHeaderProps> = ({
   children,
 }) => (
-  <Paper
-    sx={{
-      p: 2,
-      mb: 2,
-      display: "flex",
-      alignItems: "center",
-      gap: 2,
-      justifyContent: "space-between",
-      flexWrap: "wrap",
-    }}
-    elevation={3}
-  >
-    <Stack direction="row" spacing={2} alignItems="center" sx={{ flex: 1 }}>
-      <PeopleIcon sx={{ color: "#3f51b5", fontSize: 32 }} />
+  <Paper sx={hierarchyHeaderSx} elevation={3}>
+    <Stack direction="row" spacing={2} alignItems="center" sx={headerStackSx}>
+      <People sx={headerIconSx} />
       <Box>
-        <Typography variant="h5" sx={{ fontWeight: 800 }}>
+        <Typography variant="h5" sx={headerTitleSx}>
           Team Hierarchy
         </Typography>
-        <Typography variant="body2" sx={{ color: "text.secondary" }}>
+        <Typography variant="body2" sx={headerSubtitleSx}>
           Visualize reporting lines and explore team members.
         </Typography>
       </Box>

@@ -12,3 +12,7 @@ export const HIERARCHY_COLORS = [
   "#ff9800",
   "#e91e63",
 ] as const;
+
+export const getNodeColor = (depth: number, colors: readonly string[]): string => {
+  return colors[depth % colors.length];
+};
