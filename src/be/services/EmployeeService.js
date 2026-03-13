@@ -1182,6 +1182,7 @@ class EmployeeService extends Service {
           managerId: emp.managerId,
           employeeProfileId: emp.employeeProfileId,
           children: children.length ? children : [], // If no subordinates, return empty array
+          ...emp,
         });
       });
     return tree;
@@ -1226,6 +1227,7 @@ class EmployeeService extends Service {
         managerId: manager.managerId,
         employeeProfileId: manager.employeeProfileId,
         children: this.buildHierarchy(employees, manager._id), // Recursively find subordinates
+        ...manager,
       };
 
       return res.status(200).json({
