@@ -1,11 +1,8 @@
 import React from "react";
 import { Box, Typography, Button } from "@/components/ui/Component";
 import { RefreshIcon as RefreshIcon } from "@/components/ui/Component";
+import { ErrorStateProps } from "./types";
 
-interface ErrorStateProps {
-  error: string;
-  onRetry: () => void;
-}
 
 export const ErrorState: React.FC<ErrorStateProps> = ({ error, onRetry }) => (
   <Box sx={{ p: 4, textAlign: "center" }}>

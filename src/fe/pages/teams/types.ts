@@ -18,3 +18,7 @@ export interface HierarchyState {
   selectedNode: string | null;
   totalCount: number;
 }
+export interface ErrorStateProps {
+  error: string;
+  onRetry: () => void;
+}

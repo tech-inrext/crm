@@ -14,36 +14,6 @@ import {
 import useTeamsPage from "@/fe/pages/teams/hooks/useTeamsPage";
 import { TEAMS_PERMISSION_MODULE } from "@/fe/pages/teams/constants/teams";
 
-const Unauthorized: React.FC = () => (
-  <Box
-    sx={{
-      p: 4,
-      textAlign: "center",
-      minHeight: "50vh",
-      display: "flex",
-      flexDirection: "column",
-      justifyContent: "center",
-      bgcolor: "background.paper",
-      borderRadius: 2,
-      boxShadow: 1,
-    }}
-  >
-    <Typography
-      variant="h4"
-      sx={{ fontWeight: 700, mb: 2, color: "error.main" }}
-    >
-      Access Denied
-    </Typography>
-    <Typography variant="h6" sx={{ color: "text.secondary", mb: 2 }}>
-      You don't have permission to view the Team Hierarchy.
-    </Typography>
-    <Typography variant="body2" sx={{ color: "text.secondary" }}>
-      Please contact your administrator to request access to the "team" module
-      with "read" permissions.
-    </Typography>
-  </Box>
-);
-
 const TeamsPage: React.FC = () => {
   const {
     filteredHierarchy,

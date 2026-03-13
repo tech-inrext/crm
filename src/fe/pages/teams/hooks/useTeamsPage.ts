@@ -1,6 +1,5 @@
 "use client";
 
-import axios from "axios";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -9,10 +8,11 @@ import {
   filterHierarchy,
   expandAllNodes,
 } from "@/utils/hierarchy.utils";
+import { SEARCH_DEBOUNCE_DELAY } from "@/fe/pages/teams/constants/teams";
 import {
-  API_ENDPOINTS,
-  SEARCH_DEBOUNCE_DELAY,
-} from "@/fe/pages/teams/constants/teams";
+  useGetHierarchyQuery,
+  useGetAllEmployeesQuery,
+} from "@/fe/pages/teams/teamsApi";
 import type { Employee, HierarchyState } from "@/fe/pages/teams/types";
 
 export function useTeamsPage() {
@@ -24,73 +24,42 @@ export function useTeamsPage() {
     searchParams.get("managerId"),
   );
 
-  // ─── Employee list for autocomplete ───────────────────────────────────────
-  const [employees, setEmployees] = useState<Employee[]>([]);
-
   // ─── Search ───────────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
 
-  // ─── Hierarchy state ──────────────────────────────────────────────────────
-  const [state, setState] = useState<HierarchyState>({
-    hierarchy: null,
-    loading: false,
-    error: null,
-    expanded: new Set<string>(),
-    selectedNode: null,
-    totalCount: 0,
-  });
+  // ─── Expanded/selected nodes ──────────────────────────────────────────────
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
+  const [selectedNode, setSelectedNodeState] = useState<string | null>(null);
 
-  // ─── Fetch hierarchy ──────────────────────────────────────────────────────
-  const fetchHierarchy = useCallback(async (managerId: string) => {
-    setState((prev) => ({ ...prev, loading: true, error: null }));
-    try {
-      const response = await axios.get(
-        `${API_ENDPOINTS.HIERARCHY}?managerId=${managerId}`,
-        { withCredentials: true },
-      );
-      const data: Employee = response.data?.data;
-      setState((prev) => ({
-        ...prev,
-        hierarchy: data,
-        loading: false,
-        expanded: new Set([data._id]),
-        totalCount: countNodes(data),
-      }));
-    } catch (err: any) {
-      setState((prev) => ({
-        ...prev,
-        loading: false,
-        error:
-          err?.response?.data?.message ||
-          err.message ||
-          "Failed to load hierarchy",
-        hierarchy: null,
-        totalCount: 0,
-      }));
-    }
-  }, []);
+  // ─── RTK Query hooks ─────────────────────────────────────────────────────
+  const {
+    data: hierarchyData,
+    isLoading: hierarchyLoading,
+    error: hierarchyError,
+  } = useGetHierarchyQuery(
+    { managerId: selectedManager || "" },
+    { skip: !selectedManager },
+  );
 
-  // ─── Fetch employee list for autocomplete ─────────────────────────────────
+  const { data: employeesData, isLoading: employeesLoading } =
+    useGetAllEmployeesQuery();
+
+  // ─── Hierarchy ────────────────────────────────────────────────────────────
+  const hierarchy = hierarchyData?.data as Employee | undefined;
+
+  // Auto-expand root when hierarchy changes
   useEffect(() => {
-    axios
-      .get(`${API_ENDPOINTS.EMPLOYEE_LIST}?limit=1000&page=1`, {
-        withCredentials: true,
-      })
-      .then((res) => setEmployees(res.data?.data || []))
-      .catch(() => setEmployees([]));
-  }, []);
+    if (hierarchy?._id && !expanded.has(hierarchy._id)) {
+      setExpanded(new Set([hierarchy._id]));
+    }
+  }, [hierarchy?._id]);
 
   // ─── Sync selectedManager from URL ────────────────────────────────────────
   useEffect(() => {
     const managerFromUrl = searchParams.get("managerId");
     setSelectedManager(managerFromUrl);
   }, [searchParams]);
-
-  // ─── Auto-fetch hierarchy when manager changes ────────────────────────────
-  useEffect(() => {
-    if (selectedManager) fetchHierarchy(selectedManager);
-  }, [selectedManager, fetchHierarchy]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleManagerChange = useCallback(
@@ -106,43 +75,53 @@ export function useTeamsPage() {
   );
 
   const handleRefresh = useCallback(() => {
-    if (selectedManager) fetchHierarchy(selectedManager);
-  }, [selectedManager, fetchHierarchy]);
+    // Refresh is handled automatically by RTK Query
+    // Optionally, you can trigger a re-fetch by changing selectedManager
+  }, []);
 
-  const toggleNode = useCallback((id: string) => {
-    setState((prev) => {
-      const newExpanded = new Set(prev.expanded);
+  const toggleNode = useCallback(
+    (id: string) => {
+      const newExpanded = new Set(expanded);
       if (newExpanded.has(id)) newExpanded.delete(id);
       else newExpanded.add(id);
-      return { ...prev, expanded: newExpanded };
-    });
-  }, []);
-
-  const setExpanded = useCallback((expanded: Set<string>) => {
-    setState((prev) => ({ ...prev, expanded }));
-  }, []);
+      setExpanded(newExpanded);
+    },
+    [expanded],
+  );
 
   const setSelectedNode = useCallback((nodeId: string | null) => {
-    setState((prev) => ({ ...prev, selectedNode: nodeId }));
+    setSelectedNodeState(nodeId);
   }, []);
 
   const handleExpandAll = useCallback(() => {
-    if (state.hierarchy) setExpanded(expandAllNodes(state.hierarchy));
-  }, [state.hierarchy, setExpanded]);
+    if (hierarchy) setExpanded(expandAllNodes(hierarchy));
+  }, [hierarchy]);
 
   const handleCollapseAll = useCallback(() => {
-    if (state.hierarchy) setExpanded(new Set([state.hierarchy._id]));
-  }, [state.hierarchy, setExpanded]);
+    if (hierarchy) setExpanded(new Set([hierarchy._id]));
+  }, [hierarchy]);
 
-  const filteredHierarchy = filterHierarchy(state.hierarchy, debouncedSearch);
+  const filteredHierarchy = filterHierarchy(hierarchy, debouncedSearch);
+
+  // Error message from API
+  const errorMessage = hierarchyError
+    ? (hierarchyError as any)?.data?.message ||
+      (hierarchyError as any)?.message ||
+      "Failed to load hierarchy"
+    : null;
 
   return {
     // Hierarchy state
-    ...state,
+    hierarchy,
+    loading: hierarchyLoading,
+    error: errorMessage,
+    expanded,
+    selectedNode,
+    totalCount: hierarchy ? countNodes(hierarchy) : 0,
     filteredHierarchy,
 
     // Employee list
-    employees,
+    employees: employeesData?.data || [],
 
     // Manager selection
     selectedManager,

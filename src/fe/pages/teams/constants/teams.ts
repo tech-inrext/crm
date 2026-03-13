@@ -1,9 +1,3 @@
-// ─── API Endpoints ────────────────────────────────────────────────────────────
-export const API_ENDPOINTS = {
-  EMPLOYEE_LIST: "/api/v0/employee/getAllEmployeeList",
-  HIERARCHY: "/api/v0/employee/hierarchy",
-} as const;
-
 // ─── Search ───────────────────────────────────────────────────────────────────
 export const SEARCH_DEBOUNCE_DELAY = 300;
 
