@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/Component";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
-import LeadActivity from "./LeadActivity";
+import LeadActivity, { ValueChip } from "./LeadActivity";
 import FollowUpHeader from "./FollowUpHeader";
 
 // Helper to get initials for avatar
@@ -554,7 +554,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               mb: 1,
                             }}
                           >
-                            {isHistory && it.change ? (
+                            {it.isCreation ? (
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
+                                <Typography variant="body2" sx={{ color: "#374151" }}>
+                                  {it.note}
+                                </Typography>
+                                <ValueChip color="new">{it.submittedByName}</ValueChip>
+                              </Box>
+                            ) : isHistory && it.change ? (
                               <LeadActivity change={it.change} />
                             ) : it.note !== "N/A" ? (
                               it.note
@@ -609,46 +616,48 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                 )}
                             </Box>
                             {/* User Info */}
-                            <Stack
-                              direction="row"
-                              alignItems="center"
-                              justifyContent="end"
-                              spacing={1}
-                            >
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  color: "text.secondary",
-                                  fontSize: "0.5rem",
-                                }}
+                            {!it.isCreation && (
+                              <Stack
+                                direction="row"
+                                alignItems="center"
+                                justifyContent="end"
+                                spacing={1}
                               >
-                                By:{" "}
-                              </Typography>
-                              <Avatar
-                                sx={{
-                                  width: 18,
-                                  height: 18,
-                                  fontSize: "0.5rem",
-                                  bgcolor: bgColor,
-                                  color: accentColor,
-                                  border: `1px solid ${accentColor}15`,
-                                }}
-                              >
-                                {getInitials(it.submittedByName)}
-                              </Avatar>
-                              <Box>
                                 <Typography
-                                  variant="subtitle2"
+                                  variant="caption"
                                   sx={{
-                                    color: "#111827",
-                                    fontSize: "0.6rem",
-                                    lineHeight: 1.2,
+                                    color: "text.secondary",
+                                    fontSize: "0.5rem",
                                   }}
                                 >
-                                  {it.submittedByName || "System User"}
+                                  By:{" "}
                                 </Typography>
-                              </Box>
-                            </Stack>
+                                <Avatar
+                                  sx={{
+                                    width: 18,
+                                    height: 18,
+                                    fontSize: "0.5rem",
+                                    bgcolor: bgColor,
+                                    color: accentColor,
+                                    border: `1px solid ${accentColor}15`,
+                                  }}
+                                >
+                                  {getInitials(it.submittedByName)}
+                                </Avatar>
+                                <Box>
+                                  <Typography
+                                    variant="subtitle2"
+                                    sx={{
+                                      color: "#111827",
+                                      fontSize: "0.6rem",
+                                      lineHeight: 1.2,
+                                    }}
+                                  >
+                                    {it.submittedByName || "System User"}
+                                  </Typography>
+                                </Box>
+                              </Stack>
+                            )}
                           </Stack>
 
                           {/* Outcome Section: Show ONLY if date is passed OR outcome is already recorded */}
