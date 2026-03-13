@@ -120,6 +120,11 @@ export { default as Work } from "./Work";
 export { default as WorkIcon } from "./WorkIcon";
 export { default as PinIcon } from "./PinIcon";
 export { default as HomeIcon } from "./HomeIcon";
+
+// Document upload components
+export { default as DocumentUploadField } from "../documentUploadBox/DocumentUploadField";
+export { default as ImagePreview } from "../documentUploadBox/ImagePreview";
+
 // Hooks and utilities
 export { default as useMediaQuery } from "./useMediaQuery";
 export { default as useTheme } from "./useTheme";

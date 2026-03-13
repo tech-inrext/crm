@@ -1,10 +1,13 @@
 ﻿import React from "react";
-import { USERS_TABLE_HEADER, USERS_PERMISSION_MODULE } from "@/fe/pages/user/constants/users";
+import {
+  USERS_TABLE_HEADER,
+  USERS_PERMISSION_MODULE,
+} from "@/fe/pages/user/constants/users";
 import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
 import PermissionGuard from "@/components/PermissionGuard";
 import type { Employee, TableHeaderItem } from "@/fe/pages/user/types";
-import { Button } from "@/components/ui";
+import { IconButton } from "@/components/ui";
 
 interface GetUsersTableHeaderProps {
   canEditEmployee: (user: Employee) => boolean;
@@ -20,41 +23,39 @@ export function getUsersTableHeader({
   return USERS_TABLE_HEADER.map((header) =>
     header.label === "Actions"
       ? {
-        ...header,
-        component: (row: Employee) => (
-          <div className="flex items-center gap-1">
-            {/* View */}
-            <Button
-              variant="text"
-              size="small"
-              onClick={() => onView(row)}
-              aria-label="View user"
-              className="p-1.5 rounded-md text-blue-500 hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
-            >
-              <VisibilityIcon fontSize="small" />
-            </Button>
-
-            {/* Edit – only if permitted */}
-            {canEditEmployee(row) && (
-              <PermissionGuard
-                module={USERS_PERMISSION_MODULE}
-                action="write"
-                fallback={null}
+          ...header,
+          component: (row: Employee) => (
+            <div className="flex items-center gap-1">
+              {/* View */}
+              <IconButton
+                size="small"
+                onClick={() => onView(row)}
+                aria-label="View user"
+                className="text-blue-500 hover:bg-blue-50"
               >
-                <Button
-                  variant="text"
-                  size="small"
-                  onClick={() => onEdit(row)}
-                  aria-label="Edit user"
-                  className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
+                <VisibilityIcon fontSize="small" />
+              </IconButton>
+
+              {/* Edit – only if permitted */}
+              {canEditEmployee(row) && (
+                <PermissionGuard
+                  module={USERS_PERMISSION_MODULE}
+                  action="write"
+                  fallback={null}
                 >
-                  <EditIcon fontSize="small" />
-                </Button>
-              </PermissionGuard>
-            )}
-          </div>
-        ),
-      }
+                  <IconButton
+                    size="small"
+                    onClick={() => onEdit(row)}
+                    aria-label="Edit user"
+                    className="text-gray-500 hover:bg-gray-100"
+                  >
+                    <EditIcon fontSize="small" />
+                  </IconButton>
+                </PermissionGuard>
+              )}
+            </div>
+          ),
+        }
       : header,
   );
 }
