@@ -47,12 +47,6 @@ export interface PaginatedResponse<T> {
 
 // ─── UI types ─────────────────────────────────────────────────────────────────
 
-export interface ToastProps {
-  open: boolean;
-  message: string;
-  severity: "success" | "error";
-  onClose: () => void;
-}
 
 export interface RoleDialogProps {
   open: boolean;
@@ -83,4 +77,27 @@ export interface RolesListProps {
   onPageSizeChange: (size: number) => void;
   onEditRole: (role: Role) => void;
   onViewPermissions: (role: Role) => void;
+}
+
+export interface RoleCardProps {
+  role: any;
+  idx: number;
+  openEdit: (role: any) => void;
+  onViewPermissions: (role: any) => void;
+  small?: boolean;
+}
+
+export interface UseRoleDialogOptions {
+  open: boolean;
+  role?: Role | null;
+  onSubmit: (data: RoleFormData) => void;
+}
+
+export interface UseRolesListOptions {
+  page: number;
+  rowsPerPage: number;
+  search: string;
+}
+export interface RolesSkeletonProps {
+  count?: number;
 }

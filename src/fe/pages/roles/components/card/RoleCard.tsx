@@ -1,10 +1,10 @@
+"use client";
+
 import React from "react";
 import {
   Avatar,
   Card,
   CardContent,
-  Chip,
-  Divider,
   IconButton,
   Stack,
   Tooltip,
@@ -14,17 +14,10 @@ import {
   PermissionGuard,
   Skeleton,
   Visibility,
-} from "../Component";
-import Security from "../Component/Security";
-import { roleCardStyles, permissionColors } from "../style/RoleCard.styles";
-
-interface RoleCardProps {
-  role: any;
-  idx: number;
-  openEdit: (idx: number) => void;
-  onViewPermissions: (role: any) => void;
-  small?: boolean;
-}
+} from "@/components/ui/Component";
+import Security from "@/components/ui/Component/Security";
+import { roleCardStyles, permissionColors } from "./styles";
+import type { RoleCardProps } from "@/fe/pages/roles/types";
 
 const RoleCard: React.FC<RoleCardProps> = ({
   role,
@@ -66,7 +59,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
                 className="edit-button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  openEdit(idx);
+                  openEdit(role);
                 }}
                 size="small"
                 sx={roleCardStyles.editButton}
@@ -80,27 +73,5 @@ const RoleCard: React.FC<RoleCardProps> = ({
     </Card>
   );
 };
-
-export const LoadingSkeleton = () => (
-  <Box sx={roleCardStyles.loadingGrid}>
-    {Array.from({ length: 6 }).map((_, index) => (
-      <Card key={index} sx={roleCardStyles.loadingCard}>
-        <Stack spacing={1}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
-            <Skeleton variant="circular" width={40} height={40} />
-            <Skeleton variant="text" width="60%" height={24} />
-            <Skeleton variant="circular" width={28} height={28} />
-          </Box>
-          <Skeleton
-            variant="rectangular"
-            width="100%"
-            height={50}
-            sx={{ borderRadius: 1 }}
-          />
-        </Stack>
-      </Card>
-    ))}
-  </Box>
-);
 
 export default RoleCard;

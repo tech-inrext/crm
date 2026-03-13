@@ -19,7 +19,7 @@ import {
 import {
   permissionColors,
   rolePermissionsDialogStyles,
-} from "@/components/ui/style/RoleCard.styles";
+} from "../card/styles";
 import type { Role, RolePermissionsDialogProps } from "@/fe/pages/roles/types";
 import { buildGroupedPermissions } from "@/fe/pages/roles/utils";
 
@@ -115,7 +115,7 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
                             ...rolePermissionsDialogStyles.actionChip,
                             backgroundColor:
                               permissionColors[
-                                action as keyof typeof permissionColors
+                              action as keyof typeof permissionColors
                               ] || permissionColors.read,
                           }}
                         />

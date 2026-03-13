@@ -2,11 +2,9 @@
 
 import React from "react";
 import { Box, Card, Stack, Skeleton } from "@/components/ui/Component";
-import { roleCardStyles } from "@/components/ui/style/RoleCard.styles";
+import { roleCardStyles } from "./card/styles";
+import { RolesSkeletonProps } from "../types";
 
-interface RolesSkeletonProps {
-  count?: number;
-}
 
 const RolesSkeleton: React.FC<RolesSkeletonProps> = ({ count = 6 }) => (
   <Box sx={roleCardStyles.loadingGrid}>

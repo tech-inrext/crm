@@ -3,7 +3,7 @@
 import React from "react";
 import { AddIcon, Snackbar, Alert, Fab } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
-import RolesPageActionBar from "@/fe/pages/roles/components/RolesPageActionBar";
+import RolesPageActionBar from "@/fe/pages/roles/components/ActionBar/RolesPageActionBar";
 import RolesList from "@/fe/pages/roles/components/RolesList";
 import RoleDialog from "@/fe/pages/roles/components/dialog/RoleDialog";
 import RolePermissionsDialog from "@/fe/pages/roles/components/dialog/RolePermissionsDialog";

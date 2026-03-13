@@ -5,16 +5,13 @@ import {
   ROLE_PERMISSIONS,
 } from "@/fe/pages/roles/constants/roles";
 import { parseRoleToModulePerms } from "@/fe/pages/roles/utils";
-import type { Role, RoleFormData } from "@/fe/pages/roles/types";
+import type { Role, RoleFormData, UseRoleDialogOptions } from "@/fe/pages/roles/types";
+
 
 const modules = [...ROLE_MODULES];
 const permissions = [...ROLE_PERMISSIONS];
 
-interface UseRoleDialogOptions {
-  open: boolean;
-  role?: Role | null;
-  onSubmit: (data: RoleFormData) => void;
-}
+
 
 export function useRoleDialog({ open, role, onSubmit }: UseRoleDialogOptions) {
   const [roleName, setRoleName] = useState("");

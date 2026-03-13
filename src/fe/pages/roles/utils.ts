@@ -98,18 +98,6 @@ export const buildUpdateRolePayload = (data: RoleFormData) => {
   };
 };
 
-// ─── Normalize backend module name back to frontend display ──────────────────
-
-const normalizeModuleForDisplay = (mod: string): string => {
-  const displayMap: Record<string, string> = {
-    employee: "User",
-    "cab-vendor": "CabVendor",
-    "cab-booking": "CabBooking",
-    "booking-login": "BookingLogin",
-    "training-videos": "TrainingVideos",
-  };
-  return displayMap[mod] ?? mod;
-};
 
 /**
  * Parses a role's read/write/delete arrays (or permissions[] legacy format)
