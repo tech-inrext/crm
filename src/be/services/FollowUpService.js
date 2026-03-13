@@ -2,6 +2,7 @@
 import { Service } from "@framework";
 import FollowUp from "../models/FollowUp";
 import Lead from "../models/Lead";
+import LeadActivity from "../models/LeadActivity";
 import dbConnect from "../../lib/mongodb";
 import mongoose from "mongoose";
 
@@ -94,8 +95,11 @@ class FollowUpService extends Service {
       // 2. Fetch History
       // Find ALL documents matching this leadId
       const history = await FollowUp.find({ leadId: targetLead._id })
-        .sort({ createdAt: 1 }) // Oldest first (latest at bottom)
         .populate("submittedBy", "name email") // Get basic user details
+        .lean();
+
+      const activities = await LeadActivity.find({ leadId: targetLead._id })
+        .populate("updatedBy", "name email")
         .lean();
 
       // 3. Format for Frontend
@@ -111,9 +115,21 @@ class FollowUpService extends Service {
         outcome: doc.outcome || "pending"
       }));
 
+      const formattedActivities = activities.map(doc => ({
+        _id: doc._id,
+        followUpType: "history",
+        change: doc.change,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+        submittedByName: doc.updatedBy?.name || "System/Unknown",
+      }));
+
+      const combinedArr = [...formattedHistory, ...formattedActivities];
+      combinedArr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
       return res.status(200).json({
         success: true,
-        data: formattedHistory,
+        data: combinedArr,
         lead: {
           fullName: targetLead.fullName,
           phone: targetLead.phone,

@@ -212,7 +212,7 @@ const LeadCard = memo(
           boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
           background: "#fff",
           position: "relative",
-          height: "100%",
+          height: "340px",
           minHeight: "340px",
           display: "flex",
           flexDirection: "column",
@@ -293,37 +293,25 @@ const LeadCard = memo(
           {/* Contact Details Grid */}
           <Stack spacing={1.5}>
             <Box
-              onClick={(e) => { e.stopPropagation(); handleAssignedClick(e); }}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAssignedClick(e);
+              }}
               sx={{
                 position: "relative",
                 borderRadius: 2,
                 width: 240,
                 ml: 1,
-                py: 0.5,
+                // py: 0.5,
                 boxSizing: "border-box",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
                 cursor: "pointer",
-
-                "&::before": {
-                  content: '""',
-                  position: "absolute",
-                  top: 0,
-                  bottom: 0,
-                  left: -4, // 👈 border shifted from left
-                  right: -4, // 👈 border shifted from right
-                  border: `0.5px solid ${alpha(
-                    theme.palette.secondary.main,
-                    0.25
-                  )}`,
-                  borderRadius: 2,
-                  pointerEvents: "none",
-                },
               }}
             >
               <InfoRow
-                icon={<PersonAdd sx={{ fontSize: 18 }} />}
+                icon={<PersonAdd sx={{ fontSize: 16 }} />}
                 text={
                   <Box sx={{ display: "inline-block" }}>
                     <Box component="span" sx={{ color: "black" }}>

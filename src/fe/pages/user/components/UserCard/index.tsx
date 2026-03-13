@@ -1,6 +1,5 @@
 ﻿import React from "react";
-import { EditIcon } from "@/components/ui/Component";
-import PermissionGuard from "@/components/PermissionGuard";
+import { EditIcon, PermissionGuard, Button } from "@/components/ui";
 import { USERS_PERMISSION_MODULE } from "@/fe/pages/user/constants/users";
 import type { UserCardProps } from "@/fe/pages/user/types";
 
@@ -41,14 +40,15 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
           action="write"
           fallback={null}
         >
-          <button
-            type="button"
+          <Button
+            variant="text"
+            size="small"
             onClick={onEdit}
             aria-label="edit user"
-            className="ml-2 p-1 text-blue-600 hover:text-blue-700 rounded focus:outline-none"
+            className="ml-1 text-blue-600 hover:text-blue-700"
           >
             <EditIcon fontSize="small" />
-          </button>
+          </Button>
         </PermissionGuard>
       )}
     </div>

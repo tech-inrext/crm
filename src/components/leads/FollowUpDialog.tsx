@@ -30,6 +30,8 @@ import {
 } from "@/components/ui/Component";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
+import LeadActivity from "./LeadActivity";
+import FollowUpHeader from "./FollowUpHeader";
 
 // Helper to get initials for avatar
 const getInitials = (name: string) => {
@@ -72,7 +74,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [items, setItems] = useState<Array<any>>([]);
   const [historyFilter, setHistoryFilter] = useState<
-    "all" | "call back" | "site visit" | "note"
+    "all" | "call back" | "site visit" | "note" | "history"
   >("all");
   const [leadInfo, setLeadInfo] = useState<{
     phone?: string;
@@ -113,7 +115,6 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
       }
       setNote("");
       setFollowUpDate(null);
-      setFollowUpType("call back");
 
       if (onSaved) onSaved();
     } catch (err) {
@@ -209,100 +210,8 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
         },
       }}
     >
-      <Box
-        sx={{
-          bgcolor: "#fff",
-          borderBottom: "1px solid #f3f4f6",
-          pt: "10px",
-        }}
-      >
-        {/* Title row */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            pt: 1.5,
-            pb: 1,
-            px: 2.5,
-          }}
-        >
-          <Typography
-            sx={{
-              fontWeight: 600,
-              fontSize: isMobile ? "0.95rem" : "1rem",
-              color: "text.primary",
-            }}
-          >
-            Updates & Reminders
-          </Typography>
-          <IconButton
-            onClick={handleDialogClose}
-            size="small"
-            sx={{ color: "text.secondary" }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Box>
-
-        {/* Lead info strip */}
-        {leadInfo && (
-          <Box
-            sx={{
-              px: 2.5,
-              pb: 1.25,
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-            }}
-          >
-            <Avatar
-              sx={{
-                width: 32,
-                height: 32,
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                bgcolor: "#eff6ff",
-                color: "#2563eb",
-                border: "1.5px solid #dbeafe",
-              }}
-            >
-              {leadInfo.fullName
-                ? leadInfo.fullName.substring(0, 2).toUpperCase()
-                : "?"}
-            </Avatar>
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography
-                sx={{
-                  fontSize: "0.8rem",
-                  fontWeight: 600,
-                  color: "#111827",
-                  lineHeight: 1.3,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {leadInfo.fullName || "Unknown Lead"}
-              </Typography>
-              {leadInfo.phone && (
-                <Typography
-                  component="a"
-                  href={`tel:${leadInfo.phone}`}
-                  sx={{
-                    fontSize: "0.7rem",
-                    color: "#6b7280",
-                    textDecoration: "none",
-                    "&:hover": { color: "#2563eb" },
-                  }}
-                >
-                  {leadInfo.phone}
-                </Typography>
-              )}
-            </Box>
-          </Box>
-        )}
-      </Box>
+      <FollowUpHeader leadInfo={leadInfo} handleDialogClose={handleDialogClose} isMobile={isMobile} />
+      
 
       {/* History Section Header + Filter – pinned */}
       <Box
@@ -336,6 +245,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                 { key: "call back", label: "Calls" },
                 { key: "site visit", label: "Visits" },
                 { key: "note", label: "Notes" },
+                { key: "history", label: "Activity" },
               ] as const
             ).map(({ key, label }) => (
               <Box
@@ -416,22 +326,27 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                   .map((it) => {
                     const isCallBack = it.followUpType === "call back";
                     const isSiteVisit = it.followUpType === "site visit";
+                    const isHistory = it.followUpType === "history";
 
                     let accentColor = "#059669"; // default note (green)
                     if (isCallBack) accentColor = "#2563eb"; // blue
                     if (isSiteVisit) accentColor = "#7c3aed"; // violet/purple
+                    if (isHistory) accentColor = "#f59e0b"; // amber for history
 
                     let bgColor = "#ecfdf5";
                     if (isCallBack) bgColor = "#eff6ff";
                     if (isSiteVisit) bgColor = "#f5f3ff";
+                    if (isHistory) bgColor = "#fffbeb";
 
                     let chipColor = "#065f46";
                     if (isCallBack) chipColor = "#1e40af";
                     if (isSiteVisit) chipColor = "#5b21b6";
+                    if (isHistory) chipColor = "#92400e";
 
                     let chipBg = "#d1fae5";
                     if (isCallBack) chipBg = "#dbeafe";
                     if (isSiteVisit) chipBg = "#ede9fe";
+                    if (isHistory) chipBg = "#fef3c7";
 
                     const isPendingAction =
                       (isCallBack || isSiteVisit) &&
@@ -589,7 +504,11 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                 </Tooltip>
                               )}
                               <Chip
-                                label={it.followUpType}
+                                label={
+                                  it.followUpType === "history"
+                                    ? "activity"
+                                    : it.followUpType
+                                }
                                 size="small"
                                 sx={{
                                   height: 18,
@@ -626,6 +545,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                           {/* Middle: Note Content */}
                           <Typography
                             variant="body2"
+                            component="div"
                             sx={{
                               color: "#374151",
                               fontSize: "0.85rem",
@@ -634,7 +554,9 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               mb: 1,
                             }}
                           >
-                            {it.note !== "N/A" ? (
+                            {isHistory && it.change ? (
+                              <LeadActivity change={it.change} />
+                            ) : it.note !== "N/A" ? (
                               it.note
                             ) : (
                               <span
@@ -744,9 +666,9 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                 {new Date() > new Date(it.followUpDate) &&
                                 (it.outcome === "pending" || !it.outcome) ? (
                                   <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    spacing={1.5}
+                                    direction={isMobile ? "column" : "row"}
+                                    alignItems={isMobile ? "stretch" : "center"}
+                                    spacing={isMobile ? 1.5 : 1.5}
                                   >
                                     <Typography
                                       variant="caption"
@@ -760,7 +682,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                       {isCallBack ? "call" : "site visit"}{" "}
                                       completed?
                                     </Typography>
-                                    <Stack direction="row" spacing={1}>
+                                    <Stack 
+                                      direction="row" 
+                                      spacing={1}
+                                      sx={{ 
+                                        width: isMobile ? "100%" : "auto",
+                                        justifyContent: isMobile ? "stretch" : "flex-end"
+                                      }}
+                                    >
                                       <Button
                                         size="small"
                                         variant="contained"
@@ -777,12 +706,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                           )
                                         }
                                         sx={{
-                                          height: 24,
+                                          flex: isMobile ? 1 : "initial",
+                                          height: 28,
                                           fontSize: "0.65rem",
                                           fontWeight: 700,
                                           textTransform: "none",
                                           borderRadius: "6px",
                                           boxShadow: "none",
+                                          whiteSpace: "nowrap",
                                           "&:hover": {
                                             boxShadow: "none",
                                             bgcolor: "#059669",
@@ -804,12 +735,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                           handleUpdateOutcome(it._id, "missed")
                                         }
                                         sx={{
-                                          height: 24,
+                                          flex: isMobile ? 1 : "initial",
+                                          height: 28,
                                           fontSize: "0.65rem",
                                           fontWeight: 700,
                                           textTransform: "none",
                                           borderRadius: "6px",
                                           borderWidth: 1.5,
+                                          whiteSpace: "nowrap",
                                           "&:hover": {
                                             borderWidth: 1.5,
                                             bgcolor: "#fef2f2",

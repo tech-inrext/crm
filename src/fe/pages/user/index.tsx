@@ -14,7 +14,7 @@ import {
 } from "@/fe/pages/user/constants/users";
 import { canEditEmployee, getInitialUserForm } from "@/fe/pages/user/utils";
 import { getUsersTableHeader } from "@/fe/pages/user/components/UserTable";
-import UsersPageList from "@/fe/pages/user/components/UsersPageList";
+import UsersList from "@/fe/pages/user/components/UsersList";
 import useUsersPage from "@/fe/pages/user/hooks/useUsersPage";
 import { useGetUsersQuery } from "@/fe/pages/user/userApi";
 import { invalidateQueryCache } from "@/fe/hooks/createApi";
@@ -134,7 +134,7 @@ const UsersPage: React.FC = () => {
       />
 
       {/* Table / card list */}
-      <UsersPageList
+      <UsersList
         loading={loading}
         employees={employees}
         page={page}

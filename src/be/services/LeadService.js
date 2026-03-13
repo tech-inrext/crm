@@ -2,6 +2,7 @@ import { Service } from "@framework";
 import Lead from "../models/Lead";
 import Employee from "../models/Employee";
 import FollowUp from "../models/FollowUp";
+import LeadActivity from "../models/LeadActivity";
 import { NotificationHelper } from "../../lib/notification-helpers";
 import mongoose from "mongoose";
 
@@ -109,11 +110,36 @@ class LeadService extends Service {
 
     const previousAssignee = lead.assignedTo?.toString();
 
+    const changes = {};
+    if (previousAssignee !== assignedTo) {
+      let prevValue = previousAssignee || "";
+      let newValue = assignedTo || "";
+
+      if (previousAssignee) {
+        const prevEmployee = await Employee.findById(previousAssignee).select("name fullName").lean();
+        if (prevEmployee) prevValue = prevEmployee.fullName || prevEmployee.name || previousAssignee;
+      }
+      if (assignedTo) {
+        const newEmployee = await Employee.findById(assignedTo).select("name fullName").lean();
+        if (newEmployee) newValue = newEmployee.fullName || newEmployee.name || assignedTo;
+      }
+
+      changes.assignedTo = { prev: prevValue, new: newValue };
+    }
+
     // Use updateOne to avoid full-document validation on non-assignedTo fields
     await Lead.updateOne(
       { _id: leadId },
       { $set: { assignedTo, updatedBy: loggedInUserId } },
     );
+
+    if (Object.keys(changes).length > 0) {
+      await LeadActivity.create({
+        leadId: lead._id,
+        change: changes,
+        updatedBy: loggedInUserId,
+      });
+    }
 
     // 🔔 Notify ONLY if assignee changed
     if (previousAssignee !== assignedTo) {
@@ -476,12 +502,40 @@ class LeadService extends Service {
         updateFields.assignedTo = null;
       }
 
+      const changes = {};
+      for (const key in updateFields) {
+        if (key === "updatedBy") continue;
+        let oldVal = originalLead[key]?.toString() || "";
+        let newVal = updateFields[key]?.toString() || "";
+        if (oldVal !== newVal) {
+          if (["assignedTo", "managerId", "uploadedBy"].includes(key)) {
+            if (oldVal) {
+              const oldEmp = await Employee.findById(oldVal).select("name fullName").lean();
+              if (oldEmp) oldVal = oldEmp.fullName || oldEmp.name || oldVal;
+            }
+            if (newVal) {
+              const newEmp = await Employee.findById(newVal).select("name fullName").lean();
+              if (newEmp) newVal = newEmp.fullName || newEmp.name || newVal;
+            }
+          }
+          changes[key] = { prev: oldVal, new: newVal };
+        }
+      }
+
       // Use _id from the found lead to ensure update works
       const updatedLead = await Lead.findByIdAndUpdate(
         originalLead._id,
         { $set: { ...updateFields, updatedBy: loggedInUserId } },
         { new: true },
       );
+
+      if (Object.keys(changes).length > 0) {
+        await LeadActivity.create({
+          leadId: updatedLead._id,
+          change: changes,
+          updatedBy: loggedInUserId,
+        });
+      }
 
       if (!updatedLead) {
         return res
