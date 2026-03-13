@@ -20,7 +20,7 @@ const useQuery = (
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true); // Start as true to show skeleton on initial render
   const [page, setPage] = useState(1);
-  const [rowsPerPage, setRowsPerPage] = useState(config.defaultPageSize || 10);
+  const [rowsPerPage, setRowsPerPage] = useState(config.defaultPageSize || 5);
 
   const serializedParams = JSON.stringify(params);
 

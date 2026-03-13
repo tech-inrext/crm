@@ -21,7 +21,7 @@ export const USER_CACHE_KEYS = {
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
 export const USERS_ROWS_PER_PAGE_OPTIONS = [5, 10, 15, 25] as const;
-export const DEFAULT_PAGE_SIZE = 10;
+export const DEFAULT_PAGE_SIZE = 5;
 
 // ─── Form defaults ────────────────────────────────────────────────────────────
 export const DEFAULT_USER_FORM = {

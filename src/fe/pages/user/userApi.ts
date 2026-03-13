@@ -6,6 +6,7 @@ const userApi = createApi({
     getUsers: (params) => ({
       url: "/api/v0/employee",
       isPaginated: true,
+      defaultPageSize: 5,
       shouldCache: true, // Cache the employee list for better performance
     }),
     // Single employee by ID
