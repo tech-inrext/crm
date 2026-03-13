@@ -8,7 +8,8 @@ class PublicEmployeeController extends Controller {
     this.skipAuth = ["get"];
   }
   get(req, res) {
-    return this.service.getEmployeeById(req, res);
+    // return this.service.getEmployeeById(req, res);
+    return "Hello"
   }
 }
 
