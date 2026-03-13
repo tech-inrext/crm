@@ -36,6 +36,15 @@ const UsersPageActionBar: React.FC<Props> = ({
         />
       </Box>
 
+      {isSystemAdmin && (
+        <Button
+          variant={showAllEmployees ? "outlined" : "contained"}
+          onClick={onToggleAllEmployees}
+        >
+          {showAllEmployees ? "My Team" : "All Employees"}
+        </Button>
+      )}
+
       <PermissionGuard
         module={USERS_PERMISSION_MODULE}
         action="write"
