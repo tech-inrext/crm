@@ -116,27 +116,33 @@ export const getInitialUserForm = (form: any) => {
     }
   }
 
+  // Map backend field names to frontend field names
+  const formData: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(safeForm)) {
+    const frontendKey = key === "altPhone" ? "whatsapp" : key;
+    formData[frontendKey] = value;
+  }
+
   return {
     ...DEFAULT_USER_FORM,
-    ...safeForm,
-    // Map backend altPhone to frontend whatsapp field
-    whatsapp: safeForm.altPhone || safeForm.whatsapp || "",
-    gender: safeForm.gender ?? DEFAULT_USER_FORM.gender,
-    managerId: safeForm.managerId || "",
-    departmentId: safeForm.departmentId || "",
-    roles: Array.isArray(safeForm.roles)
-      ? safeForm.roles.map((r: any) =>
+    ...formData,
+    gender: formData.gender ?? DEFAULT_USER_FORM.gender,
+    managerId: formData.managerId || "",
+    departmentId: formData.departmentId || "",
+    roles: Array.isArray(formData.roles)
+      ? (formData.roles as any[]).map((r: any) =>
           typeof r === "string" ? r : r._id || r.id || "",
         )
       : [],
     joiningDate,
-    aadharUrl: safeForm.aadharUrl || "",
-    panUrl: safeForm.panUrl || "",
-    bankProofUrl: safeForm.bankProofUrl || "",
-    panNumber: safeForm.panNumber || "",
-    nominee: safeForm.nominee ?? DEFAULT_USER_FORM.nominee,
-    slabPercentage: safeForm.slabPercentage || "",
-    branch: safeForm.branch || "",
+    aadharUrl: formData.aadharUrl || "",
+    panUrl: formData.panUrl || "",
+    bankProofUrl: formData.bankProofUrl || "",
+    panNumber: formData.panNumber || "",
+    nominee: formData.nominee ?? DEFAULT_USER_FORM.nominee,
+    slabPercentage: formData.slabPercentage || "",
+    branch: formData.branch || "",
+    whatsapp: formData.whatsapp || "",
   };
 };
 
