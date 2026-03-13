@@ -4,6 +4,7 @@ import VisibilityIcon from "@mui/icons-material/Visibility";
 import EditIcon from "@mui/icons-material/Edit";
 import PermissionGuard from "@/components/PermissionGuard";
 import type { Employee, TableHeaderItem } from "@/fe/pages/user/types";
+import { Button } from "@/components/ui";
 
 interface GetUsersTableHeaderProps {
   canEditEmployee: (user: Employee) => boolean;
@@ -23,14 +24,15 @@ export function getUsersTableHeader({
         component: (row: Employee) => (
           <div className="flex items-center gap-1">
             {/* View */}
-            <button
-              type="button"
+            <Button
+              variant="text"
+              size="small"
               onClick={() => onView(row)}
               aria-label="View user"
               className="p-1.5 rounded-md text-blue-500 hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-300"
             >
               <VisibilityIcon fontSize="small" />
-            </button>
+            </Button>
 
             {/* Edit – only if permitted */}
             {canEditEmployee(row) && (
@@ -39,14 +41,15 @@ export function getUsersTableHeader({
                 action="write"
                 fallback={null}
               >
-                <button
-                  type="button"
+                <Button
+                  variant="text"
+                  size="small"
                   onClick={() => onEdit(row)}
                   aria-label="Edit user"
                   className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-gray-300"
                 >
                   <EditIcon fontSize="small" />
-                </button>
+                </Button>
               </PermissionGuard>
             )}
           </div>
