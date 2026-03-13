@@ -13,12 +13,18 @@ interface Props {
   search: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onAdd: () => void;
+  showAllEmployees?: boolean;
+  onToggleAllEmployees?: () => void;
+  isSystemAdmin?: boolean;
 }
 
 const UsersPageActionBar: React.FC<Props> = ({
   search,
   onSearchChange,
   onAdd,
+  showAllEmployees,
+  onToggleAllEmployees,
+  isSystemAdmin,
 }) => {
   return (
     <PageHeader title="Users">
@@ -29,6 +35,15 @@ const UsersPageActionBar: React.FC<Props> = ({
           placeholder={SEARCH_PLACEHOLDER}
         />
       </Box>
+
+      {isSystemAdmin && (
+        <Button
+          variant={showAllEmployees ? "outlined" : "contained"}
+          onClick={onToggleAllEmployees}
+        >
+          {showAllEmployees ? "My Team" : "All Employees"}
+        </Button>
+      )}
 
       <PermissionGuard
         module={USERS_PERMISSION_MODULE}
