@@ -38,34 +38,43 @@ const StatCard: React.FC<StatCardProps> = ({
 }) => (
   <Card
     elevation={0}
-    sx={{ height: 140 }}
-    className={`rounded-lg border border-gray-200 bg-white min-h-[85px] p-2 shadow-sm transition cursor-${
-      onClick ? "pointer" : "default"
-    } hover:shadow`}
     onClick={onClick}
+    className={`rounded-2xl border border-gray-200 h-full p-4 shadow-sm
+    transition-all duration-200 flex items-center justify-center
+    ${
+      onClick
+        ? "cursor-pointer hover:shadow-md hover:-translate-y-[2px]"
+        : "cursor-default"
+    }`}
   >
-    <CardContent className="p-0">
-      <Box className="flex justify-between items-center">
-        <Box>
-          <Typography className="text-[10px] text-gray-500">
-            {loading ? <Skeleton width={60} /> : title}
-          </Typography>
+    <CardContent className="p-0 w-full text-center flex flex-col items-center gap-2">
+      {/* Value */}
+      <Typography
+        sx={{ fontSize: "2.25rem", ml:2 , fontWeight: 550, lineHeight: 1.2}}
+        className="text-gray-900"
+      >
+        {loading ? <Skeleton width={70} height={40} /> : value}
+      </Typography>
 
-          <Typography className="mt-2 font-semibold text-gray-900 text-sm">
-            {loading ? <Skeleton width={70} height={18} /> : value}
-          </Typography>
-        </Box>
-
+      {/* Icon + Title */}
+      <Box className="flex items-center  mr-5 gap-4">
         <Box
-          className="rounded-full w-13 h-13 flex items-center justify-center"
-          style={{ backgroundColor: iconBg }}
+          className="flex items-center justify-center w-9 h-9 rounded-full -mt-3"
+          sx={{ backgroundColor: iconBg }}
         >
           {loading ? (
-            <Skeleton variant="circular" width={20} height={20} />
+            <Skeleton variant="circular" width={16} height={16} />
           ) : (
             icon
           )}
         </Box>
+
+        <Typography
+          sx={{ fontSize: "11px", fontWeight: 350 }}
+          className="uppercase text-black tracking-wide"
+        >
+          {loading ? <Skeleton width={80} /> : title}
+        </Typography>
       </Box>
     </CardContent>
   </Card>
@@ -163,16 +172,17 @@ export const StatsCardsRow: React.FC<{
   const totalEarnings = analytics?.totalEarnings ?? 0;
 
   return (
-    <Box className="w-full mb-8">
+    <Box className="w-full h-full  mb-6">
       {/* YOU SECTION */}
-      <div className="text-blue-500 text-xl m-4 font-semibold">YOU</div>
+      <div className="text-blue-500 text-lg m-4 font-medium">YOU</div>
 
-      <Box className="grid grid-cols-1 md:grid-cols-2 gap-2">
-        <Box className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <Box className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Stat Cards */}
+        <Box className="grid grid-cols-1 sm:grid-cols-2 gap-1">
           <StatCard
             title="My Teams (All Levels)"
             value={teamCount}
-            icon={<FaUserFriends size={20} color="#43a047" />}
+            icon={<FaUserFriends size={17} color="#43a047" />}
             iconBg="#e8f5e9"
             onClick={() =>
               user?._id
@@ -181,10 +191,11 @@ export const StatsCardsRow: React.FC<{
             }
             loading={loading}
           />
+
           <StatCard
             title="Active Leads"
             value={activeLeads}
-            icon={<FaPhoneAlt size={20} color="#2196f3" />}
+            icon={<FaPhoneAlt size={17} color="#2196f3" />}
             iconBg="#e3f2fd"
             onClick={() =>
               router.push(
@@ -193,39 +204,53 @@ export const StatsCardsRow: React.FC<{
             }
             loading={loading}
           />
+
           <StatCard
             title="New Leads"
             value={newLeads}
-            icon={<FaUserPlus size={20} color="#2196f3" />}
+            icon={<FaUserPlus size={17} color="#2196f3" />}
             iconBg="#e3f2fd"
             onClick={() => router.push("/dashboard/leads?status=new")}
             loading={loading}
           />
+
           <StatCard
             title="Upcoming Site Visits"
             value={siteVisitCount}
-            icon={<FaHandshake size={20} color="#8e24aa" />}
+            icon={<FaHandshake size={17} color="#8e24aa" />}
             iconBg="#f3e5f5"
             loading={loading}
+            onClick={() => {
+              const leadId = analytics?.siteVisitLeadIds?.[0];
+
+              if (leadId) {
+                router.push(`/dashboard/leads?leadIdentifier=${leadId}`);
+              } else {
+                router.push("/dashboard/leads");
+              }
+            }}
           />
+
           <StatCard
             title="MoUs (Pending / Approved)"
             value={`${mouPending} / ${mouApproved}`}
-            icon={<FaFileSignature size={20} color="#3949ab" />}
+            icon={<FaFileSignature size={17} color="#3949ab" />}
             iconBg="#e8eaf6"
             onClick={() => router.push("/dashboard/mou")}
             loading={loading}
           />
+
           <StatCard
             title="Total Vendors & Billing amount"
             value={`${totalCabVendors} / ₹${totalEarnings.toLocaleString()}`}
-            icon={<FaRupeeSign size={20} color="#ffb300" />}
+            icon={<FaRupeeSign size={17} color="#ffb300" />}
             iconBg="#fffde7"
             loading={loading}
           />
         </Box>
 
-        <Box className="bg-gray-50 rounded-2xl flex items-center justify-center p-4">
+        {/* Schedule Section */}
+        <Box className="bg-gray-50 rounded-xl flex items-center justify-center">
           <ScheduleCard
             analyticsAccess={analyticsAccess}
             scheduleLoading={scheduleLoading}
@@ -233,21 +258,24 @@ export const StatsCardsRow: React.FC<{
           />
         </Box>
       </Box>
-
       {/* YOUR TEAMS SECTION */}
-      <div className="flex flex-row mt-8 items-center">
-        <div className="text-blue-500 m-2 font-semibold">YOUR TEAMS</div>
+      <Box className="bg-white border border-gray-200 rounded-xl shadow-xs p-5 mt-6 flex flex-col md:flex-row md:items-center gap-18">
+        {/* Title */}
+        <Typography className="text-blue-600 font-semibold text-xl">
+          YOUR TEAMS
+        </Typography>
 
+        {/* Dropdown */}
         {usersLoading ? (
           <Skeleton
             variant="rectangular"
             width={280}
             height={40}
-            sx={{ ml: 2, borderRadius: 1 }}
+            className="rounded-md"
           />
         ) : (
           <Autocomplete
-            sx={{ minWidth: 280, ml: 2 }}
+            className="w-[280px]"
             options={teamUsersWithAll}
             disableClearable
             value={selectedUser ?? allOption}
@@ -265,6 +293,7 @@ export const StatsCardsRow: React.FC<{
                   ? `${option.name} (${option.teamName})`
                   : option.name
             }
+            isOptionEqualToValue={(option, value) => option._id === value._id}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -273,14 +302,13 @@ export const StatsCardsRow: React.FC<{
                 size="small"
               />
             )}
-            isOptionEqualToValue={(option, value) => option._id === value._id}
           />
         )}
-      </div>
+      </Box>
 
       {/* TEAM STAT CARDS */}
-      <Box className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full mt-4">
-        <Box className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full">
+      <Box className="grid grid-cols-1 md:grid-cols-2 gap-3 w-full mt-2">
+        <Box className="grid grid-cols-1 sm:grid-cols-2 gap-1 w-full">
           <StatCard
             loading={usersLoading}
             title="Active Leads"
@@ -290,7 +318,7 @@ export const StatsCardsRow: React.FC<{
                 "/dashboard/leads?status=in+progress%2Cdetails+shared",
               )
             }
-            icon={<FaPhoneAlt size={24} className="text-blue-500" />}
+            icon={<FaPhoneAlt size={17} className="text-blue-500" />}
             iconBg="#e3f2fd"
           />
           <StatCard
@@ -298,14 +326,14 @@ export const StatsCardsRow: React.FC<{
             title="New Leads"
             value={teamStats.newLeads}
             onClick={() => router.push("/dashboard/leads?status=new")}
-            icon={<FaUserPlus size={24} className="text-blue-500" />}
+            icon={<FaUserPlus size={17} className="text-blue-500" />}
             iconBg="#e3f2fd"
           />
           <StatCard
             loading={usersLoading}
             title="Site Visits Scheduled"
             value={teamStats.siteVisitCount}
-            icon={<FaHandshake size={24} className="text-purple-700" />}
+            icon={<FaHandshake size={17} className="text-purple-700" />}
             iconBg="#f3e5f5"
           />
           <StatCard
@@ -313,7 +341,7 @@ export const StatsCardsRow: React.FC<{
             title="MoUs (Pending / Completed)"
             value={`${teamStats.mouPending} / ${teamStats.mouApproved}`}
             onClick={() => router.push("/dashboard/mou")}
-            icon={<FaFileSignature size={24} className="text-indigo-900" />}
+            icon={<FaFileSignature size={17} className="text-indigo-900" />}
             iconBg="#e8eaf6"
           />
           {showVendorBilling && (
@@ -321,7 +349,7 @@ export const StatsCardsRow: React.FC<{
               loading={usersLoading}
               title="Total Vendors & Billing amount"
               value={`${teamStats.totalVendors} / ₹${teamStats.totalSpend.toLocaleString()}`}
-              icon={<FaRupeeSign size={24} className="text-yellow-500" />}
+              icon={<FaRupeeSign size={17} className="text-yellow-500" />}
               iconBg="#fffde7"
             />
           )}
