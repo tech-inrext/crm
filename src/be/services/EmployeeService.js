@@ -1176,11 +1176,13 @@ class EmployeeService extends Service {
         tree.push({
           _id: emp._id,
           name: emp.name,
+          email: emp.email,
           designation: emp.designation,
           branch: emp.branch,
           managerId: emp.managerId,
           employeeProfileId: emp.employeeProfileId,
           children: children.length ? children : [], // If no subordinates, return empty array
+          ...emp,
         });
       });
     return tree;
@@ -1199,7 +1201,9 @@ class EmployeeService extends Service {
       }
 
       // Fetch all employees
-      const employees = await Employee.find({}).lean();
+      const employees = await Employee.find({})
+        .select("-password -resetOTP -resetOTPExpires")
+        .lean();
 
       // Fetch the manager details
       const manager = employees.find(
@@ -1217,11 +1221,13 @@ class EmployeeService extends Service {
       const hierarchy = {
         _id: manager._id,
         name: manager.name,
+        email: manager.email,
         designation: manager.designation,
         branch: manager.branch,
         managerId: manager.managerId,
         employeeProfileId: manager.employeeProfileId,
         children: this.buildHierarchy(employees, manager._id), // Recursively find subordinates
+        ...manager,
       };
 
       return res.status(200).json({

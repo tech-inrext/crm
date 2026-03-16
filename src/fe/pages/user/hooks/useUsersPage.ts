@@ -13,6 +13,9 @@ export function useUsersPage() {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
 
+  // ─── View toggle (my team vs all employees) ──────────────────────────────
+  const [showAllEmployees, setShowAllEmployees] = useState(false);
+
   // ─── Dialog State ───────────────────────────────────────────────────────
   const [open, setOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
@@ -72,6 +75,10 @@ export function useUsersPage() {
     search,
     debouncedSearch,
     handleSearchChange,
+
+    // View toggle
+    showAllEmployees,
+    setShowAllEmployees,
 
     // Dialog
     open,

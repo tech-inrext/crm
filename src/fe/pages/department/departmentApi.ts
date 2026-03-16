@@ -19,20 +19,29 @@ const departmentApi = createApi({
       isPaginated: false,
     }),
   },
+  mutations: {
+    createDepartment: () => ({
+      url: DEPARTMENTS_API_BASE,
+      method: "post",
+    }),
+    updateDepartment: (params) => ({
+      url: `${DEPARTMENTS_API_BASE}/${params.id}`,
+      method: "patch",
+    }),
+    deleteDepartment: (params) => ({
+      url: `${DEPARTMENTS_API_BASE}/${params.id}`,
+      method: "delete",
+    }),
+  },
 });
 
-const {
+export const {
   useGetDepartmentsQuery,
   useGetDepartmentByIdQuery,
   useGetManagersQuery,
-} = departmentApi as {
-  useGetDepartmentsQuery: (params?: Record<string, unknown>) => any;
-  useGetDepartmentByIdQuery: (params?: Record<string, unknown>) => any;
-  useGetManagersQuery: (params?: Record<string, unknown>) => any;
-};
 
-export {
-  useGetDepartmentsQuery,
-  useGetDepartmentByIdQuery,
-  useGetManagersQuery,
-};
+  // Mutations
+  useCreateDepartmentMutation,
+  useUpdateDepartmentMutation,
+  useDeleteDepartmentMutation,
+} = departmentApi as any;

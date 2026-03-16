@@ -30,7 +30,8 @@ import {
 } from "@/components/ui/Component";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
-import LeadActivity from "./LeadActivity";
+import LeadActivity, { ValueChip } from "./LeadActivity";
+import FollowUpHeader from "./FollowUpHeader";
 
 // Helper to get initials for avatar
 const getInitials = (name: string) => {
@@ -209,100 +210,8 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
         },
       }}
     >
-      <Box
-        sx={{
-          bgcolor: "#fff",
-          borderBottom: "1px solid #f3f4f6",
-          pt: "10px",
-        }}
-      >
-        {/* Title row */}
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            pt: 1.5,
-            pb: 1,
-            px: 2.5,
-          }}
-        >
-          <Typography
-            sx={{
-              fontWeight: 600,
-              fontSize: isMobile ? "0.95rem" : "1rem",
-              color: "text.primary",
-            }}
-          >
-            Updates & Reminders
-          </Typography>
-          <IconButton
-            onClick={handleDialogClose}
-            size="small"
-            sx={{ color: "text.secondary" }}
-          >
-            <CloseIcon />
-          </IconButton>
-        </Box>
-
-        {/* Lead info strip */}
-        {leadInfo && (
-          <Box
-            sx={{
-              px: 2.5,
-              pb: 1.25,
-              display: "flex",
-              alignItems: "center",
-              gap: 1.5,
-            }}
-          >
-            <Avatar
-              sx={{
-                width: 32,
-                height: 32,
-                fontSize: "0.75rem",
-                fontWeight: 700,
-                bgcolor: "#eff6ff",
-                color: "#2563eb",
-                border: "1.5px solid #dbeafe",
-              }}
-            >
-              {leadInfo.fullName
-                ? leadInfo.fullName.substring(0, 2).toUpperCase()
-                : "?"}
-            </Avatar>
-            <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography
-                sx={{
-                  fontSize: "0.8rem",
-                  fontWeight: 600,
-                  color: "#111827",
-                  lineHeight: 1.3,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {leadInfo.fullName || "Unknown Lead"}
-              </Typography>
-              {leadInfo.phone && (
-                <Typography
-                  component="a"
-                  href={`tel:${leadInfo.phone}`}
-                  sx={{
-                    fontSize: "0.7rem",
-                    color: "#6b7280",
-                    textDecoration: "none",
-                    "&:hover": { color: "#2563eb" },
-                  }}
-                >
-                  {leadInfo.phone}
-                </Typography>
-              )}
-            </Box>
-          </Box>
-        )}
-      </Box>
+      <FollowUpHeader leadInfo={leadInfo} handleDialogClose={handleDialogClose} isMobile={isMobile} />
+      
 
       {/* History Section Header + Filter – pinned */}
       <Box
@@ -645,7 +554,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               mb: 1,
                             }}
                           >
-                            {isHistory && it.change ? (
+                            {it.isCreation ? (
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
+                                <Typography variant="body2" sx={{ color: "#374151" }}>
+                                  {it.note}
+                                </Typography>
+                                <ValueChip color="new">{it.submittedByName}</ValueChip>
+                              </Box>
+                            ) : isHistory && it.change ? (
                               <LeadActivity change={it.change} />
                             ) : it.note !== "N/A" ? (
                               it.note
@@ -700,46 +616,48 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                 )}
                             </Box>
                             {/* User Info */}
-                            <Stack
-                              direction="row"
-                              alignItems="center"
-                              justifyContent="end"
-                              spacing={1}
-                            >
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  color: "text.secondary",
-                                  fontSize: "0.5rem",
-                                }}
+                            {!it.isCreation && (
+                              <Stack
+                                direction="row"
+                                alignItems="center"
+                                justifyContent="end"
+                                spacing={1}
                               >
-                                By:{" "}
-                              </Typography>
-                              <Avatar
-                                sx={{
-                                  width: 18,
-                                  height: 18,
-                                  fontSize: "0.5rem",
-                                  bgcolor: bgColor,
-                                  color: accentColor,
-                                  border: `1px solid ${accentColor}15`,
-                                }}
-                              >
-                                {getInitials(it.submittedByName)}
-                              </Avatar>
-                              <Box>
                                 <Typography
-                                  variant="subtitle2"
+                                  variant="caption"
                                   sx={{
-                                    color: "#111827",
-                                    fontSize: "0.6rem",
-                                    lineHeight: 1.2,
+                                    color: "text.secondary",
+                                    fontSize: "0.5rem",
                                   }}
                                 >
-                                  {it.submittedByName || "System User"}
+                                  By:{" "}
                                 </Typography>
-                              </Box>
-                            </Stack>
+                                <Avatar
+                                  sx={{
+                                    width: 18,
+                                    height: 18,
+                                    fontSize: "0.5rem",
+                                    bgcolor: bgColor,
+                                    color: accentColor,
+                                    border: `1px solid ${accentColor}15`,
+                                  }}
+                                >
+                                  {getInitials(it.submittedByName)}
+                                </Avatar>
+                                <Box>
+                                  <Typography
+                                    variant="subtitle2"
+                                    sx={{
+                                      color: "#111827",
+                                      fontSize: "0.6rem",
+                                      lineHeight: 1.2,
+                                    }}
+                                  >
+                                    {it.submittedByName || "System User"}
+                                  </Typography>
+                                </Box>
+                              </Stack>
+                            )}
                           </Stack>
 
                           {/* Outcome Section: Show ONLY if date is passed OR outcome is already recorded */}
@@ -757,9 +675,9 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                 {new Date() > new Date(it.followUpDate) &&
                                 (it.outcome === "pending" || !it.outcome) ? (
                                   <Stack
-                                    direction="row"
-                                    alignItems="center"
-                                    spacing={1.5}
+                                    direction={isMobile ? "column" : "row"}
+                                    alignItems={isMobile ? "stretch" : "center"}
+                                    spacing={isMobile ? 1.5 : 1.5}
                                   >
                                     <Typography
                                       variant="caption"
@@ -773,7 +691,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                       {isCallBack ? "call" : "site visit"}{" "}
                                       completed?
                                     </Typography>
-                                    <Stack direction="row" spacing={1}>
+                                    <Stack 
+                                      direction="row" 
+                                      spacing={1}
+                                      sx={{ 
+                                        width: isMobile ? "100%" : "auto",
+                                        justifyContent: isMobile ? "stretch" : "flex-end"
+                                      }}
+                                    >
                                       <Button
                                         size="small"
                                         variant="contained"
@@ -790,12 +715,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                           )
                                         }
                                         sx={{
-                                          height: 24,
+                                          flex: isMobile ? 1 : "initial",
+                                          height: 28,
                                           fontSize: "0.65rem",
                                           fontWeight: 700,
                                           textTransform: "none",
                                           borderRadius: "6px",
                                           boxShadow: "none",
+                                          whiteSpace: "nowrap",
                                           "&:hover": {
                                             boxShadow: "none",
                                             bgcolor: "#059669",
@@ -817,12 +744,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                           handleUpdateOutcome(it._id, "missed")
                                         }
                                         sx={{
-                                          height: 24,
+                                          flex: isMobile ? 1 : "initial",
+                                          height: 28,
                                           fontSize: "0.65rem",
                                           fontWeight: 700,
                                           textTransform: "none",
                                           borderRadius: "6px",
                                           borderWidth: 1.5,
+                                          whiteSpace: "nowrap",
                                           "&:hover": {
                                             borderWidth: 1.5,
                                             bgcolor: "#fef2f2",

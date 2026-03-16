@@ -1,6 +1,6 @@
 ﻿import { DEFAULT_USER_FORM } from "@/fe/pages/user/constants/users";
 import { uploadFile } from "@/fe/pages/user/utils/uploadFile";
-import type { UserFormData } from "@/fe/pages/user/types";
+import type { UserFormData, Employee } from "@/fe/pages/user/types";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -68,6 +68,21 @@ export async function resolveFileUploads(
 }
 
 /**
+ * Flatten a nested hierarchy tree (from getHierarchyByManager) into a flat array
+ */
+export function flattenHierarchy(node: any): Employee[] {
+  if (!node) return [];
+  const { children, ...emp } = node;
+  const result: Employee[] = [emp as Employee];
+  if (Array.isArray(children)) {
+    for (const child of children) {
+      result.push(...flattenHierarchy(child));
+    }
+  }
+  return result;
+}
+
+/**
  * Check if current user can edit a specific employee
  * System admins can edit everyone, managers can only edit their direct reports
  */
@@ -84,6 +99,7 @@ export const canEditEmployee = (currentUser: any, employee: any): boolean => {
 
 /**
  * Transform user data to form-compatible format
+ * Maps backend field names to frontend field names (e.g., altPhone → whatsapp)
  */
 export const getInitialUserForm = (form: any) => {
   const safeForm = Object.fromEntries(
@@ -100,25 +116,33 @@ export const getInitialUserForm = (form: any) => {
     }
   }
 
+  // Map backend field names to frontend field names
+  const formData: Record<string, unknown> = {};
+  for (const [key, value] of Object.entries(safeForm)) {
+    const frontendKey = key === "altPhone" ? "whatsapp" : key;
+    formData[frontendKey] = value;
+  }
+
   return {
     ...DEFAULT_USER_FORM,
-    ...safeForm,
-    gender: safeForm.gender ?? DEFAULT_USER_FORM.gender,
-    managerId: safeForm.managerId || "",
-    departmentId: safeForm.departmentId || "",
-    roles: Array.isArray(safeForm.roles)
-      ? safeForm.roles.map((r: any) =>
+    ...formData,
+    gender: formData.gender ?? DEFAULT_USER_FORM.gender,
+    managerId: formData.managerId || "",
+    departmentId: formData.departmentId || "",
+    roles: Array.isArray(formData.roles)
+      ? (formData.roles as any[]).map((r: any) =>
           typeof r === "string" ? r : r._id || r.id || "",
         )
       : [],
     joiningDate,
-    aadharUrl: safeForm.aadharUrl || "",
-    panUrl: safeForm.panUrl || "",
-    bankProofUrl: safeForm.bankProofUrl || "",
-    panNumber: safeForm.panNumber || "",
-    nominee: safeForm.nominee ?? DEFAULT_USER_FORM.nominee,
-    slabPercentage: safeForm.slabPercentage || "",
-    branch: safeForm.branch || "",
+    aadharUrl: formData.aadharUrl || "",
+    panUrl: formData.panUrl || "",
+    bankProofUrl: formData.bankProofUrl || "",
+    panNumber: formData.panNumber || "",
+    nominee: formData.nominee ?? DEFAULT_USER_FORM.nominee,
+    slabPercentage: formData.slabPercentage || "",
+    branch: formData.branch || "",
+    whatsapp: formData.whatsapp || "",
   };
 };
 
