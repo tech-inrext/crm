@@ -6,6 +6,7 @@ const userApi = createApi({
     getUsers: (params) => ({
       url: "/api/v0/employee",
       isPaginated: true,
+      defaultPageSize: 5,
       shouldCache: true, // Cache the employee list for better performance
     }),
     // Single employee by ID
@@ -25,6 +26,11 @@ const userApi = createApi({
     getDepartments: () => ({
       url: "/api/v0/department",
       isPaginated: false,
+    }),
+    getMyTeamHierarchy: (params) => ({
+      url: "/api/v0/employee/hierarchy",
+      isPaginated: false,
+      shouldCache: true,
     }),
   },
   mutations: {
@@ -46,6 +52,7 @@ export const {
   useGetRolesQuery,
   useGetManagersQuery,
   useGetDepartmentsQuery,
+  useGetMyTeamHierarchyQuery,
 
   // Mutations
   useCreateUserMutation,

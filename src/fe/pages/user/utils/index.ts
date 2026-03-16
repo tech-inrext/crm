@@ -1,6 +1,6 @@
 ﻿import { DEFAULT_USER_FORM } from "@/fe/pages/user/constants/users";
 import { uploadFile } from "@/fe/pages/user/utils/uploadFile";
-import type { UserFormData } from "@/fe/pages/user/types";
+import type { UserFormData, Employee } from "@/fe/pages/user/types";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -65,6 +65,21 @@ export async function resolveFileUploads(
 
   await Promise.all(uploads);
   return payload as UserPayload;
+}
+
+/**
+ * Flatten a nested hierarchy tree (from getHierarchyByManager) into a flat array
+ */
+export function flattenHierarchy(node: any): Employee[] {
+  if (!node) return [];
+  const { children, ...emp } = node;
+  const result: Employee[] = [emp as Employee];
+  if (Array.isArray(children)) {
+    for (const child of children) {
+      result.push(...flattenHierarchy(child));
+    }
+  }
+  return result;
 }
 
 /**
