@@ -1,3 +1,4 @@
+// src/fe/pages/roles/components/dialog/RolePermissionsDialog.tsx
 import React from "react";
 import {
   Dialog,
@@ -12,46 +13,24 @@ import {
   Paper,
   Divider,
   IconButton,
-  useTheme,
-  useMediaQuery,
   CloseIcon,
   SecurityIcon,
-} from "../Component";
+} from "@/components/ui/Component";
 import {
   permissionColors,
   rolePermissionsDialogStyles,
-} from "../style/RoleCard.styles";
-
-interface RolePermissionsDialogProps {
-  open: boolean;
-  onClose: () => void;
-  role: any;
-}
+} from "../card/styles";
+import type { Role, RolePermissionsDialogProps } from "@/fe/pages/roles/types";
+import { buildGroupedPermissions } from "@/fe/pages/roles/utils";
 
 const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
   open,
   onClose,
   role,
 }) => {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const isTablet = useMediaQuery(theme.breakpoints.down("md"));
-
   if (!role) return null;
 
-  // Group permissions by module
-  const groupedPermissions = role.permissions.reduce(
-    (acc: any, perm: string) => {
-      const [module, action] = perm.split(":");
-      if (!acc[module]) {
-        acc[module] = [];
-      }
-      acc[module].push(action);
-      return acc;
-    },
-    {}
-  );
-
+  const groupedPermissions = buildGroupedPermissions(role);
   const modules = Object.keys(groupedPermissions);
 
   return (
@@ -61,33 +40,15 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
       maxWidth="sm"
       fullWidth={true}
       fullScreen={false}
-      PaperProps={{
-        sx: {
-          ...rolePermissionsDialogStyles.dialog,
-          ...(isMobile && rolePermissionsDialogStyles.dialogMobile),
-          ...(isTablet &&
-            !isMobile &&
-            rolePermissionsDialogStyles.dialogTablet),
-        },
-      }}
+      PaperProps={{ sx: rolePermissionsDialogStyles.dialog }}
     >
-      <DialogTitle
-        sx={{
-          ...rolePermissionsDialogStyles.dialogTitle,
-          ...(isMobile && rolePermissionsDialogStyles.dialogTitleMobile),
-        }}
-      >
+      <DialogTitle sx={rolePermissionsDialogStyles.dialogTitle}>
         <Box sx={rolePermissionsDialogStyles.titleBox}>
           <SecurityIcon sx={rolePermissionsDialogStyles.securityIcon} />
           <Typography
             variant="h6"
             component="div"
-            sx={{
-              ...rolePermissionsDialogStyles.titleText,
-              ...(isMobile
-                ? rolePermissionsDialogStyles.titleTextMobile
-                : rolePermissionsDialogStyles.titleTextDesktop),
-            }}
+            sx={rolePermissionsDialogStyles.titleText}
           >
             {role.name} - Permissions
           </Typography>
@@ -100,23 +61,9 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
         </IconButton>
       </DialogTitle>
 
-      <DialogContent
-        sx={{
-          ...rolePermissionsDialogStyles.dialogContent,
-          ...(isMobile && rolePermissionsDialogStyles.dialogContentMobile),
-          ...(isTablet &&
-            !isMobile &&
-            rolePermissionsDialogStyles.dialogContentTablet),
-        }}
-      >
+      <DialogContent sx={rolePermissionsDialogStyles.dialogContent}>
         {modules.length === 0 ? (
-          <Box
-            sx={{
-              ...rolePermissionsDialogStyles.noPermissionsBox,
-              ...(isMobile &&
-                rolePermissionsDialogStyles.noPermissionsBoxMobile),
-            }}
-          >
+          <Box sx={rolePermissionsDialogStyles.noPermissionsBox}>
             <SecurityIcon sx={rolePermissionsDialogStyles.noPermissionsIcon} />
             <Typography
               variant="h6"
@@ -135,8 +82,8 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
             </Typography>
           </Box>
         ) : (
-          <Grid container spacing={isMobile ? 2 : 3}>
-            {modules.map((module, index) => (
+          <Grid container spacing={{ xs: 2, sm: 3 }}>
+            {modules.map((module) => (
               <Grid item xs={12} sm={6} md={4} key={module}>
                 <Paper
                   elevation={0}
@@ -168,11 +115,11 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
                             ...rolePermissionsDialogStyles.actionChip,
                             backgroundColor:
                               permissionColors[
-                                action as keyof typeof permissionColors
+                              action as keyof typeof permissionColors
                               ] || permissionColors.read,
                           }}
                         />
-                      )
+                      ),
                     )}
                   </Box>
                 </Paper>
@@ -182,24 +129,11 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
         )}
       </DialogContent>
 
-      <DialogActions
-        sx={{
-          ...rolePermissionsDialogStyles.dialogActions,
-          ...(isMobile && rolePermissionsDialogStyles.dialogActionsMobile),
-          ...(isTablet &&
-            !isMobile &&
-            rolePermissionsDialogStyles.dialogActionsTablet),
-        }}
-      >
+      <DialogActions sx={rolePermissionsDialogStyles.dialogActions}>
         <Button
           onClick={onClose}
           variant="contained"
-          fullWidth={isMobile}
-          sx={{
-            ...rolePermissionsDialogStyles.closeActionButton,
-            ...(isMobile &&
-              rolePermissionsDialogStyles.closeActionButtonMobile),
-          }}
+          sx={rolePermissionsDialogStyles.closeActionButton}
         >
           Close
         </Button>
