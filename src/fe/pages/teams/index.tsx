@@ -8,7 +8,6 @@ import {
   HierarchyControls,
   HierarchyTree,
   LoadingState,
-  ErrorState,
   EmptyState,
 } from "./components";
 import useTeamsPage from "@/fe/pages/teams/hooks/useTeamsPage";
@@ -19,7 +18,6 @@ const TeamsPage: React.FC = () => {
   const {
     filteredHierarchy,
     loading,
-    error,
     expanded,
     selectedNode,
     totalCount,
@@ -60,10 +58,8 @@ const TeamsPage: React.FC = () => {
         <Paper sx={{ p: 3 }} elevation={1}>
           {loading ? (
             <LoadingState />
-          ) : error ? (
-            <ErrorState error={error} onRetry={handleRefresh} />
           ) : !filteredHierarchy ? (
-            <EmptyState />
+            <EmptyState isSearchEmpty={!!debouncedSearch} />
           ) : (
             <HierarchyTree
               hierarchy={filteredHierarchy}

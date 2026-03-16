@@ -36,7 +36,7 @@ export interface HierarchyControlsProps {
 export interface HierarchyHeaderProps {
   children: React.ReactNode;
 }
-export interface HeirarcyNodeProps {
+export interface HierarchyNodeProps {
   node: Employee;
   depth: number;
   isOpen: boolean;

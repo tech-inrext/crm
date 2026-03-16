@@ -18,7 +18,7 @@ import {
   LocationOn,
   Person,
 } from "@/components/ui/Component";
-import { Employee , HeirarcyNodeProps} from "../types";
+import { Employee , HierarchyNodeProps} from "../types";
 import { HIERARCHY_COLORS, getNodeColor} from "../constants/teams";
 import {
   nodeWrapperSx,

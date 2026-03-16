@@ -1,5 +1,5 @@
 "use client";
-
+import React  from 'react'
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -13,16 +13,21 @@ import {
   useGetHierarchyQuery,
   useGetAllEmployeesQuery,
 } from "@/fe/pages/teams/teamsApi";
-import type { Employee, HierarchyState } from "@/fe/pages/teams/types";
+import type { Employee } from "@/fe/pages/teams/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 export function useTeamsPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user } = useAuth();
 
   // ─── Manager selection (synced with URL) ──────────────────────────────────
   const [selectedManager, setSelectedManager] = useState<string | null>(
     searchParams.get("managerId"),
   );
+  
+  // Track if we have set the initial default user
+  const hasSetDefaultUser = React.useRef(!!searchParams.get("managerId"));
 
   // ─── Search ───────────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
@@ -38,9 +43,11 @@ export function useTeamsPage() {
     loading: hierarchyLoading,
     error: hierarchyError,
     refetch: refetchHierarchy,
-  } = useGetHierarchyQuery({ managerId: selectedManager || "" });
+  } = useGetHierarchyQuery({ 
+    managerId: selectedManager 
+  });
 
-  const { data: employeesData, loading: employeesLoading } =
+  const { data: employeesData } =
     useGetAllEmployeesQuery({});
 
   // ─── Hierarchy ────────────────────────────────────────────────────────────
@@ -53,11 +60,21 @@ export function useTeamsPage() {
     }
   }, [hierarchy?._id]);
 
-  // ─── Sync selectedManager from URL ────────────────────────────────────────
+  // ─── Sync selectedManager from URL & handle default user ────────────────
   useEffect(() => {
     const managerFromUrl = searchParams.get("managerId");
-    setSelectedManager(managerFromUrl);
-  }, [searchParams]);
+    
+    // Prioritize URL parameter
+    if (managerFromUrl) {
+      setSelectedManager(managerFromUrl);
+      hasSetDefaultUser.current = true;
+    } 
+    // Otherwise default once when user profile is ready
+    else if (!hasSetDefaultUser.current && user?._id) {
+      setSelectedManager(user._id);
+      hasSetDefaultUser.current = true;
+    }
+  }, [searchParams, user?._id]);
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleManagerChange = useCallback(
@@ -73,8 +90,10 @@ export function useTeamsPage() {
   );
 
   const handleRefresh = useCallback(() => {
-    refetchHierarchy();
-  }, [refetchHierarchy]);
+    if (selectedManager) {
+      refetchHierarchy();
+    }
+  }, [refetchHierarchy, selectedManager]);
 
   const toggleNode = useCallback(
     (id: string) => {
@@ -100,18 +119,12 @@ export function useTeamsPage() {
 
   const filteredHierarchy = filterHierarchy(hierarchy, debouncedSearch);
 
-  // Error message from API
-  const errorMessage = hierarchyError
-    ? (hierarchyError as any)?.data?.message ||
-      (hierarchyError as any)?.message ||
-      "Failed to load hierarchy"
-    : null;
+  // We are loading if the query is loading, OR if we haven't even tried to set the default user yet
+  const isLoading = hierarchyLoading || (!hasSetDefaultUser.current && !selectedManager);
 
   return {
     // Hierarchy state
-    hierarchy,
-    loading: hierarchyLoading,
-    error: errorMessage,
+    loading: isLoading,
     expanded,
     selectedNode,
     totalCount: hierarchy ? countNodes(hierarchy) : 0,
@@ -131,7 +144,6 @@ export function useTeamsPage() {
 
     // Tree controls
     toggleNode,
-    setExpanded,
     setSelectedNode,
     handleExpandAll,
     handleCollapseAll,

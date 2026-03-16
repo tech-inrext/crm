@@ -2,9 +2,8 @@ import createApi from "@/fe/hooks/createApi";
 
 const teamsApi = createApi({
   endpoints: {
-    // Get hierarchy for a manager
-    getHierarchy: (params) => ({
-      url: `/api/v0/employee/hierarchy?managerId=${params.managerId}`,
+    getHierarchy: () => ({
+      url: "/api/v0/employee/hierarchy",
       isPaginated: false,
       shouldCache: true,
     }),
