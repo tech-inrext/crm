@@ -143,6 +143,7 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
       anchorEl={anchorEl}
       open={Boolean(anchorEl)}
       onClose={onClose}
+      onClick={(e) => e.stopPropagation()}
       anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       transformOrigin={{ vertical: "top", horizontal: "center" }}
       PaperProps={{

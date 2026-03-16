@@ -1,6 +1,6 @@
 import { Box, Typography } from "@mui/material";
 
-const ValueChip = ({
+export const ValueChip = ({
   children,
   color,
 }: {

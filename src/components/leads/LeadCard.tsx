@@ -107,6 +107,7 @@ const InfoRow = ({
       <Box
         component="a"
         href={href}
+        onClick={(e) => e.stopPropagation()}
         sx={{
           textDecoration: "none",
           display: "block",
