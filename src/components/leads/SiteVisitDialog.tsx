@@ -453,8 +453,13 @@ const SiteVisitDialog: React.FC<SiteVisitDialogProps> = ({
             boxShadow: "none",
             py: 0.7,
             fontSize: "0.85rem",
+            color: "#fff",
             bgcolor: "#2563eb",
             "&:hover": { bgcolor: "#1d4ed8", boxShadow: "none" },
+            "&:disabled": { 
+              bgcolor: "#e2e8f0", 
+              color: "#94a3b8" 
+            },
           }}
         >
           {submitting ? (
