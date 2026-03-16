@@ -24,7 +24,7 @@ import {
   useGetUsersQuery,
   useGetMyTeamHierarchyQuery,
 } from "@/fe/pages/user/userApi";
-import { invalidateQueryCache } from "@/fe/hooks/createApi";
+import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";
 import type { Employee, TostProps } from "@/fe/pages/user/types";
 
 const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {

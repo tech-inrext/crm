@@ -20,7 +20,7 @@ import {
   useGetDepartmentsQuery,
   useDeleteDepartmentMutation,
 } from "@/fe/pages/department/departmentApi";
-import { invalidateQueryCache } from "@/fe/hooks/createApi";
+import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";
 
 const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {
   if (!open) return null;
@@ -100,15 +100,15 @@ const DepartmentsPage: React.FC = () => {
 
   const initialData = selectedDepartment
     ? {
-      name: selectedDepartment.name ?? "",
-      description: selectedDepartment.description ?? "",
-      managerId:
-        typeof selectedDepartment.managerId === "object" &&
+        name: selectedDepartment.name ?? "",
+        description: selectedDepartment.description ?? "",
+        managerId:
+          typeof selectedDepartment.managerId === "object" &&
           selectedDepartment.managerId !== null
-          ? ((selectedDepartment.managerId as any)._id ?? "")
-          : ((selectedDepartment.managerId as string) ?? ""),
-      attachments: selectedDepartment.attachments ?? [],
-    }
+            ? ((selectedDepartment.managerId as any)._id ?? "")
+            : ((selectedDepartment.managerId as string) ?? ""),
+        attachments: selectedDepartment.attachments ?? [],
+      }
     : DEFAULT_DEPARTMENT_FORM;
 
   const departments: any[] = Array.isArray((departmentsData as any)?.data)
