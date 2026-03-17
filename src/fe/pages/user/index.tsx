@@ -4,7 +4,7 @@ import React, { useCallback, useEffect, useMemo } from "react";
 import { AddIcon } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
 import UserDialog from "@/fe/pages/user/components/dialog/UserDialog";
-import UserDetailsDialog from "@/fe/pages/user/components/dialog/UserDialogView.tsx";
+import UserDetailsDialog from "@/fe/pages/user/components/dialog/UserDialogView";
 import { useAuth } from "@/contexts/AuthContext";
 import UsersPageActionBar from "@/fe/pages/user/components/UsersPageActionBar";
 import {
