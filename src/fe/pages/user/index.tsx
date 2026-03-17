@@ -3,28 +3,28 @@
 import React, { useCallback, useEffect, useMemo } from "react";
 import { AddIcon } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
-import UserDialog from "@/fe/pages/user/components/dialog/UserDialog";
-import UserDetailsDialog from "@/fe/pages/user/components/dialog/UserDialogView";
+import UserDialog from "./components/dialog/UserDialog";
+import UserDetailsDialog from "./components/dialog/UserDialogView";
 import { useAuth } from "@/contexts/AuthContext";
-import UsersPageActionBar from "@/fe/pages/user/components/UsersPageActionBar";
+import UsersPageActionBar from "./components/UsersPageActionBar";
 import {
   GRADIENTS,
   FAB_POSITION,
   USERS_PERMISSION_MODULE,
-} from "@/fe/pages/user/constants/users";
+} from "./constants/users";
 import {
   canEditEmployee,
   flattenHierarchy,
   getInitialUserForm,
-} from "@/fe/pages/user/utils";
-import UsersList from "@/fe/pages/user/components/UsersList";
-import useUsersPage from "@/fe/pages/user/hooks/useUsersPage";
+} from "./utils";
+import UsersList from "./components/UsersList";
+import useUsersPage from "./hooks/useUsersPage";
 import {
   useGetUsersQuery,
   useGetMyTeamHierarchyQuery,
-} from "@/fe/pages/user/userApi";
+} from "./userApi";
 import { invalidateQueryCache } from "@/fe/hooks/createApi";
-import type { Employee, TostProps } from "@/fe/pages/user/types";
+import type { Employee, TostProps } from "./types";
 
 const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {
   if (!open) return null;
