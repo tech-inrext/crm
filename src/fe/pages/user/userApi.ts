@@ -18,14 +18,17 @@ const userApi = createApi({
     getRoles: () => ({
       url: "/api/v0/role/getAllRoleList",
       isPaginated: false,
+      shouldCache: true,
     }),
     getManagers: () => ({
       url: "/api/v0/employee/getAllEmployeeList",
       isPaginated: false,
+      shouldCache: true,
     }),
     getDepartments: () => ({
       url: "/api/v0/department",
       isPaginated: false,
+      shouldCache: true,
     }),
     getMyTeamHierarchy: (params) => ({
       url: "/api/v0/employee/hierarchy",

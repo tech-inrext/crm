@@ -66,15 +66,6 @@ export const DEFAULT_USER_FORM = {
 // ─── Options ──────────────────────────────────────────────────────────────────
 export const GENDER_OPTIONS = ["Male", "Female", "Other"] as const;
 
-// ─── Table header config ──────────────────────────────────────────────────────
-export const USERS_TABLE_HEADER = [
-  { label: "Name", dataKey: "name" },
-  { label: "Email", dataKey: "email" },
-  { label: "Phone", dataKey: "phone" },
-  { label: "Designation", dataKey: "designation" },
-  { label: "Actions", component: "action-buttons" },
-] as const;
-
 // ─── Search ───────────────────────────────────────────────────────────────────
 export const SEARCH_PLACEHOLDER = "Search users by name, email, phone…";
 export const SEARCH_DEBOUNCE_DELAY = 600;

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -27,19 +27,6 @@ export function useUsersPage() {
   const [snackbarMessage, setSnackbarMessage] = useState("");
   const [snackbarSeverity, setSnackbarSeverity] =
     useState<SnackbarSeverity>("success");
-
-  // ─── UI ──────────────────────────────────────────────────────────────────
-  const [isClient, setIsClient] = useState(false);
-  const [windowWidth, setWindowWidth] = useState(1200);
-
-  // ─── Window setup ────────────────────────────────────────────────────────
-  useEffect(() => {
-    setIsClient(true);
-    setWindowWidth(window.innerWidth);
-    const handleResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
 
   // ─── Dialog handlers ─────────────────────────────────────────────────────
   const handleCloseDialog = useCallback(() => {
@@ -97,10 +84,6 @@ export function useUsersPage() {
     setSnackbarMessage,
     snackbarSeverity,
     setSnackbarSeverity,
-
-    // UI
-    isClient,
-    windowWidth,
   } as const;
 }
 
