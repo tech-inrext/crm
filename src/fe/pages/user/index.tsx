@@ -3,8 +3,8 @@
 import React, { useCallback, useEffect, useMemo } from "react";
 import { AddIcon } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
-import UserDialog from "./components/dialog/UserDialog";
-import UserDetailsDialog from "./components/dialog/UserDialogView";
+import UserDialog from "./components/dialog/UserDialog/index";
+import UserDetailsDialog from "./components/dialog/UserDialogView/index";
 import { useAuth } from "@/contexts/AuthContext";
 import UsersPageActionBar from "./components/UsersPageActionBar";
 import {
