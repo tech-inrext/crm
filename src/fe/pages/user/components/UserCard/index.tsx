@@ -1,56 +1,85 @@
-﻿import React from "react";
-import { EditIcon, PermissionGuard, Button } from "@/components/ui";
+import {
+  Visibility,
+  EditIcon,
+  IconButton,
+} from "@/components/ui/Component";
 import { USERS_PERMISSION_MODULE } from "@/fe/pages/user/constants/users";
 import type { UserCardProps } from "@/fe/pages/user/types";
+import { cardStyles } from "./styles";
+import { getContactInfo, getOrgInfo } from "@/fe/pages/user/utils";
+import { PermissionGuard } from "@/components/ui";
 
-const UserCard: React.FC<UserCardProps> = ({ user, onEdit }) => {
+
+const UserCard: React.FC<UserCardProps & { managers?: any[]; departments?: any[] }> = ({ 
+  user, 
+  onEdit, 
+  onView,
+  managers = [],
+  departments = []
+}) => {
+  const managerName = user.managerName || managers.find(m => m._id === user.managerId)?.name || "N/A";
+  const departmentName = user.departmentName || departments.find(d => d._id === user.departmentId)?.name || "N/A";
+
   const initial = user.name?.[0]?.toUpperCase() ?? "?";
+  const profileImage = user.avatarUrl || user.photo;
+  const contactInfo = getContactInfo(user);
+  const orgInfo = getOrgInfo({ managerName, departmentName });
 
   return (
-    <div className="w-full rounded-xl p-3 flex items-center gap-3 min-w-0 bg-gradient-to-br from-[#fafdff] to-[#f1f5fa] shadow-md">
-      {user.avatarUrl ? (
-        <img
-          src={user.avatarUrl}
-          alt={user.name}
-          className="w-14 h-14 rounded-full object-cover"
-        />
-      ) : (
-        <div className="w-14 h-14 rounded-full flex items-center justify-center font-bold text-xl bg-blue-600 text-white shadow">
-          {initial}
-        </div>
-      )}
+    <div className={cardStyles.container}>
+      {/* Background Accent */}
+      <div className={cardStyles.bgAccent} />
+      
+      <div className={cardStyles.header}>
+        <div className={cardStyles.profileInfo}>
+          <div className={cardStyles.avatarWrapper}>
+            {profileImage ? (
+              <img src={profileImage} alt={user.name} className={cardStyles.avatarImage} />
+            ) : (
+              <div className={cardStyles.avatarPlaceholder}>{initial}</div>
+            )}
+          </div>
 
-      <div className="flex-1 min-w-0">
-        <div className="flex flex-col gap-0.5">
-          <p className="text-base sm:text-lg font-extrabold leading-tight truncate">
-            {user.name}
-          </p>
-          <p className="text-sm text-gray-500 truncate">{user.email}</p>
-          {user.designation && (
-            <p className="text-xs sm:text-sm text-blue-600 font-semibold truncate">
-              {user.designation}
-            </p>
+          <div className={cardStyles.nameSection}>
+            <h3 className={cardStyles.nameTitle}>{user.name}</h3>
+            <p className={cardStyles.designationText}>{user.designation || "No Designation"}</p>
+          </div>
+        </div>
+
+        <div className={cardStyles.actionContainer}>
+          {onView && (
+            <IconButton onClick={onView} className={cardStyles.actionButton} size="small" aria-label="view user">
+              <Visibility className="w-5 h-5" />
+            </IconButton>
+          )}
+          {onEdit && (
+            <PermissionGuard module={USERS_PERMISSION_MODULE} action="write" fallback={null}>
+              <IconButton onClick={onEdit} className={cardStyles.actionButton} size="small" aria-label="edit user">
+                <EditIcon className="w-5 h-5" />
+              </IconButton>
+            </PermissionGuard>
           )}
         </div>
       </div>
 
-      {onEdit && (
-        <PermissionGuard
-          module={USERS_PERMISSION_MODULE}
-          action="write"
-          fallback={null}
-        >
-          <Button
-            variant="text"
-            size="small"
-            onClick={onEdit}
-            aria-label="edit user"
-            className="ml-1 text-blue-600 hover:text-blue-700"
-          >
-            <EditIcon fontSize="small" />
-          </Button>
-        </PermissionGuard>
-      )}
+      <div className={cardStyles.metadataSection}>
+        {contactInfo.map(({ icon: Icon, value, key }) => (
+          <div key={key} className={cardStyles.metadataItem}>
+            <Icon className={cardStyles.metadataIcon} />
+            <span className={cardStyles.metadataValue}>{value}</span>
+          </div>
+        ))}
+        
+        <div className={cardStyles.orgSection}>
+          {orgInfo.map(({ icon: Icon, label, value, key }) => (
+            <div key={key} className={cardStyles.orgItem}>
+              <Icon className={cardStyles.orgIcon} />
+              <span className={cardStyles.orgLabel}>{label}</span>
+              <span className={cardStyles.orgValue}>{value}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

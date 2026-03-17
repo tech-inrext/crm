@@ -1,63 +1,33 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo } from "react";
-import { useTheme, useMediaQuery, AddIcon } from "@/components/ui/Component";
+import { AddIcon } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
-import UserDialog from "@/fe/pages/user/components/dialog/userDialog";
-import UserDetailsDialog from "@/fe/pages/user/components/dialog/userDialogView.tsx";
+import { UserDialog, UserDialogView as UserDetailsDialog } from "./components/dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import UsersPageActionBar from "@/fe/pages/user/components/UsersPageActionBar";
+import UsersPageActionBar from "./components/UsersPageActionBar";
 import {
   GRADIENTS,
   FAB_POSITION,
   USERS_PERMISSION_MODULE,
-} from "@/fe/pages/user/constants/users";
+} from "./constants/users";
 import {
   canEditEmployee,
   flattenHierarchy,
   getInitialUserForm,
-} from "@/fe/pages/user/utils";
-import { getUsersTableHeader } from "@/fe/pages/user/components/UserTable";
-import UsersList from "@/fe/pages/user/components/UsersList";
-import useUsersPage from "@/fe/pages/user/hooks/useUsersPage";
+} from "./utils";
+import UsersList from "./components/UsersList";
+import useUsersPage from "./hooks/useUsersPage";
 import {
   useGetUsersQuery,
   useGetMyTeamHierarchyQuery,
-} from "@/fe/pages/user/userApi";
+} from "./userApi";
 import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";
-import type { Employee, TostProps } from "@/fe/pages/user/types";
-
-const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {
-  if (!open) return null;
-
-  const colourClass =
-    severity === "success"
-      ? "bg-green-600 text-white"
-      : "bg-red-600 text-white";
-
-  return (
-    <div
-      role="alert"
-      className={`fixed top-4 right-4 z-[1400] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm font-medium transition-all ${colourClass}`}
-    >
-      <span>{message}</span>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Dismiss"
-        className="ml-1 opacity-70 hover:opacity-100 transition-opacity text-lg leading-none"
-      >
-        ×
-      </button>
-    </div>
-  );
-};
+import { useToast } from "@/fe/components/Toast/ToastContext";
+import type { Employee } from "@/fe/pages/user/types";
 
 const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
   const {
     search,
     debouncedSearch,
@@ -70,17 +40,13 @@ const UsersPage: React.FC = () => {
     handleCloseDialog,
     openViewDialog,
     openEditDialog,
-    snackbarOpen,
-    setSnackbarOpen,
-    snackbarMessage,
-    setSnackbarMessage,
-    snackbarSeverity,
-    setSnackbarSeverity,
     isClient,
     windowWidth,
     showAllEmployees,
     setShowAllEmployees,
   } = useUsersPage();
+
+  const { showToast } = useToast();
 
   // ─── All-employees data (server-paginated) ─────────────────────────────
   const {
@@ -164,29 +130,14 @@ const UsersPage: React.FC = () => {
     invalidateQueryCache("/api/v0/employee");
     await Promise.all([allRefetch(), hierarchyRefetch()]);
     handleCloseDialog();
-    setSnackbarMessage("User saved successfully!");
-    setSnackbarSeverity("success");
-    setSnackbarOpen(true);
-    setTimeout(() => setSnackbarOpen(false), 2000);
+    showToast("User saved successfully!", "success");
   }, [
     allRefetch,
     hierarchyRefetch,
     handleCloseDialog,
-    setSnackbarMessage,
-    setSnackbarSeverity,
-    setSnackbarOpen,
+    showToast,
   ]);
 
-  const usersTableHeader = React.useMemo(
-    () =>
-      getUsersTableHeader({
-        canEditEmployee: (employee: Employee) =>
-          canEditEmployee(currentUser, employee),
-        onView: openViewDialog,
-        onEdit: openEditDialog,
-      }),
-    [currentUser],
-  );
 
   return (
     <div className="p-4 sm:p-6">
@@ -209,12 +160,8 @@ const UsersPage: React.FC = () => {
         totalItems={totalItems}
         onPageChange={setPage}
         onPageSizeChange={handlePageSizeChange}
-        search={search}
-        isMobile={isMobile}
-        isClient={isClient}
-        windowWidth={windowWidth}
-        usersTableHeader={usersTableHeader}
         onEditUser={openEditDialog}
+        onViewUser={openViewDialog}
         canEdit={(user: Employee) => canEditEmployee(currentUser, user)}
       />
 
@@ -234,7 +181,7 @@ const UsersPage: React.FC = () => {
             zIndex: FAB_POSITION.zIndex,
             background: GRADIENTS.button,
           }}
-          className="fixed md:hidden flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95"
+          className="fixed flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95"
         >
           <AddIcon />
         </button>
@@ -257,13 +204,6 @@ const UsersPage: React.FC = () => {
         )}
       </PermissionGuard>
 
-      {/* Toast notification */}
-      <Toast
-        open={snackbarOpen}
-        message={snackbarMessage}
-        severity={snackbarSeverity}
-        onClose={() => setSnackbarOpen(false)}
-      />
     </div>
   );
 };

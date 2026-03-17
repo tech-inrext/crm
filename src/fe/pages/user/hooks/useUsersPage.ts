@@ -1,11 +1,10 @@
-﻿"use client";
+"use client";
 
 import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { SEARCH_DEBOUNCE_DELAY } from "@/fe/pages/user/constants/users";
 import type { Employee } from "@/fe/pages/user/types";
 
-type SnackbarSeverity = "success" | "error";
 type DialogMode = "create" | "edit" | "view";
 
 export function useUsersPage() {
@@ -21,14 +20,6 @@ export function useUsersPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [dialogMode, setDialogMode] = useState<DialogMode>("create");
   const [selectedUser, setSelectedUser] = useState<Employee | null>(null);
-
-  // ─── Snackbar ───────────────────────────────────────────────────────────
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] =
-    useState<SnackbarSeverity>("success");
-
-  // ─── UI ──────────────────────────────────────────────────────────────────
   const [isClient, setIsClient] = useState(false);
   const [windowWidth, setWindowWidth] = useState(1200);
 
@@ -89,14 +80,6 @@ export function useUsersPage() {
     handleCloseDialog,
     openViewDialog,
     openEditDialog,
-
-    // Snackbar
-    snackbarOpen,
-    setSnackbarOpen,
-    snackbarMessage,
-    setSnackbarMessage,
-    snackbarSeverity,
-    setSnackbarSeverity,
 
     // UI
     isClient,
