@@ -29,9 +29,14 @@ class BulkAssignService extends Service {
       if (collectFrom === "unassigned") {
         query.$or = [{ assignedTo: null }, { assignedTo: { $exists: false } }];
 
-        // For AVP or Manager (non-admin), only collect unassigned leads managed by them
-        if (!req.isSystemAdmin && (isAVP || req.isManager)) {
+        if (req.isSystemAdmin) {
+          // System Admin can get all unassigned
+        } else if (isAVP) {
+          // AVP can only get unassigned leads managed by them
           query.managerId = updatedBy;
+        } else {
+          // Other users not allowed
+          query._id = new mongoose.Types.ObjectId(); // Force 0 result
         }
       } else if (collectFrom === "me") {
         query.assignedTo = updatedBy;
@@ -71,9 +76,14 @@ class BulkAssignService extends Service {
       if (collectFrom === "unassigned") {
         query.$or = [{ assignedTo: null }, { assignedTo: { $exists: false } }];
 
-        // For AVP or Manager (non-admin), only collect unassigned leads managed by them
-        if (!req.isSystemAdmin && (isAVP || req.isManager)) {
+        if (req.isSystemAdmin) {
+          // System Admin can get all unassigned
+        } else if (isAVP) {
+          // AVP can only get unassigned leads managed by them
           query.managerId = updatedBy;
+        } else {
+          // Other users not allowed
+          query._id = new mongoose.Types.ObjectId(); // Force 0 result
         }
       } else if (collectFrom === "me") {
         query.assignedTo = updatedBy;
@@ -108,6 +118,7 @@ class BulkAssignService extends Service {
           collectFrom,
           updatedBy,
           isAVP,
+          isSystemAdmin: req.isSystemAdmin,
           availableCount, // Pass the count we found to the worker
         },
         {

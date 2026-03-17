@@ -4,9 +4,9 @@ import dbConnect from "../../lib/mongodb.js";
 import mongoose from "mongoose";
 
 async function bulkAssignLeads(job) {
-  const { batchId, assignTo, status, limit, updatedBy, availableCount, collectFrom, isAVP } = job.data;
+  const { batchId, assignTo, status, limit, updatedBy, availableCount, collectFrom, isAVP, isSystemAdmin } = job.data;
   console.log(`\n🚀 Starting Bulk Assign Job: ${batchId}`);
-  console.log(`Params: limit=${limit}, status=${status}, collectFrom=${collectFrom}, assignTo=${assignTo}, isAVP=${isAVP}`);
+  console.log(`Params: limit=${limit}, status=${status}, collectFrom=${collectFrom}, assignTo=${assignTo}, isAVP=${isAVP}, isSystemAdmin=${isSystemAdmin}`);
 
   try {
     // 🛠️ FIX 1: Explicitly await the connection.
@@ -24,8 +24,14 @@ async function bulkAssignLeads(job) {
 
     if (collectFrom === "unassigned") {
       query.$or = [{ assignedTo: null }, { assignedTo: { $exists: false } }];
-      if (isAVP) {
-        query.managerId = updatedBy; // Only unassigned leads under this AVP
+      if (isSystemAdmin) {
+        // System Admin can get all unassigned
+      } else if (isAVP) {
+        // AVP can only get unassigned leads managed by them
+        query.managerId = updatedBy;
+      } else {
+        // Other users not allowed
+        query._id = new mongoose.Types.ObjectId(); // Force 0 result
       }
     } else if (collectFrom === "me") {
       query.assignedTo = updatedBy;
