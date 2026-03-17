@@ -1503,7 +1503,7 @@ class PropertyService extends Service {
           .skip(skip)
           .limit(itemsPerPage)
           .select(
-            "projectName builderName description location price minPrice maxPrice propertyType images slug status amenities nearby projectHighlights mapLocation isFeatured createdAt",
+            "projectName builderName description location price sizeUnit minSize maxSize minPrice maxPrice propertyType images slug status amenities nearby projectHighlights mapLocation isFeatured createdAt",
           )
           .sort({ isFeatured: -1, createdAt: -1 })
           .lean(),
