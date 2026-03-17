@@ -5,7 +5,6 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { SEARCH_DEBOUNCE_DELAY } from "@/fe/pages/user/constants/users";
 import type { Employee } from "@/fe/pages/user/types";
 
-type SnackbarSeverity = "success" | "error";
 type DialogMode = "create" | "edit" | "view";
 
 export function useUsersPage() {
@@ -21,12 +20,17 @@ export function useUsersPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [dialogMode, setDialogMode] = useState<DialogMode>("create");
   const [selectedUser, setSelectedUser] = useState<Employee | null>(null);
+  const [isClient, setIsClient] = useState(false);
+  const [windowWidth, setWindowWidth] = useState(1200);
 
-  // ─── Snackbar ───────────────────────────────────────────────────────────
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] =
-    useState<SnackbarSeverity>("success");
+  // ─── Window setup ────────────────────────────────────────────────────────
+  useEffect(() => {
+    setIsClient(true);
+    setWindowWidth(window.innerWidth);
+    const handleResize = () => setWindowWidth(window.innerWidth);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // ─── Dialog handlers ─────────────────────────────────────────────────────
   const handleCloseDialog = useCallback(() => {
@@ -77,13 +81,9 @@ export function useUsersPage() {
     openViewDialog,
     openEditDialog,
 
-    // Snackbar
-    snackbarOpen,
-    setSnackbarOpen,
-    snackbarMessage,
-    setSnackbarMessage,
-    snackbarSeverity,
-    setSnackbarSeverity,
+    // UI
+    isClient,
+    windowWidth,
   } as const;
 }
 

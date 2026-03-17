@@ -23,33 +23,8 @@ import {
   useGetMyTeamHierarchyQuery,
 } from "./userApi";
 import { invalidateQueryCache } from "@/fe/hooks/createApi";
-import type { Employee, TostProps } from "./types";
-
-const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {
-  if (!open) return null;
-
-  const colourClass =
-    severity === "success"
-      ? "bg-green-600 text-white"
-      : "bg-red-600 text-white";
-
-  return (
-    <div
-      role="alert"
-      className={`fixed top-4 right-4 z-[1400] flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm font-medium transition-all ${colourClass}`}
-    >
-      <span>{message}</span>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Dismiss"
-        className="ml-1 opacity-70 hover:opacity-100 transition-opacity text-lg leading-none"
-      >
-        ×
-      </button>
-    </div>
-  );
-};
+import { useToast } from "@/fe/components/Toast/ToastContext";
+import type { Employee } from "@/fe/pages/user/types";
 
 const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -65,15 +40,13 @@ const UsersPage: React.FC = () => {
     handleCloseDialog,
     openViewDialog,
     openEditDialog,
-    snackbarOpen,
-    setSnackbarOpen,
-    snackbarMessage,
-    setSnackbarMessage,
-    snackbarSeverity,
-    setSnackbarSeverity,
+    isClient,
+    windowWidth,
     showAllEmployees,
     setShowAllEmployees,
   } = useUsersPage();
+
+  const { showToast } = useToast();
 
   // ─── All-employees data (server-paginated) ─────────────────────────────
   const {
@@ -157,17 +130,12 @@ const UsersPage: React.FC = () => {
     invalidateQueryCache("/api/v0/employee");
     await Promise.all([allRefetch(), hierarchyRefetch()]);
     handleCloseDialog();
-    setSnackbarMessage("User saved successfully!");
-    setSnackbarSeverity("success");
-    setSnackbarOpen(true);
-    setTimeout(() => setSnackbarOpen(false), 2000);
+    showToast("User saved successfully!", "success");
   }, [
     allRefetch,
     hierarchyRefetch,
     handleCloseDialog,
-    setSnackbarMessage,
-    setSnackbarSeverity,
-    setSnackbarOpen,
+    showToast,
   ]);
 
 
@@ -236,13 +204,6 @@ const UsersPage: React.FC = () => {
         )}
       </PermissionGuard>
 
-      {/* Toast notification */}
-      <Toast
-        open={snackbarOpen}
-        message={snackbarMessage}
-        severity={snackbarSeverity}
-        onClose={() => setSnackbarOpen(false)}
-      />
     </div>
   );
 };
