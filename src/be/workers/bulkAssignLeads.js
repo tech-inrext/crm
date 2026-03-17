@@ -4,41 +4,51 @@ import dbConnect from "../../lib/mongodb.js";
 import mongoose from "mongoose";
 
 async function bulkAssignLeads(job) {
-  const { batchId, assignTo, status, limit, updatedBy, availableCount, managerId } = job.data;
+  const { batchId, assignTo, status, limit, updatedBy, availableCount, collectFrom, isAVP } = job.data;
   console.log(`\n🚀 Starting Bulk Assign Job: ${batchId}`);
-  console.log(`Params: limit=${limit}, status=${status}, assignTo=${assignTo}, availableCount=${availableCount}, managerId=${managerId}`);
+  console.log(`Params: limit=${limit}, status=${status}, collectFrom=${collectFrom}, assignTo=${assignTo}, isAVP=${isAVP}`);
 
   try {
     // 🛠️ FIX 1: Explicitly await the connection.
     await dbConnect();
-
     // 🛠️ FIX 2: Safety Check.
     if (mongoose.connection.readyState !== 1) {
       throw new Error("Database connection is not active. State: " + mongoose.connection.readyState);
     }
 
-    // Step 1: Filter leads (Status + Unassigned + Uploaded by Me)
+    // Step 1: Filter leads
+    const statuses = Array.isArray(status) ? status : [status];
     const query = {
-      status: status,
-      uploadedBy: updatedBy, // CRITICAL FIX: Only select leads uploaded by the user performing the assignment
-      $or: [{ assignedTo: null }, { assignedTo: { $exists: false } }]
+      status: { $in: statuses },
     };
+
+    if (collectFrom === "unassigned") {
+      query.$or = [{ assignedTo: null }, { assignedTo: { $exists: false } }];
+      if (isAVP) {
+        query.managerId = updatedBy; // Only unassigned leads under this AVP
+      }
+    } else if (collectFrom === "me") {
+      query.assignedTo = updatedBy;
+    } else if (mongoose.Types.ObjectId.isValid(collectFrom)) {
+      query.assignedTo = new mongoose.Types.ObjectId(collectFrom);
+    } else {
+      // Fallback
+      query.uploadedBy = updatedBy;
+      query.$or = [{ assignedTo: null }, { assignedTo: { $exists: false } }];
+    }
 
     // 🛠️ FIX 3: Cast IDs
     const assignToId = new mongoose.Types.ObjectId(assignTo);
     const updatedById = new mongoose.Types.ObjectId(updatedBy);
-    const leadsManagerId = managerId ? new mongoose.Types.ObjectId(managerId) : null;
 
     // Use the minimum of requested limit and known availability to keep things consistent
-    // If availableCount is missing (legacy jobs), fallback to limit
     const finalLimit = availableCount ? Math.min(parseInt(limit, 10), parseInt(availableCount, 10)) : parseInt(limit, 10);
 
     // Step 2: Fetch Leads
-    // Added sort({ createdAt: 1 }) for FIFO assignment (oldest leads first)
     const leadsToAssign = await Lead.find(query)
       .sort({ createdAt: 1 })
       .limit(finalLimit)
-      .select('_id assignedTo')
+      .select("_id assignedTo")
       .lean();
 
     console.log(`Found ${leadsToAssign.length} leads to assign.`);
@@ -65,25 +75,26 @@ async function bulkAssignLeads(job) {
     }
 
     // Step 4: Bulk Update Leads
-    const bulkOps = leadsToAssign.map(lead => ({
-      updateOne: {
-        filter: { _id: lead._id },
-        update: {
-          $set: {
-            assignedTo: assignToId, // Ensure ObjectId is stored
-            managerId: leadsManagerId, // ✅ Set managerId passed from service
-            updatedBy: updatedById,
-            updatedAt: timestamp
-          }
+    const bulkOps = leadsToAssign.map(lead => {
+      const updateDoc = {
+        $set: {
+          assignedTo: assignToId,
+          updatedBy: updatedById,
+          updatedAt: timestamp
         }
-      }
-    }));
+      };
+
+      return {
+        updateOne: {
+          filter: { _id: lead._id },
+          update: updateDoc
+        }
+      };
+    });
 
     if (bulkOps.length > 0) {
-      // 🛠️ FIX 3: Added a dedicated catch for the DB writes
-      // to prevent a "buffering timeout" from killing the whole worker process.
       await Lead.bulkWrite(bulkOps);
-      console.log(`✅ Successfully updated ${bulkOps.length} leads (with managerId: ${leadsManagerId}).`);
+      console.log(`✅ Successfully updated ${bulkOps.length} leads.`);
     }
 
     // Step 5: Save History
