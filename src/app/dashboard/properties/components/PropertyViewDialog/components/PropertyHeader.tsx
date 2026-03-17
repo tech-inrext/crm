@@ -32,15 +32,18 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
   return (
     <Box sx={{ 
       position: 'relative',
-      height: { xs: 2500, sm: 850, md: 600 },
+      height: { xs: 200, sm: 850, md: 600 }, // ✅ FIXED ONLY MOBILE
+      minHeight: { xs: 170 }, // ✅ prevents collapse on very small screens
       background: 'linear-gradient(135deg, #1976d2 0%, #0f5293 100%)',
       color: 'white',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
-      p: { xs: 3, md: 4 },
+      p: { xs: 2, md: 4 },
       overflow: 'hidden'
     }}>
+
+      {/* Background Image */}
       {primaryImageUrl && !primaryImageError && (
         <Box
           component="img"
@@ -61,14 +64,12 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
         />
       )}
       
+      {/* Loader */}
       {primaryImageLoading && primaryImageUrl && !primaryImageError && (
         <Box
           sx={{
             position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
+            inset: 0,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -79,22 +80,20 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
         </Box>
       )}
       
+      {/* Overlay */}
       <Box
         sx={{
           position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
+          inset: 0,
           background: 'linear-gradient(135deg, rgba(25, 118, 210, 0.95) 0%, rgba(15, 82, 147, 0.85) 100%)',
           zIndex: 1,
         }}
       />
 
+      {/* Close Button */}
       <Box sx={{ 
         display: 'flex', 
-        justifyContent: 'end', 
-        alignItems: 'flex-end',
+        justifyContent: 'flex-end',
         zIndex: 2,
         position: 'relative'
       }}>
@@ -116,6 +115,7 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
         </IconButton>
       </Box>
 
+      {/* Content */}
       <Box sx={{ 
         display: 'flex', 
         alignItems: 'flex-end', 
@@ -127,16 +127,16 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
       }}>
         <Box sx={{ flex: 1, minWidth: { xs: '100%', md: 'auto' } }}>
           <Typography variant="h2" fontWeight={800} sx={{ 
-            fontSize: { xs: '1.8rem', sm: '2.5rem', md: '3rem' },
+            fontSize: { xs: '1.4rem', sm: '2.5rem', md: '3rem' }, // slightly reduced for mobile
             textShadow: '0 4px 20px rgba(0,0,0,0.4)',
             lineHeight: 1.1,
           }}>
             {property.projectName}
           </Typography>
           
-          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 3 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
-              <Business sx={{ mr: 1.5, fontSize: 24, opacity: 0.9 }} />
+              <Business sx={{ mr: 1, fontSize: 20, opacity: 0.9 }} />
               <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 600 }}>
                 {property.builderName}
               </Typography>
@@ -151,15 +151,14 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
           border: '1px solid rgba(255,255,255,0.2)',
           borderRadius: 4,
           p: { xs: 1, md: 2 },
-          minWidth: { xs: '100%', md: 280 },
-          mt: { xs: 0, md: 0 }
+          minWidth: { xs: '100%', md: 280 }
         }}>
           <Typography variant="h3" fontWeight={800} sx={{ 
             textShadow: '0 2px 10px rgba(0,0,0,0.3)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: { xs: 'flex-start', md: 'flex-end' },
-            fontSize: { xs: '1.5rem', md: '2.5rem' }
+            fontSize: { xs: '1.3rem', md: '2.5rem' }
           }}>
             {property.price || 'Contact for Price'}
           </Typography>
