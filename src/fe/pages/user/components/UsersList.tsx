@@ -4,10 +4,8 @@ import UserCard from "@/fe/pages/user/components/UserCard";
 import UsersSkeleton from "@/fe/pages/user/components/UsersSkeleton";
 import dynamic from "next/dynamic";
 import People from "@/components/ui/Component/People";
+import { useUserDialogData } from "@/fe/pages/user/hooks/useUserDialogData";
 
-const TableMap = dynamic(() => import("@/components/ui/table/TableMap"), {
-  ssr: false,
-});
 const Pagination = dynamic(
   () => import("@/components/ui/Navigation/Pagination"),
   { ssr: false },
@@ -35,24 +33,22 @@ export const UsersList: React.FC<UsersListProps> = ({
   totalItems,
   onPageChange,
   onPageSizeChange,
-  isMobile,
-  isClient,
-  windowWidth,
-  usersTableHeader,
   onEditUser,
+  onViewUser,
   canEdit,
 }) => {
+  const { managers, departments } = useUserDialogData(true);
   const employeeList = employees || [];
 
   // Show skeleton while loading OR if employees hasn't been populated yet
   if (loading || !employees) {
-    return <UsersSkeleton isMobile={isMobile} rows={rowsPerPage || 10} />;
+    return <UsersSkeleton rows={rowsPerPage || 10} />;
   }
 
   if (employeeList.length === 0) return <EmptyState />;
 
   const paginationBar = (
-    <div className="flex justify-center mt-4">
+    <div className="flex justify-center mt-8">
       <Pagination
         page={page}
         pageSize={rowsPerPage ?? 10}
@@ -63,39 +59,30 @@ export const UsersList: React.FC<UsersListProps> = ({
     </div>
   );
 
-  if (isMobile) {
-    return (
-      <div>
-        <div className="grid grid-cols-1 gap-3 mb-2">
-          {employeeList.map((user: Employee) => (
-            <UserCard
-              key={user.id ?? user._id}
-              user={{
-                name: user.name,
-                email: user.email,
-                designation: user.designation,
-                avatarUrl: user.avatarUrl,
-              }}
-              onEdit={canEdit(user) ? () => onEditUser(user) : undefined}
-            />
-          ))}
-        </div>
-        {paginationBar}
-      </div>
-    );
-  }
-
   return (
     <div className="w-full">
-      <div className="rounded-xl overflow-hidden shadow-lg bg-white">
-        <TableMap
-          data={employeeList}
-          header={usersTableHeader}
-          onEdit={() => {}}
-          onDelete={() => {}}
-          size={isClient && windowWidth < 600 ? "small" : "medium"}
-          stickyHeader
-        />
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {employeeList.map((user: Employee) => (
+          <UserCard
+            key={user.id ?? user._id}
+            user={{
+              name: user.name,
+              email: user.email,
+              designation: user.designation,
+              avatarUrl: user.avatarUrl,
+              photo: (user as any).photo,
+              phone: user.phone,
+              managerId: user.managerId,
+              departmentId: user.departmentId,
+              managerName: (user as any).managerName,
+              departmentName: (user as any).departmentName,
+            }}
+            onEdit={canEdit(user) ? () => onEditUser(user) : undefined}
+            onView={() => onViewUser(user)}
+            managers={managers}
+            departments={departments}
+          />
+        ))}
       </div>
       {paginationBar}
     </div>
