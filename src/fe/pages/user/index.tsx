@@ -1,31 +1,29 @@
 "use client";
 
 import React, { useCallback, useEffect, useMemo } from "react";
-import { useTheme, useMediaQuery, AddIcon } from "@/components/ui/Component";
+import { AddIcon } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
-import UserDialog from "@/fe/pages/user/components/dialog/userDialog";
-import UserDetailsDialog from "@/fe/pages/user/components/dialog/userDialogView.tsx";
+import { UserDialog, UserDialogView as UserDetailsDialog } from "@/fe/pages/user/components/dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import UsersPageActionBar from "@/fe/pages/user/components/UsersPageActionBar";
+import UsersPageActionBar from "./components/UsersPageActionBar";
 import {
   GRADIENTS,
   FAB_POSITION,
   USERS_PERMISSION_MODULE,
-} from "@/fe/pages/user/constants/users";
+} from "./constants/users";
 import {
   canEditEmployee,
   flattenHierarchy,
   getInitialUserForm,
-} from "@/fe/pages/user/utils";
-import { getUsersTableHeader } from "@/fe/pages/user/components/UserTable";
-import UsersList from "@/fe/pages/user/components/UsersList";
-import useUsersPage from "@/fe/pages/user/hooks/useUsersPage";
+} from "./utils";
+import UsersList from "./components/UsersList";
+import useUsersPage from "./hooks/useUsersPage";
 import {
   useGetUsersQuery,
   useGetMyTeamHierarchyQuery,
-} from "@/fe/pages/user/userApi";
+} from "./userApi";
 import { invalidateQueryCache } from "@/fe/hooks/createApi";
-import type { Employee, TostProps } from "@/fe/pages/user/types";
+import type { Employee, TostProps } from "./types";
 
 const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {
   if (!open) return null;
@@ -55,9 +53,6 @@ const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {
 
 const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
-
   const {
     search,
     debouncedSearch,
@@ -76,8 +71,6 @@ const UsersPage: React.FC = () => {
     setSnackbarMessage,
     snackbarSeverity,
     setSnackbarSeverity,
-    isClient,
-    windowWidth,
     showAllEmployees,
     setShowAllEmployees,
   } = useUsersPage();
@@ -177,16 +170,6 @@ const UsersPage: React.FC = () => {
     setSnackbarOpen,
   ]);
 
-  const usersTableHeader = React.useMemo(
-    () =>
-      getUsersTableHeader({
-        canEditEmployee: (employee: Employee) =>
-          canEditEmployee(currentUser, employee),
-        onView: openViewDialog,
-        onEdit: openEditDialog,
-      }),
-    [currentUser],
-  );
 
   return (
     <div className="p-4 sm:p-6">
@@ -209,12 +192,8 @@ const UsersPage: React.FC = () => {
         totalItems={totalItems}
         onPageChange={setPage}
         onPageSizeChange={handlePageSizeChange}
-        search={search}
-        isMobile={isMobile}
-        isClient={isClient}
-        windowWidth={windowWidth}
-        usersTableHeader={usersTableHeader}
         onEditUser={openEditDialog}
+        onViewUser={openViewDialog}
         canEdit={(user: Employee) => canEditEmployee(currentUser, user)}
       />
 
@@ -234,7 +213,7 @@ const UsersPage: React.FC = () => {
             zIndex: FAB_POSITION.zIndex,
             background: GRADIENTS.button,
           }}
-          className="fixed md:hidden flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95"
+          className="fixed flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95"
         >
           <AddIcon />
         </button>

@@ -30,7 +30,7 @@ import {
 } from "@/components/ui/Component";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
-import LeadActivity from "./LeadActivity";
+import LeadActivity, { ValueChip } from "./LeadActivity";
 import FollowUpHeader from "./FollowUpHeader";
 
 // Helper to get initials for avatar
@@ -554,7 +554,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               mb: 1,
                             }}
                           >
-                            {isHistory && it.change ? (
+                            {it.isCreation ? (
+                              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5, flexWrap: "wrap" }}>
+                                <Typography variant="body2" sx={{ color: "#374151" }}>
+                                  {it.note}
+                                </Typography>
+                                <ValueChip color="new">{it.submittedByName}</ValueChip>
+                              </Box>
+                            ) : isHistory && it.change ? (
                               <LeadActivity change={it.change} />
                             ) : it.note !== "N/A" ? (
                               it.note
@@ -609,46 +616,48 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                 )}
                             </Box>
                             {/* User Info */}
-                            <Stack
-                              direction="row"
-                              alignItems="center"
-                              justifyContent="end"
-                              spacing={1}
-                            >
-                              <Typography
-                                variant="caption"
-                                sx={{
-                                  color: "text.secondary",
-                                  fontSize: "0.5rem",
-                                }}
+                            {!it.isCreation && (
+                              <Stack
+                                direction="row"
+                                alignItems="center"
+                                justifyContent="end"
+                                spacing={1}
                               >
-                                By:{" "}
-                              </Typography>
-                              <Avatar
-                                sx={{
-                                  width: 18,
-                                  height: 18,
-                                  fontSize: "0.5rem",
-                                  bgcolor: bgColor,
-                                  color: accentColor,
-                                  border: `1px solid ${accentColor}15`,
-                                }}
-                              >
-                                {getInitials(it.submittedByName)}
-                              </Avatar>
-                              <Box>
                                 <Typography
-                                  variant="subtitle2"
+                                  variant="caption"
                                   sx={{
-                                    color: "#111827",
-                                    fontSize: "0.6rem",
-                                    lineHeight: 1.2,
+                                    color: "text.secondary",
+                                    fontSize: "0.5rem",
                                   }}
                                 >
-                                  {it.submittedByName || "System User"}
+                                  By:{" "}
                                 </Typography>
-                              </Box>
-                            </Stack>
+                                <Avatar
+                                  sx={{
+                                    width: 18,
+                                    height: 18,
+                                    fontSize: "0.5rem",
+                                    bgcolor: bgColor,
+                                    color: accentColor,
+                                    border: `1px solid ${accentColor}15`,
+                                  }}
+                                >
+                                  {getInitials(it.submittedByName)}
+                                </Avatar>
+                                <Box>
+                                  <Typography
+                                    variant="subtitle2"
+                                    sx={{
+                                      color: "#111827",
+                                      fontSize: "0.6rem",
+                                      lineHeight: 1.2,
+                                    }}
+                                  >
+                                    {it.submittedByName || "System User"}
+                                  </Typography>
+                                </Box>
+                              </Stack>
+                            )}
                           </Stack>
 
                           {/* Outcome Section: Show ONLY if date is passed OR outcome is already recorded */}
@@ -665,94 +674,119 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               >
                                 {new Date() > new Date(it.followUpDate) &&
                                 (it.outcome === "pending" || !it.outcome) ? (
-                                  <Stack
-                                    direction={isMobile ? "column" : "row"}
-                                    alignItems={isMobile ? "stretch" : "center"}
-                                    spacing={isMobile ? 1.5 : 1.5}
-                                  >
-                                    <Typography
-                                      variant="caption"
-                                      sx={{
-                                        fontWeight: 600,
-                                        color: "text.secondary",
-                                        flexGrow: 1,
-                                      }}
+                                    <Stack
+                                      direction={isMobile ? "column" : "row"}
+                                      alignItems={isMobile ? "stretch" : "center"}
+                                      justifyContent="space-between"
+                                      spacing={isMobile ? 1.5 : 0.5}
+                                      sx={{ width: "100%", overflow: "hidden" }}
                                     >
-                                      Was the{" "}
-                                      {isCallBack ? "call" : "site visit"}{" "}
-                                      completed?
-                                    </Typography>
-                                    <Stack 
-                                      direction="row" 
-                                      spacing={1}
-                                      sx={{ 
-                                        width: isMobile ? "100%" : "auto",
-                                        justifyContent: isMobile ? "stretch" : "flex-end"
-                                      }}
-                                    >
-                                      <Button
-                                        size="small"
-                                        variant="contained"
-                                        color="success"
-                                        startIcon={
-                                          <Check
-                                            sx={{ fontSize: "14px !important" }}
-                                          />
-                                        }
-                                        onClick={() =>
-                                          handleUpdateOutcome(
-                                            it._id,
-                                            "completed"
-                                          )
-                                        }
+                                      <Typography
+                                        variant="caption"
                                         sx={{
-                                          flex: isMobile ? 1 : "initial",
-                                          height: 28,
-                                          fontSize: "0.65rem",
-                                          fontWeight: 700,
-                                          textTransform: "none",
-                                          borderRadius: "6px",
-                                          boxShadow: "none",
+                                          fontWeight: 600,
+                                          color: "text.secondary",
                                           whiteSpace: "nowrap",
-                                          "&:hover": {
+                                          fontSize: { xs: "0.9rem", sm: "0.8rem" },
+                                          mb: isMobile ? 0.5 : 0,
+                                          overflow: "hidden",
+                                          textOverflow: "ellipsis",
+                                          minWidth: 0,
+                                          flexShrink: 1,
+                                        }}
+                                      >
+                                        Was the{" "}
+                                        {isCallBack ? "call" : "site visit"}{" "}
+                                        completed?
+                                      </Typography>
+                                      <Stack 
+                                        direction="row" 
+                                        spacing={0.75}
+                                        sx={{ 
+                                          width: isMobile ? "100%" : "auto",
+                                          flexShrink: 0,
+                                        }}
+                                      >
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          startIcon={
+                                            <Check
+                                              sx={{ fontSize: "14px !important", color: "#fff" }}
+                                            />
+                                          }
+                                          onClick={() =>
+                                            handleUpdateOutcome(
+                                              it._id,
+                                              "completed"
+                                            )
+                                          }
+                                          sx={{
+                                            flex: isMobile ? 1 : "initial",
+                                            height: isMobile ? 36 : 28,
+                                            fontSize: isMobile ? "0.75rem" : "0.65rem",
+                                            px: isMobile ? 2 : 1.5,
+                                            fontWeight: 700,
+                                            textTransform: "none",
+                                            borderRadius: isMobile ? "8px" : "6px",
                                             boxShadow: "none",
-                                            bgcolor: "#059669",
-                                          },
-                                        }}
-                                      >
-                                        Yes, Done
-                                      </Button>
-                                      <Button
-                                        size="small"
-                                        variant="outlined"
-                                        color="error"
-                                        startIcon={
-                                          <Clear
-                                            sx={{ fontSize: "14px !important" }}
-                                          />
-                                        }
-                                        onClick={() =>
-                                          handleUpdateOutcome(it._id, "missed")
-                                        }
-                                        sx={{
-                                          flex: isMobile ? 1 : "initial",
-                                          height: 28,
-                                          fontSize: "0.65rem",
-                                          fontWeight: 700,
-                                          textTransform: "none",
-                                          borderRadius: "6px",
-                                          borderWidth: 1.5,
-                                          whiteSpace: "nowrap",
-                                          "&:hover": {
-                                            borderWidth: 1.5,
-                                            bgcolor: "#fef2f2",
-                                          },
-                                        }}
-                                      >
-                                        No, Missed
-                                      </Button>
+                                            whiteSpace: "nowrap",
+                                            minWidth: "auto",
+                                            bgcolor: "#2e7d32",
+                                            color: "#fff",
+                                            "&:hover": {
+                                              boxShadow: "none",
+                                              bgcolor: "#1b5e20",
+                                            },
+                                            "&:focus, &:active": {
+                                              outline: "none",
+                                              boxShadow: "none",
+                                            },
+                                          }}
+                                        >
+                                          Yes, Done
+                                        </Button>
+                                        <Button
+                                          size="small"
+                                          variant="outlined"
+                                          startIcon={
+                                            <Clear
+                                              sx={{ fontSize: "14px !important", color: "#d32f2f" }}
+                                            />
+                                          }
+                                          onClick={() =>
+                                            handleUpdateOutcome(it._id, "missed")
+                                          }
+                                          sx={{
+                                            flex: isMobile ? 1 : "initial",
+                                            height: isMobile ? 36 : 28,
+                                            fontSize: isMobile ? "0.75rem" : "0.65rem",
+                                            px: isMobile ? 2 : 1.5,
+                                            fontWeight: 700,
+                                            textTransform: "none",
+                                            borderRadius: isMobile ? "8px" : "6px",
+                                            whiteSpace: "nowrap",
+                                            minWidth: "auto",
+                                            borderColor: "#d74040ff", // Soft red border (before hover)
+                                            color: "#d32f2f",
+                                            bgcolor: "#fff",
+                                            transition: "all 0.2s ease",
+                                            "&:hover": {
+                                              borderColor: "#d32f2f", // Intense red border (after hover)
+                                              bgcolor: "#fff5f5", // Light pink background (after hover)
+                                              borderWidth: 1,
+                                            },
+                                            "&:focus, &:active": {
+                                              outline: "none",
+                                              boxShadow: "none",
+                                              borderColor: "#d32f2f",
+                                            },
+                                          }}
+                                        >
+                                          No, Missed
+                                        </Button>
+                                      </Stack>
                                     </Stack>
-                                  </Stack>
                                 ) : it.outcome && it.outcome !== "pending" ? (
                                   <Box
                                     sx={{
@@ -1096,7 +1130,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                 height="18"
                 viewBox="0 0 24 24"
                 fill="none"
-                stroke="currentColor"
+                stroke={isSubmitDisabled ? "#94a3b8" : "#fff"}
                 strokeWidth="2"
                 strokeLinecap="round"
                 strokeLinejoin="round"
