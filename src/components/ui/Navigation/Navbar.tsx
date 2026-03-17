@@ -55,16 +55,26 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           paddingLeft: { xs: "50px", sm: "20px", md: "30px", lg: "30px" },
         }}
       >
-        <AvatarComponent
-          src="https://inrext.s3.ap-south-1.amazonaws.com/Static+Assets/Inrext+logo.png"
-          alt="Inrext"
+        <Box
           sx={{
-            color: "#000",
-            width: "auto",
-            height: { xs: 35, md: 40, lg: 40 },
-            borderRadius: "0px",
+            height: { xs: 35, md: 40 },
+            width: 120,
+            display: "flex",
+            alignItems: "center",
+            flexShrink: 0, // 🔥 important for iOS
           }}
-        />
+        >
+          <img
+            src="https://inrext.s3.ap-south-1.amazonaws.com/Static%20Assets/Inrext%20logo.png"
+            alt="Inrext"
+            style={{
+              height: "100%",
+              width: "auto",
+              objectFit: "contain",
+              display: "block",
+            }}
+          />
+        </Box>
       </Box>
       {/* <ProfileMenu /> */}
       <IconButton
