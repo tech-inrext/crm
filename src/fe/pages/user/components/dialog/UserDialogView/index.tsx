@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React from "react";
 import {
@@ -16,7 +16,7 @@ import {
   getOrganizationFields,
 } from "@/fe/pages/user/constants/userDialogView";
 
-const UserDetailsDialog = ({ user, open, onClose }: any) => {
+const UserDialogView = ({ user, open, onClose }: any) => {
   const {
     roleMap,
     imageError,
@@ -153,4 +153,4 @@ const UserDetailsDialog = ({ user, open, onClose }: any) => {
   );
 };
 
-export default UserDetailsDialog;
+export default UserDialogView;
