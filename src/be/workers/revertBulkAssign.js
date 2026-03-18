@@ -52,7 +52,7 @@ async function revertBulkAssign(job) {
           update: {
             $set: {
               assignedTo: targetAssignedTo,
-              managerId: null, // ✅ Remove managerId on revert
+              // managerId: null, // ✅ Remove managerId on revert
               updatedBy: revertByObjectId,
               updatedAt: timestamp
             }
