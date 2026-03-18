@@ -61,7 +61,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
             width: 120,
             display: "flex",
             alignItems: "center",
-            flexShrink: 0, // 🔥 important for iOS
+            flexShrink: 0,  
           }}
         >
           <img
