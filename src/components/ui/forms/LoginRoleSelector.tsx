@@ -148,7 +148,13 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
             onClick={onClose}
             variant="outlined"
             disabled={loading}
-            sx={{ minWidth: 100 }}
+            sx={{ 
+              minWidth: 100,
+              "&:hover": {
+                backgroundColor: "#e8f1ff",
+                borderColor: "rgba(30, 95, 191, 0.18)",
+              }
+            }}
           >
             Cancel
           </Button>
@@ -161,10 +167,14 @@ const RoleSelectionDialog: React.FC<RoleSelectionDialogProps> = ({
             minWidth: 120,
             fontWeight: 600,
             background: "#2196f3",
+            color: "white",
+            "&:hover": {
+              background: "#2196f3",
+            },
           }}
         >
           {loading ? (
-            <CircularProgress size={20} color="inherit" />
+            <CircularProgress size={20} color="inherit"  />
           ) : (
             "Continue"
           )}

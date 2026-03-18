@@ -18,7 +18,7 @@ const ButtonComponent: React.FC<ButtonComponentProps> = ({
     fontSize: { xs: "0.85rem", sm: "0.95rem" },
     textTransform: "none",
     backgroundColor: "#e8f1ff",
-    // color: "#1e5fbf",
+    color: "#1e5fbf",
     boxShadow: "none",
     border: "1px solid rgba(30, 95, 191, 0.18)",
     "& .MuiButton-startIcon": {
