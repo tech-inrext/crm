@@ -182,9 +182,3 @@ export interface UsersActionBarProps {
   onAdd: () => void;
 }
 
-interface ToastProps {
-  open: boolean;
-  message: string;
-  severity: "success" | "error";
-  onClose: () => void;
-}

@@ -28,6 +28,7 @@ import {
   Tooltip,
   Autocomplete,
   TablePagination,
+  Divider,
 } from "@mui/material";
 import {
   Assignment,
@@ -42,6 +43,8 @@ import {
 import axios from "axios";
 import { format, differenceInHours, formatDistanceToNow } from "date-fns";
 import { LEAD_STATUSES } from "@/constants/leads";
+import { useAuth } from "@/contexts/AuthContext";
+import { OutlinedInput, Checkbox as MUICheckbox, ListItemText } from "@mui/material";
 
 interface BulkAssignProps {
   onSuccess?: () => void;
@@ -49,11 +52,23 @@ interface BulkAssignProps {
   buttonId?: string;
 }
 
+const flattenHierarchy = (node: any): any[] => {
+  let result: any[] = [];
+  if (node.children && node.children.length > 0) {
+    node.children.forEach((child: any) => {
+      result.push(child);
+      result = [...result, ...flattenHierarchy(child)];
+    });
+  }
+  return result;
+};
+
 const BulkAssign: React.FC<BulkAssignProps> = ({
   onSuccess,
   hideButton = false,
   buttonId,
 }) => {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [tabIndex, setTabIndex] = useState(0);
   const [loading, setLoading] = useState(false);
@@ -66,8 +81,9 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
   const [batchIdToRevert, setBatchIdToRevert] = useState<string | null>(null);
   const [limit, setLimit] = useState<number | string>(10);
   const [assignTo, setAssignTo] = useState<string>("");
-  const [status, setStatus] = useState<string>("new");
-  const [errors, setErrors] = useState<{ limit?: string; assignTo?: string }>({});
+  const [collectFrom, setCollectFrom] = useState<string>("unassigned");
+  const [statuses, setStatuses] = useState<string[]>(["new"]);
+  const [errors, setErrors] = useState<{ limit?: string; assignTo?: string; collectFrom?: string }>({});
 
   // Pagination State
   const [page, setPage] = useState(0);
@@ -86,6 +102,7 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
     requestedCount: 0,
     type: "none",
   });
+
   const [snackbar, setSnackbar] = useState<{
     open: boolean;
     message: string;
@@ -98,9 +115,20 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
 
   const fetchEmployees = async () => {
     try {
-      const res = await axios.get("/api/v0/employee/getAllEmployeeList", { params: { isCabVendor: false } });
-      if (res.data.success) {
-        setEmployees(res.data.data);
+      if (user?.isSystemAdmin) {
+        // System Admins get the flat list of everyone
+        const res = await axios.get("/api/v0/employee/getAllEmployeeList", { params: { isCabVendor: false } });
+        if (res.data.success) {
+          setEmployees(res.data.data);
+        }
+      } else if (user?._id) {
+        // Managers/AVPs get their specific hierarchy
+        const res = await axios.get(`/api/v0/employee/hierarchy?managerId=${user._id}`);
+        if (res.data.success && res.data.data) {
+          // Flatten the hierarchy tree to a list for the dropdown
+          const flattened = flattenHierarchy(res.data.data);
+          setEmployees(flattened);
+        }
       }
     } catch (err) {
       console.error("Failed to fetch employees", err);
@@ -132,10 +160,16 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
 
   useEffect(() => {
     if (open) {
-      setPage(0); // Reset page when opening if needed, but fetchHistory is triggered by [open, page, rowsPerPage]
+      setPage(0);
       fetchEmployees();
     }
   }, [open]);
+
+  const teamMembers = React.useMemo(() => {
+    if (!user?._id) return [];
+    // employees list is now already filtered by hierarchy for non-admins
+    return employees;
+  }, [employees, user]);
 
   const handleAssign = async (bypassCheck = false) => {
     // Reset errors
@@ -162,7 +196,7 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
       setLoading(true);
       try {
         const res = await axios.get(
-          `/api/v0/lead/check-availability?status=${status}`
+          `/api/v0/lead/check-availability?status=${statuses.join(",")}&collectFrom=${collectFrom}`
         );
         if (res.data.success) {
           const count = res.data.count;
@@ -198,7 +232,8 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
       const res = await axios.post("/api/v0/lead/bulk-assign", {
         limit: Number(limit),
         assignTo,
-        status,
+        status: statuses,
+        collectFrom,
       });
 
       if (res.data.success) {
@@ -345,13 +380,11 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
                   setLimit(val);
                   
                   const numVal = Number(val);
-                  // Immediate validation
-                  // Check if empty, not a number, or <= 0
                   if (val === "" || isNaN(numVal) || numVal <= 0) {
                      setErrors((prev) => ({
                       ...prev,
                       limit: "Please enter a valid number of leads (greater than 0)",
-                    }));
+                     }));
                   } else {
                     setErrors((prev) => ({ ...prev, limit: undefined }));
                   }
@@ -363,23 +396,64 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
                 helperText={errors.limit}
               />
 
-              <FormControl fullWidth>
-                <InputLabel>Status Filter</InputLabel>
+              <FormControl fullWidth error={!!errors.collectFrom}>
+                <InputLabel>Collect Leads From</InputLabel>
                 <Select
-                  value={status}
-                  label="Status Filter"
-                  onChange={(e) => setStatus(e.target.value)}
+                  value={collectFrom}
+                  label="Collect Leads From"
+                  onChange={(e) => {
+                    setCollectFrom(e.target.value);
+                    setErrors((prev) => ({ ...prev, collectFrom: undefined }));
+                  }}
+                >
+                  <MenuItem value="unassigned">Unassigned Leads</MenuItem>
+                  <MenuItem value="me">Assigned to Me</MenuItem>
+                  {teamMembers.length > 0 && <Divider />}
+                  {teamMembers.map((emp) => (
+                    <MenuItem key={emp._id} value={emp._id}>
+                      Assigned to {emp.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {errors.collectFrom && (
+                  <Typography variant="caption" color="error" sx={{ mx: 2, mt: 0.5 }}>
+                    {errors.collectFrom}
+                  </Typography>
+                )}
+              </FormControl>
+
+              <FormControl fullWidth>
+                <InputLabel>Status Filters</InputLabel>
+                <Select
+                  multiple
+                  value={statuses}
+                  label="Status Filters"
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setStatuses(typeof value === "string" ? value.split(",") : value);
+                  }}
+                  input={<OutlinedInput label="Status Filters" />}
+                  renderValue={(selected) => (
+                    <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                      {(selected as string[]).map((value) => (
+                        <Typography key={value} variant="body2" sx={{ bgcolor: 'action.hover', px: 1, py: 0.2, borderRadius: 1 }}>
+                          {value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()}
+                        </Typography>
+                      ))}
+                    </Box>
+                  )}
                 >
                   {LEAD_STATUSES.filter((s) => s !== "").map((s) => (
                     <MenuItem key={s} value={s}>
-                      {s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()}
+                      <MUICheckbox checked={statuses.indexOf(s) > -1} />
+                      <ListItemText primary={s.charAt(0).toUpperCase() + s.slice(1).toLowerCase()} />
                     </MenuItem>
                   ))}
                 </Select>
               </FormControl>
 
               <Autocomplete
-                options={employees}
+                options={user?.isSystemAdmin ? employees : teamMembers}
                 getOptionLabel={(option) => 
                   option.name 
                     ? `${option.name}${option.email ? ` (${option.email})` : ''}` 
@@ -757,34 +831,27 @@ const AvailabilityDialog: React.FC<{
       </DialogTitle>
       <DialogContent>
         <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-          {isNone ? (
-            <>
-              We couldn't find any unassigned leads with your selected status.
-              Please try a different status filter.
-            </>
-          ) : (
-            <>
-              You requested <strong>{data.requestedCount}</strong> leads, but
-              only <strong>{data.availableCount}</strong> are currently
-              available for assignment.
-              <br />
-              <br />
-              Would you like to proceed with the available{" "}
-              <strong>{data.availableCount}</strong> leads?
-            </>
-          )}
+          {isNone
+            ? `We couldn't find any unassigned leads matching your criteria.`
+            : `You requested ${data.requestedCount} leads, but only ${data.availableCount} matching leads are available.`}
         </Typography>
+        {!isNone && (
+          <Typography variant="body2" sx={{ mt: 2, fontWeight: 500 }}>
+            Would you like to proceed by assigning all {data.availableCount} available leads?
+          </Typography>
+        )}
       </DialogContent>
-      <DialogActions sx={{ px: 3, pb: 2 }}>
-        <Button onClick={onClose} color="inherit" sx={{ fontWeight: 600 }}>
-          {isNone ? "Okay" : "Cancel"}
+      <DialogActions sx={{ p: 2.5, pt: 1.5 }}>
+        <Button onClick={onClose} color="inherit" disabled={loading}>
+          {isNone ? "Close" : "Cancel"}
         </Button>
         {!isNone && (
           <Button
             onClick={onConfirm}
             variant="contained"
-            color="primary"
+            color="warning"
             disabled={loading}
+            autoFocus
             sx={{
               borderRadius: "10px",
               px: 4,
@@ -804,7 +871,7 @@ const AvailabilityDialog: React.FC<{
             {loading ? (
               <CircularProgress size={20} color="inherit" />
             ) : (
-              "Proceed"
+              "Assign Available"
             )}
           </Button>
         )}

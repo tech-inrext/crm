@@ -35,11 +35,6 @@ const userApi = createApi({
       isPaginated: false,
       shouldCache: true,
     }),
-    getMyTeamHierarchy: (params) => ({
-      url: "/api/v0/employee/hierarchy",
-      isPaginated: false,
-      shouldCache: true,
-    }),
   },
   mutations: {
     // Create a new employee
