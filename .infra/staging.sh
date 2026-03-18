@@ -46,7 +46,7 @@ sudo nginx -t && sudo systemctl restart nginx
 
 echo "==== Installing Certbot and enabling HTTPS ===="
 sudo apt install -y certbot python3-certbot-nginx
-sudo certbot --nginx -d staging-dashboard.inrext.com
+sudo certbot --nginx -d staging-dashboard.inrext.com --non-interactive --agree-tos -m tech.inrext@gmail.com
 
 echo "==== Enabling UFW Firewall ===="
 sudo ufw allow OpenSSH
