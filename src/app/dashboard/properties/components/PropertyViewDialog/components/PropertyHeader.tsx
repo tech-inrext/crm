@@ -26,18 +26,8 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
 }) => {
   return (
     <Box
-      sx={{
-        position: "relative",
-        height: { xs: 200, sm: 850, md: 600 }, // ✅ FIXED ONLY MOBILE
-        minHeight: { xs: 170 }, // ✅ prevents collapse on very small screens
-        background: "linear-gradient(135deg, #1976d2 0%, #0f5293 100%)",
-        color: "white",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-        p: { xs: 2, md: 4 },
-        overflow: "hidden",
-      }}
+      className="
+    relative h-[200px] sm:h-[850px] md:h-[600px] min-h-[170px]  bg-gradient-to-br from-[#1976d2] to-[#0f5293] text-white flex flex-col justify-between p-2 md:p-4 overflow-hidden"
     >
       {/* Background Image */}
       {primaryImageUrl && !primaryImageError && (
@@ -47,31 +37,13 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
           alt={property.projectName}
           onLoad={handlePrimaryImageLoad}
           onError={handlePrimaryImageError}
-          sx={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            width: "100%",
-            height: "100%",
-            objectFit: "cover",
-            opacity: 0.4,
-            display: primaryImageLoading ? "none" : "block",
-          }}
+          className={`absolute top-0 left-0 w-full h-full object-cover opacity-40 ${primaryImageLoading ? "hidden" : "block"}`}
         />
       )}
 
       {/* Loader */}
       {primaryImageLoading && primaryImageUrl && !primaryImageError && (
-        <Box
-          sx={{
-            position: "absolute",
-            inset: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backgroundColor: "rgba(0, 0, 0, 0.3)",
-          }}
-        >
+        <Box className="absolute inset-0 flex items-center justify-center bg-black/30">
           <CircularProgress sx={{ color: "white" }} />
         </Box>
       )}
@@ -98,34 +70,14 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
       >
         <IconButton
           onClick={onClose}
-          sx={{
-            color: "white",
-            backgroundColor: "rgba(255,255,255,0.15)",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            "&:hover": {
-              backgroundColor: "rgba(255,255,255,0.25)",
-              transform: "scale(1.1)",
-            },
-            transition: "all 0.2s ease",
-          }}
+          className="text-white bg-white/15 backdrop-blur-[10px] border border-white/20 transition-all duration-200 ease-in-out hover:bg-white/25 hover:scale-110"
         >
           <Close />
         </IconButton>
       </Box>
 
       {/* Content */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          mt: "auto",
-          zIndex: 2,
-          position: "relative",
-        }}
-      >
+      <Box className="flex items-end justify-between flex-wrap mt-auto z-[2] relative">
         <Box sx={{ flex: 1, minWidth: { xs: "100%", md: "auto" } }}>
           <Typography
             variant="h2"
@@ -139,14 +91,7 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
             {property.projectName}
           </Typography>
 
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              flexWrap: "wrap",
-              gap: 2,
-            }}
-          >
+          <Box className="flex items-center flex-wrap gap-2">
             <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
               <Business sx={{ mr: 1, fontSize: 20, opacity: 0.9 }} />
               <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 600 }}>
@@ -156,17 +101,7 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
           </Box>
         </Box>
 
-        <Box
-          sx={{
-            textAlign: { xs: "left", md: "right" },
-            background: "rgba(255,255,255,0.15)",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            borderRadius: 4,
-            p: { xs: 1, md: 2 },
-            minWidth: { xs: "100%", md: 280 },
-          }}
-        >
+        <Box className="text-left md:text-right bg-white/15 backdrop-blur-[10px] border border-white/20 rounded-lg p-1 md:p-2 min-w-full md:min-w-[280px]">
           <Typography
             variant="h3"
             fontWeight={800}

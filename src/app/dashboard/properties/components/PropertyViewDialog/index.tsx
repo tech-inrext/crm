@@ -305,28 +305,11 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
           </Box>
         </DialogContent>
 
-        <DialogActions
-          sx={{
-            py: 2,
-            px: { xs: 2, md: 3 },
-            borderTop: "1px solid #e2e8f0",
-            background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-            gap: 2,
-          }}
-        >
+        <DialogActions className="py-2 px-2 md:px-3 border-t border-[#e2e8f0] bg-gradient-to-br from-white to-[#f8fafc] gap-2">
           <Button
             onClick={onClose}
             variant="outlined"
-            sx={{
-              borderRadius: 3,
-              fontWeight: 600,
-              px: { xs: 1, md: 4 },
-              py: 1,
-              borderWidth: 2,
-              "&:hover": {
-                borderWidth: 2,
-              },
-            }}
+            className="rounded-lg font-semibold px-1 md:px-4 py-1 border-2 hover:border-2"
           >
             Close
           </Button>
@@ -338,19 +321,7 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
               }}
               variant="contained"
               startIcon={<Edit />}
-              sx={{
-                borderRadius: 3,
-                fontWeight: 600,
-                px: { xs: 1, md: 4 },
-                py: 1,
-                background: "linear-gradient(135deg, #1976d2 0%, #1565c0 100%)",
-                boxShadow: "0 4px 15px rgba(25, 118, 210, 0.3)",
-                "&:hover": {
-                  boxShadow: "0 6px 20px rgba(25, 118, 210, 0.4)",
-                  transform: "translateY(-1px)",
-                },
-                transition: "all 0.2s ease",
-              }}
+              className="rounded-lg font-semibold px-1 md:px-4 py-1 bg-gradient-to-br from-[#1976d2] to-[#1565c0] shadow-[0_4px_15px_rgba(25,118,210,0.3)] transition-all duration-200 ease-in-out hover:shadow-[0_6px_20px_rgba(25,118,210,0.4)] hover:-translate-y-[1px]"
             >
               Edit Property
             </Button>
