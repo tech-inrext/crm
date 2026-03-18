@@ -1,5 +1,7 @@
 import Lead from "../models/Lead.js";
 import LeadAssignmentHistory from "../models/LeadAssignmentHistory.js";
+import Employee from "../models/Employee.js";
+import LeadActivity from "../models/LeadActivity.js";
 import dbConnect from "../../lib/mongodb.js";
 import mongoose from "mongoose";
 
@@ -66,18 +68,50 @@ async function bulkAssignLeads(job) {
 
     const timestamp = new Date();
     const historyEntries = [];
+    const leadActivityEntries = [];
 
-    // Step 3: Prepare History Entries
+    // Step 2.5: Collect all unique employee IDs and fetch names
+    const employeeIdsToFetch = new Set();
+    employeeIdsToFetch.add(assignToId.toString());
+    leadsToAssign.forEach(l => {
+      if (l.assignedTo) employeeIdsToFetch.add(l.assignedTo.toString());
+    });
+
+    const employees = await Employee.find({ _id: { $in: Array.from(employeeIdsToFetch) } })
+      .select("name fullName")
+      .lean();
+
+    const employeeMap = {};
+    employees.forEach(e => {
+      employeeMap[e._id.toString()] = e.fullName || e.name || e._id.toString();
+    });
+
+    const newAssigneeName = employeeMap[assignToId.toString()] || assignToId.toString();
+
+    // Step 3: Prepare History and Activity Entries
     for (const lead of leadsToAssign) {
+      const prevAssigneeId = lead.assignedTo ? lead.assignedTo.toString() : null;
+
       historyEntries.push({
         batchId,
         leadId: lead._id,
         previousAssignedTo: lead.assignedTo || null,
-        newAssignedTo: assignToId, // Start storing ObjectId
+        newAssignedTo: assignToId,
         updatedBy: updatedById,
         actionType: "ASSIGN",
         timestamp
       });
+
+      if (prevAssigneeId !== assignToId.toString()) {
+        const prevAssigneeName = prevAssigneeId ? (employeeMap[prevAssigneeId] || prevAssigneeId) : "";
+        leadActivityEntries.push({
+          leadId: lead._id,
+          change: {
+            assignedTo: { prev: prevAssigneeName, new: newAssigneeName }
+          },
+          updatedBy: updatedById,
+        });
+      }
     }
 
     // Step 4: Bulk Update Leads
@@ -107,6 +141,12 @@ async function bulkAssignLeads(job) {
     if (historyEntries.length > 0) {
       await LeadAssignmentHistory.insertMany(historyEntries);
       console.log(`📜 History logs created.`);
+    }
+
+    // Step 6: Save LeadActivity
+    if (leadActivityEntries.length > 0) {
+      await LeadActivity.insertMany(leadActivityEntries);
+      console.log(`📝 Activity records created.`);
     }
 
     return { success: true, count: leadsToAssign.length, batchId };
