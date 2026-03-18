@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Grid, TextField } from "@mui/material";
+import { Grid, TextField, MenuItem } from "@mui/material";
 
 interface SizeDetailsProps {
   currentProperty: any;
@@ -26,13 +26,19 @@ const SizeDetails: React.FC<SizeDetailsProps> = ({
   return (
     <>
       <Grid size={{ xs: 12, md: 4 }}>
-        <TextField
-          fullWidth
-          label="Size Unit"
-          value={currentProperty.sizeUnit || 'sq.ft.'}
-          onChange={(e) => updateProperty('sizeUnit', e.target.value)}
-        />
-      </Grid>
+  <TextField
+    select
+    fullWidth
+    label="Size Unit"
+    value={currentProperty.sizeUnit || "sq.ft."}
+    onChange={(e) => updateProperty("sizeUnit", e.target.value)}
+  >
+    <MenuItem value="sq.ft.">Square Feet (sq.ft.)</MenuItem>
+    <MenuItem value="sq.yd.">Square Yard (sq.yd.)</MenuItem>
+    <MenuItem value="sq.m.">Square Meter (sq.m.)</MenuItem>
+    <MenuItem value="acre">Acre</MenuItem>
+  </TextField>
+</Grid>
       
       <Grid size={{ xs: 12, md: 4 }}>
         <TextField
