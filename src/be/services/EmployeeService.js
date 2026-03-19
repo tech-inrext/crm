@@ -2,6 +2,8 @@ import { Service } from "@framework";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
 import Employee from "../models/Employee";
+import mongoose from "mongoose";
+
 import { leadQueue } from "../queue/leadQueue.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
@@ -662,14 +664,21 @@ class EmployeeService extends Service {
         ? { slabPercentage: { $exists: true, $nin: ["", null] } }
         : {};
 
-      // ✅ Manager filter (only when mouStatus is present): managerId == loggedInId
-      const castManagerId = (id) =>
-        mongoose?.Types?.ObjectId?.isValid?.(id)
-          ? new mongoose.Types.ObjectId(id)
-          : id;
+      // ✅ Manager filter (only when mouStatus is present): 
+      // Only AVP or SystemAdmin can see pending MOUs for their team.
+      let managerFilter = {};
+      if (mouStatus && loggedInId) {
+        if (req.isSystemAdmin) {
+          managerFilter = {}; // SystemAdmin sees all
+        } else if (req.isAVP) {
+          const downlineIds = await this.getDownlineIds(loggedInId);
+          managerFilter = { managerId: { $in: downlineIds } };
+        } else {
+          // Regular managers see nothing in the MOU pending list anymore
+          managerFilter = { _id: null };
+        }
+      }
 
-      const managerFilter =
-        mouStatus && loggedInId ? { managerId: castManagerId(loggedInId) } : {};
 
       const query = {
         ...searchFilter,
@@ -1297,6 +1306,33 @@ class EmployeeService extends Service {
       });
     }
   }
+
+  async getDownlineIds(managerId) {
+    if (!managerId) return [];
+    try {
+      const allEmployees = await Employee.find({})
+        .select("_id managerId")
+        .lean();
+      const ids = [managerId.toString()];
+
+      const findSubordinates = (mId) => {
+        const subs = allEmployees.filter(
+          (e) => String(e.managerId) === String(mId),
+        );
+        subs.forEach((s) => {
+          ids.push(s._id.toString());
+          findSubordinates(s._id);
+        });
+      };
+
+      findSubordinates(managerId);
+      return ids.map((id) => new mongoose.Types.ObjectId(id));
+    } catch (error) {
+      console.error("Error fetching downline IDs:", error);
+      return [new mongoose.Types.ObjectId(managerId)];
+    }
+  }
+
 
   async getAllAVPEmployees(req, res) {
     try {
