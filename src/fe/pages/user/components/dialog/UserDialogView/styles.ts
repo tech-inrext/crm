@@ -104,8 +104,8 @@ export const userHeaderCard = {
   row: "flex flex-col sm:flex-row items-start sm:items-center gap-4",
   avatarWrap: "flex-shrink-0",
   avatar:
-    "w-16 h-16 rounded-xl bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center text-xl font-bold shadow-lg",
-  photo: "w-full h-full object-cover rounded-xl",
+    "w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center text-xl font-bold shadow-lg",
+  photo: "w-full h-full object-cover rounded-full",
   info: "flex-1 min-w-0",
   name: "text-2xl font-bold text-gray-900 mb-2",
   designation: "text-sm text-gray-600 mb-2",
