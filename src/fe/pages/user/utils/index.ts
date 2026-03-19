@@ -1,6 +1,12 @@
-﻿import { DEFAULT_USER_FORM } from "@/fe/pages/user/constants/users";
+import { DEFAULT_USER_FORM } from "@/fe/pages/user/constants/users";
 import { uploadFile } from "@/fe/pages/user/utils/uploadFile";
 import type { UserFormData, Employee } from "@/fe/pages/user/types";
+import {
+  Email,
+  Phone,
+  Person,
+  Work,
+} from "@/components/ui/Component";
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -254,3 +260,30 @@ export const formatPhoneValue = (value: string | null | undefined): string => {
 export const formatPanNumber = (value: string | null | undefined): string => {
   return (value ?? "").toUpperCase();
 };
+
+export const getContactInfo = (
+  user: Pick<Employee, "email" | "phone"> & { photo?: string },
+) =>
+  [
+    { icon: Email, value: user.email, key: "email" },
+    { icon: Phone, value: user.phone, key: "phone" },
+  ].filter((item) => item.value);
+
+export const getOrgInfo = (user: {
+  managerName?: string;
+  departmentName?: string;
+}) => [
+  {
+    icon: Person,
+    label: "Manager:",
+    value: user.managerName || "N/A",
+    key: "manager",
+  },
+  {
+    icon: Work,
+    label: "Dept:",
+    value: user.departmentName || "N/A",
+    key: "dept",
+  },
+];
+

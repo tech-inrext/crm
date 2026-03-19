@@ -76,7 +76,7 @@ jobs:
           script: |
             set -e
             cd /home/ubuntu/crm/runtime
-            pm2 delete all
+            pm2 delete all || true
             pm2 start server.js --update-env
             cd /home/ubuntu/crm/runtime/worker
             pm2 start worker.cjs --name "crm-worker" --restart-delay 10000 --max-restarts 10

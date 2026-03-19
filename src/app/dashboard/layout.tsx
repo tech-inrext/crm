@@ -195,7 +195,7 @@ export default function DashboardLayout({
   return (
     <>
       {user && (
-        <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f5f7fa" }}>
+        <Box sx={{ display: "flex", minHeight: ["100vh", "100dvh"] ,  bgcolor: "#f5f7fa" }}>
           {!isMobile && !pendingRoleSelection && (
             <Sidebar
               open={true}
@@ -215,7 +215,14 @@ export default function DashboardLayout({
                 pl: { xs: 0, lg: "260px" },
                 pr: { xs: 0 },
                 transition: "padding-left 0.3s ease",
-                height: "calc(100vh - 64px)",
+                 // ✅ FIXED iOS height issue
+                height: "calc(100dvh - 64px)",
+                minHeight: "100dvh",
+
+                // ✅ FIX for iPhone notch
+                paddingTop: "env(safe-area-inset-top)",
+                paddingBottom: "env(safe-area-inset-bottom)",
+
                 backgroundColor: "#f9f9f9",
                 width: "100%",
               }}
