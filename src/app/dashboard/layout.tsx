@@ -207,6 +207,7 @@ export default function DashboardLayout({
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
             <Box
+              key={String(typeof user?.currentRole === "object" ? user?.currentRole?._id : user?.currentRole)}
               component="main"
               sx={{
                 flexGrow: 1,
