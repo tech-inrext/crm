@@ -8,6 +8,8 @@ import {
 } from "@/utils/leadUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTeamHierarchy } from "@/hooks/useTeamHierarchy";
+import axios from "axios";
+
 
 export function useLeadsPage() {
   const router = useRouter();
@@ -80,34 +82,69 @@ export function useLeadsPage() {
   const debouncedSearch = useDebounce(searchInput, 500);
 
   const { hierarchy, loading: hierarchyLoading } = useTeamHierarchy(user?._id || null);
+  const [allEmployees, setAllEmployees] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchAllEmployees = async () => {
+      if (!user?.isSystemAdmin) return;
+      try {
+        const res = await axios.get("/api/v0/employee/getAllEmployeeList", { params: { isCabVendor: false } });
+        if (res.data.success) {
+          setAllEmployees(res.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch all employees for admin", err);
+      }
+    };
+    fetchAllEmployees();
+  }, [user?.isSystemAdmin]);
+
 
   // Flatten hierarchy for the filter dropdown
   const teamMembers = useMemo(() => {
     // always offer an "Unassigned" option at the top of the filters
     const unassignedEntry = { _id: "unassigned", name: "Unassigned" };
+    const meEntry = user?._id ? { _id: user._id, name: "Assigned to me", designation: null } : null;
 
-    if (!hierarchy) return [unassignedEntry];
+    if (user?.isSystemAdmin) {
+      const others = allEmployees
+        .filter(emp => emp._id !== user?._id)
+        .map(emp => ({
+          _id: emp._id,
+          name: emp.name,
+          designation: emp.designation,
+        }));
+      
+      const result = [unassignedEntry];
+      if (meEntry) result.push(meEntry);
+      return [...result, ...others];
+    }
+
+    if (!hierarchy) return meEntry ? [unassignedEntry, meEntry] : [unassignedEntry];
 
     const members: any[] = [];
     const flatten = (node: any) => {
-      const isMe = node._id === user?._id;
-      members.push({
-        _id: node._id,
-        name: isMe ? "Assigned to me" : node.name,
-        designation: isMe ? null : node.designation,
-      });
+      // Don't push me here, we handle it explicitly to ensure order
+      if (node._id !== user?._id) {
+        members.push({
+          _id: node._id,
+          name: node.name,
+          designation: node.designation,
+        });
+      }
       if (node.children && node.children.length > 0) {
         node.children.forEach((child: any) => flatten(child));
       }
     };
 
     flatten(hierarchy);
-    // Exclude the manager themselves if you want only subordinates, 
-    // but usually include them to allow filtering "my own leads"
+    
+    const result = [unassignedEntry];
+    if (meEntry) result.push(meEntry);
+    return [...result, ...members];
+  }, [hierarchy, allEmployees, user]);
 
-    // prepend unassigned entry so it appears first in the filter list
-    return [unassignedEntry, ...members];
-  }, [hierarchy]);
+
 
   // Sync with URL for back/forward navigation or initial load after mount
   useEffect(() => {

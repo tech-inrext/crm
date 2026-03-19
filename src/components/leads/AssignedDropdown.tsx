@@ -39,7 +39,14 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
   useEffect(() => {
     const fetchTeamMembers = async () => {
       try {
-        // Use the new hierarchy endpoint with managerId
+        if (user?.isSystemAdmin) {
+          const res = await axios.get("/api/v0/employee/getAllEmployeeList", { params: { isCabVendor: false } });
+          if (res.data.success) {
+            setTeamMembers(res.data.data);
+          }
+          return;
+        }
+
         const mid = user?._id;
         if (!mid) return;
 
@@ -54,7 +61,8 @@ const AssignedDropdown: React.FC<AssignedDropdownProps> = ({
     };
 
     if (anchorEl) fetchTeamMembers();
-  }, [anchorEl, managerId, user?._id]);
+  }, [anchorEl, managerId, user?._id, user?.isSystemAdmin]);
+
 
   /* ---------- Flatten Hierarchy ---------- */
   const allMembers = useMemo(() => {

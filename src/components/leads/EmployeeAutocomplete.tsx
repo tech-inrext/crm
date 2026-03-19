@@ -89,28 +89,24 @@ const EmployeeAutocomplete: React.FC<EmployeeAutocompleteProps> = ({
                 </Typography>
               )}
             </Box>
-            {/* {option.isSpecial && (
-              <Chip
-                label="System"
-                size="small"
-                variant="outlined"
-                sx={{ height: 20, fontSize: "0.65rem" }}
-              />
-            )} */}
           </Box>
         </li>
       )}
       isOptionEqualToValue={(option, value) => option._id === value._id}
       noOptionsText="No matching results"
       filterOptions={(options, { inputValue }) => {
-        const query = inputValue.toLowerCase();
-        return options.filter(
-          (opt) =>
-            (opt.name || "").toLowerCase().includes(query) ||
-            (opt.email || "").toLowerCase().includes(query)
-        );
+        return filterEmployees(options, inputValue);
       }}
     />
+  );
+};
+
+const filterEmployees = (options: EmployeeOption[], inputValue: string) => {
+  const query = inputValue.toLowerCase();
+  return options.filter(
+    (opt) =>
+      (opt.name || "").toLowerCase().includes(query) ||
+      (opt.email || "").toLowerCase().includes(query)
   );
 };
 
