@@ -1,9 +1,7 @@
 import { memo } from "react";
 import { Skeleton } from "@/components/ui/Component";
+import { UsersSkeletonProps } from "../types";
 
-interface UsersSkeletonProps {
-  rows?: number;
-}
 
 const UsersSkeleton = memo(({ rows = 12 }: UsersSkeletonProps) => {
   return (
@@ -48,15 +46,10 @@ const UsersSkeleton = memo(({ rows = 12 }: UsersSkeletonProps) => {
         ))}
       </div>
       
-      {/* Pagination skeleton */}
-      <div className="flex justify-center mt-8 gap-2">
-        <Skeleton variant="rectangular" width={40} height={40} className="rounded-lg" />
-        <Skeleton variant="rectangular" width={120} height={40} className="rounded-lg" />
-        <Skeleton variant="rectangular" width={40} height={40} className="rounded-lg" />
-      </div>
     </div>
   );
 });
+
 
 UsersSkeleton.displayName = "UsersSkeleton";
 
