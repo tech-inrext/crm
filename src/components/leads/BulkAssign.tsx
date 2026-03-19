@@ -29,7 +29,10 @@ import {
   Autocomplete,
   TablePagination,
   Divider,
+  Avatar,
+  Chip,
 } from "@mui/material";
+
 import {
   Assignment,
   History as HistoryIcon,
@@ -44,7 +47,9 @@ import axios from "axios";
 import { format, differenceInHours, formatDistanceToNow } from "date-fns";
 import { LEAD_STATUSES } from "@/constants/leads";
 import { useAuth } from "@/contexts/AuthContext";
+import EmployeeAutocomplete from "./EmployeeAutocomplete";
 import { OutlinedInput, Checkbox as MUICheckbox, ListItemText } from "@mui/material";
+
 
 interface BulkAssignProps {
   onSuccess?: () => void;
@@ -165,11 +170,20 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
     }
   }, [open]);
 
+  const collectOptions = React.useMemo(() => {
+    const base = [
+      { _id: "unassigned", name: "Unassigned Leads", email: "Leads with no assigned owner", isSpecial: true },
+      { _id: "me", name: "Assigned to Me", email: user?.email || "Current user", isSpecial: true },
+    ];
+    // Add a separator/header if there are team members
+    return [...base, ...employees];
+  }, [employees, user]);
+
   const teamMembers = React.useMemo(() => {
     if (!user?._id) return [];
-    // employees list is now already filtered by hierarchy for non-admins
     return employees;
   }, [employees, user]);
+
 
   const handleAssign = async (bypassCheck = false) => {
     // Reset errors
@@ -396,31 +410,18 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
                 helperText={errors.limit}
               />
 
-              <FormControl fullWidth error={!!errors.collectFrom}>
-                <InputLabel>Collect Leads From</InputLabel>
-                <Select
-                  value={collectFrom}
-                  label="Collect Leads From"
-                  onChange={(e) => {
-                    setCollectFrom(e.target.value);
-                    setErrors((prev) => ({ ...prev, collectFrom: undefined }));
-                  }}
-                >
-                  <MenuItem value="unassigned">Unassigned Leads</MenuItem>
-                  <MenuItem value="me">Assigned to Me</MenuItem>
-                  {teamMembers.length > 0 && <Divider />}
-                  {teamMembers.map((emp) => (
-                    <MenuItem key={emp._id} value={emp._id}>
-                      Assigned to {emp.name}
-                    </MenuItem>
-                  ))}
-                </Select>
-                {errors.collectFrom && (
-                  <Typography variant="caption" color="error" sx={{ mx: 2, mt: 0.5 }}>
-                    {errors.collectFrom}
-                  </Typography>
-                )}
-              </FormControl>
+              <EmployeeAutocomplete
+                label="Collect Leads From"
+                options={collectOptions}
+                value={collectFrom}
+                onChange={(val) => {
+                  setCollectFrom(val || "unassigned");
+                  setErrors((prev) => ({ ...prev, collectFrom: undefined }));
+                }}
+                error={!!errors.collectFrom}
+                helperText={errors.collectFrom}
+              />
+
 
               <FormControl fullWidth>
                 <InputLabel>Status Filters</InputLabel>
@@ -436,13 +437,17 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
                   renderValue={(selected) => (
                     <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                       {(selected as string[]).map((value) => (
-                        <Typography key={value} variant="body2" sx={{ bgcolor: 'action.hover', px: 1, py: 0.2, borderRadius: 1 }}>
-                          {value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()}
-                        </Typography>
+                        <Chip 
+                          key={value} 
+                          label={value.charAt(0).toUpperCase() + value.slice(1).toLowerCase()} 
+                          size="small"
+                          sx={{ height: 24 }}
+                        />
                       ))}
                     </Box>
                   )}
                 >
+
                   {LEAD_STATUSES.filter((s) => s !== "").map((s) => (
                     <MenuItem key={s} value={s}>
                       <MUICheckbox checked={statuses.indexOf(s) > -1} />
@@ -452,57 +457,21 @@ const BulkAssign: React.FC<BulkAssignProps> = ({
                 </Select>
               </FormControl>
 
-              <Autocomplete
+              <EmployeeAutocomplete
+                label="Assign To"
+                placeholder="Search by name or email..."
                 options={user?.isSystemAdmin ? employees : teamMembers}
-                getOptionLabel={(option) => 
-                  option.name 
-                    ? `${option.name}${option.email ? ` (${option.email})` : ''}` 
-                    : ""
-                }
-                value={employees.find((emp) => emp._id === assignTo) || null}
-                onChange={(event, newValue) => {
-                  setAssignTo(newValue ? newValue._id : "");
-                  if (newValue) {
+                value={assignTo}
+                onChange={(val) => {
+                  setAssignTo(val);
+                  if (val) {
                     setErrors((prev) => ({ ...prev, assignTo: undefined }));
                   }
                 }}
-                renderInput={(params) => (
-                  <TextField
-                    {...params}
-                    label="Assign To"
-                    placeholder="Search by name or email..."
-                    fullWidth
-                    error={!!errors.assignTo}
-                    helperText={errors.assignTo}
-                  />
-                )}
-                renderOption={(props, option) => (
-                  <li {...props} key={option._id || option.id}>
-                    <Box sx={{ display: "flex", flexDirection: "column", py: 0.5 }}>
-                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                        {option.name}
-                      </Typography>
-                      {option.email && (
-                        <Typography variant="caption" color="text.secondary">
-                          {option.email}
-                        </Typography>
-                      )}
-                    </Box>
-                  </li>
-                )}
-                filterOptions={(options, { inputValue }) => {
-                  const query = inputValue.toLowerCase();
-                  return options.filter(
-                    (opt) =>
-                      (opt.name || "").toLowerCase().includes(query) ||
-                      (opt.email || "").toLowerCase().includes(query)
-                  );
-                }}
-                isOptionEqualToValue={(option, value) =>
-                  option._id === value._id
-                }
-                noOptionsText="No employees found"
+                error={!!errors.assignTo}
+                helperText={errors.assignTo}
               />
+
             </Box>
           )}
 
