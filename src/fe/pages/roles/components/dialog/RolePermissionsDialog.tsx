@@ -19,7 +19,7 @@ import {
 import {
   permissionColors,
   rolePermissionsDialogStyles,
-} from "../card/styles";
+} from "../Card/styles";
 import type { Role, RolePermissionsDialogProps } from "@/fe/pages/roles/types";
 import { buildGroupedPermissions } from "@/fe/pages/roles/utils";
 

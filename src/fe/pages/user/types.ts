@@ -182,3 +182,15 @@ export interface UsersActionBarProps {
   onAdd: () => void;
 }
 
+export interface Props {
+  search: string;
+  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onAdd: () => void;
+  showAllEmployees?: boolean;
+  onToggleAllEmployees?: () => void;
+  isSystemAdmin?: boolean;
+}
+
+export interface UsersSkeletonProps {
+  rows?: number;
+}

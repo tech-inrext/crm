@@ -27,8 +27,6 @@ const UserCard: React.FC<UserCardProps & { managers?: any[]; departments?: any[]
 
   return (
     <div className={cardStyles.container}>
-      {/* Background Accent */}
-      <div className={cardStyles.bgAccent} />
       
       <div className={cardStyles.header}>
         <div className={cardStyles.profileInfo}>
@@ -46,26 +44,13 @@ const UserCard: React.FC<UserCardProps & { managers?: any[]; departments?: any[]
           </div>
         </div>
 
-        <div className={cardStyles.actionContainer}>
-          {onView && (
-            <IconButton onClick={onView} className={cardStyles.actionButton} size="small" aria-label="view user">
-              <Visibility className="w-5 h-5" />
-            </IconButton>
-          )}
-          {onEdit && (
-            <PermissionGuard module={USERS_PERMISSION_MODULE} action="write" fallback={null}>
-              <IconButton onClick={onEdit} className={cardStyles.actionButton} size="small" aria-label="edit user">
-                <EditIcon className="w-5 h-5" />
-              </IconButton>
-            </PermissionGuard>
-          )}
-        </div>
       </div>
 
       <div className={cardStyles.metadataSection}>
-        {contactInfo.map(({ icon: Icon, value, key }) => (
+        {contactInfo.map(({ icon: Icon, label, value, key }) => (
           <div key={key} className={cardStyles.metadataItem}>
             <Icon className={cardStyles.metadataIcon} />
+            {label && <span className={cardStyles.orgLabel}>{label}</span>}
             <span className={cardStyles.metadataValue}>{value}</span>
           </div>
         ))}
@@ -79,6 +64,21 @@ const UserCard: React.FC<UserCardProps & { managers?: any[]; departments?: any[]
             </div>
           ))}
         </div>
+      </div>
+
+      <div className={cardStyles.actionContainer}>
+        {onView && (
+          <IconButton onClick={onView} className={cardStyles.actionButton} size="small" aria-label="view user">
+            <Visibility className="w-5 h-5" />
+          </IconButton>
+        )}
+        {onEdit && (
+          <PermissionGuard module={USERS_PERMISSION_MODULE} action="write" fallback={null}>
+            <IconButton onClick={onEdit} className={cardStyles.actionButton} size="small" aria-label="edit user">
+              <EditIcon className="w-5 h-5" />
+            </IconButton>
+          </PermissionGuard>
+        )}
       </div>
     </div>
   );
