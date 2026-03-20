@@ -13,3 +13,4 @@ class PublicEmployeeController extends Controller {
 }
 
 export default new PublicEmployeeController().handler;
+    
