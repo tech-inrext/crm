@@ -310,10 +310,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setPendingRoleSelection(false);
       setRoleSelected(true);
       // Redirect after role selection: prefer postLoginRedirect if set.
-      // If not set, try to detect `cabBooking` flag from current URL
-      // (handles cases where user navigated directly to a protected page
-      // and the login modal overlay appeared without the login page
-      // setting postLoginRedirect).
       let dest: string | null = null;
       if (postLoginRedirect) {
         dest = postLoginRedirect;
@@ -334,15 +330,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         dest = "/dashboard/leads";
       }
 
-      // If dest equals current location, use replace to force refresh.
+      // Instead of Next.js router transitions which might preserve stale state/cache 
+      // from the previous role's network requests, do a hard location redirect.
       const current =
         typeof window !== "undefined"
           ? window.location.pathname + window.location.search
           : null;
+          
       if (current && dest === current) {
-        router.replace(dest);
+        window.location.reload();
       } else {
-        router.push(dest);
+        window.location.href = dest;
       }
     } catch (error) {
       console.error("Role selection failed:", error);
