@@ -4,6 +4,7 @@ import React from "react";
 import { Box, Typography } from "@/components/ui/Component";
 import RoleCard from "./card/RoleCard";
 import RolesSkeleton from "@/fe/pages/roles/components/RolesSkeleton";
+import EmptyState from "./EmptyState";
 import dynamic from "next/dynamic";
 import type { Role, RolesListProps } from "@/fe/pages/roles/types";
 import { rolesGridSx, roleCardWrapperSx } from "@/fe/pages/roles/styles";
@@ -11,12 +12,6 @@ import { rolesGridSx, roleCardWrapperSx } from "@/fe/pages/roles/styles";
 const Pagination = dynamic(
   () => import("@/components/ui/Navigation/Pagination"),
   { ssr: false },
-);
-
-const EmptyState: React.FC = () => (
-  <Typography textAlign="center" width="100%" mt={2} color="text.primary">
-    No roles found.
-  </Typography>
 );
 
 const RolesList: React.FC<RolesListProps> = ({
