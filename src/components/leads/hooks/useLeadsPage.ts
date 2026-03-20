@@ -114,7 +114,7 @@ export function useLeadsPage() {
           name: emp.name,
           designation: emp.designation,
         }));
-      
+
       const result = [unassignedEntry];
       if (meEntry) result.push(meEntry);
       return [...result, ...others];
@@ -138,7 +138,7 @@ export function useLeadsPage() {
     };
 
     flatten(hierarchy);
-    
+
     const result = [unassignedEntry];
     if (meEntry) result.push(meEntry);
     return [...result, ...members];
@@ -149,38 +149,34 @@ export function useLeadsPage() {
   // Sync with URL for back/forward navigation or initial load after mount
   useEffect(() => {
     const statusParam = searchParams.get("status");
-    if (statusParam) {
-      const statuses = statusParam.split(",").filter(Boolean);
-      setSelectedStatuses(statuses);
-    }
+    const newStatuses = statusParam ? statusParam.split(",").filter(Boolean) : [];
+    setSelectedStatuses((prev) => prev.join(",") === newStatuses.join(",") ? prev : newStatuses);
 
     const leadTypeParam = searchParams.get("leadType");
-    if (leadTypeParam) {
-      const types = leadTypeParam.split(",").filter(Boolean);
-      setSelectedLeadTypes(types);
-    }
+    const newLeadTypes = leadTypeParam ? leadTypeParam.split(",").filter(Boolean) : [];
+    setSelectedLeadTypes((prev) => prev.join(",") === newLeadTypes.join(",") ? prev : newLeadTypes);
 
     const propertyParam = searchParams.get("propertyName");
-    if (propertyParam) {
-      const properties = propertyParam.split(",").filter(Boolean);
-      setSelectedProperties(properties);
-    }
+    const newProperties = propertyParam ? propertyParam.split(",").filter(Boolean) : [];
+    setSelectedProperties((prev) => prev.join(",") === newProperties.join(",") ? prev : newProperties);
 
     const budgetParam = searchParams.get("budgetRange");
-    if (budgetParam) {
-      const budgets = budgetParam.split(",").filter(Boolean);
-      setSelectedBudgets(budgets);
-    }
+    const newBudgets = budgetParam ? budgetParam.split(",").filter(Boolean) : [];
+    setSelectedBudgets((prev) => prev.join(",") === newBudgets.join(",") ? prev : newBudgets);
 
     const assignedToParam = searchParams.get("assignedTo");
-    if (assignedToParam) {
-      const ids = assignedToParam.split(",").filter(Boolean).slice(0, 1);
-      setSelectedAssignedTo(ids);
-    }
+    // If the URL has an explicitly empty assignedTo or lacks it, default to the current user 
+    // to maintain 'Assigned to me' default scoping naturally, mirroring the initialFilters fallback.
+    const newAssignedTo = assignedToParam 
+      ? assignedToParam.split(",").filter(Boolean).slice(0, 1) 
+      : (user?._id ? [user._id] : []);
+    setSelectedAssignedTo((prev) => prev.join(",") === newAssignedTo.join(",") ? prev : newAssignedTo);
 
     const assignedToModeParam = searchParams.get("assignedToMode") as "direct" | "hierarchy" | null;
     if (assignedToModeParam) {
-      setAssignedToMode(assignedToModeParam);
+      setAssignedToMode((prev) => prev === assignedToModeParam ? prev : assignedToModeParam);
+    } else {
+      setAssignedToMode((prev) => prev === "direct" ? prev : "direct");
     }
 
     // Check for openDialog param
@@ -189,11 +185,11 @@ export function useLeadsPage() {
     const mode = searchParams.get("mode") as "view" | "edit" | null;
 
     if (openDialog === "true" && leadId) {
-      setEditId(leadId);
-      setDialogMode(mode || "view");
-      setOpen(true);
+      setEditId(prev => prev === leadId ? prev : leadId);
+      setDialogMode(prev => prev === (mode || "view") ? prev : (mode || "view"));
+      setOpen(prev => prev === true ? prev : true);
     }
-  }, [searchParams, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setAssignedToMode]);
+  }, [searchParams, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setAssignedToMode, setEditId, setDialogMode, setOpen]);
 
   // Sync debounced search
   useEffect(() => {
@@ -382,6 +378,31 @@ export function useLeadsPage() {
     router.push(`?${params.toString()}`, { scroll: false });
   }, [searchParams, router]);
 
+  const refreshLeads = useCallback(() => {
+    loadLeads(
+      page + 1,
+      rowsPerPage,
+      searchInput,
+      selectedStatuses,
+      selectedLeadTypes,
+      selectedProperties,
+      selectedBudgets,
+      selectedAssignedTo,
+      assignedToMode
+    );
+  }, [
+    loadLeads,
+    page,
+    rowsPerPage,
+    searchInput,
+    selectedStatuses,
+    selectedLeadTypes,
+    selectedProperties,
+    selectedBudgets,
+    selectedAssignedTo,
+    assignedToMode,
+  ]);
+
   return {
     // State
     leads,
@@ -425,6 +446,7 @@ export function useLeadsPage() {
     updateLeadStatus,
     updateLeadType,
     loadLeads,
+    refreshLeads,
     dialogMode,
   };
 }
