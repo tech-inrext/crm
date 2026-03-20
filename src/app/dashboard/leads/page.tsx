@@ -106,6 +106,7 @@ const Leads: React.FC = () => {
     updateLeadStatus,
     updateLeadType,
     loadLeads,
+    refreshLeads,
     dialogMode,
     handleCloseDialog,
   } = useLeadsPage();
@@ -222,7 +223,7 @@ const Leads: React.FC = () => {
           setViewMode={setViewMode}
           onAdd={() => setOpen(true)}
           saving={saving}
-          loadLeads={loadLeads}
+          loadLeads={refreshLeads}
           selectedStatuses={selectedStatuses}
           onStatusesChange={handleStatusChange}
           selectedLeadTypes={selectedLeadTypes}
@@ -295,7 +296,8 @@ const Leads: React.FC = () => {
             onClose={closeFeedback}
             leadIdentifier={selectedLeadForFeedback}
             onSaved={async () => {
-              await loadLeads(page + 1, rowsPerPage, searchInput);
+              // Intentionally left blank: rely on the dialog's robust internal data
+              // fetching instead of aggressively reloading the entire background table.
             }}
             onScheduleSiteVisit={(leadId) => {
               setSelectedLeadForSiteVisit(leadId);
@@ -335,7 +337,8 @@ const Leads: React.FC = () => {
             }
             onSaved={async () => {
               showSnackbar("Site visit scheduled successfully", "success");
-              await loadLeads(page + 1, rowsPerPage, searchInput);
+              // Intentionally avoided calling loadLeads() here to prevent 
+              // a jarring full-page skeleton loading blink and dropped URL filters.
             }}
           />
         )}

@@ -66,7 +66,12 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
     "call back"
   );
   const handleDialogClose = () => {
-    router.replace("/dashboard/leads");
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.has("leadIdentifier")) {
+      params.delete("leadIdentifier");
+      const queryString = params.toString();
+      router.replace(`/dashboard/leads${queryString ? `?${queryString}` : ""}`, { scroll: false });
+    }
     onClose();
   };
   const finalLeadIdentifier = leadIdentifier || leadIdentifierFromUrl || "";
@@ -145,9 +150,13 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
   };
   useEffect(() => {
     if (open && finalLeadIdentifier) {
-      router.replace(`/dashboard/leads?leadIdentifier=${finalLeadIdentifier}`);
+      const params = new URLSearchParams(searchParams.toString());
+      if (params.get("leadIdentifier") !== finalLeadIdentifier) {
+        params.set("leadIdentifier", finalLeadIdentifier);
+        router.replace(`/dashboard/leads?${params.toString()}`, { scroll: false });
+      }
     }
-  }, [open, finalLeadIdentifier, router]);
+  }, [open, finalLeadIdentifier, router, searchParams]);
 
   const loadFollowUps = React.useCallback(async () => {
     if (!open || !finalLeadIdentifier) return;
