@@ -1,12 +1,12 @@
-﻿import React, { useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { TextField, MenuItem } from "@/components/ui/Component";
 import { Typography } from "@mui/material";
 import { Field, FieldProps } from "formik";
-import { FIELD_LABELS } from "@/fe/pages/user/constants/users";
 import {
+  FIELD_LABELS,
   BRANCH_LABELS,
   SLAB_OPTIONS,
-} from "@/fe/pages/user/constants/forFreelancer";
+} from "@/fe/pages/user/constants/users";
 import { getSlabLabel } from "@/fe/pages/user/utils";
 import { inputSx } from "./styles";
 

@@ -1,9 +1,8 @@
-﻿"use client";
+"use client";
 
 import React, { memo } from "react";
 import { Box, Typography } from "@mui/material";
-import { FIELD_LABELS } from "@/fe/pages/user/constants/users";
-import { DOCUMENTS } from "@/fe/pages/user/constants/documents";
+import { FIELD_LABELS, DOCUMENTS } from "@/fe/pages/user/constants/users";
 import DocumentUploadField from "@/components/ui/documentUploadBox/DocumentUploadField";
 import { requiredDocumentsStyles as styles } from "./styles";
 
