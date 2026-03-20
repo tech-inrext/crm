@@ -49,11 +49,11 @@ const StatCard: React.FC<StatCardProps> = ({
 >
   {/* Icon */}
   <Box
-    className="absolute left-5 mt-3  flex items-center justify-center w-10 h-10 rounded-full"
+    className="absolute left-7 mt-7  flex items-center justify-center w-8 h-8 rounded-full"
     sx={{ backgroundColor: iconBg }}
   >
     {loading ? (
-      <Skeleton variant="circular" width={24} height={24} />
+      <Skeleton variant="circular" width={20} height={20} />
     ) : (
       icon
     )}
@@ -62,7 +62,7 @@ const StatCard: React.FC<StatCardProps> = ({
   <CardContent className="p-0 w-full text-center">
     {/* Value */}
     <Typography
-      sx={{ fontSize: "2.25rem", fontWeight: 550, lineHeight: 1.2 }}
+      sx={{ fontSize: "2.25rem", fontWeight: 550, lineHeight: 1.3 }}
       className="text-gray-900"
     >
       {loading ? <Skeleton width={70} height={40} /> : value}
@@ -70,7 +70,7 @@ const StatCard: React.FC<StatCardProps> = ({
 
     {/* Title */}
     <Typography
-      sx={{ fontSize: "11px", fontWeight: 350 }}
+      sx={{ fontSize: "9px", fontWeight: 350 }}
       className="uppercase text-black tracking-wide"
     >
       {loading ? <Skeleton width={80} /> : title}
