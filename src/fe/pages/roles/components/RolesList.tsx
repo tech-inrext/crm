@@ -29,9 +29,9 @@ const RolesList: React.FC<RolesListProps> = ({
 
   return (
     <>
-      <Box sx={rolesGridSx}>
-        {roles.length > 0 ? (
-          roles.map((role, idx) => (
+      {roles.length > 0 ? (
+        <Box sx={rolesGridSx}>
+          {roles.map((role, idx) => (
             <Box key={role._id || idx} sx={roleCardWrapperSx}>
               <RoleCard
                 role={role}
@@ -40,11 +40,11 @@ const RolesList: React.FC<RolesListProps> = ({
                 onViewPermissions={onViewPermissions}
               />
             </Box>
-          ))
-        ) : (
-          <EmptyState />
-        )}
-      </Box>
+          ))}
+        </Box>
+      ) : (
+        <EmptyState />
+      )}
 
       <div className="flex justify-center mt-4">
         <Pagination
