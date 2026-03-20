@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Box, Typography } from "@/components/ui/Component";
-import RoleCard from "./card/RoleCard";
+import RoleCard from "./Card";
 import RolesSkeleton from "@/fe/pages/roles/components/RolesSkeleton";
 import dynamic from "next/dynamic";
 import type { Role, RolesListProps } from "@/fe/pages/roles/types";
