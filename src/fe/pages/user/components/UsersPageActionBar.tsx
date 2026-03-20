@@ -45,6 +45,7 @@ const UsersPageActionBar: React.FC<Props> = ({
         </Button>
       )}
 
+
       <PermissionGuard
         module={USERS_PERMISSION_MODULE}
         action="write"
