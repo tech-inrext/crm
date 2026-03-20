@@ -1,12 +1,12 @@
 "use client";
 
 import React from "react";
-import { AddIcon, Snackbar, Alert, Fab } from "@/components/ui/Component";
+import { AddIcon, Fab } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
 import RolesPageActionBar from "@/fe/pages/roles/components/ActionBar/RolesPageActionBar";
 import RolesList from "@/fe/pages/roles/components/RolesList";
-import RoleDialog from "@/fe/pages/roles/components/dialog/RoleDialog";
-import RolePermissionsDialog from "@/fe/pages/roles/components/dialog/RolePermissionsDialog";
+import RoleDialog from "@/fe/pages/roles/components/Dialog/RoleDialog";
+import RolePermissionsDialog from "@/fe/pages/roles/components/Dialog/RolePermissionsDialog";
 import useRolesPage from "@/fe/pages/roles/hooks/useRolesPage";
 import { ROLES_PERMISSION_MODULE } from "@/fe/pages/roles/constants/roles";
 import { fabStyle } from "@/fe/pages/roles/styles";
@@ -24,10 +24,6 @@ const RolesPage: React.FC = () => {
     selectedRoleForPermissions,
     openViewPermissions,
     closePermissionsDialog,
-    snackbarOpen,
-    setSnackbarOpen,
-    snackbarMessage,
-    snackbarSeverity,
     roles,
     loading,
     page,
@@ -88,21 +84,6 @@ const RolesPage: React.FC = () => {
         onClose={closePermissionsDialog}
       />
 
-      {/* Toast notification */}
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={3000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{ vertical: "top", horizontal: "right" }}
-      >
-        <Alert
-          onClose={() => setSnackbarOpen(false)}
-          severity={snackbarSeverity}
-          variant="filled"
-        >
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
     </div>
   );
 };
