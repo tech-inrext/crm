@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useToast } from "@/fe/components/Toast/ToastContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
   SEARCH_DEBOUNCE_DELAY,
@@ -18,7 +19,6 @@ import {
 } from "@/fe/pages/roles/utils";
 import type { Role, RoleFormData } from "@/fe/pages/roles/types";
 
-type SnackbarSeverity = "success" | "error";
 
 export function useRolesPage() {
   // ─── Search ────────────────────────────────────────────────────────────────
@@ -35,11 +35,8 @@ export function useRolesPage() {
   const [selectedRoleForPermissions, setSelectedRoleForPermissions] =
     useState<Role | null>(null);
 
-  // ─── Snackbar ──────────────────────────────────────────────────────────────
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] =
-    useState<SnackbarSeverity>("success");
+  // ─── Toast ─────────────────────────────────────────────────────────────
+  const { showToast } = useToast();
 
   // ─── Handlers ─────────────────────────────────────────────────────────────
   const handleSearchChange = useCallback(
@@ -71,6 +68,12 @@ export function useRolesPage() {
     setSelectedRoleForPermissions(null);
   }, []);
 
+  // ─── Search reset ────────────────────────────────────────────────────────
+  // Reset page to 1 whenever search query changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
   // ─── Query & mutations ────────────────────────────────────────────────────
   const {
     items: roles,
@@ -86,22 +89,13 @@ export function useRolesPage() {
   const { mutate: createRole } = useCreateRoleMutation();
   const { mutate: updateRole } = useUpdateRoleMutation();
 
-  const showSnackbar = useCallback(
-    (message: string, severity: SnackbarSeverity, duration = 2000) => {
-      setSnackbarMessage(message);
-      setSnackbarSeverity(severity);
-      setSnackbarOpen(true);
-      setTimeout(() => setSnackbarOpen(false), duration);
-    },
-    [setSnackbarMessage, setSnackbarSeverity, setSnackbarOpen],
-  );
 
   const handleMutationSuccess = useCallback(async () => {
     invalidateQueryCache(ROLE_CACHE_KEYS.ROLES);
     await refetch();
     handleCloseDialog();
-    showSnackbar("Role saved successfully!", "success");
-  }, [refetch, handleCloseDialog, showSnackbar]);
+    showToast("Role saved successfully!", "success");
+  }, [refetch, handleCloseDialog, showToast]);
 
   const handleRoleSubmit = useCallback(
     async (formData: RoleFormData) => {
@@ -118,10 +112,10 @@ export function useRolesPage() {
           );
         }
       } catch {
-        showSnackbar("Failed to save role.", "error", 3000);
+        showToast("Failed to save role.", "error");
       }
     },
-    [createRole, updateRole, handleMutationSuccess, showSnackbar],
+    [createRole, updateRole, handleMutationSuccess, showToast],
   );
 
   return {
@@ -144,11 +138,6 @@ export function useRolesPage() {
     openViewPermissions,
     closePermissionsDialog,
 
-    // Snackbar
-    snackbarOpen,
-    setSnackbarOpen,
-    snackbarMessage,
-    snackbarSeverity,
 
     // Query data
     roles,

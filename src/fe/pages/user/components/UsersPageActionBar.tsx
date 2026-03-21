@@ -8,15 +8,7 @@ import {
   USERS_PERMISSION_MODULE,
   SEARCH_PLACEHOLDER,
 } from "@/fe/pages/user/constants/users";
-
-interface Props {
-  search: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  onAdd: () => void;
-  showAllEmployees?: boolean;
-  onToggleAllEmployees?: () => void;
-  isSystemAdmin?: boolean;
-}
+import { Props } from "@/fe/pages/user/types";
 
 const UsersPageActionBar: React.FC<Props> = ({
   search,

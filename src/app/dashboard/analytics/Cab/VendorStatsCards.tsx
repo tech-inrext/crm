@@ -1,30 +1,22 @@
-import React from 'react';
-import Box from '@/components/ui/Component/Box';
-import Typography from '@/components/ui/Component/Typography';
-import Paper from '@/components/ui/Component/Paper';
+import React from "react";
+import Box from "@/components/ui/Component/Box";
+import Typography from "@/components/ui/Component/Typography";
+import Card from "@/components/ui/Component/Card";
+import CardContent from "@/components/ui/Component/CardContent";
 
 export function VendorStatsCards({ displayVendors, appliedFilters }) {
   const stats = [
     {
       label: "Total Bookings",
       value: displayVendors.reduce((sum, v) => sum + (v.totalBookings || 0), 0),
-      bg: "bg-blue-100",
-      color: "text-blue-600",
-      size: "text-2xl",
     },
     {
       label: "Completed",
       value: displayVendors.reduce((sum, v) => sum + (v.completedBookings || 0), 0),
-      bg: "bg-green-100",
-      color: "text-green-600",
-      size: "text-2xl",
     },
     {
       label: "Pending",
       value: displayVendors.reduce((sum, v) => sum + (v.pendingBookings || 0), 0),
-      bg: "bg-orange-100",
-      color: "text-orange-600",
-      size: "text-2xl",
     },
     {
       label:
@@ -35,35 +27,41 @@ export function VendorStatsCards({ displayVendors, appliedFilters }) {
         appliedFilters.status === "payment-due"
           ? displayVendors.reduce((sum, v) => sum + (v.paymentDue || 0), 0)
           : displayVendors.reduce((sum, v) => sum + (v.totalSpendings || 0), 0),
-      bg: "bg-purple-100",
-      color: "text-purple-700",
-      size: "text-xl",
       isCurrency: true,
     },
   ];
 
   return (
-    <Paper className="bg-gray-100 p-4 rounded-xl border border-gray-300 mb-4" elevation={0}>
-      <Box className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mt-2">
+    <Box className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2 mb-3">
+      {stats.map((item, idx) => (
+        <Card
+          key={idx}
+          elevation={0}
+          className="rounded-2xl border border-gray-200 shadow-sm transition-all duration-200 hover:shadow-md flex items-center justify-center"
+        >
+          <CardContent className="py-3 px-3 text-center">
 
-        {stats.map((item, idx) => (
-          <Box
-            key={idx}
-            className={`${item.bg} p-3 rounded-xl text-center`}
-          >
-            <Typography className={`${item.color} font-bold ${item.size}`}>
+            {/* Value */}
+            <Typography
+              sx={{ fontSize: "1.4rem", fontWeight: 600, lineHeight: 1.2 }}
+              className="text-gray-900"
+            >
               {item.isCurrency
                 ? `₹${item.value.toLocaleString()}`
                 : item.value}
             </Typography>
 
-            <Typography className="text-gray-600 text-sm">
+            {/* Label */}
+            <Typography
+              sx={{ fontSize: "11px", fontWeight: 500 }}
+              className="uppercase text-gray-600 tracking-wide"
+            >
               {item.label}
             </Typography>
-          </Box>
-        ))}
 
-      </Box>
-    </Paper>
+          </CardContent>
+        </Card>
+      ))}
+    </Box>
   );
 }

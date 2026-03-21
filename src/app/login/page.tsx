@@ -363,6 +363,7 @@ const LandingPage: React.FC = () => {
                       borderRadius: 2,
                       fontWeight: 600,
                       textTransform: "none",
+                      color: "white",
                       fontSize: { xs: "1rem", sm: "1.1rem" },
                       background: "#1976d2",
                       "&:hover": {

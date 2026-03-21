@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Box, Card, Stack, Skeleton } from "@/components/ui/Component";
-import { roleCardStyles } from "./card/styles";
+import { roleCardStyles } from "./Card/styles";
 import { RolesSkeletonProps } from "../types";
 
 

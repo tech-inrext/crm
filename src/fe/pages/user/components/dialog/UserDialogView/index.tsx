@@ -14,7 +14,7 @@ import { dialogHeader, userHeaderCard, layout, dialogProps } from "./styles";
 import {
   getContactPersonalFields,
   getOrganizationFields,
-} from "@/fe/pages/user/constants/userDialogView";
+} from "@/fe/pages/user/constants/users";
 
 const UserDialogView = ({ user, open, onClose }: any) => {
   const {

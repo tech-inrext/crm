@@ -265,8 +265,8 @@ export const getContactInfo = (
   user: Pick<Employee, "email" | "phone"> & { photo?: string },
 ) =>
   [
-    { icon: Email, value: user.email, key: "email" },
-    { icon: Phone, value: user.phone, key: "phone" },
+    { icon: Email, label: "Email:", value: user.email, key: "email" },
+    { icon: Phone, label: "Phone:", value: user.phone, key: "phone" },
   ].filter((item) => item.value);
 
 export const getOrgInfo = (user: {
