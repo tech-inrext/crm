@@ -49,25 +49,10 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
       )}
 
       {/* Overlay */}
-      <Box
-        sx={{
-          position: "absolute",
-          inset: 0,
-          background:
-            "linear-gradient(135deg, rgba(25, 118, 210, 0.95) 0%, rgba(15, 82, 147, 0.85) 100%)",
-          zIndex: 1,
-        }}
-      />
+      <Box className="absolute inset-0 z-[1] bg-[linear-gradient(135deg,rgba(25,118,210,0.95)_0%,rgba(15,82,147,0.85)_100%)]" />
 
       {/* Close Button */}
-      <Box
-        sx={{
-          display: "flex",
-          justifyContent: "flex-end",
-          zIndex: 2,
-          position: "relative",
-        }}
-      >
+      <Box className="flex justify-end relative z-[2]">
         <IconButton
           onClick={onClose}
           className="text-white bg-white/15 backdrop-blur-[10px] border border-white/20 transition-all duration-200 ease-in-out hover:bg-white/25 hover:scale-110"
@@ -78,23 +63,23 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
 
       {/* Content */}
       <Box className="flex items-end justify-between flex-wrap mt-auto z-[2] relative">
-        <Box sx={{ flex: 1, minWidth: { xs: "100%", md: "auto" } }}>
+        <Box className="flex-1 min-w-full md:min-w-0">
           <Typography
-            variant="h2"
-            fontWeight={800}
-            sx={{
-              fontSize: { xs: "1.4rem", sm: "2.5rem", md: "3rem" }, // slightly reduced for mobile
-              textShadow: "0 4px 20px rgba(0,0,0,0.4)",
-              lineHeight: 1.1,
-            }}
+            className="
+    !font-extrabold
+    !text-[1.4rem] sm:!text-[2.5rem] md:!text-[3rem]
+    !leading-[1.1]
+    [text-shadow:0_4px_20px_rgba(0,0,0,0.4)]
+  "
           >
             {property.projectName}
           </Typography>
 
           <Box className="flex items-center flex-wrap gap-2">
-            <Box sx={{ display: "flex", alignItems: "center", mb: 1 }}>
-              <Business sx={{ mr: 1, fontSize: 20, opacity: 0.9 }} />
-              <Typography variant="h6" sx={{ opacity: 0.95, fontWeight: 600 }}>
+            <Box className="flex items-center mb-2">
+              <Business className="mr-1 text-[20px] opacity-90" />
+
+              <Typography className="!font-semibold opacity-95 !text-[1.25rem]">
                 {property.builderName}
               </Typography>
             </Box>
@@ -103,15 +88,13 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
 
         <Box className="text-left md:text-right bg-white/15 backdrop-blur-[10px] border border-white/20 rounded-lg p-1 md:p-2 min-w-full md:min-w-[280px]">
           <Typography
-            variant="h3"
-            fontWeight={800}
-            sx={{
-              textShadow: "0 2px 10px rgba(0,0,0,0.3)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: { xs: "flex-start", md: "flex-end" },
-              fontSize: { xs: "1.3rem", md: "2.5rem" },
-            }}
+            className="
+    !flex !items-center
+    !justify-start md:!justify-end
+    !font-extrabold
+    !text-[1.3rem] md:!text-[2.5rem]
+    [text-shadow:0_2px_10px_rgba(0,0,0,0.3)]
+  "
           >
             {property.price
               ? `${property.price}${property.sizeUnit ? ` / ${property.sizeUnit}` : ""}`

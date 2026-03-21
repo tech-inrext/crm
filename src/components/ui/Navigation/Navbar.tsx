@@ -19,41 +19,18 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   return (
-    <Box
-      sx={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 1300,
-        display: "flex",
-        alignItems: "center",
-        bgcolor: "#fff",
-        height: "auto",
-        borderBottom: "1px solid #E6EEF5",
-        overflow: "visible",
-        justifyContent: "space-between",
-      }}
-    >
+    <Box className="fixed top-0 left-0 right-0 z-[1300] flex items-center justify-between bg-white h-auto border-b border-[#E6EEF5] overflow-visible">
       <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          gap: { xs: 0.3, sm: 1, md: 2 }, // reduce gap for xs
-          minWidth: 0,
-          pl: { xs: 6, sm: 0 },
-          pr: { xs: 1, sm: 2 },
-          borderRight: {
-            xs: "none",
-            sm: "none",
-            md: "none",
-            lg: "1px solid #E6EEF5",
-          },
-          width: { xs: "auto", sm: "auto", md: "260px", lg: "260px" },
-          px: { xs: 0.5, sm: 1, md: 1.5, lg: 1 },
-          py: { xs: 0.5, sm: 1, md: 1 },
-          paddingLeft: { xs: "50px", sm: "20px", md: "30px", lg: "30px" },
-        }}
+        className="
+  flex items-center min-w-0
+  gap-[2px] sm:gap-1 md:gap-2
+  pl-[50px] sm:pl-[20px] md:pl-[30px] lg:pl-[30px]
+  pr-1 sm:pr-2
+  w-auto md:w-[260px]
+  px-[2px] sm:px-1 md:px-1.5 lg:px-1
+  py-[2px] sm:py-1 md:py-1
+  lg:border-r lg:border-[#E6EEF5]
+"
       >
         <Box
           sx={{
@@ -61,7 +38,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
             width: 120,
             display: "flex",
             alignItems: "center",
-            flexShrink: 0,  
+            flexShrink: 0,
           }}
         >
           <img

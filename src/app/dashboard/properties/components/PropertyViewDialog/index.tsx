@@ -248,15 +248,11 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
         onClose={onClose}
         maxWidth="lg"
         fullWidth
-        fullScreen={isMobile} // ✅ mobile full screen
+        fullScreen={isMobile}
         scroll="paper"
-        sx={{
-          "& .MuiDialog-paper": {
-            borderRadius: 3,
-            overflow: "hidden",
-            boxShadow: "0 25px 50px -12px rgba(0,0,0,0.5)",
-            background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-          },
+        PaperProps={{
+          className:
+            "rounded-2xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] bg-[linear-gradient(135deg,#f8fafc_0%,#f1f5f9_100%)]",
         }}
       >
         <PropertyHeader
