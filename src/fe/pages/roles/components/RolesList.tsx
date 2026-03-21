@@ -4,6 +4,7 @@ import React from "react";
 import { Box, Typography } from "@/components/ui/Component";
 import RoleCard from "./Card";
 import RolesSkeleton from "@/fe/pages/roles/components/RolesSkeleton";
+import EmptyState from "./EmptyState";
 import dynamic from "next/dynamic";
 import type { Role, RolesListProps } from "@/fe/pages/roles/types";
 import { rolesGridSx, roleCardWrapperSx } from "@/fe/pages/roles/styles";
@@ -11,12 +12,6 @@ import { rolesGridSx, roleCardWrapperSx } from "@/fe/pages/roles/styles";
 const Pagination = dynamic(
   () => import("@/components/ui/Navigation/Pagination"),
   { ssr: false },
-);
-
-const EmptyState: React.FC = () => (
-  <Typography textAlign="center" width="100%" mt={2} color="text.primary">
-    No roles found.
-  </Typography>
 );
 
 const RolesList: React.FC<RolesListProps> = ({
@@ -34,9 +29,9 @@ const RolesList: React.FC<RolesListProps> = ({
 
   return (
     <>
-      <Box sx={rolesGridSx}>
-        {roles.length > 0 ? (
-          roles.map((role, idx) => (
+      {roles.length > 0 ? (
+        <Box sx={rolesGridSx}>
+          {roles.map((role, idx) => (
             <Box key={role._id || idx} sx={roleCardWrapperSx}>
               <RoleCard
                 role={role}
@@ -45,11 +40,11 @@ const RolesList: React.FC<RolesListProps> = ({
                 onViewPermissions={onViewPermissions}
               />
             </Box>
-          ))
-        ) : (
-          <EmptyState />
-        )}
-      </Box>
+          ))}
+        </Box>
+      ) : (
+        <EmptyState />
+      )}
 
       <div className="flex justify-center mt-4">
         <Pagination
