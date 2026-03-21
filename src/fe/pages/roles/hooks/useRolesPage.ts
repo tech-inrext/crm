@@ -12,7 +12,7 @@ import {
   useCreateRoleMutation,
   useUpdateRoleMutation,
 } from "@/fe/pages/roles/roleApi";
-import { invalidateQueryCache } from "@/fe/hooks/createApi";
+import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";
 import {
   buildCreateRolePayload,
   buildUpdateRolePayload,

@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import PageHeader from "@/fe/framework/components/PageHeader";
+import PageHeader from "@/fe/components/PageHeader";
 import { Add, Button, Box, PermissionGuard } from "@/components/ui/Component";
 import SearchBar from "@/components/ui/search/SearchBar";
 import {

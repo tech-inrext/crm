@@ -132,8 +132,7 @@ const RolePermissionsDialog: React.FC<RolePermissionsDialogProps> = ({
       <DialogActions sx={rolePermissionsDialogStyles.dialogActions}>
         <Button
           onClick={onClose}
-          variant="contained"
-          sx={rolePermissionsDialogStyles.closeActionButton}
+          variant="outlined"
         >
           Close
         </Button>

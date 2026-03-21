@@ -1,4 +1,4 @@
-import Cache from "../framework/Cache";
+import Cache from "../utils/Cache";
 
 const apiHooksCache = new Cache();
 

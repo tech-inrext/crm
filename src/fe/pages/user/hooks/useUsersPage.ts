@@ -11,7 +11,7 @@ import {
   useGetMyTeamHierarchyQuery,
 } from "../userApi";
 import { flattenHierarchy } from "../utils";
-import { invalidateQueryCache } from "@/fe/hooks/createApi";
+import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";
 
 type DialogMode = "create" | "edit" | "view";
 
