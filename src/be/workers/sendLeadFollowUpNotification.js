@@ -1,6 +1,9 @@
 import Lead from "../models/Lead.js";
 import Notification from "../models/Notification.js";
 import FollowUp from "../models/FollowUp.js";
+import NotificationService from "../services/NotificationService.js";
+
+const notificationService = new NotificationService();
 
 /**
  * Worker to send lead follow-up notifications
@@ -19,8 +22,8 @@ const sendLeadFollowUpNotification = async (job) => {
         }
 
         // Get the most recent follow-up entry
-        const latestEntry = followUpDoc?.followUps?.length > 0 
-            ? followUpDoc.followUps[followUpDoc.followUps.length - 1] 
+        const latestEntry = followUpDoc?.followUps?.length > 0
+            ? followUpDoc.followUps[followUpDoc.followUps.length - 1]
             : null;
 
         if (!latestEntry || !latestEntry.followUpDate) {
@@ -62,8 +65,8 @@ const sendLeadFollowUpNotification = async (job) => {
                     break;
             }
 
-            // Create notification directly using the model
-            await Notification.create({
+            // Create notification using service to ensure email channel is processed
+            await notificationService._createSingleNotification({
                 recipient: lead.assignedTo,
                 type: "LEAD_FOLLOWUP_DUE",
                 title: title,

@@ -1,5 +1,7 @@
 import Lead from "../models/Lead.js";
 import LeadAssignmentHistory from "../models/LeadAssignmentHistory.js";
+import Employee from "../models/Employee.js";
+import LeadActivity from "../models/LeadActivity.js";
 import dbConnect from "../../lib/mongodb.js";
 import mongoose from "mongoose";
 
@@ -31,11 +33,26 @@ async function revertBulkAssign(job) {
     const revertByObjectId = new mongoose.Types.ObjectId(revertedBy);
     const revertOps = [];
     const newHistoryEntries = [];
+    const leadActivityEntries = [];
     const timestamp = new Date();
 
+    // Step 1.5: Collect all unique employee IDs and fetch names for Activity Log
+    const employeeIdsToFetch = new Set();
+    historyRecords.forEach(r => {
+      if (r.newAssignedTo) employeeIdsToFetch.add(r.newAssignedTo.toString());
+      if (r.previousAssignedTo) employeeIdsToFetch.add(r.previousAssignedTo.toString());
+    });
+
+    const employees = await Employee.find({ _id: { $in: Array.from(employeeIdsToFetch) } })
+      .select("name fullName")
+      .lean();
+
+    const employeeMap = {};
+    employees.forEach(e => {
+      employeeMap[e._id.toString()] = e.fullName || e.name || e._id.toString();
+    });
+
     for (const record of historyRecords) {
-      // 🛠️ FIX: Normalize previousAssignedTo. If it's an empty string or null, use null.
-      // Also ensure it is cast to an ObjectId if it exists.
       let targetAssignedTo = record.previousAssignedTo;
       if (targetAssignedTo === "" || !targetAssignedTo) {
         targetAssignedTo = null;
@@ -51,9 +68,9 @@ async function revertBulkAssign(job) {
           filter: { _id: record.leadId },
           update: {
             $set: {
-                assignedTo: targetAssignedTo,
-                updatedBy: revertByObjectId,
-                updatedAt: timestamp
+              assignedTo: targetAssignedTo,
+              updatedBy: revertByObjectId,
+              updatedAt: timestamp
             }
           }
         }
@@ -61,14 +78,30 @@ async function revertBulkAssign(job) {
 
       // Log the revert action
       newHistoryEntries.push({
-        batchId, 
+        batchId,
         leadId: record.leadId,
-        previousAssignedTo: record.newAssignedTo, 
-        newAssignedTo: targetAssignedTo, 
+        previousAssignedTo: record.newAssignedTo,
+        newAssignedTo: targetAssignedTo,
         updatedBy: revertByObjectId,
         actionType: "REVERT",
         timestamp
       });
+
+      // Log Lead Activity
+      const prevOwnerId = record.newAssignedTo ? record.newAssignedTo.toString() : null;
+      const newOwnerId = targetAssignedTo ? targetAssignedTo.toString() : null;
+
+      if (prevOwnerId !== newOwnerId) {
+        const prevName = prevOwnerId ? (employeeMap[prevOwnerId] || prevOwnerId) : "";
+        const newName = newOwnerId ? (employeeMap[newOwnerId] || newOwnerId) : "";
+        leadActivityEntries.push({
+          leadId: record.leadId,
+          change: {
+            assignedTo: { prev: prevName, new: newName }
+          },
+          updatedBy: revertByObjectId,
+        });
+      }
     }
 
     // Execute Bulk Update on Leads
@@ -81,6 +114,12 @@ async function revertBulkAssign(job) {
     if (newHistoryEntries.length > 0) {
       await LeadAssignmentHistory.insertMany(newHistoryEntries);
       console.log(`📜 Revert history logged.`);
+    }
+
+    // Save Lead Activity
+    if (leadActivityEntries.length > 0) {
+      await LeadActivity.insertMany(leadActivityEntries);
+      console.log(`📝 Activity records created.`);
     }
 
     return { success: true, count: revertOps.length };

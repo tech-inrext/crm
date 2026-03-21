@@ -10,6 +10,7 @@ const BulkUploadSchema = new mongoose.Schema({
   assignedTo: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Employee",
+    default: null,
   },
   status: {
     type: String,

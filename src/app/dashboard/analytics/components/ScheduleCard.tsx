@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import Skeleton from "@/components/ui/Component/Skeleton";
 import Pagination from "@mui/material/Pagination";
 import Select from "@mui/material/Select";
@@ -7,6 +7,13 @@ import Card from "@/components/ui/Component/Card";
 import CardContent from "@/components/ui/Component/CardContent";
 import Box from "@/components/ui/Component/Box";
 import Typography from "@/components/ui/Component/Typography";
+import { useRouter } from "next/navigation";
+
+import CallIcon from "@mui/icons-material/Call";
+import HomeIcon from "@mui/icons-material/Home";
+import EventIcon from "@mui/icons-material/Event";
+import DescriptionIcon from "@mui/icons-material/Description";
+import TaskAltIcon from "@mui/icons-material/TaskAlt";
 
 interface AnalyticsAccess {
   showScheduleThisWeek: boolean;
@@ -37,311 +44,294 @@ const ScheduleCard: React.FC<ScheduleCardProps> = ({
   scheduleLoading,
   scheduleAnalytics,
 }) => {
-  const [filter, setFilter] = React.useState<"day" | "week" | "overdue">(
-    "week",
+  const router = useRouter();
+
+  const [filter, setFilter] = useState<"day" | "week" | "overdue">("week");
+  const [page, setPage] = useState(1);
+
+  const leadsPerPage = 10;
+
+  useEffect(() => {
+    setPage(1);
+  }, [filter, scheduleAnalytics]);
+
+  const filteredLeads = useMemo(() => {
+    if (!scheduleAnalytics?.data) return [];
+
+    let data: any[] = [];
+
+    if (filter === "day") data = scheduleAnalytics.data.today || [];
+    if (filter === "week") data = scheduleAnalytics.data.week || [];
+    if (filter === "overdue") data = scheduleAnalytics.data.overdue || [];
+
+    return data.filter(
+      (item) =>
+        item?.followUpType && item.followUpType.toLowerCase() !== "note",
+    );
+  }, [filter, scheduleAnalytics]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredLeads.length / leadsPerPage),
   );
-  const [page, setPage] = React.useState(1);
-  const [leadsPerPage, setLeadsPerPage] = React.useState(2);
 
-  if (analyticsAccess.showScheduleThisWeek) {
-    // ✅ Use backend grouped data
-    const filteredLeads =
-      filter === "day"
-        ? scheduleAnalytics?.data?.today || []
-        : filter === "week"
-          ? scheduleAnalytics?.data?.week || []
-          : scheduleAnalytics?.data?.overdue || [];
+  const paginatedLeads = useMemo(() => {
+    return filteredLeads.slice((page - 1) * leadsPerPage, page * leadsPerPage);
+  }, [filteredLeads, page]);
 
-    const totalPages = Math.max(
-      1,
-      Math.ceil(filteredLeads.length / leadsPerPage),
-    );
+  const handleCardClick = (item: any) => {
+    const leadId = item?.lead?._id || item?.lead?.id;
 
-    const paginatedLeads = filteredLeads.slice(
-      (page - 1) * leadsPerPage,
-      page * leadsPerPage,
-    );
+    if (leadId) {
+      router.push(`/dashboard/leads?leadIdentifier=${leadId}`);
+    } else {
+      router.push("/dashboard/leads");
+    }
+  };
 
-    React.useEffect(() => {
-      setPage(1);
-    }, [filter, scheduleAnalytics, leadsPerPage]);
+  /* DATE LABEL FUNCTION */
+  const getDateLabel = (date: string) => {
+    if (!date) return "";
 
-    const handleChangePage = (_: any, value: number) => {
-      setPage(value);
+    const followDate = new Date(date);
+    const today = new Date();
+
+    const todayStart = new Date(today.setHours(0, 0, 0, 0));
+    const followStart = new Date(followDate.setHours(0, 0, 0, 0));
+
+    const diffDays = (followStart.getTime() - todayStart.getTime()) / 86400000;
+
+    if (diffDays === 0) return "Today";
+    if (diffDays === 1) return "Tomorrow";
+    if (diffDays === -1) return "Yesterday";
+
+    return followStart.toLocaleDateString("en-US", {
+      weekday: "short",
+      month: "short",
+      day: "numeric",
+    });
+  };
+
+  /* ICON + COLOR CONFIG */
+  const getIconConfig = (type: string) => {
+    const t = type?.toLowerCase() || "";
+
+    if (t.includes("call"))
+      return {
+        icon: <CallIcon fontSize="small" />,
+        style: "bg-blue-100 text-blue-600",
+      };
+
+    if (t.includes("visit"))
+      return {
+        icon: <HomeIcon fontSize="small" />,
+        style: "bg-green-100 text-green-400",
+      };
+
+    if (t.includes("meeting"))
+      return {
+        icon: <EventIcon fontSize="small" />,
+        style: "bg-yellow-100 text-yellow-400",
+      };
+
+    if (t.includes("proposal"))
+      return {
+        icon: <DescriptionIcon fontSize="small" />,
+        style: "bg-purple-100 text-purple-400",
+      };
+
+    return {
+      icon: <TaskAltIcon fontSize="small" />,
+      style: "bg-gray-100 text-gray-400",
     };
+  };
 
-    const handleChangeRowsPerPage = (
-      event: React.ChangeEvent<{ value: unknown }>,
-    ) => {
-      setLeadsPerPage(Number(event.target.value));
-      setPage(1);
-    };
-
+  if (!analyticsAccess.showScheduleThisWeek) {
     return (
-      <Card className="min-h-[400px] h-full flex flex-col justify-start w-full md:w-[175%] md:mr-1">
-        <CardContent>
-          {/* Header */}
-          <Box className="flex gap-1 items-center mb-[18px] flex-wrap md:flex-nowrap">
-            <Typography
-              sx={{
-                fontSize: "1.35rem",
-                fontWeight: 600,
-                color: "#222",
-                mb: { xs: 1, sm: 1, md: 0 },
-              }}
-            >
-              Schedule In this
-            </Typography>
-
-            <Box className="flex items-center gap-1 flex-1 min-w-0 flex-wrap md:flex-nowrap">
-              <Select
-                value={filter === "overdue" ? "week" : filter}
-                onChange={(e) => setFilter(e.target.value as "day" | "week")}
-                size="small"
-                sx={{ minWidth: 140, width: "auto", maxWidth: "100%" }}
-                displayEmpty
-              >
-                <MenuItem value="day">Day Wise</MenuItem>
-                <MenuItem value="week">Week Wise</MenuItem>
-              </Select>
-
-              <a
-                href="/dashboard/leads"
-                className="text-[#0792fa] font-medium text-base no-underline hover:underline"
-                style={{
-                  marginLeft: 0,
-                  whiteSpace: "nowrap",
-                  ...(typeof window !== "undefined" && window.innerWidth >= 900
-                    ? { marginLeft: "10rem" }
-                    : {}),
-                }}
-              >
-                View All
-              </a>
-            </Box>
-          </Box>
-
-          <Box>
-            {/* Loading */}
-            {scheduleLoading && (
-              <Box sx={{ py: 2.5 }}>
-                <Skeleton
-                  variant="rectangular"
-                  width="100%"
-                  height={40}
-                  sx={{ mb: 2, borderRadius: 2 }}
-                />
-                <Skeleton
-                  variant="text"
-                  width="60%"
-                  height={32}
-                  sx={{ mb: 1 }}
-                />
-                <Skeleton
-                  variant="text"
-                  width="40%"
-                  height={24}
-                  sx={{ mb: 1 }}
-                />
-                {[...Array(2)].map((_, i) => (
-                  <Box key={i} sx={{ mb: 2 }}>
-                    <Skeleton
-                      variant="rectangular"
-                      width="100%"
-                      height={60}
-                      sx={{ borderRadius: 2 }}
-                    />
-                  </Box>
-                ))}
-              </Box>
-            )}
-
-            {/* Success */}
-            {!scheduleLoading && scheduleAnalytics?.success && (
-              <Box>
-                {/* Summary */}
-                <Box display="flex" gap={2} mb={2} flexWrap="wrap">
-                  {/* Today/Week Count */}
-                  {/* Scheduled Clickable */}
-                  <Box
-                    onClick={() => setFilter(filter === "day" ? "day" : "week")}
-                    className={`bg-[#e3f2fd] px-3 py-2 rounded-lg text-[0.85rem] font-semibold text-[#1976d2] cursor-pointer ${filter !== "overdue" ? "border-2 border-[#1976d2]" : ""}`}
-                  >
-                    {filter === "day"
-                      ? scheduleAnalytics.summary?.todayCount
-                      : scheduleAnalytics.summary?.weekCount}{" "}
-                    scheduled
-                  </Box>
-
-                  {/* Overdue Clickable */}
-                  <Box
-                    onClick={() => setFilter("overdue")}
-                    className={`bg-[#ffebee] px-3 py-2 rounded-lg text-[0.85rem] font-semibold text-[#d32f2f] cursor-pointer ${filter === "overdue" ? "border-2 border-[#d32f2f]" : ""}`}
-                  >
-                    {scheduleAnalytics.summary?.overdueCount || 0} overdue
-                  </Box>
-                </Box>
-
-                {/* Leads List */}
-                <Box className="relative h-[280px] max-h-[280px] overflow-y-auto pb-7">
-                  {filteredLeads.length > 0 ? (
-                    paginatedLeads.map((item: any) => {
-                      const followUpDate = new Date(item.followUpDate);
-
-                      const isToday =
-                        followUpDate.toDateString() ===
-                        new Date().toDateString();
-
-                      const isTomorrow =
-                        followUpDate.toDateString() ===
-                        new Date(Date.now() + 86400000).toDateString();
-
-                      let dateLabel = followUpDate.toLocaleDateString("en-US", {
-                        weekday: "short",
-                        month: "short",
-                        day: "numeric",
-                      });
-
-                      if (isToday) dateLabel = "Today";
-                      else if (isTomorrow) dateLabel = "Tomorrow";
-
-                      return (
-                        <Box
-                          key={item.id}
-                          className={`flex items-center p-1.5 mb-1 rounded-lg cursor-pointer ${
-                            filter === "overdue"
-                              ? "bg-[#fff5f5] border border-[#f5c2c7]"
-                              : isToday
-                                ? "bg-[#fff3e0] border border-[#ffcc02]"
-                                : "bg-[#f8f9fa] border border-[#e9ecef]"
-                          }`}
-                        >
-                          <Box flex={1}>
-                            <Typography
-                              sx={{
-                                fontWeight: 600,
-                                color: "#222",
-                                fontSize: "0.95rem",
-                                mb: 0.25,
-                              }}
-                            >
-                              {item.lead?.fullName || "Unknown"}
-                            </Typography>
-
-                            <Typography
-                              sx={{
-                                fontSize: "0.8rem",
-                                color: "#666",
-                                mb: 0.5,
-                              }}
-                            >
-                              {item.lead?.phone} •{" "}
-                              {item.lead?.source || "No source"}
-                            </Typography>
-
-                            <Typography
-                              sx={{ fontSize: "0.75rem", color: "#888" }}
-                            >
-                              {item.lead?.assignedTo
-                                ? `Assigned to: ${item.lead.assignedTo.name}`
-                                : "Unassigned"}
-                            </Typography>
-                          </Box>
-
-                          <Box textAlign="right" minWidth={80}>
-                            <Typography
-                              sx={{
-                                fontSize: "0.8rem",
-                                fontWeight: 600,
-                                color: "#666",
-                                mb: 0.25,
-                              }}
-                            >
-                              {dateLabel}
-                            </Typography>
-
-                            <Typography
-                              sx={{ fontSize: "0.75rem", color: "#888" }}
-                            >
-                              {item.followUpTime}
-                            </Typography>
-
-                            <div
-                              className={`text-[0.7rem] px-2 py-1 rounded mt-2 ${
-                                item.lead?.status === "New"
-                                  ? "bg-[#e3f2fd] text-[#1976d2]"
-                                  : item.lead?.status === "Contacted"
-                                    ? "bg-[#e8f5e9] text-[#388e3c]"
-                                    : item.lead?.status === "Site Visit"
-                                      ? "bg-[#fff3e0] text-[#f57c00]"
-                                      : "bg-[#f3e5f5] text-[#7b1fa2]"
-                              }`}
-                            >
-                              {item.lead?.status}
-                            </div>
-                          </Box>
-                        </Box>
-                      );
-                    })
-                  ) : (
-                    <Box sx={{ color: "#666", textAlign: "center", py: 5 }}>
-                      📅 No follow-ups scheduled for this{" "}
-                      {filter === "day"
-                        ? "day"
-                        : filter === "week"
-                          ? "week"
-                          : "overdue"}
-                    </Box>
-                  )}
-
-                  {/* Pagination */}
-                  <Box className="flex items-center justify-center gap-5 absolute left-0 right-0 bottom-0 bg-white border-t border-[#eee] py-3 z-[2]">
-                    <Typography className="text-[#666] text-[0.95rem]">
-                      Page
-                    </Typography>
-                    <Pagination
-                      count={totalPages}
-                      page={page}
-                      onChange={handleChangePage}
-                      color="primary"
-                      size="small"
-                    />
-                    <Typography className="text-[#666] text-[0.95rem]">
-                      Rows:
-                    </Typography>
-                    <Select
-                      value={leadsPerPage}
-                      onChange={handleChangeRowsPerPage}
-                      size="small"
-                    >
-                      <MenuItem value={2}>2</MenuItem>
-                    </Select>
-                  </Box>
-                </Box>
-              </Box>
-            )}
-
-            {!scheduleLoading &&
-              (!scheduleAnalytics || !scheduleAnalytics.success) && (
-                <Box sx={{ color: "#d32f2f", textAlign: "center", py: 2.5 }}>
-                  Failed to load schedule data
-                </Box>
-              )}
-          </Box>
+      <Card>
+        <CardContent className="text-center space-y-2 py-6">
+          <Typography className="text-lg font-semibold">
+            🔒 Access Restricted
+          </Typography>
+          <Typography className="text-gray-600 text-sm">
+            You don't have permission to view Schedule.
+          </Typography>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card className="min-h-[320px] h-[95%] flex flex-col justify-center items-center w-[175%] mr-1">
-      <CardContent sx={{ textAlign: "center" }}>
-        <Typography sx={{ fontSize: "1.2rem", fontWeight: 600 }}>
-          🔒 Access Restricted
-        </Typography>
-        <Typography>
-          You don't have permission to view Schedule This Week.
-        </Typography>
+    <Card className="h-[420px] w-full overflow-hidden flex flex-col">
+      <CardContent className="flex flex-col h-full">
+
+        {/* HEADER */}
+        <Box className="flex flex-wrap items-center gap-2 mb-3">
+          <Typography className="text-xl font-semibold text-gray-800">
+            Schedule Activity
+          </Typography>
+
+          <div className="flex items-center gap-2 flex-1 flex-wrap">
+            <Select
+              value={filter}
+              onChange={(e) =>
+                setFilter(e.target.value as "day" | "week" | "overdue")
+              }
+              size="small"
+              className="min-w-[120px]"
+            >
+              <MenuItem value="day">Today</MenuItem>
+              <MenuItem value="week">This Week</MenuItem>
+              <MenuItem value="overdue">Overdue</MenuItem>
+            </Select>
+
+            <a
+              href="/dashboard/leads"
+              className="text-[#0792fa] text-sm font-medium hover:underline ml-auto"
+            >
+              View All
+            </a>
+          </div>
+        </Box>
+
+        <Box className="flex-1 flex flex-col">
+
+          {/* LOADING */}
+          {scheduleLoading && (
+            <div className="space-y-3">
+              {[...Array(4)].map((_, i) => (
+                <Skeleton
+                  key={i}
+                  variant="rectangular"
+                  width="100%"
+                  height={70}
+                  className="rounded-lg"
+                />
+              ))}
+            </div>
+          )}
+
+          {/* DATA */}
+          {!scheduleLoading && scheduleAnalytics?.success && (
+            <>
+              {/* SUMMARY */}
+              <div className="flex gap-2 mb-2">
+
+                <div
+                  onClick={() => setFilter("day")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer
+                  ${
+                    filter === "day"
+                      ? "bg-blue-100 text-blue-700 border border-blue-500"
+                      : "border border-gray-300 text-blue-600"
+                  }`}
+                >
+                  {scheduleAnalytics.summary?.todayCount || 0} Today
+                </div>
+
+                <div
+                  onClick={() => setFilter("week")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer
+                  ${
+                    filter === "week"
+                      ? "bg-green-100 text-green-700 border border-green-500"
+                      : "border border-gray-300 text-green-600"
+                  }`}
+                >
+                  {scheduleAnalytics.summary?.weekCount || 0} This Week
+                </div>
+
+                <div
+                  onClick={() => setFilter("overdue")}
+                  className={`px-3 py-1.5 rounded-md text-xs font-semibold cursor-pointer
+                  ${
+                    filter === "overdue"
+                      ? "bg-red-100 text-red-700 border border-red-500"
+                      : "border border-gray-300 text-red-600"
+                  }`}
+                >
+                  {filter === "overdue"
+                    ? filteredLeads.length
+                    : scheduleAnalytics.summary?.overdueCount || 0} Overdue
+                </div>
+              </div>
+
+              {/* LIST */}
+              <div className="flex-1 space-y-3 overflow-y-auto pr-1 min-h-0 max-h-[260px]">
+
+                {filteredLeads.length > 0 ? (
+                  paginatedLeads.map((item: any) => {
+                    const title =
+                      item.followUpTitle ||
+                      `${item.followUpType || "Follow up"} with ${
+                        item.lead?.fullName || "Lead"
+                      }`;
+
+                    const dateLabel = getDateLabel(item.followUpDate);
+                    const type = item.followUpType || "task";
+
+                    const { icon, style } = getIconConfig(type);
+
+                    return (
+                      <div
+                        key={item?._id || item?.id}
+                        onClick={() => handleCardClick(item)}
+                        className="flex items-center justify-between p-2.5 rounded-lg cursor-pointer hover:bg-gray-50 transition"
+                      >
+
+                        {/* LEFT */}
+                        <div className="flex items-center gap-3">
+
+                          <div
+                            className={`w-8 h-8 flex items-center justify-center rounded-full ${style}`}
+                          >
+                            {icon}
+                          </div>
+
+                          <div>
+                            <Typography className="font-medium text-black !text-[15px]">
+                              {title}
+                            </Typography>
+
+                            <Typography className="text-gray-500 !text-[12px]">
+                              {dateLabel} • {item.followUpTime || "--"}
+                            </Typography>
+                          </div>
+                        </div>
+
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="flex items-center justify-center h-full text-gray-500 text-sm">
+                    📅 No activities for this {filter}
+                  </div>
+                )}
+
+              </div>
+
+              {/* PAGINATION */}
+              <div className="mt-4 flex justify-center shrink-0">
+                <Pagination
+                  count={totalPages}
+                  page={page}
+                  onChange={(_, value) => setPage(value)}
+                  size="small"
+                  color="primary"
+                />
+              </div>
+
+            </>
+          )}
+
+          {!scheduleLoading &&
+            (!scheduleAnalytics || !scheduleAnalytics.success) && (
+              <div className="text-red-600 text-center py-6 text-sm">
+                Failed to load schedule data
+              </div>
+            )}
+
+        </Box>
       </CardContent>
     </Card>
   );

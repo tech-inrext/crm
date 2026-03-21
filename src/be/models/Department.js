@@ -4,12 +4,6 @@ import mongoose from "mongoose";
 
 const departmentSchema = new mongoose.Schema(
   {
-    departmentId: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-    },
     name: {
       type: String,
       required: [true, "Department name is required"],
@@ -29,9 +23,20 @@ const departmentSchema = new mongoose.Schema(
     isActive: {
       type: Boolean,
       default: true,
-    }
+    },
+    attachments: [
+      {
+        filename: String,
+        url: String,
+        uploadedAt: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
-export default mongoose.models.Department || mongoose.model("Department", departmentSchema);
+export default mongoose.models.Department ||
+  mongoose.model("Department", departmentSchema);

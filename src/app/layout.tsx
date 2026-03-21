@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "../contexts/AuthContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
+import { ToastProvider } from "../fe/components/Toast/ToastContext";
 import MuiRootProvider from "../components/ui/provider/MuiRootProvider";
 import { PermissionsProvider } from "../contexts/AuthContext";
 import LoginWrapper from "../components/ui/wrapper/LoginWrapper";
@@ -38,9 +39,11 @@ export default function RootLayout({
       >
         <MuiRootProvider>
           <AuthProvider>
-            <NotificationProvider>
-              <LoginWrapper>{children}</LoginWrapper>
-            </NotificationProvider>
+            <ToastProvider>
+              <NotificationProvider>
+                <LoginWrapper>{children}</LoginWrapper>
+              </NotificationProvider>
+            </ToastProvider>
           </AuthProvider>
         </MuiRootProvider>
       </body>

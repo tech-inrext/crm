@@ -42,6 +42,11 @@ const followUpSchema = new mongoose.Schema(
       type: [String],
       default: [], // e.g., ["24H", "2H", "5M", "DUE"]
     },
+    outcome: {
+      type: String,
+      enum: ["pending", "completed", "missed"],
+      default: "pending",
+    },
   },
   { timestamps: true }
 );

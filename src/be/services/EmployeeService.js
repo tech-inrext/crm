@@ -2,6 +2,8 @@ import { Service } from "@framework";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
 import Employee from "../models/Employee";
+import mongoose from "mongoose";
+
 import { leadQueue } from "../queue/leadQueue.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
@@ -662,14 +664,21 @@ class EmployeeService extends Service {
         ? { slabPercentage: { $exists: true, $nin: ["", null] } }
         : {};
 
-      // ✅ Manager filter (only when mouStatus is present): managerId == loggedInId
-      const castManagerId = (id) =>
-        mongoose?.Types?.ObjectId?.isValid?.(id)
-          ? new mongoose.Types.ObjectId(id)
-          : id;
+      // ✅ Manager filter (only when mouStatus is present): 
+      // Only AVP or SystemAdmin can see pending MOUs for their team.
+      let managerFilter = {};
+      if (mouStatus && loggedInId) {
+        if (req.isSystemAdmin) {
+          managerFilter = {}; // SystemAdmin sees all
+        } else if (req.isAVP) {
+          const downlineIds = await this.getDownlineIds(loggedInId);
+          managerFilter = { managerId: { $in: downlineIds } };
+        } else {
+          // Regular managers see nothing in the MOU pending list anymore
+          managerFilter = { _id: null };
+        }
+      }
 
-      const managerFilter =
-        mouStatus && loggedInId ? { managerId: castManagerId(loggedInId) } : {};
 
       const query = {
         ...searchFilter,
@@ -681,6 +690,7 @@ class EmployeeService extends Service {
 
       const [employees, totalEmployees] = await Promise.all([
         Employee.find(query)
+          .select("-password")
           .skip(skip)
           .limit(itemsPerPage)
           .sort({ createdAt: -1 })
@@ -1175,11 +1185,13 @@ class EmployeeService extends Service {
         tree.push({
           _id: emp._id,
           name: emp.name,
+          email: emp.email,
           designation: emp.designation,
           branch: emp.branch,
           managerId: emp.managerId,
           employeeProfileId: emp.employeeProfileId,
           children: children.length ? children : [], // If no subordinates, return empty array
+          ...emp,
         });
       });
     return tree;
@@ -1198,7 +1210,9 @@ class EmployeeService extends Service {
       }
 
       // Fetch all employees
-      const employees = await Employee.find({}).lean();
+      const employees = await Employee.find({})
+        .select("-password -resetOTP -resetOTPExpires")
+        .lean();
 
       // Fetch the manager details
       const manager = employees.find(
@@ -1216,11 +1230,13 @@ class EmployeeService extends Service {
       const hierarchy = {
         _id: manager._id,
         name: manager.name,
+        email: manager.email,
         designation: manager.designation,
         branch: manager.branch,
         managerId: manager.managerId,
         employeeProfileId: manager.employeeProfileId,
         children: this.buildHierarchy(employees, manager._id), // Recursively find subordinates
+        ...manager,
       };
 
       return res.status(200).json({
@@ -1286,6 +1302,67 @@ class EmployeeService extends Service {
       return res.status(500).json({
         success: false,
         message: "Failed to fetch MoU stats for manager",
+        error: error.message,
+      });
+    }
+  }
+
+  async getDownlineIds(managerId) {
+    if (!managerId) return [];
+    try {
+      const allEmployees = await Employee.find({})
+        .select("_id managerId")
+        .lean();
+      const ids = [managerId.toString()];
+
+      const findSubordinates = (mId) => {
+        const subs = allEmployees.filter(
+          (e) => String(e.managerId) === String(mId),
+        );
+        subs.forEach((s) => {
+          ids.push(s._id.toString());
+          findSubordinates(s._id);
+        });
+      };
+
+      findSubordinates(managerId);
+      return ids.map((id) => new mongoose.Types.ObjectId(id));
+    } catch (error) {
+      console.error("Error fetching downline IDs:", error);
+      return [new mongoose.Types.ObjectId(managerId)];
+    }
+  }
+
+
+  async getAllAVPEmployees(req, res) {
+    try {
+      // Find all roles where isAVP is true
+      const avpRoles = await Role.find({ isAVP: true }, "_id");
+      const avpRoleIds = avpRoles.map(role => role._id);
+
+      if (avpRoleIds.length === 0) {
+        return res.status(200).json({
+          success: true,
+          count: 0,
+          data: [],
+        });
+      }
+
+      // Fetch employees who have any of these roles
+      const employees = await Employee.find({ roles: { $in: avpRoleIds } })
+        .select("-password")
+        .sort({ createdAt: -1 })
+        .lean();
+
+      return res.status(200).json({
+        success: true,
+        count: employees.length,
+        data: employees,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch AVP employees",
         error: error.message,
       });
     }

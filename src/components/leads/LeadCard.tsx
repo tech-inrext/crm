@@ -107,6 +107,7 @@ const InfoRow = ({
       <Box
         component="a"
         href={href}
+        onClick={(e) => e.stopPropagation()}
         sx={{
           textDecoration: "none",
           display: "block",
@@ -145,7 +146,7 @@ const LeadCard = memo(
     const theme = useTheme();
 
     const [assignedUser, setAssignedUser] = useState<any>(
-      lead.assignedTo || null,
+      lead.assignedTo || null
     );
     const [isManualAssign, setIsManualAssign] = useState(false);
 
@@ -170,7 +171,7 @@ const LeadCard = memo(
               "Content-Type": "application/json",
             },
             body: JSON.stringify({ assignedTo: user._id }),
-          },
+          }
         );
         if (!response.ok) {
           throw new Error("Failed to update assignment");
@@ -206,17 +207,19 @@ const LeadCard = memo(
     return (
       <Card
         elevation={0}
+        onClick={() => onOpenFeedback(leadId)}
         sx={{
           borderRadius: 4,
           boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
           background: "#fff",
           position: "relative",
-          height: "100%",
+          height: "340px",
           minHeight: "340px",
           display: "flex",
           flexDirection: "column",
           transition: "all 0.3s ease",
           overflow: "visible",
+          cursor: "pointer",
           "&:hover": {
             boxShadow: "0 16px 32px rgba(0,0,0,0.12)",
             transform: "translateY(-4px)",
@@ -224,7 +227,10 @@ const LeadCard = memo(
         }}
       >
         {/* Lead Type Dropdown (Top-Left) */}
-        <Box sx={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}>
+        <Box
+          sx={{ position: "absolute", top: 16, left: 16, zIndex: 1 }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <LeadTypeDropdown
             leadId={lead._id || lead.id || lead.leadId || ""}
             currentLeadType={lead.leadType || ""}
@@ -235,7 +241,10 @@ const LeadCard = memo(
         </Box>
 
         {/* Status Dropdown (Top-Right) */}
-        <Box sx={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}>
+        <Box
+          sx={{ position: "absolute", top: 16, right: 16, zIndex: 10 }}
+          onClick={(e) => e.stopPropagation()}
+        >
           <StatusDropdown
             leadId={lead._id || lead.id || lead.leadId || ""}
             currentStatus={lead.status}
@@ -284,6 +293,47 @@ const LeadCard = memo(
 
           {/* Contact Details Grid */}
           <Stack spacing={1.5}>
+            <Box
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAssignedClick(e);
+              }}
+              sx={{
+                position: "relative",
+                borderRadius: 2,
+                width: 240,
+                ml: 1,
+                // py: 0.5,
+                boxSizing: "border-box",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                cursor: "pointer",
+              }}
+            >
+              <InfoRow
+                icon={<PersonAdd sx={{ fontSize: 16 }} />}
+                text={
+                  <Box sx={{ display: "inline-block" }}>
+                    <Box component="span" sx={{ color: "black" }}>
+                      {assignedUser?.name ||
+                        assignedUser?.fullName ||
+                        "Unassigned"}
+                    </Box>
+                  </Box>
+                }
+                color={theme.palette.secondary.main}
+              />
+
+              {/* ✅ Dropdown Icon */}
+              <KeyboardArrowDown
+                sx={{
+                  fontSize: 20,
+                  color: alpha(theme.palette.secondary.main, 0.7),
+                }}
+              />
+            </Box>
+
             <InfoRow
               icon={<Email sx={{ fontSize: 18 }} />}
               text={lead.email || "Not provided"}
@@ -302,58 +352,6 @@ const LeadCard = memo(
               color={theme.palette.warning.main}
             />
 
-            <Box
-  onClick={handleAssignedClick}
-  sx={{
-    position: "relative",
-    borderRadius: 2,
-    width: 240,
-    ml: 1,
-    py: 0.5,
-    boxSizing: "border-box",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    cursor: "pointer",
-
-    "&::before": {
-      content: '""',
-      position: "absolute",
-      top: 0,
-      bottom: 0,
-      left: -4,   // 👈 border shifted from left
-      right: -4,  // 👈 border shifted from right
-      border: `0.5px solid ${alpha(theme.palette.secondary.main, 0.25)}`,
-      borderRadius: 2,
-      pointerEvents: "none",
-    },
-  }}
->
-  <InfoRow
-    icon={<PersonAdd sx={{ fontSize: 18 }} />}
-    text={
-      <Box sx={{ display: "inline-block" }}>
-        <Box component="span" sx={{ color: "black" }}>
-          {assignedUser?.name ||
-            assignedUser?.fullName ||
-            "Unassigned"}
-        </Box>
-      </Box>
-    }
-    color={theme.palette.secondary.main}
-  />
-
-
-
-              {/* ✅ Dropdown Icon */}
-              <KeyboardArrowDown
-                sx={{
-                  fontSize: 20,
-                  color: alpha(theme.palette.secondary.main, 0.7),
-                }}
-              />
-            </Box>
-
             {/* AssignedDropdown rendered at root for proper closing */}
             {anchorEl && (
               <AssignedDropdown
@@ -363,6 +361,7 @@ const LeadCard = memo(
                   setAnchorEl(null);
                 }}
                 onAssign={handleAssignUser}
+                managerId={lead.managerId}
               />
             )}
           </Stack>
@@ -380,7 +379,10 @@ const LeadCard = memo(
         >
           <PermissionGuard module="lead" action="write" fallback={<></>}>
             <ClickAwayListener onClickAway={() => setActionsOpen(false)}>
-              <Box sx={{ position: "relative", zIndex: 20 }}>
+              <Box
+                sx={{ position: "relative", zIndex: 20 }}
+                onClick={(e) => e.stopPropagation()}
+              >
                 <SpeedDial
                   ariaLabel="Actions"
                   sx={{
@@ -401,7 +403,11 @@ const LeadCard = memo(
                     <SpeedDialIcon icon={<MoreVert sx={{ fontSize: 20 }} />} />
                   }
                   onClose={(_, reason) => {
-                    if (reason === "toggle" || reason === "escapeKeyDown" || reason === "blur") {
+                    if (
+                      reason === "toggle" ||
+                      reason === "escapeKeyDown" ||
+                      reason === "blur"
+                    ) {
                       setActionsOpen(false);
                     }
                   }}
@@ -468,7 +474,7 @@ const LeadCard = memo(
                     onClick={() => {
                       setActionsOpen(false);
                       onScheduleSiteVisit(
-                        lead._id || lead.id || lead.leadId || "",
+                        lead._id || lead.id || lead.leadId || ""
                       );
                     }}
                   />
@@ -479,7 +485,7 @@ const LeadCard = memo(
         </Box>
       </Card>
     );
-  },
+  }
 );
 
 LeadCard.displayName = "LeadCard";

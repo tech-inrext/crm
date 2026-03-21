@@ -90,6 +90,7 @@ export { default as LockReset } from "./LockReset";
 export { default as Logout } from "./Logout";
 export { default as MenuIcon } from "./MenuIcon";
 export { default as MonetizationOn } from "./MonetizationOn";
+export { default as CurrencyRupee } from "./CurrencyRupee";
 export { default as Notes } from "./Notes";
 export { default as Person } from "./Person";
 export { default as People } from "./People";
@@ -119,6 +120,11 @@ export { default as Work } from "./Work";
 export { default as WorkIcon } from "./WorkIcon";
 export { default as PinIcon } from "./PinIcon";
 export { default as HomeIcon } from "./HomeIcon";
+
+// Document upload components
+export { default as DocumentUploadField } from "../documentUploadBox/DocumentUploadField";
+export { default as ImagePreview } from "../documentUploadBox/ImagePreview";
+
 // Hooks and utilities
 export { default as useMediaQuery } from "./useMediaQuery";
 export { default as useTheme } from "./useTheme";

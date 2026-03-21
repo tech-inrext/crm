@@ -1,6 +1,8 @@
 import { Service } from "@framework";
 import Lead from "../models/Lead";
+import Employee from "../models/Employee";
 import FollowUp from "../models/FollowUp";
+import LeadActivity from "../models/LeadActivity";
 import { NotificationHelper } from "../../lib/notification-helpers";
 import mongoose from "mongoose";
 
@@ -30,7 +32,7 @@ class LeadService extends Service {
       }
 
       const leadId = `LD-${Date.now().toString().slice(-6)}-${Math.floor(
-        100 + Math.random() * 900
+        100 + Math.random() * 900,
       )}`;
 
       let loggedInUserId = req.employee?._id || req.employee?.id;
@@ -67,10 +69,13 @@ class LeadService extends Service {
               name: newLead.name,
               phone: newLead.phone,
               priority: "HIGH",
-            }
+            },
           );
         } catch (notificationError) {
-          console.error("Failed to send new lead notification:", notificationError);
+          console.error(
+            "Failed to send new lead notification:",
+            notificationError,
+          );
         }
       }
 
@@ -105,9 +110,36 @@ class LeadService extends Service {
 
     const previousAssignee = lead.assignedTo?.toString();
 
-    lead.assignedTo = assignedTo;
-    lead.updatedBy = loggedInUserId;
-    await lead.save();
+    const changes = {};
+    if (previousAssignee !== assignedTo) {
+      let prevValue = previousAssignee || "";
+      let newValue = assignedTo || "";
+
+      if (previousAssignee) {
+        const prevEmployee = await Employee.findById(previousAssignee).select("name fullName").lean();
+        if (prevEmployee) prevValue = prevEmployee.fullName || prevEmployee.name || previousAssignee;
+      }
+      if (assignedTo) {
+        const newEmployee = await Employee.findById(assignedTo).select("name fullName").lean();
+        if (newEmployee) newValue = newEmployee.fullName || newEmployee.name || assignedTo;
+      }
+
+      changes.assignedTo = { prev: prevValue, new: newValue };
+    }
+
+    // Use updateOne to avoid full-document validation on non-assignedTo fields
+    await Lead.updateOne(
+      { _id: leadId },
+      { $set: { assignedTo, updatedBy: loggedInUserId } },
+    );
+
+    if (Object.keys(changes).length > 0) {
+      await LeadActivity.create({
+        leadId: lead._id,
+        change: changes,
+        updatedBy: loggedInUserId,
+      });
+    }
 
     // 🔔 Notify ONLY if assignee changed
     if (previousAssignee !== assignedTo) {
@@ -122,36 +154,92 @@ class LeadService extends Service {
             name: lead.name,
             phone: lead.phone,
             priority: "HIGH",
-          }
+          },
         );
       } catch (e) {
         console.error("Assign notification failed", e);
       }
     }
 
+    // Fetch updated lead to return
+    const updatedLead = await Lead.findById(leadId);
+
     return res.status(200).json({
       success: true,
-      data: lead,
+      data: updatedLead,
       message: "Lead assigned successfully",
     });
   }
 
+  // 🔹 Helper to fetch all subordinates in a hierarchy (downline)
+  async getDownlineIds(managerId) {
+    if (!managerId) return [];
+    try {
+      const allEmployees = await Employee.find({})
+        .select("_id managerId")
+        .lean();
+      const ids = [managerId.toString()];
+
+      const findSubordinates = (mId) => {
+        const subs = allEmployees.filter(
+          (e) => String(e.managerId) === String(mId),
+        );
+        subs.forEach((s) => {
+          ids.push(s._id.toString());
+          findSubordinates(s._id);
+        });
+      };
+
+      findSubordinates(managerId);
+      // Return as ObjectIds for reliable matching in MongoDB
+      return ids.map((id) => new mongoose.Types.ObjectId(id));
+    } catch (error) {
+      console.error("Error fetching downline IDs:", error);
+      return [new mongoose.Types.ObjectId(managerId)];
+    }
+  }
 
   async getAllLeads(req, res) {
     try {
-      const { page = 1, limit = 5, search = "", status } = req.query;
+      const {
+        page = 1,
+        limit = 5,
+        search = "",
+        status,
+        leadType,
+        propertyName,
+        budgetRange,
+        assignedTo,
+      } = req.query;
       const currentPage = parseInt(page);
       const itemsPerPage = parseInt(limit);
       const skip = (currentPage - 1) * itemsPerPage;
 
+      console.log("req.isAVP", req.isAVP);
+      console.log("req.isSystemAdmin", req.isSystemAdmin);
+
       const loggedInUserId = req.employee?._id;
-      const baseQuery = {
-        $or: [
-          { uploadedBy: loggedInUserId },
-          { managerId: loggedInUserId },
-          { assignedTo: loggedInUserId },
-        ],
-      };
+
+      // 🛡️ Determine visibility based on role and hierarchy
+      let baseQuery = {};
+      if (req.isSystemAdmin) {
+        // System Admins see all leads across the entire system
+        baseQuery = {};
+      } else if (req.isAVP) {
+        baseQuery = {
+          $or: [{ managerId: { $in: loggedInUserId } }],
+        };
+      } else {
+        // Managers and Agents see leads from their entire downline hierarchy
+        const downlineIds = await this.getDownlineIds(loggedInUserId);
+        baseQuery = {
+          $or: [
+            // { uploadedBy: { $in: downlineIds } },
+            // { managerId: { $in: loggedInUserId } },
+            { assignedTo: { $in: downlineIds } },
+          ],
+        };
+      }
 
       const searchQuery = search
         ? {
@@ -167,7 +255,10 @@ class LeadService extends Service {
       if (status) {
         const statuses = Array.isArray(status)
           ? status
-          : String(status).split(",").map((s) => s.trim()).filter(Boolean);
+          : String(status)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
 
         if (statuses.length) {
           statusQuery = {
@@ -176,33 +267,134 @@ class LeadService extends Service {
         }
       }
 
+      let leadTypeQuery = {};
+      if (leadType) {
+        const types = Array.isArray(leadType)
+          ? leadType
+          : String(leadType)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+        if (types.length) {
+          leadTypeQuery = {
+            leadType: { $in: types.map((t) => new RegExp(`^${t}$`, "i")) },
+          };
+        }
+      }
+
+      let propertyQuery = {};
+      if (propertyName) {
+        const properties = Array.isArray(propertyName)
+          ? propertyName
+          : String(propertyName)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+        if (properties.length) {
+          propertyQuery = {
+            propertyName: {
+              $in: properties.map((p) => new RegExp(`^${p}$`, "i")),
+            },
+          };
+        }
+      }
+
+      let budgetQuery = {};
+      if (budgetRange) {
+        const budgets = Array.isArray(budgetRange)
+          ? budgetRange
+          : String(budgetRange)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+        if (budgets.length) {
+          budgetQuery = {
+            budgetRange: { $in: budgets.map((b) => new RegExp(`^${b}$`, "i")) },
+          };
+        }
+      }
+
+      let assignedToQuery = {};
+      if (assignedTo) {
+        const { assignedToMode = "direct" } = req.query;
+        const userIds = Array.isArray(assignedTo)
+          ? assignedTo
+          : String(assignedTo)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+        if (userIds.length) {
+          const includeUnassigned = userIds.includes("unassigned");
+          const validIds = userIds.filter((id) => id !== "unassigned");
+          const clauses = [];
+
+          if (validIds.length) {
+            if (assignedToMode === "hierarchy" && validIds.length === 1) {
+              const downlineIds = await this.getDownlineIds(validIds[0]);
+              clauses.push({ assignedTo: { $in: downlineIds } });
+            } else {
+              clauses.push({ assignedTo: { $in: validIds } });
+            }
+          }
+          if (includeUnassigned) {
+            clauses.push({ assignedTo: { $exists: false } });
+            clauses.push({ assignedTo: null });
+          }
+
+          if (clauses.length === 1) {
+            assignedToQuery = clauses[0];
+          } else if (clauses.length > 1) {
+            assignedToQuery = { $or: clauses };
+          }
+        }
+      }
+
       const queryParts = [baseQuery];
       if (Object.keys(searchQuery).length) queryParts.push(searchQuery);
       if (Object.keys(statusQuery).length) queryParts.push(statusQuery);
+      if (Object.keys(leadTypeQuery).length) queryParts.push(leadTypeQuery);
+      if (Object.keys(propertyQuery).length) queryParts.push(propertyQuery);
+      if (Object.keys(budgetQuery).length) queryParts.push(budgetQuery);
+      if (Object.keys(assignedToQuery).length) queryParts.push(assignedToQuery);
 
       const query = queryParts.length > 1 ? { $and: queryParts } : baseQuery;
 
       const [leads, totalLeads] = await Promise.all([
-        Lead.find(query).populate("assignedTo", "fullName name email").populate("uploadedBy", "fullName name").populate("managerId", "fullName name").skip(skip).limit(itemsPerPage).sort({ createdAt: -1 }).lean(),
+        Lead.find(query)
+          .populate("assignedTo", "fullName name email")
+          .populate("uploadedBy", "fullName name")
+          .populate("managerId", "fullName name")
+          .skip(skip)
+          .limit(itemsPerPage)
+          .sort({ createdAt: -1 })
+          .lean(),
         Lead.countDocuments(query),
       ]);
 
       // Merge follow-up data for each lead (AGGREGATING NEW SCHEMA)
-      const mergedLeads = await Promise.all(leads.map(async (lead) => {
-        // 1. Get Count
-        const count = await FollowUp.countDocuments({ leadId: lead._id });
+      const mergedLeads = await Promise.all(
+        leads.map(async (lead) => {
+          // 1. Get Count
+          const count = await FollowUp.countDocuments({ leadId: lead._id });
 
-        // 2. Get Latest
-        const latest = await FollowUp.findOne({ leadId: lead._id }).sort({ createdAt: -1 }).lean();
+          // 2. Get Latest
+          const latest = await FollowUp.findOne({ leadId: lead._id })
+            .sort({ createdAt: -1 })
+            .lean();
 
-        return {
-          ...lead,
-          followUpCount: count, // Used for Badge
-          nextFollowUp: latest ? latest.followUpDate : null,
-          // Providing empty arrays as notes are no longer on Lead object
-          followUpNotes: latest ? [latest.note] : []
-        };
-      }));
+          return {
+            ...lead,
+            followUpCount: count, // Used for Badge
+            nextFollowUp: latest ? latest.followUpDate : null,
+            // Providing empty arrays as notes are no longer on Lead object
+            followUpNotes: latest ? [latest.note] : [],
+          };
+        }),
+      );
 
       return res.status(200).json({
         success: true,
@@ -239,7 +431,9 @@ class LeadService extends Service {
       const lead = await Lead.findOne(query);
 
       if (!lead) {
-        return res.status(404).json({ success: false, error: "Lead not found" });
+        return res
+          .status(404)
+          .json({ success: false, error: "Lead not found" });
       }
 
       const hasAccess =
@@ -255,7 +449,9 @@ class LeadService extends Service {
 
       // Aggregating FollowUps
       const count = await FollowUp.countDocuments({ leadId: lead._id });
-      const latest = await FollowUp.findOne({ leadId: lead._id }).sort({ createdAt: -1 }).lean();
+      const latest = await FollowUp.findOne({ leadId: lead._id })
+        .sort({ createdAt: -1 })
+        .lean();
 
       leadObj.followUpCount = count;
       leadObj.nextFollowUp = latest ? latest.followUpDate : null;
@@ -263,7 +459,9 @@ class LeadService extends Service {
       return res.status(200).json({ success: true, data: leadObj });
     } catch (error) {
       console.error("Error fetching lead:", error);
-      return res.status(500).json({ success: false, error: "Error: " + error.message });
+      return res
+        .status(500)
+        .json({ success: false, error: "Error: " + error.message });
     }
   }
 
@@ -284,7 +482,9 @@ class LeadService extends Service {
 
       const originalLead = await Lead.findOne(query);
       if (!originalLead) {
-        return res.status(404).json({ success: false, error: "Lead not found" });
+        return res
+          .status(404)
+          .json({ success: false, error: "Lead not found" });
       }
 
       // Explicitly handle leadType
@@ -302,15 +502,45 @@ class LeadService extends Service {
         updateFields.assignedTo = null;
       }
 
+      const changes = {};
+      for (const key in updateFields) {
+        if (key === "updatedBy") continue;
+        let oldVal = originalLead[key]?.toString() || "";
+        let newVal = updateFields[key]?.toString() || "";
+        if (oldVal !== newVal) {
+          if (["assignedTo", "managerId", "uploadedBy"].includes(key)) {
+            if (oldVal) {
+              const oldEmp = await Employee.findById(oldVal).select("name fullName").lean();
+              if (oldEmp) oldVal = oldEmp.fullName || oldEmp.name || oldVal;
+            }
+            if (newVal) {
+              const newEmp = await Employee.findById(newVal).select("name fullName").lean();
+              if (newEmp) newVal = newEmp.fullName || newEmp.name || newVal;
+            }
+          }
+          changes[key] = { prev: oldVal, new: newVal };
+        }
+      }
+
       // Use _id from the found lead to ensure update works
       const updatedLead = await Lead.findByIdAndUpdate(
         originalLead._id,
         { $set: { ...updateFields, updatedBy: loggedInUserId } },
-        { new: true }
+        { new: true },
       );
 
+      if (Object.keys(changes).length > 0) {
+        await LeadActivity.create({
+          leadId: updatedLead._id,
+          change: changes,
+          updatedBy: loggedInUserId,
+        });
+      }
+
       if (!updatedLead) {
-        return res.status(404).json({ success: false, error: "Lead not found during update" });
+        return res
+          .status(404)
+          .json({ success: false, error: "Lead not found during update" });
       }
 
       // Notifications (Status & Assign) logic kept the same...
@@ -321,17 +551,31 @@ class LeadService extends Service {
             updatedLead.assignedTo || req.employee._id,
             originalLead.status,
             updateFields.status,
-            { leadId: updatedLead.leadId, company: updatedLead.company, name: updatedLead.name, phone: updatedLead.phone }
+            {
+              leadId: updatedLead.leadId,
+              company: updatedLead.company,
+              name: updatedLead.name,
+              phone: updatedLead.phone,
+            },
           );
         } catch (e) { }
       }
-      if (updateFields.assignedTo && originalLead.assignedTo?.toString() !== updateFields.assignedTo) {
+      if (
+        updateFields.assignedTo &&
+        originalLead.assignedTo?.toString() !== updateFields.assignedTo
+      ) {
         try {
           await NotificationHelper.notifyLeadAssigned(
             updatedLead._id,
             updateFields.assignedTo,
             req.employee._id,
-            { leadId: updatedLead.leadId, company: updatedLead.company, name: updatedLead.name, phone: updatedLead.phone, priority: "HIGH" }
+            {
+              leadId: updatedLead.leadId,
+              company: updatedLead.company,
+              name: updatedLead.name,
+              phone: updatedLead.phone,
+              priority: "HIGH",
+            },
           );
         } catch (e) { }
       }

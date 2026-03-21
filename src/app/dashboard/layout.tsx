@@ -127,6 +127,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
   },
   {
+    label: "Departments",
+    href: "/dashboard/department",
+    module: "department",
+    icon: <GroupIcon sx={{ color: "#3785FF" }} />,
+  },
+  {
     label: "Notifications",
     href: "/dashboard/notifications",
     icon: <Notifications sx={{ color: "#3785FF" }} />,
@@ -201,6 +207,7 @@ export default function DashboardLayout({
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
             <Box
+              key={String(typeof user?.currentRole === "object" ? user?.currentRole?._id : user?.currentRole)}
               component="main"
               sx={{
                 flexGrow: 1,

@@ -2,6 +2,7 @@
 import { Service } from "@framework";
 import FollowUp from "../models/FollowUp";
 import Lead from "../models/Lead";
+import LeadActivity from "../models/LeadActivity";
 import dbConnect from "../../lib/mongodb";
 import mongoose from "mongoose";
 
@@ -10,12 +11,12 @@ class FollowUpService extends Service {
   async findLeadByIdentifier(identifier) {
     if (!identifier) return null;
     const identifierStr = String(identifier);
-    
+
     // Check if valid ObjectId
     if (mongoose.Types.ObjectId.isValid(identifierStr)) {
-        // Double check if it exists
-        const byId = await Lead.findById(identifierStr);
-        if (byId) return byId;
+      // Double check if it exists
+      const byId = await Lead.findById(identifierStr);
+      if (byId) return byId;
     }
 
     // Check by custom leadId
@@ -29,16 +30,16 @@ class FollowUpService extends Service {
     try {
       await dbConnect();
       const { leadId, leadIdentifier, followUpDate, note, followUpType } = req.body || {};
-      
+
       console.log(`[FollowUpService] Processing request:`, { leadId, leadIdentifier, type: followUpType });
 
       // 1. Resolve Lead
       let targetLead = null;
       if (leadId) {
-          targetLead = await this.findLeadByIdentifier(leadId);
+        targetLead = await this.findLeadByIdentifier(leadId);
       }
       if (!targetLead && leadIdentifier) {
-          targetLead = await this.findLeadByIdentifier(leadIdentifier);
+        targetLead = await this.findLeadByIdentifier(leadIdentifier);
       }
 
       if (!targetLead) {
@@ -53,7 +54,7 @@ class FollowUpService extends Service {
       // Note: We no longer Append. We ALWAYS create a new document.
       const validTypes = ["site visit", "call back", "note"];
       const safeType = validTypes.includes(followUpType) ? followUpType : "note";
-      
+
       const newFollowUp = new FollowUp({
         leadId: targetLead._id,
         followUpDate: followUpDate || new Date(), // Default to now if not provided
@@ -80,22 +81,29 @@ class FollowUpService extends Service {
       // 1. Resolve Lead
       let targetLead = null;
       if (leadId) {
-          targetLead = await this.findLeadByIdentifier(leadId);
+        targetLead = await Lead.findById(leadId).populate("uploadedBy", "name email");
+        if (!targetLead) targetLead = await Lead.findOne({ leadId }).populate("uploadedBy", "name email");
       }
       if (!targetLead && leadIdentifier) {
-          targetLead = await this.findLeadByIdentifier(leadIdentifier);
+        targetLead = await this.findLeadByIdentifier(leadIdentifier);
+        if (targetLead) {
+          await targetLead.populate("uploadedBy", "name email");
+        }
       }
 
       if (!targetLead) {
-         // Return empty if lead not found (soft fail for frontend search)
-         return res.status(200).json({ success: true, data: [] });
+        // Return empty if lead not found (soft fail for frontend search)
+        return res.status(200).json({ success: true, data: [] });
       }
 
       // 2. Fetch History
       // Find ALL documents matching this leadId
       const history = await FollowUp.find({ leadId: targetLead._id })
-        .sort({ createdAt: 1 }) // Oldest first (latest at bottom)
         .populate("submittedBy", "name email") // Get basic user details
+        .lean();
+
+      const activities = await LeadActivity.find({ leadId: targetLead._id })
+        .populate("updatedBy", "name email")
         .lean();
 
       // 3. Format for Frontend
@@ -107,21 +115,75 @@ class FollowUpService extends Service {
         cabBookingId: doc.cabBookingId,
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
-        submittedByName: doc.submittedBy?.name || "System/Unknown"
+        submittedByName: doc.submittedBy?.name || "System/Unknown",
+        outcome: doc.outcome || "pending"
       }));
 
-      return res.status(200).json({ 
-          success: true, 
-          data: formattedHistory,
-          lead: {
-              fullName: targetLead.fullName,
-              phone: targetLead.phone,
-              id: targetLead._id
-          }
+      const formattedActivities = activities.map(doc => ({
+        _id: doc._id,
+        followUpType: "history",
+        change: doc.change,
+        createdAt: doc.createdAt,
+        updatedAt: doc.updatedAt,
+        submittedByName: doc.updatedBy?.name || "System/Unknown",
+      }));
+
+      const creationEntry = {
+        _id: targetLead._id + "_creation",
+        followUpType: "history",
+        note: "Lead Created by ",
+        createdAt: targetLead.createdAt,
+        updatedAt: targetLead.createdAt,
+        submittedByName: targetLead.uploadedBy?.name || "System/Unknown",
+        isCreation: true,
+      };
+
+      const combinedArr = [creationEntry, ...formattedHistory, ...formattedActivities];
+      combinedArr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+      return res.status(200).json({
+        success: true,
+        data: combinedArr,
+        lead: {
+          fullName: targetLead.fullName,
+          phone: targetLead.phone,
+          id: targetLead._id
+        }
       });
 
     } catch (error) {
       console.error("[FollowUpService] Get History Error:", error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  async updateFollowUpOutcome(req, res) {
+    try {
+      await dbConnect();
+      const { followUpId, outcome } = req.body || {};
+
+      if (!followUpId || !outcome) {
+        return res.status(400).json({ success: false, message: "Missing required fields" });
+      }
+
+      const validOutcomes = ["pending", "completed", "missed"];
+      if (!validOutcomes.includes(outcome)) {
+        return res.status(400).json({ success: false, message: "Invalid outcome value" });
+      }
+
+      const updatedFollowUp = await FollowUp.findByIdAndUpdate(
+        followUpId,
+        { outcome },
+        { new: true }
+      );
+
+      if (!updatedFollowUp) {
+        return res.status(404).json({ success: false, message: "Follow-up not found" });
+      }
+
+      return res.status(200).json({ success: true, data: updatedFollowUp, message: "Outcome updated successfully" });
+    } catch (error) {
+      console.error("[FollowUpService] Update Outcome Error:", error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }

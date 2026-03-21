@@ -25,7 +25,11 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
   handlePrimaryImageError,
 }) => {
   return (
-    <Box className="relative h-[1500px] sm:h-[850px] md:h-[500px] bg-gradient-to-br from-blue-600 to-blue-900 text-white flex flex-col justify-between p-2 md:p-3 overflow-hidden">
+    <Box
+      className="
+    relative h-[200px] sm:h-[850px] md:h-[600px] min-h-[170px]  bg-gradient-to-br from-[#1976d2] to-[#0f5293] text-white flex flex-col justify-between p-2 md:p-4 overflow-hidden"
+    >
+      {/* Background Image */}
       {primaryImageUrl && !primaryImageError && (
         <Box
           component="img"
@@ -37,76 +41,63 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
         />
       )}
 
+      {/* Loader */}
       {primaryImageLoading && primaryImageUrl && !primaryImageError && (
-        <Box className="absolute top-0 left-0 w-full h-full flex items-center justify-center bg-black/30">
-          <CircularProgress className="text-white" />
+        <Box className="absolute inset-0 flex items-center justify-center bg-black/30">
+          <CircularProgress sx={{ color: "white" }} />
         </Box>
       )}
 
-     <Box className="absolute top-0 left-0 right-0 bottom-0 z-[0] bg-[linear-gradient(135deg,rgba(25,118,210,0.95)_0%,rgba(15,82,147,0.85)_100%)]" />
+      {/* Overlay */}
+      <Box className="absolute inset-0 z-[1] bg-[linear-gradient(135deg,rgba(25,118,210,0.95)_0%,rgba(15,82,147,0.85)_100%)]" />
 
-      <Box
-        className="relative z-20 flex justify-end items-end">
-        {/* Your content here */}
+      {/* Close Button */}
+      <Box className="flex justify-end relative z-[2]">
         <IconButton
           onClick={onClose}
-          sx={{
-            color: "white",
-            backgroundColor: "rgba(255,255,255,0.15)",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            "&:hover": {
-              backgroundColor: "rgba(255,255,255,0.25)",
-              transform: "scale(1.1)",
-            },
-            transition: "all 0.2s ease",
-          }}
+          className="text-white bg-white/15 backdrop-blur-[10px] border border-white/20 transition-all duration-200 ease-in-out hover:bg-white/25 hover:scale-110"
         >
           <Close />
         </IconButton>
       </Box>
 
-      <Box className="flex items-end justify-between flex-wrap mt-auto relative z-2">
-        <Box className="flex-1 min-w-full md:min-w-0 ml-auto">
-  <h2 className="font-extrabold text-[1.8rem] sm:text-[2.5rem] md:text-[2.5rem] leading-[1.1]">
-    {property.projectName}
-  </h2>
-
-  <Box className="flex items-center flex-wrap gap-6">
-    <Box className="flex items-center mb-1">
-      <Business className="mr-6 text-[24px] opacity-90" />
-      <Typography className="text-lg font-semibold opacity-95">
-        {property.builderName}
-      </Typography>
-    </Box>
-  </Box>
-</Box>
-
-        <Box
-          sx={{
-            textAlign: { xs: "left", md: "right" },
-            background: "rgba(255,255,255,0.15)",
-            backdropFilter: "blur(10px)",
-            border: "1px solid rgba(255,255,255,0.2)",
-            borderRadius: 4,
-            p: { xs: 1, md: 2 },
-            minWidth: { xs: "100%", md: 280 },
-            mt: { xs: 0, md: 0 },
-          }}
-        >
+      {/* Content */}
+      <Box className="flex items-end justify-between flex-wrap mt-auto z-[2] relative">
+        <Box className="flex-1 min-w-full md:min-w-0">
           <Typography
-            variant="h3"
-            fontWeight={800}
-            sx={{
-              textShadow: "0 2px 10px rgba(0,0,0,0.3)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: { xs: "flex-start", md: "flex-end" },
-              fontSize: { xs: "1.5rem", md: "2rem" },
-            }}
+            className="
+    !font-extrabold
+    !text-[1.4rem] sm:!text-[2.5rem] md:!text-[3rem]
+    !leading-[1.1]
+    [text-shadow:0_4px_20px_rgba(0,0,0,0.4)]
+  "
           >
-            {property?.price
-              ? `${property.price}${property?.sizeUnit ? `/${property.sizeUnit}` : ""}`
+            {property.projectName}
+          </Typography>
+
+          <Box className="flex items-center flex-wrap gap-2">
+            <Box className="flex items-center mb-2">
+              <Business className="mr-1 text-[20px] opacity-90" />
+
+              <Typography className="!font-semibold opacity-95 !text-[1.25rem]">
+                {property.builderName}
+              </Typography>
+            </Box>
+          </Box>
+        </Box>
+
+        <Box className="text-left md:text-right bg-white/15 backdrop-blur-[10px] border border-white/20 rounded-lg p-1 md:p-2 min-w-full md:min-w-[280px]">
+          <Typography
+            className="
+    !flex !items-center
+    !justify-start md:!justify-end
+    !font-extrabold
+    !text-[1.3rem] md:!text-[2.5rem]
+    [text-shadow:0_2px_10px_rgba(0,0,0,0.3)]
+  "
+          >
+            {property.price
+              ? `${property.price}${property.sizeUnit ? ` / ${property.sizeUnit}` : ""}`
               : "Contact for Price"}
           </Typography>
         </Box>

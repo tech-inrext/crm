@@ -45,6 +45,10 @@ const roleSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    isAVP: {
+      type: Boolean,
+      default: false,
+    },
     read: {
       type: [String],
       enum: modules,

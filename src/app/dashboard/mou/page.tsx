@@ -134,11 +134,12 @@ const MOUPage: React.FC = () => {
                         // call server endpoint which will set status, upload PDF and send email
                         await axios.post(`/api/v0/mou/approve-and-send/${id}`);
 
-                        // Keep the current view (Pending) — do not auto-switch to Completed.
-                        // Notify user of success.
-                        setSnackMsg("MOU approved and email sent to associate");
-                        setSnackSeverity("success");
-                        setSnackOpen(true);
+                         // Refresh the list
+                         await load(page, rowsPerPage, "", "Pending");
+
+                         setSnackMsg("MOU approved and email sent to associate");
+                         setSnackSeverity("success");
+                         setSnackOpen(true);
                       } catch (e) {
                         console.error("approve failed", e);
                         // rollback local optimistic change by reloading pending list
@@ -158,10 +159,21 @@ const MOUPage: React.FC = () => {
                     }}
                     onReject={async (id) => {
                       try {
-                        await markStatus(id, "Rejected");
+                        // Mark as rejected via dedicated endpoint
+                        await axios.post(`/api/v0/mou/reject/${id}`);
+                        
+                        // Notify user
+                        setSnackMsg("MOU rejected");
+                        setSnackSeverity("success");
+                        setSnackOpen(true);
+
+                        // Refresh the list
                         await load(page, rowsPerPage, "", "Pending");
                       } catch (e) {
-                        console.error(e);
+                        console.error("reject failed", e);
+                        setSnackMsg("Failed to reject MOU");
+                        setSnackSeverity("error");
+                        setSnackOpen(true);
                       }
                     }}
                     onResend={async (id) => {
