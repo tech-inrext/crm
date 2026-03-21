@@ -7,26 +7,21 @@ import {
   TextField,
   IconButton,
   Typography,
-  Box,
+  People,
+  Search,
+  Refresh,
+  Clear
 } from "@/components/ui/Component";
-import {
-  People as PeopleIcon,
-  Search as SearchIcon,
-  Refresh as RefreshIcon,
-  Clear as ClearIcon,
-} from "@/components/ui/Component";
-import { Employee } from "@/types/team-hierarchy";
 
-interface HierarchyControlsProps {
-  employees: Employee[];
-  selectedManager: string | null;
-  totalCount: number;
-  search: string;
-  loading: boolean;
-  onManagerChange: (managerId: string | null) => void;
-  onSearchChange: (search: string) => void;
-  onRefresh: () => void;
-}
+import { Employee, HierarchyControlsProps } from "../types";
+import {
+  controlsStackSx,
+  totalMembersChipSx,
+  managerAutocompleteSx,
+  searchTextFieldSx,
+  searchIconSx,
+  clearButtonSx,
+} from "./styles";
 
 export const HierarchyControls: React.FC<HierarchyControlsProps> = ({
   employees,
@@ -45,15 +40,15 @@ export const HierarchyControls: React.FC<HierarchyControlsProps> = ({
       direction="row"
       spacing={1}
       alignItems="center"
-      sx={{ mt: { xs: 2, md: 0 }, flexWrap: "wrap" }}
+      sx={controlsStackSx}
     >
       <Tooltip title="Total members in this hierarchy">
         <Chip
-          icon={<PeopleIcon />}
+          icon={<People />}
           label={`${totalCount} Members`}
           color="success"
           variant="filled"
-          sx={{ fontWeight: 600 }}
+          sx={totalMembersChipSx}
         />
       </Tooltip>
 
@@ -63,7 +58,7 @@ export const HierarchyControls: React.FC<HierarchyControlsProps> = ({
           if (typeof opt === 'string') return opt;
           return opt.name || opt.employeeProfileId || "";
         }}
-        sx={{ width: 280 }}
+        sx={managerAutocompleteSx}
         value={selectedEmployee || null}
         onChange={(_, val) => {
           if (typeof val === 'string' || Array.isArray(val)) return;
@@ -97,18 +92,16 @@ export const HierarchyControls: React.FC<HierarchyControlsProps> = ({
         placeholder="Search team member or role"
         value={search}
         onChange={(e) => onSearchChange(e.target.value)}
-        sx={{ minWidth: 240 }}
+        sx={searchTextFieldSx}
         InputProps={{
-          startAdornment: (
-            <SearchIcon sx={{ mr: 1, color: "text.secondary" }} />
-          ),
+          startAdornment: <Search sx={searchIconSx} />,
           endAdornment: search ? (
             <IconButton
               size="small"
               onClick={() => onSearchChange("")}
-              sx={{ mr: -1 }}
+              sx={clearButtonSx}
             >
-              <ClearIcon fontSize="small" />
+              <Clear fontSize="small" />
             </IconButton>
           ) : null,
         }}
@@ -116,7 +109,7 @@ export const HierarchyControls: React.FC<HierarchyControlsProps> = ({
 
       <Tooltip title="Refresh hierarchy">
         <IconButton color="primary" onClick={onRefresh} disabled={loading}>
-          <RefreshIcon />
+          <Refresh />
         </IconButton>
       </Tooltip>
     </Stack>

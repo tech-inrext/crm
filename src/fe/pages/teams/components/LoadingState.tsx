@@ -1,15 +1,10 @@
 import React from "react";
 import { Box, CircularProgress, Typography } from "@/components/ui/Component";
+import { loadingStateSx } from "./styles";
 
 export const LoadingState: React.FC = () => (
   <Box
-    sx={{
-      display: "flex",
-      flexDirection: "column",
-      alignItems: "center",
-      justifyContent: "center",
-      p: 8,
-    }}
+    sx={loadingStateSx}
   >
     <CircularProgress size={48} />
     <Typography sx={{ mt: 2, color: "text.secondary" }}>
