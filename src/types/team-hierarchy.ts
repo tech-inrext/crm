@@ -17,7 +17,4 @@ export interface HierarchyState {
   totalCount: number;
 }
 
-export interface HierarchyFilters {
-  search: string;
-  selectedManager: string | null;
-}
+

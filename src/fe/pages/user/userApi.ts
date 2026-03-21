@@ -1,4 +1,4 @@
-import createApi from "@/fe/hooks/createApi";
+import createApi from "@/fe/framework/hooks/createApi";
 
 const userApi = createApi({
   endpoints: {

@@ -1,4 +1,4 @@
-import createApi from "@/fe/hooks/createApi";
+import createApi from "@/fe/framework/hooks/createApi";
 import { DEPARTMENTS_API_BASE } from "@/fe/pages/department/constants/departments";
 
 const departmentApi = createApi({

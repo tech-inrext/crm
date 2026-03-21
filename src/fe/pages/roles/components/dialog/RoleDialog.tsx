@@ -10,6 +10,7 @@ import {
   Typography,
   Box,
   Checkbox,
+  Button
 } from "@/components/ui/Component";
 import ButtonComponent from "@/components/ui/Component/ButtonComponent";
 import { capitalizeFriendly } from "@/fe/pages/roles/utils";
@@ -204,13 +205,13 @@ const RoleDialog: React.FC<RoleDialogProps> = ({
         <ButtonComponent onClick={onClose} color="inherit">
           Cancel
         </ButtonComponent>
-        <ButtonComponent
+        <Button
           onClick={handleSubmit}
           variant="contained"
           disabled={!roleName.trim()}
         >
           {role ? "Save" : "Add"}
-        </ButtonComponent>
+        </Button>
       </DialogActions>
     </Dialog>
   );

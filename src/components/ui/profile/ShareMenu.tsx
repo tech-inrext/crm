@@ -140,7 +140,7 @@ const ShareMenu: React.FC<ShareMenuProps> = ({
   const handleShareWhatsApp = () => {
     if (userId && userName) {
       const url = getVisitingCardUrl();
-      const message = `Check out ${userName}'s digital visiting card: ${url}`;
+      const message = `${url}`;
       const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
       window.open(whatsappUrl, '_blank');
       onClose();
