@@ -31,9 +31,11 @@ class CabBookingService {
           const names = Array.isArray(vendorNames)
             ? vendorNames
             : vendorNames.split(",");
+
           or.push({
             cabOwnerName: { $in: names.map((n) => new RegExp(n.trim(), "i")) },
           });
+
           or.push({
             driverName: { $in: names.map((n) => new RegExp(n.trim(), "i")) },
           });
@@ -43,6 +45,7 @@ class CabBookingService {
           const emails = Array.isArray(vendorEmails)
             ? vendorEmails
             : vendorEmails.split(",");
+
           or.push({
             email: { $in: emails.map((e) => new RegExp(e.trim(), "i")) },
           });
@@ -52,26 +55,51 @@ class CabBookingService {
       }
 
       /* ---------------- Totals ---------------- */
+
       const [
         totalCabBookings,
         completedCabBookings,
         pendingCabBookings,
+        paymentDueCabBookings,
         totalSpend,
+        paymentDueAmount,
         cabVendorNames,
       ] = await Promise.all([
         CabBooking.countDocuments(filters),
-        CabBooking.countDocuments({ ...filters, status: /completed/i }),
-        CabBooking.countDocuments({ ...filters, status: /pending/i }),
+
+        CabBooking.countDocuments({
+          ...filters,
+          status: /completed/i,
+        }),
+
+        CabBooking.countDocuments({
+          ...filters,
+          status: /pending|waiting|scheduled/i,
+        }),
+
+        CabBooking.countDocuments({
+          ...filters,
+          status: /payment_due/i,
+        }),
+
         CabBooking.aggregate([
           { $match: filters },
           { $group: { _id: null, total: { $sum: "$fare" } } },
         ]).then((r) => r[0]?.total || 0),
+
+        CabBooking.aggregate([
+          { $match: { ...filters, status: /payment_due/i } },
+          { $group: { _id: null, total: { $sum: "$fare" } } },
+        ]).then((r) => r[0]?.total || 0),
+
         CabVendor.distinct("cabOwnerName", vendorCond),
       ]);
 
       /* ---------------- Cab Vendor Analytics ---------------- */
+
       const vendorAnalytics = await Employee.aggregate([
         { $match: { isCabVendor: true, ...vendorCond } },
+
         {
           $lookup: {
             from: "cabbookings",
@@ -87,9 +115,11 @@ class CabBookingService {
             as: "bookings",
           },
         },
+
         {
           $addFields: {
             totalBookings: { $size: "$bookings" },
+
             completedBookings: {
               $size: {
                 $filter: {
@@ -103,6 +133,7 @@ class CabBookingService {
                 },
               },
             },
+
             pendingBookings: {
               $size: {
                 $filter: {
@@ -110,16 +141,52 @@ class CabBookingService {
                   cond: {
                     $regexMatch: {
                       input: "$$this.status",
-                      regex: /pending/i,
+                      regex: /pending|waiting|scheduled/i,
                     },
                   },
                 },
               },
             },
+
+            paymentDueBookings: {
+              $size: {
+                $filter: {
+                  input: "$bookings",
+                  cond: {
+                    $regexMatch: {
+                      input: "$$this.status",
+                      regex: /payment_due/i,
+                    },
+                  },
+                },
+              },
+            },
+
+            paymentDueAmount: {
+              $sum: {
+                $map: {
+                  input: {
+                    $filter: {
+                      input: "$bookings",
+                      cond: {
+                        $regexMatch: {
+                          input: "$$this.status",
+                          regex: /payment_due/i,
+                        },
+                      },
+                    },
+                  },
+                  as: "b",
+                  in: "$$b.fare",
+                },
+              },
+            },
+
             totalEarnings: { $sum: "$bookings.fare" },
             avgFare: { $avg: "$bookings.fare" },
           },
         },
+
         {
           $project: {
             _id: 1,
@@ -133,34 +200,37 @@ class CabBookingService {
             totalBookings: 1,
             completedBookings: 1,
             pendingBookings: 1,
+            paymentDueBookings: 1,
+            paymentDueAmount: { $round: ["$paymentDueAmount", 2] },
             totalEarnings: { $round: ["$totalEarnings", 2] },
             avgFare: { $round: ["$avgFare", 2] },
           },
         },
+
         { $sort: { totalBookings: -1 } },
       ]);
 
       /* ---------------- Vendor Booking Analytics ---------------- */
+
       const vendorBookingStats = await VendorBooking.aggregate([
         { $match: vendorCond },
+
         {
           $group: {
             _id: "$ownerName",
+
             totalBookings: { $sum: 1 },
+
             completedBookings: {
               $sum: {
                 $cond: [
-                  {
-                    $regexMatch: {
-                      input: "$status",
-                      regex: /completed|done|finished/i,
-                    },
-                  },
+                  { $regexMatch: { input: "$status", regex: /completed/i } },
                   1,
                   0,
                 ],
               },
             },
+
             pendingBookings: {
               $sum: {
                 $cond: [
@@ -175,18 +245,42 @@ class CabBookingService {
                 ],
               },
             },
+
+            paymentDueBookings: {
+              $sum: {
+                $cond: [
+                  { $regexMatch: { input: "$status", regex: /payment_due/i } },
+                  1,
+                  0,
+                ],
+              },
+            },
+
+            paymentDueAmount: {
+              $sum: {
+                $cond: [
+                  { $regexMatch: { input: "$status", regex: /payment_due/i } },
+                  "$amount",
+                  0,
+                ],
+              },
+            },
+
             totalAmount: { $sum: "$amount" },
             avgAmount: { $avg: "$amount" },
             latestBooking: { $max: "$createdAt" },
             vendorInfo: { $first: "$$ROOT" },
           },
         },
+
         {
           $project: {
             name: "$_id",
             totalBookings: 1,
             completedBookings: 1,
             pendingBookings: 1,
+            paymentDueBookings: 1,
+            paymentDueAmount: { $round: ["$paymentDueAmount", 2] },
             totalAmount: { $round: ["$totalAmount", 2] },
             avgAmount: { $round: ["$avgAmount", 2] },
             latestBooking: 1,
@@ -197,10 +291,12 @@ class CabBookingService {
             email: "$vendorInfo.email",
           },
         },
+
         { $sort: { totalBookings: -1 } },
       ]);
 
       /* ---------------- Final Response ---------------- */
+
       const getBestVendorName = (v) =>
         v?.cabOwnerName ||
         v?.driverName ||
@@ -216,13 +312,12 @@ class CabBookingService {
           totalBookings: v.totalBookings || 0,
           completedBookings: v.completedBookings || 0,
           pendingBookings: v.pendingBookings || 0,
+          paymentDueBookings: v.paymentDueBookings || 0,
+          paymentDueAmount: v.paymentDueAmount || 0,
           totalSpendings: v.totalEarnings || 0,
           avgFare: v.avgFare || 0,
-          email: v.email,
-          phone: v.phone,
-          vehicleType: v.vehicleType,
-          vehicleNumber: v.vehicleNumber,
         })),
+
         ...vendorBookingStats.map((v) => ({
           id: v._id,
           name: v.name || "Vendor",
@@ -230,34 +325,23 @@ class CabBookingService {
           totalBookings: v.totalBookings || 0,
           completedBookings: v.completedBookings || 0,
           pendingBookings: v.pendingBookings || 0,
+          paymentDueBookings: v.paymentDueBookings || 0,
+          paymentDueAmount: v.paymentDueAmount || 0,
           totalEarnings: v.totalAmount || 0,
           avgFare: v.avgAmount || 0,
-          contactNumber: v.contactNumber,
-          vehicleType: v.vehicleType,
-          vehicleNumber: v.vehicleNumber,
-          location: v.location,
-          latestBooking: v.latestBooking,
-          email: v.email,
         })),
       ];
-
-      const uniqueVendors = allVendors.filter(
-        (v, i, self) =>
-          i ===
-          self.findIndex(
-            (x) =>
-              (x.name || "").toLowerCase() === (v.name || "").toLowerCase()
-          )
-      );
 
       return {
         success: true,
         totalCabBookings,
         completedCabBookings,
         pendingCabBookings,
+        paymentDueCabBookings,
+        paymentDueAmount,
         totalSpend,
-        totalVendors: uniqueVendors.length,
-        allVendors: uniqueVendors,
+        totalVendors: allVendors.length,
+        allVendors,
         cabVendors: vendorAnalytics,
         generalVendors: vendorBookingStats,
         cabVendorNames,
@@ -265,7 +349,7 @@ class CabBookingService {
       };
     } catch (err) {
       console.error("CabBooking Service Error:", err);
-      throw err; // 🔥 API will handle response
+      throw err;
     }
   }
 }

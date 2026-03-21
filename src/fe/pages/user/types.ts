@@ -139,14 +139,6 @@ export interface UserFormData {
   nominee?: NomineeDetails | null;
 }
 
-// ─── Table ────────────────────────────────────────────────────────────────────
-
-export interface TableHeaderItem {
-  label: string;
-  dataKey?: string;
-  component?: string | ((row: Employee) => React.ReactNode);
-}
-
 // ─── Component prop types ─────────────────────────────────────────────────────
 
 export interface UserDialogProps {
@@ -158,23 +150,29 @@ export interface UserDialogProps {
 }
 
 export interface UserCardProps {
-  user: Pick<Employee, "name" | "email" | "designation" | "avatarUrl">;
+  user: Pick<Employee, "name" | "email" | "designation" | "avatarUrl" | "phone"> & {
+    photo?: string;
+    managerId?: string;
+    departmentId?: string;
+    managerName?: string;
+    departmentName?: string;
+  };
   onEdit?: () => void;
+  onView?: () => void;
+  managers?: any[];
+  departments?: any[];
 }
 
 export interface UsersListProps {
   loading: boolean;
   employees: Employee[];
-  isMobile: boolean;
-  isClient: boolean;
-  windowWidth: number;
   page: number;
   rowsPerPage: number;
   totalItems: number;
-  usersTableHeader: TableHeaderItem[];
   onPageChange: (page: number) => void;
   onPageSizeChange: (size: number) => void;
   onEditUser: (user: Employee) => void;
+  onViewUser: (user: Employee) => void;
   canEdit: (user: Employee) => boolean;
 }
 
@@ -184,9 +182,15 @@ export interface UsersActionBarProps {
   onAdd: () => void;
 }
 
-interface ToastProps {
-  open: boolean;
-  message: string;
-  severity: "success" | "error";
-  onClose: () => void;
+export interface Props {
+  search: string;
+  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onAdd: () => void;
+  showAllEmployees?: boolean;
+  onToggleAllEmployees?: () => void;
+  isSystemAdmin?: boolean;
+}
+
+export interface UsersSkeletonProps {
+  rows?: number;
 }

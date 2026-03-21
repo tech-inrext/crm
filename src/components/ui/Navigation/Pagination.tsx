@@ -131,6 +131,11 @@ const Pagination: React.FC<PaginationProps> = ({
       >
         <ArrowForwardIosIcon fontSize="small" />
       </IconButton>
+      
+      {/* Total Count */}
+      <Typography sx={{ color: "#64748b", fontSize: { xs: 12, sm: 14 }, mx: 1 }}>
+        Total: {total}
+      </Typography>
 
       {/* Page Size Selector */}
       {onPageSizeChange && (
