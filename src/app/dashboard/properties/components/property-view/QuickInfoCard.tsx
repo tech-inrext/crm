@@ -1,13 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Chip,
-} from "@mui/material";
+import { Card, CardContent, Typography, Box, Chip } from "@mui/material";
 import { Property } from "@/services/propertyService";
 
 interface QuickInfoCardProps {
@@ -43,7 +37,7 @@ const QuickInfoCard: React.FC<QuickInfoCardProps> = ({ property }) => {
     const fetchSubProperties = async () => {
       try {
         const res = await fetch(
-          `/api/v0/property?parentId=${property._id}&action=subproperties`
+          `/api/v0/property?parentId=${property._id}&action=subproperties`,
         );
 
         if (!res.ok) return setData();
@@ -53,14 +47,10 @@ const QuickInfoCard: React.FC<QuickInfoCardProps> = ({ property }) => {
         if (!success || !Array.isArray(data)) return setData();
 
         const validChild = data.find(
-          (item: any) =>
-            item.propertyType && item.propertyType !== "project"
+          (item: any) => item.propertyType && item.propertyType !== "project",
         );
 
-        setData(
-          validChild?.propertyType || "",
-          validChild?.propertyName || ""
-        );
+        setData(validChild?.propertyType || "", validChild?.propertyName || "");
       } catch {
         setData();
       }
@@ -80,13 +70,21 @@ const QuickInfoCard: React.FC<QuickInfoCardProps> = ({ property }) => {
   const formattedName = derivedName || "N/A";
 
   return (
-<Card className="rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-black/5">
+    <Card className="rounded-2xl shadow-[0_8px_32px_rgba(0,0,0,0.08)] border border-black/5">
       <CardContent sx={{ p: 2 }}>
-        <Typography variant="h6" fontWeight={700} gutterBottom sx={{ color: "primary.main" }}>
+        <Typography
+          className="
+    !font-bold
+    !text-[1.25rem]
+    mb-2
+    text-primary
+  "
+        >
+          {" "}
           ℹ️ Quick Info
         </Typography>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}> 
-          <Box sx={{display: "flex", justifyContent: 'space-between', alignItems: "center", py: 1, }}>
+        <Box className="flex flex-col gap-2">
+          <Box className="flex justify-between items-center py-2">
             <Typography variant="body2" color="text.secondary">
               Property Type
             </Typography>
@@ -100,7 +98,7 @@ const QuickInfoCard: React.FC<QuickInfoCardProps> = ({ property }) => {
           </Box>
 
           {/* Payment Plan */}
-         <Box className="flex justify-between items-center py-1">
+          <Box className="flex justify-between items-center py-1">
             <Typography variant="body2" color="text.secondary">
               Payment Plan
             </Typography>
@@ -110,7 +108,7 @@ const QuickInfoCard: React.FC<QuickInfoCardProps> = ({ property }) => {
           </Box>
 
           {/* Options */}
-         <Box className="flex justify-between items-center py-1">
+          <Box className="flex justify-between items-center py-1">
             <Typography variant="body2" color="text.secondary">
               Options
             </Typography>
@@ -118,7 +116,6 @@ const QuickInfoCard: React.FC<QuickInfoCardProps> = ({ property }) => {
               {formattedName}
             </Typography>
           </Box>
-
         </Box>
       </CardContent>
     </Card>

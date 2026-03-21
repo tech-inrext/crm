@@ -43,18 +43,7 @@ const PropertyHeader: React.FC<PropertyHeaderProps> = ({
         </Box>
       )}
 
-      <Box
-        sx={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background:
-            "linear-gradient(135deg, rgba(25, 118, 210, 0.95) 0%, rgba(15, 82, 147, 0.85) 100%)",
-          zIndex: 0,
-        }}
-      />
+     <Box className="absolute top-0 left-0 right-0 bottom-0 z-[0] bg-[linear-gradient(135deg,rgba(25,118,210,0.95)_0%,rgba(15,82,147,0.85)_100%)]" />
 
       <Box
         className="relative z-20 flex justify-end items-end">
