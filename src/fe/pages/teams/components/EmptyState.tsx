@@ -14,7 +14,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ isSearchEmpty }) => (
     <Typography sx={{ color: "text.secondary" }}>
       {isSearchEmpty 
         ? "We couldn't find anyone matching your search in this hierarchy." 
-        : "Select a manager from the dropdown to view their team hierarchy."}
+        : "No reporting lines found for your account."}
     </Typography>
   </Box>
 );
