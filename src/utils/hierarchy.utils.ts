@@ -53,6 +53,4 @@ export const expandAllNodes = (node: Employee | null): Set<string> => {
   return ids;
 };
 
-export const getNodeColor = (depth: number, colors: readonly string[]): string => {
-  return colors[depth % colors.length];
-};
+

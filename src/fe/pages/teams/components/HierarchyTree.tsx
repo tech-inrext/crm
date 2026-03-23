@@ -9,18 +9,10 @@ import {
 } from "@/components/ui/Component";
 import { Employee } from "@/types/team-hierarchy";
 import { HierarchyNode } from "./HierarchyNode";
+import { HierarchyTreeProps } from "../types";
 
-interface HierarchyTreeProps {
-  hierarchy: Employee;
-  expanded: Set<string>;
-  selectedNode: string | null;
-  searchQuery: string;
-  onToggle: (id: string) => void;
-  onSelect: (id: string) => void;
-  onExpandAll: () => void;
-  onCollapseAll: () => void;
-  onClearSearch: () => void;
-}
+
+import { treeHeaderSx, treeHeaderStackSx } from "./styles";
 
 export const HierarchyTree: React.FC<HierarchyTreeProps> = ({
   hierarchy,
@@ -57,17 +49,8 @@ export const HierarchyTree: React.FC<HierarchyTreeProps> = ({
 
   return (
     <Box>
-      <Box
-        sx={{
-          mb: 3,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          flexWrap: "wrap",
-          gap: 2,
-        }}
-      >
-        <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap" }}>
+      <Box sx={treeHeaderSx}>
+        <Stack direction="row" spacing={1} sx={treeHeaderStackSx}>
           <Chip
             icon={<PersonIcon />}
             label={`Root: ${hierarchy.name}`}
