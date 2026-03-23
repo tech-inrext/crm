@@ -23,18 +23,28 @@ export interface ErrorStateProps {
   onRetry: () => void;
 }
 
-export interface HierarchyControlsProps {
-  employees: Employee[];
-  selectedManager: string | null;
+export interface TeamsActionBarProps {
   totalCount: number;
   search: string;
   loading: boolean;
-  onManagerChange: (managerId: string | null) => void;
+  hierarchy?: Employee | null;
+  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRefresh: () => void;
+  onExpandAll?: () => void;
+  onCollapseAll?: () => void;
+  onClearSearch?: () => void;
+}
+
+export interface HierarchyControlsProps {
+  totalCount: number;
+  search: string;
+  loading: boolean;
+  hierarchy?: Employee | null;
   onSearchChange: (search: string) => void;
   onRefresh: () => void;
-}
-export interface HierarchyHeaderProps {
-  children: React.ReactNode;
+  onExpandAll?: () => void;
+  onCollapseAll?: () => void;
+  onClearSearch?: () => void;
 }
 export interface HierarchyNodeProps {
   node: Employee;
