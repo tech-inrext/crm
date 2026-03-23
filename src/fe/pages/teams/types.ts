@@ -66,3 +66,7 @@ export interface HierarchyTreeProps {
   onCollapseAll: () => void;
   onClearSearch: () => void;
 }
+
+export interface EmptyStateProps {
+  isSearchEmpty?: boolean;
+}

@@ -1,9 +1,7 @@
 import React from "react";
 import { Box, Typography, AccountTree as AccountTreeIcon } from "@/components/ui/Component";
+import { EmptyStateProps } from "../types";
 
-interface EmptyStateProps {
-  isSearchEmpty?: boolean;
-}
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ isSearchEmpty }) => (
   <Box sx={{ p: 4, textAlign: "center" }}>
