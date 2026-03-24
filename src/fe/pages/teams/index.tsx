@@ -12,7 +12,7 @@ import {
 import PageHeader from "@/fe/components/PageHeader";
 import useTeamsPage from "@/fe/pages/teams/hooks/useTeamsPage";
 import { TEAMS_PERMISSION_MODULE } from "@/fe/pages/teams/constants/teams";
-import { mainBoxSx } from "./components/styles";
+import { mainBoxSx } from "./styles";
 
 const TeamsPage: React.FC = () => {
   const {

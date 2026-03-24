@@ -7,7 +7,7 @@ import {
   countNodes,
   filterHierarchy,
   expandAllNodes,
-} from "@/utils/hierarchy.utils";
+} from "@/fe/pages/teams/utils";
 import { SEARCH_DEBOUNCE_DELAY } from "@/fe/pages/teams/constants/teams";
 import {
   useGetHierarchyQuery,

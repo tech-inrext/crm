@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
-import { Employee, HierarchyState } from "@/types/team-hierarchy";
+import { Employee, HierarchyState } from "@/fe/pages/teams/types";
 import { teamHierarchyService } from "@/services/team-hierarchy.service";
-import { countNodes } from "@/utils/hierarchy.utils";
+import { countNodes } from "@/fe/pages/teams/utils";
 
 export const useTeamHierarchy = (selectedManager: string | null) => {
   const [state, setState] = useState<HierarchyState>({

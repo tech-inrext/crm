@@ -7,7 +7,7 @@ import {
   People as PeopleIcon,
   Search as SearchIcon,
 } from "@/components/ui/Component";
-import { Employee } from "@/types/team-hierarchy";
+import { Employee } from "../types";
 import { HierarchyNode } from "./HierarchyNode";
 import { HierarchyTreeProps } from "../types";
 
