@@ -23,6 +23,7 @@ const TeamsPage: React.FC = () => {
     selectedNode,
     totalCount,
     search,
+    managerName,
     handleSearchChange,
     setSearch,
     toggleNode,
@@ -45,6 +46,7 @@ const TeamsPage: React.FC = () => {
           totalCount={totalCount}
           search={search}
           loading={loading}
+          managerName={managerName}
           hierarchy={hierarchy}
           onSearchChange={handleSearchChange}
           onRefresh={handleRefresh}

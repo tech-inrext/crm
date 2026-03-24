@@ -27,6 +27,7 @@ export interface TeamsActionBarProps {
   totalCount: number;
   search: string;
   loading: boolean;
+  managerName?: string;
   hierarchy?: Employee | null;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRefresh: () => void;

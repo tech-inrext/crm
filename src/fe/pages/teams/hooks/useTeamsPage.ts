@@ -1,6 +1,6 @@
 "use client";
 import React  from 'react'
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDebounce } from "@/hooks/useDebounce";
 import {
@@ -12,6 +12,7 @@ import { SEARCH_DEBOUNCE_DELAY } from "@/fe/pages/teams/constants/teams";
 import {
   useGetHierarchyQuery,
 } from "@/fe/pages/teams/teamsApi";
+import { useGetManagersQuery } from "@/fe/pages/user/userApi";
 import type { Employee } from "@/fe/pages/teams/types";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -44,6 +45,19 @@ export function useTeamsPage() {
   } = useGetHierarchyQuery({ 
     managerId: selectedManager 
   });
+  
+  // ─── Manager info for logged in user ─────────────────────────────────────────
+  const { data: managersData } = useGetManagersQuery({
+    isCabVendor: false,
+    limit: 1000,
+    page: 1,
+  });
+
+  const managerName = useMemo(() => {
+    const managers = (managersData as any)?.data ?? managersData ?? [];
+    const manager = managers.find((m: any) => m._id === user?.managerId);
+    return manager?.name;
+  }, [managersData, user?.managerId]);
 
   // ─── Hierarchy ────────────────────────────────────────────────────────────
   const hierarchy = hierarchyData?.data as Employee | undefined;
@@ -108,6 +122,7 @@ export function useTeamsPage() {
     selectedNode,
     totalCount: hierarchy ? countNodes(hierarchy) : 0,
     filteredHierarchy,
+    managerName,
 
     // Manager selection
     selectedManager,

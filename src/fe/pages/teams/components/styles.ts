@@ -30,6 +30,33 @@ export const headerSubtitleSx: SxProps<Theme> = {
 export const controlsStackSx: SxProps<Theme> = {
   mt: { xs: 2, md: 0 },
   flexWrap: "wrap",
+  mb: 1.5,
+};
+
+export const actionBarBoxSx: SxProps<Theme> = {
+  width: "100%",
+};
+
+export const searchBarWrapperSx: SxProps<Theme> = {
+  flexGrow: 1,
+  maxWidth: "600px",
+};
+
+export const rightActionsStackSx: SxProps<Theme> = {
+  ml: "auto",
+};
+
+export const actionButtonSx: SxProps<Theme> = {
+  minWidth: "auto",
+  px: 2,
+  borderRadius: "6px",
+  fontWeight: 600,
+  textTransform: "none",
+  "& .MuiButton-startIcon": { mr: 1 },
+};
+
+export const textActionButtonSx: SxProps<Theme> = {
+  fontWeight: 600,
 };
 
 export const totalMembersChipSx: SxProps<Theme> = {
