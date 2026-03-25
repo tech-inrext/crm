@@ -32,6 +32,15 @@ const TeamsPage: React.FC = () => {
     handleCollapseAll,
     handleRefresh,
     debouncedSearch,
+    // Admin search
+    isAdmin,
+    managersData,
+    handleEmployeeSelect,
+    selectedManager,
+    isEmployeeLoading,
+    hierarchyOptions,
+    contextManager,
+    handleHierarchySelect,
   } = useTeamsPage();
 
   return (
@@ -53,6 +62,15 @@ const TeamsPage: React.FC = () => {
           onExpandAll={handleExpandAll}
           onCollapseAll={handleCollapseAll}
           onClearSearch={() => setSearch("")}
+          // Admin search props
+          isAdmin={isAdmin}
+          employeeOptions={managersData}
+          onEmployeeSelect={handleEmployeeSelect}
+          isEmployeeLoading={isEmployeeLoading}
+          selectedEmployeeId={contextManager}
+          hierarchyOptions={hierarchyOptions}
+          selectedHierarchyId={selectedNode}
+          onHierarchySelect={handleHierarchySelect}
         />
 
         <Paper sx={{ p: 3 }} elevation={1}>

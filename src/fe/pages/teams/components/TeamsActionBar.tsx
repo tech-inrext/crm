@@ -15,8 +15,11 @@ import {
   People as PeopleIcon,
   ExpandMore,
   ChevronRight,
+  Autocomplete,
+  Typography,
+  CircularProgress,
 } from "@/components/ui/Component";
-import SearchBar from "@/components/ui/search/SearchBar";
+import AllEmployeeSearchBar from "./AllEmployeeSearchBar";
 import { TeamsActionBarProps } from "../types";
 import {
   controlsStackSx,
@@ -25,9 +28,10 @@ import {
   rightActionsStackSx,
   actionButtonSx,
   textActionButtonSx,
+  searchTextFieldSx,
 } from "./styles";
 
-export const TeamsActionBar: React.FC<TeamsActionBarProps> = ({
+ export const TeamsActionBar: React.FC<TeamsActionBarProps> = ({
   totalCount,
   search,
   loading,
@@ -37,6 +41,15 @@ export const TeamsActionBar: React.FC<TeamsActionBarProps> = ({
   onRefresh,
   onExpandAll,
   onCollapseAll,
+  isAdmin,
+  employeeOptions,
+  hierarchyOptions,
+  onEmployeeSelect,
+  isEmployeeLoading,
+  selectedEmployeeId,
+  // New props
+  selectedHierarchyId,
+  onHierarchySelect,
 }) => {
   return (
     <PageHeader 
@@ -51,11 +64,21 @@ export const TeamsActionBar: React.FC<TeamsActionBarProps> = ({
           alignItems="center"
           sx={controlsStackSx}
         >
+          {isAdmin && employeeOptions && onEmployeeSelect && (
+            <AllEmployeeSearchBar
+              options={employeeOptions}
+              onSelect={onEmployeeSelect}
+              loading={isEmployeeLoading}
+              selectedId={selectedEmployeeId}
+            />
+          )}
+
           <Box sx={searchBarWrapperSx}>
-            <SearchBar
-              value={search}
-              onChange={onSearchChange}
-              placeholder="Search team member or role"
+            <AllEmployeeSearchBar
+              options={hierarchyOptions || []}
+              onSelect={onHierarchySelect || (() => {})}
+              placeholder="Search in this team..."
+              selectedId={selectedHierarchyId}
             />
           </Box>
 

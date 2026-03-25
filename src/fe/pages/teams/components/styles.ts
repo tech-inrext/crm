@@ -31,6 +31,7 @@ export const controlsStackSx: SxProps<Theme> = {
   mt: { xs: 2, md: 0 },
   flexWrap: "wrap",
   mb: 1.5,
+  width: "100%",
 };
 
 export const actionBarBoxSx: SxProps<Theme> = {
@@ -38,12 +39,12 @@ export const actionBarBoxSx: SxProps<Theme> = {
 };
 
 export const searchBarWrapperSx: SxProps<Theme> = {
-  flexGrow: 1,
   maxWidth: "600px",
+  minWidth: "200px",
 };
 
 export const rightActionsStackSx: SxProps<Theme> = {
-  ml: "auto",
+  flexShrink: 0,
 };
 
 export const actionButtonSx: SxProps<Theme> = {
@@ -68,7 +69,17 @@ export const managerAutocompleteSx: SxProps<Theme> = {
 };
 
 export const searchTextFieldSx: SxProps<Theme> = {
-  minWidth: 240,
+  bgcolor: "white",
+  borderRadius: 1,
+  width: "100%",
+  "& .MuiOutlinedInput-root": {
+    "& fieldset": {
+      borderColor: "rgba(0, 0, 0, 0.1)",
+    },
+    "&:hover fieldset": {
+      borderColor: "rgba(0, 0, 0, 0.2)",
+    },
+  },
 };
 
 export const searchIconSx: SxProps<Theme> = {
