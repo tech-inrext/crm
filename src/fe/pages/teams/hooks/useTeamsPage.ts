@@ -128,8 +128,8 @@ export function useTeamsPage() {
   }, [hierarchy]);
 
   const handleCollapseAll = useCallback(() => {
-    if (hierarchy) setExpanded(new Set([hierarchy._id]));
-  }, [hierarchy]);
+    setExpanded(new Set());
+  }, []);
 
   const hierarchyOptions = useMemo(() => flattenHierarchy(hierarchy), [hierarchy]);
 
