@@ -25,6 +25,7 @@ import {
   Groups,
   GroupAdd,
   Assignment,
+  Campaign,
 } from "@mui/icons-material";
 
 // const AppIcon = ({
@@ -54,6 +55,10 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     module: "analytics",
     icon: <Analytics sx={{ color: "#3785FF" }} />,
   },
+  {
+    label: "Notice Board",
+    href: "/dashboard/Notice-Board",
+icon: <Campaign sx={{ color: "#3785FF" }} />  },
   {
     label: "Leads",
     href: "/dashboard/leads",
@@ -207,7 +212,11 @@ export default function DashboardLayout({
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
             <Box
-              key={String(typeof user?.currentRole === "object" ? user?.currentRole?._id : user?.currentRole)}
+              key={String(
+                typeof user?.currentRole === "object"
+                  ? user?.currentRole?._id
+                  : user?.currentRole,
+              )}
               component="main"
               sx={{
                 flexGrow: 1,
