@@ -221,6 +221,12 @@ const employeeSchema = new mongoose.Schema(
         vendor: { type: Boolean, default: true },
         system: { type: Boolean, default: true },
       },
+      whatsapp: {
+        leads: { type: Boolean, default: true },
+        cabBooking: { type: Boolean, default: true },
+        vendor: { type: Boolean, default: true },
+        system: { type: Boolean, default: true },
+      },
       inApp: {
         leads: { type: Boolean, default: true },
         cabBooking: { type: Boolean, default: true },

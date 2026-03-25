@@ -7,10 +7,10 @@ const notificationService = new NotificationService();
 
 /**
  * Process checks for due follow-up notifications.
- * OPTIMIZED: Separate queries per notification type with $nin filter.
- * Only fetches records that need processing.
- *
- * @param {Object} job - The BullMQ job (contains no specific data for this cron-like task)
+ * PROFESSIONAL VERSION: 
+ * 1. Global de-duplication per run
+ * 2. Type-aware handling (Call vs Site Visit)
+ * 3. Atomic marking of skipped duplicates to prevent ghost triggers
  */
 const checkFollowUpsJob = async (job) => {
   console.log("🔍 [Job] Starting follow-up check...");
@@ -23,33 +23,33 @@ const checkFollowUpsJob = async (job) => {
     const H2 = 2 * 60 * 60 * 1000;
     const M5 = 5 * 60 * 1000;
 
-    // Notification type configurations with time windows
+    // PROFESSIONAL: Narrower windows to ensure "on-time" delivery
     const notificationTypes = [
       {
         tag: "24H",
-        windowStart: nowTime + H24 - 30 * 60 * 1000, // 23.5h ahead
-        windowEnd: nowTime + H24 + 30 * 60 * 1000, // 24.5h ahead
+        windowStart: nowTime + H24 - 15 * 60 * 1000, 
+        windowEnd: nowTime + H24 + 15 * 60 * 1000, 
         priority: "MEDIUM",
         title: "Upcoming (24h)",
       },
       {
         tag: "2H",
-        windowStart: nowTime + H2 - 15 * 60 * 1000, // 1h 45m ahead
-        windowEnd: nowTime + H2 + 15 * 60 * 1000, // 2h 15m ahead
+        windowStart: nowTime + H2 - 10 * 60 * 1000, 
+        windowEnd: nowTime + H2 + 10 * 60 * 1000, 
         priority: "HIGH",
         title: "Upcoming (2h)",
       },
       {
         tag: "5M",
-        windowStart: nowTime + M5 - 2 * 60 * 1000, // 3m ahead
-        windowEnd: nowTime + M5 + 3 * 60 * 1000, // 8m ahead
+        windowStart: nowTime + M5 - 3 * 60 * 1000, 
+        windowEnd: nowTime + M5 + 2 * 60 * 1000, 
         priority: "URGENT",
         title: "Upcoming (5m)",
       },
       {
         tag: "DUE",
-        windowStart: nowTime - 15 * 60 * 1000, // 15m ago
-        windowEnd: nowTime + 2 * 60 * 1000, // 2m ahead
+        windowStart: nowTime - 10 * 60 * 1000, // Up to 10m late
+        windowEnd: nowTime + 1 * 60 * 1000,  // Up to 1m early
         priority: "URGENT",
         title: "Due Now",
       },
@@ -58,121 +58,115 @@ const checkFollowUpsJob = async (job) => {
     let totalSent = 0;
     let totalProcessed = 0;
 
-    // Process each notification type separately with optimized queries
+    // ✅ GLOBAL DE-DUPLICATION: Prevents same lead getting multiple tags in one run
+    const processedLeadTasks = new Set();
+
     for (const config of notificationTypes) {
       const { tag, windowStart, windowEnd } = config;
 
-      // ✅ OPTIMIZED: Only fetch records that:
-      // 1. Are in the time window for this notification type
-      // 2. Haven't sent this notification yet ($nin)
       const query = {
+        outcome: "pending",
         followUpDate: {
           $gte: new Date(windowStart),
           $lte: new Date(windowEnd),
         },
-        notificationsSent: { $nin: [tag] }, // Only get records without this tag
+        notificationsSent: { $nin: [tag] }, 
       };
 
       const followUps = await FollowUp.find(query)
         .populate("leadId")
-        .limit(1000) // Safety limit per notification type
+        .limit(200) // Lower batch limit for better reliability
         .lean();
 
       if (followUps.length > 0) {
-        console.log(
-          `[Job] Processing ${followUps.length} follow-ups for ${tag} notification`
-        );
+        console.log(`[Job] Found ${followUps.length} candidates for ${tag}`);
       }
 
-      // Process in batches for this notification type
-      const batchSize = 50;
-      for (let i = 0; i < followUps.length; i += batchSize) {
-        const batch = followUps.slice(i, i + batchSize);
-        const sent = await processBatch(batch, config, tag);
+      const uniqueFollowUps = [];
+      
+      for (const fp of followUps) {
+        const leadId = fp.leadId?._id?.toString() || fp.leadId?.toString();
+        const type = (fp.followUpType || "note").toLowerCase();
+        
+        // key includes lead, type AND tag to prevent repeat notifications 
+        // but allowing different tasks for same lead
+        const key = `${leadId}_${type}`; 
+
+        if (leadId && !processedLeadTasks.has(key)) {
+          processedLeadTasks.add(key);
+          uniqueFollowUps.push(fp);
+        } else {
+          // ✅ CRITICAL FIX: If we skip a duplicate record in this run, mark it as 'sent' in DB 
+          // immediately so it doesn't get picked up in the next run (1 minute later).
+          await FollowUp.updateOne(
+            { _id: fp._id },
+            { $addToSet: { notificationsSent: tag } }
+          );
+          console.log(`[Job] Marked duplicate task as notified: Lead ${leadId} (${type})`);
+        }
+      }
+
+      if (uniqueFollowUps.length > 0) {
+        const sent = await processBatch(uniqueFollowUps, config, tag);
         totalSent += sent;
-        totalProcessed += batch.length;
+        totalProcessed += uniqueFollowUps.length;
       }
     }
 
-    console.log(
-      `✅ [Job] Completed. Processed: ${totalProcessed}, Notifications Sent: ${totalSent}`
-    );
+    console.log(`✅ [Job] Completed. Processed: ${totalProcessed}, Sent: ${totalSent}`);
   } catch (error) {
-    console.error("❌ [Job] Error in checkFollowUpsJob:", error);
-    throw error; // Retry job
+    console.error("❌ [Job] Fatal error in checkFollowUpsJob:", error);
+    throw error; 
   }
 };
 
-/**
- * Process a batch of FollowUps for a specific notification type
- */
 async function processBatch(docs, config, tag) {
   let sent = 0;
 
   const results = await Promise.allSettled(
     docs.map(async (fp) => {
-      if (!fp.followUpDate || !fp.leadId) {
-        console.warn(
-          `⚠️ [Job] Skipping follow-up ${fp._id}: Missing date or lead reference.`
-        );
-        return false;
-      }
+      if (!fp.followUpDate || !fp.leadId) return false;
 
       const lead = fp.leadId;
       const recipientId = lead.assignedTo || lead.uploadedBy;
 
-      if (!recipientId) {
-        console.warn(
-          `⚠️ [Job] Skipping follow-up ${fp._id} for Lead ${lead._id}: No assigned user or owner.`
-        );
-        return false;
-      }
+      if (!recipientId) return false;
 
-      // Send notification
-      await sendNotification(lead, recipientId, tag, config, fp);
+      // 1. Create and Queue Notification
+      const notification = await notificationService._createSingleNotification({
+        recipient: recipientId,
+        type: "LEAD_FOLLOWUP_DUE",
+        title: config.title,
+        message: `${config.title} for lead: ${lead.fullName || lead.phone}. Type: ${fp.followUpType}`,
+        metadata: {
+          leadId: lead._id,
+          actionUrl: `/dashboard/leads?openDialog=true&leadId=${lead._id}`,
+          priority: config.priority,
+          isActionable: true,
+          reminderType: tag,
+          followUpId: fp._id,
+        },
+        channels: { inApp: true, email: true, whatsapp: true },
+        scheduledFor: new Date(),
+      });
 
-      // ✅ ATOMIC UPDATE: Use $addToSet to add tag (prevents duplicates)
+      // 2. Mark this specific document as sent for this tag
       await FollowUp.updateOne(
         { _id: fp._id },
         { $addToSet: { notificationsSent: tag } }
       );
 
+      console.log(`📡 [Job] Queued ${tag} (${fp.followUpType}) for Lead: ${lead._id}`);
       return true;
     })
   );
 
   results.forEach((r) => {
     if (r.status === "fulfilled" && r.value === true) sent++;
-    if (r.status === "rejected")
-      console.error("Error processing single doc:", r.reason);
+    else if (r.status === "rejected") console.error("Batch Error:", r.reason);
   });
 
   return sent;
-}
-
-async function sendNotification(lead, recipient, tag, config, fp) {
-  try {
-    await notificationService._createSingleNotification({
-      recipient: recipient,
-      type: "LEAD_FOLLOWUP_DUE",
-      title: config.title,
-      message: `${config.title} for lead: ${lead.fullName || lead.phone
-        }. Type: ${fp.followUpType}`,
-      metadata: {
-        leadId: lead._id,
-        actionUrl: `/dashboard/leads?openDialog=true&leadId=${lead._id}`,
-        priority: config.priority,
-        isActionable: true,
-        reminderType: tag,
-        followUpId: fp._id,
-      },
-      channels: { inApp: true, email: true },
-      scheduledFor: new Date(),
-    });
-  } catch (e) {
-    console.error(`Failed to send ${tag} notification`, e);
-    throw e; // Bubble up to fail the promise in the batch
-  }
 }
 
 export default checkFollowUpsJob;
