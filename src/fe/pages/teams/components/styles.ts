@@ -29,7 +29,7 @@ export const headerSubtitleSx: SxProps<Theme> = {
 
 export const controlsStackSx: SxProps<Theme> = {
   mt: { xs: 2, md: 0 },
-  flexWrap: { xs: "wrap", md: "nowrap" },
+  flexWrap: "wrap",
   mb: 1.5,
   width: "100%",
 };
@@ -39,7 +39,6 @@ export const actionBarBoxSx: SxProps<Theme> = {
 };
 
 export const searchBarWrapperSx: SxProps<Theme> = {
-  flexGrow: 1,
   maxWidth: "600px",
   minWidth: "200px",
 };
