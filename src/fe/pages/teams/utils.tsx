@@ -76,3 +76,42 @@ export const expandAllNodes = (node: Employee | null): Set<string> => {
 
   return ids;
 };
+
+/**
+ * Flattens the hierarchy tree into a linear array of unique employees.
+ */
+export const flattenHierarchy = (node: Employee | null): Employee[] => {
+  const employees: Employee[] = [];
+  if (!node) return employees;
+
+  const collect = (n: Employee) => {
+    const { children, ...rest } = n;
+    employees.push(rest as Employee);
+    if (children && Array.isArray(children)) {
+      children.forEach(collect);
+    }
+  };
+
+  collect(node);
+  return employees;
+};
+
+/**
+ * Returns a list of parent IDs for a given target node ID.
+ * Used to expand the path to a selected node.
+ */
+export const findPathToNode = (
+  node: Employee | null,
+  targetId: string,
+  path: string[] = []
+): string[] | null => {
+  if (!node) return null;
+  if (node._id === targetId) return path;
+
+  for (const child of node.children || []) {
+    const result = findPathToNode(child, targetId, [...path, node._id]);
+    if (result) return result;
+  }
+
+  return null;
+};
