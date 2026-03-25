@@ -49,10 +49,10 @@ const RolesList: React.FC<RolesListProps> = ({
       <div className="flex justify-center mt-4">
         <Pagination
           page={page}
-          pageSize={rowsPerPage}
+          pageSize={rowsPerPage ?? 8}
           total={totalItems}
           onPageChange={onPageChange}
-          pageSizeOptions={[3, 6, 12, 24]}
+          pageSizeOptions={[4, 8, 12, 24]}
           onPageSizeChange={onPageSizeChange}
         />
       </div>
