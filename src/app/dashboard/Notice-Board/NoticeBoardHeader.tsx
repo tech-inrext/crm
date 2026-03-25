@@ -2,6 +2,10 @@
 
 import React, { useState } from "react";
 import AddNoticeModal from "./AddNoticeModal";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+
 import {
   Box,
   Button,
@@ -17,7 +21,6 @@ import {
 } from "@mui/material";
 
 import SearchIcon from "@mui/icons-material/Search";
-import CalendarMonthIcon from "@mui/icons-material/CalendarMonth";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import FolderOpenIcon from "@mui/icons-material/FolderOpen";
@@ -48,6 +51,7 @@ function NoticeBoardHeader({
     searchText: string;
     category: string;
     priority: string;
+    date?: any;
   }) => void;
 }) {
   const [tab, setTab] = useState(0);
@@ -55,37 +59,55 @@ function NoticeBoardHeader({
   const [searchText, setSearchText] = useState("");
   const [category, setCategory] = useState("");
   const [priority, setPriority] = useState("");
+  const [date, setDate] = useState<any>(null);
 
+  // Search
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchText(value);
-    onFilterChange({ searchText: value, category, priority });
+    onFilterChange({ searchText: value, category, priority, date });
   };
 
+  // Category
   const handleCategoryChange = (e: any) => {
     const value = e.target.value;
     setCategory(value);
-    onFilterChange({ searchText, category: value, priority });
+    onFilterChange({ searchText, category: value, priority, date });
   };
 
+  // Priority
   const handlePriorityChange = (e: any) => {
     const value = e.target.value;
     setPriority(value);
-    onFilterChange({ searchText, category, priority: value });
+    onFilterChange({ searchText, category, priority: value, date });
   };
 
+  // Date
+  const handleDateChange = (newValue: any) => {
+    setDate(newValue);
+    onFilterChange({ searchText, category, priority, date: newValue });
+  };
+
+  // Tabs
   const handleTabChange = (_: any, value: number) => {
     setTab(value);
     const tabValue = tabData[value].value;
-    setCategory(tabValue); // clicking a tab filters category
-    onFilterChange({ searchText, category: tabValue, priority });
+    setCategory(tabValue);
+    onFilterChange({
+      searchText,
+      category: tabValue,
+      priority,
+      date,
+    });
   };
 
   return (
     <>
       <AddNoticeModal open={open} onClose={() => setOpen(false)} />
+
       <Box className="px-4 ml-4 py-2 bg-white rounded-xl border border-gray-200 max-w-fit">
         <Box className="rounded-2xl space-y-4">
+          {/* Top Filters */}
           <Box className="p-2 rounded-2xl">
             <Stack
               direction="row"
@@ -137,31 +159,40 @@ function NoticeBoardHeader({
                 </Select>
               </FormControl>
 
+              {/* Date Picker */}
+              <LocalizationProvider dateAdapter={AdapterDayjs}>
+                <DatePicker
+                  label="Select Date"
+                  value={date}
+                  onChange={handleDateChange}
+                  format="MM/DD/YYYY"
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      sx: {
+                        width: 180,
+                        backgroundColor: "white",
+                      },
+                    },
+                  }}
+                />
+              </LocalizationProvider>
+
               {/* Filter Icon */}
               <IconButton
                 sx={{
                   bgcolor: "#fff",
                   height: 38,
                   width: 38,
-                  boxShadow: 1,
                 }}
               >
                 <FilterListIcon />
               </IconButton>
 
-              {/* Date */}
-              <Box className="flex items-center bg-white rounded-lg px-3 h-10 border border-gray-800">
-                <CalendarMonthIcon className="text-gray-400 text-[18px] mr-2" />
-                <InputBase
-                  placeholder="07/2022 - 00/2022"
-                  className="text-[13px] w-30"
-                />
-              </Box>
-
               {/* Add Button */}
               <Button
                 variant="contained"
-                className="h-10! px-5! rounded-xl! text-md! normal-case! bg-blue-500! hover:bg-blue-600! transition"
+                className="h-10! px-5! rounded-xl! text-md! normal-case! bg-blue-500! hover:bg-blue-600!"
                 onClick={() => setOpen(true)}
               >
                 + Add Notice
@@ -173,23 +204,19 @@ function NoticeBoardHeader({
           <Tabs
             value={tab}
             onChange={handleTabChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            className="rounded-2xl bg-[#eef1f5] p-1"
-            TabIndicatorProps={{ style: { display: "none" } }}
-          >
+           >
             {tabData.map((item, idx) => (
               <Tab
                 key={idx}
                 icon={item.icon}
                 iconPosition="start"
                 label={item.label}
-                className={`normal-case! text-md! font-medium! min-h-[40px]! px-6! border-r border-gray-300 last:border-r-0
-        ${
-          tab === idx
-            ? "bg-[#e6f0ff]! text-blue-600!"
-            : "text-gray-600 hover:bg-white!"
-        }`}
+                className={`normal-case! !mt-1 text-md! font-medium! min-h-[40px]! px-6! border-gray-300
+                ${
+                  tab === idx
+                    ? "bg-[#e6f0ff]! text-blue-600!"
+                    : "text-gray-600 hover:bg-white!"
+                }`}
               />
             ))}
           </Tabs>

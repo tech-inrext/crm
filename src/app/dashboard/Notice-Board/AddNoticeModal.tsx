@@ -16,11 +16,11 @@ import {
   IconButton,
   Typography,
   Box,
+  CircularProgress,
 } from "@mui/material";
 
 import CloseIcon from "@mui/icons-material/Close";
 
-// ✅ FIX: Date Picker Provider Imports
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -42,9 +42,14 @@ const audiences = ["All", "Teams", "Roles"];
 type Props = {
   open: boolean;
   onClose: () => void;
+  onNoticeAdded?: () => void; // 🔥 refresh dashboard
 };
 
-export default function AddNoticeModal({ open, onClose }: Props) {
+export default function AddNoticeModal({
+  open,
+  onClose,
+  onNoticeAdded,
+}: Props) {
   const [title, setTitle] = useState<string>("");
   const [description, setDescription] = useState<string>("");
   const [category, setCategory] = useState<string>(categories[0]);
@@ -52,6 +57,7 @@ export default function AddNoticeModal({ open, onClose }: Props) {
   const [audience, setAudience] = useState<string>(audiences[0]);
   const [expiry, setExpiry] = useState<Dayjs | null>(null);
   const [attachments, setAttachments] = useState<File[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -59,34 +65,73 @@ export default function AddNoticeModal({ open, onClose }: Props) {
     }
   };
 
-  const handleSubmit = () => {
-    const data = {
-      title,
-      description,
-      category,
-      priority,
-      audience,
-      expiry: expiry ? expiry.format("YYYY-MM-DD") : null,
-      attachments,
-    };
+  // ✅ API Submit
+  const handleSubmit = async () => {
+    if (!title || !description) {
+      alert("Title and Description are required");
+      return;
+    }
 
-    console.log("Submitting Notice:", data);
+    try {
+      setLoading(true);
 
-    // 👉 Add API call here
+      const data = {
+        title,
+        description,
+        category,
+        priority,
+        audience,
+        expiry: expiry ? expiry.format("YYYY-MM-DD") : null,
+        pinned: priority === "Urgent",
+      };
 
-    onClose();
+      const res = await fetch("/api/v0/notice", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
+
+      const result = await res.json();
+
+      if (result.success) {
+        alert("Notice created successfully");
+
+        // 🔄 Reset form
+        setTitle("");
+        setDescription("");
+        setCategory(categories[0]);
+        setPriority(priorities[2]);
+        setAudience(audiences[0]);
+        setExpiry(null);
+        setAttachments([]);
+
+        onClose();
+
+        // 🔥 refresh dashboard
+        if (onNoticeAdded) {
+          onNoticeAdded();
+        }
+      } else {
+        alert(result.message);
+      }
+    } catch (error) {
+      console.error("Notice Error:", error);
+      alert("Failed to create notice");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    // ✅ FIX: Wrap with LocalizationProvider
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-        
+
         {/* Header */}
         <DialogTitle sx={{ fontWeight: 700, fontSize: 22 }}>
           Create New Notice
           <IconButton
-            aria-label="close"
             onClick={onClose}
             sx={{ position: "absolute", right: 16, top: 16 }}
           >
@@ -98,20 +143,16 @@ export default function AddNoticeModal({ open, onClose }: Props) {
         <DialogContent dividers>
           <Stack spacing={2}>
 
-            {/* Title */}
             <TextField
               label="Notice Title"
-              placeholder="e.g., New Project Launch..."
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               fullWidth
               size="small"
             />
 
-            {/* Description */}
             <TextField
               label="Description"
-              placeholder="Provide the full details here..."
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               fullWidth
@@ -120,15 +161,13 @@ export default function AddNoticeModal({ open, onClose }: Props) {
               size="small"
             />
 
-            {/* Category + Priority */}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              
               <FormControl fullWidth size="small">
                 <InputLabel>Category</InputLabel>
                 <Select
-                  label="Category"
                   value={category}
-                  onChange={(e) => setCategory(e.target.value as string)}
+                  label="Category"
+                  onChange={(e) => setCategory(e.target.value)}
                 >
                   {categories.map((cat) => (
                     <MenuItem key={cat} value={cat}>
@@ -141,9 +180,9 @@ export default function AddNoticeModal({ open, onClose }: Props) {
               <FormControl fullWidth size="small">
                 <InputLabel>Priority</InputLabel>
                 <Select
-                  label="Priority"
                   value={priority}
-                  onChange={(e) => setPriority(e.target.value as string)}
+                  label="Priority"
+                  onChange={(e) => setPriority(e.target.value)}
                 >
                   {priorities.map((pri) => (
                     <MenuItem key={pri} value={pri}>
@@ -152,18 +191,15 @@ export default function AddNoticeModal({ open, onClose }: Props) {
                   ))}
                 </Select>
               </FormControl>
-
             </Stack>
 
-            {/* Audience + Date */}
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
-              
               <FormControl fullWidth size="small">
                 <InputLabel>Audience</InputLabel>
                 <Select
-                  label="Audience"
                   value={audience}
-                  onChange={(e) => setAudience(e.target.value as string)}
+                  label="Audience"
+                  onChange={(e) => setAudience(e.target.value)}
                 >
                   {audiences.map((aud) => (
                     <MenuItem key={aud} value={aud}>
@@ -181,7 +217,6 @@ export default function AddNoticeModal({ open, onClose }: Props) {
                   textField: { size: "small", fullWidth: true },
                 }}
               />
-
             </Stack>
 
             {/* Attachments */}
@@ -192,12 +227,7 @@ export default function AddNoticeModal({ open, onClose }: Props) {
 
               <Button variant="outlined" component="label" size="small">
                 Upload File
-                <input
-                  type="file"
-                  hidden
-                  multiple
-                  onChange={handleFileChange}
-                />
+                <input hidden type="file" multiple onChange={handleFileChange} />
               </Button>
 
               {attachments.length > 0 && (
@@ -219,8 +249,17 @@ export default function AddNoticeModal({ open, onClose }: Props) {
           <Button onClick={onClose} variant="outlined">
             Cancel
           </Button>
-          <Button onClick={handleSubmit} variant="contained">
-            Publish Notice
+
+          <Button
+            onClick={handleSubmit}
+            variant="contained"
+            disabled={loading}
+          >
+            {loading ? (
+              <CircularProgress size={20} color="inherit" />
+            ) : (
+              "Publish Notice"
+            )}
           </Button>
         </DialogActions>
 

@@ -10,6 +10,15 @@ export interface Employee {
   children?: Employee[];
 }
 
+
+export interface AllEmployeeSearchBarProps {
+  options: any[];
+  onSelect: (id: string | null) => void;
+  loading?: boolean;
+  selectedId?: string | null;
+  placeholder?: string;
+}
+
 export interface HierarchyState {
   hierarchy: Employee | null;
   loading: boolean;
@@ -27,12 +36,25 @@ export interface TeamsActionBarProps {
   totalCount: number;
   search: string;
   loading: boolean;
+  managerName?: string;
   hierarchy?: Employee | null;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRefresh: () => void;
   onExpandAll?: () => void;
   onCollapseAll?: () => void;
   onClearSearch?: () => void;
+  
+  // Admin search props
+  isAdmin?: boolean;
+  employeeOptions?: any[];
+  hierarchyOptions?: any[];
+  onEmployeeSelect?: (employeeId: string | null) => void;
+  isEmployeeLoading?: boolean;
+  selectedEmployeeId?: string | null;
+  
+  // Hierarchy selection props
+  selectedHierarchyId?: string | null;
+  onHierarchySelect?: (employeeId: string | null) => void;
 }
 
 export interface HierarchyControlsProps {
@@ -65,4 +87,8 @@ export interface HierarchyTreeProps {
   onExpandAll: () => void;
   onCollapseAll: () => void;
   onClearSearch: () => void;
+}
+
+export interface EmptyStateProps {
+  isSearchEmpty?: boolean;
 }

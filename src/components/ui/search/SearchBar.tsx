@@ -1,29 +1,37 @@
-import React from "react";
-import { Box, TextField, SxProps, Theme } from "@/components/ui/Component";
+import React, { forwardRef } from "react";
+import { Box, TextField, SxProps, Theme, Search } from "@/components/ui/Component";
 
-interface SearchBarProps {
-  value: string;
-  onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  placeholder?: string;
+interface SearchBarProps extends React.ComponentProps<typeof TextField> {
   sx?: SxProps<Theme>;
 }
 
-const SearchBar: React.FC<SearchBarProps> = ({
-  value,
-  onChange,
-  placeholder,
-  sx,
-}) => (
-  <Box sx={{ minWidth: 200, bgcolor: "white", borderRadius: 1, ...sx }}>
-    <TextField
-      size="small"
-      placeholder={placeholder || "Search"}
-      value={value}
-      onChange={onChange}
-      inputProps={{ "aria-label": placeholder || "Search" }}
-      fullWidth
-    />
-  </Box>
+const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
+  ({ sx, InputProps, ...props }, ref) => (
+    <Box
+      ref={ref}
+      sx={{ minWidth: 200, bgcolor: "white", borderRadius: 1, ...sx }}
+    >
+      <TextField
+        size="small"
+        fullWidth
+        {...props}
+        InputProps={{
+          ...InputProps,
+          startAdornment: (
+            <>
+              <Search
+                fontSize="small"
+                sx={{ color: "text.secondary", mr: 1 }}
+              />
+              {InputProps?.startAdornment}
+            </>
+          ),
+        }}
+      />
+    </Box>
+  ),
 );
+
+SearchBar.displayName = "SearchBar";
 
 export default SearchBar;

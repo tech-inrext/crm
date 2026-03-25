@@ -12,7 +12,7 @@ import {
 import PageHeader from "@/fe/components/PageHeader";
 import useTeamsPage from "@/fe/pages/teams/hooks/useTeamsPage";
 import { TEAMS_PERMISSION_MODULE } from "@/fe/pages/teams/constants/teams";
-import { mainBoxSx } from "./components/styles";
+import { mainBoxSx } from "./styles";
 
 const TeamsPage: React.FC = () => {
   const {
@@ -23,6 +23,7 @@ const TeamsPage: React.FC = () => {
     selectedNode,
     totalCount,
     search,
+    managerName,
     handleSearchChange,
     setSearch,
     toggleNode,
@@ -31,6 +32,15 @@ const TeamsPage: React.FC = () => {
     handleCollapseAll,
     handleRefresh,
     debouncedSearch,
+    // Admin search
+    isAdmin,
+    managersData,
+    handleEmployeeSelect,
+    selectedManager,
+    isEmployeeLoading,
+    hierarchyOptions,
+    contextManager,
+    handleHierarchySelect,
   } = useTeamsPage();
 
   return (
@@ -45,12 +55,22 @@ const TeamsPage: React.FC = () => {
           totalCount={totalCount}
           search={search}
           loading={loading}
+          managerName={managerName}
           hierarchy={hierarchy}
           onSearchChange={handleSearchChange}
           onRefresh={handleRefresh}
           onExpandAll={handleExpandAll}
           onCollapseAll={handleCollapseAll}
           onClearSearch={() => setSearch("")}
+          // Admin search props
+          isAdmin={isAdmin}
+          employeeOptions={managersData}
+          onEmployeeSelect={handleEmployeeSelect}
+          isEmployeeLoading={isEmployeeLoading}
+          selectedEmployeeId={contextManager}
+          hierarchyOptions={hierarchyOptions}
+          selectedHierarchyId={selectedNode}
+          onHierarchySelect={handleHierarchySelect}
         />
 
         <Paper sx={{ p: 3 }} elevation={1}>

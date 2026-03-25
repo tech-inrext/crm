@@ -23,6 +23,7 @@ const notices = [
     title: "Emergency: Server Maintenance",
     description: "The CRM and main database will be down...",
     date: "Mar 24, 11:46 AM",
+    author: "Admin Team",
     color: "#f44336",
     priorityColor: "#d32f2f",
     pinned: true,
@@ -33,16 +34,18 @@ const notices = [
     title: "New Luxury Villa Project Launch",
     description: "We are thrilled to announce the launch...",
     date: "Mar 24, 9:46 AM",
+    author: "Project Manager",
     color: "#9c27b0",
     priorityColor: "#1976d2",
     pinned: false,
   },
-   {
+  {
     category: "Project Updates",
     priority: "Info",
     title: "New Luxury Villa Project Launch",
     description: "We are thrilled to announce the launch...",
     date: "Mar 24, 9:46 AM",
+    author: "Marketing Team",
     color: "#9c27b0",
     priorityColor: "#1976d2",
     pinned: false,
@@ -53,6 +56,7 @@ const notices = [
     title: "Updated Commission Structure",
     description: "The commission structure has been revised...",
     date: "Mar 23, 11:46 AM",
+    author: "Sales Head",
     color: "#3f51b5",
     priorityColor: "#ed6c02",
     pinned: false,
@@ -73,25 +77,26 @@ const gridStyles = {
 // NoticeCard component
 function NoticeCard({
   notice,
-  showBorder = true, // control left border
+  showBorder = true,
 }: {
-  notice: typeof notices[0];
+  notice: (typeof notices)[0];
   showBorder?: boolean;
 }) {
   return (
-    <Card
-      sx={{
-        borderRadius: 3,
-        boxShadow: "0px 2px 8px rgba(0,0,0,0.08)",
-        display: "flex",
-        flexDirection: "column",
-        height: "100%",
-        borderLeft: showBorder ? `4px solid ${notice.color}` : "none",
-      }}
-    >
-      <CardContent sx={{ display: "flex", flexDirection: "column", flexGrow: 1 }}>
+   <Card
+  className="!rounded-2xl flex flex-col h-full"
+  style={{
+    borderLeft: showBorder ? `4px solid ${notice.color}` : "none",
+  }}
+>
+      <CardContent className="flex flex-col flex-grow">
         <Stack direction="row" justifyContent="space-between" mb={2}>
-          <Chip label={notice.category} size="small" sx={{ color: notice.color }} />
+          <Chip
+            label={notice.category}
+            size="small"
+            sx={{ color: notice.color }}
+          />
+
           {notice.priority && (
             <Chip
               icon={
@@ -114,28 +119,23 @@ function NoticeCard({
         </Stack>
 
         <Box sx={{ flexGrow: 1 }}>
-          <Typography fontWeight={700} fontSize={16} mb={1} sx={{ minHeight: 48 }}>
+         <Typography className="font-bold text-[16px] mb-1 min-h-[48px]">
             {notice.title}
           </Typography>
-          <Typography
-            fontSize={13}
-            color="text.secondary"
-            mb={2}
-            sx={{
-              display: "-webkit-box",
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: "vertical",
-              overflow: "hidden",
-              minHeight: 40,
-            }}
-          >
+
+          <Typography className="!text-sm text-gray-500 mb-2 line-clamp-2 min-h-[40px]">
             {notice.description}
           </Typography>
         </Box>
 
         <Divider />
 
-        <Stack direction="row" justifyContent="space-between" mt={1}>
+        {/* Author + Date */}
+        <Stack className="justify-between items-center mt-1" direction="row">
+          <Typography fontSize={12} color="text.secondary">
+            By {notice.author}
+          </Typography>
+
           <Typography fontSize={12} color="text.secondary">
             {notice.date}
           </Typography>
@@ -161,6 +161,7 @@ export default function NoticesDashboard() {
               Pinned Notices
             </Typography>
           </Stack>
+
           <Box sx={gridStyles} mb={4}>
             {pinnedNotices.map((notice, i) => (
               <NoticeCard key={i} notice={notice} />
@@ -175,18 +176,12 @@ export default function NoticesDashboard() {
         <Typography variant="h6" fontWeight={600}>
           All Notices
         </Typography>
-        <Box
-          sx={{
-            bgcolor: "#e5e7eb",
-            px: 1.5,
-            py: 0.5,
-            borderRadius: "999px",
-            fontSize: 13,
-          }}
-        >
+
+        <Box className="bg-gray-200 px-1.5 py-0.5 rounded-full text-[13px]">
           {regularNotices.length}
         </Box>
       </Stack>
+
       <Box sx={gridStyles}>
         {regularNotices.map((notice, i) => (
           <NoticeCard key={i} notice={notice} showBorder={false} />

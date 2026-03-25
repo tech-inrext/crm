@@ -15,68 +15,103 @@ import {
   People as PeopleIcon,
   ExpandMore,
   ChevronRight,
+  Autocomplete,
+  Typography,
+  CircularProgress,
 } from "@/components/ui/Component";
-import SearchBar from "@/components/ui/search/SearchBar";
+import AllEmployeeSearchBar from "./AllEmployeeSearchBar";
 import { TeamsActionBarProps } from "../types";
 import {
   controlsStackSx,
-  totalMembersChipSx,
+  actionBarBoxSx,
+  searchBarWrapperSx,
+  rightActionsStackSx,
+  actionButtonSx,
+  textActionButtonSx,
+  searchTextFieldSx,
 } from "./styles";
 
-export const TeamsActionBar: React.FC<TeamsActionBarProps> = ({
+ export const TeamsActionBar: React.FC<TeamsActionBarProps> = ({
   totalCount,
   search,
   loading,
+  managerName,
   hierarchy,
   onSearchChange,
   onRefresh,
   onExpandAll,
   onCollapseAll,
+  isAdmin,
+  employeeOptions,
+  hierarchyOptions,
+  onEmployeeSelect,
+  isEmployeeLoading,
+  selectedEmployeeId,
+  // New props
+  selectedHierarchyId,
+  onHierarchySelect,
 }) => {
   return (
     <PageHeader 
       title="Team Hierarchy"
       subtitle="Visualize reporting lines and explore team members."
     >
-      <Box sx={{ width: "100%" }}>
+      <Box sx={actionBarBoxSx}>
         {/* Row 1: Search and Global Actions */}
         <Stack
           direction="row"
           spacing={2}
           alignItems="center"
-          sx={{ ...controlsStackSx, mb: 1.5 }}
+          sx={controlsStackSx}
         >
-          <Box sx={{ flexGrow: 1, maxWidth: "600px" }}>
-            <SearchBar
-              value={search}
-              onChange={onSearchChange}
-              placeholder="Search team member or role"
+          {isAdmin && employeeOptions && onEmployeeSelect && (
+            <AllEmployeeSearchBar
+              options={employeeOptions}
+              onSelect={onEmployeeSelect}
+              loading={isEmployeeLoading}
+              selectedId={selectedEmployeeId}
+            />
+          )}
+
+          <Box sx={searchBarWrapperSx}>
+            <AllEmployeeSearchBar
+              options={hierarchyOptions || []}
+              onSelect={onHierarchySelect || (() => {})}
+              placeholder="Search in this team..."
+              selectedId={selectedHierarchyId}
             />
           </Box>
 
-          <Tooltip title="Refresh hierarchy">
-            <IconButton color="primary" onClick={onRefresh} disabled={loading}>
-              <Refresh />
-            </IconButton>
-          </Tooltip>
+          <Stack direction="row" spacing={1} alignItems="center" sx={rightActionsStackSx}>
+            {managerName && (
+              <Tooltip title="Your Direct Manager">
+                <Button
+                  size="small"
+                  variant="outlined"
+                  startIcon={<PersonIcon fontSize="small" />}
+                  sx={actionButtonSx}
+                >
+                  {`Manager: ${managerName}`}
+                </Button>
+              </Tooltip>
+            )}
 
-          <Tooltip title="Total members in this hierarchy">
-            <Chip
-              icon={<PeopleIcon />}
-              label={`${totalCount} Members`}
-              color="success"
-              variant="filled"
-              sx={totalMembersChipSx}
-            />
-          </Tooltip>
+            <Tooltip title="Total members in this hierarchy">
+              <Button
+                variant="outlined"
+                startIcon={<PeopleIcon fontSize="small" />}
+                sx={actionButtonSx}
+              >
+                {`${totalCount} Members`}
+              </Button>
+            </Tooltip>
 
-          <Stack direction="row" spacing={1} sx={{ ml: "auto" }}>
             <Button
               size="small"
               variant="text"
               startIcon={<ExpandMore />}
               onClick={onExpandAll}
-              sx={{ fontWeight: 600 }}
+              sx={textActionButtonSx}
             >
               Expand All
             </Button>
@@ -85,10 +120,16 @@ export const TeamsActionBar: React.FC<TeamsActionBarProps> = ({
               variant="text"
               startIcon={<ChevronRight />}
               onClick={onCollapseAll}
-              sx={{ fontWeight: 600 }}
+              sx={textActionButtonSx}
             >
               Collapse All
             </Button>
+
+            <Tooltip title="Refresh hierarchy">
+              <IconButton color="primary" onClick={onRefresh} disabled={loading}>
+                <Refresh />
+              </IconButton>
+            </Tooltip>
           </Stack>
         </Stack>
       </Box>
