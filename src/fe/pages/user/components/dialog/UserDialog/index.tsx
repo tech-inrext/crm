@@ -9,10 +9,8 @@ import {
   IconButton,
 } from "@/components/ui/Component";
 import { BUTTON_LABELS } from "@/fe/pages/user/constants/users";
-import { useAuth } from "@/contexts/AuthContext";
-import { useToast } from "@/fe/components/Toast/ToastContext";
 import { useUserDialogData } from "@/fe/pages/user/hooks/useUserDialogData";
-import { makeAllTouched, resolveFileUploads } from "@/fe/pages/user/utils";
+import { makeAllTouched } from "@/fe/pages/user/utils";
 import { userValidationSchema } from "./validation";
 import PhotoUpload from "./PhotoUpload";
 import BasicInformation from "./BasicInformation";
@@ -21,10 +19,6 @@ import ForFreelancer from "./ForFreelancer";
 import RequiredDocuments from "./RequiredDocuments";
 import NomineeSection from "./NomineeSection";
 import type { UserFormData, UserDialogProps } from "@/fe/pages/user/types";
-import {
-  useCreateUserMutation,
-  useUpdateUserMutation,
-} from "@/fe/pages/user/userApi";
 
 const UserDialog: React.FC<UserDialogProps> = ({
   open,
@@ -33,60 +27,13 @@ const UserDialog: React.FC<UserDialogProps> = ({
   onClose,
   onSave,
 }) => {
-  const { user: currentUser } = useAuth();
-  const { showToast } = useToast();
-  const { roles, managers, departments } = useUserDialogData(open);
-  const createMutation = useCreateUserMutation();
-  const updateMutation = useUpdateUserMutation();
-
-  const { mutate: handleUserSave, loading: saving = false } = editId
-    ? updateMutation
-    : createMutation;
-
-  // 🛡️ Filter roles based on logged-in user's rank
-  const filteredRoles = useMemo(() => {
-    if (!open) return [];
-    if (currentUser?.isSystemAdmin) return roles;
-
-    // Get current user's rank from their active role
-    let activeUserRank = Infinity;
-    if (currentUser?.currentRole) {
-      const activeRoleId = typeof currentUser.currentRole === "string"
-        ? currentUser.currentRole
-        : currentUser.currentRole._id;
-
-      const activeRoleObj = currentUser.roles?.find(r => r._id === activeRoleId);
-      // Fallback to the currentRole object itself if rank is present there
-      const rankVal = activeRoleObj?.rank ?? (currentUser.currentRole as any).rank;
-      
-      activeUserRank = (typeof rankVal === "number" && rankVal > 0) ? rankVal : Infinity;
-    }
-
-    return roles.filter(role => {
-      const targetRank = role.rank ?? 0;
-      const normalizedTarget = targetRank > 0 ? targetRank : Infinity;
-      return normalizedTarget >= activeUserRank;
-    });
-  }, [open, roles, currentUser]);
+  const { roles, managers, departments, loading, saving, handleSubmit } =
+    useUserDialogData(open, editId);
 
   if (!open) return null;
 
-  const handleSubmit = async (values: UserFormData) => {
-    try {
-      const payload = await resolveFileUploads(values);
-      if (editId) {
-        await handleUserSave({ ...payload, id: editId }, onSave);
-      } else {
-        await handleUserSave(payload, onSave);
-      }
-      onClose();
-    } catch (err: any) {
-      const backendMessage =
-        err.response?.data?.message ||
-        err.response?.data?.error ||
-        "Failed to save user.";
-      showToast(backendMessage, "error");
-    }
+  const onSubmit = async (values: UserFormData) => {
+    await handleSubmit(values, onSave, onClose);
   };
 
   return (
@@ -121,7 +68,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
             validationSchema={userValidationSchema}
             validateOnMount={false}
             enableReinitialize
-            onSubmit={handleSubmit}
+            onSubmit={onSubmit}
           >
             {({ setFieldValue, dirty, values, submitForm, setTouched }) => (
               <Form className="flex flex-col min-h-0">
@@ -141,7 +88,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   <OrganizationSection
                     managers={managers}
                     departments={departments}
-                    roles={filteredRoles}
+                    roles={roles}
                     setFieldValue={setFieldValue}
                     currentRoles={values.roles}
                     currentManagerId={values.managerId}
