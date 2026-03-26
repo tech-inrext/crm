@@ -1422,16 +1422,20 @@ class EmployeeService extends Service {
       // 👑 System Admins can assign any role
       if (requesterRole.isSystemAdmin) return { authorized: true };
 
-      const requesterRank = requesterRole.rank ?? 0;
+      // 🏆 New Hierarchy Logic: 1 = Highest Privilege, higher = Lower Privilege
+      // Treat rank 0 or undefined as the lowest possible privilege (infinity) 
+      const requesterRank = requesterRole.rank > 0 ? requesterRole.rank : Infinity;
 
       for (const target of targetRoles) {
-        const targetRank = target.rank ?? 0;
+        const targetRank = target.rank > 0 ? target.rank : Infinity;
 
         // 🚫 Check 1: Rank comparison
-        if (targetRank > requesterRank) {
+        // If targetRank is smaller than requesterRank, it means the target role 
+        // has HIGHER privilege than the requester.
+        if (targetRank < requesterRank) {
           return {
             authorized: false,
-            message: `Insufficient privilege: Role '${target.name}' has rank ${targetRank}, but your role '${requesterRole.name}' only has rank ${requesterRank}. You cannot assign roles with a higher rank than your own.`,
+            message: `Insufficient privilege: Role '${target.name}' has rank ${target.rank || "none"}, but your role '${requesterRole.name}' only has rank ${requesterRole.rank || "none"}. 1 is the highest privilege; you cannot assign roles with a higher rank than your own.`,
           };
         }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Formik, Form } from "formik";
 import {
   CircularProgress,
@@ -9,6 +9,7 @@ import {
   IconButton,
 } from "@/components/ui/Component";
 import { BUTTON_LABELS } from "@/fe/pages/user/constants/users";
+import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/fe/components/Toast/ToastContext";
 import { useUserDialogData } from "@/fe/pages/user/hooks/useUserDialogData";
 import { makeAllTouched, resolveFileUploads } from "@/fe/pages/user/utils";
@@ -32,6 +33,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
   onClose,
   onSave,
 }) => {
+  const { user: currentUser } = useAuth();
   const { showToast } = useToast();
   const { roles, managers, departments } = useUserDialogData(open);
   const createMutation = useCreateUserMutation();
@@ -40,6 +42,32 @@ const UserDialog: React.FC<UserDialogProps> = ({
   const { mutate: handleUserSave, loading: saving = false } = editId
     ? updateMutation
     : createMutation;
+
+  // 🛡️ Filter roles based on logged-in user's rank
+  const filteredRoles = useMemo(() => {
+    if (!open) return [];
+    if (currentUser?.isSystemAdmin) return roles;
+
+    // Get current user's rank from their active role
+    let activeUserRank = Infinity;
+    if (currentUser?.currentRole) {
+      const activeRoleId = typeof currentUser.currentRole === "string"
+        ? currentUser.currentRole
+        : currentUser.currentRole._id;
+
+      const activeRoleObj = currentUser.roles?.find(r => r._id === activeRoleId);
+      // Fallback to the currentRole object itself if rank is present there
+      const rankVal = activeRoleObj?.rank ?? (currentUser.currentRole as any).rank;
+      
+      activeUserRank = (typeof rankVal === "number" && rankVal > 0) ? rankVal : Infinity;
+    }
+
+    return roles.filter(role => {
+      const targetRank = role.rank ?? 0;
+      const normalizedTarget = targetRank > 0 ? targetRank : Infinity;
+      return normalizedTarget >= activeUserRank;
+    });
+  }, [open, roles, currentUser]);
 
   if (!open) return null;
 
@@ -113,7 +141,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                   <OrganizationSection
                     managers={managers}
                     departments={departments}
-                    roles={roles}
+                    roles={filteredRoles}
                     setFieldValue={setFieldValue}
                     currentRoles={values.roles}
                     currentManagerId={values.managerId}
