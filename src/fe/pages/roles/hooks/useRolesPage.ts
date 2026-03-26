@@ -111,8 +111,9 @@ export function useRolesPage() {
             handleMutationSuccess,
           );
         }
-      } catch {
-        showToast("Failed to save role.", "error");
+      } catch (err: any) {
+        const backendMessage = err.response?.data?.message || err.response?.data?.error;
+        showToast(backendMessage || "Failed to save role.", "error");
       }
     },
     [createRole, updateRole, handleMutationSuccess, showToast],

@@ -19,7 +19,7 @@ const Toast: React.FC<ToastProps> = ({ open, message, severity, onClose }) => {
   return (
     <div
       role="alert"
-      className={`fixed top-4 right-4 z-[1400] flex items-center gap-3 px-5 py-2.5 rounded-xl shadow-xl text-sm font-medium transition-all ${colourClass}`}
+      className={`fixed top-4 right-4 z-[11000] flex items-center gap-3 px-5 py-2.5 rounded-xl shadow-xl text-sm font-medium transition-all ${colourClass}`}
     >
       <span>{message}</span>
       <IconButton
