@@ -6,7 +6,7 @@ const userApi = createApi({
     getUsers: (params) => ({
       url: "/api/v0/employee",
       isPaginated: true,
-      defaultPageSize: 5,
+      defaultPageSize: 8,
       shouldCache: true, // Cache the employee list for better performance
     }),
     // Single employee by ID
@@ -32,7 +32,8 @@ const userApi = createApi({
     }),
     getMyTeamHierarchy: (params) => ({
       url: "/api/v0/employee/hierarchy",
-      isPaginated: false,
+      isPaginated: true,
+      defaultPageSize: 8,
       shouldCache: true,
     }),
   },
