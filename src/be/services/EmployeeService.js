@@ -310,9 +310,22 @@ class EmployeeService extends Service {
         newManagerId = req.body.managerId ? String(req.body.managerId) : null;
       }
       const managerChanged = oldManagerId !== newManagerId;
-      // If manager changed → set MOU status
-      if (managerChanged) {
+      
+      /* ---------- MOU REGENERATION DETECTION ---------- */
+      // Helper to compare trimmed strings safely
+      const hasStringChanged = (oldVal, newVal) => 
+        String(oldVal || "").trim() !== String(newVal || "").trim();
+
+      const slabChanged = ("slabPercentage" in req.body) && 
+        hasStringChanged(existingEmployee.slabPercentage, req.body.slabPercentage);
+
+      const branchChanged = ("branch" in req.body) && 
+        hasStringChanged(existingEmployee.branch, req.body.branch);
+
+      // If manager, slab, or branch changed → set MOU status to Pending
+      if (managerChanged || slabChanged || branchChanged) {
         updateFields.mouStatus = "Pending";
+        updateFields.mouPdfUrl = "";
       }
       const oldRoles = existingEmployee.roles.map((r) => ({
         id: r._id.toString(),
