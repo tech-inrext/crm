@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import React, { useState } from "react";
 import { Formik, Form } from "formik";
@@ -9,6 +9,7 @@ import {
   IconButton,
 } from "@/components/ui/Component";
 import { BUTTON_LABELS } from "@/fe/pages/user/constants/users";
+import { useToast } from "@/fe/components/Toast/ToastContext";
 import { useUserDialogData } from "@/fe/pages/user/hooks/useUserDialogData";
 import { makeAllTouched, resolveFileUploads } from "@/fe/pages/user/utils";
 import { userValidationSchema } from "./validation";
@@ -31,6 +32,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
   onClose,
   onSave,
 }) => {
+  const { showToast } = useToast();
   const { roles, managers, departments } = useUserDialogData(open);
   const createMutation = useCreateUserMutation();
   const updateMutation = useUpdateUserMutation();
@@ -42,13 +44,21 @@ const UserDialog: React.FC<UserDialogProps> = ({
   if (!open) return null;
 
   const handleSubmit = async (values: UserFormData) => {
-    const payload = await resolveFileUploads(values);
-    if (editId) {
-      await handleUserSave({ ...payload, id: editId }, onSave);
-    } else {
-      await handleUserSave(payload, onSave);
+    try {
+      const payload = await resolveFileUploads(values);
+      if (editId) {
+        await handleUserSave({ ...payload, id: editId }, onSave);
+      } else {
+        await handleUserSave(payload, onSave);
+      }
+      onClose();
+    } catch (err: any) {
+      const backendMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        "Failed to save user.";
+      showToast(backendMessage, "error");
     }
-    onClose();
   };
 
   return (

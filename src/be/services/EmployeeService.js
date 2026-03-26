@@ -268,6 +268,15 @@ class EmployeeService extends Service {
     setIfPresent("managerId", managerId);
     setIfPresent("departmentId", departmentId);
     if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
+      // 🛡️ Prevent Role Escalation
+      const requesterRoleId = req.role?._id;
+      const authorityCheck = await this.verifyRoleAuthority(requesterRoleId, roles);
+      if (!authorityCheck.authorized) {
+        return res.status(403).json({
+          success: false,
+          message: authorityCheck.message,
+        });
+      }
       updateFields.roles = Array.isArray(roles) ? roles : [];
     }
     setIfPresent("photo", photo);
@@ -536,6 +545,15 @@ class EmployeeService extends Service {
       if (Object.prototype.hasOwnProperty.call(req.body, "departmentId"))
         employeeData.departmentId = departmentId;
       if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
+        // 🛡️ Prevent Role Escalation 
+        const requesterRoleId = req.role?._id;
+        const authorityCheck = await this.verifyRoleAuthority(requesterRoleId, roles);
+        if (!authorityCheck.authorized) {
+          return res.status(403).json({
+            success: false,
+            message: authorityCheck.message,
+          });
+        }
         employeeData.roles = Array.isArray(roles)
           ? roles
           : roles
@@ -1378,6 +1396,75 @@ class EmployeeService extends Service {
         message: "Failed to fetch AVP employees",
         error: error.message,
       });
+    }
+  }
+
+  /**
+   * Helper to verify if the requester has enough authority (rank)
+   * to assign target roles to another user.
+   *
+   * @param {string} requesterRoleId - Role ID of the user making the request
+   * @param {string|string[]} targetRoleIds - Role ID(s) being assigned
+   * @returns {Promise<{authorized: boolean, message?: string}>}
+   */
+  async verifyRoleAuthority(requesterRoleId, targetRoleIds) {
+    if (!requesterRoleId) {
+      return { authorized: false, message: "Requester role context missing" };
+    }
+
+    // Normalize target IDs to an array
+    const targets = Array.isArray(targetRoleIds)
+      ? targetRoleIds
+      : targetRoleIds
+        ? [targetRoleIds]
+        : [];
+
+    if (targets.length === 0) return { authorized: true };
+
+    try {
+      // Fetch requester role and target roles in parallel for efficiency
+      const [requesterRole, targetRoles] = await Promise.all([
+        Role.findById(requesterRoleId).lean(),
+        Role.find({ _id: { $in: targets } }).lean(),
+      ]);
+
+      if (!requesterRole) {
+        return { authorized: false, message: "Requester role not found" };
+      }
+
+      // 👑 System Admins can assign any role
+      if (requesterRole.isSystemAdmin) return { authorized: true };
+
+      const requesterRank = requesterRole.rank ?? 0;
+
+      for (const target of targetRoles) {
+        const targetRank = target.rank ?? 0;
+
+        // 🚫 Check 1: Rank comparison
+        if (targetRank > requesterRank) {
+          return {
+            authorized: false,
+            message: `Insufficient privilege: Role '${target.name}' has rank ${targetRank}, but your role '${requesterRole.name}' only has rank ${requesterRank}. You cannot assign roles with a higher rank than your own.`,
+          };
+        }
+
+        // 🚫 Check 2: Explicit System Admin protection (fail-safe)
+        // Even if ranks matched, only real System Admins can grant the isSystemAdmin flag.
+        if (target.isSystemAdmin) {
+          return {
+            authorized: false,
+            message: `Security Violation: The '${target.name}' role has System Administrator privileges. Only a System Admin can grant this level of access.`,
+          };
+        }
+      }
+
+      return { authorized: true };
+    } catch (error) {
+      console.error("Role authority verification failed:", error);
+      return {
+        authorized: false,
+        message: "Internal security check failed: " + error.message,
+      };
     }
   }
 }
