@@ -122,14 +122,14 @@ const RoleDialog: React.FC<RoleDialogProps> = ({
 
         <TextField
           margin="dense"
-          label="Role Rank (Higher = More Privilege)"
+          label="Role Rank (1 = Highest Privilege)"
           fullWidth
           type="number"
           value={rank}
           onChange={(e) => setRank(e.target.value)}
           sx={textFieldSx}
           inputProps={{ style: inputStyle, min: 0 }}
-          helperText="Defines hierarchy. Users can only assign roles with rank ≤ their own."
+          helperText="Defines hierarchy. 1 is highest privilege. Users can only assign roles with a rank ≥ their own (lower or equal privilege)."
         />
 
         <Box sx={modulePermsSectionSx}>

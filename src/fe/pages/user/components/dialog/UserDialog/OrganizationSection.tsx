@@ -1,4 +1,4 @@
-﻿import React from "react";
+import React from "react";
 import {
   TextField,
   MenuItem,
@@ -111,7 +111,9 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
           <Autocomplete
             multiple
             options={roles}
-            getOptionLabel={(opt) => opt.name || ""}
+            getOptionLabel={(opt) =>
+              opt.rank ? `${opt.name} (Rank: ${opt.rank})` : opt.name || ""
+            }
             value={roles.filter((r) =>
               currentRoles?.some(
                 (cr: any) => cr === r._id || cr?._id === r._id,
@@ -125,6 +127,16 @@ const OrganizationSection: React.FC<OrganizationSectionProps> = ({
             }
             PopperComponent={BottomStartPopper}
             disablePortal
+            renderOption={(props, opt) => (
+              <li {...props} key={opt._id}>
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{opt.name}</span>
+                  <span className="text-xs text-slate-400">
+                    Rank: {opt.rank || 0}
+                  </span>
+                </div>
+              </li>
+            )}
             renderInput={(params) => (
               <TextField
                 {...params}

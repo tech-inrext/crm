@@ -12,6 +12,7 @@ export interface RoleObject {
   showCabBookingAnalytics?: boolean;
   showScheduleThisWeek?: boolean;
   isAVP?: boolean;
+  rank?: number;
 }
 
 export interface NomineeDetails {
@@ -90,6 +91,7 @@ export interface UploadPresignResponse {
 export interface RoleItem {
   _id: string;
   name: string;
+  rank?: number;
 }
 
 export interface ManagerItem {
