@@ -163,18 +163,15 @@ class NoticeService extends Service {
       });
     }
   }
- 
+
   // Get Notice Meta
   async getNoticeMeta(req, res) {
     try {
-      const categories =
-        Notice.schema.path("category")?.enumValues || [];
+      const categories = Notice.schema.path("category")?.enumValues || [];
 
-      const priorities =
-        Notice.schema.path("priority")?.enumValues || [];
+      const priorities = Notice.schema.path("priority")?.enumValues || [];
 
-      const departments =
-        Notice.schema.path("departments")?.enumValues || [];
+      const departments = Notice.schema.path("departments")?.enumValues || [];
 
       return res.status(200).json({
         success: true,
@@ -242,14 +239,10 @@ class NoticeService extends Service {
         });
       }
 
-      const updatedNotice = await Notice.findByIdAndUpdate(
-        id,
-        req.body,
-        {
-          new: true,
-          runValidators: true,
-        }
-      )
+      const updatedNotice = await Notice.findByIdAndUpdate(id, req.body, {
+        new: true,
+        runValidators: true,
+      })
         .populate("createdBy", "name email employeeId")
         .lean();
 

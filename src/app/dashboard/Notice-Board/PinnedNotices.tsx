@@ -282,7 +282,10 @@ export default function NoticesDashboard() {
         <>
           {pinnedNotices.length > 0 && (
             <>
-             <Stack className="flex items-center !gap-2 !mt-4 !mb-2" direction="row">
+              <Stack
+                className="flex items-center !gap-2 !mt-4 !mb-2"
+                direction="row"
+              >
                 <PushPinIcon />
                 <Typography variant="h6" fontWeight={600}>
                   Pinned Notices

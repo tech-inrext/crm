@@ -67,7 +67,7 @@ const noticeSchema = new mongoose.Schema(
       index: true,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 // Compound index for dashboard queries
@@ -88,5 +88,4 @@ noticeSchema.statics.getMeta = function () {
   };
 };
 
-export default mongoose.models.Notice ||
-  mongoose.model("Notice", noticeSchema);
+export default mongoose.models.Notice || mongoose.model("Notice", noticeSchema);
