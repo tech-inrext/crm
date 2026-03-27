@@ -3,6 +3,8 @@ import Employee from "../models/Employee.js";
 import Lead from "../models/Lead.js";
 import FollowUp from "../models/FollowUp.js";
 import twilio from "../whatsapp-msg-service/twilio.js";
+import { sendCallReminderWhatsappMessage } from "../whatsapp-msg-service/agent-call-reminder/callReminder.js";
+import { sendSiteVisitReminderWhatsappMessage } from "../whatsapp-msg-service/agent-sitevisit-reminder/siteVisitReminder.js";
 
 // Job handler for sending notification WhatsApp messages
 export default async function sendNotificationWhatsapp(job) {
@@ -108,7 +110,7 @@ async function processWhatsappNotification(job) {
       if (reminderType === "5M") timeRemaining = "5 minutes";
 
       if (type === "site visit") {
-        await twilio.sendSiteVisitReminderWhatsappMessage(
+        await sendSiteVisitReminderWhatsappMessage(
           recipient.phone,
           recipient.name,
           lead.fullName || "Valued Client",
@@ -118,7 +120,7 @@ async function processWhatsappNotification(job) {
         );
       } else {
         // Default to call reminder for other types or "call back"
-        await twilio.sendCallReminderWhatsappMessage(
+        await sendCallReminderWhatsappMessage(
           recipient.phone,
           recipient.name,
           lead.fullName || "Valued Client",
