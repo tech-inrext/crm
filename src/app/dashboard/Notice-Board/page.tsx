@@ -5,7 +5,7 @@ import PinnedNotices from './PinnedNotices';
 // import AllNotices from './AllNotices';
 const NoticeBoardHeaderPage = () => (
 	<>
-		<NoticeBoardHeader />
+		{/* <NoticeBoardHeader /> */}
 		<PinnedNotices />
         {/* <AllNotices /> */}
 	</>

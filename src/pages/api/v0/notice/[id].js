@@ -1,5 +1,5 @@
 import { Controller } from "@framework";
-import NoticeService from "../../../../services/NoticeService";
+import NoticeService from "../../../../be/services/NoticeService";
 
 class NoticeByIdController extends Controller {
   constructor() {

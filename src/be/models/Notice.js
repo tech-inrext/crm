@@ -6,7 +6,7 @@ const noticeSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      index: true, // fast search
+      index: true,
     },
 
     description: {
@@ -17,20 +17,28 @@ const noticeSchema = new mongoose.Schema(
 
     category: {
       type: String,
-      trim: true,
-      index: true, // filter support
+      required: true,
+      enum: [
+        "General Announcements",
+        "Project Updates",
+        "Pricing / Offers",
+        "Sales Targets",
+        "Urgent Alerts",
+        "HR / Internal",
+      ],
+      index: true,
     },
 
     priority: {
       type: String,
-      trim: true,
+      enum: ["Urgent", "Important", "Info"],
       default: "Info",
       index: true,
     },
 
-    audience: {
+    departments: {
       type: String,
-      trim: true,
+      enum: ["All", "Sales", "Marketing", "HR", "Accounts", "Operations"],
       default: "All",
       index: true,
     },
@@ -38,7 +46,7 @@ const noticeSchema = new mongoose.Schema(
     expiry: {
       type: Date,
       default: null,
-      index: true, // expiry filtering
+      index: true,
     },
 
     pinned: {
@@ -46,17 +54,17 @@ const noticeSchema = new mongoose.Schema(
       default: false,
       index: true,
     },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Employee",
-      required: false,
       index: true,
     },
 
     isActive: {
       type: Boolean,
       default: true,
-      index: true, // important for filtering active notices
+      index: true,
     },
   },
   { timestamps: true }
@@ -70,6 +78,15 @@ noticeSchema.index({
   expiry: 1,
   createdAt: -1,
 });
+
+// Meta Method
+noticeSchema.statics.getMeta = function () {
+  return {
+    categories: this.schema.path("category").enumValues,
+    priorities: this.schema.path("priority").enumValues,
+    departments: this.schema.path("departments").enumValues,
+  };
+};
 
 export default mongoose.models.Notice ||
   mongoose.model("Notice", noticeSchema);

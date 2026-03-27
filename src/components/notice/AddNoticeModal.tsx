@@ -17,6 +17,8 @@ import {
   Typography,
   Box,
   CircularProgress,
+  Switch,
+  FormControlLabel,
 } from "@mui/material";
 
 import CloseIcon from "@mui/icons-material/Close";
@@ -37,12 +39,12 @@ const categories = [
 ];
 
 const priorities = ["Urgent", "Important", "Info"];
-const audiences = ["All", "Teams", "Roles"];
+const departments = ["All", "Teams", "Roles"];
 
 type Props = {
   open: boolean;
   onClose: () => void;
-  onNoticeAdded?: () => void; // 🔥 refresh dashboard
+  onNoticeAdded: () => void;
 };
 
 export default function AddNoticeModal({
@@ -50,75 +52,58 @@ export default function AddNoticeModal({
   onClose,
   onNoticeAdded,
 }: Props) {
-  const [title, setTitle] = useState<string>("");
-  const [description, setDescription] = useState<string>("");
-  const [category, setCategory] = useState<string>(categories[0]);
-  const [priority, setPriority] = useState<string>(priorities[2]);
-  const [audience, setAudience] = useState<string>(audiences[0]);
+  const [title, setTitle] = useState("");
+  const [description, setDescription] = useState("");
+  const [category, setCategory] = useState(categories[0]);
+  const [priority, setPriority] = useState(priorities[2]);
+  const [selectedDepartment, setSelectedDepartment] = useState(departments[0]);
   const [expiry, setExpiry] = useState<Dayjs | null>(null);
-  const [attachments, setAttachments] = useState<File[]>([]);
+  const [pinned, setPinned] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
-      setAttachments(Array.from(e.target.files));
-    }
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setCategory(categories[0]);
+    setPriority(priorities[2]);
+    setSelectedDepartment(departments[0]);
+    setExpiry(null);
+    setPinned(false);
   };
 
-  // ✅ API Submit
   const handleSubmit = async () => {
-    if (!title || !description) {
-      alert("Title and Description are required");
-      return;
-    }
+    if (!title.trim() || !description.trim()) return;
 
     try {
       setLoading(true);
-
-      const data = {
-        title,
-        description,
-        category,
-        priority,
-        audience,
-        expiry: expiry ? expiry.format("YYYY-MM-DD") : null,
-        pinned: priority === "Urgent",
-      };
 
       const res = await fetch("/api/v0/notice", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          title,
+          description,
+          category,
+          priority,
+          departments: selectedDepartment,
+          expiry: expiry ? expiry.format("YYYY-MM-DD") : null,
+          pinned,
+        }),
       });
 
       const result = await res.json();
 
-      if (result.success) {
-        alert("Notice created successfully");
-
-        // 🔄 Reset form
-        setTitle("");
-        setDescription("");
-        setCategory(categories[0]);
-        setPriority(priorities[2]);
-        setAudience(audiences[0]);
-        setExpiry(null);
-        setAttachments([]);
-
-        onClose();
-
-        // 🔥 refresh dashboard
-        if (onNoticeAdded) {
-          onNoticeAdded();
-        }
-      } else {
-        alert(result.message);
+      if (!result.success) {
+        throw new Error(result.message);
       }
+
+      resetForm();
+      onClose();
+      onNoticeAdded(); // 🔥 auto refresh dashboard
     } catch (error) {
-      console.error("Notice Error:", error);
-      alert("Failed to create notice");
+      console.error("Notice Create Error:", error);
     } finally {
       setLoading(false);
     }
@@ -127,28 +112,22 @@ export default function AddNoticeModal({
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-
-        {/* Header */}
         <DialogTitle sx={{ fontWeight: 700, fontSize: 22 }}>
           Create New Notice
-          <IconButton
-            onClick={onClose}
-            sx={{ position: "absolute", right: 16, top: 16 }}
-          >
+          <IconButton onClick={onClose} className="!absolute !right-4 !top-4">
             <CloseIcon />
           </IconButton>
         </DialogTitle>
 
-        {/* Content */}
         <DialogContent dividers>
           <Stack spacing={2}>
-
             <TextField
               label="Notice Title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               fullWidth
               size="small"
+              className="bg-white rounded-lg"
             />
 
             <TextField
@@ -195,15 +174,15 @@ export default function AddNoticeModal({
 
             <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
               <FormControl fullWidth size="small">
-                <InputLabel>Audience</InputLabel>
+                <InputLabel>Departments</InputLabel>
                 <Select
-                  value={audience}
-                  label="Audience"
-                  onChange={(e) => setAudience(e.target.value)}
+                  value={selectedDepartment}
+                  label="Departments"
+                  onChange={(e) => setSelectedDepartment(e.target.value)}
                 >
-                  {audiences.map((aud) => (
-                    <MenuItem key={aud} value={aud}>
-                      {aud}
+                  {departments.map((dept) => (
+                    <MenuItem key={dept} value={dept}>
+                      {dept}
                     </MenuItem>
                   ))}
                 </Select>
@@ -212,57 +191,36 @@ export default function AddNoticeModal({
               <DatePicker
                 label="Expiry Date"
                 value={expiry}
-                onChange={(newValue) => setExpiry(newValue)}
+                onChange={(val) => setExpiry(val)}
                 slotProps={{
                   textField: { size: "small", fullWidth: true },
                 }}
               />
             </Stack>
 
-            {/* Attachments */}
-            <Box>
-              <Typography fontWeight={500} mb={0.5}>
-                Attachments (optional)
-              </Typography>
-
-              <Button variant="outlined" component="label" size="small">
-                Upload File
-                <input hidden type="file" multiple onChange={handleFileChange} />
-              </Button>
-
-              {attachments.length > 0 && (
-                <Box mt={1}>
-                  {attachments.map((file, idx) => (
-                    <Typography key={idx} fontSize={13}>
-                      {file.name}
-                    </Typography>
-                  ))}
-                </Box>
-              )}
+            <Box className="bg-gray-50 rounded-lg p-1 border">
+              <FormControlLabel
+                control={
+                  <Switch
+                    checked={pinned}
+                    onChange={(e) => setPinned(e.target.checked)}
+                  />
+                }
+                label="Pin this notice to top"
+              />
             </Box>
-
           </Stack>
         </DialogContent>
 
-        {/* Actions */}
         <DialogActions sx={{ px: 3, py: 2 }}>
           <Button onClick={onClose} variant="outlined">
             Cancel
           </Button>
 
-          <Button
-            onClick={handleSubmit}
-            variant="contained"
-            disabled={loading}
-          >
-            {loading ? (
-              <CircularProgress size={20} color="inherit" />
-            ) : (
-              "Publish Notice"
-            )}
+          <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+            {loading ? <CircularProgress size={20} /> : "Publish Notice"}
           </Button>
         </DialogActions>
-
       </Dialog>
     </LocalizationProvider>
   );

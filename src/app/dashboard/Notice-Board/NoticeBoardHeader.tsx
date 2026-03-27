@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import AddNoticeModal from "./AddNoticeModal";
+import React, { useState, useEffect } from "react";
+import AddNoticeModal from "../../../components/notice/AddNoticeModal";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -61,51 +61,112 @@ function NoticeBoardHeader({
   const [priority, setPriority] = useState("");
   const [date, setDate] = useState<any>(null);
 
-  // Search
+  const [categories, setCategories] = useState<string[]>([]);
+  const [priorities, setPriorities] = useState<string[]>([]);
+
+  // =========================
+  // Fetch Meta
+  // =========================
+  const fetchMeta = async () => {
+    try {
+      const res = await fetch("/api/v0/notice/meta");
+      const data = await res.json();
+
+      if (data.success) {
+        setCategories(data.data.categories || []);
+        setPriorities(data.data.priorities || []);
+      }
+    } catch (error) {
+      console.log("Meta fetch error", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchMeta();
+  }, []);
+
+  // =========================
+  // Filter trigger
+  // =========================
+  const triggerFilter = (
+    newSearch = searchText,
+    newCategory = category,
+    newPriority = priority,
+    newDate = date,
+  ) => {
+    onFilterChange({
+      searchText: newSearch,
+      category: newCategory,
+      priority: newPriority,
+      date: newDate ? newDate.format("YYYY-MM-DD") : "",
+    });
+  };
+
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSearchText(value);
-    onFilterChange({ searchText: value, category, priority, date });
+    triggerFilter(value, category, priority, date);
   };
 
-  // Category
   const handleCategoryChange = (e: any) => {
     const value = e.target.value;
     setCategory(value);
-    onFilterChange({ searchText, category: value, priority, date });
+
+    // reverse mapping to sync tab
+    const reverseMap: any = {
+      "General Announcements": 1,
+      "Project Updates": 2,
+      "Pricing / Offers": 3,
+      "Sales Targets": 4,
+      "Urgent Alerts": 5,
+      "HR / Internal": 6,
+    };
+
+    setTab(reverseMap[value] || 0);
+
+    triggerFilter(searchText, value, priority, date);
   };
 
-  // Priority
   const handlePriorityChange = (e: any) => {
     const value = e.target.value;
     setPriority(value);
-    onFilterChange({ searchText, category, priority: value, date });
+    triggerFilter(searchText, category, value, date);
   };
 
-  // Date
   const handleDateChange = (newValue: any) => {
     setDate(newValue);
-    onFilterChange({ searchText, category, priority, date: newValue });
+    triggerFilter(searchText, category, priority, newValue);
   };
 
+  // =========================
   // Tabs
+  // =========================
   const handleTabChange = (_: any, value: number) => {
     setTab(value);
+
     const tabValue = tabData[value].value;
-    setCategory(tabValue);
-    onFilterChange({
-      searchText,
-      category: tabValue,
-      priority,
-      date,
-    });
+
+    const categoryMap: any = {
+      general: "General Announcements",
+      project: "Project Updates",
+      pricing: "Pricing / Offers",
+      sales: "Sales Targets",
+      urgent: "Urgent Alerts",
+      hr: "HR / Internal",
+    };
+
+    const mappedCategory = categoryMap[tabValue] || "";
+
+    setCategory(mappedCategory);
+
+    triggerFilter(searchText, mappedCategory, priority, date);
   };
 
   return (
     <>
       <AddNoticeModal open={open} onClose={() => setOpen(false)} />
 
-      <Box className="px-4 ml-4 py-2 bg-white rounded-xl border border-gray-200 max-w-fit">
+      <Box className="px-6 mr-4 py-2 bg-white rounded-xl border mb-5 border-gray-200 max-w-full">
         <Box className="rounded-2xl space-y-4">
           {/* Top Filters */}
           <Box className="p-2 rounded-2xl">
@@ -135,17 +196,17 @@ function NoticeBoardHeader({
                   onChange={handleCategoryChange}
                 >
                   <MenuItem value="">All</MenuItem>
-                  <MenuItem value="general">General</MenuItem>
-                  <MenuItem value="project">Project Updates</MenuItem>
-                  <MenuItem value="pricing">Pricing / Offers</MenuItem>
-                  <MenuItem value="sales">Sales Targets</MenuItem>
-                  <MenuItem value="urgent">Urgent Alerts</MenuItem>
-                  <MenuItem value="hr">HR / Internal</MenuItem>
+
+                  {categories.map((cat, index) => (
+                    <MenuItem key={index} value={cat}>
+                      {cat}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
               {/* Priority */}
-              <FormControl size="small" sx={{ minWidth: 160 }}>
+              <FormControl size="small" sx={{ minWidth: 150 }}>
                 <InputLabel>Select priority</InputLabel>
                 <Select
                   label="Select priority"
@@ -153,9 +214,12 @@ function NoticeBoardHeader({
                   onChange={handlePriorityChange}
                 >
                   <MenuItem value="">All</MenuItem>
-                  <MenuItem value="high">Urgent</MenuItem>
-                  <MenuItem value="medium">Important</MenuItem>
-                  <MenuItem value="low">Info</MenuItem>
+
+                  {priorities.map((pri, index) => (
+                    <MenuItem key={index} value={pri}>
+                      {pri}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
@@ -169,30 +233,21 @@ function NoticeBoardHeader({
                   slotProps={{
                     textField: {
                       size: "small",
-                      sx: {
-                        width: 180,
-                        backgroundColor: "white",
-                      },
+                      className: "bg-white w-[160px]",
                     },
                   }}
                 />
               </LocalizationProvider>
 
               {/* Filter Icon */}
-              <IconButton
-                sx={{
-                  bgcolor: "#fff",
-                  height: 38,
-                  width: 38,
-                }}
-              >
+              <IconButton className="!bg-white !h-[38px] !w-[38px]">
                 <FilterListIcon />
               </IconButton>
 
               {/* Add Button */}
               <Button
                 variant="contained"
-                className="h-10! px-5! rounded-xl! text-md! normal-case! bg-blue-500! hover:bg-blue-600!"
+                className="h-10! px-5! rounded-sm! text-md! normal-case! bg-blue-500! hover:bg-blue-600!"
                 onClick={() => setOpen(true)}
               >
                 + Add Notice
@@ -201,17 +256,14 @@ function NoticeBoardHeader({
           </Box>
 
           {/* Tabs */}
-          <Tabs
-            value={tab}
-            onChange={handleTabChange}
-           >
+          <Tabs value={tab} onChange={handleTabChange}>
             {tabData.map((item, idx) => (
               <Tab
                 key={idx}
                 icon={item.icon}
                 iconPosition="start"
                 label={item.label}
-                className={`normal-case! !mt-1 text-md! font-medium! min-h-[40px]! px-6! border-gray-300
+                className={`normal-case! !mt-1 text-md! mr-2 font-medium! min-h-[40px]! px-6! border-gray-300
                 ${
                   tab === idx
                     ? "bg-[#e6f0ff]! text-blue-600!"
