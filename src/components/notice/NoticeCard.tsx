@@ -64,9 +64,25 @@ export default function NoticeCard({
 
           {notice.priority && (
             <Chip
-              label={notice.priority}
               size="small"
-              className="font-semibold rounded-full px-2"
+              label={
+                <span className="flex items-center gap-2 font-semibold">
+                  <span className="relative flex h-3 w-3">
+                    <span
+                      className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                      style={{ backgroundColor: priorityColor }}
+                    ></span>
+
+                    <span
+                      className="relative inline-flex rounded-full h-3 w-3"
+                      style={{ backgroundColor: priorityColor }}
+                    ></span>
+                  </span>
+
+                  {notice.priority}
+                </span>
+              }
+              className="rounded-full px-2"
               style={{
                 backgroundColor: `${priorityColor}20`,
                 color: priorityColor,
