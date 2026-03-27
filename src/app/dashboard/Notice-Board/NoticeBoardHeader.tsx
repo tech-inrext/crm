@@ -1,7 +1,11 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import AddNoticeModal from "../../../components/notice/AddNoticeModal";
+import useNoticeBoardHeader from "../../../hooks/useNoticeBoardHeader";
+
+import { NOTICE_TABS } from "../../../utils/noticeTab";
+
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
@@ -9,7 +13,7 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import {
   Box,
   Button,
-  Select, 
+  Select,
   MenuItem,
   FormControl,
   InputLabel,
@@ -18,29 +22,9 @@ import {
 } from "../../../components/ui/Component";
 
 import { InputBase, Tabs, Tab } from "@mui/material";
+
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
-import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
-import FolderOpenIcon from "@mui/icons-material/FolderOpen";
-import WifiIcon from "@mui/icons-material/Wifi";
-import LocalOfferIcon from "@mui/icons-material/LocalOffer";
-import TrendingUpIcon from "@mui/icons-material/TrendingUp";
-import WarningAmberIcon from "@mui/icons-material/WarningAmber";
-import LockIcon from "@mui/icons-material/Lock";
-
-const tabData = [
-  { label: "All Notices", icon: <NotificationsNoneIcon />, value: "" },
-  { label: "General", icon: <FolderOpenIcon />, value: "general" },
-  { label: "Project Updates", icon: <WifiIcon />, value: "project" },
-  { label: "Pricing / Offers", icon: <LocalOfferIcon />, value: "pricing" },
-  { label: "Sales Targets", icon: <TrendingUpIcon />, value: "sales" },
-  {
-    label: "Urgent Alerts",
-    icon: <WarningAmberIcon color="error" />,
-    value: "urgent",
-  },
-  { label: "HR / Internal", icon: <LockIcon />, value: "hr" },
-];
 
 function NoticeBoardHeader({
   onFilterChange,
@@ -52,113 +36,23 @@ function NoticeBoardHeader({
     date?: any;
   }) => void;
 }) {
-  const [tab, setTab] = useState(0);
-  const [open, setOpen] = useState(false);
-  const [searchText, setSearchText] = useState("");
-  const [category, setCategory] = useState("");
-  const [priority, setPriority] = useState("");
-  const [date, setDate] = useState<any>(null);
-
-  const [categories, setCategories] = useState<string[]>([]);
-  const [priorities, setPriorities] = useState<string[]>([]);
-
-  // =========================
-  // Fetch Meta
-  // =========================
-  const fetchMeta = async () => {
-    try {
-      const res = await fetch("/api/v0/notice/meta");
-      const data = await res.json();
-
-      if (data.success) {
-        setCategories(data.data.categories || []);
-        setPriorities(data.data.priorities || []);
-      }
-    } catch (error) {
-      console.log("Meta fetch error", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchMeta();
-  }, []);
-
-  // =========================
-  // Filter trigger
-  // =========================
-  const triggerFilter = (
-    newSearch = searchText,
-    newCategory = category,
-    newPriority = priority,
-    newDate = date,
-  ) => {
-    onFilterChange({
-      searchText: newSearch,
-      category: newCategory,
-      priority: newPriority,
-      date: newDate ? newDate.format("YYYY-MM-DD") : "",
-    });
-  };
-
-  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setSearchText(value);
-    triggerFilter(value, category, priority, date);
-  };
-
-  const handleCategoryChange = (e: any) => {
-    const value = e.target.value;
-    setCategory(value);
-
-    // reverse mapping to sync tab
-    const reverseMap: any = {
-      "General Announcements": 1,
-      "Project Updates": 2,
-      "Pricing / Offers": 3,
-      "Sales Targets": 4,
-      "Urgent Alerts": 5,
-      "HR / Internal": 6,
-    };
-
-    setTab(reverseMap[value] || 0);
-
-    triggerFilter(searchText, value, priority, date);
-  };
-
-  const handlePriorityChange = (e: any) => {
-    const value = e.target.value;
-    setPriority(value);
-    triggerFilter(searchText, category, value, date);
-  };
-
-  const handleDateChange = (newValue: any) => {
-    setDate(newValue);
-    triggerFilter(searchText, category, priority, newValue);
-  };
-
-  // =========================
-  // Tabs
-  // =========================
-  const handleTabChange = (_: any, value: number) => {
-    setTab(value);
-
-    const tabValue = tabData[value].value;
-
-    const categoryMap: any = {
-      general: "General Announcements",
-      project: "Project Updates",
-      pricing: "Pricing / Offers",
-      sales: "Sales Targets",
-      urgent: "Urgent Alerts",
-      hr: "HR / Internal",
-    };
-
-    const mappedCategory = categoryMap[tabValue] || "";
-
-    setCategory(mappedCategory);
-
-    triggerFilter(searchText, mappedCategory, priority, date);
-  };
+  // 🔥 Hook
+  const {
+    tab,
+    open,
+    setOpen,
+    searchText,
+    category,
+    priority,
+    date,
+    categories,
+    priorities,
+    handleSearchChange,
+    handleCategoryChange,
+    handlePriorityChange,
+    handleDateChange,
+    handleTabChange,
+  } = useNoticeBoardHeader(onFilterChange, NOTICE_TABS);
 
   return (
     <>
@@ -255,7 +149,7 @@ function NoticeBoardHeader({
 
           {/* Tabs */}
           <Tabs value={tab} onChange={handleTabChange}>
-            {tabData.map((item, idx) => (
+            {NOTICE_TABS.map((item, idx) => (
               <Tab
                 key={idx}
                 icon={item.icon}
