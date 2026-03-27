@@ -103,8 +103,9 @@ async function processWhatsappNotification(job) {
       
       const reminderType = notification.metadata.reminderType || "DUE";
       let timeRemaining = "now";
-      if (reminderType === "24H_BEFORE") timeRemaining = "24 hours";
-      if (reminderType === "2H_BEFORE") timeRemaining = "2 hours";
+      if (reminderType === "24H") timeRemaining = "24 hours";
+      if (reminderType === "2H") timeRemaining = "2 hours";
+      if (reminderType === "5M") timeRemaining = "5 minutes";
 
       if (type === "site visit") {
         await twilio.sendSiteVisitReminderWhatsappMessage(
