@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Formik, Form } from "formik";
 import {
   CircularProgress,
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/Component";
 import { BUTTON_LABELS } from "@/fe/pages/user/constants/users";
 import { useUserDialogData } from "@/fe/pages/user/hooks/useUserDialogData";
-import { makeAllTouched, resolveFileUploads } from "@/fe/pages/user/utils";
+import { makeAllTouched } from "@/fe/pages/user/utils";
 import { userValidationSchema } from "./validation";
 import PhotoUpload from "./PhotoUpload";
 import BasicInformation from "./BasicInformation";
@@ -19,10 +19,6 @@ import ForFreelancer from "./ForFreelancer";
 import RequiredDocuments from "./RequiredDocuments";
 import NomineeSection from "./NomineeSection";
 import type { UserFormData, UserDialogProps } from "@/fe/pages/user/types";
-import {
-  useCreateUserMutation,
-  useUpdateUserMutation,
-} from "@/fe/pages/user/userApi";
 
 const UserDialog: React.FC<UserDialogProps> = ({
   open,
@@ -31,24 +27,13 @@ const UserDialog: React.FC<UserDialogProps> = ({
   onClose,
   onSave,
 }) => {
-  const { roles, managers, departments } = useUserDialogData(open);
-  const createMutation = useCreateUserMutation();
-  const updateMutation = useUpdateUserMutation();
-
-  const { mutate: handleUserSave, loading: saving = false } = editId
-    ? updateMutation
-    : createMutation;
+  const { roles, managers, departments, loading, saving, handleSubmit } =
+    useUserDialogData(open, editId);
 
   if (!open) return null;
 
-  const handleSubmit = async (values: UserFormData) => {
-    const payload = await resolveFileUploads(values);
-    if (editId) {
-      await handleUserSave({ ...payload, id: editId }, onSave);
-    } else {
-      await handleUserSave(payload, onSave);
-    }
-    onClose();
+  const onSubmit = async (values: UserFormData) => {
+    await handleSubmit(values, onSave, onClose);
   };
 
   return (
@@ -83,7 +68,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
             validationSchema={userValidationSchema}
             validateOnMount={false}
             enableReinitialize
-            onSubmit={handleSubmit}
+            onSubmit={onSubmit}
           >
             {({ setFieldValue, dirty, values, submitForm, setTouched }) => (
               <Form className="flex flex-col min-h-0">

@@ -67,6 +67,8 @@ const RoleDialog: React.FC<RoleDialogProps> = ({
     setShowScheduleThisWeek,
     isAVP,
     setIsAVP,
+    rank,
+    setRank,
     isClient,
     windowWidth,
     gridTemplateColumns,
@@ -117,6 +119,18 @@ const RoleDialog: React.FC<RoleDialogProps> = ({
             inputProps={{ style: inputStyle }}
           />
         )}
+
+        <TextField
+          margin="dense"
+          label="Role Rank (1 = Highest Privilege)"
+          fullWidth
+          type="number"
+          value={rank}
+          onChange={(e) => setRank(e.target.value)}
+          sx={textFieldSx}
+          inputProps={{ style: inputStyle, min: 0 }}
+          helperText="Defines hierarchy. 1 is highest privilege. Users can only assign roles with a rank ≥ their own (lower or equal privilege)."
+        />
 
         <Box sx={modulePermsSectionSx}>
           <Typography sx={sectionTitleSx}>Module Permissions</Typography>
