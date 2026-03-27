@@ -19,7 +19,7 @@ import {
   CircularProgress,
   Switch,
   FormControlLabel,
-} from "@mui/material";
+} from "../../components/ui/Component";
 
 import CloseIcon from "@mui/icons-material/Close";
 
@@ -101,7 +101,7 @@ export default function AddNoticeModal({
 
       resetForm();
       onClose();
-      onNoticeAdded(); // 🔥 auto refresh dashboard
+      onNoticeAdded(); 
     } catch (error) {
       console.error("Notice Create Error:", error);
     } finally {

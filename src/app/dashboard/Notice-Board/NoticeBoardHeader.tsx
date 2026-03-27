@@ -9,17 +9,15 @@ import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import {
   Box,
   Button,
-  InputBase,
-  Tabs,
-  Tab,
-  Select,
+  Select, 
   MenuItem,
   FormControl,
   InputLabel,
   IconButton,
   Stack,
-} from "@mui/material";
+} from "../../../components/ui/Component";
 
+import { InputBase, Tabs, Tab } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
@@ -166,7 +164,7 @@ function NoticeBoardHeader({
     <>
       <AddNoticeModal open={open} onClose={() => setOpen(false)} />
 
-      <Box className="px-6 mr-4 py-2 bg-white rounded-xl border mb-5 border-gray-200 max-w-full">
+      <Box className="px-6 mr-2 py-2 bg-white rounded-xl border mb-5 border-gray-200 max-w-full">
         <Box className="rounded-2xl space-y-4">
           {/* Top Filters */}
           <Box className="p-2 rounded-2xl">
@@ -233,21 +231,21 @@ function NoticeBoardHeader({
                   slotProps={{
                     textField: {
                       size: "small",
-                      className: "bg-white w-[160px]",
+                      className: "bg-white w-[150px]",
                     },
                   }}
                 />
               </LocalizationProvider>
 
               {/* Filter Icon */}
-              <IconButton className="!bg-white !h-[38px] !w-[38px]">
+              <IconButton className="!bg-white !h-[38px] !w-[36px]">
                 <FilterListIcon />
               </IconButton>
 
               {/* Add Button */}
               <Button
                 variant="contained"
-                className="h-10! px-5! rounded-sm! text-md! normal-case! bg-blue-500! hover:bg-blue-600!"
+                className="h-10! px-2! rounded-sm! text-md! normal-case! bg-blue-500! hover:bg-blue-600!"
                 onClick={() => setOpen(true)}
               >
                 + Add Notice
