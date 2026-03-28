@@ -11,7 +11,7 @@ import {
   Box,
 } from "@mui/material";
 
-import { categoryColors, priorityColors } from "@/utils/noticeUtils";
+import { categoryColors, priorityColors } from "@/fe/pages/Notice/utils/noticeUtils";
 
 type Notice = {
   _id: string;

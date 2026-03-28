@@ -19,7 +19,7 @@ import {
   CircularProgress,
   Switch,
   FormControlLabel,
-} from "../../components/ui/Component";
+} from "../../../../components/ui/Component";
 
 import CloseIcon from "@mui/icons-material/Close";
 

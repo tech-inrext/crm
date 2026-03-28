@@ -1,10 +1,10 @@
 "use client";
 
 import React from "react";
-import AddNoticeModal from "../../../components/notice/AddNoticeModal";
-import useNoticeBoardHeader from "../../../hooks/useNoticeBoardHeader";
+import AddNoticeModal from "@/fe/pages/Notice/component/AddNoticeModal";
+import useNoticeBoardHeader from "@/fe/pages/Notice/hooks/useNoticeBoardHeader";
 
-import { NOTICE_TABS } from "../../../utils/noticeTab";
+import { NOTICE_TABS } from "@/fe/pages/Notice/utils/noticeTab";
 
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
@@ -19,7 +19,7 @@ import {
   InputLabel,
   IconButton,
   Stack,
-} from "../../../components/ui/Component";
+} from "../../../../components/ui/Component";
 
 import { InputBase, Tabs, Tab } from "@mui/material";
 

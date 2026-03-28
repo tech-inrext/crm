@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { buildNoticeQuery } from "@/utils/noticeUtils";
+import { buildNoticeQuery } from "@/fe/pages/Notice/utils/noticeUtils";
 
 export type Notice = {
   _id: string;

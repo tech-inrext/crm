@@ -1,40 +1,47 @@
 "use client";
 
-import React from "react";
-import NoticeBoardHeader from "./NoticeBoardHeader";
-
-import {
-  Box,
-  Typography,
-  Stack,
-  Container,
-} from "@mui/material";
-
+import React, { useEffect } from "react";
+import NoticeBoardHeader from "@/fe/pages/Notice/component/NoticeBoardHeader";
+import Pagination from "@/components/ui/Navigation/Pagination";
+import { Box, Typography, Stack, Container } from "@mui/material";
 import PushPinIcon from "@mui/icons-material/PushPin";
 import ViewListIcon from "@mui/icons-material/ViewList";
-
-import NoticeCard from "@/components/notice/NoticeCard";
-import NoticeShimmer from "@/components/notice/NoticeShimmer";
-
-import useNotices from "../../../hooks/useNoticeDashboard";
-import { gridStyles } from "@/utils/noticeUtils";
+import NoticeCard from "@/fe/pages/Notice/component/NoticeCard";
+import NoticeShimmer from "@/fe/pages/Notice/component/NoticeShimmer";
+import useNotices from "@/fe/pages/Notice/hooks/useNoticeDashboard";
+import { gridStyles } from "@/fe/pages/Notice/utils/noticeUtils";
+import { useNoticePagination } from "@/fe/pages/Notice/hooks/useNoticePagination";
 
 export default function NoticesDashboard() {
-  const {
-    meta,
-    loading,
-    fetchNotices,
-    pinnedNotices,
-    regularNotices,
-  } = useNotices();
+  const { meta, loading, fetchNotices, pinnedNotices, regularNotices } =
+    useNotices();
 
   const handleFilterChange = (filters: any) => {
     fetchNotices(filters);
   };
 
+  const {
+    page,
+    rowsPerPage,
+    totalItems,
+    setTotalItems,
+    setPage,
+    setRowsPerPage,
+  } = useNoticePagination(1, 6); // 🔥 only 6 cards per page
+
+  // update total items
+  useEffect(() => {
+    setTotalItems(regularNotices.length);
+  }, [regularNotices, setTotalItems]);
+
+  // pagination logic
+  const paginatedNotices = regularNotices.slice(
+    (page - 1) * rowsPerPage,
+    page * rowsPerPage
+  );
+
   return (
     <Container maxWidth={false} sx={{ bgcolor: "#fafaf9", p: 1, ml: 2 }}>
-      
       <NoticeBoardHeader
         onFilterChange={handleFilterChange}
         categories={meta.categories}
@@ -93,9 +100,18 @@ export default function NoticesDashboard() {
           </Stack>
 
           {/* Regular Notices */}
-          <Box sx={gridStyles}>
-            {regularNotices.length > 0 ? (
-              regularNotices.map((notice) => (
+          <Box
+            sx={{
+              ...gridStyles,
+              minHeight: 380,
+              display: regularNotices.length === 0 ? "flex" : "grid",
+              alignItems: "center",
+              justifyContent: "center",
+              gridAutoRows: "max-content",
+            }}
+          >
+            {paginatedNotices.length > 0 ? (
+              paginatedNotices.map((notice) => (
                 <NoticeCard
                   key={notice._id}
                   notice={notice}
@@ -103,10 +119,27 @@ export default function NoticesDashboard() {
                 />
               ))
             ) : (
-              <Typography color="text.secondary">
+              <Typography
+                color="text.secondary"
+                className="text-center text-lg font-medium"
+              >
                 No notices found
               </Typography>
             )}
+          </Box>
+
+          {/* Pagination */}
+          <Box sx={{ mt: 2 }}>
+            <Pagination
+              page={page}
+              pageSize={rowsPerPage}
+              total={totalItems}
+              onPageChange={(p) => setPage(p)}
+              onPageSizeChange={(s) => {
+                setRowsPerPage(s);
+                setPage(1);
+              }}
+            />
           </Box>
         </>
       )}

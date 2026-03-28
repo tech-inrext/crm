@@ -69,8 +69,8 @@ class NoticeService extends Service {
 
       let filters = [];
 
-      // Search
-      if (search.trim()) {
+      // 🔍 Search
+      if (search?.trim()) {
         filters.push({
           $or: [
             { title: { $regex: search.trim(), $options: "i" } },
@@ -81,34 +81,35 @@ class NoticeService extends Service {
         });
       }
 
-      // Category
+      // 📂 Category
       if (category && category !== "All") {
         filters.push({
           category: { $regex: `^${category}$`, $options: "i" },
         });
       }
 
-      // Priority
+      // ⚡ Priority
       if (priority && priority !== "All") {
         filters.push({
           priority: { $regex: `^${priority}$`, $options: "i" },
         });
       }
-      // Pinned
+
+      // 📌 Pinned
       if (pinned !== "") {
         filters.push({
           pinned: pinned === "true",
         });
       }
 
-      // Departments
+      // 🏢 Departments
       if (departments && departments !== "All") {
         filters.push({
           departments: { $regex: `^${departments}$`, $options: "i" },
         });
       }
 
-      // Date
+      // 📅 Created Date Filter
       if (date) {
         const start = new Date(date);
         start.setHours(0, 0, 0, 0);
@@ -124,38 +125,57 @@ class NoticeService extends Service {
         });
       }
 
-      // Remove expired
+      // 🕒 Expiry Filter
+      // Notice visible till expiry date ends (23:59:59)
+      const todayStart = new Date();
+      todayStart.setHours(0, 0, 0, 0);
+
       filters.push({
-        $or: [{ expiry: null }, { expiry: { $gte: new Date() } }],
+        $or: [
+          { expiry: { $exists: false } },
+          { expiry: null },
+          { expiry: { $gte: todayStart } },
+        ],
       });
 
-      // Active only
+      // ✅ Active Notices Only
       filters.push({ isActive: true });
 
+      // Final Query
       const query = filters.length ? { $and: filters } : {};
 
-      const pageNumber = parseInt(page);
-      const limitNumber = parseInt(limit);
+      // 📄 Pagination
+      const pageNumber = parseInt(page) || 1;
+      const limitNumber = parseInt(limit) || 50;
       const skip = (pageNumber - 1) * limitNumber;
 
-      const total = await Notice.countDocuments(query);
+      // Total Count
+      const totalItems = await Notice.countDocuments(query);
 
+      // Fetch Notices
       const notices = await Notice.find(query)
         .populate("createdBy", "name email employeeId")
-        .sort({ pinned: -1, createdAt: -1 })
+        .sort({
+          pinned: -1,
+          createdAt: -1,
+        })
         .skip(skip)
         .limit(limitNumber)
         .lean();
 
       return res.status(200).json({
         success: true,
-        total,
-        page: pageNumber,
-        limit: limitNumber,
         data: notices,
+        pagination: {
+          totalItems,
+          currentPage: pageNumber,
+          totalPages: Math.ceil(totalItems / limitNumber),
+          limit: limitNumber,
+        },
       });
     } catch (error) {
-      console.log("Fetch Notice Error:", error);
+      console.error("Fetch Notice Error:", error);
+
       return res.status(500).json({
         success: false,
         message: "Failed to fetch notices",
