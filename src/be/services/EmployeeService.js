@@ -10,6 +10,7 @@ import validator from "validator";
 import Role from "../models/Role";
 import { sendNewEmployeeWelcomeEmail } from "../email-service/employee/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "../email-service/manager/managerNewReport.js";
+import { sendMOUApprovalRequestAVPMail } from "../email-service/mou/sendMOUApprovalRequestAVPMail.js";
 import { sendRoleChangeEmail } from "../email-service/role/sendRoleChangeEmail.js";
 import {
   notifyUserRegistration,
@@ -502,7 +503,7 @@ class EmployeeService extends Service {
         panNumber: formattedPan,
         password: hashedPassword,
         isCabVendor,
-        mouStatus: "Pending",
+        mouStatus: slabPercentage ? "Pending" : undefined,
         fatherName,
       };
 
@@ -579,31 +580,57 @@ class EmployeeService extends Service {
         // WhatsApp failed silently
       }
 
-      // 2) Send email to manager (if managerId is provided)
+      // 2) Notifications (Email/WhatsApp)
       if (managerId) {
         try {
+          // A) Always notify the direct manager about the new report
           const managerDoc = await Employee.findById(managerId).lean();
-          if (managerDoc) {
-            if (managerDoc.email) {
-              await sendManagerNewReportEmail({
-                manager: managerDoc,
-                employee: newEmployee.toObject(),
-              });
-            }
-            // 2.5) Send MOU approval request WhatsApp to manager (AVP)
-            if (managerDoc.phone) {
-              await sendMOUApprovalRequestWhatsappMessage(
-                managerDoc.phone,
-                managerDoc.name,
-                newEmployee.name,
-                newEmployee.employeeProfileId || newEmployee._id,
-                `${process.env.APP_URL || "https://dashboard.inrext.com"}/dashboard/mou`
-              );
+          if (managerDoc && managerDoc.email) {
+            await sendManagerNewReportEmail({
+              manager: managerDoc,
+              employee: newEmployee.toObject(),
+            });
+          }
+
+          // B) Only send MOU notifications if this is a freelancer (has slabPercentage)
+          if (slabPercentage) {
+            // Find the AVP in the hierarchy for MOU approval
+            const avpDoc = await this.findAVPHierarchy(managerId);
+
+            if (avpDoc) {
+              // Send MOU approval request email to AVP
+              if (avpDoc.email) {
+                await sendMOUApprovalRequestAVPMail({
+                  avp: avpDoc,
+                  employee: newEmployee.toObject(),
+                });
+              }
+
+              // Send MOU approval request WhatsApp to AVP
+              if (avpDoc.phone) {
+                await sendMOUApprovalRequestWhatsappMessage(
+                  avpDoc.phone,
+                  avpDoc.name,
+                  newEmployee.name,
+                  newEmployee.employeeProfileId || newEmployee._id,
+                  `${process.env.APP_URL || "https://dashboard.inrext.com"}/dashboard/mou`
+                );
+              }
+            } else if (managerDoc) {
+              // Fallback: Notify immediate manager if no AVP found in higher hierarchy
+              if (managerDoc.phone) {
+                await sendMOUApprovalRequestWhatsappMessage(
+                  managerDoc.phone,
+                  managerDoc.name,
+                  newEmployee.name,
+                  newEmployee.employeeProfileId || newEmployee._id,
+                  `${process.env.APP_URL || "https://dashboard.inrext.com"}/dashboard/mou`
+                );
+              }
             }
           }
         } catch (e) {
-          // Email/WhatsApp failed silently
-          console.error("Manager notification failed:", e);
+          console.error("AVP/Manager notification failed:", e);
         }
       }
 
@@ -1394,6 +1421,27 @@ class EmployeeService extends Service {
         error: error.message,
       });
     }
+  }
+  async findAVPHierarchy(employeeId) {
+    if (!employeeId) return null;
+
+    try {
+      // Find employee and populate roles to check isAVP flag
+      const employee = await Employee.findById(employeeId).populate("roles");
+      if (!employee) return null;
+
+      // Check if current employee is an AVP
+      const isAVP = Array.isArray(employee.roles) && employee.roles.some((role) => role.isAVP === true);
+      if (isAVP) return employee.toObject();
+
+      // Recurse upward
+      if (employee.managerId) {
+        return await this.findAVPHierarchy(employee.managerId);
+      }
+    } catch (error) {
+      console.error("Error in findAVPHierarchy:", error);
+    }
+    return null;
   }
 }
 
