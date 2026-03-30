@@ -6,27 +6,17 @@ import {
   Typography,
   Button,
   Grid,
-  Chip,
   Stack,
   Dialog,
   DialogTitle,
   DialogContent,
   DialogContentText,
   DialogActions,
-  Avatar,
   Divider,
-  Check,
 } from "@/components/ui/Component";
+import { MouListProps } from "../types";
+import MouCard from "./MouCard";
 
-interface MouListProps {
-  items: any[];
-  loading: boolean;
-  onMarkComplete: (id: string) => Promise<void>;
-  onApprove?: (id: string) => Promise<void>;
-  onReject?: (id: string) => Promise<void>;
-  onResend?: (id: string) => Promise<void>;
-  view?: "pending" | "completed";
-}
 
 const MouList: React.FC<MouListProps> = ({
   items,
@@ -73,183 +63,17 @@ const MouList: React.FC<MouListProps> = ({
       <Grid container spacing={2}>
         {items.map((emp) => (
           <Grid item xs={12} sm={6} md={6} lg={4} key={emp._id}>
-            <Paper
-              sx={{
-                p: 4,
-                position: "relative",
-                borderRadius: 3,
-                minHeight: 170,
-                transition: "transform 150ms ease, box-shadow 150ms ease",
-                "&:hover": { transform: "translateY(-6px)", boxShadow: 8 },
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "space-between",
+            <MouCard
+              emp={emp}
+              view={view}
+              onApproveConfirm={(id) => openConfirm("approve", id)}
+              onRejectConfirm={(id) => openConfirm("reject", id)}
+              onPreview={(id) => {
+                setPreviewId(id);
+                setPreviewOpen(true);
               }}
-              elevation={1}
-            >
-              <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    gap: 2,
-                  }}
-                >
-                  <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-                    <Avatar
-                      sx={{
-                        bgcolor: "primary.main",
-                        width: 56,
-                        height: 56,
-                        fontSize: 18,
-                      }}
-                    >
-                      {String(emp.name || "")
-                        .split(" ")
-                        .map((s: string) => s[0])
-                        .slice(0, 2)
-                        .join("")
-                        .toUpperCase()
-                        .replace(/[^A-Z]/g, "")}
-                    </Avatar>
-                    <Box>
-                      <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
-                        {emp.name}
-                      </Typography>
-                      <Typography
-                        sx={{ color: "text.secondary", fontSize: 14, mt: 0.5 }}
-                      >
-                        {emp.email}
-                      </Typography>
-                      {emp.designation && (
-                        <Typography
-                          sx={{
-                            color: "text.secondary",
-                            fontSize: 13,
-                            mt: 0.5,
-                          }}
-                        >
-                          {emp.designation}
-                        </Typography>
-                      )}
-                    </Box>
-                  </Box>
-                </Box>
-                <Box
-                  sx={{
-                    mt: 2,
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: 1,
-                  }}
-                >
-                  <Divider />
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "center",
-                      gap: 2,
-                      pt: 1,
-                    }}
-                  >
-                    {(!view || view === "pending") && (
-                      <>
-                        <Button
-                          type="button"
-                          size="medium"
-                          color="success"
-                          variant="contained"
-                          startIcon={<Check fontSize="small" />}
-                          onClick={() => {
-                            if (!emp._id) return;
-                            openConfirm("approve", emp._id);
-                          }}
-                          sx={{
-                            textTransform: "none",
-                            fontWeight: 700,
-                            minWidth: 140,
-                            borderRadius: 2,
-                          }}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          type="button"
-                          size="medium"
-                          color="error"
-                          variant="outlined"
-                          onClick={() => {
-                            if (!emp._id) return;
-                            openConfirm("reject", emp._id);
-                          }}
-                          sx={{
-                            textTransform: "none",
-                            fontWeight: 700,
-                            minWidth: 120,
-                            borderRadius: 2,
-                          }}
-                        >
-                          Reject
-                        </Button>
-                      </>
-                    )}
-
-                    {view === "completed" && (
-                      <>
-                        <Button
-                          type="button"
-                          size="medium"
-                          variant="outlined"
-                          onClick={() => {
-                            if (!emp._id) return;
-                            setPreviewId(emp._id);
-                            setPreviewOpen(true);
-                          }}
-                          sx={{
-                            textTransform: "none",
-                            fontWeight: 700,
-                            minWidth: 120,
-                            borderRadius: 2,
-                          }}
-                        >
-                          Preview
-                        </Button>
-                        <Button
-                          type="button"
-                          size="medium"
-                          color="primary"
-                          variant="contained"
-                          onClick={() => {
-                            if (!emp._id) return;
-                            if (onResend) onResend(emp._id);
-                          }}
-                          sx={{
-                            textTransform: "none",
-                            fontWeight: 700,
-                            minWidth: 140,
-                            borderRadius: 2,
-                          }}
-                        >
-                          Resend Mail
-                        </Button>
-                      </>
-                    )}
-                  </Box>
-                </Box>
-              </Box>
-              <Chip
-                label={emp.mouStatus || "-"}
-                color={emp.mouStatus === "Completed" ? "success" : "warning"}
-                size="small"
-                sx={{
-                  position: "absolute",
-                  top: 12,
-                  right: 12,
-                  textTransform: "none",
-                  fontWeight: 600,
-                }}
-              />
-            </Paper>
+              onResend={onResend}
+            />
           </Grid>
         ))}
       </Grid>
