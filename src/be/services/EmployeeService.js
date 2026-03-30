@@ -16,6 +16,8 @@ import {
   notifyUserUpdate,
   notifyRoleChange,
 } from "../../lib/notification-helpers";
+import { sendEmployeeWelcomeWhatsappMessage } from "../whatsapp-msg-service/employee-welcome/employeeWelcome.js";
+import { sendMOUApprovalRequestWhatsappMessage } from "../whatsapp-msg-service/mou-notification/mouNotification.js";
 
 class EmployeeService extends Service {
   constructor() {
@@ -564,18 +566,44 @@ class EmployeeService extends Service {
         // Email failed silently
       }
 
+      // 1.5) Send welcome WhatsApp to employee
+      try {
+        if (newEmployee.phone) {
+          await sendEmployeeWelcomeWhatsappMessage(
+            newEmployee.phone,
+            newEmployee.name,
+            `${process.env.APP_URL || "https://dashboard.inrext.com"}/login`
+          );
+        }
+      } catch (e) {
+        // WhatsApp failed silently
+      }
+
       // 2) Send email to manager (if managerId is provided)
       if (managerId) {
         try {
           const managerDoc = await Employee.findById(managerId).lean();
-          if (managerDoc?.email) {
-            await sendManagerNewReportEmail({
-              manager: managerDoc,
-              employee: newEmployee.toObject(),
-            });
+          if (managerDoc) {
+            if (managerDoc.email) {
+              await sendManagerNewReportEmail({
+                manager: managerDoc,
+                employee: newEmployee.toObject(),
+              });
+            }
+            // 2.5) Send MOU approval request WhatsApp to manager (AVP)
+            if (managerDoc.phone) {
+              await sendMOUApprovalRequestWhatsappMessage(
+                managerDoc.phone,
+                managerDoc.name,
+                newEmployee.name,
+                newEmployee.employeeProfileId || newEmployee._id,
+                `${process.env.APP_URL || "https://dashboard.inrext.com"}/dashboard/mou`
+              );
+            }
           }
         } catch (e) {
-          // Email failed silently
+          // Email/WhatsApp failed silently
+          console.error("Manager notification failed:", e);
         }
       }
 
