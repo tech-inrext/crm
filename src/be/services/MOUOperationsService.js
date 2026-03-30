@@ -2,6 +2,8 @@ import { Service } from "@framework";
 import fs from "fs";
 import path from "path";
 import Employee from "../models/Employee"; // Standard import
+import EmployeeService from "./EmployeeService";
+
 import { generateMOUPDF } from "./mouService/generator"; // Sibling import
 import { uploadToS3 } from "../../lib/s3"; // Standard import
 import { NotificationHelper } from "../../lib/notification-helpers";
@@ -28,6 +30,22 @@ class MOUOperationsService extends Service {
         return res
           .status(404)
           .json({ success: false, message: "Employee not found" });
+
+      // Permission check: Only AVP or SystemAdmin
+      if (!req.isAVP && !req.isSystemAdmin) {
+        return res.status(403).json({ success: false, message: "Only AVPs can approve MOUs" });
+      }
+
+      // Downline check: Must be in the AVP's team (entire hierarchy)
+      if (!req.isSystemAdmin) {
+        const employeeService = new EmployeeService();
+        const downlineIds = await employeeService.getDownlineIds(req.employee?._id);
+        const isDownline = downlineIds.some(dId => dId.toString() === mou._id.toString());
+        if (!isDownline) {
+          return res.status(403).json({ success: false, message: "You can only approve MOUs for your team members" });
+        }
+      }
+
 
       // generate PDF
       const facilitatorSignatureUrl =
@@ -220,6 +238,58 @@ class MOUOperationsService extends Service {
       return res.status(500).json({ success: false, message: err.message });
     }
   }
+
+  async rejectMOU(req, res) {
+    try {
+      const { id } = req.query;
+      if (!id)
+        return res.status(400).json({ success: false, message: "Missing id" });
+
+      const mou = await Employee.findById(id);
+      if (!mou)
+        return res
+          .status(404)
+          .json({ success: false, message: "Employee not found" });
+
+      // Permission check: Only AVP or SystemAdmin
+      if (!req.isAVP && !req.isSystemAdmin) {
+        return res.status(403).json({ success: false, message: "Only AVPs can reject MOUs" });
+      }
+
+      // Downline check: Must be in the AVP's team (entire hierarchy)
+      if (!req.isSystemAdmin) {
+        const employeeService = new EmployeeService();
+        const downlineIds = await employeeService.getDownlineIds(req.employee?._id);
+        const isDownline = downlineIds.some(dId => dId.toString() === mou._id.toString());
+        if (!isDownline) {
+          return res.status(403).json({ success: false, message: "You can only reject MOUs for your team members" });
+        }
+      }
+
+      // Update status
+      mou.mouStatus = "Rejected";
+      await mou.save();
+
+      // Send notification
+      try {
+        await NotificationHelper.notifyMOUStatusChange(
+          mou._id,
+          "REJECTED",
+          req.employee?._id,
+          mou.toObject()
+        );
+      } catch (e) {
+        console.error("MOU rejection notification failed", e);
+      }
+
+      return res.json({ success: true });
+    } catch (err) {
+      console.error(err);
+      return res.status(500).json({ success: false, message: err.message });
+    }
+  }
+
 }
+
 
 export default MOUOperationsService;

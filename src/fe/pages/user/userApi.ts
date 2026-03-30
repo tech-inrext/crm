@@ -1,4 +1,4 @@
-import createApi from "@/fe/hooks/createApi";
+import createApi from "@/fe/framework/hooks/createApi";
 
 const userApi = createApi({
   endpoints: {
@@ -6,6 +6,7 @@ const userApi = createApi({
     getUsers: (params) => ({
       url: "/api/v0/employee",
       isPaginated: true,
+      defaultPageSize: 8,
       shouldCache: true, // Cache the employee list for better performance
     }),
     // Single employee by ID
@@ -17,14 +18,23 @@ const userApi = createApi({
     getRoles: () => ({
       url: "/api/v0/role/getAllRoleList",
       isPaginated: false,
+      shouldCache: true,
     }),
     getManagers: () => ({
       url: "/api/v0/employee/getAllEmployeeList",
       isPaginated: false,
+      shouldCache: true,
     }),
     getDepartments: () => ({
       url: "/api/v0/department",
       isPaginated: false,
+      shouldCache: true,
+    }),
+    getMyTeamHierarchy: (params) => ({
+      url: "/api/v0/employee/hierarchy",
+      isPaginated: true,
+      defaultPageSize: 8,
+      shouldCache: true,
     }),
   },
   mutations: {
@@ -46,6 +56,7 @@ export const {
   useGetRolesQuery,
   useGetManagersQuery,
   useGetDepartmentsQuery,
+  useGetMyTeamHierarchyQuery,
 
   // Mutations
   useCreateUserMutation,

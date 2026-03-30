@@ -61,6 +61,10 @@ const roleSchema = new mongoose.Schema(
       type: [String],
       enum: modules,
     },
+    rank: {
+      type: Number,
+      default: 0,
+    },
   },
   { timestamps: true }
 );

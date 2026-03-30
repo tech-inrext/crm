@@ -123,10 +123,10 @@ const propertySchema = new mongoose.Schema(
     },
 
     minSize: {
-      type: String,
+      type: Number,
     },
     maxSize: {
-      type: String,
+      type: Number,
     },
     sizeUnit: {
       type: String,

@@ -1,6 +1,5 @@
 import { Controller } from "@framework";
 import PropertyService from "../../../../be/services/PropertyService";
-
 class PropertyIndexController extends Controller {
   constructor() {
     super();

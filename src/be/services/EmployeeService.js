@@ -2,6 +2,8 @@ import { Service } from "@framework";
 import jwt from "jsonwebtoken";
 import * as cookie from "cookie";
 import Employee from "../models/Employee";
+import mongoose from "mongoose";
+
 import { leadQueue } from "../queue/leadQueue.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
@@ -266,6 +268,15 @@ class EmployeeService extends Service {
     setIfPresent("managerId", managerId);
     setIfPresent("departmentId", departmentId);
     if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
+      // 🛡️ Prevent Role Escalation
+      const requesterRoleId = req.role?._id;
+      const authorityCheck = await this.verifyRoleAuthority(requesterRoleId, roles);
+      if (!authorityCheck.authorized) {
+        return res.status(403).json({
+          success: false,
+          message: authorityCheck.message,
+        });
+      }
       updateFields.roles = Array.isArray(roles) ? roles : [];
     }
     setIfPresent("photo", photo);
@@ -308,9 +319,22 @@ class EmployeeService extends Service {
         newManagerId = req.body.managerId ? String(req.body.managerId) : null;
       }
       const managerChanged = oldManagerId !== newManagerId;
-      // If manager changed → set MOU status
-      if (managerChanged) {
+      
+      /* ---------- MOU REGENERATION DETECTION ---------- */
+      // Helper to compare trimmed strings safely
+      const hasStringChanged = (oldVal, newVal) => 
+        String(oldVal || "").trim() !== String(newVal || "").trim();
+
+      const slabChanged = ("slabPercentage" in req.body) && 
+        hasStringChanged(existingEmployee.slabPercentage, req.body.slabPercentage);
+
+      const branchChanged = ("branch" in req.body) && 
+        hasStringChanged(existingEmployee.branch, req.body.branch);
+
+      // If manager, slab, or branch changed → set MOU status to Pending
+      if (managerChanged || slabChanged || branchChanged) {
         updateFields.mouStatus = "Pending";
+        updateFields.mouPdfUrl = "";
       }
       const oldRoles = existingEmployee.roles.map((r) => ({
         id: r._id.toString(),
@@ -521,6 +545,15 @@ class EmployeeService extends Service {
       if (Object.prototype.hasOwnProperty.call(req.body, "departmentId"))
         employeeData.departmentId = departmentId;
       if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
+        // 🛡️ Prevent Role Escalation 
+        const requesterRoleId = req.role?._id;
+        const authorityCheck = await this.verifyRoleAuthority(requesterRoleId, roles);
+        if (!authorityCheck.authorized) {
+          return res.status(403).json({
+            success: false,
+            message: authorityCheck.message,
+          });
+        }
         employeeData.roles = Array.isArray(roles)
           ? roles
           : roles
@@ -662,14 +695,21 @@ class EmployeeService extends Service {
         ? { slabPercentage: { $exists: true, $nin: ["", null] } }
         : {};
 
-      // ✅ Manager filter (only when mouStatus is present): managerId == loggedInId
-      const castManagerId = (id) =>
-        mongoose?.Types?.ObjectId?.isValid?.(id)
-          ? new mongoose.Types.ObjectId(id)
-          : id;
+      // ✅ Manager filter (only when mouStatus is present): 
+      // Only AVP or SystemAdmin can see pending MOUs for their team.
+      let managerFilter = {};
+      if (mouStatus && loggedInId) {
+        if (req.isSystemAdmin) {
+          managerFilter = {}; // SystemAdmin sees all
+        } else if (req.isAVP) {
+          const downlineIds = await this.getDownlineIds(loggedInId);
+          managerFilter = { managerId: { $in: downlineIds } };
+        } else {
+          // Regular managers see nothing in the MOU pending list anymore
+          managerFilter = { _id: null };
+        }
+      }
 
-      const managerFilter =
-        mouStatus && loggedInId ? { managerId: castManagerId(loggedInId) } : {};
 
       const query = {
         ...searchFilter,
@@ -1176,11 +1216,13 @@ class EmployeeService extends Service {
         tree.push({
           _id: emp._id,
           name: emp.name,
+          email: emp.email,
           designation: emp.designation,
           branch: emp.branch,
           managerId: emp.managerId,
           employeeProfileId: emp.employeeProfileId,
           children: children.length ? children : [], // If no subordinates, return empty array
+          ...emp,
         });
       });
     return tree;
@@ -1199,7 +1241,9 @@ class EmployeeService extends Service {
       }
 
       // Fetch all employees
-      const employees = await Employee.find({}).lean();
+      const employees = await Employee.find({})
+        .select("-password -resetOTP -resetOTPExpires")
+        .lean();
 
       // Fetch the manager details
       const manager = employees.find(
@@ -1217,11 +1261,13 @@ class EmployeeService extends Service {
       const hierarchy = {
         _id: manager._id,
         name: manager.name,
+        email: manager.email,
         designation: manager.designation,
         branch: manager.branch,
         managerId: manager.managerId,
         employeeProfileId: manager.employeeProfileId,
         children: this.buildHierarchy(employees, manager._id), // Recursively find subordinates
+        ...manager,
       };
 
       return res.status(200).json({
@@ -1292,6 +1338,33 @@ class EmployeeService extends Service {
     }
   }
 
+  async getDownlineIds(managerId) {
+    if (!managerId) return [];
+    try {
+      const allEmployees = await Employee.find({})
+        .select("_id managerId")
+        .lean();
+      const ids = [managerId.toString()];
+
+      const findSubordinates = (mId) => {
+        const subs = allEmployees.filter(
+          (e) => String(e.managerId) === String(mId),
+        );
+        subs.forEach((s) => {
+          ids.push(s._id.toString());
+          findSubordinates(s._id);
+        });
+      };
+
+      findSubordinates(managerId);
+      return ids.map((id) => new mongoose.Types.ObjectId(id));
+    } catch (error) {
+      console.error("Error fetching downline IDs:", error);
+      return [new mongoose.Types.ObjectId(managerId)];
+    }
+  }
+
+
   async getAllAVPEmployees(req, res) {
     try {
       // Find all roles where isAVP is true
@@ -1323,6 +1396,79 @@ class EmployeeService extends Service {
         message: "Failed to fetch AVP employees",
         error: error.message,
       });
+    }
+  }
+
+  /**
+   * Helper to verify if the requester has enough authority (rank)
+   * to assign target roles to another user.
+   *
+   * @param {string} requesterRoleId - Role ID of the user making the request
+   * @param {string|string[]} targetRoleIds - Role ID(s) being assigned
+   * @returns {Promise<{authorized: boolean, message?: string}>}
+   */
+  async verifyRoleAuthority(requesterRoleId, targetRoleIds) {
+    if (!requesterRoleId) {
+      return { authorized: false, message: "Requester role context missing" };
+    }
+
+    // Normalize target IDs to an array
+    const targets = Array.isArray(targetRoleIds)
+      ? targetRoleIds
+      : targetRoleIds
+        ? [targetRoleIds]
+        : [];
+
+    if (targets.length === 0) return { authorized: true };
+
+    try {
+      // Fetch requester role and target roles in parallel for efficiency
+      const [requesterRole, targetRoles] = await Promise.all([
+        Role.findById(requesterRoleId).lean(),
+        Role.find({ _id: { $in: targets } }).lean(),
+      ]);
+
+      if (!requesterRole) {
+        return { authorized: false, message: "Requester role not found" };
+      }
+
+      // 👑 System Admins can assign any role
+      if (requesterRole.isSystemAdmin) return { authorized: true };
+
+      // 🏆 New Hierarchy Logic: 1 = Highest Privilege, higher = Lower Privilege
+      // Treat rank 0 or undefined as the lowest possible privilege (infinity) 
+      const requesterRank = requesterRole.rank > 0 ? requesterRole.rank : Infinity;
+
+      for (const target of targetRoles) {
+        const targetRank = target.rank > 0 ? target.rank : Infinity;
+
+        // 🚫 Check 1: Rank comparison
+        // If targetRank is smaller than requesterRank, it means the target role 
+        // has HIGHER privilege than the requester.
+        if (targetRank < requesterRank) {
+          return {
+            authorized: false,
+            message: `Insufficient privilege: Role '${target.name}' has rank ${target.rank || "none"}, but your role '${requesterRole.name}' only has rank ${requesterRole.rank || "none"}. 1 is the highest privilege; you cannot assign roles with a higher rank than your own.`,
+          };
+        }
+
+        // 🚫 Check 2: Explicit System Admin protection (fail-safe)
+        // Even if ranks matched, only real System Admins can grant the isSystemAdmin flag.
+        if (target.isSystemAdmin) {
+          return {
+            authorized: false,
+            message: `Security Violation: The '${target.name}' role has System Administrator privileges. Only a System Admin can grant this level of access.`,
+          };
+        }
+      }
+
+      return { authorized: true };
+    } catch (error) {
+      console.error("Role authority verification failed:", error);
+      return {
+        authorized: false,
+        message: "Internal security check failed: " + error.message,
+      };
     }
   }
 }

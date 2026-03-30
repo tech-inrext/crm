@@ -582,14 +582,11 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
   }
 
   // Associate signature
-  const loggedUser =
-    employee &&
-    (employee.loggedInUser || employee.loggedInUserObj || employee.loggedIn);
   const sigUrl =
-    (loggedUser && loggedUser.employee && loggedUser.employee.signatureURL) ||
-    (loggedUser && loggedUser.signatureURL) ||
-    (employee && employee.signatureURL) ||
-    (employee && employee.employee && employee.employee.signatureURL) ||
+    employee?.signatureUrl ||
+    employee?.signatureURL ||
+    employee?.employee?.signatureUrl ||
+    employee?.employee?.signatureURL ||
     "";
 
   if (sigUrl) {

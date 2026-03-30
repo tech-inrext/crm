@@ -1,15 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import axios from "axios";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useDepartments } from "@/fe/pages/department/hooks/useDepartments";
-import { useDepartmentDialog } from "@/fe/pages/department/hooks/useDepartmentDialog";
-import type { MutationError } from "@/fe/hooks/useMutation";
 import {
   SEARCH_DEBOUNCE_DELAY,
   DEFAULT_DEPARTMENT_FORM,
+  DEPARTMENTS_API_BASE,
 } from "@/fe/pages/department/constants/departments";
-import type { DepartmentFormData } from "@/fe/pages/department/types";
+import { useDepartmentDialog } from "@/fe/pages/department/hooks/useDepartmentDialog";
+import type { Department, DepartmentFormData } from "@/fe/pages/department/types";
 
 type SnackbarSeverity = "success" | "error";
 
@@ -36,19 +36,39 @@ export function useDepartmentsPage() {
   const [snackbarOpen, setSnackbarOpen] = useState(false);
 
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
-  const depts = useDepartments(debouncedSearch);
-  const { loadDepartments } = depts;
 
-  const { dialogMode, selectedDepartment, handleCloseDialog, openEditDialog } =
-    useDepartmentDialog({
-      departments: depts.departments,
-      loading: depts.loading,
-      getDepartmentById: depts.getDepartmentById,
-      setEditId: depts.setEditId,
-      setOpen: depts.setOpen,
-      setForm: depts.setForm,
-      defaultForm: DEFAULT_DEPARTMENT_FORM,
-    });
+  // ─── Dialog State ───────────────────────────────────────────────────────
+  const [open, setOpen] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  /**
+   * Mock fetching by ID or finding in local state.
+   * In a real app with createApi, this might be a manual fetch.
+   */
+  const getDepartmentById = async (id: string) => {
+    try {
+      const resp = await axios.get(`${DEPARTMENTS_API_BASE}/${id}`);
+      return resp.data;
+    } catch {
+      return null;
+    }
+  };
+
+  const {
+    dialogMode,
+    handleCloseDialog,
+    openEditDialog,
+    selectedDepartment,
+  } = useDepartmentDialog({
+    departments: [], // Not needed for alignment
+    loading: false,
+    getDepartmentById,
+    setEditId,
+    setOpen,
+    setForm: () => { },
+    defaultForm: DEFAULT_DEPARTMENT_FORM,
+  },
+  );
 
   // ── Window / client-side setup ───────────────────────────────────────────
   useEffect(() => {
@@ -60,106 +80,33 @@ export function useDepartmentsPage() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // ── Snackbar helpers ─────────────────────────────────────────────────────
-  const showSnackbar = useCallback(
-    (message: string, severity: SnackbarSeverity = "success") => {
-      setSnackbarMessage(message);
-      setSnackbarSeverity(severity);
-      setSnackbarOpen(true);
-    },
-    [],
-  );
-
   // ── Search ───────────────────────────────────────────────────────────────
   const handleSearchChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       setSearch(e.target.value);
-      depts.setPage(1);
     },
-    [depts],
-  );
-
-  // ── Pagination ───────────────────────────────────────────────────────────
-  const handlePageSizeChange = useCallback(
-    (newSize: number) => {
-      depts.setRowsPerPage(newSize);
-      depts.setPage(1);
-    },
-    [depts],
-  );
-
-  // ── Save (create / update) ────────────────────────────────────────────────
-  const handleDepartmentSave = useCallback(
-    async (values: DepartmentFormData) => {
-      try {
-        if (depts.editId) {
-          await depts.updateDepartment(depts.editId, values);
-          showSnackbar("Department updated successfully");
-        } else {
-          await depts.addDepartment(values);
-          showSnackbar("Department created successfully");
-        }
-        handleCloseDialog();
-        depts.setPage(1);
-        setSearch("");
-        await loadDepartments();
-      } catch (err) {
-        const { message, status } = resolveErrorMessage(
-          err,
-          "Failed to save department",
-        );
-        showSnackbar(
-          status === 409
-            ? message || "Department with same name or ID already exists"
-            : message,
-          "error",
-        );
-      }
-    },
-    [depts, loadDepartments, handleCloseDialog, showSnackbar],
-  );
-
-  // ── Delete ───────────────────────────────────────────────────────────────
-  const handleDepartmentDelete = useCallback(
-    async (id: string) => {
-      try {
-        await depts.deleteDepartment(id);
-        showSnackbar("Department deleted successfully");
-        depts.setPage(1);
-        await loadDepartments();
-      } catch (err) {
-        const { message } = resolveErrorMessage(
-          err,
-          "Failed to delete department",
-        );
-        showSnackbar(message, "error");
-      }
-    },
-    [depts, loadDepartments, showSnackbar],
+    [],
   );
 
   return {
-    // depts hook exports
-    ...depts,
-    // dialog exports
-    dialogMode,
-    selectedDepartment,
-    handleCloseDialog,
-    openEditDialog,
-    // UI state
     isClient,
     windowWidth,
     search,
-    setSearch,
+    debouncedSearch,
     handleSearchChange,
-    // snackbar
-    snackbarMessage,
-    snackbarSeverity,
+    open,
+    setOpen,
+    editId,
+    selectedDepartment,
+    dialogMode,
+    handleCloseDialog,
+    openEditDialog,
     snackbarOpen,
     setSnackbarOpen,
-    // handlers
-    handleDepartmentSave,
-    handleDepartmentDelete,
+    snackbarMessage,
+    setSnackbarMessage,
+    snackbarSeverity,
+    setSnackbarSeverity,
   } as const;
 }
 

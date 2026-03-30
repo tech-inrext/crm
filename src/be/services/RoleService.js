@@ -9,23 +9,23 @@ class RoleService extends Service {
 
   async getAllRoles(req, res) {
     try {
-      const { page = 1, limit = 5, search = "" } = req.query;
+      const { page = 1, limit, rowsPerPage, search = "" } = req.query;
 
       const currentPage = parseInt(page);
-      const itemsPerPage = parseInt(limit);
+      const itemsPerPage = parseInt(rowsPerPage || limit || 6);
       const skip = (currentPage - 1) * itemsPerPage;
 
       // Optional search filter
       const query = search
         ? {
-          $or: [{ name: { $regex: search, $options: "i" } }],
-        }
+            $or: [{ name: { $regex: search, $options: "i" } }],
+          }
         : {};
 
       const [roles, totalRoles] = await Promise.all([
         Role.find(query)
           .select(
-            "name read write delete isSystemAdmin showTotalUsers showTotalVendorsBilling showCabBookingAnalytics showScheduleThisWeek isAVP createdAt updatedAt"
+            "name read write delete isSystemAdmin showTotalUsers showTotalVendorsBilling showCabBookingAnalytics showScheduleThisWeek isAVP rank createdAt updatedAt",
           )
           .skip(skip)
           .limit(itemsPerPage)
@@ -65,6 +65,7 @@ class RoleService extends Service {
         showCabBookingAnalytics,
         showScheduleThisWeek,
         isAVP,
+        rank,
       } = req.body;
 
       if (!name) {
@@ -85,6 +86,7 @@ class RoleService extends Service {
         showCabBookingAnalytics: !!showCabBookingAnalytics,
         showScheduleThisWeek: !!showScheduleThisWeek,
         isAVP: !!isAVP,
+        rank: Number(rank) || 0,
       });
 
       await newRole.save();
@@ -94,7 +96,7 @@ class RoleService extends Service {
         await NotificationHelper.notifyRoleCreated(
           newRole._id,
           newRole.toObject(),
-          req.employee?._id
+          req.employee?._id,
         );
         console.log("✅ Role creation notification sent");
       } catch (error) {
@@ -149,6 +151,7 @@ class RoleService extends Service {
       showCabBookingAnalytics,
       showScheduleThisWeek,
       isAVP,
+      rank,
     } = req.body;
 
     try {
@@ -232,6 +235,10 @@ class RoleService extends Service {
         setObj.isAVP = flag;
       }
 
+      if (typeof rank !== "undefined") {
+        setObj.rank = Number(rank) || 0;
+      }
+
       if (Object.keys(setObj).length === 0) {
         return res.status(400).json({
           success: false,
@@ -242,7 +249,7 @@ class RoleService extends Service {
       const updatedRole = await Role.findByIdAndUpdate(
         id,
         { $set: setObj },
-        { new: true, runValidators: true }
+        { new: true, runValidators: true },
       );
 
       if (!updatedRole) {
@@ -257,7 +264,7 @@ class RoleService extends Service {
           updatedRole._id,
           updatedRole.toObject(),
           setObj,
-          req.employee?._id
+          req.employee?._id,
         );
         console.log("✅ Role update notification sent");
       } catch (error) {

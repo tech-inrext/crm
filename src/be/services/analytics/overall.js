@@ -43,19 +43,20 @@ class OverallAnalyticsService {
   async countUpcomingSiteVisits(userId) {
     const now = new Date();
 
-    // Build lead filter for user visibility
     const leadFilter = this.buildLeadFilter(userId);
     const visibleLeadIds = await Lead.find(leadFilter, "_id").lean();
     const leadIdArray = visibleLeadIds.map((l) => l._id);
 
-    // Count distinct leadIds in FollowUp for site visits
     const upcomingSiteVisitLeadIds = await FollowUp.distinct("leadId", {
       followUpType: "site visit",
       followUpDate: { $gte: now },
-      leadId: { $in: leadIdArray }, // respect user visibility
+      leadId: { $in: leadIdArray },
     });
 
-    return upcomingSiteVisitLeadIds.length;
+    return {
+      count: upcomingSiteVisitLeadIds.length,
+      leadIds: upcomingSiteVisitLeadIds,
+    };
   }
 
   // MOU COUNTS
@@ -113,7 +114,7 @@ class OverallAnalyticsService {
         teamCount,
         activeLeads,
         newLeads,
-        upcomingSiteVisitCount,
+        upcomingSiteVisits,
         mouPending,
         mouApproved,
         totalCabVendors,
@@ -134,7 +135,8 @@ class OverallAnalyticsService {
         teamCount,
         activeLeads,
         newLeads,
-        siteVisitCount: upcomingSiteVisitCount, // updated
+        siteVisitCount: upcomingSiteVisits.count,
+        siteVisitLeadIds: upcomingSiteVisits.leadIds,
         mouPending,
         mouApproved,
         totalCabVendors,
