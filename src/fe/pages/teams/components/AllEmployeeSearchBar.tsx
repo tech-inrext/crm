@@ -77,7 +77,7 @@ const AllEmployeeSearchBar: React.FC<AllEmployeeSearchBarProps> = ({
           </Box>
         </Box>
       )}
-      sx={{ width: "100%", maxWidth: 300, minWidth: 150 }}
+      sx={{ width: "100%", maxWidth: { xs: "none", md: 300 }, minWidth: 150 }}
     />
   );
 };
