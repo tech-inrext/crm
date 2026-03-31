@@ -1,5 +1,5 @@
 import axios from "axios";
-import { Employee } from "@/types/team-hierarchy";
+import { Employee } from "@/fe/pages/teams/types";
 import { API_ENDPOINTS } from "@/constants/team-hierarchy";
 
 export class TeamHierarchyService {

@@ -1,9 +1,7 @@
 import React from "react";
 import { Box, Typography, AccountTree as AccountTreeIcon } from "@/components/ui/Component";
+import { EmptyStateProps } from "../types";
 
-interface EmptyStateProps {
-  isSearchEmpty?: boolean;
-}
 
 export const EmptyState: React.FC<EmptyStateProps> = ({ isSearchEmpty }) => (
   <Box sx={{ p: 4, textAlign: "center" }}>
@@ -14,7 +12,7 @@ export const EmptyState: React.FC<EmptyStateProps> = ({ isSearchEmpty }) => (
     <Typography sx={{ color: "text.secondary" }}>
       {isSearchEmpty 
         ? "We couldn't find anyone matching your search in this hierarchy." 
-        : "Select a manager from the dropdown to view their team hierarchy."}
+        : "No reporting lines found for your account."}
     </Typography>
   </Box>
 );

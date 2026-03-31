@@ -271,6 +271,15 @@ class EmployeeService extends Service {
     setIfPresent("managerId", managerId);
     setIfPresent("departmentId", departmentId);
     if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
+      // 🛡️ Prevent Role Escalation
+      const requesterRoleId = req.role?._id;
+      const authorityCheck = await this.verifyRoleAuthority(requesterRoleId, roles);
+      if (!authorityCheck.authorized) {
+        return res.status(403).json({
+          success: false,
+          message: authorityCheck.message,
+        });
+      }
       updateFields.roles = Array.isArray(roles) ? roles : [];
     }
     setIfPresent("photo", photo);
@@ -313,9 +322,22 @@ class EmployeeService extends Service {
         newManagerId = req.body.managerId ? String(req.body.managerId) : null;
       }
       const managerChanged = oldManagerId !== newManagerId;
-      // If manager changed → set MOU status
-      if (managerChanged) {
+
+      /* ---------- MOU REGENERATION DETECTION ---------- */
+      // Helper to compare trimmed strings safely
+      const hasStringChanged = (oldVal, newVal) =>
+        String(oldVal || "").trim() !== String(newVal || "").trim();
+
+      const slabChanged = ("slabPercentage" in req.body) &&
+        hasStringChanged(existingEmployee.slabPercentage, req.body.slabPercentage);
+
+      const branchChanged = ("branch" in req.body) &&
+        hasStringChanged(existingEmployee.branch, req.body.branch);
+
+      // If manager, slab, or branch changed → set MOU status to Pending
+      if (managerChanged || slabChanged || branchChanged) {
         updateFields.mouStatus = "Pending";
+        updateFields.mouPdfUrl = "";
       }
       const oldRoles = existingEmployee.roles.map((r) => ({
         id: r._id.toString(),
@@ -526,6 +548,15 @@ class EmployeeService extends Service {
       if (Object.prototype.hasOwnProperty.call(req.body, "departmentId"))
         employeeData.departmentId = departmentId;
       if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
+        // 🛡️ Prevent Role Escalation 
+        const requesterRoleId = req.role?._id;
+        const authorityCheck = await this.verifyRoleAuthority(requesterRoleId, roles);
+        if (!authorityCheck.authorized) {
+          return res.status(403).json({
+            success: false,
+            message: authorityCheck.message,
+          });
+        }
         employeeData.roles = Array.isArray(roles)
           ? roles
           : roles
@@ -1442,6 +1473,79 @@ class EmployeeService extends Service {
       console.error("Error in findAVPHierarchy:", error);
     }
     return null;
+  }
+
+  /**
+   * Helper to verify if the requester has enough authority (rank)
+   * to assign target roles to another user.
+   *
+   * @param {string} requesterRoleId - Role ID of the user making the request
+   * @param {string|string[]} targetRoleIds - Role ID(s) being assigned
+   * @returns {Promise<{authorized: boolean, message?: string}>}
+   */
+  async verifyRoleAuthority(requesterRoleId, targetRoleIds) {
+    if (!requesterRoleId) {
+      return { authorized: false, message: "Requester role context missing" };
+    }
+
+    // Normalize target IDs to an array
+    const targets = Array.isArray(targetRoleIds)
+      ? targetRoleIds
+      : targetRoleIds
+        ? [targetRoleIds]
+        : [];
+
+    if (targets.length === 0) return { authorized: true };
+
+    try {
+      // Fetch requester role and target roles in parallel for efficiency
+      const [requesterRole, targetRoles] = await Promise.all([
+        Role.findById(requesterRoleId).lean(),
+        Role.find({ _id: { $in: targets } }).lean(),
+      ]);
+
+      if (!requesterRole) {
+        return { authorized: false, message: "Requester role not found" };
+      }
+
+      // 👑 System Admins can assign any role
+      if (requesterRole.isSystemAdmin) return { authorized: true };
+
+      // 🏆 New Hierarchy Logic: 1 = Highest Privilege, higher = Lower Privilege
+      // Treat rank 0 or undefined as the lowest possible privilege (infinity) 
+      const requesterRank = requesterRole.rank > 0 ? requesterRole.rank : Infinity;
+
+      for (const target of targetRoles) {
+        const targetRank = target.rank > 0 ? target.rank : Infinity;
+
+        // 🚫 Check 1: Rank comparison
+        // If targetRank is smaller than requesterRank, it means the target role 
+        // has HIGHER privilege than the requester.
+        if (targetRank < requesterRank) {
+          return {
+            authorized: false,
+            message: `Insufficient privilege: Role '${target.name}' has rank ${target.rank || "none"}, but your role '${requesterRole.name}' only has rank ${requesterRole.rank || "none"}. 1 is the highest privilege; you cannot assign roles with a higher rank than your own.`,
+          };
+        }
+
+        // 🚫 Check 2: Explicit System Admin protection (fail-safe)
+        // Even if ranks matched, only real System Admins can grant the isSystemAdmin flag.
+        if (target.isSystemAdmin) {
+          return {
+            authorized: false,
+            message: `Security Violation: The '${target.name}' role has System Administrator privileges. Only a System Admin can grant this level of access.`,
+          };
+        }
+      }
+
+      return { authorized: true };
+    } catch (error) {
+      console.error("Role authority verification failed:", error);
+      return {
+        authorized: false,
+        message: "Internal security check failed: " + error.message,
+      };
+    }
   }
 }
 

@@ -10,6 +10,15 @@ export interface Employee {
   children?: Employee[];
 }
 
+
+export interface AllEmployeeSearchBarProps {
+  options: any[];
+  onSelect: (id: string | null) => void;
+  loading?: boolean;
+  selectedId?: string | null;
+  placeholder?: string;
+}
+
 export interface HierarchyState {
   hierarchy: Employee | null;
   loading: boolean;
@@ -23,18 +32,41 @@ export interface ErrorStateProps {
   onRetry: () => void;
 }
 
-export interface HierarchyControlsProps {
-  employees: Employee[];
-  selectedManager: string | null;
+export interface TeamsActionBarProps {
   totalCount: number;
   search: string;
   loading: boolean;
-  onManagerChange: (managerId: string | null) => void;
+  managerName?: string;
+  hierarchy?: Employee | null;
+  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  onRefresh: () => void;
+  onExpandAll?: () => void;
+  onCollapseAll?: () => void;
+  onClearSearch?: () => void;
+  
+  // Admin search props
+  isAdmin?: boolean;
+  employeeOptions?: any[];
+  hierarchyOptions?: any[];
+  onEmployeeSelect?: (employeeId: string | null) => void;
+  isEmployeeLoading?: boolean;
+  selectedEmployeeId?: string | null;
+  
+  // Hierarchy selection props
+  selectedHierarchyId?: string | null;
+  onHierarchySelect?: (employeeId: string | null) => void;
+}
+
+export interface HierarchyControlsProps {
+  totalCount: number;
+  search: string;
+  loading: boolean;
+  hierarchy?: Employee | null;
   onSearchChange: (search: string) => void;
   onRefresh: () => void;
-}
-export interface HierarchyHeaderProps {
-  children: React.ReactNode;
+  onExpandAll?: () => void;
+  onCollapseAll?: () => void;
+  onClearSearch?: () => void;
 }
 export interface HierarchyNodeProps {
   node: Employee;
@@ -55,4 +87,8 @@ export interface HierarchyTreeProps {
   onExpandAll: () => void;
   onCollapseAll: () => void;
   onClearSearch: () => void;
+}
+
+export interface EmptyStateProps {
+  isSearchEmpty?: boolean;
 }

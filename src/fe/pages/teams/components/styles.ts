@@ -29,7 +29,49 @@ export const headerSubtitleSx: SxProps<Theme> = {
 
 export const controlsStackSx: SxProps<Theme> = {
   mt: { xs: 2, md: 0 },
-  flexWrap: "wrap",
+  display: "flex",
+  flexDirection: { xs: "column", md: "row" },
+  gap: 2,
+  alignItems: "center",
+  mb: 1.5,
+  width: "100%",
+};
+
+export const actionBarBoxSx: SxProps<Theme> = {
+  width: "100%",
+};
+
+export const searchBarWrapperSx: SxProps<Theme> = {
+  width: { xs: "100%", md: "auto" },
+  maxWidth: { xs: "none", md: "600px" },
+  minWidth: { xs: "none", md: "200px" },
+};
+
+export const rightActionsStackSx: SxProps<Theme> = {
+  display: "flex",
+  flexDirection: "row",
+  flexWrap: { xs: "wrap", md: "nowrap" },
+  gap: { xs: 1, md: 2 },
+  alignItems: "center",
+  justifyContent: { xs: "center", md: "flex-end" },
+  width: { xs: "100%", md: "auto" },
+  flexShrink: { xs: 0, md: 0 },
+};
+
+export const actionButtonSx: SxProps<Theme> = {
+  minWidth: "auto",
+  px: { xs: 1, md: 2 },
+  borderRadius: "6px",
+  fontWeight: 600,
+  textTransform: "none",
+  "& .MuiButton-startIcon": { mr: { xs: 0.5, md: 1 } },
+};
+
+export const textActionButtonSx: SxProps<Theme> = {
+  fontWeight: 600,
+  fontSize: { xs: "0.75rem", md: "0.875rem" },
+  minWidth: "auto",
+  px: { xs: 0.5, md: 1 },
 };
 
 export const totalMembersChipSx: SxProps<Theme> = {
@@ -41,7 +83,17 @@ export const managerAutocompleteSx: SxProps<Theme> = {
 };
 
 export const searchTextFieldSx: SxProps<Theme> = {
-  minWidth: 240,
+  bgcolor: "white",
+  borderRadius: 1,
+  width: "100%",
+  "& .MuiOutlinedInput-root": {
+    "& fieldset": {
+      borderColor: "rgba(0, 0, 0, 0.1)",
+    },
+    "&:hover fieldset": {
+      borderColor: "rgba(0, 0, 0, 0.2)",
+    },
+  },
 };
 
 export const searchIconSx: SxProps<Theme> = {
@@ -134,13 +186,4 @@ export const loadingStateSx: SxProps<Theme> = {
   alignItems: "center",
   justifyContent: "center",
   p: 8,
-}
-
-export const mainBoxSx: SxProps<Theme> = {
-  p: { xs: 1, sm: 2, md: 3 },
-  pt: { xs: 2, sm: 3, md: 4 },
-  minHeight: "100vh",
-  bgcolor: "background.default",
-  width: "100%",
-  overflow: "hidden",
 }

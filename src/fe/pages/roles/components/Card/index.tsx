@@ -34,13 +34,14 @@ const RoleCard: React.FC<RoleCardProps> = ({
             <Avatar className="role-avatar" sx={roleCardStyles.avatar}>
               <Security fontSize="small" />
             </Avatar>
-            <Typography
-              variant="subtitle1"
-              noWrap
-              sx={{ ...roleCardStyles.title, flex: 1 }}
-            >
-              {role.name}
-            </Typography>
+            <Box sx={{ flex: 1 }}>
+              <Typography variant="subtitle1" noWrap sx={roleCardStyles.title}>
+                {role.name}
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Rank: {role.rank || 0}
+              </Typography>
+            </Box>
             <Tooltip title="View Permissions">
               <IconButton
                 className="view-permissions-button"

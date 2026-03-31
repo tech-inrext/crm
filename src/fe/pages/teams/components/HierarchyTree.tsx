@@ -7,7 +7,7 @@ import {
   People as PeopleIcon,
   Search as SearchIcon,
 } from "@/components/ui/Component";
-import { Employee } from "@/types/team-hierarchy";
+import { Employee } from "../types";
 import { HierarchyNode } from "./HierarchyNode";
 import { HierarchyTreeProps } from "../types";
 
@@ -49,51 +49,6 @@ export const HierarchyTree: React.FC<HierarchyTreeProps> = ({
 
   return (
     <Box>
-      <Box sx={treeHeaderSx}>
-        <Stack direction="row" spacing={1} sx={treeHeaderStackSx}>
-          <Chip
-            icon={<PersonIcon />}
-            label={`Root: ${hierarchy.name}`}
-            color="primary"
-            variant="filled"
-          />
-          <Chip
-            icon={<PeopleIcon />}
-            label={`${(hierarchy.children || []).length} Direct Reports`}
-            variant="outlined"
-          />
-          {searchQuery && (
-            <Chip
-              icon={<SearchIcon />}
-              label={`Filtered: "${searchQuery}"`}
-              onDelete={onClearSearch}
-              color="secondary"
-            />
-          )}
-        </Stack>
-
-        <Stack direction="row" spacing={1}>
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<ExpandMore />}
-            onClick={onExpandAll}
-          >
-            Expand All
-          </Button>
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<ChevronRightIcon />}
-            onClick={onCollapseAll}
-          >
-            Collapse All
-          </Button>
-        </Stack>
-      </Box>
-
-      <Divider sx={{ mb: 2 }} />
-
       <Box>{renderTreeNode(hierarchy)}</Box>
     </Box>
   );
