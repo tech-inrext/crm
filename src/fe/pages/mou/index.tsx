@@ -41,10 +41,6 @@ const MOUPage: React.FC = () => {
     handleReject,
     handleResend,
     handleMarkComplete,
-    snackOpen,
-    setSnackOpen,
-    snackMsg,
-    snackSeverity,
   } = useMouPage();
 
   return (
@@ -121,17 +117,6 @@ const MOUPage: React.FC = () => {
             </Paper>
           </Box>
         )}
-
-        <Snackbar
-          open={snackOpen}
-          autoHideDuration={4000}
-          anchorOrigin={{ vertical: "top", horizontal: "right" }}
-          onClose={() => setSnackOpen(false)}
-        >
-          <Alert severity={snackSeverity} onClose={() => setSnackOpen(false)}>
-            {snackMsg}
-          </Alert>
-        </Snackbar>
       </Box>
     </PermissionGuard>
   );
