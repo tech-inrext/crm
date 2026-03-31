@@ -103,3 +103,61 @@ export const statusChipSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 600,
 };
+
+// ─── PreviewLoader Styles ───────────────────────────────────────────────────
+
+export const previewLoadingSx: SxProps<Theme> = {
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+};
+
+export const previewErrorSx: SxProps<Theme> = {
+  p: 2,
+};
+
+export const previewIframeContainerSx: SxProps<Theme> = {
+  width: "100%",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+};
+
+export const previewIframeHeaderSx: SxProps<Theme> = {
+  display: "flex",
+  justifyContent: "flex-end",
+  gap: 1,
+  mb: 1,
+};
+
+export const previewIframeStyle: React.CSSProperties = {
+  width: "100%",
+  height: "100%",
+  border: "none",
+  flex: 1,
+};
+
+// ─── MouList Dialog Styles ───────────────────────────────────────────────────
+
+export const dialgonContentSx: SxProps<Theme> = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 2,
+};
+
+export const previewContainerSx: SxProps<Theme> = {
+  width: "100%",
+  height: "70vh",
+};
+
+export const noteTextSx: SxProps<Theme> = {
+  color: "text.secondary",
+  mr: "auto",
+  pl: 1,
+};
+
+export const fullPreviewContentSx: SxProps<Theme> = {
+  height: "80vh",
+};
