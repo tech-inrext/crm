@@ -130,5 +130,4 @@ const MouCard: React.FC<MouCardProps> = ({
   );
 };
 
-
 export default MouCard;

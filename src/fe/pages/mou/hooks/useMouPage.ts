@@ -152,4 +152,65 @@ export function useMouPage() {
   } as const;
 }
 
+/**
+ * Hook to manage UI action states for the MouList (Confirmation Dialogs, Previews).
+ */
+export function useMouListActions(
+  onApprove?: (id: string) => Promise<void>,
+  onReject?: (id: string) => Promise<void>,
+) {
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingAction, setPendingAction] = useState<{
+    type: "approve" | "reject";
+    id: string;
+  } | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewId, setPreviewId] = useState<string | null>(null);
+
+  const openConfirm = (type: "approve" | "reject", id: string) => {
+    setPendingAction({ type, id });
+    setConfirmOpen(true);
+  };
+
+  const handleConfirm = async () => {
+    if (!pendingAction) return;
+    const { type, id } = pendingAction;
+    setConfirmOpen(false);
+    try {
+      if (type === "approve" && onApprove) await onApprove(id);
+      if (type === "reject" && onReject) await onReject(id);
+    } catch (e) {
+      // Error handling is typically done in the provided callback
+    } finally {
+      setPendingAction(null);
+    }
+  };
+
+  const handleCancel = () => {
+    setConfirmOpen(false);
+    setPendingAction(null);
+  };
+
+  const openPreview = (id: string) => {
+    setPreviewId(id);
+    setPreviewOpen(true);
+  };
+
+  const closePreview = () => {
+    setPreviewOpen(false);
+  };
+
+  return {
+    confirmOpen,
+    pendingAction,
+    previewOpen,
+    previewId,
+    openConfirm,
+    handleConfirm,
+    handleCancel,
+    openPreview,
+    closePreview,
+  };
+}
+
 export default useMouPage;

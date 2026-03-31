@@ -39,3 +39,7 @@ export interface MouCardProps {
   onPreview: (id: string) => void;
   onResend?: (id: string) => void;
 }
+
+export interface PreviewLoaderProps {
+  id: string;
+}
