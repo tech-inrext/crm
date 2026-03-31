@@ -5,6 +5,7 @@ import { worker } from './WorkerDT.js';
 import bulkUploadLeads from "./bulkupload.js";
 import sendOTPJob from "./sendOTPJob.js";
 import sendNotificationEmail from "./sendNotificationEmail.js";
+import sendNotificationWhatsapp from "./sendNotificationWhatsapp.js";
 import notificationCleanupJob from "./notificationCleanup.js";
 import sendLeadFollowUpNotification from "./sendLeadFollowUpNotification.js";
 import bulkAssignLeads from "./bulkAssignLeads.js";
@@ -17,6 +18,7 @@ import checkFollowUpsJob from "./checkFollowUpsJob.js";
 worker.addJobListener("bulkUploadLeads", bulkUploadLeads);
 worker.addJobListener("sendOTPJob", sendOTPJob);
 worker.addJobListener("sendNotificationEmail", sendNotificationEmail);
+worker.addJobListener("sendNotificationWhatsapp", sendNotificationWhatsapp);
 worker.addJobListener("notificationCleanup", notificationCleanupJob);
 worker.addJobListener(
   "sendLeadFollowUpNotification",
