@@ -8,6 +8,7 @@ import { generateMOUPDF } from "./mouService/generator"; // Sibling import
 import { uploadToS3 } from "../../lib/s3"; // Standard import
 import { NotificationHelper } from "../../lib/notification-helpers";
 import { sendMOUApprovalMail } from "../email-service/mou/sendMOUApprovedMail.js";
+import { sendMOUApprovedWhatsappMessage } from "../whatsapp-msg-service/mou-notification/mouNotification.js";
 
 
 class MOUOperationsService extends Service {
@@ -93,6 +94,20 @@ class MOUOperationsService extends Service {
         );
       } catch (e) {
         console.error("Failed to send approval mail:", e);
+      }
+
+      // send WhatsApp notification
+      try {
+        if (mou.phone) {
+          await sendMOUApprovedWhatsappMessage(
+            mou.phone,
+            mou.name,
+            mou.employeeProfileId,
+            s3Url
+          );
+        }
+      } catch (e) {
+        console.error("Failed to send WhatsApp notification:", e);
       }
 
       // cleanup temp pdf
@@ -226,12 +241,23 @@ class MOUOperationsService extends Service {
           mou.employeeProfileId,
           s3Url
         );
+        
+        // send WhatsApp notification
+        if (mou.phone) {
+          await sendMOUApprovedWhatsappMessage(
+            mou.phone,
+            mou.name,
+            mou.employeeProfileId,
+            s3Url
+          );
+        }
+        
         return res.json({ success: true });
       } catch (e) {
-        console.error("resend mail failed", e);
+        console.error("resend mail/whatsapp failed", e);
         return res
           .status(500)
-          .json({ success: false, message: "Failed to send mail" });
+          .json({ success: false, message: "Failed to send mail/whatsapp" });
       }
     } catch (err) {
       console.error(err);

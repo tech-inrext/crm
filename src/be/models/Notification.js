@@ -142,6 +142,7 @@ const notificationSchema = new mongoose.Schema(
 
     metadata: {
       leadId: { type: mongoose.Schema.Types.ObjectId, ref: "Lead" },
+      followUpId: { type: mongoose.Schema.Types.ObjectId, ref: "FollowUp" },
       cabBookingId: { type: mongoose.Schema.Types.ObjectId, ref: "CabBooking" },
       vendorBookingId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -155,6 +156,7 @@ const notificationSchema = new mongoose.Schema(
         enum: ["LOW", "MEDIUM", "HIGH", "URGENT"],
         default: "MEDIUM",
       },
+      reminderType: String,
 
       // Context for smart cleanup
       entityStatus: String, // Status of related entity
@@ -174,12 +176,18 @@ const notificationSchema = new mongoose.Schema(
     channels: {
       inApp: { type: Boolean, default: true },
       email: { type: Boolean, default: false },
+      whatsapp: { type: Boolean, default: false },
     },
 
     // Email delivery status
     emailSent: { type: Boolean, default: false },
     emailSentAt: Date,
     emailError: String,
+
+    // Whatsapp delivery status
+    whatsappSent: { type: Boolean, default: false },
+    whatsappSentAt: Date,
+    whatsappError: String,
 
     // Scheduling
     scheduledFor: Date, // For delayed notifications

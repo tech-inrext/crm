@@ -57,6 +57,7 @@
     "recharts": "^3.2.1",
     "slugify": "^1.6.6",
     "sonner": "^2.0.7",
+    "twilio": "^5.13.0",
     "use-sync-external-store": "^1.5.0",
     "validator": "^13.15.15",
     "web-push": "^3.6.7",
