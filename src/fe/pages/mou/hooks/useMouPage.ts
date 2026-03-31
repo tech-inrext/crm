@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { MOU_API_BASE, DEFAULT_PAGE_SIZE } from "@/fe/pages/mou/constants/mou";
 import type { MouItem, MouView } from "@/fe/pages/mou/types";
+import { isSystemAdmin as checkIsSystemAdmin } from "../utils";
 
 export function useMouPage() {
   const { user } = useAuth();
@@ -41,16 +42,7 @@ export function useMouPage() {
     async (p = page, limit = rowsPerPage, st = status) => {
       setLoading(true);
       try {
-        let isSystemAdmin = false;
-        if (user) {
-          const cur = user.currentRole;
-          if (cur && typeof cur !== "string") {
-            isSystemAdmin = Boolean((cur as any).isSystemAdmin);
-          } else if (Array.isArray(user.roles)) {
-            const roleObj = user.roles.find((r: any) => r._id === cur);
-            if (roleObj) isSystemAdmin = Boolean(roleObj.isSystemAdmin);
-          }
-        }
+        const isSystemAdmin = checkIsSystemAdmin(user);
 
         const params: Record<string, any> = {
           page: p,

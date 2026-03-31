@@ -11,6 +11,24 @@ import {
   Check,
 } from "@/components/ui/Component";
 import { MouCardProps } from "../types";
+import { getInitials } from "../utils";
+import {
+  cardPaperSx,
+  mainStackSx,
+  headerStackSx,
+  infoStackSx,
+  avatarSx,
+  nameSx,
+  emailSx,
+  designationSx,
+  actionWrapperSx,
+  buttonGroupSx,
+  approveBtnSx,
+  rejectBtnSx,
+  previewBtnSx,
+  resendBtnSx,
+  statusChipSx,
+} from "./styles";
 
 const MouCard: React.FC<MouCardProps> = ({
   emp,
@@ -21,85 +39,23 @@ const MouCard: React.FC<MouCardProps> = ({
   onResend,
 }) => {
   return (
-    <Paper
-      sx={{
-        p: 4,
-        position: "relative",
-        borderRadius: 3,
-        minHeight: 170,
-        transition: "transform 150ms ease, box-shadow 150ms ease",
-        "&:hover": { transform: "translateY(-6px)", boxShadow: 8 },
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "space-between",
-      }}
-      elevation={1}
-    >
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "space-between",
-            gap: 2,
-          }}
-        >
-          <Box sx={{ display: "flex", gap: 2, alignItems: "center" }}>
-            <Avatar
-              sx={{
-                bgcolor: "primary.main",
-                width: 56,
-                height: 56,
-                fontSize: 18,
-              }}
-            >
-              {String(emp.name || "")
-                .split(" ")
-                .map((s: string) => s[0])
-                .slice(0, 2)
-                .join("")
-                .toUpperCase()
-                .replace(/[^A-Z]/g, "")}
-            </Avatar>
+    <Paper sx={cardPaperSx} elevation={1}>
+      <Box sx={mainStackSx}>
+        <Box sx={headerStackSx}>
+          <Box sx={infoStackSx}>
+            <Avatar sx={avatarSx}>{getInitials(emp.name)}</Avatar>
             <Box>
-              <Typography sx={{ fontWeight: 800, fontSize: 18 }}>
-                {emp.name}
-              </Typography>
-              <Typography
-                sx={{ color: "text.secondary", fontSize: 14, mt: 0.5 }}
-              >
-                {emp.email}
-              </Typography>
+              <Typography sx={nameSx}>{emp.name}</Typography>
+              <Typography sx={emailSx}>{emp.email}</Typography>
               {emp.designation && (
-                <Typography
-                  sx={{
-                    color: "text.secondary",
-                    fontSize: 13,
-                    mt: 0.5,
-                  }}
-                >
-                  {emp.designation}
-                </Typography>
+                <Typography sx={designationSx}>{emp.designation}</Typography>
               )}
             </Box>
           </Box>
         </Box>
-        <Box
-          sx={{
-            mt: 2,
-            display: "flex",
-            flexDirection: "column",
-            gap: 1,
-          }}
-        >
+        <Box sx={actionWrapperSx}>
           <Divider />
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "center",
-              gap: 2,
-              pt: 1,
-            }}
-          >
+          <Box sx={buttonGroupSx}>
             {(!view || view === "pending") && (
               <>
                 <Button
@@ -112,12 +68,7 @@ const MouCard: React.FC<MouCardProps> = ({
                     if (!emp._id) return;
                     onApproveConfirm(emp._id);
                   }}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 700,
-                    minWidth: 140,
-                    borderRadius: 2,
-                  }}
+                  sx={approveBtnSx}
                 >
                   Approve
                 </Button>
@@ -130,12 +81,7 @@ const MouCard: React.FC<MouCardProps> = ({
                     if (!emp._id) return;
                     onRejectConfirm(emp._id);
                   }}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 700,
-                    minWidth: 120,
-                    borderRadius: 2,
-                  }}
+                  sx={rejectBtnSx}
                 >
                   Reject
                 </Button>
@@ -152,12 +98,7 @@ const MouCard: React.FC<MouCardProps> = ({
                     if (!emp._id) return;
                     onPreview(emp._id);
                   }}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 700,
-                    minWidth: 120,
-                    borderRadius: 2,
-                  }}
+                  sx={previewBtnSx}
                 >
                   Preview
                 </Button>
@@ -170,12 +111,7 @@ const MouCard: React.FC<MouCardProps> = ({
                     if (!emp._id) return;
                     if (onResend) onResend(emp._id);
                   }}
-                  sx={{
-                    textTransform: "none",
-                    fontWeight: 700,
-                    minWidth: 140,
-                    borderRadius: 2,
-                  }}
+                  sx={resendBtnSx}
                 >
                   Resend Mail
                 </Button>
@@ -188,16 +124,11 @@ const MouCard: React.FC<MouCardProps> = ({
         label={emp.mouStatus || "-"}
         color={emp.mouStatus === "Completed" ? "success" : "warning"}
         size="small"
-        sx={{
-          position: "absolute",
-          top: 12,
-          right: 12,
-          textTransform: "none",
-          fontWeight: 600,
-        }}
+        sx={statusChipSx}
       />
     </Paper>
   );
 };
+
 
 export default MouCard;
