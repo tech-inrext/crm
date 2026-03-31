@@ -40,7 +40,6 @@ export function useMouPage() {
     mouStatus: status,
     requireSlab: status === "Pending" ? true : undefined,
     managerId: (user?._id && !isSystemAdmin) ? user._id : undefined,
-    // Explicitly pass limit and page to match backend EmployeeService expectations
     page: currentPage,
     limit: pageSize,
   });
@@ -146,10 +145,6 @@ export function useMouPage() {
     handleResend,
     handleMarkComplete,
 
-    // UI state moved to useToast for consistency with User module pattern
-    // If the original components still expect snackOpen/snackMsg, we might need them
-    // but the User module usually uses a shared Toast/Snackbar.
-    // Let's check if we should keep the snackbar state for compatibility.
     snackOpen: false, 
     setSnackOpen: () => {},
     snackMsg: "",
