@@ -16,6 +16,11 @@ import {
 } from "@/components/ui/Component";
 import { MouListProps } from "../types";
 import MouCard from "./MouCard";
+import {
+  getFilenameFromContentDisposition,
+  sanitizeFilename,
+  downloadBlob,
+} from "../utils";
 
 
 const MouList: React.FC<MouListProps> = ({
@@ -178,29 +183,9 @@ const PreviewLoader: React.FC<{ id: string }> = ({ id }) => {
         if (ct.includes("application/pdf")) {
           try {
             const cd = res.headers.get("content-disposition") || "";
-            let name: string | null = null;
-            const fnStarMatch = cd.match(
-              /filename\*=(?:UTF-8'')?([^;\n\r\"]+)/i,
-            );
-            const fnMatch = cd.match(/filename=\"([^\"]+)\"/i);
-            if (fnStarMatch && fnStarMatch[1]) {
-              try {
-                name = decodeURIComponent(fnStarMatch[1]);
-              } catch (e) {
-                name = fnStarMatch[1];
-              }
-            } else if (fnMatch && fnMatch[1]) {
-              name = fnMatch[1];
-            }
+            const name = getFilenameFromContentDisposition(cd);
             if (name) {
-              const cleaned = name.replace(/\s+/g, "");
-              console.debug(
-                "PreviewLoader: Content-Disposition header:",
-                cd,
-                "-> filename:",
-                cleaned,
-              );
-              setFilename(cleaned);
+              setFilename(name);
             } else {
               console.debug(
                 "PreviewLoader: no filename in Content-Disposition:",
@@ -275,28 +260,9 @@ const PreviewLoader: React.FC<{ id: string }> = ({ id }) => {
                 }
                 const blob = await resp.blob();
 
-                let fname: string | null = null;
-                try {
-                  const cd = resp.headers.get("content-disposition") || "";
-                  console.debug("Download: Content-Disposition:", cd);
-                  const fnStarMatch = cd.match(
-                    /filename\*=(?:UTF-8'')?([^;\n\r\"]+)/i,
-                  );
-                  const fnMatch = cd.match(/filename=\"([^\"]+)\"/i);
-                  if (fnStarMatch && fnStarMatch[1]) {
-                    try {
-                      fname = decodeURIComponent(fnStarMatch[1]);
-                    } catch (e) {
-                      fname = fnStarMatch[1];
-                    }
-                  } else if (fnMatch && fnMatch[1]) {
-                    fname = fnMatch[1];
-                  }
-                  if (fname)
-                    console.debug("Download: parsed filename ->", fname);
-                } catch (e) {
-                  console.debug("Download: filename parse failed", e);
-                }
+                let fname = getFilenameFromContentDisposition(
+                  resp.headers.get("content-disposition") || "",
+                );
 
                 if (!fname) {
                   try {
@@ -318,13 +284,7 @@ const PreviewLoader: React.FC<{ id: string }> = ({ id }) => {
                             emp.employeeProfileId ||
                             emp._id
                           : "preview";
-                      const sanitized =
-                        String(rawName)
-                          .replace(/[^\x00-\x7F]/g, "")
-                          .replace(/[^a-zA-Z0-9 _\-\.]/g, "")
-                          .replace(/\s+/g, "")
-                          .trim() || "preview";
-                      fname = `${sanitized}MOU.pdf`;
+                      fname = `${sanitizeFilename(String(rawName))}MOU.pdf`;
                     }
                   } catch (e) {
                     // ignore
@@ -332,15 +292,7 @@ const PreviewLoader: React.FC<{ id: string }> = ({ id }) => {
                 }
 
                 if (!fname) fname = "preview.pdf";
-
-                const downloadUrl = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = downloadUrl;
-                a.download = fname;
-                document.body.appendChild(a);
-                a.click();
-                a.remove();
-                URL.revokeObjectURL(downloadUrl);
+                downloadBlob(blob, fname);
               } catch (e) {
                 if (iframeSrc) window.open(iframeSrc, "_blank");
                 else if (blobUrl) window.open(blobUrl, "_blank");

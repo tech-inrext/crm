@@ -13,6 +13,18 @@ import Pagination from "@/components/ui/Navigation/Pagination";
 import PermissionGuard from "@/components/PermissionGuard";
 import MouList from "@/fe/pages/mou/components/MouList";
 import { useMouPage } from "@/fe/pages/mou/hooks/useMouPage";
+import {
+  containerSx,
+  headerPaperSx,
+  headerContentSx,
+  titleSx,
+  tabButtonsContainerSx,
+  loadingContainerSx,
+  contentGridSx,
+  listPaperSx,
+  listTitleSx,
+  paginationContainerSx,
+} from "./styles";
 
 const MOUPage: React.FC = () => {
   const {
@@ -37,32 +49,17 @@ const MOUPage: React.FC = () => {
 
   return (
     <PermissionGuard module="mou">
-      <Box
-        sx={{
-          p: { xs: 1, sm: 2, md: 3 },
-          pt: { xs: 2, sm: 3, md: 4 },
-          minHeight: "100vh",
-          bgcolor: "background.default",
-          width: "100%",
-          overflow: "hidden",
-        }}
-      >
-        <Paper sx={{ p: 2, mb: 2 }} elevation={2}>
-          <Box
-            sx={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-            }}
-          >
-            <Typography variant="h4" sx={{ fontWeight: 700 }}>
+      <Box sx={containerSx}>
+        <Paper sx={headerPaperSx} elevation={2}>
+          <Box sx={headerContentSx}>
+            <Typography variant="h4" sx={titleSx}>
               MOU
             </Typography>
             <Box />
           </Box>
         </Paper>
 
-        <Box sx={{ display: "flex", gap: 1, mb: 2 }}>
+        <Box sx={tabButtonsContainerSx}>
           <Button
             variant={view === "pending" ? "contained" : "outlined"}
             onClick={() => setView("pending")}
@@ -78,13 +75,13 @@ const MOUPage: React.FC = () => {
         </Box>
 
         {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+          <Box sx={loadingContainerSx}>
             <CircularProgress />
           </Box>
         ) : (
-          <Box sx={{ display: "grid", gap: 2 }}>
-            <Paper sx={{ p: 2 }} elevation={1}>
-              <Typography variant="h6" sx={{ fontWeight: 600, mb: 1 }}>
+          <Box sx={contentGridSx}>
+            <Paper sx={listPaperSx} elevation={1}>
+              <Typography variant="h6" sx={listTitleSx}>
                 {view === "pending"
                   ? `Pending MOU (${items.length})`
                   : `Completed MOU (${items.length})`}
@@ -107,7 +104,7 @@ const MOUPage: React.FC = () => {
                     onResend={handleResend}
                   />
 
-                  <Box sx={{ mt: 2 }}>
+                  <Box sx={paginationContainerSx}>
                     <Pagination
                       page={page}
                       pageSize={rowsPerPage}
