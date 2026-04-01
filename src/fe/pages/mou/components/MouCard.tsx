@@ -56,7 +56,7 @@ const MouCard: React.FC<MouCardProps> = ({
         <Box sx={actionWrapperSx}>
           <Divider />
           <Box sx={buttonGroupSx}>
-            {(!view || view === "pending") && (
+            {(view === "pending" || (!view && emp.mouStatus === "Pending")) && (
               <>
                 <Button
                   type="button"
@@ -88,7 +88,10 @@ const MouCard: React.FC<MouCardProps> = ({
               </>
             )}
 
-            {view === "completed" && (
+            {(view === "completed" ||
+              (!view &&
+                (emp.mouStatus === "Completed" ||
+                  emp.mouStatus === "Approved"))) && (
               <>
                 <Button
                   type="button"

@@ -134,7 +134,6 @@ export function useMouPage() {
     rowsPerPage: pageSize,
     setRowsPerPage: setLocalPageSize,
     totalItems,
-...
     // View
     view,
     setView,
