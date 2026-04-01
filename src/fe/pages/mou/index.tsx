@@ -78,9 +78,9 @@ const MOUPage: React.FC = () => {
           <Box sx={contentGridSx}>
             <Paper sx={listPaperSx} elevation={1}>
               <Typography variant="h6" sx={listTitleSx}>
-                {view === "pending"
-                  ? `Pending MOU (${items.length})`
-                  : `Completed MOU (${items.length})`}
+                {view === "completed"
+                  ? `Completed MOU (${items.length})`
+                  : `Pending MOU (${items.length})`}
               </Typography>
               {items.length === 0 ? (
                 <Typography>
