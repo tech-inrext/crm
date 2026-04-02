@@ -41,7 +41,6 @@ export async function sendMOUApprovalRequestAVPMail({ avp, employee, appUrl }) {
 
   try {
     await mailer.sendEmail(avp.email, subject, html);
-    console.log("MOU approval request mail sent successfully to AVP!");
   } catch (err) {
     console.error("Error sending AVP MOU email:", err);
   }
