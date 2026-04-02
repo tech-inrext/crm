@@ -4,7 +4,7 @@ import React, { useCallback, useEffect } from "react";
 import PermissionGuard from "@/components/PermissionGuard";
 import VendorsPageActionBar from "@/fe/pages/vendor/components/VendorsPageActionBar";
 import VendorsList from "@/fe/pages/vendor/components/VendorsList";
-import VendorDialog from "@/fe/pages/vendor/components/dialog/vendorDialog";
+import VendorDialog from "@/fe/pages/vendor/components/VendorDialog";
 import useVendorsPage from "@/fe/pages/vendor/hooks/useVendorsPage";
 import { useGetVendorsQuery } from "@/fe/pages/vendor/vendorApi";
 import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";

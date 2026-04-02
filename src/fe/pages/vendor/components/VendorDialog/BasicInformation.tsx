@@ -82,6 +82,26 @@ const BasicInformation: React.FC = () => {
           )}
         </Field>
       </Box>
+      <Field name="panNumber">
+        {({ field, meta }: FieldProps) => (
+          <TextField
+            {...field}
+            label={FIELD_LABELS.PAN_NUMBER}
+            fullWidth
+            margin="normal"
+            error={!!meta.touched && !!meta.error}
+            helperText={meta.touched && meta.error}
+            sx={{ bgcolor: "#fff", borderRadius: 1 }}
+            onChange={(e) => {
+              setFieldTouched(field.name, true, true);
+              const val = (e.target as HTMLInputElement).value
+                .toUpperCase()
+                .trim();
+              field.onChange({ target: { name: field.name, value: val } });
+            }}
+          />
+        )}
+      </Field>
 
       {/* Address */}
       <Field name="address">

@@ -10,6 +10,7 @@ export const DEFAULT_VENDOR_FORM = {
   email: "",
   phone: "",
   address: "",
+  panNumber: "",
 };
 
 export const GENDER_OPTIONS = ["Male", "Female", "Other"] as const;
@@ -41,6 +42,7 @@ export const FIELD_LABELS = {
   FULL_NAME: "Full Name",
   EMAIL: "Email",
   PHONE: "Phone",
+  PAN_NUMBER: "PAN Number",
   ADDRESS: "Address",
 } as const;
 

@@ -8,6 +8,7 @@ export const getInitialVendorForm = (vendor: any): VendorFormData => {
     email: vendor.email ?? "",
     phone: vendor.phone ?? "",
     address: vendor.address ?? "",
+    panNumber: vendor.panNumber ?? "",
   };
 };
 
@@ -23,6 +24,7 @@ export const buildVendorPayload = (
   email: values.email,
   phone: values.phone,
   address: values.address,
+  panNumber: values.panNumber,
   isCabVendor: true,
   ...extra,
 });

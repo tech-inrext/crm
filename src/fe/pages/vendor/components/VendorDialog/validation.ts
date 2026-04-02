@@ -31,6 +31,13 @@ const coreSchema = {
       `Address must be at least ${VALIDATION_RULES.ADDRESS.min} characters`,
     )
     .required("Address is required"),
+  panNumber: Yup.string()
+    .transform((value) => (value ? value.toUpperCase().trim() : value))
+    .required("PAN Number is required")
+    .matches(
+      /^[A-Z]{5}[0-9]{4}[A-Z]{1}$/,
+      "Invalid PAN card number. Must be 10 characters: 5 letters, 4 digits, 1 letter (e.g., ABCDE1234F)",
+    ),
 };
 
 // Both add and edit use the same 4-field schema — isCabVendor is set server-side

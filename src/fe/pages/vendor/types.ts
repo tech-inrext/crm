@@ -27,6 +27,7 @@ export interface Vendor {
   isCabVendor?: boolean;
   joiningDate?: string;
   altPhone?: string;
+  panNumber?: string;
   avatarUrl?: string;
   [key: string]: any;
 }
@@ -36,6 +37,7 @@ export interface VendorFormData {
   email: string;
   phone: string;
   address: string;
+  panNumber: string;
 }
 
 export interface VendorsPageActionBarProps {
