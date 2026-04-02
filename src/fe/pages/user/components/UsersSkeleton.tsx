@@ -1,123 +1,55 @@
 import { memo } from "react";
 import { Skeleton } from "@/components/ui/Component";
+import { UsersSkeletonProps } from "../types";
 
-interface UsersSkeletonProps {
-  isMobile?: boolean;
-  rows?: number;
-}
 
-const UsersSkeleton = memo(
-  ({ isMobile = false, rows = 10 }: UsersSkeletonProps) => {
-    if (isMobile) {
-      // Mobile card skeleton
-      return (
-        <div className="grid grid-cols-1 gap-3 mb-2">
-          {Array.from({ length: rows }).map((_, index) => (
-            <div
-              key={index}
-              className="bg-white rounded-xl p-4 shadow-sm border border-gray-100"
-            >
-              <div className="flex items-center gap-3">
+const UsersSkeleton = memo(({ rows = 12 }: UsersSkeletonProps) => {
+  return (
+    <div className="w-full">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        {Array.from({ length: rows }).map((_, index) => (
+          <div
+            key={index}
+            className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex items-center gap-4">
                 {/* Avatar skeleton */}
                 <Skeleton
-                  variant="circular"
-                  width={48}
-                  height={48}
-                  className="shrink-0"
+                  variant="rectangular"
+                  width={64}
+                  height={64}
+                  className="rounded-2xl shrink-0"
                 />
-                <div className="flex-1">
+                <div className="space-y-2">
                   {/* Name */}
-                  <Skeleton variant="text" width="60%" height={24} />
-                  {/* Email */}
-                  <Skeleton variant="text" width="80%" height={20} />
+                  <Skeleton variant="text" width={100} height={24} />
                   {/* Designation */}
-                  <Skeleton variant="text" width="40%" height={18} />
+                  <Skeleton variant="text" width={80} height={20} />
                 </div>
               </div>
+              <div className="flex flex-col gap-2">
+                <Skeleton variant="circular" width={32} height={32} />
+                <Skeleton variant="circular" width={32} height={32} />
+              </div>
             </div>
-          ))}
-        </div>
-      );
-    }
-
-    // Desktop table skeleton
-    return (
-      <div className="w-full">
-        <div className="rounded-xl overflow-hidden shadow-lg bg-white">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              {/* Table header skeleton */}
-              <thead className="bg-gray-50 border-b border-gray-200">
-                <tr>
-                  {Array.from({ length: 5 }).map((_, index) => (
-                    <th key={index} className="px-6 py-4 text-left">
-                      <Skeleton variant="text" width="80%" height={20} />
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              {/* Table body skeleton */}
-              <tbody className="divide-y divide-gray-100">
-                {Array.from({ length: rows }).map((_, rowIndex) => (
-                  <tr key={rowIndex} className="hover:bg-gray-50">
-                    {Array.from({ length: 5 }).map((_, colIndex) => (
-                      <td key={colIndex} className="px-6 py-4">
-                        {colIndex === 4 ? (
-                          // Action buttons skeleton
-                          <div className="flex gap-2">
-                            <Skeleton
-                              variant="rectangular"
-                              width={32}
-                              height={32}
-                              className="rounded"
-                            />
-                            <Skeleton
-                              variant="rectangular"
-                              width={32}
-                              height={32}
-                              className="rounded"
-                            />
-                          </div>
-                        ) : (
-                          <Skeleton
-                            variant="text"
-                            width={colIndex === 0 ? "70%" : "85%"}
-                            height={20}
-                          />
-                        )}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            
+            <div className="pt-3 border-t border-gray-50 space-y-2">
+              <Skeleton variant="text" width="90%" height={20} />
+              <Skeleton variant="text" width="70%" height={20} />
+              <div className="pt-2 space-y-2">
+                <Skeleton variant="text" width="60%" height={16} />
+                <Skeleton variant="text" width="50%" height={16} />
+              </div>
+            </div>
           </div>
-        </div>
-        {/* Pagination skeleton */}
-        <div className="flex justify-center mt-4 gap-2">
-          <Skeleton
-            variant="rectangular"
-            width={80}
-            height={36}
-            className="rounded"
-          />
-          <Skeleton
-            variant="rectangular"
-            width={200}
-            height={36}
-            className="rounded"
-          />
-          <Skeleton
-            variant="rectangular"
-            width={80}
-            height={36}
-            className="rounded"
-          />
-        </div>
+        ))}
       </div>
-    );
-  },
-);
+      
+    </div>
+  );
+});
+
 
 UsersSkeleton.displayName = "UsersSkeleton";
 

@@ -1,0 +1,41 @@
+name: Setup EC2 Instance
+
+on:
+  workflow_dispatch:
+    inputs:
+      ec2_host:
+        description: "Enter the new EC2 Instance IP Address"
+        required: true
+        type: string
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Upload staging.sh to EC2
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ inputs.ec2_host }}
+          username: ubuntu
+          key: ${{ secrets.STAGING_EC2_KEY }}
+          source: ".infra/staging.sh"
+          target: "/home/ubuntu/"
+
+      - name: Execute staging.sh on EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ inputs.ec2_host }}
+          username: ubuntu
+          key: ${{ secrets.STAGING_EC2_KEY }}
+          script: |
+            echo "Making script executable..."
+            chmod +x /home/ubuntu/.infra/staging.sh
+
+            echo "Running staging.sh..."
+            cd /home/ubuntu/.infra
+            ./staging.sh

@@ -87,7 +87,7 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
     onClose();
   }
 };
-
+ 
   let content;
 
   if (!user) {

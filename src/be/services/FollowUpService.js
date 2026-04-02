@@ -81,10 +81,14 @@ class FollowUpService extends Service {
       // 1. Resolve Lead
       let targetLead = null;
       if (leadId) {
-        targetLead = await this.findLeadByIdentifier(leadId);
+        targetLead = await Lead.findById(leadId).populate("uploadedBy", "name email");
+        if (!targetLead) targetLead = await Lead.findOne({ leadId }).populate("uploadedBy", "name email");
       }
       if (!targetLead && leadIdentifier) {
         targetLead = await this.findLeadByIdentifier(leadIdentifier);
+        if (targetLead) {
+          await targetLead.populate("uploadedBy", "name email");
+        }
       }
 
       if (!targetLead) {
@@ -124,7 +128,17 @@ class FollowUpService extends Service {
         submittedByName: doc.updatedBy?.name || "System/Unknown",
       }));
 
-      const combinedArr = [...formattedHistory, ...formattedActivities];
+      const creationEntry = {
+        _id: targetLead._id + "_creation",
+        followUpType: "history",
+        note: "Lead Created by ",
+        createdAt: targetLead.createdAt,
+        updatedAt: targetLead.createdAt,
+        submittedByName: targetLead.uploadedBy?.name || "System/Unknown",
+        isCreation: true,
+      };
+
+      const combinedArr = [creationEntry, ...formattedHistory, ...formattedActivities];
       combinedArr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
       return res.status(200).json({

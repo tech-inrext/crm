@@ -11,7 +11,12 @@ export async function sendFollowUpEmail(recipientEmail, notification) {
 
     // Fetch lead and follow-up details for a rich email
     const lead = await Lead.findById(leadId);
-    const followUpDoc = await FollowUp.findOne({ leadId }).sort({ createdAt: -1 });
+    let followUpDoc;
+    if (notification.metadata.followUpId) {
+      followUpDoc = await FollowUp.findById(notification.metadata.followUpId);
+    } else {
+      followUpDoc = await FollowUp.findOne({ leadId, outcome: "pending" }).sort({ createdAt: -1 });
+    }
 
     if (!lead) {
       throw new Error(`Lead not found: ${leadId}`);

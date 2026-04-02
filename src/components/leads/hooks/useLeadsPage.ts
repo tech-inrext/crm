@@ -8,6 +8,8 @@ import {
 } from "@/utils/leadUtils";
 import { useAuth } from "@/contexts/AuthContext";
 import { useTeamHierarchy } from "@/hooks/useTeamHierarchy";
+import axios from "axios";
+
 
 export function useLeadsPage() {
   const router = useRouter();
@@ -80,70 +82,101 @@ export function useLeadsPage() {
   const debouncedSearch = useDebounce(searchInput, 500);
 
   const { hierarchy, loading: hierarchyLoading } = useTeamHierarchy(user?._id || null);
+  const [allEmployees, setAllEmployees] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchAllEmployees = async () => {
+      if (!user?.isSystemAdmin) return;
+      try {
+        const res = await axios.get("/api/v0/employee/getAllEmployeeList", { params: { isCabVendor: false } });
+        if (res.data.success) {
+          setAllEmployees(res.data.data);
+        }
+      } catch (err) {
+        console.error("Failed to fetch all employees for admin", err);
+      }
+    };
+    fetchAllEmployees();
+  }, [user?.isSystemAdmin]);
+
 
   // Flatten hierarchy for the filter dropdown
   const teamMembers = useMemo(() => {
     // always offer an "Unassigned" option at the top of the filters
     const unassignedEntry = { _id: "unassigned", name: "Unassigned" };
+    const meEntry = user?._id ? { _id: user._id, name: "Assigned to me", designation: null } : null;
 
-    if (!hierarchy) return [unassignedEntry];
+    if (user?.isSystemAdmin) {
+      const others = allEmployees
+        .filter(emp => emp._id !== user?._id)
+        .map(emp => ({
+          _id: emp._id,
+          name: emp.name,
+          designation: emp.designation,
+        }));
+
+      const result = [unassignedEntry];
+      if (meEntry) result.push(meEntry);
+      return [...result, ...others];
+    }
+
+    if (!hierarchy) return meEntry ? [unassignedEntry, meEntry] : [unassignedEntry];
 
     const members: any[] = [];
     const flatten = (node: any) => {
-      const isMe = node._id === user?._id;
-      members.push({
-        _id: node._id,
-        name: isMe ? "Assigned to me" : node.name,
-        designation: isMe ? null : node.designation,
-      });
+      // Don't push me here, we handle it explicitly to ensure order
+      if (node._id !== user?._id) {
+        members.push({
+          _id: node._id,
+          name: node.name,
+          designation: node.designation,
+        });
+      }
       if (node.children && node.children.length > 0) {
         node.children.forEach((child: any) => flatten(child));
       }
     };
 
     flatten(hierarchy);
-    // Exclude the manager themselves if you want only subordinates, 
-    // but usually include them to allow filtering "my own leads"
 
-    // prepend unassigned entry so it appears first in the filter list
-    return [unassignedEntry, ...members];
-  }, [hierarchy]);
+    const result = [unassignedEntry];
+    if (meEntry) result.push(meEntry);
+    return [...result, ...members];
+  }, [hierarchy, allEmployees, user]);
+
+
 
   // Sync with URL for back/forward navigation or initial load after mount
   useEffect(() => {
     const statusParam = searchParams.get("status");
-    if (statusParam) {
-      const statuses = statusParam.split(",").filter(Boolean);
-      setSelectedStatuses(statuses);
-    }
+    const newStatuses = statusParam ? statusParam.split(",").filter(Boolean) : [];
+    setSelectedStatuses((prev) => prev.join(",") === newStatuses.join(",") ? prev : newStatuses);
 
     const leadTypeParam = searchParams.get("leadType");
-    if (leadTypeParam) {
-      const types = leadTypeParam.split(",").filter(Boolean);
-      setSelectedLeadTypes(types);
-    }
+    const newLeadTypes = leadTypeParam ? leadTypeParam.split(",").filter(Boolean) : [];
+    setSelectedLeadTypes((prev) => prev.join(",") === newLeadTypes.join(",") ? prev : newLeadTypes);
 
     const propertyParam = searchParams.get("propertyName");
-    if (propertyParam) {
-      const properties = propertyParam.split(",").filter(Boolean);
-      setSelectedProperties(properties);
-    }
+    const newProperties = propertyParam ? propertyParam.split(",").filter(Boolean) : [];
+    setSelectedProperties((prev) => prev.join(",") === newProperties.join(",") ? prev : newProperties);
 
     const budgetParam = searchParams.get("budgetRange");
-    if (budgetParam) {
-      const budgets = budgetParam.split(",").filter(Boolean);
-      setSelectedBudgets(budgets);
-    }
+    const newBudgets = budgetParam ? budgetParam.split(",").filter(Boolean) : [];
+    setSelectedBudgets((prev) => prev.join(",") === newBudgets.join(",") ? prev : newBudgets);
 
     const assignedToParam = searchParams.get("assignedTo");
-    if (assignedToParam) {
-      const ids = assignedToParam.split(",").filter(Boolean).slice(0, 1);
-      setSelectedAssignedTo(ids);
-    }
+    // If the URL has an explicitly empty assignedTo or lacks it, default to the current user 
+    // to maintain 'Assigned to me' default scoping naturally, mirroring the initialFilters fallback.
+    const newAssignedTo = assignedToParam 
+      ? assignedToParam.split(",").filter(Boolean).slice(0, 1) 
+      : (user?._id ? [user._id] : []);
+    setSelectedAssignedTo((prev) => prev.join(",") === newAssignedTo.join(",") ? prev : newAssignedTo);
 
     const assignedToModeParam = searchParams.get("assignedToMode") as "direct" | "hierarchy" | null;
     if (assignedToModeParam) {
-      setAssignedToMode(assignedToModeParam);
+      setAssignedToMode((prev) => prev === assignedToModeParam ? prev : assignedToModeParam);
+    } else {
+      setAssignedToMode((prev) => prev === "direct" ? prev : "direct");
     }
 
     // Check for openDialog param
@@ -152,11 +185,11 @@ export function useLeadsPage() {
     const mode = searchParams.get("mode") as "view" | "edit" | null;
 
     if (openDialog === "true" && leadId) {
-      setEditId(leadId);
-      setDialogMode(mode || "view");
-      setOpen(true);
+      setEditId(prev => prev === leadId ? prev : leadId);
+      setDialogMode(prev => prev === (mode || "view") ? prev : (mode || "view"));
+      setOpen(prev => prev === true ? prev : true);
     }
-  }, [searchParams, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setAssignedToMode]);
+  }, [searchParams, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setAssignedToMode, setEditId, setDialogMode, setOpen]);
 
   // Sync debounced search
   useEffect(() => {
@@ -345,6 +378,31 @@ export function useLeadsPage() {
     router.push(`?${params.toString()}`, { scroll: false });
   }, [searchParams, router]);
 
+  const refreshLeads = useCallback(() => {
+    loadLeads(
+      page + 1,
+      rowsPerPage,
+      searchInput,
+      selectedStatuses,
+      selectedLeadTypes,
+      selectedProperties,
+      selectedBudgets,
+      selectedAssignedTo,
+      assignedToMode
+    );
+  }, [
+    loadLeads,
+    page,
+    rowsPerPage,
+    searchInput,
+    selectedStatuses,
+    selectedLeadTypes,
+    selectedProperties,
+    selectedBudgets,
+    selectedAssignedTo,
+    assignedToMode,
+  ]);
+
   return {
     // State
     leads,
@@ -388,6 +446,7 @@ export function useLeadsPage() {
     updateLeadStatus,
     updateLeadType,
     loadLeads,
+    refreshLeads,
     dialogMode,
   };
 }

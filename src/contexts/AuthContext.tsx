@@ -27,14 +27,14 @@ interface User {
     delete?: string[];
   }[]; // Backend returns array of role objects
   currentRole?:
-    | string
-    | {
-        _id: string;
-        name: string;
-        read?: string[];
-        write?: string[];
-        delete?: string[];
-      }; // Can be either role ID (string) or full role object
+  | string
+  | {
+    _id: string;
+    name: string;
+    read?: string[];
+    write?: string[];
+    delete?: string[];
+  }; // Can be either role ID (string) or full role object
   designation?: string;
   departmentId?: string;
   managerId?: string;
@@ -132,18 +132,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         // UI logic can check this flag.
         const profile = profileResponse.data || ({} as any);
 
-        // Derive isSystemAdmin from explicit flag or from roles array
+        // Derive isSystemAdmin from the CURRENT active role only.
+        // Checking all roles would incorrectly flag users who merely have
+        // a system-admin role assigned but are not currently operating in it.
         const rolesArr = Array.isArray(profile.roles) ? profile.roles : [];
-        const isSystemAdminFromRoles = rolesArr.some((r: any) =>
-          Boolean(r && r.isSystemAdmin)
-        );
+        const currentRoleObj = rolesArr.find(
+          (r: any) => r._id === profile.currentRole
+        ) ?? (typeof profile.currentRole === "object" ? profile.currentRole : null);
+        const isSystemAdminFromCurrentRole = Boolean(currentRoleObj?.isSystemAdmin);
 
         const normalized = {
           ...profile,
           _id: profile._id || profile.id || undefined,
           isSystemAdmin:
-            Boolean(profile.isSystemAdmin) || isSystemAdminFromRoles,
-            photo: profile.photo || "",
+            Boolean(profile.isSystemAdmin) || isSystemAdminFromCurrentRole,
+          photo: profile.photo || "",
         } as User;
 
         setUser(normalized);
@@ -195,7 +198,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const response = await createLogin(email, password);
 
       if (response.success) {
-        setUser(response.employee);
+        const emp = response.employee;
+        const empRoles = Array.isArray(emp?.roles) ? emp.roles : [];
+        // Only check the current active role for isSystemAdmin, not all roles
+        const empCurrentRoleObj = empRoles.find(
+          (r: any) => r._id === emp?.currentRole || r._id?.toString() === emp?.currentRole?.toString()
+        ) ?? (typeof emp?.currentRole === "object" ? emp?.currentRole : null);
+        const isSystemAdminFromCurrentRole = Boolean(empCurrentRoleObj?.isSystemAdmin);
+        const normalizedEmployee = {
+          ...emp,
+          _id: emp?._id || emp?.id || undefined,
+          isSystemAdmin: Boolean(emp?.isSystemAdmin) || isSystemAdminFromCurrentRole,
+        };
+        setUser(normalizedEmployee);
         if (!response?.employee?.currentRole) {
           // Need to select a role first — show role selector and DO NOT
           // consume the postLoginRedirect yet. The redirect will be handled
@@ -240,8 +255,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error(
         "Logout error:",
         axiosError.response?.data?.message ||
-          axiosError.message ||
-          "Unknown error"
+        axiosError.message ||
+        "Unknown error"
       );
     } finally {
       setUser(null);
@@ -295,10 +310,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       setPendingRoleSelection(false);
       setRoleSelected(true);
       // Redirect after role selection: prefer postLoginRedirect if set.
-      // If not set, try to detect `cabBooking` flag from current URL
-      // (handles cases where user navigated directly to a protected page
-      // and the login modal overlay appeared without the login page
-      // setting postLoginRedirect).
       let dest: string | null = null;
       if (postLoginRedirect) {
         dest = postLoginRedirect;
@@ -309,8 +320,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           const bookingId = params.get("bookingId");
           dest = bookingId
             ? `/dashboard/cab-booking?cabBooking=1&bookingId=${encodeURIComponent(
-                bookingId
-              )}`
+              bookingId
+            )}`
             : "/dashboard/cab-booking";
         }
       }
@@ -319,15 +330,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         dest = "/dashboard/leads";
       }
 
-      // If dest equals current location, use replace to force refresh.
+      // Instead of Next.js router transitions which might preserve stale state/cache 
+      // from the previous role's network requests, do a hard location redirect.
       const current =
         typeof window !== "undefined"
           ? window.location.pathname + window.location.search
           : null;
+          
       if (current && dest === current) {
-        router.replace(dest);
+        window.location.reload();
       } else {
-        router.push(dest);
+        window.location.href = dest;
       }
     } catch (error) {
       console.error("Role selection failed:", error);
@@ -405,14 +418,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       showScheduleThisWeek: Boolean(role.showScheduleThisWeek || false),
     };
   };
-  
+
   const hasAdminRole = () => {
-  if (!user) return false;
-  
-  const currentRoleName = getCurrentRoleName()?.toLowerCase();
-  const isSystemAdmin = user.isSystemAdmin;
-  
-  return currentRoleName === 'accounts' || currentRoleName === 'admin' || isSystemAdmin;
+    if (!user) return false;
+
+    const currentRoleName = getCurrentRoleName()?.toLowerCase();
+    const isSystemAdmin = user.isSystemAdmin;
+
+    return currentRoleName === 'accounts' || currentRoleName === 'admin' || isSystemAdmin;
   };
 
   // ✅ Function: Check if current user has the 'Accounts' role
@@ -425,7 +438,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     // Check if current role is "accounts" (case-insensitive)
     return currentRoleName === "accounts" || currentRoleName === "admin";
   };
-  
+
 
   useEffect(() => {
     // Let's have this failing api for now
