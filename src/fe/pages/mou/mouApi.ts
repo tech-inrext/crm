@@ -1,11 +1,13 @@
 import createApi from "@/fe/framework/hooks/createApi";
+import { DEFAULT_PAGE_SIZE } from "./constants/mou";
+
 
 const mouApi = createApi({
   endpoints: {
     getMous: (params) => ({
       url: "/api/v0/employee",
       isPaginated: true,
-      defaultPageSize: 10,
+      defaultPageSize: DEFAULT_PAGE_SIZE,
       shouldCache: true,
     }),
   },
