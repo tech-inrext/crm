@@ -8,7 +8,7 @@ import {
   useCreateVendorMutation,
   useUpdateVendorMutation,
 } from "@/fe/pages/vendor/vendorApi";
-import { invalidateQueryCache } from "@/fe/hooks/createApi";
+import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";
 import { buildVendorPayload, extractMessage } from "@/fe/pages/vendor/utils";
 import {
   vendorValidationSchema,

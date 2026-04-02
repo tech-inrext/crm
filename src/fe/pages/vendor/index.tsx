@@ -7,7 +7,7 @@ import VendorsList from "@/fe/pages/vendor/components/VendorsList";
 import VendorDialog from "@/fe/pages/vendor/components/dialog/vendorDialog";
 import useVendorsPage from "@/fe/pages/vendor/hooks/useVendorsPage";
 import { useGetVendorsQuery } from "@/fe/pages/vendor/vendorApi";
-import { invalidateQueryCache } from "@/fe/hooks/createApi";
+import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";
 import {
   VENDORS_PERMISSION_MODULE,
   FAB_POSITION,
