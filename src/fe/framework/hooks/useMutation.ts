@@ -66,8 +66,8 @@ function useMutation<TPayload = unknown, TResponse = unknown>(
           status: axiosErr.response?.status,
           raw: err,
         };
-        console.log("Here is error", err);
         setError(err);
+        throw err;
       } finally {
         setLoading(false);
       }

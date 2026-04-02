@@ -449,6 +449,8 @@ class NotificationService extends Service {
 
     if (notification.channels.email)
       this._scheduleEmailNotification(notification);
+    if (notification.channels.whatsapp)
+      this._scheduleWhatsappNotification(notification);
     if (notification.channels.inApp && !data.scheduledFor)
       this._deliverRealtimeNotification(notification);
 
@@ -577,6 +579,27 @@ class NotificationService extends Service {
       ]);
     } catch (error) {
       console.error("❌ Email scheduling failed (non-blocking):", error.message);
+    }
+  }
+
+  async _scheduleWhatsappNotification(notification) {
+    if (!leadQueue) {
+      console.warn("⚠️ NotificationService: Whatsapp queue not available, skipping whatsapp for:", notification._id);
+      return;
+    }
+
+    try {
+      console.log("📲 Scheduling whatsapp for notification:", notification._id);
+      await Promise.race([
+        leadQueue.add("sendNotificationWhatsapp", {
+          notificationId: notification._id.toString(),
+        }),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error("Redis timeout")), 5000)
+        ),
+      ]);
+    } catch (error) {
+      console.error("❌ Whatsapp scheduling failed (non-blocking):", error.message);
     }
   }
 

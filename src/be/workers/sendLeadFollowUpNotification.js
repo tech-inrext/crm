@@ -81,6 +81,7 @@ const sendLeadFollowUpNotification = async (job) => {
                 channels: {
                     inApp: true,
                     email: true,
+                    whatsapp: true,
                 },
                 scheduledFor: reminderType === "DUE" ? latestEntry.followUpDate : undefined,
             });

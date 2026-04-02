@@ -162,6 +162,10 @@ export default function DashboardLayout({
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
           if (!link.module) return true;
+
+          // Roles module only for system admins
+          if (link.module === "role") return Boolean(user.isSystemAdmin);
+
           const { hasReadAccess } = getPermissions(link.module);
           return hasReadAccess;
         })

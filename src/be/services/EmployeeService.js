@@ -10,12 +10,15 @@ import validator from "validator";
 import Role from "../models/Role";
 import { sendNewEmployeeWelcomeEmail } from "../email-service/employee/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "../email-service/manager/managerNewReport.js";
+import { sendMOUApprovalRequestAVPMail } from "../email-service/mou/sendMOUApprovalRequestAVPMail.js";
 import { sendRoleChangeEmail } from "../email-service/role/sendRoleChangeEmail.js";
 import {
   notifyUserRegistration,
   notifyUserUpdate,
   notifyRoleChange,
 } from "../../lib/notification-helpers";
+import { sendEmployeeWelcomeWhatsappMessage } from "../whatsapp-msg-service/employee-welcome/employeeWelcome.js";
+import { sendMOUApprovalRequestWhatsappMessage } from "../whatsapp-msg-service/mou-notification/mouNotification.js";
 
 class EmployeeService extends Service {
   constructor() {
@@ -268,6 +271,15 @@ class EmployeeService extends Service {
     setIfPresent("managerId", managerId);
     setIfPresent("departmentId", departmentId);
     if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
+      // 🛡️ Prevent Role Escalation
+      const requesterRoleId = req.role?._id;
+      const authorityCheck = await this.verifyRoleAuthority(requesterRoleId, roles);
+      if (!authorityCheck.authorized) {
+        return res.status(403).json({
+          success: false,
+          message: authorityCheck.message,
+        });
+      }
       updateFields.roles = Array.isArray(roles) ? roles : [];
     }
     setIfPresent("photo", photo);
@@ -310,9 +322,22 @@ class EmployeeService extends Service {
         newManagerId = req.body.managerId ? String(req.body.managerId) : null;
       }
       const managerChanged = oldManagerId !== newManagerId;
-      // If manager changed → set MOU status
-      if (managerChanged) {
+
+      /* ---------- MOU REGENERATION DETECTION ---------- */
+      // Helper to compare trimmed strings safely
+      const hasStringChanged = (oldVal, newVal) =>
+        String(oldVal || "").trim() !== String(newVal || "").trim();
+
+      const slabChanged = ("slabPercentage" in req.body) &&
+        hasStringChanged(existingEmployee.slabPercentage, req.body.slabPercentage);
+
+      const branchChanged = ("branch" in req.body) &&
+        hasStringChanged(existingEmployee.branch, req.body.branch);
+
+      // If manager, slab, or branch changed → set MOU status to Pending
+      if (managerChanged || slabChanged || branchChanged) {
         updateFields.mouStatus = "Pending";
+        updateFields.mouPdfUrl = "";
       }
       const oldRoles = existingEmployee.roles.map((r) => ({
         id: r._id.toString(),
@@ -500,7 +525,7 @@ class EmployeeService extends Service {
         panNumber: formattedPan,
         password: hashedPassword,
         isCabVendor,
-        mouStatus: "Pending",
+        mouStatus: slabPercentage ? "Pending" : undefined,
         fatherName,
       };
 
@@ -523,6 +548,15 @@ class EmployeeService extends Service {
       if (Object.prototype.hasOwnProperty.call(req.body, "departmentId"))
         employeeData.departmentId = departmentId;
       if (Object.prototype.hasOwnProperty.call(req.body, "roles")) {
+        // 🛡️ Prevent Role Escalation 
+        const requesterRoleId = req.role?._id;
+        const authorityCheck = await this.verifyRoleAuthority(requesterRoleId, roles);
+        if (!authorityCheck.authorized) {
+          return res.status(403).json({
+            success: false,
+            message: authorityCheck.message,
+          });
+        }
         employeeData.roles = Array.isArray(roles)
           ? roles
           : roles
@@ -564,18 +598,70 @@ class EmployeeService extends Service {
         // Email failed silently
       }
 
-      // 2) Send email to manager (if managerId is provided)
+      // 1.5) Send welcome WhatsApp to employee
+      try {
+        if (newEmployee.phone) {
+          await sendEmployeeWelcomeWhatsappMessage(
+            newEmployee.phone,
+            newEmployee.name,
+            `${process.env.APP_URL || "https://dashboard.inrext.com"}/login`
+          );
+        }
+      } catch (e) {
+        // WhatsApp failed silently
+      }
+
+      // 2) Notifications (Email/WhatsApp)
       if (managerId) {
         try {
+          // A) Always notify the direct manager about the new report
           const managerDoc = await Employee.findById(managerId).lean();
-          if (managerDoc?.email) {
+          if (managerDoc && managerDoc.email) {
             await sendManagerNewReportEmail({
               manager: managerDoc,
               employee: newEmployee.toObject(),
             });
           }
+
+          // B) Only send MOU notifications if this is a freelancer (has slabPercentage)
+          if (slabPercentage) {
+            // Find the AVP in the hierarchy for MOU approval
+            const avpDoc = await this.findAVPHierarchy(managerId);
+
+            if (avpDoc) {
+              // Send MOU approval request email to AVP
+              if (avpDoc.email) {
+                await sendMOUApprovalRequestAVPMail({
+                  avp: avpDoc,
+                  employee: newEmployee.toObject(),
+                });
+              }
+
+              // Send MOU approval request WhatsApp to AVP
+              if (avpDoc.phone) {
+                await sendMOUApprovalRequestWhatsappMessage(
+                  avpDoc.phone,
+                  avpDoc.name,
+                  newEmployee.name,
+                  newEmployee.employeeProfileId || newEmployee._id,
+                  `${process.env.APP_URL || "https://dashboard.inrext.com"}/dashboard/mou`
+                );
+              }
+            } else if (managerDoc) {
+              // Fallback: Notify immediate manager if no AVP found in higher hierarchy
+              if (managerDoc.phone) {
+                await sendMOUApprovalRequestWhatsappMessage(
+                  managerDoc.phone,
+                  managerDoc.name,
+                  newEmployee.name,
+                  newEmployee.employeeProfileId || newEmployee._id,
+                  `${process.env.APP_URL || "https://dashboard.inrext.com"}/dashboard/mou`
+                );
+              }
+            }
+          }
         } catch (e) {
-          // Email failed silently
+          console.error("AVP/Manager notification failed:", e);
         }
       }
 
@@ -1365,6 +1451,100 @@ class EmployeeService extends Service {
         message: "Failed to fetch AVP employees",
         error: error.message,
       });
+    }
+  }
+  async findAVPHierarchy(employeeId) {
+    if (!employeeId) return null;
+
+    try {
+      // Find employee and populate roles to check isAVP flag
+      const employee = await Employee.findById(employeeId).populate("roles");
+      if (!employee) return null;
+
+      // Check if current employee is an AVP
+      const isAVP = Array.isArray(employee.roles) && employee.roles.some((role) => role.isAVP === true);
+      if (isAVP) return employee.toObject();
+
+      // Recurse upward
+      if (employee.managerId) {
+        return await this.findAVPHierarchy(employee.managerId);
+      }
+    } catch (error) {
+      console.error("Error in findAVPHierarchy:", error);
+    }
+    return null;
+  }
+
+  /**
+   * Helper to verify if the requester has enough authority (rank)
+   * to assign target roles to another user.
+   *
+   * @param {string} requesterRoleId - Role ID of the user making the request
+   * @param {string|string[]} targetRoleIds - Role ID(s) being assigned
+   * @returns {Promise<{authorized: boolean, message?: string}>}
+   */
+  async verifyRoleAuthority(requesterRoleId, targetRoleIds) {
+    if (!requesterRoleId) {
+      return { authorized: false, message: "Requester role context missing" };
+    }
+
+    // Normalize target IDs to an array
+    const targets = Array.isArray(targetRoleIds)
+      ? targetRoleIds
+      : targetRoleIds
+        ? [targetRoleIds]
+        : [];
+
+    if (targets.length === 0) return { authorized: true };
+
+    try {
+      // Fetch requester role and target roles in parallel for efficiency
+      const [requesterRole, targetRoles] = await Promise.all([
+        Role.findById(requesterRoleId).lean(),
+        Role.find({ _id: { $in: targets } }).lean(),
+      ]);
+
+      if (!requesterRole) {
+        return { authorized: false, message: "Requester role not found" };
+      }
+
+      // 👑 System Admins can assign any role
+      if (requesterRole.isSystemAdmin) return { authorized: true };
+
+      // 🏆 New Hierarchy Logic: 1 = Highest Privilege, higher = Lower Privilege
+      // Treat rank 0 or undefined as the lowest possible privilege (infinity) 
+      const requesterRank = requesterRole.rank > 0 ? requesterRole.rank : Infinity;
+
+      for (const target of targetRoles) {
+        const targetRank = target.rank > 0 ? target.rank : Infinity;
+
+        // 🚫 Check 1: Rank comparison
+        // If targetRank is smaller than requesterRank, it means the target role 
+        // has HIGHER privilege than the requester.
+        if (targetRank < requesterRank) {
+          return {
+            authorized: false,
+            message: `Insufficient privilege: Role '${target.name}' has rank ${target.rank || "none"}, but your role '${requesterRole.name}' only has rank ${requesterRole.rank || "none"}. 1 is the highest privilege; you cannot assign roles with a higher rank than your own.`,
+          };
+        }
+
+        // 🚫 Check 2: Explicit System Admin protection (fail-safe)
+        // Even if ranks matched, only real System Admins can grant the isSystemAdmin flag.
+        if (target.isSystemAdmin) {
+          return {
+            authorized: false,
+            message: `Security Violation: The '${target.name}' role has System Administrator privileges. Only a System Admin can grant this level of access.`,
+          };
+        }
+      }
+
+      return { authorized: true };
+    } catch (error) {
+      console.error("Role authority verification failed:", error);
+      return {
+        authorized: false,
+        message: "Internal security check failed: " + error.message,
+      };
     }
   }
 }

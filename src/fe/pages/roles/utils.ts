@@ -78,6 +78,7 @@ export const buildCreateRolePayload = (data: RoleFormData) => {
     showCabBookingAnalytics: !!data.showCabBookingAnalytics,
     showScheduleThisWeek: !!data.showScheduleThisWeek,
     isAVP: !!data.isAVP,
+    rank: Number(data.rank) || 0,
   };
 };
 
@@ -95,6 +96,7 @@ export const buildUpdateRolePayload = (data: RoleFormData) => {
     showCabBookingAnalytics: !!data.showCabBookingAnalytics,
     showScheduleThisWeek: !!data.showScheduleThisWeek,
     isAVP: !!data.isAVP,
+    rank: Number(data.rank) || 0,
   };
 };
 

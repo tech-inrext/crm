@@ -59,9 +59,6 @@ import {
       <Box sx={actionBarBoxSx}>
         {/* Row 1: Search and Global Actions */}
         <Stack
-          direction="row"
-          spacing={2}
-          alignItems="center"
           sx={controlsStackSx}
         >
           {isAdmin && employeeOptions && onEmployeeSelect && (
@@ -82,7 +79,9 @@ import {
             />
           </Box>
 
-          <Stack direction="row" spacing={1} alignItems="center" sx={rightActionsStackSx}>
+          <Stack
+            sx={rightActionsStackSx}
+          >
             {managerName && (
               <Tooltip title="Your Direct Manager">
                 <Button
