@@ -9,25 +9,28 @@ export const containerSx: SxProps<Theme> = {
   overflow: "hidden",
 };
 
-export const headerPaperSx: SxProps<Theme> = {
-  p: 2,
-  mb: 2,
+export const searchContainerSx: SxProps<Theme> = {
+  width: "100%",
+  maxWidth: "600px",
+  flexGrow: 1,
 };
 
-export const headerContentSx: SxProps<Theme> = {
+export const actionBarButtonsSx: SxProps<Theme> = {
   display: "flex",
-  justifyContent: "space-between",
+  gap: { xs: 1, sm: 2 },
+  flexDirection: { xs: "row", sm: "row" },
   alignItems: "center",
+  justifyContent: { xs: "center", sm: "flex-start" },
+  width: { xs: "100%", sm: "auto" },
 };
 
-export const titleSx: SxProps<Theme> = {
-  fontWeight: 700,
-};
-
-export const tabButtonsContainerSx: SxProps<Theme> = {
-  display: "flex",
-  gap: 1,
-  mb: 2,
+export const actionBarButtonSx: SxProps<Theme> = {
+  flex: { xs: 1, sm: "none" },
+  minWidth: { xs: "0", sm: "140px" },
+  borderRadius: "10px",
+  textTransform: "none",
+  fontWeight: 600,
+  whiteSpace: "nowrap",
 };
 
 export const loadingContainerSx: SxProps<Theme> = {

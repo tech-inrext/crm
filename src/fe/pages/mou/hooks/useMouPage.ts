@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDebounce } from "@/hooks/useDebounce";
 import { DEFAULT_PAGE_SIZE } from "@/fe/pages/mou/constants/mou";
 import type { MouView } from "@/fe/pages/mou/types";
 import { isSystemAdmin as checkIsSystemAdmin } from "../utils";
@@ -22,9 +23,11 @@ export function useMouPage() {
   const [view, setView] = useState<MouView>("pending");
   const status = view === "pending" ? "Pending" : "Approved";
 
-  // ─── Pagination State ──────────────────────────────────────────────────────
+  // ─── Pagination & Search State ─────────────────────────────────────────────
   const [currentPage, setLocalPage] = useState(1);
   const [pageSize, setLocalPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
 
   // ─── Data Query ───────────────────────────────────────────────────────────
   const isSystemAdmin = checkIsSystemAdmin(user);
@@ -42,6 +45,7 @@ export function useMouPage() {
     managerId: (user?._id && !isSystemAdmin) ? user._id : undefined,
     page: currentPage,
     limit: pageSize,
+    search: debouncedSearch || undefined,
   });
 
   // ─── Mutations ────────────────────────────────────────────────────────────
@@ -58,10 +62,17 @@ export function useMouPage() {
     setApiPageSize(pageSize);
   }, [pageSize, setApiPageSize]);
 
-  // Reset page when view changes
+  // Reset page when view or search changes
   useEffect(() => {
     setLocalPage(1);
-  }, [view]);
+  }, [view, debouncedSearch]);
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearch(e.target.value);
+    },
+    [],
+  );
 
   // ─── Action handlers ──────────────────────────────────────────────────────
   
@@ -143,6 +154,10 @@ export function useMouPage() {
     handleReject,
     handleResend,
     handleMarkComplete,
+
+    // Search
+    search,
+    handleSearchChange,
 
     snackOpen: false, 
     setSnackOpen: () => {},
