@@ -38,7 +38,7 @@ const noticeSchema = new mongoose.Schema(
 
     departments: {
       type: String,
-      enum: ["All", "Sales", "Marketing", "HR", "Accounts", "Operations"],
+      enum: ["All", "Teams"],
       default: "All",
       index: true,
     },

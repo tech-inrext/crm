@@ -16,9 +16,19 @@ export default function NoticesDashboard() {
   const { meta, loading, fetchNotices, pinnedNotices, regularNotices } =
     useNotices();
 
+  /* ---------------- FILTER ---------------- */
+
   const handleFilterChange = (filters: any) => {
     fetchNotices(filters);
   };
+
+  /* ---------------- AUTO REFRESH ---------------- */
+
+  const handleNoticeAdded = () => {
+    fetchNotices(); // refresh notices after publish
+  };
+
+  /* ---------------- PAGINATION ---------------- */
 
   const {
     page,
@@ -27,23 +37,31 @@ export default function NoticesDashboard() {
     setTotalItems,
     setPage,
     setRowsPerPage,
-  } = useNoticePagination(1, 6); // 🔥 only 6 cards per page
+  } = useNoticePagination(1, 6);
 
-  // update total items
   useEffect(() => {
     setTotalItems(regularNotices.length);
   }, [regularNotices, setTotalItems]);
 
-  // pagination logic
   const paginatedNotices = regularNotices.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage
   );
 
   return (
-    <Container maxWidth={false} sx={{ bgcolor: "#fafaf9", p: 1, ml: 2 }}>
+    <Container
+      maxWidth={false}
+      sx={{
+        bgcolor: "#fafaf9",
+        p: 1,
+        ml: { xs: 0, sm: 0.5 },
+      }}
+    >
+      {/* HEADER */}
+
       <NoticeBoardHeader
         onFilterChange={handleFilterChange}
+        onNoticeAdded={handleNoticeAdded}   // ✅ important
         categories={meta.categories}
         priorities={meta.priorities}
       />
@@ -57,6 +75,7 @@ export default function NoticesDashboard() {
       ) : (
         <>
           {/* Pinned Notices */}
+
           {pinnedNotices.length > 0 && (
             <>
               <Stack
@@ -80,7 +99,8 @@ export default function NoticesDashboard() {
             </>
           )}
 
-          {/* All Notices Header */}
+          {/* All Notices */}
+
           <Stack
             direction="row"
             alignItems="center"
@@ -100,6 +120,7 @@ export default function NoticesDashboard() {
           </Stack>
 
           {/* Regular Notices */}
+
           <Box
             sx={{
               ...gridStyles,
@@ -129,6 +150,7 @@ export default function NoticesDashboard() {
           </Box>
 
           {/* Pagination */}
+
           <Box sx={{ mt: 2 }}>
             <Pagination
               page={page}

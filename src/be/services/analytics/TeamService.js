@@ -1,5 +1,3 @@
-// TeamService.js
-
 import { Service } from "@framework";
 import Employee from "../../models/Employee";
 
@@ -8,38 +6,64 @@ class TeamService extends Service {
     super();
   }
 
-  buildTeamHierarchy(employees, managerId, visited = new Set()) {
-    if (visited.has(String(managerId))) return [];
-    visited.add(String(managerId));
+  // ---------------- CHECK TEAM MEMBER ----------------
+  async isTeamMember(employeeId) {
+    try {
+      if (!employeeId) return false;
 
-    return employees
-      .filter((emp) => String(emp.managerId) === String(managerId))
-      .map((emp) => ({
-        _id: emp._id,
-        children: this.buildTeamHierarchy(employees, emp._id, new Set(visited)),
-      }));
-  }
+      const employee = await Employee.findById(employeeId)
+        .select("_id managerId")
+        .lean();
 
-  countTeamMembers(team) {
-    if (!Array.isArray(team)) return 0;
+      if (!employee) return false;
 
-    let count = 0;
-    for (const member of team) {
-      count += 1;
-      if (member.children?.length) {
-        count += this.countTeamMembers(member.children);
-      }
+      // if employee has manager → team member
+      if (employee.managerId) return true;
+
+      // if employee has subordinates → manager
+      const subordinates = await Employee.countDocuments({
+        managerId: employeeId,
+      });
+
+      return subordinates > 0;
+    } catch (error) {
+      console.error("isTeamMember error:", error);
+      return false;
     }
-    return count;
   }
 
-  // 🔥 Reusable method
-  async getTeamCount(loggedInId) {
-    const employees = await Employee.find({}, "_id managerId").lean();
+  // ---------------- GET MY TEAM MEMBERS ----------------
+  async getMyTeamMembers(employeeId) {
+    try {
+      if (!employeeId) return [];
 
-    const teamHierarchy = this.buildTeamHierarchy(employees, loggedInId);
+      const members = await Employee.find({
+        managerId: employeeId,
+      })
+        .select("_id")
+        .lean();
 
-    return this.countTeamMembers(teamHierarchy);
+      return members.map((m) => m._id);
+    } catch (error) {
+      console.error("getMyTeamMembers error:", error);
+      return [];
+    }
+  }
+
+  // ---------------- GET MY MANAGER ----------------
+  async getMyManager(employeeId) {
+    try {
+      if (!employeeId) return null;
+
+      const employee = await Employee.findById(employeeId)
+        .select("managerId")
+        .lean();
+
+      return employee?.managerId || null;
+    } catch (error) {
+      console.error("getMyManager error:", error);
+      return null;
+    }
   }
 }
 

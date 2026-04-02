@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -21,6 +21,7 @@ import {
   Typography,
   Snackbar,
 } from "../../../../components/ui/Component";
+
 import Alert from "../../../../components/ui/Component/Alert";
 import CloseIcon from "@mui/icons-material/Close";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
@@ -30,6 +31,8 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 
+/* ---------------- STATIC OPTIONS ---------------- */
+
 const categories = [
   "General Announcements",
   "Project Updates",
@@ -38,8 +41,10 @@ const categories = [
   "Urgent Alerts",
   "HR / Internal",
 ];
+
 const priorities = ["Urgent", "Important", "Info"];
-const departments = ["All", "Teams", "Roles"];
+
+/* ---------------- TYPES ---------------- */
 
 interface PendingFile {
   id: string;
@@ -55,45 +60,68 @@ interface SavedAttachment {
 type Props = {
   open: boolean;
   onClose: () => void;
-  onNoticeAdded: () => void;
+  onNoticeAdded?: () => void; // optional for safety
 };
 
-// Upload file to S3 and return public URL
+/* ---------------- S3 UPLOAD ---------------- */
+
 async function uploadToS3(file: File): Promise<string> {
   const { uploadUrl, fileUrl } = await fetch("/api/v0/s3/upload-url", {
     method: "POST",
-    body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+    body: JSON.stringify({
+      fileName: file.name,
+      fileType: file.type,
+    }),
     headers: { "Content-Type": "application/json" },
   }).then((res) => res.json());
 
   await fetch(uploadUrl, {
     method: "PUT",
     body: file,
-    headers: { "Content-Type": file.type },
+    headers: {
+      "Content-Type": file.type,
+    },
   });
 
   return fileUrl;
 }
 
-export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) {
+/* ---------------- COMPONENT ---------------- */
+
+export default function AddNoticeModal({
+  open,
+  onClose,
+  onNoticeAdded,
+}: Props) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  /* ---------------- STATE ---------------- */
+
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+
   const [category, setCategory] = useState(categories[0]);
   const [priority, setPriority] = useState(priorities[2]);
-  const [selectedDepartment, setSelectedDepartment] = useState(departments[0]);
+
+  const [departments, setDepartments] = useState<string[]>([]);
+  const [selectedDepartment, setSelectedDepartment] = useState("All");
+
   const [expiry, setExpiry] = useState<Dayjs | null>(null);
   const [pinned, setPinned] = useState(false);
 
   const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
-  const [savedAttachments, setSavedAttachments] = useState<SavedAttachment[]>([]);
-  const [renamingUrl, setRenamingUrl] = useState<string | null>(null);
+  const [savedAttachments, setSavedAttachments] = useState<SavedAttachment[]>(
+    []
+  );
 
   const [loading, setLoading] = useState(false);
+
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"error" | "success">("error");
+  const [snackbarSeverity, setSnackbarSeverity] =
+    useState<"error" | "success">("error");
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  /* ---------------- SNACKBAR ---------------- */
 
   const notify = (msg: string, type: "error" | "success" = "error") => {
     setSnackbarMsg(msg);
@@ -101,9 +129,30 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
     setSnackbarOpen(true);
   };
 
+  /* ---------------- LOAD META ---------------- */
+
+  useEffect(() => {
+    fetch("/api/v0/notice/meta")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data?.success) {
+          setDepartments(data.data.departments || ["All", "Teams", "Roles"]);
+        } else {
+          setDepartments(["All", "Teams", "Roles"]);
+        }
+      })
+      .catch(() => {
+        setDepartments(["All", "Teams", "Roles"]);
+      });
+  }, []);
+
+  /* ---------------- FILE PICK ---------------- */
+
   const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
+
     if (!files.length) return;
+
     setPendingFiles((prev) => [
       ...prev,
       ...files.map((f) => ({
@@ -112,16 +161,21 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
         customName: f.name.replace(/\.[^.]+$/, ""),
       })),
     ]);
+
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  /* ---------------- SUBMIT ---------------- */
+
   const handleSubmit = async () => {
-    if (!title.trim() || !description.trim()) return notify("Title and Description are required");
+    if (!title.trim() || !description.trim()) {
+      return notify("Title and Description are required");
+    }
 
     try {
       setLoading(true);
 
-      // Upload pending files to S3
+      /* upload files */
       const newAttachments: SavedAttachment[] = await Promise.all(
         pendingFiles.map(async (p) => ({
           filename: p.customName.trim() || p.file.name,
@@ -140,32 +194,41 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
         attachments: [...savedAttachments, ...newAttachments],
       };
 
-      console.log("Payload being sent:", payload);
-
       const res = await fetch("/api/v0/notice", {
         method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
         body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" },
       });
+
       const result = await res.json();
 
-      if (!result.success) throw new Error(result.message);
+      if (!result.success) {
+        throw new Error(result.message);
+      }
 
-      setSavedAttachments(payload.attachments);
-      setPendingFiles([]);
+      notify("Notice added successfully!", "success");
+
+      /* auto refresh notice cards */
+      if (onNoticeAdded) {
+        onNoticeAdded();
+      }
+
+      onClose();
+
+      /* reset */
       setTitle("");
       setDescription("");
       setCategory(categories[0]);
       setPriority(priorities[2]);
-      setSelectedDepartment(departments[0]);
+      setSelectedDepartment("All");
       setExpiry(null);
       setPinned(false);
-
-      notify("Notice added successfully!", "success");
-      onNoticeAdded();
-      onClose();
+      setPendingFiles([]);
+      setSavedAttachments([]);
     } catch (err: any) {
-      notify(err?.message ?? "Failed to add notice");
+      notify(err?.message || "Failed to add notice");
     } finally {
       setLoading(false);
     }
@@ -173,13 +236,19 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
 
   if (!open) return null;
 
+  /* ---------------- UI ---------------- */
+
   return (
     <>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
           <DialogTitle sx={{ fontWeight: 700, fontSize: 22 }}>
             Create New Notice
-            <IconButton onClick={onClose} className="!absolute !right-4 !top-4">
+
+            <IconButton
+              onClick={onClose}
+              className="!absolute !right-4 !top-4"
+            >
               <CloseIcon />
             </IconButton>
           </DialogTitle>
@@ -193,6 +262,7 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
                 fullWidth
                 size="small"
               />
+
               <TextField
                 label="Description"
                 value={description}
@@ -203,27 +273,55 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
                 size="small"
               />
 
+              {/* Category & Priority */}
+
               <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Category</InputLabel>
-                  <Select value={category} label="Category" onChange={(e) => setCategory(e.target.value)}>
-                    {categories.map((cat) => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)}
+                  <Select
+                    value={category}
+                    label="Category"
+                    onChange={(e) => setCategory(e.target.value)}
+                  >
+                    {categories.map((cat) => (
+                      <MenuItem key={cat} value={cat}>
+                        {cat}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
 
                 <FormControl fullWidth size="small">
                   <InputLabel>Priority</InputLabel>
-                  <Select value={priority} label="Priority" onChange={(e) => setPriority(e.target.value)}>
-                    {priorities.map((pri) => <MenuItem key={pri} value={pri}>{pri}</MenuItem>)}
+                  <Select
+                    value={priority}
+                    label="Priority"
+                    onChange={(e) => setPriority(e.target.value)}
+                  >
+                    {priorities.map((pri) => (
+                      <MenuItem key={pri} value={pri}>
+                        {pri}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
               </Stack>
 
+              {/* Department & Expiry */}
+
               <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Departments</InputLabel>
-                  <Select value={selectedDepartment} label="Departments" onChange={(e) => setSelectedDepartment(e.target.value)}>
-                    {departments.map((dept) => <MenuItem key={dept} value={dept}>{dept}</MenuItem>)}
+                  <Select
+                    value={selectedDepartment}
+                    label="Departments"
+                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                  >
+                    {departments.map((dept) => (
+                      <MenuItem key={dept} value={dept}>
+                        {dept}
+                      </MenuItem>
+                    ))}
                   </Select>
                 </FormControl>
 
@@ -231,76 +329,94 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
                   label="Expiry Date"
                   value={expiry}
                   onChange={(val) => setExpiry(val)}
-                  slotProps={{ textField: { size: "small", fullWidth: true } }}
+                  slotProps={{
+                    textField: {
+                      size: "small",
+                      fullWidth: true,
+                    },
+                  }}
                 />
               </Stack>
 
               {/* Attachments */}
+
               <Box>
-                <div className="flex items-center justify-between mb-1">
-                  <Typography fontSize={12} fontWeight={600}>Attachments</Typography>
-                  <Button variant="text" startIcon={<UploadFileIcon />} onClick={() => fileInputRef.current?.click()} size="small">
+                <div className="flex justify-between mb-1">
+                  <Typography fontSize={12} fontWeight={600}>
+                    Attachments
+                  </Typography>
+
+                  <Button
+                    variant="text"
+                    startIcon={<UploadFileIcon />}
+                    onClick={() => fileInputRef.current?.click()}
+                    size="small"
+                  >
                     Add files
                   </Button>
-                  <input ref={fileInputRef} type="file" multiple hidden onChange={pickFiles} />
+
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    hidden
+                    onChange={pickFiles}
+                  />
                 </div>
 
-                {savedAttachments.map((att) => (
-                  <Box key={att.url} className="flex items-center justify-between bg-gray-100 px-2 py-1 rounded mb-1">
-                    {renamingUrl === att.url ? (
-                      <input
-                        value={att.filename}
-                        onChange={(e) => setSavedAttachments((prev) => prev.map(a => a.url === att.url ? { ...a, filename: e.target.value } : a))}
-                        onBlur={() => setRenamingUrl(null)}
-                        className="border px-1 rounded text-sm w-full"
-                        autoFocus
-                      />
-                    ) : (
-                      <Typography fontSize={13}>{att.filename}</Typography>
-                    )}
-                    <div className="flex gap-2">
-                      <Button size="small" onClick={() => setRenamingUrl(att.url)}>Rename</Button>
-                      <Button size="small" color="error" onClick={() => setSavedAttachments((prev) => prev.filter(a => a.url !== att.url))}>Remove</Button>
-                    </div>
-                  </Box>
+                {pendingFiles.map((f) => (
+                  <Typography key={f.id} fontSize={12}>
+                    {f.customName}
+                  </Typography>
                 ))}
 
-                {pendingFiles.map((p) => (
-                  <Box key={p.id} className="flex items-center justify-between bg-gray-50 px-2 py-1 rounded mb-1">
-                    <Typography fontSize={13}>{p.customName}</Typography>
-                    <div className="flex gap-2">
-                      <Button size="small" onClick={() => {
-                        const name = prompt("Enter new name", p.customName);
-                        if (name) setPendingFiles(prev => prev.map(f => f.id === p.id ? { ...f, customName: name } : f));
-                      }}>Rename</Button>
-                      <Button size="small" color="error" onClick={() => setPendingFiles(prev => prev.filter(f => f.id !== p.id))}>Remove</Button>
-                    </div>
-                  </Box>
-                ))}
-
-                {!savedAttachments.length && !pendingFiles.length && (
-                  <Typography fontSize={12} color="text.secondary">No attachments yet. Click "Add files" to upload.</Typography>
+                {!pendingFiles.length && (
+                  <Typography fontSize={12} color="text.secondary">
+                    No attachments yet
+                  </Typography>
                 )}
               </Box>
 
               <FormControlLabel
-                control={<Switch checked={pinned} onChange={(e) => setPinned(e.target.checked)} />}
+                control={
+                  <Switch
+                    checked={pinned}
+                    onChange={(e) => setPinned(e.target.checked)}
+                  />
+                }
                 label="Pin this notice to top"
               />
             </Stack>
           </DialogContent>
 
           <DialogActions>
-            <Button onClick={onClose} disabled={loading} variant="outlined">Cancel</Button>
-            <Button onClick={handleSubmit} variant="contained" disabled={loading}>
+            <Button onClick={onClose} variant="outlined" disabled={loading}>
+              Cancel
+            </Button>
+
+            <Button
+              onClick={handleSubmit}
+              variant="contained"
+              disabled={loading}
+            >
               {loading ? <CircularProgress size={20} /> : "Publish Notice"}
             </Button>
           </DialogActions>
         </Dialog>
       </LocalizationProvider>
 
-      <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={() => setSnackbarOpen(false)} anchorOrigin={{ vertical: "top", horizontal: "right" }}>
-        <Alert severity={snackbarSeverity} variant="filled">{snackbarMsg}</Alert>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{
+          vertical: "top",
+          horizontal: "right",
+        }}
+      >
+        <Alert severity={snackbarSeverity} variant="filled">
+          {snackbarMsg}
+        </Alert>
       </Snackbar>
     </>
   );
