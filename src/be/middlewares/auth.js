@@ -20,6 +20,7 @@ const MODULES = [
   "notifications",
   "analytics",
   "mou",
+  "notice",
 ];
 
 // Configure which actions on which modules should be allowed for roles
@@ -133,6 +134,10 @@ export async function userAuth(req, res, next) {
 
     // Special-case: allow all authenticated users to access mou module
     if (!hasAccess && moduleName === "mou") {
+      hasAccess = true;
+    }
+      // ✅ Allow notice
+    if (!hasAccess && moduleName === "notice") {
       hasAccess = true;
     }
 
