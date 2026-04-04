@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
+import "quill/dist/quill.snow.css";
+import Quill from "quill";
+
 import {
   Dialog,
   DialogTitle,
@@ -31,7 +34,7 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 
-/* ---------------- STATIC OPTIONS ---------------- */
+/* ---------------- OPTIONS ---------------- */
 
 const categories = [
   "General Announcements",
@@ -44,49 +47,11 @@ const categories = [
 
 const priorities = ["Urgent", "Important", "Info"];
 
-/* ---------------- TYPES ---------------- */
-
-interface PendingFile {
-  id: string;
-  file: File;
-  customName: string;
-}
-
-interface SavedAttachment {
-  filename: string;
-  url: string;
-}
-
 type Props = {
   open: boolean;
   onClose: () => void;
-  onNoticeAdded?: () => void; // optional for safety
+  onNoticeAdded?: () => void;
 };
-
-/* ---------------- S3 UPLOAD ---------------- */
-
-async function uploadToS3(file: File): Promise<string> {
-  const { uploadUrl, fileUrl } = await fetch("/api/v0/s3/upload-url", {
-    method: "POST",
-    body: JSON.stringify({
-      fileName: file.name,
-      fileType: file.type,
-    }),
-    headers: { "Content-Type": "application/json" },
-  }).then((res) => res.json());
-
-  await fetch(uploadUrl, {
-    method: "PUT",
-    body: file,
-    headers: {
-      "Content-Type": file.type,
-    },
-  });
-
-  return fileUrl;
-}
-
-/* ---------------- COMPONENT ---------------- */
 
 export default function AddNoticeModal({
   open,
@@ -94,6 +59,9 @@ export default function AddNoticeModal({
   onNoticeAdded,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const quillRef = useRef<any>(null);
 
   /* ---------------- STATE ---------------- */
 
@@ -109,10 +77,8 @@ export default function AddNoticeModal({
   const [expiry, setExpiry] = useState<Dayjs | null>(null);
   const [pinned, setPinned] = useState(false);
 
-  const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
-  const [savedAttachments, setSavedAttachments] = useState<SavedAttachment[]>(
-    []
-  );
+  const [pendingFiles, setPendingFiles] = useState<any[]>([]);
+  const [savedAttachments, setSavedAttachments] = useState<any[]>([]);
 
   const [loading, setLoading] = useState(false);
 
@@ -121,13 +87,35 @@ export default function AddNoticeModal({
   const [snackbarSeverity, setSnackbarSeverity] =
     useState<"error" | "success">("error");
 
-  /* ---------------- SNACKBAR ---------------- */
+  /* ---------------- INIT QUILL (FIXED) ---------------- */
 
-  const notify = (msg: string, type: "error" | "success" = "error") => {
-    setSnackbarMsg(msg);
-    setSnackbarSeverity(type);
-    setSnackbarOpen(true);
-  };
+  useEffect(() => {
+    if (!open) return;
+
+    const timer = setTimeout(() => {
+      if (!editorRef.current || quillRef.current) return;
+
+      const quill = new Quill(editorRef.current, {
+        theme: "snow",
+        placeholder: "Write description...",
+        modules: {
+          toolbar: [
+            ["bold", "italic", "underline"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["link"],
+          ],
+        },
+      });
+
+      quill.on("text-change", () => {
+        setDescription(quill.root.innerHTML);
+      });
+
+      quillRef.current = quill;
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [open]);
 
   /* ---------------- LOAD META ---------------- */
 
@@ -135,37 +123,29 @@ export default function AddNoticeModal({
     fetch("/api/v0/notice/meta")
       .then((res) => res.json())
       .then((data) => {
-        if (data?.success) {
-          setDepartments(data.data.departments || ["All", "Teams", "Roles"]);
-        } else {
-          setDepartments(["All", "Teams", "Roles"]);
-        }
+        setDepartments(data?.data?.departments || ["All"]);
       })
-      .catch(() => {
-        setDepartments(["All", "Teams", "Roles"]);
-      });
+      .catch(() => setDepartments(["All"]));
   }, []);
 
   /* ---------------- FILE PICK ---------------- */
 
   const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
-
     if (!files.length) return;
 
-    setPendingFiles((prev) => [
-      ...prev,
-      ...files.map((f) => ({
-        id: `${f.name}-${Date.now()}-${Math.random()}`,
-        file: f,
-        customName: f.name.replace(/\.[^.]+$/, ""),
-      })),
-    ]);
+    setPendingFiles((prev) => [...prev, ...files]);
 
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
   /* ---------------- SUBMIT ---------------- */
+
+  const notify = (msg: string, type: "error" | "success" = "error") => {
+    setSnackbarMsg(msg);
+    setSnackbarSeverity(type);
+    setSnackbarOpen(true);
+  };
 
   const handleSubmit = async () => {
     if (!title.trim() || !description.trim()) {
@@ -175,14 +155,6 @@ export default function AddNoticeModal({
     try {
       setLoading(true);
 
-      /* upload files */
-      const newAttachments: SavedAttachment[] = await Promise.all(
-        pendingFiles.map(async (p) => ({
-          filename: p.customName.trim() || p.file.name,
-          url: await uploadToS3(p.file),
-        }))
-      );
-
       const payload = {
         title,
         description,
@@ -191,7 +163,7 @@ export default function AddNoticeModal({
         departments: selectedDepartment,
         expiry: expiry ? dayjs(expiry).format("YYYY-MM-DD") : null,
         pinned,
-        attachments: [...savedAttachments, ...newAttachments],
+        attachments: savedAttachments,
       };
 
       const res = await fetch("/api/v0/notice", {
@@ -204,20 +176,14 @@ export default function AddNoticeModal({
 
       const result = await res.json();
 
-      if (!result.success) {
-        throw new Error(result.message);
-      }
+      if (!result.success) throw new Error(result.message);
 
       notify("Notice added successfully!", "success");
 
-      /* auto refresh notice cards */
-      if (onNoticeAdded) {
-        onNoticeAdded();
-      }
-
+      onNoticeAdded?.();
       onClose();
 
-      /* reset */
+      // RESET
       setTitle("");
       setDescription("");
       setCategory(categories[0]);
@@ -227,8 +193,13 @@ export default function AddNoticeModal({
       setPinned(false);
       setPendingFiles([]);
       setSavedAttachments([]);
+
+      if (quillRef.current) {
+        quillRef.current.root.innerHTML = "";
+      }
+
     } catch (err: any) {
-      notify(err?.message || "Failed to add notice");
+      notify(err?.message || "Failed");
     } finally {
       setLoading(false);
     }
@@ -255,6 +226,7 @@ export default function AddNoticeModal({
 
           <DialogContent dividers>
             <Stack spacing={2}>
+              {/* Title */}
               <TextField
                 label="Notice Title"
                 value={title}
@@ -263,18 +235,19 @@ export default function AddNoticeModal({
                 size="small"
               />
 
-              <TextField
-                label="Description"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                fullWidth
-                multiline
-                minRows={4}
-                size="small"
-              />
+              {/* ✅ RICH TEXT EDITOR */}
+              <Box className="border rounded-lg bg-white mb-2">
+                <div
+                  ref={editorRef}
+                  style={{
+                    minHeight: "150px",
+                    padding: "10px",
+                    cursor: "text",
+                  }}
+                />
+              </Box>
 
-              {/* Category & Priority */}
-
+              {/* Category + Priority */}
               <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Category</InputLabel>
@@ -307,8 +280,7 @@ export default function AddNoticeModal({
                 </FormControl>
               </Stack>
 
-              {/* Department & Expiry */}
-
+              {/* Department + Expiry */}
               <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Departments</InputLabel>
@@ -339,7 +311,6 @@ export default function AddNoticeModal({
               </Stack>
 
               {/* Attachments */}
-
               <Box>
                 <div className="flex justify-between mb-1">
                   <Typography fontSize={12} fontWeight={600}>
@@ -364,9 +335,9 @@ export default function AddNoticeModal({
                   />
                 </div>
 
-                {pendingFiles.map((f) => (
-                  <Typography key={f.id} fontSize={12}>
-                    {f.customName}
+                {pendingFiles.map((f: any, i) => (
+                  <Typography key={i} fontSize={12}>
+                    {f.name}
                   </Typography>
                 ))}
 
@@ -377,6 +348,7 @@ export default function AddNoticeModal({
                 )}
               </Box>
 
+              {/* Pin */}
               <FormControlLabel
                 control={
                   <Switch
@@ -405,18 +377,8 @@ export default function AddNoticeModal({
         </Dialog>
       </LocalizationProvider>
 
-      <Snackbar
-        open={snackbarOpen}
-        autoHideDuration={4000}
-        onClose={() => setSnackbarOpen(false)}
-        anchorOrigin={{
-          vertical: "top",
-          horizontal: "right",
-        }}
-      >
-        <Alert severity={snackbarSeverity} variant="filled">
-          {snackbarMsg}
-        </Alert>
+      <Snackbar open={snackbarOpen} autoHideDuration={4000}>
+        <Alert severity={snackbarSeverity}>{snackbarMsg}</Alert>
       </Snackbar>
     </>
   );

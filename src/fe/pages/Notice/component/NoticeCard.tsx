@@ -1,6 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
+import DOMPurify from "dompurify";
+
 import {
   Card,
   CardContent,
@@ -19,6 +21,7 @@ import {
 } from "@mui/material";
 
 import CloseIcon from "@mui/icons-material/Close";
+import AttachFileIcon from "@mui/icons-material/AttachFile";
 
 import {
   categoryColors,
@@ -55,151 +58,47 @@ export default function NoticeCard({
   const priorityColor = priorityColors[notice.priority] || "#1976d2";
 
   const [open, setOpen] = useState(false);
+  const attachmentCount = notice.attachments?.length || 0;
+
+  const sanitizedHTML = DOMPurify.sanitize(notice.description || "");
 
   return (
     <>
-      {/* Notice Card */}
+      {/* ================= CARD ================= */}
       <Card
         onClick={() => setOpen(true)}
-        className="!rounded-2xl flex flex-col h-full"
-        sx={{
+        className="!rounded-2xl !flex !flex-col !h-full !min-h-[200px] !cursor-pointer !transition-all !duration-300 hover:!shadow-[0px_6px_20px_rgba(0,0,0,0.15)] hover:!-translate-y-[3px]"
+        style={{
           borderLeft: showBorder ? `4px solid ${color}` : "none",
-          cursor: "pointer",
-          transition: "0.3s",
-          "&:hover": {
-            boxShadow: 6,
-            transform: "translateY(-2px)",
-          },
         }}
       >
-        <CardContent className="flex flex-col flex-grow">
-          {/* Category & Priority */}
+        <CardContent className="!flex !flex-col !flex-grow !p-5">
+          {/* Top Row */}
           <Stack
             direction="row"
             justifyContent="space-between"
             alignItems="center"
-            mb={2}
+            className="!mb-2"
           >
             <Chip
               label={notice.category}
               size="small"
               variant="outlined"
-              className="!font-semibold !rounded-lg !px-2"
-              sx={{
+              className="!font-semibold !rounded-lg"
+              style={{
                 color: color,
                 borderColor: `${color}40`,
                 backgroundColor: `${color}10`,
               }}
             />
 
-            {notice.priority && (
+            <Stack direction="row" spacing={1} alignItems="center">
               <Chip
                 size="small"
-                label={
-                  <span className="flex items-center gap-2 font-semibold">
-                    <span className="relative flex h-3 w-3">
-                      <span
-                        className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                        style={{ backgroundColor: priorityColor }}
-                      />
-
-                      <span
-                        className="relative inline-flex rounded-full h-3 w-3"
-                        style={{ backgroundColor: priorityColor }}
-                      />
-                    </span>
-
-                    {notice.priority}
-                  </span>
-                }
-                sx={{
-                  backgroundColor: `${priorityColor}20`,
-                  color: priorityColor,
-                }}
-              />
-            )}
-          </Stack>
-
-          {/* Title & Description */}
-          <Box sx={{ flexGrow: 1 }}>
-            <Typography className="!font-bold text-[16px] mb-1 min-h-[48px]">
-              {notice.title}
-            </Typography>
-
-            <Typography className="!text-[13px] text-gray-500 !mb-2 !line-clamp-2 min-h-[34px]">
-              {notice.description}
-            </Typography>
-          </Box>
-
-          <Divider />
-
-          {/* Footer */}
-          <Stack direction="row" justifyContent="space-between" mt={1}>
-            <Typography fontSize={12} fontWeight={700} color="text.secondary">
-              {notice.createdBy
-                ? `By ${notice.createdBy.name}`
-                : "Unknown Author"}
-            </Typography>
-
-            <Typography fontSize={12} color="text.secondary">
-              {new Date(notice.createdAt).toLocaleDateString()}
-            </Typography>
-          </Stack>
-        </CardContent>
-      </Card>
-
-      {/* Notice Preview Modal */}
-      <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{
-          sx: {
-            borderRadius: 3,
-            p: 1,
-          },
-        }}
-      >
-        {/* Header */}
-        <DialogTitle sx={{ pb: 1 }}>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Typography variant="h6" fontWeight={700}>
-              Notice Preview
-            </Typography>
-
-            <IconButton onClick={() => setOpen(false)}>
-              <CloseIcon />
-            </IconButton>
-          </Stack>
-        </DialogTitle>
-
-        <Divider />
-
-        {/* Content */}
-        <DialogContent sx={{ pt: 2 }}>
-          <Stack spacing={2}>
-            {/* Category & Priority */}
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-              mb={2}
-            >
-              <Chip
-                label={notice.category}
-                size="small"
-                variant="outlined"
-                className="!font-semibold !rounded-lg !px-2"
-                sx={{
-                  color: color,
-                  borderColor: `${color}40`,
-                  backgroundColor: `${color}10`,
-                }}
+                icon={<AttachFileIcon className="!text-[16px]" />}
+                label={attachmentCount}
+                className="!font-semibold"
+                style={{ backgroundColor: "#f1f5f9" }}
               />
 
               {notice.priority && (
@@ -212,73 +111,185 @@ export default function NoticeCard({
                           className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
                           style={{ backgroundColor: priorityColor }}
                         />
-
                         <span
                           className="relative inline-flex rounded-full h-3 w-3"
                           style={{ backgroundColor: priorityColor }}
                         />
                       </span>
-
                       {notice.priority}
                     </span>
                   }
-                  sx={{
+                  className="!font-semibold"
+                  style={{
                     backgroundColor: `${priorityColor}20`,
                     color: priorityColor,
                   }}
                 />
               )}
             </Stack>
+          </Stack>
 
-            {/* Title */}
-            <Typography variant="h6" fontWeight={700}>
-              {notice.title}
-            </Typography>
+          {/* Title */}
+          <Typography className="!font-semibold !text-[18px] !mb-0.5 !mt-1 !leading-[1.5] !min-h-[48px]">
+            {notice.title}
+          </Typography>
 
-            {/* Creator & Date */}
-          <Stack direction="row" justifyContent="space-between" mt={1}>
-            <Typography fontSize={12} fontWeight={700} color="text.secondary">
+          {/* Rich Text Preview (CLAMPED) */}
+          <Box
+            className="prose max-w-none flex-grow mb-2 !text-[14px] line-clamp-2"
+            dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
+          />
+
+          <Divider />
+
+          {/* Footer */}
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            className="!mt-auto !pt-2"
+          >
+            <Typography className="!text-[12px] !font-semibold !text-gray-500">
               {notice.createdBy
                 ? `By ${notice.createdBy.name}`
                 : "Unknown Author"}
             </Typography>
 
-            <Typography fontSize={12} color="text.secondary">
+            <Typography className="!text-[12px] !text-gray-500">
               {new Date(notice.createdAt).toLocaleDateString()}
             </Typography>
           </Stack>
+        </CardContent>
+      </Card>
+
+      {/* ================= MODAL ================= */}
+      <Dialog
+        open={open}
+        onClose={() => setOpen(false)}
+        fullWidth
+        maxWidth="sm"
+        PaperProps={{
+          className: "!rounded-2xl !p-4", // smooth rounded modal
+        }}
+      >
+        {/* Modal Header */}
+        <DialogTitle>
+          <Stack
+            direction="row"
+            justifyContent="space-between"
+            alignItems="center"
+          >
+            <Typography className="!font-bold !text-lg">
+              Notice Preview
+            </Typography>
+            <IconButton onClick={() => setOpen(false)}>
+              <CloseIcon />
+            </IconButton>
+          </Stack>
+        </DialogTitle>
+
+        <Divider />
+
+        {/* Modal Body */}
+        <DialogContent>
+          <Stack spacing={3}>
+            {/* Top Row: Category, Attachments, Priority */}
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              alignItems="center"
+            >
+              <Chip
+                label={notice.category}
+                size="small"
+                variant="outlined"
+                className="!font-semibold"
+                style={{
+                  color: color,
+                  borderColor: `${color}40`,
+                  backgroundColor: `${color}10`,
+                }}
+              />
+
+              <Stack direction="row" spacing={1}>
+                <Chip
+                  size="small"
+                  icon={<AttachFileIcon />}
+                  label={`${attachmentCount} Files`}
+                />
+
+                {notice.priority && (
+                <Chip
+                  size="small"
+                  label={
+                    <span className="flex items-center gap-2 font-semibold">
+                      <span className="relative flex h-3 w-3">
+                        <span
+                          className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
+                          style={{ backgroundColor: priorityColor }}
+                        />
+                        <span
+                          className="relative inline-flex rounded-full h-3 w-3"
+                          style={{ backgroundColor: priorityColor }}
+                        />
+                      </span>
+                      {notice.priority}
+                    </span>
+                  }
+                  className="!font-semibold"
+                  style={{
+                    backgroundColor: `${priorityColor}20`,
+                    color: priorityColor,
+                  }}
+                />
+              )}
+              </Stack>
+            </Stack>
+
+            {/* Title */}
+            {/* Title */}
+            <Typography className="!text-[17px] !font-bold">
+              {notice.title}
+            </Typography>
+
+            {/* Author & Date */}
+            <Stack
+              direction="row"
+              justifyContent="space-between"
+              className="!mt-1"
+            >
+              <Typography className="!text-[12px] !font-semibold !text-gray-500 !mt-1 !mb-0">
+                {notice.createdBy
+                  ? `By ${notice.createdBy.name}`
+                  : "Unknown Author"}
+              </Typography>
+              <Typography className="!text-[12px] !font-semibold !text-gray-500 !mt-1 !mb-0">
+                {new Date(notice.createdAt).toLocaleDateString()}
+              </Typography>
+            </Stack>
 
             <Divider />
 
             {/* Description */}
             <Box>
-              <Typography variant="subtitle2" fontWeight={600} mb={1}>
+              <Typography className="!font-semibold !text-sm !mb-1">
                 Description
               </Typography>
-
-              <Typography
-                variant="body1"
-                sx={{
-                  whiteSpace: "pre-line",
-                  lineHeight: 1.7,
-                }}
-              >
-                {notice.description}
-              </Typography>
+              <Box
+                className="prose max-w-none !text-sm"
+                dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
+              />
             </Box>
 
             {/* Attachments */}
-            {notice.attachments && notice.attachments.length > 0 && (
+            {attachmentCount > 0 && (
               <>
                 <Divider />
-
                 <Box>
-                  <Typography variant="subtitle2" fontWeight={600} mb={2}>
+                  <Typography className="!font-semibold !mb-2">
                     Attachments
                   </Typography>
-
                   <Grid container spacing={2}>
-                    {notice.attachments.map((att, index) => {
+                    {notice.attachments?.map((att, index) => {
                       const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(
                         att.url,
                       );
@@ -286,43 +297,23 @@ export default function NoticeCard({
                       return (
                         <Grid item xs={12} sm={6} md={4} key={index}>
                           {isImage ? (
-                            <Card
-                              sx={{
-                                borderRadius: 2,
-                                overflow: "hidden",
-                                boxShadow: 2,
-                                transition: "0.3s",
-                                "&:hover": {
-                                  boxShadow: 6,
-                                },
-                              }}
-                            >
+                            <Card className="!rounded-lg !overflow-hidden hover:!shadow-lg">
                               <CardMedia
                                 component="img"
-                                height="120"
+                                height="80"
                                 image={att.url}
-                                alt={att.filename}
                               />
-
-                              <CardContent sx={{ p: 1 }}>
-                                <Typography fontSize={12} noWrap>
+                              <CardContent className="!p-2">
+                                <Typography className="!text-xs !truncate">
                                   {att.filename}
                                 </Typography>
                               </CardContent>
                             </Card>
                           ) : (
-                            <Card
-                              sx={{
-                                p: 2,
-                                textAlign: "center",
-                                borderRadius: 2,
-                                backgroundColor: "#f9f9f9",
-                              }}
-                            >
-                              <Typography fontSize={13} mb={1}>
+                            <Card className="!text-center !p-2 !rounded-lg">
+                              <Typography className="!text-xs !mb-1">
                                 {att.filename}
                               </Typography>
-
                               <Button
                                 size="small"
                                 variant="outlined"
