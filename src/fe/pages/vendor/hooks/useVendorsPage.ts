@@ -4,10 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
 import { SEARCH_DEBOUNCE_DELAY } from "@/fe/pages/vendor/constants/vendors";
 import type { Vendor } from "@/fe/pages/vendor/types";
-
-type SnackbarSeverity = "success" | "error";
+import { useGetVendorsQuery } from "../vendorApi";
+import { useToast } from "@/fe/components/Toast/ToastContext";
+import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";
 
 export function useVendorsPage() {
+  const { showToast } = useToast();
+
   // ─── Search ─────────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
@@ -17,17 +20,21 @@ export function useVendorsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
-  // ─── Snackbar ───────────────────────────────────────────────────────────
-  const [snackbarOpen, setSnackbarOpen] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] =
-    useState<SnackbarSeverity>("success");
+  // ─── Data Fetching ──────────────────────────────────────────────────────
+  const {
+    items: vendors,
+    loading,
+    page,
+    rowsPerPage,
+    totalItems,
+    refetch,
+    setPage,
+    setPageSize,
+  } = useGetVendorsQuery({ search: debouncedSearch, isCabVendor: true });
 
   // ─── Reset to page 1 when search changes ────────────────────────────────
-  const [resetPageToken, setResetPageToken] = useState(0);
-
   useEffect(() => {
-    setResetPageToken((t) => t + 1);
+    setPage(1);
   }, [debouncedSearch]);
 
   // ─── Dialog handlers ─────────────────────────────────────────────────────
@@ -50,10 +57,24 @@ export function useVendorsPage() {
     [],
   );
 
+  const handlePageSizeChange = useCallback(
+    (newSize: number) => {
+      setPageSize(newSize);
+      setPage(1);
+    },
+    [setPageSize, setPage],
+  );
+
+  const handleMutationSuccess = useCallback(async () => {
+    invalidateQueryCache("/api/v0/employee");
+    await refetch();
+    handleCloseDialog();
+    showToast("Vendor saved successfully!", "success");
+  }, [refetch, handleCloseDialog, showToast]);
+
   return {
     // Search
     search,
-    debouncedSearch,
     handleSearchChange,
 
     // Dialog
@@ -64,16 +85,15 @@ export function useVendorsPage() {
     handleCloseDialog,
     openEditDialog,
 
-    // Snackbar
-    snackbarOpen,
-    setSnackbarOpen,
-    snackbarMessage,
-    setSnackbarMessage,
-    snackbarSeverity,
-    setSnackbarSeverity,
-
-    // Internal
-    resetPageToken,
+    // Data
+    vendors,
+    loading,
+    page,
+    rowsPerPage,
+    totalItems,
+    setPage,
+    handlePageSizeChange,
+    handleMutationSuccess,
   } as const;
 }
 

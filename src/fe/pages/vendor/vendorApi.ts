@@ -25,4 +25,4 @@ export const {
   useGetVendorsQuery,
   useCreateVendorMutation,
   useUpdateVendorMutation,
-} = vendorApi as any;
+} = vendorApi;
