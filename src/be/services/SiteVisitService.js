@@ -140,9 +140,11 @@ class SiteVisitService extends Service {
 
       // Trigger Lead WhatsApp Notification (Immediate)
       try {
-        const lead = await Lead.findById(targetLeadId);
+        const lead = await Lead.findById(targetLeadId).populate("assignedTo", "name");
         if (lead && lead.phone) {
-          const agentName = currentUser.name || "Our Executive";
+          // Use name of assigned agent if available, otherwise fallback to logged-in user
+          const agentName = lead.assignedTo?.name || currentUser.name || "Our Executive";
+          
           // Format date for display
           const displayDate = new Date(requestedDateTime).toLocaleString('en-IN', {
             day: 'numeric',
