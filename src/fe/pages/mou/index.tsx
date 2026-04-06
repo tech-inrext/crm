@@ -12,13 +12,10 @@ import {
 import Pagination from "@/components/ui/Navigation/Pagination";
 import PermissionGuard from "@/components/PermissionGuard";
 import MouList from "@/fe/pages/mou/components/MouList";
+import MouActionBar from "@/fe/pages/mou/components/MouActionBar";
 import { useMouPage } from "@/fe/pages/mou/hooks/useMouPage";
 import {
   containerSx,
-  headerPaperSx,
-  headerContentSx,
-  titleSx,
-  tabButtonsContainerSx,
   loadingContainerSx,
   contentGridSx,
   listPaperSx,
@@ -41,34 +38,19 @@ const MOUPage: React.FC = () => {
     handleReject,
     handleResend,
     handleMarkComplete,
+    search,
+    handleSearchChange,
   } = useMouPage();
 
   return (
     <PermissionGuard module="mou">
       <Box sx={containerSx}>
-        <Paper sx={headerPaperSx} elevation={2}>
-          <Box sx={headerContentSx}>
-            <Typography variant="h4" sx={titleSx}>
-              MOU
-            </Typography>
-            <Box />
-          </Box>
-        </Paper>
-
-        <Box sx={tabButtonsContainerSx}>
-          <Button
-            variant={view === "pending" ? "contained" : "outlined"}
-            onClick={() => setView("pending")}
-          >
-            Pending MOU
-          </Button>
-          <Button
-            variant={view === "completed" ? "contained" : "outlined"}
-            onClick={() => setView("completed")}
-          >
-            Completed MOU
-          </Button>
-        </Box>
+        <MouActionBar
+          search={search}
+          onSearchChange={handleSearchChange}
+          view={view}
+          onViewChange={setView}
+        />
 
         {loading ? (
           <Box sx={loadingContainerSx}>

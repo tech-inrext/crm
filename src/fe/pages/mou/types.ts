@@ -31,6 +31,13 @@ export interface MouListProps {
   view?: "pending" | "completed";
 }
 
+export interface MouActionBarProps {
+  search: string;
+  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+  view: MouView;
+  onViewChange: (view: MouView) => void;
+}
+
 export interface MouCardProps {
   emp: MouItem;
   view?: "pending" | "completed";
