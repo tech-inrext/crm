@@ -174,7 +174,8 @@ async function processBatch(docs, config, tag) {
             month: 'long',
             hour: 'numeric',
             minute: '2-digit',
-            hour12: true
+            hour12: true,
+            timeZone: 'Asia/Kolkata'
           });
 
           if (type === "site visit") {

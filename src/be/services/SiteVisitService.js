@@ -149,7 +149,8 @@ class SiteVisitService extends Service {
             month: 'long',
             hour: 'numeric',
             minute: '2-digit',
-            hour12: true
+            hour12: true,
+            timeZone: 'Asia/Kolkata'
           });
           
           await sendLeadSiteVisitScheduled(
