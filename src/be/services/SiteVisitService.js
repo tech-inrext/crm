@@ -6,6 +6,7 @@ import Lead from "../models/Lead";
 import Employee from "../models/Employee"; // Added import
 import mongoose from "mongoose";
 import { sendCabBookingApprovalEmail } from "../email-service/cab-booking/cabBookingApproval"; // Added import
+import { sendLeadSiteVisitScheduled } from "../whatsapp-msg-service/lead-notifications/leadNotify.js"; // Added import
 
 class SiteVisitService extends Service {
   async getLeadId(identifier) {
@@ -136,6 +137,32 @@ class SiteVisitService extends Service {
       });
 
       await newFollowUp.save();
+
+      // Trigger Lead WhatsApp Notification (Immediate)
+      try {
+        const lead = await Lead.findById(targetLeadId);
+        if (lead && lead.phone) {
+          const agentName = currentUser.name || "Our Executive";
+          // Format date for display
+          const displayDate = new Date(requestedDateTime).toLocaleString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+          
+          await sendLeadSiteVisitScheduled(
+            lead.phone,
+            lead.fullName || "Valued Customer",
+            project || lead.propertyName || "Site",
+            displayDate,
+            agentName
+          );
+        }
+      } catch (err) {
+        console.error("Failed to send Lead Site Visit WhatsApp Notification:", err);
+      }
 
       return res.status(200).json({ success: true, message: "Site visit scheduled successfully" });
 
