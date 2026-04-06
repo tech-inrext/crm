@@ -102,7 +102,7 @@ async function processWhatsappNotification(job) {
       }
 
       const type = followUpDoc?.followUpType || "follow-up";
-      
+
       const reminderType = notification.metadata.reminderType || "DUE";
       let timeRemaining = "now";
       if (reminderType === "24H") timeRemaining = "24 hours";

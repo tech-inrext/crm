@@ -2,6 +2,7 @@ import FollowUp from "../models/FollowUp.js";
 import Notification from "../models/Notification.js";
 import Lead from "../models/Lead.js";
 import NotificationService from "../services/NotificationService.js";
+import { sendLeadSiteVisitReminder } from "../whatsapp-msg-service/lead-notifications/leadNotify.js"; // Updated import
 
 const notificationService = new NotificationService();
 
@@ -27,22 +28,22 @@ const checkFollowUpsJob = async (job) => {
     const notificationTypes = [
       {
         tag: "24H",
-        windowStart: nowTime + H24 - 15 * 60 * 1000, 
-        windowEnd: nowTime + H24 + 15 * 60 * 1000, 
+        windowStart: nowTime + H24 - 15 * 60 * 1000,
+        windowEnd: nowTime + H24 + 15 * 60 * 1000,
         priority: "MEDIUM",
         title: "Upcoming (24h)",
       },
       {
         tag: "2H",
-        windowStart: nowTime + H2 - 10 * 60 * 1000, 
-        windowEnd: nowTime + H2 + 10 * 60 * 1000, 
+        windowStart: nowTime + H2 - 10 * 60 * 1000,
+        windowEnd: nowTime + H2 + 10 * 60 * 1000,
         priority: "HIGH",
         title: "Upcoming (2h)",
       },
       {
         tag: "5M",
-        windowStart: nowTime + M5 - 3 * 60 * 1000, 
-        windowEnd: nowTime + M5 + 2 * 60 * 1000, 
+        windowStart: nowTime + M5 - 3 * 60 * 1000,
+        windowEnd: nowTime + M5 + 2 * 60 * 1000,
         priority: "URGENT",
         title: "Upcoming (5m)",
       },
@@ -70,7 +71,7 @@ const checkFollowUpsJob = async (job) => {
           $gte: new Date(windowStart),
           $lte: new Date(windowEnd),
         },
-        notificationsSent: { $nin: [tag] }, 
+        notificationsSent: { $nin: [tag] },
       };
 
       const followUps = await FollowUp.find(query)
@@ -83,14 +84,14 @@ const checkFollowUpsJob = async (job) => {
       }
 
       const uniqueFollowUps = [];
-      
+
       for (const fp of followUps) {
         const leadId = fp.leadId?._id?.toString() || fp.leadId?.toString();
         const type = (fp.followUpType || "note").toLowerCase();
-        
+
         // key includes lead, type AND tag to prevent repeat notifications 
         // but allowing different tasks for same lead
-        const key = `${leadId}_${type}`; 
+        const key = `${leadId}_${type}`;
 
         if (leadId && !processedLeadTasks.has(key)) {
           processedLeadTasks.add(key);
@@ -116,7 +117,7 @@ const checkFollowUpsJob = async (job) => {
     console.log(`✅ [Job] Completed. Processed: ${totalProcessed}, Sent: ${totalSent}`);
   } catch (error) {
     console.error("❌ [Job] Fatal error in checkFollowUpsJob:", error);
-    throw error; 
+    throw error;
   }
 };
 
@@ -157,6 +158,39 @@ async function processBatch(docs, config, tag) {
       );
 
       console.log(`📡 [Job] Queued ${tag} (${fp.followUpType}) for Lead: ${lead._id}`);
+
+      // 3. Trigger Lead WhatsApp Reminder
+      // Only for scheduled reminders (24H, 2H, 5M)
+      if (["24H", "2H", "5M"].includes(tag) && lead.phone) {
+        try {
+          const type = (fp.followUpType || "note").toLowerCase();
+
+          let timeRemaining = "2 hours";
+          if (tag === "24H") timeRemaining = "24 hours";
+          if (tag === "5M") timeRemaining = "5 minutes";
+
+          const displayTime = new Date(fp.followUpDate).toLocaleString('en-IN', {
+            day: 'numeric',
+            month: 'long',
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+          });
+
+          if (type === "site visit") {
+            await sendLeadSiteVisitReminder(
+              lead.phone,
+              lead.fullName || "Valued Customer",
+              lead.propertyName || "Site",
+              timeRemaining,
+              displayTime
+            );
+          }
+        } catch (err) {
+          console.error(`[Job] Failed to send ${tag} reminder to lead ${lead._id}:`, err);
+        }
+      }
+
       return true;
     })
   );
