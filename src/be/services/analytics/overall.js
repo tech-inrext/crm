@@ -4,14 +4,13 @@ import Lead from "../../models/Lead";
 import CabBooking from "../../models/CabBooking";
 import FollowUp from "../../models/FollowUp";
 import TeamService from "./TeamService";
-import mongoose from "mongoose";
 
 class OverallAnalyticsService {
   constructor() {
     this.teamService = new TeamService();
   }
 
-  //FILTER BUILDERS
+  // FILTER BUILDERS
   buildLeadFilter(userId) {
     return {
       $or: [{ assignedTo: userId }, { uploadedBy: userId }],
@@ -22,7 +21,7 @@ class OverallAnalyticsService {
     return { managerId: userId };
   }
 
-  //LEAD COUNTS
+  // LEAD COUNTS
   countActiveLeads(filter) {
     return Lead.countDocuments({
       ...filter,
@@ -37,12 +36,9 @@ class OverallAnalyticsService {
     });
   }
 
-  /**
-   * Count upcoming site visits based on FollowUp collection
-   */
+  // COUNT UPCOMING SITE VISITS
   async countUpcomingSiteVisits(userId) {
     const now = new Date();
-
     const leadFilter = this.buildLeadFilter(userId);
     const visibleLeadIds = await Lead.find(leadFilter, "_id").lean();
     const leadIdArray = visibleLeadIds.map((l) => l._id);
@@ -59,27 +55,34 @@ class OverallAnalyticsService {
     };
   }
 
-  // MOU COUNTS
-  countMouPending(filter) {
+  // MOU COUNTS (FIXED)
+  async getTeamEmployeeIds(managerId) {
+    const team = await Employee.find({ managerId }, "_id").lean();
+    return team.map((emp) => emp._id);
+  }
+
+  async countMouPending(managerId) {
+    const teamIds = await this.getTeamEmployeeIds(managerId);
     return Employee.countDocuments({
-      ...filter,
-      mouStatus: "Pending",
+      _id: { $in: teamIds },
+      mouStatus: { $regex: /^pending$/i }, // case-insensitive
     });
   }
 
-  countMouApproved(filter) {
+  async countMouApproved(managerId) {
+    const teamIds = await this.getTeamEmployeeIds(managerId);
     return Employee.countDocuments({
-      ...filter,
-      mouStatus: "Approved",
+      _id: { $in: teamIds },
+      mouStatus: { $regex: /^approved$/i }, // case-insensitive
     });
   }
 
-  // Total Vendors
+  // TOTAL CAB VENDORS
   async getTotalCabVendors() {
     return Employee.countDocuments({ isCabVendor: true });
   }
 
-  // Total Earnings
+  // TOTAL CAB EARNINGS
   async getTotalCabEarnings() {
     const result = await CabBooking.aggregate([
       {
@@ -89,8 +92,9 @@ class OverallAnalyticsService {
         },
       },
     ]);
-
-    return result.length > 0 ? Number(result[0].totalEarnings.toFixed(2)) : 0;
+    return result.length > 0
+      ? Number(result[0].totalEarnings.toFixed(2))
+      : 0;
   }
 
   // OVERALL ANALYTICS
@@ -107,7 +111,6 @@ class OverallAnalyticsService {
       }
 
       const leadFilter = this.buildLeadFilter(userId);
-      const employeeFilter = this.buildEmployeeFilter(userId);
 
       // Parallel execution
       const [
@@ -124,8 +127,8 @@ class OverallAnalyticsService {
         this.countActiveLeads(leadFilter),
         this.countNewLeads(leadFilter),
         this.countUpcomingSiteVisits(userId),
-        this.countMouPending(employeeFilter),
-        this.countMouApproved(employeeFilter),
+        this.countMouPending(userId),
+        this.countMouApproved(userId),
         this.getTotalCabVendors(),
         this.getTotalCabEarnings(),
       ]);

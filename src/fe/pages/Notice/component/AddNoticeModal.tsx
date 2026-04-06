@@ -59,7 +59,6 @@ export default function AddNoticeModal({
   onNoticeAdded,
 }: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   const editorRef = useRef<HTMLDivElement | null>(null);
   const quillRef = useRef<any>(null);
 
@@ -78,8 +77,6 @@ export default function AddNoticeModal({
   const [pinned, setPinned] = useState(false);
 
   const [pendingFiles, setPendingFiles] = useState<any[]>([]);
-  const [savedAttachments, setSavedAttachments] = useState<any[]>([]);
-
   const [loading, setLoading] = useState(false);
 
   const [snackbarOpen, setSnackbarOpen] = useState(false);
@@ -87,7 +84,7 @@ export default function AddNoticeModal({
   const [snackbarSeverity, setSnackbarSeverity] =
     useState<"error" | "success">("error");
 
-  /* ---------------- INIT QUILL (FIXED) ---------------- */
+  /* ---------------- QUILL ---------------- */
 
   useEffect(() => {
     if (!open) return;
@@ -98,13 +95,6 @@ export default function AddNoticeModal({
       const quill = new Quill(editorRef.current, {
         theme: "snow",
         placeholder: "Write description...",
-        modules: {
-          toolbar: [
-            ["bold", "italic", "underline"],
-            [{ list: "ordered" }, { list: "bullet" }],
-            ["link"],
-          ],
-        },
       });
 
       quill.on("text-change", () => {
@@ -139,6 +129,33 @@ export default function AddNoticeModal({
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
+  /* ---------------- S3 UPLOAD ---------------- */
+
+  const uploadToS3 = async (file: File): Promise<string> => {
+    const res = await fetch("/api/v0/s3/upload-url", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        fileName: file.name,
+        fileType: file.type,
+      }),
+    });
+
+    const data = await res.json();
+
+    await fetch(data.uploadUrl, {
+      method: "PUT",
+      headers: {
+        "Content-Type": file.type,
+      },
+      body: file,
+    });
+
+    return data.fileUrl;
+  };
+
   /* ---------------- SUBMIT ---------------- */
 
   const notify = (msg: string, type: "error" | "success" = "error") => {
@@ -155,6 +172,14 @@ export default function AddNoticeModal({
     try {
       setLoading(true);
 
+      // Upload files
+      const uploadedAttachments = await Promise.all(
+        pendingFiles.map(async (file: File) => ({
+          url: await uploadToS3(file),
+          name: file.name,
+        }))
+      );
+
       const payload = {
         title,
         description,
@@ -163,7 +188,7 @@ export default function AddNoticeModal({
         departments: selectedDepartment,
         expiry: expiry ? dayjs(expiry).format("YYYY-MM-DD") : null,
         pinned,
-        attachments: savedAttachments,
+        attachments: uploadedAttachments,
       };
 
       const res = await fetch("/api/v0/notice", {
@@ -175,28 +200,12 @@ export default function AddNoticeModal({
       });
 
       const result = await res.json();
-
       if (!result.success) throw new Error(result.message);
 
       notify("Notice added successfully!", "success");
 
       onNoticeAdded?.();
       onClose();
-
-      // RESET
-      setTitle("");
-      setDescription("");
-      setCategory(categories[0]);
-      setPriority(priorities[2]);
-      setSelectedDepartment("All");
-      setExpiry(null);
-      setPinned(false);
-      setPendingFiles([]);
-      setSavedAttachments([]);
-
-      if (quillRef.current) {
-        quillRef.current.root.innerHTML = "";
-      }
 
     } catch (err: any) {
       notify(err?.message || "Failed");
@@ -213,20 +222,15 @@ export default function AddNoticeModal({
     <>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
-          <DialogTitle sx={{ fontWeight: 700, fontSize: 22 }}>
+          <DialogTitle>
             Create New Notice
-
-            <IconButton
-              onClick={onClose}
-              className="!absolute !right-4 !top-4"
-            >
+            <IconButton onClick={onClose} className="!absolute !right-4 !top-4">
               <CloseIcon />
             </IconButton>
           </DialogTitle>
 
           <DialogContent dividers>
             <Stack spacing={2}>
-              {/* Title */}
               <TextField
                 label="Notice Title"
                 value={title}
@@ -235,20 +239,13 @@ export default function AddNoticeModal({
                 size="small"
               />
 
-              {/* ✅ RICH TEXT EDITOR */}
-              <Box className="border rounded-lg bg-white mb-2">
-                <div
-                  ref={editorRef}
-                  style={{
-                    minHeight: "150px",
-                    padding: "10px",
-                    cursor: "text",
-                  }}
-                />
+              {/* Editor */}
+              <Box className="border rounded-lg bg-white">
+                <div ref={editorRef} style={{ minHeight: 150 }} />
               </Box>
 
-              {/* Category + Priority */}
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              {/* ✅ ROW 1 */}
+              <Stack direction="row" spacing={2}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Category</InputLabel>
                   <Select
@@ -256,9 +253,9 @@ export default function AddNoticeModal({
                     label="Category"
                     onChange={(e) => setCategory(e.target.value)}
                   >
-                    {categories.map((cat) => (
-                      <MenuItem key={cat} value={cat}>
-                        {cat}
+                    {categories.map((c) => (
+                      <MenuItem key={c} value={c}>
+                        {c}
                       </MenuItem>
                     ))}
                   </Select>
@@ -271,27 +268,29 @@ export default function AddNoticeModal({
                     label="Priority"
                     onChange={(e) => setPriority(e.target.value)}
                   >
-                    {priorities.map((pri) => (
-                      <MenuItem key={pri} value={pri}>
-                        {pri}
+                    {priorities.map((p) => (
+                      <MenuItem key={p} value={p}>
+                        {p}
                       </MenuItem>
                     ))}
                   </Select>
                 </FormControl>
               </Stack>
 
-              {/* Department + Expiry */}
-              <Stack direction={{ xs: "column", sm: "row" }} spacing={2}>
+              {/* ✅ ROW 2 */}
+              <Stack direction="row" spacing={2}>
                 <FormControl fullWidth size="small">
                   <InputLabel>Departments</InputLabel>
                   <Select
                     value={selectedDepartment}
                     label="Departments"
-                    onChange={(e) => setSelectedDepartment(e.target.value)}
+                    onChange={(e) =>
+                      setSelectedDepartment(e.target.value)
+                    }
                   >
-                    {departments.map((dept) => (
-                      <MenuItem key={dept} value={dept}>
-                        {dept}
+                    {departments.map((d) => (
+                      <MenuItem key={d} value={d}>
+                        {d}
                       </MenuItem>
                     ))}
                   </Select>
@@ -302,53 +301,32 @@ export default function AddNoticeModal({
                   value={expiry}
                   onChange={(val) => setExpiry(val)}
                   slotProps={{
-                    textField: {
-                      size: "small",
-                      fullWidth: true,
-                    },
+                    textField: { size: "small", fullWidth: true },
                   }}
                 />
               </Stack>
 
               {/* Attachments */}
-              <Box>
-                <div className="flex justify-between mb-1">
-                  <Typography fontSize={12} fontWeight={600}>
-                    Attachments
-                  </Typography>
+              <Button
+                startIcon={<UploadFileIcon />}
+                onClick={() => fileInputRef.current?.click()}
+                size="small"
+              >
+                Add files
+              </Button>
 
-                  <Button
-                    variant="text"
-                    startIcon={<UploadFileIcon />}
-                    onClick={() => fileInputRef.current?.click()}
-                    size="small"
-                  >
-                    Add files
-                  </Button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                hidden
+                onChange={pickFiles}
+              />
 
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    multiple
-                    hidden
-                    onChange={pickFiles}
-                  />
-                </div>
+              {pendingFiles.map((f: any, i) => (
+                <Typography key={i}>{f.name}</Typography>
+              ))}
 
-                {pendingFiles.map((f: any, i) => (
-                  <Typography key={i} fontSize={12}>
-                    {f.name}
-                  </Typography>
-                ))}
-
-                {!pendingFiles.length && (
-                  <Typography fontSize={12} color="text.secondary">
-                    No attachments yet
-                  </Typography>
-                )}
-              </Box>
-
-              {/* Pin */}
               <FormControlLabel
                 control={
                   <Switch
@@ -356,22 +334,15 @@ export default function AddNoticeModal({
                     onChange={(e) => setPinned(e.target.checked)}
                   />
                 }
-                label="Pin this notice to top"
+                label="Pin this notice"
               />
             </Stack>
           </DialogContent>
 
           <DialogActions>
-            <Button onClick={onClose} variant="outlined" disabled={loading}>
-              Cancel
-            </Button>
-
-            <Button
-              onClick={handleSubmit}
-              variant="contained"
-              disabled={loading}
-            >
-              {loading ? <CircularProgress size={20} /> : "Publish Notice"}
+            <Button onClick={onClose}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={loading}>
+              {loading ? <CircularProgress size={20} /> : "Publish"}
             </Button>
           </DialogActions>
         </Dialog>
