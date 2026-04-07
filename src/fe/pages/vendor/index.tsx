@@ -12,7 +12,7 @@ import {
   GRADIENTS,
 } from "@/fe/pages/vendor/constants/vendors";
 import { getInitialVendorForm } from "@/fe/pages/vendor/utils";
-import { AddIcon } from "@/components/ui/Component";
+import { AddIcon, Fab } from "@/components/ui/Component";
 
 const VendorsPage: React.FC = () => {
   const {
@@ -60,20 +60,24 @@ const VendorsPage: React.FC = () => {
           action="write"
           fallback={<></>}
         >
-          <button
-            type="button"
+          <Fab
             aria-label="Add vendor"
             onClick={() => setOpen(true)}
-            style={{
+            sx={{
+              position: "fixed",
               bottom: FAB_POSITION.bottom,
               right: FAB_POSITION.right,
               zIndex: FAB_POSITION.zIndex,
               background: GRADIENTS.button,
+              color: "white",
+              display: { md: "none" },
+              "&:active": {
+                transform: "scale(0.95)",
+              },
             }}
-            className="fixed md:hidden flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95"
           >
             <AddIcon />
-          </button>
+          </Fab>
         </PermissionGuard>
 
         <VendorDialog

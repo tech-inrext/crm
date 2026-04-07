@@ -8,6 +8,8 @@ import {
   VENDORS_PERMISSION_MODULE,
   SEARCH_PLACEHOLDER,
 } from "@/fe/pages/vendor/constants/vendors";
+import { Button } from "@/components/ui/Component";
+import * as styles from "./styles";
 import type { VendorsPageActionBarProps } from "@/fe/pages/vendor/types";
 
 const VendorsPageActionBar: React.FC<VendorsPageActionBarProps> = ({
@@ -24,7 +26,7 @@ const VendorsPageActionBar: React.FC<VendorsPageActionBarProps> = ({
             value={search}
             onChange={onSearchChange}
             placeholder={SEARCH_PLACEHOLDER}
-            sx={{ width: "100%", minWidth: 280 }}
+            sx={styles.searchBarSx}
           />
         </div>
 
@@ -33,17 +35,13 @@ const VendorsPageActionBar: React.FC<VendorsPageActionBarProps> = ({
           action="write"
           fallback={<></>}
         >
-          <button
-            type="button"
+          <Button
+            variant="contained"
             onClick={onAdd}
             disabled={saving}
-            className="hidden sm:flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-white shadow-md transition-transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
-            style={{
-              background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-            }}
           >
             + Add Vendor
-          </button>
+          </Button>
         </PermissionGuard>
       </div>
     </PageHeader>
@@ -51,3 +49,4 @@ const VendorsPageActionBar: React.FC<VendorsPageActionBarProps> = ({
 };
 
 export default VendorsPageActionBar;
+

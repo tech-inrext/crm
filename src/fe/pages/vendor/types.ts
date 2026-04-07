@@ -71,9 +71,7 @@ export interface VendorsListProps {
   onEditVendor: (vendor: Vendor) => void;
 }
 
-export interface ToastProps {
-  open: boolean;
-  message: string;
-  severity: "success" | "error";
-  onClose: () => void;
+export interface VendorsSkeletonProps {
+  rows?: number;
 }
+

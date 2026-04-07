@@ -47,3 +47,11 @@ export const extractMessage = (err: any): string => {
     return "Failed to save vendor";
   }
 };
+
+export const makeAllTouched = (values: Record<string, unknown>) => {
+  const touched: Record<string, boolean> = {};
+  Object.keys(values).forEach((key) => {
+    touched[key] = true;
+  });
+  return touched;
+};

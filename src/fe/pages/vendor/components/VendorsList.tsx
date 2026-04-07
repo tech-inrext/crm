@@ -1,9 +1,10 @@
-"use client";
-
 import React from "react";
-import { Box, CircularProgress, Typography } from "@/components/ui/Component";
+import { Box, Typography } from "@/components/ui/Component";
 import dynamic from "next/dynamic";
 import VendorCard from "@/fe/pages/vendor/components/VendorCard";
+import VendorsSkeleton from "@/fe/pages/vendor/components/VendorsSkeleton";
+import EmptyState from "@/fe/pages/vendor/components/EmptyState";
+import * as styles from "./styles";
 import { VENDORS_ROWS_PER_PAGE_OPTIONS } from "@/fe/pages/vendor/constants/vendors";
 import type { VendorsListProps } from "@/fe/pages/vendor/types";
 
@@ -25,24 +26,16 @@ const VendorsList: React.FC<VendorsListProps> = ({
   onEditVendor,
 }) => {
   if (loading) {
-    return (
-      <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-        <CircularProgress />
-      </Box>
-    );
+    return <VendorsSkeleton rows={rowsPerPage} />;
   }
 
   if (vendors.length === 0) {
-    return (
-      <Typography variant="body1" sx={{ mt: 4, textAlign: "center" }}>
-        No vendors found.
-      </Typography>
-    );
+    return <EmptyState />;
   }
 
   return (
     <>
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mt: 2 }}>
+      <Box sx={styles.vendorsGridSx}>
         {vendors.map((vendor) => (
           <VendorCard
             key={vendor._id}
@@ -52,16 +45,19 @@ const VendorsList: React.FC<VendorsListProps> = ({
         ))}
       </Box>
 
-      <Pagination
-        page={page}
-        pageSize={rowsPerPage}
-        total={totalItems}
-        onPageChange={onPageChange}
-        onPageSizeChange={onPageSizeChange}
-        pageSizeOptions={VENDORS_ROWS_PER_PAGE_OPTIONS}
-      />
+      <Box sx={styles.paginationContainerSx}>
+        <Pagination
+          page={page}
+          pageSize={rowsPerPage}
+          total={totalItems}
+          onPageChange={onPageChange}
+          onPageSizeChange={onPageSizeChange}
+          pageSizeOptions={VENDORS_ROWS_PER_PAGE_OPTIONS}
+        />
+      </Box>
     </>
   );
 };
 
 export default VendorsList;
+
