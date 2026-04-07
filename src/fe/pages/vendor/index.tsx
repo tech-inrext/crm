@@ -1,50 +1,22 @@
 "use client";
 
-import React, { useCallback, useEffect } from "react";
+import React from "react";
 import PermissionGuard from "@/components/PermissionGuard";
 import VendorsPageActionBar from "@/fe/pages/vendor/components/VendorsPageActionBar";
 import VendorsList from "@/fe/pages/vendor/components/VendorsList";
 import VendorDialog from "@/fe/pages/vendor/components/VendorDialog";
 import useVendorsPage from "@/fe/pages/vendor/hooks/useVendorsPage";
-import { useGetVendorsQuery } from "@/fe/pages/vendor/vendorApi";
-import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";
 import {
   VENDORS_PERMISSION_MODULE,
   FAB_POSITION,
   GRADIENTS,
 } from "@/fe/pages/vendor/constants/vendors";
 import { getInitialVendorForm } from "@/fe/pages/vendor/utils";
-import type { ToastProps } from "@/fe/pages/vendor/types";
 import { AddIcon } from "@/components/ui/Component";
-
-const Toast: React.FC<ToastProps> = ({ open, message, severity, onClose }) => {
-  if (!open) return null;
-  const colourClass =
-    severity === "success"
-      ? "bg-green-600 text-white"
-      : "bg-red-600 text-white";
-  return (
-    <div
-      role="alert"
-      className={`fixed top-4 right-4 z-1400 flex items-center gap-3 px-5 py-3.5 rounded-xl shadow-xl text-sm font-medium transition-all ${colourClass}`}
-    >
-      <span>{message}</span>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Dismiss"
-        className="ml-1 opacity-70 hover:opacity-100 transition-opacity text-lg leading-none"
-      >
-        ×
-      </button>
-    </div>
-  );
-};
 
 const VendorsPage: React.FC = () => {
   const {
     search,
-    debouncedSearch,
     handleSearchChange,
     open,
     setOpen,
@@ -52,53 +24,15 @@ const VendorsPage: React.FC = () => {
     selectedVendor,
     handleCloseDialog,
     openEditDialog,
-    snackbarOpen,
-    setSnackbarOpen,
-    snackbarMessage,
-    setSnackbarMessage,
-    snackbarSeverity,
-    setSnackbarSeverity,
-  } = useVendorsPage();
-
-  const {
-    items: vendors,
+    vendors,
     loading,
     page,
     rowsPerPage,
     totalItems,
-    refetch,
     setPage,
-    setPageSize,
-  } = useGetVendorsQuery({ search: debouncedSearch, isCabVendor: true });
-
-  // Reset to page 1 when search changes
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
-
-  const handlePageSizeChange = useCallback(
-    (newSize: number) => {
-      setPageSize(newSize);
-      setPage(1);
-    },
-    [setPageSize, setPage],
-  );
-
-  const handleMutationSuccess = useCallback(async () => {
-    invalidateQueryCache("/api/v0/employee");
-    await refetch();
-    handleCloseDialog();
-    setSnackbarMessage("Vendor saved successfully!");
-    setSnackbarSeverity("success");
-    setSnackbarOpen(true);
-    setTimeout(() => setSnackbarOpen(false), 3000);
-  }, [
-    refetch,
-    handleCloseDialog,
-    setSnackbarMessage,
-    setSnackbarSeverity,
-    setSnackbarOpen,
-  ]);
+    handlePageSizeChange,
+    handleMutationSuccess,
+  } = useVendorsPage();
 
   return (
     <PermissionGuard module={VENDORS_PERMISSION_MODULE}>
@@ -148,13 +82,6 @@ const VendorsPage: React.FC = () => {
           initialData={getInitialVendorForm(selectedVendor)}
           onClose={handleCloseDialog}
           onSave={handleMutationSuccess}
-        />
-
-        <Toast
-          open={snackbarOpen}
-          message={snackbarMessage}
-          severity={snackbarSeverity}
-          onClose={() => setSnackbarOpen(false)}
         />
       </div>
     </PermissionGuard>
