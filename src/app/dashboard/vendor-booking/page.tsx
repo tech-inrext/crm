@@ -3,11 +3,11 @@
 import React, { useState, useEffect, useCallback } from "react";
 import Pagination from "@/components/ui/Navigation/Pagination";
 import { Box, Dialog, DialogContent, Typography } from "@/components/ui/Component";
-import VendorBookingForm from "@/components/cab-booking/VendorBookingForm";
-import BookingDetailsDialog from "@/components/cab-booking/BookingDetailsDialog";
-import BookingCard from "@/components/cab-booking/BookingCard";
+import VendorBookingForm from "@/fe/pages/cab-booking/components/VendorBookingForm";
+import BookingDetailsDialog from "@/fe/pages/cab-booking/components/BookingDetailsDialog";
+import BookingCard from "@/fe/pages/cab-booking/components/BookingCard";
 import PermissionGuard from "@/components/PermissionGuard";
-import { useCabBooking } from "@/hooks/useCabBooking"; // for updateBookingFields only
+import { useCabBooking } from "@/fe/pages/cab-booking/hooks/useCabBooking"; // for updateBookingFields only
 
 type Booking = any; // replace with your real Booking type
 

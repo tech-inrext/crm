@@ -22,12 +22,12 @@ import {
 } from "@/components/ui/Component";
 import MODULE_STYLES from "@/styles/moduleStyles";
 import Avatar from "@/components/ui/Component/Avatar";
-import { Booking } from "@/types/cab-booking";
+import { Booking } from "@/fe/pages/cab-booking/types/cab-booking";
 import {
   formatDateTime,
   getProjectName,
   statusOptions,
-} from "@/constants/cab-booking";
+} from "@/fe/pages/cab-booking/constants/cab-booking";
 import { useEffect, useState } from "react";
 
 interface BookingDetailsDialogProps {

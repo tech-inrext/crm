@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { cabBookingApi, projectApi } from "@/services/cab-booking.service";
-import { DEFAULT_PROJECTS } from "@/constants/cab-booking";
+import { cabBookingApi, projectApi } from "@/fe/pages/cab-booking/cabBookingApi";
+import { DEFAULT_PROJECTS } from "@/fe/pages/cab-booking/constants/cab-booking";
 
 // options: { autoFetch?: boolean, refetchAfterMutations?: boolean }
 export const useCabBooking = (opts = {}) => {

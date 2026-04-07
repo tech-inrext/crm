@@ -6,8 +6,8 @@ import React, {
   useRef,
 } from "react";
 import axios from "axios";
-import { Project, BookingFormData } from "@/types/cab-booking";
-import { getCurrentDateTime } from "@/constants/cab-booking";
+import { Project, BookingFormData } from "@/fe/pages/cab-booking/types/cab-booking";
+import { getCurrentDateTime } from "@/fe/pages/cab-booking/constants/cab-booking";
 
 interface Employee {
   _id: string;
