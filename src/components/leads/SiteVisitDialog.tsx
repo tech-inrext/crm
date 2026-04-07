@@ -97,7 +97,7 @@ const SiteVisitDialog: React.FC<SiteVisitDialogProps> = ({
     try {
       const payload = {
         leadId,
-        project: cabRequired ? project : undefined,
+        project: project || undefined,
         clientName: displayName, // Use name or phone as client identifier
         requestedDateTime: requestedDate,
         notes,
