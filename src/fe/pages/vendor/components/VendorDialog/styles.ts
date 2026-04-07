@@ -16,3 +16,25 @@ export const dateInputSx = {
     padding: "0 10px",
   },
 } as const;
+
+export const backdropSx = {
+  backgroundColor: "rgba(15, 23, 42, 0.4)",
+} as const;
+
+export const dialogPanelSx = {
+  maxHeight: "90vh",
+} as const;
+
+export const closeIconButtonSx = {
+  color: "slate.400",
+  "&:hover": {
+    color: "slate.600",
+    bgcolor: "slate.100",
+  },
+} as const;
+
+export const submitButtonSx = {
+  fontWeight: 600,
+  bgcolor: "#1976d2",
+  color: "#fff",
+} as const;

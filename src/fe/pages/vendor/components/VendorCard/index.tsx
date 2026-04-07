@@ -18,60 +18,25 @@ import LocationOnIcon from "@/components/ui/Component/LocationOn";
 import WorkIcon from "@/components/ui/Component/Work";
 import EditIcon from "@mui/icons-material/Edit";
 import type { VendorCardProps } from "@/fe/pages/vendor/types";
+import * as styles from "./styles";
 
 const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit }) => {
   const phoneHref = vendor.phone ? vendor.phone.replace(/[^+\d]/g, "") : "";
 
   return (
-    <Card
-      elevation={3}
-      sx={{
-        my: 1,
-        mx: { xs: "auto", sm: 0 },
-        borderRadius: 4,
-        p: 3,
-        width: { xs: "95%", sm: 290 },
-        minHeight: 140,
-        boxShadow: "0 6px 18px rgba(16,24,40,0.06)",
-        background:
-          "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(243,247,255,0.7) 100%)",
-        transition: "transform 0.18s ease, box-shadow 0.18s ease",
-        "&:hover": {
-          transform: "translateY(-4px)",
-          boxShadow: "0 10px 30px rgba(16,24,40,0.12)",
-        },
-        display: "flex",
-        flexDirection: "column",
-        gap: 1,
-        justifyContent: "space-between",
-      }}
-    >
+    <Card elevation={3} sx={styles.cardRoot}>
       {/* Header row */}
-      <Box
-        sx={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-        }}
-      >
+      <Box sx={styles.headerBox}>
         <Stack direction="row" spacing={1} alignItems="center">
           <Avatar
             src={vendor.avatarUrl}
             alt={vendor.name}
-            sx={{
-              width: 48,
-              height: 48,
-              fontWeight: 700,
-              fontSize: 16,
-              bgcolor: "primary.main",
-              color: "white",
-              boxShadow: 3,
-            }}
+            sx={styles.avatar}
           >
             {vendor.name?.[0]?.toUpperCase()}
           </Avatar>
 
-          <Box sx={{ minWidth: 0 }}>
+          <Box sx={styles.nameContainer}>
             <Tooltip title={vendor.name} placement="top">
               <Typography
                 fontWeight={700}
@@ -86,12 +51,12 @@ const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit }) => {
               variant="body2"
               color="text.secondary"
               noWrap
-              sx={{ fontSize: 13 }}
+              sx={styles.emailText}
             >
               {vendor.email}
             </Typography>
             {vendor.designation && (
-              <Chip label={vendor.designation} size="small" sx={{ mt: 0.6 }} />
+              <Chip label={vendor.designation} size="small" sx={styles.designationChip} />
             )}
           </Box>
         </Stack>
@@ -101,7 +66,7 @@ const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit }) => {
             <IconButton
               size="small"
               onClick={onEdit}
-              sx={{ background: "#ffffff", boxShadow: 1 }}
+              sx={styles.editButton}
             >
               <EditIcon fontSize="small" />
             </IconButton>
@@ -111,7 +76,7 @@ const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit }) => {
 
       <Divider />
 
-      <CardContent sx={{ py: 0, px: 0 }}>
+      <CardContent sx={styles.cardContent}>
         <Stack direction="column" spacing={0.5}>
           {vendor.phone && (
             <Tooltip title={vendor.phone} placement="top">
@@ -120,13 +85,13 @@ const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit }) => {
                 <Box
                   component="a"
                   href={`tel:${phoneHref}`}
-                  sx={{ textDecoration: "none" }}
+                  sx={styles.contactLink}
                 >
                   <Typography
                     fontSize={13}
                     color="text.primary"
                     noWrap
-                    sx={{ minWidth: 0 }}
+                    sx={styles.contactText}
                   >
                     {vendor.phone}
                   </Typography>
@@ -141,13 +106,13 @@ const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit }) => {
                 <LocationOnIcon
                   fontSize="small"
                   color="action"
-                  sx={{ mt: 0.1 }}
+                  sx={styles.addressIcon}
                 />
                 <Typography
                   fontSize={13}
                   color="text.primary"
                   noWrap
-                  sx={{ minWidth: 0 }}
+                  sx={styles.contactText}
                 >
                   {vendor.address}
                 </Typography>
@@ -155,7 +120,7 @@ const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit }) => {
             </Tooltip>
           )}
 
-          <Box sx={{ height: 2 }} />
+          <Box sx={styles.spacer} />
 
           {vendor.designation && (
             <Stack direction="row" spacing={1} alignItems="center">
@@ -172,3 +137,4 @@ const VendorCard: React.FC<VendorCardProps> = ({ vendor, onEdit }) => {
 };
 
 export default VendorCard;
+
