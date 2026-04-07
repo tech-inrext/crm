@@ -54,7 +54,8 @@ export const paginationContainerSx: SxProps<Theme> = {
  */
 export const searchBarSx: SxProps<Theme> = {
   width: "100%",
-  minWidth: 280,
+  maxWidth: 600,
+  flexGrow: 1,
 } as const;
 
 /** 

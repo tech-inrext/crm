@@ -4,53 +4,84 @@ export const cardRoot: SxProps<Theme> = {
   my: 1,
   mx: { xs: "auto", sm: 0 },
   borderRadius: 4,
-  p: 3,
-  width: { xs: "95%", sm: 290 },
-  minHeight: 140,
-  boxShadow: "0 6px 18px rgba(16,24,40,0.06)",
-  background: "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(243,247,255,0.7) 100%)",
-  transition: "transform 0.18s ease, box-shadow 0.18s ease",
-  "&:hover": {
-    transform: "translateY(-4px)",
-    boxShadow: "0 10px 30px rgba(16,24,40,0.12)",
-  },
+  p: 2.5,
+  width: { xs: "95%", sm: 300 },
+  minHeight: 180,
+  boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
+  background: "#ffffff",
+  border: "1px solid rgba(0, 0, 0, 0.06)",
+  transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
   display: "flex",
   flexDirection: "column",
-  gap: 1,
   justifyContent: "space-between",
+  position: "relative",
+  overflow: "hidden",
+  "&:hover": {
+    transform: "translateY(-4px)",
+    boxShadow: "0 12px 30px rgba(0, 0, 0, 0.1)",
+    borderColor: "primary.main",
+  },
+  "&::before": {
+    content: '""',
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "3px",
+    background: "primary.main",
+    opacity: 0.1,
+  },
 };
 
 export const headerBox: SxProps<Theme> = {
   display: "flex",
-  alignItems: "center",
+  alignItems: "flex-start",
   justifyContent: "space-between",
+  mb: 2.5,
 };
 
 export const avatar: SxProps<Theme> = {
-  width: 48,
-  height: 48,
+  width: 56,
+  height: 56,
   fontWeight: 700,
-  fontSize: 16,
+  fontSize: 20,
   bgcolor: "primary.main",
   color: "white",
-  boxShadow: 3,
+  boxShadow: "0 4px 10px rgba(0, 0, 0, 0.1)",
 };
 
 export const nameContainer: SxProps<Theme> = {
   minWidth: 0,
+  flex: 1,
+  ml: 2,
 };
 
 export const emailText: SxProps<Theme> = {
-  fontSize: 13,
+  fontSize: "0.85rem",
+  color: "text.secondary",
+  mt: 0.5,
+  fontWeight: 500,
 };
 
 export const designationChip: SxProps<Theme> = {
-  mt: 0.6,
+  mt: 1,
+  height: 24,
+  fontSize: "0.75rem",
+  fontWeight: 600,
+  bgcolor: "rgba(0, 0, 0, 0.04)",
+  color: "text.primary",
 };
 
 export const editButton: SxProps<Theme> = {
-  background: "#ffffff",
-  boxShadow: 1,
+  background: "rgba(0, 0, 0, 0.03)",
+  color: "text.secondary",
+  transition: "all 0.2s ease",
+  marginLeft: 1,
+  "&:hover": {
+    color: "primary.main",
+    background: "rgba(37, 99, 235, 0.1)",
+    transform: "scale(1.1)",
+  },
 };
 
 export const cardContent: SxProps<Theme> = {
@@ -58,18 +89,42 @@ export const cardContent: SxProps<Theme> = {
   px: 0,
 };
 
-export const contactLink: SxProps<Theme> = {
-  textDecoration: "none",
+export const contactItem: SxProps<Theme> = {
+  display: "flex",
+  alignItems: "center",
+  gap: 1.5,
+  mb: 1.5,
 };
 
-export const contactText: SxProps<Theme> = {
+export const iconShell: SxProps<Theme> = {
+  display: "flex",
+  alignItems: "center",
+  justifyContent: "center",
+  width: 32,
+  height: 32,
+  borderRadius: "50%",
+  bgcolor: "rgba(0, 0, 0, 0.03)",
+  color: "text.secondary",
+  flexShrink: 0,
+};
+
+export const contactLink: SxProps<Theme> = {
+  textDecoration: "none",
+  color: "inherit",
+  display: "block",
   minWidth: 0,
 };
 
+export const contactText: SxProps<Theme> = {
+  fontSize: "0.875rem",
+  fontWeight: 500,
+  color: "text.primary",
+};
+
 export const addressIcon: SxProps<Theme> = {
-  mt: 0.1,
+  fontSize: 18,
 };
 
 export const spacer: SxProps<Theme> = {
-  height: 2,
+  height: 0,
 };
