@@ -36,11 +36,18 @@ const noticeSchema = new mongoose.Schema(
       index: true,
     },
 
+    // <-- FIXED: Make departments an array to support multiple values
     departments: {
-      type: String,
-      enum: ["All", "Teams"],
-      default: "All",
+      type: [String],
+      enum: ["All", "Team"],
+      default: ["All"],
       index: true,
+    },
+
+    targetAVP: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
     },
 
     expiry: {
@@ -54,7 +61,8 @@ const noticeSchema = new mongoose.Schema(
       default: false,
       index: true,
     },
-  attachments: [
+
+    attachments: [
       {
         filename: String,
         url: String,

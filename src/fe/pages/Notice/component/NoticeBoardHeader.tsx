@@ -81,7 +81,7 @@ function NoticeBoardHeader({
         <AddNoticeModal
           open={open}
           onClose={() => setOpen(false)}
-          onNoticeAdded={onNoticeAdded}   // ✅ important
+          onNoticeAdded={onNoticeAdded} // ✅ important
         />
       )}
 
@@ -112,13 +112,18 @@ function NoticeBoardHeader({
                 size="small"
                 sx={{ minWidth: { xs: "100%", md: 200 } }}
               >
-                <InputLabel>Select category</InputLabel>
+                <InputLabel id="category-label">Select Category</InputLabel>
+
                 <Select
-                  label="Select category"
-                  value={category}
+                  labelId="category-label"
+                  value={category || "All"}
                   onChange={handleCategoryChange}
+                  label="Select Category"
                 >
-                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="All">
+                    <>All</>
+                  </MenuItem>
+
                   {categories?.map((cat, index) => (
                     <MenuItem key={index} value={cat}>
                       {cat}
@@ -133,13 +138,19 @@ function NoticeBoardHeader({
                 size="small"
                 sx={{ minWidth: { xs: "100%", md: 150 } }}
               >
-                <InputLabel>Select priority</InputLabel>
+                {/* ✅ Label */}
+                <InputLabel id="priority-label">Select Priority</InputLabel>
+
                 <Select
-                  label="Select priority"
-                  value={priority}
+                  labelId="priority-label" // ✅ MUST match
+                  value={priority || "All"} // ✅ fallback
                   onChange={handlePriorityChange}
+                  label="Select Priority" // ✅ IMPORTANT
                 >
-                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="All">
+                    <>All</>
+                  </MenuItem>
+
                   {priorities?.map((pri, index) => (
                     <MenuItem key={index} value={pri}>
                       {pri}
@@ -150,7 +161,7 @@ function NoticeBoardHeader({
 
               {/* Date */}
 
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
+              {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
                 <DatePicker
                   label="Select Date"
                   value={date}
@@ -163,10 +174,10 @@ function NoticeBoardHeader({
                     },
                   }}
                 />
-              </LocalizationProvider>
+              </LocalizationProvider> */}
 
-              <IconButton className="!bg-white !h-[38px] !w-[36px]">
-                <FilterListIcon />
+              <IconButton>
+                {/* <FilterListIcon /> */}
               </IconButton>
 
               {/* Add Notice Button */}
@@ -182,26 +193,6 @@ function NoticeBoardHeader({
                 </Button>
               )}
             </Stack>
-          </Box>
-
-          {/* Tabs */}
-
-          <Box sx={{ display: { xs: "none", md: "block" } }}>
-            <Tabs value={tab} onChange={handleTabChange}>
-              {NOTICE_TABS.map((item, idx) => (
-                <Tab
-                  key={idx}
-                  icon={item.icon}
-                  iconPosition="start"
-                  label={item.label}
-                  className={`!normal-case !mt-1 !text-md !mr-2 !font-medium !min-h-[40px] !px-6 border border-gray-300 rounded-md ${
-                    tab === idx
-                      ? "!bg-[#e6f0ff] !text-blue-600"
-                      : "text-gray-600 hover:bg-white"
-                  }`}
-                />
-              ))}
-            </Tabs>
           </Box>
         </Box>
       </Box>
