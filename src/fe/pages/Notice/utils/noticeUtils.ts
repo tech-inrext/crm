@@ -1,4 +1,4 @@
-// Category Colors
+// ================= CATEGORY COLORS =================
 export const categoryColors: Record<string, string> = {
   "Urgent Alerts": "#f44336",
   "Project Updates": "#9c27b0",
@@ -8,48 +8,75 @@ export const categoryColors: Record<string, string> = {
   "General Announcements": "#1976d2",
 };
 
-// Priority Colors
+// ================= PRIORITY COLORS =================
 export const priorityColors: Record<string, string> = {
   Urgent: "#d32f2f",
   Important: "#ed6c02",
   Info: "#1976d2",
 };
 
-// Grid Style
+// ================= GRID STYLE =================
+// 4 cards per row on large screens
 export const gridStyles = {
   display: "grid",
   gridTemplateColumns: {
-    xs: "1fr",
-    sm: "repeat(2, 1fr)",
-    md: "repeat(3, 1fr)",
+    xs: "1fr",                 // mobile
+    sm: "repeat(2, 1fr)",     // tablet
+    md: "repeat(3, 1fr)",     // small laptop
+    lg: "repeat(4, 1fr)",     // desktop ✅
   },
   gap: 2,
+  width: "100%",
+  alignItems: "stretch",
 };
 
-// Build Query Params
-export const buildNoticeQuery = (filters: any) => {
+// ================= QUERY BUILDER =================
+type NoticeFilters = {
+  searchText?: string;
+  category?: string;
+  priority?: string;
+  date?: any; // supports string | dayjs | moment
+};
+
+export const buildNoticeQuery = (filters: NoticeFilters = {}) => {
   const query = new URLSearchParams();
 
-  if (filters?.searchText?.trim()) {
-    query.append("search", filters.searchText);
+  const { searchText, category, priority, date } = filters;
+
+  // SEARCH
+  if (searchText?.trim()) {
+    query.append("search", searchText.trim());
   }
 
-  if (filters?.category && filters.category !== "All") {
-    query.append("category", filters.category);
+  // CATEGORY
+  if (category && category !== "All") {
+    query.append("category", category);
   }
 
-  if (filters?.priority && filters.priority !== "All") {
-    query.append("priority", filters.priority);
+  // PRIORITY
+  if (priority && priority !== "All") {
+    query.append("priority", priority);
   }
 
-  if (filters?.date) {
-    query.append(
-      "date",
-      filters.date?.format
-        ? filters.date.format("YYYY-MM-DD")
-        : filters.date
-    );
+  // DATE
+  if (date) {
+    let formattedDate = "";
+
+    if (typeof date === "string") {
+      formattedDate = date;
+    } else if (date?.format) {
+      formattedDate = date.format("YYYY-MM-DD");
+    }
+
+    if (formattedDate) {
+      query.append("date", formattedDate);
+    }
   }
 
   return query.toString();
 };
+export const isImageFile = (url: string) =>
+  /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
+
+export const formatDate = (date: string) =>
+  new Date(date).toLocaleDateString();

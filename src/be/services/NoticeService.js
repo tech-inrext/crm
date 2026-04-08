@@ -6,6 +6,7 @@ import TeamService from "./analytics/TeamService";
 class NoticeService extends Service {
   constructor() {
     super();
+    this.teamService = new TeamService(); // initialize teamService
   }
 
   // ---------------- CREATE NOTICE ----------------
@@ -20,6 +21,7 @@ class NoticeService extends Service {
         expiry,
         pinned,
         attachments,
+        targetAVP, // Admin can assign to an AVP
       } = req.body;
 
       if (!title?.trim() || !description?.trim() || !category?.trim()) {
@@ -29,11 +31,9 @@ class NoticeService extends Service {
         });
       }
 
-      // ✅ FIX: ensure attachments are proper
-      let safeAttachments = [];
-      if (Array.isArray(attachments)) {
-        safeAttachments = attachments.filter((f) => f && f.url);
-      }
+      const safeAttachments = Array.isArray(attachments)
+        ? attachments.filter((f) => f && f.url)
+        : [];
 
       const newNotice = new Notice({
         title: title.trim(),
@@ -43,8 +43,9 @@ class NoticeService extends Service {
         departments: departments?.trim() || "All",
         expiry: expiry || null,
         pinned: pinned || false,
-        attachments: safeAttachments, // ✅ FIXED HERE
+        attachments: safeAttachments,
         createdBy: req.employee?._id || null,
+        targetAVP: targetAVP || null, // store AVP if created by Admin
         isActive: true,
       });
 
@@ -57,7 +58,6 @@ class NoticeService extends Service {
       });
     } catch (error) {
       console.error("Create Notice Error:", error);
-
       return res.status(500).json({
         success: false,
         message: "Failed to create notice",
@@ -96,96 +96,77 @@ class NoticeService extends Service {
 
       // CATEGORY
       if (category && category !== "All") {
-        filters.push({
-          category: { $regex: `^${category}$`, $options: "i" },
-        });
+        filters.push({ category: { $regex: `^${category}$`, $options: "i" } });
       }
 
       // PRIORITY
       if (priority && priority !== "All") {
-        filters.push({
-          priority: { $regex: `^${priority}$`, $options: "i" },
-        });
+        filters.push({ priority: { $regex: `^${priority}$`, $options: "i" } });
       }
 
       // PINNED
       if (pinned !== "") {
-        filters.push({
-          pinned: pinned === "true",
-        });
+        filters.push({ pinned: pinned === "true" });
       }
 
       // ---------------- EMPLOYEE ACCESS ----------------
-      const teamService = new TeamService();
       const employeeId = req.employee?._id;
+      const role = req.employee?.role; // Admin / AVP / Employee
 
       let teamMembers = [];
       let myManager = null;
 
       if (employeeId) {
-        teamMembers = await teamService.getMyTeamMembers(employeeId);
-        myManager = await teamService.getMyManager(employeeId);
+        teamMembers = await this.teamService.getMyTeamMembers(employeeId) || [];
+        myManager = await this.teamService.getMyManager(employeeId) || null;
       }
 
-      filters.push({
-        $or: [
-          { departments: "All" },
-          {
-            departments: "Teams",
-            createdBy: employeeId,
-          },
-          {
-            departments: "Teams",
-            createdBy: { $in: teamMembers },
-          },
-          {
-            departments: "Teams",
-            createdBy: myManager,
-          },
-        ],
-      });
-
-      // ---------------- TAB FILTER ----------------
-      if (departments && departments !== "All") {
+      // Access Rules
+      if (role === "Admin") {
+        // Admin sees all
+        filters.push({ isActive: true });
+      } else if (role === "AVP") {
         filters.push({
-          departments: departments,
+          $or: [
+            { departments: "All" }, // public notices
+            { departments: "Team", createdBy: employeeId }, // notices AVP created for their team
+            { departments: "Team", createdBy: { $in: teamMembers } }, // team member notices
+            { targetAVP: employeeId }, // Admin created notices assigned to this AVP
+          ],
+        });
+      } else {
+        // Normal Employee
+        filters.push({
+          $or: [
+            { departments: "All" },
+            { createdBy: employeeId },
+            { createdBy: myManager },
+          ],
         });
       }
 
-      // DATE
+      // FILTER BY DEPARTMENT TAB
+      if (departments && departments !== "All") {
+        filters.push({ departments });
+      }
+
+      // DATE FILTER
       if (date) {
         const start = new Date(date);
         start.setHours(0, 0, 0, 0);
-
         const end = new Date(date);
         end.setHours(23, 59, 59, 999);
-
-        filters.push({
-          createdAt: {
-            $gte: start,
-            $lte: end,
-          },
-        });
+        filters.push({ createdAt: { $gte: start, $lte: end } });
       }
 
-      // EXPIRY
+      // EXPIRY FILTER
       const today = new Date();
       today.setHours(0, 0, 0, 0);
-
       filters.push({
-        $or: [
-          { expiry: { $exists: false } },
-          { expiry: null },
-          { expiry: { $gte: today } },
-        ],
-      });
-
-      filters.push({
-        isActive: true,
+        $or: [{ expiry: { $exists: false } }, { expiry: null }, { expiry: { $gte: today } }],
       });
 
       const query = { $and: filters };
-
       const pageNumber = parseInt(page) || 1;
       const limitNumber = parseInt(limit) || 50;
       const skip = (pageNumber - 1) * limitNumber;
@@ -199,9 +180,21 @@ class NoticeService extends Service {
         .limit(limitNumber)
         .lean();
 
+      // ADD isLatest FLAG
+      const startOfToday = new Date();
+      startOfToday.setHours(0, 0, 0, 0);
+      const startOfTomorrow = new Date(startOfToday);
+      startOfTomorrow.setDate(startOfToday.getDate() + 1);
+
+      const noticesWithLatest = notices.map((notice) => {
+        const createdAt = new Date(notice.createdAt);
+        const isLatest = createdAt >= startOfToday && createdAt < startOfTomorrow;
+        return { ...notice, isLatest };
+      });
+
       return res.status(200).json({
         success: true,
-        data: notices,
+        data: noticesWithLatest,
         pagination: {
           totalItems,
           currentPage: pageNumber,
@@ -209,10 +202,8 @@ class NoticeService extends Service {
           limit: limitNumber,
         },
       });
-
     } catch (error) {
       console.error("Fetch Notice Error:", error);
-
       return res.status(500).json({
         success: false,
         message: "Failed to fetch notices",
@@ -221,7 +212,7 @@ class NoticeService extends Service {
     }
   }
 
-  // ---------------- META ----------------
+  // ---------------- GET META ----------------
   async getNoticeMeta(req, res) {
     try {
       const categories = Notice.schema.path("category")?.enumValues || [];
@@ -230,15 +221,10 @@ class NoticeService extends Service {
 
       return res.status(200).json({
         success: true,
-        data: {
-          categories,
-          priorities,
-          departments,
-        },
+        data: { categories, priorities, departments },
       });
     } catch (error) {
       console.error("Meta Error:", error);
-
       return res.status(500).json({
         success: false,
         message: "Failed to fetch meta",
@@ -251,35 +237,64 @@ class NoticeService extends Service {
   async getNoticeById(req, res) {
     try {
       const { id } = req.params;
-
       if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid notice ID",
-        });
+        return res.status(400).json({ success: false, message: "Invalid notice ID" });
       }
 
       const notice = await Notice.findById(id)
         .populate("createdBy", "name email employeeId")
         .lean();
 
-      if (!notice) {
-        return res.status(404).json({
-          success: false,
-          message: "Notice not found",
-        });
-      }
+      if (!notice) return res.status(404).json({ success: false, message: "Notice not found" });
 
-      return res.status(200).json({
-        success: true,
-        data: notice,
-      });
+      return res.status(200).json({ success: true, data: notice });
     } catch (error) {
-      return res.status(500).json({
-        success: false,
-        message: "Error fetching notice",
-        error: error.message,
-      });
+      return res.status(500).json({ success: false, message: "Error fetching notice", error: error.message });
+    }
+  }
+
+  // ---------------- UPDATE NOTICE ----------------
+  async updateNotice(req, res) {
+    try {
+      const id = req.params?.id || req.query?.id || req.body?.id;
+      if (!id || !mongoose.Types.ObjectId.isValid(id))
+        return res.status(400).json({ success: false, message: "Invalid notice ID" });
+
+      const updateData = { ...req.body };
+      if (updateData.title) updateData.title = updateData.title.trim();
+      if (updateData.description) updateData.description = updateData.description.trim();
+      if (updateData.category) updateData.category = updateData.category.trim();
+      if (updateData.priority) updateData.priority = updateData.priority.trim();
+      if (updateData.departments) updateData.departments = updateData.departments.trim();
+      if (updateData.expiry) updateData.expiry = new Date(updateData.expiry);
+      if (Array.isArray(updateData.attachments)) updateData.attachments = updateData.attachments.filter((f) => f && f.url);
+
+      const updatedNotice = await Notice.findByIdAndUpdate(id, updateData, { new: true, runValidators: true })
+        .populate("createdBy", "name email employeeId");
+
+      if (!updatedNotice) return res.status(404).json({ success: false, message: "Notice not found" });
+
+      return res.status(200).json({ success: true, message: "Notice updated successfully", data: updatedNotice });
+    } catch (error) {
+      console.error("Update Notice Error:", error);
+      return res.status(500).json({ success: false, message: "Update failed", error: error.message });
+    }
+  }
+
+  // ---------------- DELETE NOTICE ----------------
+  async deleteNotice(req, res) {
+    try {
+      const id = req.params?.id || req.query?.id;
+      if (!id || !mongoose.Types.ObjectId.isValid(id))
+        return res.status(400).json({ success: false, message: "Invalid notice ID" });
+
+      const notice = await Notice.findByIdAndDelete(id);
+      if (!notice) return res.status(404).json({ success: false, message: "Notice not found" });
+
+      return res.status(200).json({ success: true, message: "Notice deleted successfully" });
+    } catch (error) {
+      console.error("Delete Notice Error:", error);
+      return res.status(500).json({ success: false, message: "Delete failed", error: error.message });
     }
   }
 }

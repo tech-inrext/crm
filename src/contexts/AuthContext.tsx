@@ -465,6 +465,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setPostLoginRedirect,
     postLoginRedirect,
     hasAccountsRole,
+    hasAdminRole, //  Add this line
+
   };
 
   return (
