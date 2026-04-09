@@ -41,18 +41,10 @@ export const emptyStateDescriptionSx: SxProps<Theme> = {
 } as const;
 
 /** 
- * Vendors List specific styles 
- */
-export const paginationContainerSx: SxProps<Theme> = {
-  display: "flex",
-  justifyContent: "center",
-  mt: 6,
-} as const;
-
-/** 
  * Page Action Bar styles 
  */
 export const searchBarSx: SxProps<Theme> = {
+
   width: "100%",
   maxWidth: 600,
   flexGrow: 1,

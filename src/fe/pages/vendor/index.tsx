@@ -30,7 +30,7 @@ const VendorsPage: React.FC = () => {
     rowsPerPage,
     totalItems,
     setPage,
-    handlePageSizeChange,
+    setPageSize,
     handleMutationSuccess,
   } = useVendorsPage();
 
@@ -50,7 +50,7 @@ const VendorsPage: React.FC = () => {
           rowsPerPage={rowsPerPage}
           totalItems={totalItems}
           onPageChange={setPage}
-          onPageSizeChange={handlePageSizeChange}
+          onPageSizeChange={setPageSize}
           onEditVendor={openEditDialog}
         />
 
