@@ -80,3 +80,47 @@ export const isImageFile = (url: string) =>
 
 export const formatDate = (date: string) =>
   new Date(date).toLocaleDateString();
+
+import dayjs, { Dayjs } from "dayjs";
+
+// ---------------- FILE UTILITIES ----------------
+export type PendingFile = { id: string; file: File; customName: string };
+
+export const generatePendingFiles = (files: File[]): PendingFile[] =>
+  files.map((f) => ({
+    id: `${f.name}-${Date.now()}`,
+    file: f,
+    customName: f.name.replace(/\.[^.]+$/, ""),
+  }));
+
+export const uploadToS3 = async (file: File): Promise<string> => {
+  const res = await fetch("/api/v0/s3/upload-url", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+  });
+  const data = await res.json();
+  await fetch(data.uploadUrl, {
+    method: "PUT",
+    headers: { "Content-Type": file.type },
+    body: file,
+  });
+  return data.fileUrl;
+};
+
+// ---------------- NOTIFICATION ----------------
+export type NotifyFn = (msg: string, type?: "error" | "success") => void;
+
+export const notify = (setMsg: (msg: string) => void, setSeverity: (type: "error" | "success") => void, setOpen: (open: boolean) => void) =>
+  (msg: string, type: "error" | "success" = "error") => {
+    setMsg(msg);
+    setSeverity(type);
+    setOpen(true);
+  };
+
+// ---------------- DATE ----------------
+export const formatDayjs = (date: Dayjs | null): string | null =>
+  date ? dayjs(date).format("YYYY-MM-DD") : null;
+
+
+

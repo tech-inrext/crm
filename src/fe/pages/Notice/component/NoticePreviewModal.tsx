@@ -31,12 +31,8 @@ import {
   categoryColors,
   priorityColors,
 } from "@/fe/pages/Notice/utils/noticeUtils";
-
 import { isImageFile, formatDate } from "../utils/noticeUtils";
-
-/* ✅ IMPORT AUTH */
 import { useAuth } from "@/contexts/AuthContext";
-
 export default function NoticePreviewDialog({
   open,
   onClose,
@@ -255,9 +251,6 @@ export default function NoticePreviewDialog({
           </Box>
         )}
       </Dialog>
-
-      {/* IMAGE PREVIEW */}
-      {/* IMAGE PREVIEW */}
       <Dialog
         open={previewOpen}
         onClose={() => setPreviewOpen(false)}
