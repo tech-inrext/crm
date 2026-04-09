@@ -33,15 +33,6 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 
-// ---------------- UTIL IMPORTS ----------------
-import {
-  PendingFile,
-  generatePendingFiles,
-  uploadToS3,
-  notify as notifyUtil,
-  formatDayjs,
-} from "@/fe/pages/Notice/utils/noticeUtils";
-
 const categories = [
   "General Announcements",
   "Project Updates",
@@ -52,6 +43,8 @@ const categories = [
 ];
 
 const priorities = ["Urgent", "Important", "Info"];
+
+type PendingFile = { id: string; file: File; customName: string };
 
 type Props = { open: boolean; onClose: () => void; onNoticeAdded?: () => void };
 
@@ -86,9 +79,6 @@ export default function AddNoticeModal({
   const { hasAdminRole } = useAuth();
   const isAdmin = hasAdminRole();
   const isAVP = !isAdmin;
-
-  // ---------------- UTIL NOTIFY ----------------
-  const notify = notifyUtil(setSnackbarMsg, setSnackbarSeverity, setSnackbarOpen);
 
   /* ---------------- RESET ---------------- */
   const resetForm = () => {
@@ -161,17 +151,21 @@ export default function AddNoticeModal({
       .then((res) => res.json())
       .then((data) => {
         if (isAVP) {
-          setDepartments(["All", "Team"]);
+          setDepartments(["All", "Team"]); // Only once
         } else {
           setDepartments(data?.data?.departments || ["All"]);
         }
       })
       .catch(() => {
-        if (isAVP) setDepartments(["All", "Team"]);
-        else setDepartments(["All"]);
+        if (isAVP) {
+          setDepartments(["All", "Team"]);
+        } else {
+          setDepartments(["All"]);
+        }
       });
-  }, [isAVP]);
+  }, [isAVP]); // <--- dependency is correct
 
+  // Admin sees AVPs
   useEffect(() => {
     if (isAdmin) {
       fetch("/api/v0/employee/getAllAVPEmployees")
@@ -181,6 +175,7 @@ export default function AddNoticeModal({
     }
   }, [isAdmin]);
 
+  // AVP sees "All" / "Team"
   useEffect(() => {
     if (isAVP) setDepartments(["All", "Team"]);
   }, [isAVP]);
@@ -189,8 +184,36 @@ export default function AddNoticeModal({
   const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
-    setPendingFiles((prev) => [...prev, ...generatePendingFiles(files)]);
+    setPendingFiles((prev) => [
+      ...prev,
+      ...files.map((f) => ({
+        id: `${f.name}-${Date.now()}`,
+        file: f,
+        customName: f.name.replace(/\.[^.]+$/, ""),
+      })),
+    ]);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const uploadToS3 = async (file: File): Promise<string> => {
+    const res = await fetch("/api/v0/s3/upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName: file.name, fileType: file.type }),
+    });
+    const data = await res.json();
+    await fetch(data.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    return data.fileUrl;
+  };
+
+  const notify = (msg: string, type: "error" | "success" = "error") => {
+    setSnackbarMsg(msg);
+    setSnackbarSeverity(type);
+    setSnackbarOpen(true);
   };
 
   /* ---------------- SUBMIT ---------------- */
@@ -225,7 +248,7 @@ export default function AddNoticeModal({
         description,
         category,
         priority,
-        expiry: formatDayjs(expiry),
+        expiry: expiry ? dayjs(expiry).format("YYYY-MM-DD") : null,
         pinned,
         attachments: uploadedAttachments,
       };
@@ -233,11 +256,10 @@ export default function AddNoticeModal({
       if (isAdmin) {
         payload.targetAVP =
           selectedDepartment !== "All" ? selectedDepartment : null;
-        payload.departments = ["All"];
+        payload.departments = ["All"]; // Admin notices are considered public for others
       } else {
-        payload.departments = [selectedDepartment];
+        payload.departments = [selectedDepartment]; // AVP sends "All" or "Team"
       }
-
       const res = await fetch("/api/v0/notice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -303,14 +325,18 @@ export default function AddNoticeModal({
             <FormControl
               fullWidth
               size="small"
-              className={`!rounded-md !border ${
-                editorFocused ? "!border-blue-500" : "!border-gray-300"
-              }`}
+              className={`!rounded-md !border ${editorFocused ? "!border-blue-500" : "!border-gray-300"}`}
             >
-              <InputLabel shrink={!!description || editorFocused} className="!bg-white !px-1">
+              <InputLabel
+                shrink={!!description || editorFocused}
+                className="!bg-white !px-1"
+              >
                 Notice Description
               </InputLabel>
-              <Box className="!rounded-md cursor-text" onClick={() => quillRef.current?.focus()}>
+              <Box
+                className="!rounded-md cursor-text"
+                onClick={() => quillRef.current?.focus()}
+              >
                 <div ref={editorRef} />
               </Box>
             </FormControl>
@@ -324,7 +350,11 @@ export default function AddNoticeModal({
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth size="small">
                 <InputLabel>Category</InputLabel>
-                <Select value={category} label="Category" onChange={(e) => setCategory(e.target.value)}>
+                <Select
+                  value={category}
+                  label="Category"
+                  onChange={(e) => setCategory(e.target.value)}
+                >
                   {categories.map((c) => (
                     <MenuItem key={c} value={c}>
                       {c}
@@ -335,7 +365,11 @@ export default function AddNoticeModal({
 
               <FormControl fullWidth size="small">
                 <InputLabel>Priority</InputLabel>
-                <Select value={priority} label="Priority" onChange={(e) => setPriority(e.target.value)}>
+                <Select
+                  value={priority}
+                  label="Priority"
+                  onChange={(e) => setPriority(e.target.value)}
+                >
                   {priorities.map((p) => (
                     <MenuItem key={p} value={p}>
                       {p}
@@ -348,11 +382,15 @@ export default function AddNoticeModal({
             {/* DEPARTMENTS / AVP */}
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth size="small">
-                <InputLabel id="department-label">{isAdmin ? "Select AVP" : "Departments"}</InputLabel>
+                <InputLabel id="department-label">
+                  {isAdmin ? "Select AVP" : "Departments"}
+                </InputLabel>
                 <Select
                   labelId="department-label"
                   value={selectedDepartment}
-                  onChange={(e) => setSelectedDepartment(String(e.target.value))}
+                  onChange={(e) =>
+                    setSelectedDepartment(String(e.target.value))
+                  }
                   renderValue={(selected) => {
                     if (!selected) return "Select...";
                     if (isAdmin) {
@@ -360,7 +398,7 @@ export default function AddNoticeModal({
                       const found = avps.find((a) => a._id === selected);
                       return found?.name || "Select";
                     }
-                    return selected;
+                    return selected; // AVP sees All/Team
                   }}
                 >
                   {isAdmin
@@ -377,12 +415,12 @@ export default function AddNoticeModal({
                           : []),
                       ]
                     : Array.isArray(departments)
-                    ? departments.map((d) => (
-                        <MenuItem key={d} value={d}>
-                          {d}
-                        </MenuItem>
-                      ))
-                    : []}
+                      ? departments.map((d) => (
+                          <MenuItem key={d} value={d}>
+                            {d}
+                          </MenuItem>
+                        ))
+                      : []}
                 </Select>
               </FormControl>
 
@@ -412,16 +450,29 @@ export default function AddNoticeModal({
                   Add files
                 </Button>
               </Box>
-              <input ref={fileInputRef} type="file" multiple hidden onChange={pickFiles} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                hidden
+                onChange={pickFiles}
+              />
               {pendingFiles.map((p, i) => (
-                <Box key={p.id} className="flex items-center justify-between border border-gray-200 rounded px-3 py-2">
-                  <Typography className="text-sm text-gray-700">{p.customName}</Typography>
+                <Box
+                  key={p.id}
+                  className="flex items-center justify-between border border-gray-200 rounded px-3 py-2"
+                >
+                  <Typography className="text-sm text-gray-700">
+                    {p.customName}
+                  </Typography>
                   <Button
                     size="small"
                     color="error"
                     className="!text-xs !min-w-0"
                     onClick={() =>
-                      setPendingFiles((prev) => prev.filter((_, index) => index !== i))
+                      setPendingFiles((prev) =>
+                        prev.filter((_, index) => index !== i),
+                      )
                     }
                   >
                     Remove
@@ -429,12 +480,19 @@ export default function AddNoticeModal({
                 </Box>
               ))}
               {!pendingFiles.length && (
-                <Typography className="text-sm text-gray-400">No attachments added</Typography>
+                <Typography className="text-sm text-gray-400">
+                  No attachments added
+                </Typography>
               )}
             </Box>
 
             <FormControlLabel
-              control={<Switch checked={pinned} onChange={(e) => setPinned(e.target.checked)} />}
+              control={
+                <Switch
+                  checked={pinned}
+                  onChange={(e) => setPinned(e.target.checked)}
+                />
+              }
               label="Pin this notice"
             />
           </Stack>
@@ -447,12 +505,20 @@ export default function AddNoticeModal({
             disabled={loading}
             className="!bg-blue-600 !text-white hover:!bg-blue-700"
           >
-            {loading ? <CircularProgress size={20} className="text-white" /> : "Publish"}
+            {loading ? (
+              <CircularProgress size={20} className="text-white" />
+            ) : (
+              "Publish"
+            )}
           </Button>
         </DialogActions>
       </Dialog>
 
-      <Snackbar open={snackbarOpen} autoHideDuration={4000} onClose={() => setSnackbarOpen(false)}>
+      <Snackbar
+        open={snackbarOpen}
+        autoHideDuration={4000}
+        onClose={() => setSnackbarOpen(false)}
+      >
         <Alert severity={snackbarSeverity}>{snackbarMsg}</Alert>
       </Snackbar>
     </LocalizationProvider>
