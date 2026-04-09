@@ -10,62 +10,79 @@ class NoticeService extends Service {
   }
 
   // ---------------- CREATE NOTICE ----------------
-  async createNotice(req, res) {
-    try {
-      const {
-        title,
-        description,
-        category,
-        priority,
-        departments,
-        expiry,
-        pinned,
-        attachments,
-        targetAVP, // Admin can assign to an AVP
-      } = req.body;
+ async createNotice(req, res) {
+  try {
+    const role = req.employee?.role; // ✅ FIX ADDED
 
-      if (!title?.trim() || !description?.trim() || !category?.trim()) {
-        return res.status(400).json({
-          success: false,
-          message: "Title, description and category are required",
-        });
-      }
+    const {
+      title,
+      description,
+      category,
+      priority,
+      departments,
+      expiry,
+      pinned,
+      attachments,
+      targetAVP,
+    } = req.body;
 
-      const safeAttachments = Array.isArray(attachments)
-        ? attachments.filter((f) => f && f.url)
-        : [];
-
-      const newNotice = new Notice({
-        title: title.trim(),
-        description: description.trim(),
-        category: category.trim(),
-        priority: priority?.trim() || "Info",
-        departments: departments?.trim() || "All",
-        expiry: expiry || null,
-        pinned: pinned || false,
-        attachments: safeAttachments,
-        createdBy: req.employee?._id || null,
-        targetAVP: targetAVP || null, // store AVP if created by Admin
-        isActive: true,
-      });
-
-      await newNotice.save();
-
-      return res.status(201).json({
-        success: true,
-        message: "Notice created successfully",
-        data: newNotice,
-      });
-    } catch (error) {
-      console.error("Create Notice Error:", error);
-      return res.status(500).json({
+    if (!title?.trim() || !description?.trim() || !category?.trim()) {
+      return res.status(400).json({
         success: false,
-        message: "Failed to create notice",
-        error: error.message,
+        message: "Title, description and category are required",
       });
     }
-  }
 
+    const safeAttachments = Array.isArray(attachments)
+      ? attachments.filter((f) => f && f.url)
+      : [];
+
+    const newNotice = new Notice({
+      title: title.trim(),
+      description: description.trim(),
+      category: category.trim(),
+      priority: priority?.trim() || "Info",
+
+      // ✅ now role works
+      departments:
+        role === "AVP"
+          ? Array.isArray(departments)
+            ? departments.map((d) => d.trim())
+            : [departments?.trim() || "All"]
+          : ["All"],
+
+      expiry: expiry || null,
+      pinned: pinned || false,
+
+      attachments: safeAttachments.map((f) => ({
+        filename: f.filename || f.name,
+        url: f.url,
+      })),
+
+      createdBy: req.employee?._id || null,
+
+      // ⚠️ FIX: make role comparison consistent
+      targetAVP: role === "ADMIN" && targetAVP ? targetAVP : null,
+
+      isActive: true,
+    });
+
+    await newNotice.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Notice created successfully",
+      data: newNotice,
+    });
+  } catch (error) {
+    console.error("Create Notice Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Failed to create notice",
+      error: error.message,
+    });
+  }
+}
   // ---------------- GET ALL NOTICES ----------------
   async getAllNotices(req, res) {
     try {
@@ -117,30 +134,32 @@ class NoticeService extends Service {
       let myManager = null;
 
       if (employeeId) {
-        teamMembers = await this.teamService.getMyTeamMembers(employeeId) || [];
-        myManager = await this.teamService.getMyManager(employeeId) || null;
+        teamMembers =
+          (await this.teamService.getMyTeamMembers(employeeId)) || [];
+        myManager = (await this.teamService.getMyManager(employeeId)) || null;
       }
 
       // Access Rules
       if (role === "Admin") {
-        // Admin sees all
+        // Admin sees all active notices
         filters.push({ isActive: true });
       } else if (role === "AVP") {
+        // AVP sees:
         filters.push({
           $or: [
-            { departments: "All" }, // public notices
-            { departments: "Team", createdBy: employeeId }, // notices AVP created for their team
-            { departments: "Team", createdBy: { $in: teamMembers } }, // team member notices
-            { targetAVP: employeeId }, // Admin created notices assigned to this AVP
+            { departments: "All" }, // Public notices
+            { departments: "Team", createdBy: employeeId }, // Notices AVP created for their team
+            { departments: "Team", createdBy: { $in: teamMembers } }, // Team notices
+            { targetAVP: employeeId }, // Admin assigned notices
           ],
         });
       } else {
-        // Normal Employee
+        // Employee sees:
         filters.push({
           $or: [
-            { departments: "All" },
-            { createdBy: employeeId },
-            { createdBy: myManager },
+            { departments: "All" }, // Public
+            { createdBy: employeeId }, // Own notices
+            { createdBy: myManager }, // Notices from manager
           ],
         });
       }
@@ -163,7 +182,11 @@ class NoticeService extends Service {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       filters.push({
-        $or: [{ expiry: { $exists: false } }, { expiry: null }, { expiry: { $gte: today } }],
+        $or: [
+          { expiry: { $exists: false } },
+          { expiry: null },
+          { expiry: { $gte: today } },
+        ],
       });
 
       const query = { $and: filters };
@@ -188,7 +211,8 @@ class NoticeService extends Service {
 
       const noticesWithLatest = notices.map((notice) => {
         const createdAt = new Date(notice.createdAt);
-        const isLatest = createdAt >= startOfToday && createdAt < startOfTomorrow;
+        const isLatest =
+          createdAt >= startOfToday && createdAt < startOfTomorrow;
         return { ...notice, isLatest };
       });
 
@@ -238,18 +262,27 @@ class NoticeService extends Service {
     try {
       const { id } = req.params;
       if (!mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({ success: false, message: "Invalid notice ID" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid notice ID" });
       }
 
       const notice = await Notice.findById(id)
         .populate("createdBy", "name email employeeId")
         .lean();
 
-      if (!notice) return res.status(404).json({ success: false, message: "Notice not found" });
+      if (!notice)
+        return res
+          .status(404)
+          .json({ success: false, message: "Notice not found" });
 
       return res.status(200).json({ success: true, data: notice });
     } catch (error) {
-      return res.status(500).json({ success: false, message: "Error fetching notice", error: error.message });
+      return res.status(500).json({
+        success: false,
+        message: "Error fetching notice",
+        error: error.message,
+      });
     }
   }
 
@@ -257,44 +290,95 @@ class NoticeService extends Service {
   async updateNotice(req, res) {
     try {
       const id = req.params?.id || req.query?.id || req.body?.id;
-      if (!id || !mongoose.Types.ObjectId.isValid(id))
-        return res.status(400).json({ success: false, message: "Invalid notice ID" });
+      if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid notice ID" });
+      }
 
-      const updateData = { ...req.body };
+      const updateData = { ...req.body }; // ✅ JS only, no TypeScript syntax
+
+      // Trim string fields
       if (updateData.title) updateData.title = updateData.title.trim();
-      if (updateData.description) updateData.description = updateData.description.trim();
+      if (updateData.description)
+        updateData.description = updateData.description.trim();
       if (updateData.category) updateData.category = updateData.category.trim();
       if (updateData.priority) updateData.priority = updateData.priority.trim();
-      if (updateData.departments) updateData.departments = updateData.departments.trim();
+
+      // Handle departments (string or array)
+      if (updateData.departments) {
+        if (Array.isArray(updateData.departments)) {
+          updateData.departments = updateData.departments.map((d) =>
+            typeof d === "string" ? d.trim() : d,
+          );
+        } else if (typeof updateData.departments === "string") {
+          updateData.departments = updateData.departments.trim();
+        }
+      }
+
+      // Expiry date
       if (updateData.expiry) updateData.expiry = new Date(updateData.expiry);
-      if (Array.isArray(updateData.attachments)) updateData.attachments = updateData.attachments.filter((f) => f && f.url);
 
-      const updatedNotice = await Notice.findByIdAndUpdate(id, updateData, { new: true, runValidators: true })
-        .populate("createdBy", "name email employeeId");
+      // Attachments (store name + URL)
+      if (Array.isArray(updateData.attachments)) {
+        updateData.attachments = updateData.attachments.map((f) => ({
+          name:
+            f.customName || f.filename || (f.file && f.file.name) || "unknown",
+          url: f.url || (f.file ? f.fileUrl : null), // Expect S3 uploaded file URL in f.fileUrl
+        }));
+      }
 
-      if (!updatedNotice) return res.status(404).json({ success: false, message: "Notice not found" });
+      // Update in DB
+      const updatedNotice = await Notice.findByIdAndUpdate(id, updateData, {
+        new: true,
+        runValidators: true,
+      }).populate("createdBy", "name email employeeId");
 
-      return res.status(200).json({ success: true, message: "Notice updated successfully", data: updatedNotice });
+      if (!updatedNotice) {
+        return res
+          .status(404)
+          .json({ success: false, message: "Notice not found" });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Notice updated successfully",
+        data: updatedNotice,
+      });
     } catch (error) {
       console.error("Update Notice Error:", error);
-      return res.status(500).json({ success: false, message: "Update failed", error: error.message });
+      return res.status(500).json({
+        success: false,
+        message: "Update failed",
+        error: error.message,
+      });
     }
   }
-
   // ---------------- DELETE NOTICE ----------------
   async deleteNotice(req, res) {
     try {
       const id = req.params?.id || req.query?.id;
       if (!id || !mongoose.Types.ObjectId.isValid(id))
-        return res.status(400).json({ success: false, message: "Invalid notice ID" });
+        return res
+          .status(400)
+          .json({ success: false, message: "Invalid notice ID" });
 
       const notice = await Notice.findByIdAndDelete(id);
-      if (!notice) return res.status(404).json({ success: false, message: "Notice not found" });
+      if (!notice)
+        return res
+          .status(404)
+          .json({ success: false, message: "Notice not found" });
 
-      return res.status(200).json({ success: true, message: "Notice deleted successfully" });
+      return res
+        .status(200)
+        .json({ success: true, message: "Notice deleted successfully" });
     } catch (error) {
       console.error("Delete Notice Error:", error);
-      return res.status(500).json({ success: false, message: "Delete failed", error: error.message });
+      return res.status(500).json({
+        success: false,
+        message: "Delete failed",
+        error: error.message,
+      });
     }
   }
 }

@@ -33,6 +33,15 @@ import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import dayjs, { Dayjs } from "dayjs";
 
+// ---------------- UTIL IMPORTS ----------------
+import {
+  PendingFile,
+  generatePendingFiles,
+  uploadToS3,
+  notify as notifyUtil,
+  formatDayjs,
+} from "@/fe/pages/Notice/utils/noticeUtils";
+
 const categories = [
   "General Announcements",
   "Project Updates",
@@ -44,11 +53,13 @@ const categories = [
 
 const priorities = ["Urgent", "Important", "Info"];
 
-type PendingFile = { id: string; file: File; customName: string };
-
 type Props = { open: boolean; onClose: () => void; onNoticeAdded?: () => void };
 
-export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) {
+export default function AddNoticeModal({
+  open,
+  onClose,
+  onNoticeAdded,
+}: Props) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const quillRef = useRef<any>(null);
@@ -66,13 +77,18 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
   const [loading, setLoading] = useState(false);
   const [snackbarOpen, setSnackbarOpen] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState("");
-  const [snackbarSeverity, setSnackbarSeverity] = useState<"error" | "success">("error");
+  const [snackbarSeverity, setSnackbarSeverity] = useState<"error" | "success">(
+    "error",
+  );
   const [editorFocused, setEditorFocused] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const { hasAdminRole } = useAuth();
   const isAdmin = hasAdminRole();
   const isAVP = !isAdmin;
+
+  // ---------------- UTIL NOTIFY ----------------
+  const notify = notifyUtil(setSnackbarMsg, setSnackbarSeverity, setSnackbarOpen);
 
   /* ---------------- RESET ---------------- */
   const resetForm = () => {
@@ -116,7 +132,8 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
 
       const quillContent = quill.root;
       quillContent.style.fontSize = "1rem";
-      quillContent.style.fontFamily = '"Roboto", "Helvetica", "Arial", sans-serif';
+      quillContent.style.fontFamily =
+        '"Roboto", "Helvetica", "Arial", sans-serif';
       quillContent.style.padding = "8.5px 14px";
       quillContent.style.minHeight = "56px";
       quillContent.style.lineHeight = "1.4375em";
@@ -142,9 +159,18 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
   useEffect(() => {
     fetch("/api/v0/notice/meta")
       .then((res) => res.json())
-      .then((data) => setDepartments(data?.data?.departments || ["All"]))
-      .catch(() => setDepartments(["All"]));
-  }, []);
+      .then((data) => {
+        if (isAVP) {
+          setDepartments(["All", "Team"]);
+        } else {
+          setDepartments(data?.data?.departments || ["All"]);
+        }
+      })
+      .catch(() => {
+        if (isAVP) setDepartments(["All", "Team"]);
+        else setDepartments(["All"]);
+      });
+  }, [isAVP]);
 
   useEffect(() => {
     if (isAdmin) {
@@ -163,28 +189,8 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
   const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
-    setPendingFiles((prev) => [
-      ...prev,
-      ...files.map((f) => ({ id: `${f.name}-${Date.now()}`, file: f, customName: f.name.replace(/\.[^.]+$/, "") })),
-    ]);
+    setPendingFiles((prev) => [...prev, ...generatePendingFiles(files)]);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const uploadToS3 = async (file: File): Promise<string> => {
-    const res = await fetch("/api/v0/s3/upload-url", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ fileName: file.name, fileType: file.type }),
-    });
-    const data = await res.json();
-    await fetch(data.uploadUrl, { method: "PUT", headers: { "Content-Type": file.type }, body: file });
-    return data.fileUrl;
-  };
-
-  const notify = (msg: string, type: "error" | "success" = "error") => {
-    setSnackbarMsg(msg);
-    setSnackbarSeverity(type);
-    setSnackbarOpen(true);
   };
 
   /* ---------------- SUBMIT ---------------- */
@@ -208,19 +214,35 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
       setLoading(true);
 
       const uploadedAttachments = await Promise.all(
-        pendingFiles.map(async (p) => ({ url: await uploadToS3(p.file), filename: p.customName.trim() || p.file.name })),
+        pendingFiles.map(async (p) => ({
+          url: await uploadToS3(p.file),
+          filename: p.customName.trim() || p.file.name,
+        })),
       );
 
-      const payload: any = { title, description, category, priority, expiry: expiry ? dayjs(expiry).format("YYYY-MM-DD") : null, pinned, attachments: uploadedAttachments };
+      const payload: any = {
+        title,
+        description,
+        category,
+        priority,
+        expiry: formatDayjs(expiry),
+        pinned,
+        attachments: uploadedAttachments,
+      };
 
-      // Admin sends targetAVP, AVP sends departments
       if (isAdmin) {
-        payload.targetAVP = selectedDepartment === "All" ? null : selectedDepartment; // <-- FIXED to send _id
+        payload.targetAVP =
+          selectedDepartment !== "All" ? selectedDepartment : null;
+        payload.departments = ["All"];
       } else {
-        payload.departments = selectedDepartment;
+        payload.departments = [selectedDepartment];
       }
 
-      const res = await fetch("/api/v0/notice", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) });
+      const res = await fetch("/api/v0/notice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
       const result = await res.json();
 
       if (!result.success) throw new Error(result.message);
@@ -232,7 +254,9 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
     } catch (err: any) {
       if (err.inner) {
         const validationErrors: Record<string, string> = {};
-        err.inner.forEach((e: any) => { if (!validationErrors[e.path]) validationErrors[e.path] = e.message; });
+        err.inner.forEach((e: any) => {
+          if (!validationErrors[e.path]) validationErrors[e.path] = e.message;
+        });
         setErrors(validationErrors);
         return;
       }
@@ -242,7 +266,10 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
     }
   };
 
-  const handleClose = () => { resetForm(); onClose(); };
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
   if (!open) return null;
 
@@ -251,36 +278,69 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
       <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
         <DialogTitle>
           Create New Notice
-          <IconButton onClick={handleClose} className="!absolute !right-4 !top-4"><CloseIcon /></IconButton>
+          <IconButton
+            onClick={handleClose}
+            className="!absolute !right-4 !top-4"
+          >
+            <CloseIcon />
+          </IconButton>
         </DialogTitle>
 
         <DialogContent dividers>
           <Stack spacing={2}>
             {/* TITLE */}
-            <TextField label="Notice Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth size="small" error={!!errors.title} helperText={errors.title} />
+            <TextField
+              label="Notice Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              fullWidth
+              size="small"
+              error={!!errors.title}
+              helperText={errors.title}
+            />
 
             {/* DESCRIPTION */}
-            <FormControl fullWidth size="small" className={`!rounded-md !border ${editorFocused ? "!border-blue-500" : "!border-gray-300"}`}>
-              <InputLabel shrink={!!description || editorFocused} className="!bg-white !px-1">Notice Description</InputLabel>
+            <FormControl
+              fullWidth
+              size="small"
+              className={`!rounded-md !border ${
+                editorFocused ? "!border-blue-500" : "!border-gray-300"
+              }`}
+            >
+              <InputLabel shrink={!!description || editorFocused} className="!bg-white !px-1">
+                Notice Description
+              </InputLabel>
               <Box className="!rounded-md cursor-text" onClick={() => quillRef.current?.focus()}>
                 <div ref={editorRef} />
               </Box>
             </FormControl>
-            {errors.description && <Typography className="text-red-700 !mt3 !text-[13px] !ml-4">{errors.description}</Typography>}
+            {errors.description && (
+              <Typography className="text-red-700 !mt3 !text-[13px] !ml-4">
+                {errors.description}
+              </Typography>
+            )}
 
             {/* CATEGORY + PRIORITY */}
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth size="small">
                 <InputLabel>Category</InputLabel>
                 <Select value={category} label="Category" onChange={(e) => setCategory(e.target.value)}>
-                  {categories.map((c) => <MenuItem key={c} value={c}>{c}</MenuItem>)}
+                  {categories.map((c) => (
+                    <MenuItem key={c} value={c}>
+                      {c}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
 
               <FormControl fullWidth size="small">
                 <InputLabel>Priority</InputLabel>
                 <Select value={priority} label="Priority" onChange={(e) => setPriority(e.target.value)}>
-                  {priorities.map((p) => <MenuItem key={p} value={p}>{p}</MenuItem>)}
+                  {priorities.map((p) => (
+                    <MenuItem key={p} value={p}>
+                      {p}
+                    </MenuItem>
+                  ))}
                 </Select>
               </FormControl>
             </Stack>
@@ -294,49 +354,99 @@ export default function AddNoticeModal({ open, onClose, onNoticeAdded }: Props) 
                   value={selectedDepartment}
                   onChange={(e) => setSelectedDepartment(String(e.target.value))}
                   renderValue={(selected) => {
-                    if (selected === "All") return "All";
+                    if (!selected) return "Select...";
                     if (isAdmin) {
-                      const found = avps.find((a) => String(a._id) === selected);
+                      if (selected === "All") return "All";
+                      const found = avps.find((a) => a._id === selected);
                       return found?.name || "Select";
                     }
                     return selected;
                   }}
                 >
-                  <MenuItem value="All">All</MenuItem>
                   {isAdmin
-                    ? avps.map((a) => <MenuItem key={a._id} value={a._id}>{a.name}</MenuItem>)
-                    : departments.map((d) => <MenuItem key={d} value={d}>{d}</MenuItem>)}
+                    ? [
+                        <MenuItem key="All" value="All">
+                          All
+                        </MenuItem>,
+                        ...(Array.isArray(avps)
+                          ? avps.map((a) => (
+                              <MenuItem key={a._id} value={a._id}>
+                                {a.name}
+                              </MenuItem>
+                            ))
+                          : []),
+                      ]
+                    : Array.isArray(departments)
+                    ? departments.map((d) => (
+                        <MenuItem key={d} value={d}>
+                          {d}
+                        </MenuItem>
+                      ))
+                    : []}
                 </Select>
               </FormControl>
 
               <Box className="w-full">
-                <DatePicker label="Expiry Date" value={expiry} onChange={(val) => setExpiry(val)} slotProps={{ textField: { size: "small", fullWidth: true } }} />
+                <DatePicker
+                  label="Expiry Date"
+                  value={expiry}
+                  onChange={(val) => setExpiry(val)}
+                  slotProps={{ textField: { size: "small", fullWidth: true } }}
+                />
               </Box>
             </Stack>
 
             {/* ATTACHMENTS */}
             <Box className="flex flex-col gap-2">
               <Box className="flex items-center justify-between">
-                <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">ATTACHMENTS</Typography>
-                <Button startIcon={<UploadFileIcon />} onClick={() => fileInputRef.current?.click()} size="small" variant="text" className="!text-xs !font-semibold !text-blue-600 hover:!text-blue-800 !min-w-0">Add files</Button>
+                <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                  ATTACHMENTS
+                </Typography>
+                <Button
+                  startIcon={<UploadFileIcon />}
+                  onClick={() => fileInputRef.current?.click()}
+                  size="small"
+                  variant="text"
+                  className="!text-xs !font-semibold !text-blue-600 hover:!text-blue-800 !min-w-0"
+                >
+                  Add files
+                </Button>
               </Box>
               <input ref={fileInputRef} type="file" multiple hidden onChange={pickFiles} />
               {pendingFiles.map((p, i) => (
                 <Box key={p.id} className="flex items-center justify-between border border-gray-200 rounded px-3 py-2">
                   <Typography className="text-sm text-gray-700">{p.customName}</Typography>
-                  <Button size="small" color="error" className="!text-xs !min-w-0" onClick={() => setPendingFiles((prev) => prev.filter((_, index) => index !== i))}>Remove</Button>
+                  <Button
+                    size="small"
+                    color="error"
+                    className="!text-xs !min-w-0"
+                    onClick={() =>
+                      setPendingFiles((prev) => prev.filter((_, index) => index !== i))
+                    }
+                  >
+                    Remove
+                  </Button>
                 </Box>
               ))}
-              {!pendingFiles.length && <Typography className="text-sm text-gray-400">No attachments added</Typography>}
+              {!pendingFiles.length && (
+                <Typography className="text-sm text-gray-400">No attachments added</Typography>
+              )}
             </Box>
 
-            <FormControlLabel control={<Switch checked={pinned} onChange={(e) => setPinned(e.target.checked)} />} label="Pin this notice" />
+            <FormControlLabel
+              control={<Switch checked={pinned} onChange={(e) => setPinned(e.target.checked)} />}
+              label="Pin this notice"
+            />
           </Stack>
         </DialogContent>
 
         <DialogActions>
           <Button onClick={handleClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={loading} className="!bg-blue-600 !text-white hover:!bg-blue-700">
+          <Button
+            onClick={handleSubmit}
+            disabled={loading}
+            className="!bg-blue-600 !text-white hover:!bg-blue-700"
+          >
             {loading ? <CircularProgress size={20} className="text-white" /> : "Publish"}
           </Button>
         </DialogActions>

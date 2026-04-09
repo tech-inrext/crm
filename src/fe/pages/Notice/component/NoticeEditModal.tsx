@@ -12,16 +12,15 @@ import {
   Button,
   Stack,
   IconButton,
-  Divider,
   FormControl,
   InputLabel,
   Select,
   MenuItem,
-  CircularProgress,
   Switch,
   FormControlLabel,
   Box,
   Typography,
+  CircularProgress,
 } from "@mui/material";
 
 import CloseIcon from "@mui/icons-material/Close";
@@ -35,16 +34,27 @@ import { useNoticeMeta } from "../hooks/useNoticeMeta";
 import { useNoticeForm } from "../hooks/useNoticeForm";
 
 export default function NoticeEditDialog({ open, onClose, notice }: any) {
-  const { categories, priorities, loading, departments, avps } = useNoticeMeta();
+  const { categories, priorities, loading, departments, avps } =
+    useNoticeMeta();
   const { form, setForm } = useNoticeForm(notice);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [pendingFiles, setPendingFiles] = useState<any[]>(notice?.attachments || []);
+
+  // ------------------- FIXED -------------------
+  const [pendingFiles, setPendingFiles] = useState<any[]>(
+    (notice?.attachments || []).map((f, index) => ({
+      id: Date.now() + index,        // ✅ unique id for React key and removal
+      filename: f.filename || f.name,
+      url: f.url,
+      customName: f.filename || f.name,
+    })),
+  );
   const [selectedDepartment, setSelectedDepartment] = useState<any>(
-    notice?.departments || notice?.targetAVP || ""
+    notice?.departments || notice?.targetAVP || "",
   );
 
   const isAdmin = true; // Replace with actual role check if needed
+  // ------------------- END FIXED -------------------
 
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -52,28 +62,61 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
 
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
-    const files = Array.from(e.target.files).map((file) => ({
-      id: Math.random(),
+
+    // ------------------- FIXED -------------------
+    const files = Array.from(e.target.files).map((file, index) => ({
+      id: Date.now() + index, // ✅ unique ID
       file,
       customName: file.name,
     }));
     setPendingFiles((prev) => [...prev, ...files]);
+    // ------------------- END FIXED -------------------
   };
 
   const handleRemoveFile = (id: number) => {
     setPendingFiles((prev) => prev.filter((f) => f.id !== id));
   };
 
-  const handleUpdate = async () => {
-    await axios.put(`/api/v0/notice/${notice._id}`, {
-      ...form,
-      expiry: form.expiry ? form.expiry.toISOString() : null,
-      attachments: pendingFiles,
-      departments: selectedDepartment,
+  const uploadToS3 = async (file: File) => {
+    const res = await fetch("/api/v0/s3/upload-url", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ fileName: file.name, fileType: file.type }),
     });
+    const data = await res.json();
+    await fetch(data.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    return data.fileUrl;
+  };
 
-    onClose();
-    window.location.reload();
+  const handleUpdate = async () => {
+    try {
+      const updatedAttachments = await Promise.all(
+        pendingFiles.map(async (f) => {
+          if (f.file) {
+            const url = await uploadToS3(f.file);
+            return { filename: f.customName || f.file.name, url };
+          }
+          return { filename: f.customName || f.filename, url: f.url || "" };
+        }),
+      );
+
+      await axios.put(`/api/v0/notice/${notice._id}`, {
+        ...form,
+        expiry: form.expiry ? form.expiry.toISOString() : null,
+        attachments: updatedAttachments,
+        departments: selectedDepartment,
+      });
+
+      onClose();
+      window.location.reload();
+    } catch (err: any) {
+      console.error("Update failed:", err);
+      alert("Failed to update notice. Please try again.");
+    }
   };
 
   return (
@@ -99,14 +142,14 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
             />
 
             {/* DESCRIPTION */}
-            <FormControl fullWidth size="small" className="!rounded-md !border !border-gray-300">
-              <InputLabel shrink={!!form.description} className="!bg-white !px-1">
-                Notice Description
-              </InputLabel>
+            <FormControl fullWidth size="small">
+              <InputLabel shrink={!!form.description}>Notice Description</InputLabel>
               <Box className="!rounded-md cursor-text p-2">
                 <textarea
                   value={form.description}
-                  onChange={(e) => setForm({ ...form, description: e.target.value })}
+                  onChange={(e) =>
+                    setForm({ ...form, description: e.target.value })
+                  }
                   rows={5}
                   className="w-full border-none outline-none resize-none"
                 />
@@ -121,14 +164,17 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
                   name="category"
                   value={form.category || ""}
                   onChange={handleChange}
-                  label="Category"
                 >
                   {loading ? (
                     <MenuItem>
                       <CircularProgress size={20} />
                     </MenuItem>
                   ) : (
-                    categories.map((cat: any) => <MenuItem key={cat} value={cat}>{cat}</MenuItem>)
+                    categories.map((cat: any) => (
+                      <MenuItem key={cat} value={cat}>
+                        {cat}
+                      </MenuItem>
+                    ))
                   )}
                 </Select>
               </FormControl>
@@ -139,32 +185,41 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
                   name="priority"
                   value={form.priority || ""}
                   onChange={handleChange}
-                  label="Priority"
                 >
                   {loading ? (
                     <MenuItem>
                       <CircularProgress size={20} />
                     </MenuItem>
                   ) : (
-                    priorities.map((pri: any) => <MenuItem key={pri} value={pri}>{pri}</MenuItem>)
+                    priorities.map((pri: any) => (
+                      <MenuItem key={pri} value={pri}>
+                        {pri}
+                      </MenuItem>
+                    ))
                   )}
                 </Select>
               </FormControl>
             </Stack>
 
-            {/* DEPARTMENT + EXPIRY in one row */}
+            {/* DEPARTMENT + EXPIRY */}
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth size="small">
-                <InputLabel id="department-label">{isAdmin ? "Department" : "Departments"}</InputLabel>
+                <InputLabel>{isAdmin ? "Department" : "Departments"}</InputLabel>
                 <Select
-                  labelId="department-label"
                   value={selectedDepartment}
                   onChange={(e) => setSelectedDepartment(e.target.value)}
-                  size="small"
                 >
                   {isAdmin
-                    ? avps?.map((a) => <MenuItem key={a._id} value={a._id}>{a.name}</MenuItem>)
-                    : departments?.map((d) => <MenuItem key={d} value={d}>{d}</MenuItem>)}
+                    ? avps?.map((a) => (
+                        <MenuItem key={a._id} value={a._id}>
+                          {a.name}
+                        </MenuItem>
+                      ))
+                    : departments?.map((d) => (
+                        <MenuItem key={d} value={d}>
+                          {d}
+                        </MenuItem>
+                      ))}
                 </Select>
               </FormControl>
 
@@ -181,7 +236,9 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
               control={
                 <Switch
                   checked={form.pinned}
-                  onChange={(e) => setForm({ ...form, pinned: e.target.checked })}
+                  onChange={(e) =>
+                    setForm({ ...form, pinned: e.target.checked })
+                  }
                 />
               }
               label="Pin this notice"
@@ -198,27 +255,38 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
                   onClick={() => fileInputRef.current?.click()}
                   size="small"
                   variant="text"
-                  className="!text-xs !font-semibold !text-blue-600 hover:!text-blue-800 !min-w-0"
                 >
                   Add files
                 </Button>
               </Box>
-              <input ref={fileInputRef} type="file" multiple hidden onChange={handleFilePick} />
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                hidden
+                onChange={handleFilePick}
+              />
               {pendingFiles.map((p) => (
-                <Box key={p.id} className="flex items-center justify-between border border-gray-200 rounded px-3 py-2">
-                  <Typography className="text-sm text-gray-700">{p.customName || p.filename}</Typography>
+                <Box
+                  key={p.id} // ✅ unique key fixes removal
+                  className="flex items-center justify-between border border-gray-200 rounded px-3 py-2"
+                >
+                  <Typography className="text-sm text-gray-700">
+                    {p.customName || p.filename || (p.file && p.file.name)}
+                  </Typography>
                   <Button
                     size="small"
                     color="error"
-                    className="!text-xs !min-w-0"
-                    onClick={() => handleRemoveFile(p.id)}
+                    onClick={() => handleRemoveFile(p.id)} // ✅ remove only this file
                   >
                     Remove
                   </Button>
                 </Box>
               ))}
               {!pendingFiles.length && (
-                <Typography className="text-sm text-gray-400">No attachments added</Typography>
+                <Typography className="text-sm text-gray-400">
+                  No attachments added
+                </Typography>
               )}
             </Box>
           </Stack>

@@ -158,30 +158,9 @@ function NoticeBoardHeader({
                   ))}
                 </Select>
               </FormControl>
-
-              {/* Date */}
-
-              {/* <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  label="Select Date"
-                  value={date}
-                  onChange={handleDateChange}
-                  format="MM/DD/YYYY"
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      className: "bg-white w-full md:w-[150px]",
-                    },
-                  }}
-                />
-              </LocalizationProvider> */}
-
-              <IconButton>
-                {/* <FilterListIcon /> */}
+              <IconButton>     
               </IconButton>
-
-              {/* Add Notice Button */}
-
+              
               {isAdminOrAVP && (
                 <Button
                   variant="contained"
