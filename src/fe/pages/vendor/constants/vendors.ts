@@ -1,6 +1,11 @@
 export const USERS_API_BASE = "/api/v0/employee";
 export const ROLES_API_BASE = "/api/v0/role";
 export const DEPARTMENTS_API_BASE = "/api/v0/department";
+export const VENDOR_API_BASE = "/api/v0/employee";
+
+export const VENDOR_CACHE_KEYS = {
+  VENDORS: VENDOR_API_BASE,
+} as const;
 
 export const VENDORS_ROWS_PER_PAGE_OPTIONS = [5, 10, 15, 25] as const;
 export const DEFAULT_PAGE_SIZE = 10;
