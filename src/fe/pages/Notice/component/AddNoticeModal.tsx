@@ -381,24 +381,33 @@ export default function AddNoticeModal({
 
             {/* DEPARTMENTS / AVP */}
             <Stack direction="row" spacing={2}>
-              <FormControl fullWidth size="small">
+              <FormControl fullWidth size="small" variant="outlined">
                 <InputLabel id="department-label">
                   {isAdmin ? "Select AVP" : "Departments"}
                 </InputLabel>
+
                 <Select
                   labelId="department-label"
+                  label={isAdmin ? "Select AVP" : "Departments"} // ✅ IMPORTANT
                   value={selectedDepartment}
                   onChange={(e) =>
                     setSelectedDepartment(String(e.target.value))
                   }
+                  displayEmpty
+                  sx={{
+                    height: "40px", // ✅ Match TextField height
+                  }}
                   renderValue={(selected) => {
-                    if (!selected) return "Select...";
+                    if (!selected)
+                      return <span style={{ color: "#aaa" }}>Select...</span>;
+
                     if (isAdmin) {
                       if (selected === "All") return "All";
                       const found = avps.find((a) => a._id === selected);
                       return found?.name || "Select";
                     }
-                    return selected; // AVP sees All/Team
+
+                    return selected;
                   }}
                 >
                   {isAdmin
@@ -436,6 +445,7 @@ export default function AddNoticeModal({
 
             {/* ATTACHMENTS */}
             <Box className="flex flex-col gap-2">
+              {/* Header */}
               <Box className="flex items-center justify-between">
                 <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
                   ATTACHMENTS
@@ -450,36 +460,75 @@ export default function AddNoticeModal({
                   Add files
                 </Button>
               </Box>
+
+              {/* Allowed formats */}
+              <Typography className="!text-[15px] text-gray-400">
+                Supported formats: PDF, JPG, JPEG, PNG
+              </Typography>
+
+              {/* Hidden input */}
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
                 hidden
-                onChange={pickFiles}
-              />
-              {pendingFiles.map((p, i) => (
-                <Box
-                  key={p.id}
-                  className="flex items-center justify-between border border-gray-200 rounded px-3 py-2"
-                >
-                  <Typography className="text-sm text-gray-700">
-                    {p.customName}
-                  </Typography>
-                  <Button
-                    size="small"
-                    color="error"
-                    className="!text-xs !min-w-0"
-                    onClick={() =>
-                      setPendingFiles((prev) =>
-                        prev.filter((_, index) => index !== i),
-                      )
+                accept=".pdf,.jpg,.jpeg,.png"
+                onChange={(e) => {
+                  const files = Array.from(e.target.files ?? []);
+                  const allowedTypes = [
+                    "application/pdf",
+                    "image/jpeg",
+                    "image/png",
+                  ];
+                  const validFiles: typeof pendingFiles = [];
+
+                  files.forEach((file) => {
+                    if (allowedTypes.includes(file.type)) {
+                      validFiles.push({
+                        id: `${file.name}-${Date.now()}`,
+                        file,
+                        customName: file.name,
+                      });
+                    } else {
+                      alert(
+                        `Invalid file type: ${file.name}. Only PDF, JPG, JPEG, PNG allowed.`,
+                      );
                     }
+                  });
+
+                  if (validFiles.length) {
+                    setPendingFiles((prev) => [...prev, ...validFiles]);
+                  }
+
+                  if (fileInputRef.current) fileInputRef.current.value = "";
+                }}
+              />
+
+              {/* File list */}
+              {pendingFiles.length > 0 ? (
+                pendingFiles.map((p, i) => (
+                  <Box
+                    key={p.id}
+                    className="flex items-center justify-between border border-gray-200 rounded px-3 py-2"
                   >
-                    Remove
-                  </Button>
-                </Box>
-              ))}
-              {!pendingFiles.length && (
+                    <Typography className="text-sm text-gray-700">
+                      {p.customName}
+                    </Typography>
+                    <Button
+                      size="small"
+                      color="error"
+                      className="!text-xs !min-w-0"
+                      onClick={() =>
+                        setPendingFiles((prev) =>
+                          prev.filter((_, index) => index !== i),
+                        )
+                      }
+                    >
+                      Remove
+                    </Button>
+                  </Box>
+                ))
+              ) : (
                 <Typography className="text-sm text-gray-400">
                   No attachments added
                 </Typography>

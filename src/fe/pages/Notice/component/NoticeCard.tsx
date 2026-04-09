@@ -14,6 +14,11 @@ import {
   IconButton,
   Menu,
   MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
 
 import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
@@ -25,7 +30,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 import NoticePreviewModal from "../hooks/NoticePreviewModal";
 import { categoryColors } from "@/fe/pages/Notice/utils/noticeUtils";
 
-/* ✅ IMPORT AUTH */
+/* ✅ AUTH */
 import { useAuth } from "@/contexts/AuthContext";
 
 type Attachment = {
@@ -51,9 +56,11 @@ export default function NoticeCard({ notice }: { notice: Notice }) {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const openMenu = Boolean(anchorEl);
 
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
   const carouselRef = useRef<HTMLDivElement>(null);
 
-  /* ✅ ROLE CHECK START */
+  /* ✅ ROLE CHECK */
   const { user } = useAuth();
 
   const currentRoleName =
@@ -64,7 +71,6 @@ export default function NoticeCard({ notice }: { notice: Notice }) {
   const isAdminOrAVP =
     currentRoleName?.toLowerCase() === "admin" ||
     currentRoleName?.toLowerCase() === "avp";
-  /* ✅ ROLE CHECK END */
 
   const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
@@ -78,17 +84,21 @@ export default function NoticeCard({ notice }: { notice: Notice }) {
     setOpen(true);
   };
 
-  const handleDelete = async () => {
+  /* ✅ DELETE FLOW */
+  const handleDeleteClick = () => {
     handleMenuClose();
+    setDeleteOpen(true);
+  };
 
-    if (!window.confirm("Are you sure you want to delete this notice?")) return;
-
+  const confirmDelete = async () => {
     try {
       await axios.delete(`/api/v0/notice/${notice._id}`);
       alert("Notice deleted successfully");
       window.location.reload();
     } catch {
       alert("Delete failed");
+    } finally {
+      setDeleteOpen(false);
     }
   };
 
@@ -212,7 +222,6 @@ export default function NoticeCard({ notice }: { notice: Notice }) {
             }}
           />
 
-          {/* ✅ SHOW MENU ONLY FOR ADMIN / AVP */}
           {isAdminOrAVP && (
             <Box>
               <IconButton size="small" onClick={handleMenuOpen}>
@@ -230,7 +239,7 @@ export default function NoticeCard({ notice }: { notice: Notice }) {
                   Edit
                 </MenuItem>
 
-                <MenuItem onClick={handleDelete}>
+                <MenuItem onClick={handleDeleteClick}>
                   <DeleteIcon fontSize="small" className="mr-2" />
                   Delete
                 </MenuItem>
@@ -252,12 +261,42 @@ export default function NoticeCard({ notice }: { notice: Notice }) {
         </CardContent>
       </Card>
 
+      {/* PREVIEW MODAL */}
       <NoticePreviewModal
         open={open}
         onClose={() => setOpen(false)}
         notice={notice}
         editMode={true}
       />
+
+      {/* ✅ DELETE CONFIRM MODAL */}
+      <Dialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <DialogTitle>Delete Notice</DialogTitle>
+
+        <DialogContent>
+          <Typography>
+            Are you sure you want to delete this notice?
+          </Typography>
+        </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setDeleteOpen(false)}>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={confirmDelete}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
+      </Dialog>
     </>
   );
 }
