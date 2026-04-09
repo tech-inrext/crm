@@ -69,13 +69,13 @@ export default function NoticePreviewDialog({
 
   const handlePrev = () => {
     setSelectedIndex((prev) =>
-      prev === 0 ? imageAttachments.length - 1 : prev - 1
+      prev === 0 ? imageAttachments.length - 1 : prev - 1,
     );
   };
 
   const handleNext = () => {
     setSelectedIndex((prev) =>
-      prev === imageAttachments.length - 1 ? 0 : prev + 1
+      prev === imageAttachments.length - 1 ? 0 : prev + 1,
     );
   };
 
@@ -182,7 +182,7 @@ export default function NoticePreviewDialog({
                             className="cursor-pointer"
                             onClick={() => {
                               const index = imageAttachments.findIndex(
-                                (img: any) => img.url === att.url
+                                (img: any) => img.url === att.url,
                               );
                               handleImageClick(index);
                             }}
@@ -208,7 +208,11 @@ export default function NoticePreviewDialog({
                               </Typography>
                             </Stack>
 
-                            <Stack direction="row" spacing={1} className="!mt-2">
+                            <Stack
+                              direction="row"
+                              spacing={1}
+                              className="!mt-2"
+                            >
                               <Button
                                 size="small"
                                 variant="outlined"
@@ -253,8 +257,13 @@ export default function NoticePreviewDialog({
       </Dialog>
 
       {/* IMAGE PREVIEW */}
-      <Dialog open={previewOpen} onClose={() => setPreviewOpen(false)}>
-        <div className="relative bg-black flex items-center justify-center">
+      {/* IMAGE PREVIEW */}
+      <Dialog
+        open={previewOpen}
+        onClose={() => setPreviewOpen(false)}
+        maxWidth="xl"
+      >
+        <div className="relative bg-black flex flex-col items-center justify-center p-4">
           <IconButton
             onClick={() => setPreviewOpen(false)}
             className="!absolute !top-2 !right-2 !text-white"
@@ -265,7 +274,7 @@ export default function NoticePreviewDialog({
           {imageAttachments.length > 1 && (
             <IconButton
               onClick={handlePrev}
-              className="!absolute !left-2 !text-white"
+              className="!absolute !left-2 !top-1/2 !transform -translate-y-1/2 !text-white"
             >
               <ArrowBackIosNewIcon />
             </IconButton>
@@ -274,17 +283,38 @@ export default function NoticePreviewDialog({
           <img
             src={imageAttachments[selectedIndex]?.url || ""}
             alt="preview"
-            className="max-h-[80vh] max-w-[90vw] object-contain"
+            className="max-h-[80vh] max-w-[90vw] object-contain my-4"
           />
 
           {imageAttachments.length > 1 && (
             <IconButton
               onClick={handleNext}
-              className="!absolute !right-2 !text-white"
+              className="!absolute !right-2 !top-1/2 !transform -translate-y-1/2 !text-white"
             >
               <ArrowForwardIosIcon />
             </IconButton>
           )}
+
+          {/* ACTION BUTTONS */}
+          <Stack direction="row" spacing={2} className="mt-2">
+            <Button
+              variant="outlined"
+              color="primary"
+              target="_blank"
+              href={imageAttachments[selectedIndex]?.url}
+            >
+              Open
+            </Button>
+
+            <Button
+              variant="contained"
+              color="primary"
+              href={imageAttachments[selectedIndex]?.url}
+              download={imageAttachments[selectedIndex]?.filename}
+            >
+              Download
+            </Button>
+          </Stack>
         </div>
       </Dialog>
     </>

@@ -37,7 +37,7 @@ export default function NoticesDashboard() {
     setTotalItems,
     setPage,
     setRowsPerPage,
-  } = useNoticePagination(1, 6);
+  } = useNoticePagination(1, 8);
 
   useEffect(() => {
     setTotalItems(regularNotices.length);
