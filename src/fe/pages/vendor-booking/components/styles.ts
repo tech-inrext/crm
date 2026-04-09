@@ -57,3 +57,25 @@ export const skeletonBadgeSx: SxProps<Theme> = {
   borderRadius: 16,
   mt: 0.6,
 } as const;
+
+/**
+ * Shared MUI TextField sx prop used across vendor booking forms
+ */
+export const inputSx: SxProps<Theme> = {
+  bgcolor: "#fff",
+  borderRadius: 1,
+  "& .MuiInputBase-root": { minHeight: 40 },
+  "& .MuiInputBase-input": { py: 1, fontSize: "0.875rem" },
+  "& .MuiInputLabel-root": { fontSize: "0.875rem" },
+} as const;
+
+/**
+ * Section title styling for forms
+ */
+export const formSectionTitleSx: SxProps<Theme> = {
+  fontSize: "0.95rem",
+  fontWeight: 600,
+  color: "text.primary",
+  mb: 1.5,
+  mt: 1,
+} as const;
