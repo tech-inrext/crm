@@ -35,21 +35,34 @@ class CabVendorService extends Service {
 
       const {
         page = 1,
-        limit = 10,
+        limit, // Changed to let it be undefined if not provided
+        rowsPerPage, // Supported for compatibility with createApi
         status, // optional: "pending" or "pending,approved"
         from, // optional ISO date string
         to, // optional ISO date string
         sortBy = "createdAt",
         sortOrder = "desc",
+        search = "", // Added search parameter
       } = req.query;
 
       const currentPage = Math.max(1, parseInt(String(page), 10) || 1);
-      const itemsPerPage = Math.max(1, parseInt(String(limit), 10) || 10);
+      const itemsPerPage = Math.max(1, parseInt(String(limit || rowsPerPage), 10) || 10);
       const skip = (currentPage - 1) * itemsPerPage;
       const sort = { [sortBy]: sortOrder === "asc" ? 1 : -1 };
 
       // base filter: only this vendor's bookings
       const filter = { vendor: vendorObjectId };
+
+      // search filter (optional)
+      if (search) {
+        filter.$or = [
+          { bookingId: { $regex: search, $options: "i" } },
+          { clientName: { $regex: search, $options: "i" } },
+          { pickupPoint: { $regex: search, $options: "i" } },
+          { dropPoint: { $regex: search, $options: "i" } },
+          { notes: { $regex: search, $options: "i" } },
+        ];
+      }
 
       // status filter (optional)
       if (typeof status !== "undefined" && String(status).trim() !== "") {
