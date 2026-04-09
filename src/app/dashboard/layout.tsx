@@ -157,6 +157,10 @@ export default function DashboardLayout({
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
           if (!link.module) return true;
+
+          // Roles module only for system admins
+          if (link.module === "role") return Boolean(user.isSystemAdmin);
+
           const { hasReadAccess } = getPermissions(link.module);
           return hasReadAccess;
         })
@@ -207,6 +211,7 @@ export default function DashboardLayout({
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
             <Box
+              key={String(typeof user?.currentRole === "object" ? user?.currentRole?._id : user?.currentRole)}
               component="main"
               sx={{
                 flexGrow: 1,

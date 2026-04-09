@@ -9,8 +9,9 @@ import {
   Button,
   Grid,
 } from "@mui/material";
+import { useTheme, useMediaQuery } from "@mui/material";
 import { Edit, Close } from "@mui/icons-material";
-import { Property } from '@/services/propertyService';
+import { Property } from "@/services/propertyService";
 import { useAuth } from "@/contexts/AuthContext";
 
 // Import components
@@ -18,7 +19,6 @@ import PropertyHeader from "./components/PropertyHeader";
 import PropertyQuickActions from "./components/PropertyQuickActions";
 import PropertyContent from "./components/PropertyContent";
 import PropertyMediaSection from "./components/PropertyMediaSection";
-
 interface PropertyViewDialogProps {
   open: boolean;
   onClose: () => void;
@@ -46,19 +46,31 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
   onDownloadFile,
   onViewSubProperty,
 }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { getPermissions } = useAuth();
-  
+
   // State
   const [imageErrors, setImageErrors] = useState<Record<string, boolean>>({});
-  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>({});
+  const [loadingImages, setLoadingImages] = useState<Record<string, boolean>>(
+    {},
+  );
   const [primaryImageUrl, setPrimaryImageUrl] = useState<string | null>(null);
   const [primaryImageLoading, setPrimaryImageLoading] = useState(true);
   const [primaryImageError, setPrimaryImageError] = useState(false);
   const [tabValue, setTabValue] = useState(0);
-  const [fullscreenImageIndex, setFullscreenImageIndex] = useState<number | null>(null);
-  const [fullscreenVideoIndex, setFullscreenVideoIndex] = useState<number | null>(null);
-  const [fullscreenCreativeIndex, setFullscreenCreativeIndex] = useState<number | null>(null);
-  const [fullscreenBrochureIndex, setFullscreenBrochureIndex] = useState<number | null>(null);
+  const [fullscreenImageIndex, setFullscreenImageIndex] = useState<
+    number | null
+  >(null);
+  const [fullscreenVideoIndex, setFullscreenVideoIndex] = useState<
+    number | null
+  >(null);
+  const [fullscreenCreativeIndex, setFullscreenCreativeIndex] = useState<
+    number | null
+  >(null);
+  const [fullscreenBrochureIndex, setFullscreenBrochureIndex] = useState<
+    number | null
+  >(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // Check if user has write permission for property module
@@ -66,29 +78,30 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
 
   // Format image URL
   const formatImageUrl = (url: string): string => {
-    if (!url) return '';
-    
-    url = url.trim().replace(/^["']|["']$/g, '');
-    
-    if (url.startsWith('http://') || url.startsWith('https://')) {
+    if (!url) return "";
+
+    url = url.trim().replace(/^["']|["']$/g, "");
+
+    if (url.startsWith("http://") || url.startsWith("https://")) {
       return url;
     }
-    
-    if (url.startsWith('data:image')) {
+
+    if (url.startsWith("data:image")) {
       return url;
     }
-    
-    if (url.startsWith('/')) {
+
+    if (url.startsWith("/")) {
       return url;
     }
-    
+
     return url;
   };
 
   // Get primary image URL
   useEffect(() => {
     if (property?.images && property.images.length > 0) {
-      const primaryImage = property.images.find(img => img.isPrimary) || property.images[0];
+      const primaryImage =
+        property.images.find((img) => img.isPrimary) || property.images[0];
       if (primaryImage && primaryImage.url) {
         const formattedUrl = formatImageUrl(primaryImage.url);
         setPrimaryImageUrl(formattedUrl);
@@ -113,15 +126,15 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
 
   // Handle image load
   const handleImageLoad = (id: string) => {
-    setLoadingImages(prev => ({ ...prev, [id]: false }));
-    setImageErrors(prev => ({ ...prev, [id]: false }));
+    setLoadingImages((prev) => ({ ...prev, [id]: false }));
+    setImageErrors((prev) => ({ ...prev, [id]: false }));
   };
 
   // Handle image error
   const handleImageError = (id: string) => {
     console.error(`Failed to load image: ${id}`);
-    setLoadingImages(prev => ({ ...prev, [id]: false }));
-    setImageErrors(prev => ({ ...prev, [id]: true }));
+    setLoadingImages((prev) => ({ ...prev, [id]: false }));
+    setImageErrors((prev) => ({ ...prev, [id]: true }));
   };
 
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -160,49 +173,69 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
   // Navigation functions for fullscreen view
   const handleNextImage = () => {
     if (fullscreenImageIndex !== null && property?.images) {
-      setFullscreenImageIndex((fullscreenImageIndex + 1) % property.images.length);
+      setFullscreenImageIndex(
+        (fullscreenImageIndex + 1) % property.images.length,
+      );
     }
   };
 
   const handlePrevImage = () => {
     if (fullscreenImageIndex !== null && property?.images) {
-      setFullscreenImageIndex((fullscreenImageIndex - 1 + property.images.length) % property.images.length);
+      setFullscreenImageIndex(
+        (fullscreenImageIndex - 1 + property.images.length) %
+          property.images.length,
+      );
     }
   };
 
   const handleNextVideo = () => {
     if (fullscreenVideoIndex !== null && property?.videos) {
-      setFullscreenVideoIndex((fullscreenVideoIndex + 1) % property.videos.length);
+      setFullscreenVideoIndex(
+        (fullscreenVideoIndex + 1) % property.videos.length,
+      );
     }
   };
 
   const handlePrevVideo = () => {
     if (fullscreenVideoIndex !== null && property?.videos) {
-      setFullscreenVideoIndex((fullscreenVideoIndex - 1 + property.videos.length) % property.videos.length);
+      setFullscreenVideoIndex(
+        (fullscreenVideoIndex - 1 + property.videos.length) %
+          property.videos.length,
+      );
     }
   };
 
   const handleNextCreative = () => {
     if (fullscreenCreativeIndex !== null && property?.creatives) {
-      setFullscreenCreativeIndex((fullscreenCreativeIndex + 1) % property.creatives.length);
+      setFullscreenCreativeIndex(
+        (fullscreenCreativeIndex + 1) % property.creatives.length,
+      );
     }
   };
 
   const handlePrevCreative = () => {
     if (fullscreenCreativeIndex !== null && property?.creatives) {
-      setFullscreenCreativeIndex((fullscreenCreativeIndex - 1 + property.creatives.length) % property.creatives.length);
+      setFullscreenCreativeIndex(
+        (fullscreenCreativeIndex - 1 + property.creatives.length) %
+          property.creatives.length,
+      );
     }
   };
 
   const handleNextBrochure = () => {
     if (fullscreenBrochureIndex !== null && property?.brochureUrls) {
-      setFullscreenBrochureIndex((fullscreenBrochureIndex + 1) % property.brochureUrls.length);
+      setFullscreenBrochureIndex(
+        (fullscreenBrochureIndex + 1) % property.brochureUrls.length,
+      );
     }
   };
 
   const handlePrevBrochure = () => {
     if (fullscreenBrochureIndex !== null && property?.brochureUrls) {
-      setFullscreenBrochureIndex((fullscreenBrochureIndex - 1 + property.brochureUrls.length) % property.brochureUrls.length);
+      setFullscreenBrochureIndex(
+        (fullscreenBrochureIndex - 1 + property.brochureUrls.length) %
+          property.brochureUrls.length,
+      );
     }
   };
 
@@ -210,19 +243,16 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
 
   return (
     <>
-      <Dialog 
-        open={open} 
-        onClose={onClose} 
-        maxWidth="lg" 
+      <Dialog
+        open={open}
+        onClose={onClose}
+        maxWidth="lg"
         fullWidth
+        fullScreen={isMobile}
         scroll="paper"
-        sx={{
-          '& .MuiDialog-paper': {
-            borderRadius: 3,
-            overflow: 'hidden',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.5)',
-            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-          }
+        PaperProps={{
+          className:
+            "rounded-2xl overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] bg-[linear-gradient(135deg,#f8fafc_0%,#f1f5f9_100%)]",
         }}
       >
         <PropertyHeader
@@ -243,7 +273,7 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
 
           <Box sx={{ p: { xs: 2, md: 4 } }}>
             <Grid container spacing={4}>
-              <PropertyContent 
+              <PropertyContent
                 property={property}
                 onViewSubProperty={onViewSubProperty}
               />
@@ -271,50 +301,23 @@ const PropertyViewDialog: React.FC<PropertyViewDialogProps> = ({
           </Box>
         </DialogContent>
 
-        <DialogActions sx={{ 
-          py: 2,
-          px: {xs: 2, md: 3}, 
-          borderTop: '1px solid #e2e8f0', 
-          background: 'linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)',
-          gap: 2
-        }}>
-          <Button 
+        <DialogActions className="py-2 px-2 md:px-3 border-t border-[#e2e8f0] bg-gradient-to-br from-white to-[#f8fafc] gap-2">
+          <Button
             onClick={onClose}
             variant="outlined"
-            sx={{ 
-              borderRadius: 3, 
-              fontWeight: 600,
-              px: {xs: 1, md: 4}, 
-              py: 1,
-              borderWidth: 2,
-              '&:hover': {
-                borderWidth: 2
-              }
-            }}
+            className="rounded-lg font-semibold px-1 md:px-4 py-1 border-2 hover:border-2"
           >
             Close
           </Button>
           {canEditProperty && (
-            <Button 
-              onClick={() => { 
-                onClose(); 
-                onEdit(property); 
-              }} 
-              variant="contained" 
-              startIcon={<Edit />}
-              sx={{ 
-                borderRadius: 3, 
-                fontWeight: 600,
-                px: {xs: 1, md: 4},        
-                py: 1,
-                background: 'linear-gradient(135deg, #1976d2 0%, #1565c0 100%)',
-                boxShadow: '0 4px 15px rgba(25, 118, 210, 0.3)',
-                '&:hover': {
-                  boxShadow: '0 6px 20px rgba(25, 118, 210, 0.4)',
-                  transform: 'translateY(-1px)'
-                },
-                transition: 'all 0.2s ease'
+            <Button
+              onClick={() => {
+                onClose();
+                onEdit(property);
               }}
+              variant="contained"
+              startIcon={<Edit />}
+              className="rounded-lg font-semibold px-1 md:px-4 py-1 bg-gradient-to-br from-[#1976d2] to-[#1565c0] shadow-[0_4px_15px_rgba(25,118,210,0.3)] transition-all duration-200 ease-in-out hover:shadow-[0_6px_20px_rgba(25,118,210,0.4)] hover:-translate-y-[1px]"
             >
               Edit Property
             </Button>
