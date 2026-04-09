@@ -30,6 +30,11 @@ const VendorBookingPage: React.FC = () => {
     removeCabBookingQuery,
     markHandledFor,
     setUrlHandled,
+    search,
+    debouncedSearch,
+    handleSearchChange,
+    statusFilter,
+    handleStatusChange,
   } = useVendorBookingPage();
 
   const { mutate: doUpdateFields } = useUpdateBookingFieldsMutation();
@@ -109,7 +114,12 @@ const VendorBookingPage: React.FC = () => {
   return (
     <PermissionGuard module="cab-vendor" action="read">
       <Box sx={{ p: { xs: 2, sm: 3 }, minHeight: "100vh" }}>
-        <VendorBookingActionBar />
+        <VendorBookingActionBar
+          search={search}
+          onSearchChange={handleSearchChange}
+          statusFilter={statusFilter}
+          onStatusChange={handleStatusChange}
+        />
 
         <Box sx={{ mt: 2 }}>
           <VendorBookingsList
@@ -117,6 +127,8 @@ const VendorBookingPage: React.FC = () => {
             onOpenForm={openForm}
             canWrite={canWriteVendorBookings}
             onReady={setRefetch}
+            search={debouncedSearch}
+            statusFilter={statusFilter}
           />
         </Box>
 

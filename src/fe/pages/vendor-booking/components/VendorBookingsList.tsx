@@ -15,6 +15,8 @@ interface VendorBookingsListProps {
   canWrite: boolean;
   /** Call to get a refetch function back to the parent for post-submit refresh */
   onReady?: (refetch: () => void) => void;
+  search?: string;
+  statusFilter?: string;
 }
 
 const VendorBookingsList: React.FC<VendorBookingsListProps> = ({
@@ -22,6 +24,8 @@ const VendorBookingsList: React.FC<VendorBookingsListProps> = ({
   onOpenForm,
   canWrite,
   onReady,
+  search,
+  statusFilter,
 }) => {
   const {
     items,
@@ -33,7 +37,12 @@ const VendorBookingsList: React.FC<VendorBookingsListProps> = ({
     refetch,
     setPage,
     setPageSize,
-  } = useGetVendorBookingsQuery({});
+  } = useGetVendorBookingsQuery({ search, status: statusFilter === "all" ? undefined : statusFilter });
+
+  // Reset to first page when search or statusFilter changes
+  useEffect(() => {
+    setPage(1);
+  }, [search, statusFilter, setPage]);
 
   // Expose refetch to parent so it can refresh after form submit
   useEffect(() => {

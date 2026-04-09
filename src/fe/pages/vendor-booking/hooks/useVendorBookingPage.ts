@@ -1,6 +1,8 @@
 import { useState, useCallback, useEffect, useRef } from "react";
 import { VendorBooking } from "../types";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDebounce } from "@/hooks/useDebounce";
+import { SEARCH_DEBOUNCE_DELAY } from "../constants";
 
 export function useVendorBookingPage() {
   const { getPermissions } = useAuth();
@@ -10,6 +12,23 @@ export function useVendorBookingPage() {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [activeBookingId, setActiveBookingId] = useState<string | null>(null);
+
+  // ---------- Search ----------
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, SEARCH_DEBOUNCE_DELAY);
+
+  const [statusFilter, setStatusFilter] = useState<string>("all");
+
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setSearch(e.target.value);
+    },
+    [],
+  );
+
+  const handleStatusChange = useCallback((status: string) => {
+    setStatusFilter(status);
+  }, []);
 
   // Holds refetch fn exposed by VendorBookingsList
   const refetchRef = useRef<(() => void) | null>(null);
@@ -115,6 +134,12 @@ export function useVendorBookingPage() {
     triggerRefetch: () => refetchRef.current?.(),
     removeCabBookingQuery,
     markHandledFor,
-    setUrlHandled
+    setUrlHandled,
+    // Search
+    search,
+    debouncedSearch,
+    handleSearchChange,
+    statusFilter,
+    handleStatusChange,
   };
 }
