@@ -3,10 +3,11 @@
 import React, { useEffect } from "react";
 import { VendorBooking } from "../types";
 import { useGetVendorBookingsQuery } from "../vendorBookingApi";
-import { invalidateQueryCache, VENDOR_BOOKING_API_BASE } from "../constants";
 import VendorBookingCard from "./VendorBookingCard";
 import Pagination from "@/components/ui/Navigation/Pagination";
-import { Typography } from "@/components/ui/Component";
+import { Typography, Box } from "@/components/ui/Component";
+import VendorBookingsSkeleton from "./VendorBookingsSkeleton";
+import * as styles from "./styles";
 
 interface VendorBookingsListProps {
   onViewDetails: (booking: VendorBooking) => void;
@@ -37,20 +38,30 @@ const VendorBookingsList: React.FC<VendorBookingsListProps> = ({
   // Expose refetch to parent so it can refresh after form submit
   useEffect(() => {
     onReady?.(refetch);
-  }, [refetch]);
+  }, [refetch, onReady]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return <VendorBookingsSkeleton count={rowsPerPage || 6} />;
+
   if (error)
     return (
-      <Typography color="error" sx={{ mt: 2, textAlign: "center" }}>
-        Failed to load bookings.
+      <Typography color="error" sx={{ mt: 4, textAlign: "center" }}>
+        Failed to load bookings. Please try again later.
       </Typography>
     );
-  if (!items.length) return <div>No vendor bookings found.</div>;
+
+  if (!items.length) {
+    return (
+      <Box sx={styles.emptyStateContainerSx}>
+        <Typography variant="h6" color="text.secondary">
+          No vendor bookings found.
+        </Typography>
+      </Box>
+    );
+  }
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <Box sx={styles.bookingGridSx}>
         {items.map((booking: VendorBooking) => (
           <VendorBookingCard
             key={booking._id}
@@ -60,8 +71,8 @@ const VendorBookingsList: React.FC<VendorBookingsListProps> = ({
             onOpenForm={onOpenForm}
           />
         ))}
-      </div>
-      <div className="flex justify-center mt-4">
+      </Box>
+      <Box className="flex justify-center mt-8">
         <Pagination
           page={page}
           pageSize={rowsPerPage}
@@ -71,9 +82,9 @@ const VendorBookingsList: React.FC<VendorBookingsListProps> = ({
             setPage(1);
             setPageSize(size);
           }}
-          pageSizeOptions={[6, 12, 24]}
+          pageSizeOptions={[6, 12, 18, 24]}
         />
-      </div>
+      </Box>
     </>
   );
 };

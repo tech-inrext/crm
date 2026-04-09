@@ -1,43 +1,19 @@
 "use client";
 
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback } from "react";
 import { Box, Dialog, DialogContent } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
-import { useAuth } from "@/contexts/AuthContext";
 import VendorBookingForm from "./components/VendorBookingForm";
 import BookingDetailsDialog from "@/components/cab-booking/BookingDetailsDialog";
 import { useUpdateBookingFieldsMutation } from "./vendorBookingApi";
 import { invalidateQueryCache, VENDOR_BOOKING_API_BASE } from "./constants";
 import { useVendorBookingPage } from "./hooks/useVendorBookingPage";
-import VendorBookingPageHeader from "./components/VendorBookingPageHeader";
+import VendorBookingActionBar from "./components/VendorBookingActionBar";
 import VendorBookingsList from "./components/VendorBookingsList";
 import { VendorBooking } from "./types";
-
-/** Upload a single File to S3 via the presigned-URL endpoint */
-async function uploadFileToS3(file: File): Promise<{ fileUrl: string }> {
-  const presignRes = await fetch("/api/v0/s3/upload-url", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ fileName: file.name, fileType: file.type }),
-  });
-  if (!presignRes.ok) {
-    const txt = await presignRes.text().catch(() => "");
-    throw new Error(`Failed to get upload URL: ${presignRes.status} ${txt}`);
-  }
-  const { uploadUrl, fileUrl } = await presignRes.json();
-  if (!uploadUrl || !fileUrl) throw new Error("Invalid presign response");
-
-  const uploadRes = await fetch(uploadUrl, {
-    method: "PUT",
-    headers: { "Content-Type": file.type },
-    body: file,
-  });
-  if (!uploadRes.ok) throw new Error(`S3 upload failed: ${uploadRes.status}`);
-  return { fileUrl };
-}
+import { uploadFileToS3 } from "./utils/s3";
 
 const VendorBookingPage: React.FC = () => {
-  const { getPermissions } = useAuth();
   const {
     selectedBooking,
     setSelectedBooking,
@@ -48,73 +24,15 @@ const VendorBookingPage: React.FC = () => {
     closeDetails,
     openForm,
     closeForm,
+    canWriteVendorBookings,
+    setRefetch,
+    triggerRefetch,
+    removeCabBookingQuery,
+    markHandledFor,
+    setUrlHandled,
   } = useVendorBookingPage();
 
   const { mutate: doUpdateFields } = useUpdateBookingFieldsMutation();
-  const canWriteVendorBookings = getPermissions("cab-vendor").hasWriteAccess;
-
-  // Holds refetch fn exposed by VendorBookingsList
-  const refetchRef = useRef<(() => void) | null>(null);
-
-  // ---------- Deep-link: ?cabBooking=1&bookingId=... ----------
-  const [urlHandled, setUrlHandled] = useState(false);
-
-  const handledKey = (id: string) => `vendorBookingHandled_${id}`;
-  const isHandledFor = useCallback((id: string | null) => {
-    if (!id || typeof window === "undefined") return false;
-    try {
-      return Boolean(sessionStorage.getItem(handledKey(id)));
-    } catch {
-      return false;
-    }
-  }, []);
-  const markHandledFor = useCallback((id: string | null) => {
-    if (!id || typeof window === "undefined") return;
-    try {
-      sessionStorage.setItem(handledKey(id!), "1");
-    } catch {}
-  }, []);
-
-  useEffect(() => {
-    if (typeof window === "undefined" || urlHandled) return;
-    const params = new URLSearchParams(window.location.search);
-    if (params.get("cabBooking") !== "1") return;
-    const bId = params.get("bookingId");
-    if (!bId || isHandledFor(bId)) {
-      setUrlHandled(true);
-      return;
-    }
-
-    fetch(`/api/v0/cab-booking/${bId}`, { credentials: "include" })
-      .then((r) => r.json())
-      .then((res) => {
-        const booking: VendorBooking = res?.data || res;
-        if (!booking?._id) return;
-        setUrlHandled(true);
-        markHandledFor(bId);
-        if (booking.status === "active" && canWriteVendorBookings) {
-          openForm(booking._id, booking);
-        } else {
-          openDetails(booking);
-        }
-      })
-      .catch(() => setUrlHandled(true));
-  }, [
-    urlHandled,
-    isHandledFor,
-    markHandledFor,
-    openForm,
-    openDetails,
-    canWriteVendorBookings,
-  ]);
-
-  const removeCabBookingQuery = () => {
-    if (typeof window === "undefined") return;
-    const url = new URL(window.location.href);
-    url.searchParams.delete("cabBooking");
-    url.searchParams.delete("bookingId");
-    window.history.replaceState({}, document.title, url.toString());
-  };
 
   // ---------- Form submit ----------
   const handleVendorFormSubmit = useCallback(
@@ -149,7 +67,7 @@ const VendorBookingPage: React.FC = () => {
 
       await doUpdateFields(
         { id: activeBookingId, ...payload },
-        (responseData: any) => {
+        () => {
           // Show updated booking in details dialog
           const updated = { ...(selectedBooking || {}), ...payload };
           setSelectedBooking(updated as VendorBooking);
@@ -158,7 +76,7 @@ const VendorBookingPage: React.FC = () => {
 
           // Bust cache and refetch list
           invalidateQueryCache(VENDOR_BOOKING_API_BASE);
-          refetchRef.current?.();
+          triggerRefetch();
         },
       );
     },
@@ -170,6 +88,7 @@ const VendorBookingPage: React.FC = () => {
       closeForm,
       openDetails,
       setSelectedBooking,
+      triggerRefetch,
     ],
   );
 
@@ -190,16 +109,14 @@ const VendorBookingPage: React.FC = () => {
   return (
     <PermissionGuard module="cab-vendor" action="read">
       <Box sx={{ p: { xs: 2, sm: 3 }, minHeight: "100vh" }}>
-        <VendorBookingPageHeader />
+        <VendorBookingActionBar />
 
         <Box sx={{ mt: 2 }}>
           <VendorBookingsList
             onViewDetails={openDetails}
             onOpenForm={openForm}
             canWrite={canWriteVendorBookings}
-            onReady={(refetch) => {
-              refetchRef.current = refetch;
-            }}
+            onReady={setRefetch}
           />
         </Box>
 
@@ -210,7 +127,7 @@ const VendorBookingPage: React.FC = () => {
             fullWidth
             maxWidth="sm"
           >
-            <DialogContent>
+            <DialogContent sx={{ p: 0 }}>
               <VendorBookingForm
                 bookingId={activeBookingId}
                 onClose={handleCloseForm}

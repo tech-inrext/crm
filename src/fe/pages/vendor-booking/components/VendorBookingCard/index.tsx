@@ -1,8 +1,10 @@
 "use client";
 
 import React from "react";
-import { VendorBooking } from "../types";
+import { VendorBooking } from "../../types";
 import BookingCard from "@/components/cab-booking/BookingCard";
+import { Box, Button } from "@/components/ui/Component";
+import * as styles from "./styles";
 
 interface VendorBookingCardProps {
   booking: VendorBooking;
@@ -18,7 +20,7 @@ const VendorBookingCard: React.FC<VendorBookingCardProps> = ({
   onOpenForm,
 }) => {
   return (
-    <div className="relative">
+    <Box sx={styles.cardContainerSx}>
       <BookingCard
         booking={booking as any}
         onViewDetails={onViewDetails as any}
@@ -26,16 +28,21 @@ const VendorBookingCard: React.FC<VendorBookingCardProps> = ({
 
       {/* "Fill Form" button — only shown to vendor when booking is active */}
       {canWrite && booking.status === "active" && (
-        <div className="absolute top-4 right-4">
-          <button
-            className="px-3 py-1 bg-blue-100 text-blue-900 rounded shadow border border-blue-300 text-sm"
-            onClick={() => onOpenForm(booking._id, booking)}
+        <Box sx={styles.fillFormButtonContainerSx} className="fill-form-btn">
+          <Button
+            variant="outlined"
+            size="small"
+            sx={styles.fillFormButtonSx}
+            onClick={(e) => {
+              e.stopPropagation();
+              onOpenForm(booking._id, booking);
+            }}
           >
             Fill Form
-          </button>
-        </div>
+          </Button>
+        </Box>
       )}
-    </div>
+    </Box>
   );
 };
 

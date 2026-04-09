@@ -1,10 +1,17 @@
 "use client";
 
 import React from "react";
-import { useAuth } from "@/contexts/AuthContext";
 import VendorFormFields from "./VendorFormFields";
 import { Formik, Form } from "formik";
 import * as Yup from "yup";
+import { 
+  Box, 
+  Typography, 
+  Button, 
+  IconButton, 
+  CloseIcon,
+  Divider
+} from "@/components/ui/Component";
 
 interface VendorBookingFormProps {
   disabled?: boolean;
@@ -19,19 +26,11 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({
   onSubmit,
   onClose,
 }) => {
-  const { getCurrentRoleName } = useAuth();
-  const isVendor = getCurrentRoleName() === "vendor";
-
-  const inputClass = "w-full p-2 border border-gray-300 rounded-md";
-
   const validationSchema = Yup.object()
     .shape({
       cabOwner: Yup.string()
         .trim()
-        .min(
-          3,
-          "Please provide the cab owner's full name (minimum 3 characters)."
-        )
+        .min(3, "Please provide the cab owner's full name (minimum 3 characters).")
         .required("Cab owner's name is required."),
       driverName: Yup.string()
         .trim()
@@ -99,13 +98,25 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({
   };
 
   return (
-    <div className="p-6">
-      <h1 className="text-2xl font-bold mb-6">Cab Vendor Details</h1>
-      {bookingId && (
-        <div className="mb-4 text-sm text-gray-600">
-          <b>Booking ID:</b> {bookingId}
-        </div>
-      )}
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100%" }}>
+      {/* Header */}
+      <Box sx={{ px: 3, py: 2, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+        <Box>
+          <Typography variant="h6" fontWeight={700}>
+            Cab Vendor Details
+          </Typography>
+          {bookingId && (
+            <Typography variant="caption" color="text.secondary">
+              Booking ID: {bookingId}
+            </Typography>
+          )}
+        </Box>
+        <IconButton onClick={onClose} size="small" disabled={disabled}>
+          <CloseIcon fontSize="small" />
+        </IconButton>
+      </Box>
+      
+      <Divider />
 
       <Formik
         initialValues={initialValues}
@@ -168,20 +179,6 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({
       >
         {({ values }) => {
           const totalKm = (() => {
-            const isNumericString = (v: any) =>
-              typeof v === "string" &&
-              v.trim() !== "" &&
-              !Number.isNaN(Number(v));
-
-            if (
-              isNumericString(values.odometerStart) &&
-              isNumericString(values.odometerEnd)
-            ) {
-              return Math.max(
-                Number(values.odometerEnd) - Number(values.odometerStart),
-                0
-              );
-            }
             if (values.startKm !== "" && values.endKm !== "") {
               return Math.max(Number(values.endKm) - Number(values.startKm), 0);
             }
@@ -189,35 +186,37 @@ const VendorBookingForm: React.FC<VendorBookingFormProps> = ({
           })();
 
           return (
-            <Form className="space-y-4">
-              <VendorFormFields
-                disabled={disabled}
-                inputClass={inputClass}
-                totalKm={totalKm}
-              />
-
-              <div className="mt-6 flex gap-2 justify-end">
-                <button
-                  type="button"
+            <Form>
+              <Box sx={{ px: 3, py: 3, maxHeight: "calc(90vh - 120px)", overflowY: "auto" }}>
+                <VendorFormFields
                   disabled={disabled}
-                  className="px-4 py-2 border border-gray-300 rounded-md bg-white text-gray-700 hover:bg-gray-100 disabled:opacity-50"
+                  totalKm={totalKm}
+                />
+              </Box>
+
+              <Divider />
+
+              <Box sx={{ px: 3, py: 2, display: "flex", gap: 2, justifyContent: "flex-end" }}>
+                <Button
+                  variant="outlined"
                   onClick={onClose}
+                  disabled={disabled}
                 >
                   Cancel
-                </button>
-                <button
+                </Button>
+                <Button
                   type="submit"
+                  variant="contained"
                   disabled={disabled}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
                 >
                   Submit Form
-                </button>
-              </div>
+                </Button>
+              </Box>
             </Form>
           );
         }}
       </Formik>
-    </div>
+    </Box>
   );
 };
 

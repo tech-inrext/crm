@@ -1,4 +1,4 @@
-import createApi from "@/fe/hooks/createApi";
+import createApi from "@/fe/framework/hooks/createApi";
 import { VENDOR_BOOKING_API_BASE, CAB_BOOKING_PATCH_BASE } from "./constants";
 
 const vendorBookingApi = createApi({

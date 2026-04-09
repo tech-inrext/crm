@@ -3,6 +3,13 @@
 import React, { useState } from "react";
 import { useFormikContext } from "formik";
 import Image from "next/image";
+import { 
+  TextField, 
+  Box, 
+  Typography, 
+  Grid,
+  Button
+} from "@/components/ui/Component";
 
 interface Values {
   cabOwner: string;
@@ -20,14 +27,11 @@ interface Values {
 
 interface Props {
   disabled?: boolean;
-  inputClass: string;
-
   totalKm?: number | string;
 }
 
 const VendorFormFields: React.FC<Props> = ({
   disabled,
-  inputClass,
   totalKm,
 }) => {
   const {
@@ -40,373 +44,263 @@ const VendorFormFields: React.FC<Props> = ({
     setFieldTouched,
   } = useFormikContext<Values>();
 
-  // Local file error state to ensure immediate visibility
-  const [odometerStartLocalError, setOdometerStartLocalError] = useState<
-    string | null
-  >(null);
-  const [odometerEndLocalError, setOdometerEndLocalError] = useState<
-    string | null
-  >(null);
+  const [odometerStartLocalError, setOdometerStartLocalError] = useState<string | null>(null);
+  const [odometerEndLocalError, setOdometerEndLocalError] = useState<string | null>(null);
 
   const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1 MB
 
-  const shouldShowError = (name: keyof Values) => {
-    const val = (values as any)[name];
-    const t = (touched as any)[name];
-    const hasStartedTyping = val !== undefined && val !== null && val !== "";
-    return !!(t || hasStartedTyping);
+  const handleFileChange = (name: "odometerStart" | "odometerEnd", file: File | null) => {
+    const setError = name === "odometerStart" ? setOdometerStartLocalError : setOdometerEndLocalError;
+    setFieldTouched(name, true, false);
+    
+    if (file) {
+      if (file.size > MAX_FILE_SIZE) {
+        setFieldValue(name, null);
+        setFieldError(name, "File size must be 1 MB or smaller.");
+        setError("File size must be 1 MB or smaller.");
+      } else {
+        setFieldValue(name, file);
+        setFieldError(name, undefined as any);
+        setError(null);
+      }
+    } else {
+      setFieldValue(name, null);
+      setFieldError(name, undefined as any);
+      setError(null);
+    }
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      {/* Cab Owner */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">
-          Cab Owner Name *
-        </label>
-        <input
-          type="text"
+    <Grid container spacing={3}>
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="Cab Owner Name"
           name="cabOwner"
           value={values.cabOwner}
-          onChange={(e) => {
-            setFieldTouched("cabOwner", true, false);
-            handleChange(e);
-          }}
+          onChange={handleChange}
+          onBlur={() => setFieldTouched("cabOwner", true)}
+          error={touched.cabOwner && !!errors.cabOwner}
+          helperText={touched.cabOwner && errors.cabOwner}
           disabled={disabled}
-          className={inputClass}
+          required
         />
-        {shouldShowError("cabOwner") && errors.cabOwner && (
-          <p className="mt-1 text-sm text-red-600">{errors.cabOwner}</p>
-        )}
-      </div>
+      </Grid>
 
-      {/* Driver Name */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">Driver Name *</label>
-        <input
-          type="text"
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="Driver Name"
           name="driverName"
           value={values.driverName}
-          onChange={(e) => {
-            setFieldTouched("driverName", true, false);
-            handleChange(e);
-          }}
+          onChange={handleChange}
+          onBlur={() => setFieldTouched("driverName", true)}
+          error={touched.driverName && !!errors.driverName}
+          helperText={touched.driverName && errors.driverName}
           disabled={disabled}
-          className={inputClass}
+          required
         />
-        {shouldShowError("driverName") && errors.driverName && (
-          <p className="mt-1 text-sm text-red-600">{errors.driverName}</p>
-        )}
-      </div>
+      </Grid>
 
-      {/* Aadhar Number (optional) */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">
-          Aadhar Number (Driver)
-        </label>
-        <input
-          type="text"
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="Aadhar Number (Driver)"
           name="aadharNumber"
-          value={values.aadharNumber as string}
-          onChange={(e) => {
-            setFieldTouched("aadharNumber", true, false);
-            setFieldValue(
-              "aadharNumber",
-              String(e.target.value).replace(/\D/g, ""),
-            );
-          }}
+          value={values.aadharNumber}
+          onChange={(e) => setFieldValue("aadharNumber", e.target.value.replace(/\D/g, ""))}
+          onBlur={() => setFieldTouched("aadharNumber", true)}
+          error={touched.aadharNumber && !!errors.aadharNumber}
+          helperText={touched.aadharNumber && errors.aadharNumber}
           disabled={disabled}
-          className={inputClass}
         />
-        {shouldShowError("aadharNumber") && errors.aadharNumber && (
-          <p className="mt-1 text-sm text-red-600">{errors.aadharNumber}</p>
-        )}
-      </div>
+      </Grid>
 
-      {/* DL Number (optional) */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">
-          DL Number (Driver)
-        </label>
-        <input
-          type="text"
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="DL Number (Driver)"
           name="dlNumber"
-          value={values.dlNumber as string}
-          onChange={(e) => {
-            setFieldTouched("dlNumber", true, false);
-            handleChange(e);
-          }}
+          value={values.dlNumber}
+          onChange={handleChange}
+          onBlur={() => setFieldTouched("dlNumber", true)}
+          error={touched.dlNumber && !!errors.dlNumber}
+          helperText={touched.dlNumber && errors.dlNumber}
           disabled={disabled}
-          className={inputClass}
         />
-        {shouldShowError("dlNumber") && errors.dlNumber && (
-          <p className="mt-1 text-sm text-red-600">{errors.dlNumber}</p>
-        )}
-      </div>
+      </Grid>
 
-      {/* Pickup Point */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">Pickup Point *</label>
-        <input
-          type="text"
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="Pickup Point"
           name="pickupPoint"
           value={values.pickupPoint}
-          onChange={(e) => {
-            setFieldTouched("pickupPoint", true, false);
-            handleChange(e);
-          }}
+          onChange={handleChange}
+          onBlur={() => setFieldTouched("pickupPoint", true)}
+          error={touched.pickupPoint && !!errors.pickupPoint}
+          helperText={touched.pickupPoint && errors.pickupPoint}
           disabled={disabled}
-          className={inputClass}
+          required
         />
-        {shouldShowError("pickupPoint") && errors.pickupPoint && (
-          <p className="mt-1 text-sm text-red-600">{errors.pickupPoint}</p>
-        )}
-      </div>
+      </Grid>
 
-      {/* Drop Point */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">Drop Point *</label>
-        <input
-          type="text"
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="Drop Point"
           name="dropPoint"
           value={values.dropPoint}
-          onChange={(e) => {
-            setFieldTouched("dropPoint", true, false);
-            handleChange(e);
-          }}
+          onChange={handleChange}
+          onBlur={() => setFieldTouched("dropPoint", true)}
+          error={touched.dropPoint && !!errors.dropPoint}
+          helperText={touched.dropPoint && errors.dropPoint}
           disabled={disabled}
-          className={inputClass}
+          required
         />
-        {shouldShowError("dropPoint") && errors.dropPoint && (
-          <p className="mt-1 text-sm text-red-600">{errors.dropPoint}</p>
-        )}
-      </div>
+      </Grid>
 
-      {/* Start Kilometers */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">
-          Start Kilometers *
-        </label>
-        <input
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
           type="number"
+          label="Start Kilometers"
           name="startKm"
-          value={values.startKm as any}
-          onChange={(e) => {
-            setFieldTouched("startKm", true, false);
-            handleChange(e);
-          }}
+          value={values.startKm}
+          onChange={handleChange}
+          onBlur={() => setFieldTouched("startKm", true)}
+          error={touched.startKm && !!errors.startKm}
+          helperText={touched.startKm && errors.startKm}
           disabled={disabled}
-          className={inputClass}
+          required
         />
-        {shouldShowError("startKm") && errors.startKm && (
-          <p className="mt-1 text-sm text-red-600">{errors.startKm}</p>
-        )}
-      </div>
+      </Grid>
 
-      {/* Odometer Start (driver) - image upload */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">
-          Odometer Start Image (Max 1 MB)
-        </label>
-        <div className="relative">
-          <label
-            className={`${inputClass} flex items-center justify-between bg-gray-100 cursor-pointer`}
+      <Grid item xs={12} md={6}>
+        <Box>
+          <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: "block" }}>
+            Odometer Start Image (Max 1 MB)
+          </Typography>
+          <Button
+            variant="outlined"
+            component="label"
+            fullWidth
+            disabled={disabled}
+            sx={{ height: 56, justifyContent: "flex-start", px: 2, textTransform: "none" }}
           >
-            <span className="text-sm font-medium">Choose File</span>
-            <span className="text-sm text-gray-600 ml-2">
-              {values.odometerStart
-                ? typeof values.odometerStart === "string"
-                  ? "Selected"
-                  : (values.odometerStart as File).name
-                : "No file chosen"}
-            </span>
+            {values.odometerStart
+              ? typeof values.odometerStart === "string"
+                ? "Image Uploaded"
+                : (values.odometerStart as File).name
+              : "Choose File"}
             <input
               type="file"
-              name="odometerStart"
+              hidden
               accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files && e.target.files[0];
-                setFieldTouched("odometerStart", true, false);
-                if (file) {
-                  if (file.size > MAX_FILE_SIZE) {
-                    setFieldValue("odometerStart", null);
-                    setFieldError(
-                      "odometerStart",
-                      "File size must be 1 MB or smaller.",
-                    );
-                    setOdometerStartLocalError(
-                      "File size must be 1 MB or smaller.",
-                    );
-                  } else {
-                    setFieldValue("odometerStart", file);
-                    setFieldError("odometerStart", undefined as any);
-                    setOdometerStartLocalError(null);
-                  }
-                } else {
-                  setFieldValue("odometerStart", null);
-                  setFieldError("odometerStart", undefined as any);
-                  setOdometerStartLocalError(null);
-                }
-              }}
-              disabled={disabled}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              onChange={(e) => handleFileChange("odometerStart", e.target.files?.[0] || null)}
             />
-          </label>
-        </div>
-        {values.odometerStart && typeof values.odometerStart === "string" && (
-          <Image
-            src={values.odometerStart}
-            alt="start-odo"
-            width={128}
-            height={80}
-            className="mt-2 w-32 h-20 object-cover rounded"
-          />
-        )}
-        {values.odometerStart && typeof values.odometerStart !== "string" && (
-          <Image
-            src={URL.createObjectURL(values.odometerStart as File)}
-            alt="start-odo-file"
-            width={128}
-            height={80}
-            className="mt-2 w-32 h-20 object-cover rounded"
-          />
-        )}
-        {(odometerStartLocalError || errors.odometerStart) && (
-          <p className="mt-1 text-sm text-red-600">
-            {odometerStartLocalError || errors.odometerStart}
-          </p>
-        )}
-      </div>
+          </Button>
+          {(odometerStartLocalError || (touched.odometerStart && errors.odometerStart)) && (
+            <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+              {odometerStartLocalError || errors.odometerStart}
+            </Typography>
+          )}
+          {values.odometerStart && (
+            <Box sx={{ mt: 1, position: "relative", width: 120, height: 80 }}>
+              <Image
+                src={typeof values.odometerStart === "string" ? values.odometerStart : URL.createObjectURL(values.odometerStart)}
+                alt="odometer start"
+                fill
+                className="object-cover rounded border"
+              />
+            </Box>
+          )}
+        </Box>
+      </Grid>
 
-      {/* End Kilometers */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">
-          End Kilometers *
-        </label>
-        <input
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
           type="number"
+          label="End Kilometers"
           name="endKm"
-          value={values.endKm as any}
-          onChange={(e) => {
-            setFieldTouched("endKm", true, false);
-            handleChange(e);
-          }}
+          value={values.endKm}
+          onChange={handleChange}
+          onBlur={() => setFieldTouched("endKm", true)}
+          error={touched.endKm && !!errors.endKm}
+          helperText={touched.endKm && errors.endKm}
           disabled={disabled}
-          className={inputClass}
+          required
         />
-        {shouldShowError("endKm") && errors.endKm && (
-          <p className="mt-1 text-sm text-red-600">{errors.endKm}</p>
-        )}
-      </div>
+      </Grid>
 
-      {/* Odometer End (driver) - image upload */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">
-          Odometer End Image (Max 1 MB)
-        </label>
-        <div className="relative">
-          <label
-            className={`${inputClass} flex items-center justify-between bg-gray-100 cursor-pointer`}
+      <Grid item xs={12} md={6}>
+        <Box>
+          <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: "block" }}>
+            Odometer End Image (Max 1 MB)
+          </Typography>
+          <Button
+            variant="outlined"
+            component="label"
+            fullWidth
+            disabled={disabled}
+            sx={{ height: 56, justifyContent: "flex-start", px: 2, textTransform: "none" }}
           >
-            <span className="text-sm font-medium">Choose File</span>
-            <span className="text-sm text-gray-600 ml-2">
-              {values.odometerEnd
-                ? typeof values.odometerEnd === "string"
-                  ? "Selected"
-                  : (values.odometerEnd as File).name
-                : "No file chosen"}
-            </span>
+            {values.odometerEnd
+              ? typeof values.odometerEnd === "string"
+                ? "Image Uploaded"
+                : (values.odometerEnd as File).name
+              : "Choose File"}
             <input
               type="file"
-              name="odometerEnd"
+              hidden
               accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files && e.target.files[0];
-                setFieldTouched("odometerEnd", true, false);
-                if (file) {
-                  if (file.size > MAX_FILE_SIZE) {
-                    setFieldValue("odometerEnd", null);
-                    setFieldError(
-                      "odometerEnd",
-                      "File size must be 1 MB or smaller.",
-                    );
-                    setOdometerEndLocalError(
-                      "File size must be 1 MB or smaller.",
-                    );
-                  } else {
-                    setFieldValue("odometerEnd", file);
-                    setFieldError("odometerEnd", undefined as any);
-                    setOdometerEndLocalError(null);
-                  }
-                } else {
-                  setFieldValue("odometerEnd", null);
-                  setFieldError("odometerEnd", undefined as any);
-                  setOdometerEndLocalError(null);
-                }
-              }}
-              disabled={disabled}
-              className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+              onChange={(e) => handleFileChange("odometerEnd", e.target.files?.[0] || null)}
             />
-          </label>
-        </div>
-        {values.odometerEnd && typeof values.odometerEnd === "string" && (
-          <Image
-            src={values.odometerEnd}
-            alt="end-odo"
-            width={128}
-            height={80}
-            className="mt-2 w-32 h-20 object-cover rounded"
-          />
-        )}
-        {values.odometerEnd && typeof values.odometerEnd !== "string" && (
-          <Image
-            src={URL.createObjectURL(values.odometerEnd as File)}
-            alt="end-odo-file"
-            width={128}
-            height={80}
-            className="mt-2 w-32 h-20 object-cover rounded"
-          />
-        )}
-        {(odometerEndLocalError || errors.odometerEnd) && (
-          <p className="mt-1 text-sm text-red-600">
-            {odometerEndLocalError || errors.odometerEnd}
-          </p>
-        )}
-      </div>
+          </Button>
+          {(odometerEndLocalError || (touched.odometerEnd && errors.odometerEnd)) && (
+            <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
+              {odometerEndLocalError || errors.odometerEnd}
+            </Typography>
+          )}
+          {values.odometerEnd && (
+            <Box sx={{ mt: 1, position: "relative", width: 120, height: 80 }}>
+              <Image
+                src={typeof values.odometerEnd === "string" ? values.odometerEnd : URL.createObjectURL(values.odometerEnd)}
+                alt="odometer end"
+                fill
+                className="object-cover rounded border"
+              />
+            </Box>
+          )}
+        </Box>
+      </Grid>
 
-      {/* Total Kilometers */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">
-          Total Kilometers
-        </label>
-        <input
-          type="text"
-          name="totalKm"
-          value={typeof totalKm !== "undefined" ? String(totalKm) : ""}
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
+          label="Total Kilometers"
+          value={totalKm ?? ""}
           disabled
-          className="w-full p-2 border border-gray-300 rounded-md bg-gray-100"
+          InputProps={{ readOnly: true }}
         />
-      </div>
+      </Grid>
 
-      {/* Fare */}
-      <div className="form-group">
-        <label className="block text-sm font-medium mb-1">Fare</label>
-        <input
+      <Grid item xs={12} md={6}>
+        <TextField
+          fullWidth
           type="number"
+          label="Fare"
           name="fare"
-          value={values.fare as any}
-          onChange={(e) => {
-            setFieldTouched("fare", true, false);
-            handleChange(e);
-          }}
+          value={values.fare}
+          onChange={handleChange}
+          onBlur={() => setFieldTouched("fare", true)}
+          error={touched.fare && !!errors.fare}
+          helperText={touched.fare && errors.fare}
           disabled={disabled}
-          className={inputClass}
         />
-        {shouldShowError("fare") && errors.fare && (
-          <p className="mt-1 text-sm text-red-600">{errors.fare}</p>
-        )}
-      </div>
-    </div>
+      </Grid>
+    </Grid>
   );
 };
 
