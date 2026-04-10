@@ -76,9 +76,12 @@ export default function AddNoticeModal({
   const [editorFocused, setEditorFocused] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const { hasAdminRole } = useAuth();
-  const isAdmin = hasAdminRole();
-  const isAVP = !isAdmin;
+  const auth = useAuth();
+  const isSystemAdmin = Boolean(auth?.isSystemAdmin);
+  const isAVP =
+    auth?.isAVP === true ||
+    (auth?.user as any)?.isAVP === true ||
+    (auth?.user as any)?.role?.isAVP === true;
 
   /* ---------------- RESET ---------------- */
   const resetForm = () => {
@@ -147,38 +150,37 @@ export default function AddNoticeModal({
 
   /* ---------------- META ---------------- */
   useEffect(() => {
-    fetch("/api/v0/notice/meta")
-      .then((res) => res.json())
-      .then((data) => {
-        if (isAVP) {
-          setDepartments(["All", "Team"]); // Only once
+    const loadMeta = async () => {
+      try {
+        const res = await fetch("/api/v0/notice/meta");
+        const data = await res.json();
+
+        if (isSystemAdmin) {
+          setDepartments(["All"]);
+        } else if (isAVP) {
+          setDepartments(["All", "Team"]);
         } else {
           setDepartments(data?.data?.departments || ["All"]);
         }
-      })
-      .catch(() => {
-        if (isAVP) {
-          setDepartments(["All", "Team"]);
-        } else {
-          setDepartments(["All"]);
-        }
-      });
-  }, [isAVP]); // <--- dependency is correct
+      } catch {
+        setDepartments(isAVP ? ["All", "Team"] : ["All"]);
+      }
+    };
+
+    loadMeta();
+  }, [isSystemAdmin, isAVP]);
 
   // Admin sees AVPs
   useEffect(() => {
-    if (isAdmin) {
+    if (isSystemAdmin) {
       fetch("/api/v0/employee/getAllAVPEmployees")
         .then((res) => res.json())
         .then((data) => setAvps(data?.data || []))
         .catch(() => setAvps([]));
     }
-  }, [isAdmin]);
+  }, [isSystemAdmin]);
 
   // AVP sees "All" / "Team"
-  useEffect(() => {
-    if (isAVP) setDepartments(["All", "Team"]);
-  }, [isAVP]);
 
   /* ---------------- FILES ---------------- */
   const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -253,7 +255,7 @@ export default function AddNoticeModal({
         attachments: uploadedAttachments,
       };
 
-      if (isAdmin) {
+      if (isSystemAdmin) {
         payload.targetAVP =
           selectedDepartment !== "All" ? selectedDepartment : null;
         payload.departments = ["All"]; // Admin notices are considered public for others
@@ -294,6 +296,7 @@ export default function AddNoticeModal({
   };
 
   if (!open) return null;
+  if (!isAVP && !isSystemAdmin) return null;
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -381,36 +384,27 @@ export default function AddNoticeModal({
 
             {/* DEPARTMENTS / AVP */}
             <Stack direction="row" spacing={2}>
-              <FormControl fullWidth size="small" variant="outlined">
+              <FormControl fullWidth size="small">
                 <InputLabel id="department-label">
-                  {isAdmin ? "Select AVP" : "Departments"}
+                  {isSystemAdmin ? "Select AVP" : "Departments"}
                 </InputLabel>
-
                 <Select
                   labelId="department-label"
-                  label={isAdmin ? "Select AVP" : "Departments"} // ✅ IMPORTANT
                   value={selectedDepartment}
                   onChange={(e) =>
                     setSelectedDepartment(String(e.target.value))
                   }
-                  displayEmpty
-                  sx={{
-                    height: "40px", // ✅ Match TextField height
-                  }}
                   renderValue={(selected) => {
-                    if (!selected)
-                      return <span style={{ color: "#aaa" }}>Select...</span>;
-
-                    if (isAdmin) {
+                    if (!selected) return "Select...";
+                    if (isSystemAdmin) {
                       if (selected === "All") return "All";
                       const found = avps.find((a) => a._id === selected);
                       return found?.name || "Select";
                     }
-
-                    return selected;
+                    return selected; // AVP sees All/Team
                   }}
                 >
-                  {isAdmin
+                  {isSystemAdmin
                     ? [
                         <MenuItem key="All" value="All">
                           All
@@ -445,7 +439,6 @@ export default function AddNoticeModal({
 
             {/* ATTACHMENTS */}
             <Box className="flex flex-col gap-2">
-              {/* Header */}
               <Box className="flex items-center justify-between">
                 <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
                   ATTACHMENTS
@@ -460,75 +453,36 @@ export default function AddNoticeModal({
                   Add files
                 </Button>
               </Box>
-
-              {/* Allowed formats */}
-              <Typography className="!text-[15px] text-gray-400">
-                Supported formats: PDF, JPG, JPEG, PNG
-              </Typography>
-
-              {/* Hidden input */}
               <input
                 ref={fileInputRef}
                 type="file"
                 multiple
                 hidden
-                accept=".pdf,.jpg,.jpeg,.png"
-                onChange={(e) => {
-                  const files = Array.from(e.target.files ?? []);
-                  const allowedTypes = [
-                    "application/pdf",
-                    "image/jpeg",
-                    "image/png",
-                  ];
-                  const validFiles: typeof pendingFiles = [];
-
-                  files.forEach((file) => {
-                    if (allowedTypes.includes(file.type)) {
-                      validFiles.push({
-                        id: `${file.name}-${Date.now()}`,
-                        file,
-                        customName: file.name,
-                      });
-                    } else {
-                      alert(
-                        `Invalid file type: ${file.name}. Only PDF, JPG, JPEG, PNG allowed.`,
-                      );
-                    }
-                  });
-
-                  if (validFiles.length) {
-                    setPendingFiles((prev) => [...prev, ...validFiles]);
-                  }
-
-                  if (fileInputRef.current) fileInputRef.current.value = "";
-                }}
+                onChange={pickFiles}
               />
-
-              {/* File list */}
-              {pendingFiles.length > 0 ? (
-                pendingFiles.map((p, i) => (
-                  <Box
-                    key={p.id}
-                    className="flex items-center justify-between border border-gray-200 rounded px-3 py-2"
+              {pendingFiles.map((p, i) => (
+                <Box
+                  key={p.id}
+                  className="flex items-center justify-between border border-gray-200 rounded px-3 py-2"
+                >
+                  <Typography className="text-sm text-gray-700">
+                    {p.customName}
+                  </Typography>
+                  <Button
+                    size="small"
+                    color="error"
+                    className="!text-xs !min-w-0"
+                    onClick={() =>
+                      setPendingFiles((prev) =>
+                        prev.filter((_, index) => index !== i),
+                      )
+                    }
                   >
-                    <Typography className="text-sm text-gray-700">
-                      {p.customName}
-                    </Typography>
-                    <Button
-                      size="small"
-                      color="error"
-                      className="!text-xs !min-w-0"
-                      onClick={() =>
-                        setPendingFiles((prev) =>
-                          prev.filter((_, index) => index !== i),
-                        )
-                      }
-                    >
-                      Remove
-                    </Button>
-                  </Box>
-                ))
-              ) : (
+                    Remove
+                  </Button>
+                </Box>
+              ))}
+              {!pendingFiles.length && (
                 <Typography className="text-sm text-gray-400">
                   No attachments added
                 </Typography>

@@ -43,18 +43,24 @@ function NoticeBoardHeader({
   categories: string[];
   priorities: string[];
 }) {
-  const { user } = useAuth();
+  /* ---------------- AUTH ---------------- */
+
+  const auth = useAuth();
+  const { user } = auth;
 
   /* ---------------- ROLE CHECK ---------------- */
+  const roleName = String(user?.currentRole?.name || "").toLowerCase();
 
-  const currentRoleName =
-    typeof user?.currentRole === "object"
-      ? user?.currentRole?.name
-      : user?.roles?.find((r) => r._id === user?.currentRole)?.name;
+  const isSystemAdmin =
+    auth?.isSystemAdmin === true ||
+    user?.isSystemAdmin === true ||
+    user?.currentRole?.isSystemAdmin === true ||
+    roleName === "admin";
 
-  const isAdminOrAVP =
-    currentRoleName?.toLowerCase() === "admin" ||
-    currentRoleName?.toLowerCase() === "avp";
+  const isAVP =
+    auth?.isAVP === true || user?.isAVP === true || roleName === "avp";
+
+  const isAdminOrAVP = isSystemAdmin || isAVP;
 
   /* ---------------- HOOK ---------------- */
 
@@ -76,12 +82,11 @@ function NoticeBoardHeader({
   return (
     <>
       {/* Add Notice Modal */}
-
       {isAdminOrAVP && (
         <AddNoticeModal
           open={open}
           onClose={() => setOpen(false)}
-          onNoticeAdded={onNoticeAdded} // ✅ important
+          onNoticeAdded={onNoticeAdded}
         />
       )}
 
@@ -95,7 +100,6 @@ function NoticeBoardHeader({
               flexWrap="wrap"
             >
               {/* Search */}
-
               <Box className="flex items-center bg-white rounded-lg px-3 h-10 w-full md:w-90 border border-gray-500">
                 <SearchIcon className="text-gray-500 text-[18px] mr-2" />
                 <InputBase
@@ -107,23 +111,18 @@ function NoticeBoardHeader({
               </Box>
 
               {/* Category */}
-
               <FormControl
                 size="small"
                 sx={{ minWidth: { xs: "100%", md: 200 } }}
               >
                 <InputLabel id="category-label">Select Category</InputLabel>
-
                 <Select
                   labelId="category-label"
                   value={category || "All"}
                   onChange={handleCategoryChange}
                   label="Select Category"
                 >
-                  <MenuItem value="All">
-                    <>All</>
-                  </MenuItem>
-
+                  <MenuItem value="All">All</MenuItem>
                   {categories?.map((cat, index) => (
                     <MenuItem key={index} value={cat}>
                       {cat}
@@ -133,24 +132,18 @@ function NoticeBoardHeader({
               </FormControl>
 
               {/* Priority */}
-
               <FormControl
                 size="small"
                 sx={{ minWidth: { xs: "100%", md: 150 } }}
               >
-                {/* ✅ Label */}
                 <InputLabel id="priority-label">Select Priority</InputLabel>
-
                 <Select
-                  labelId="priority-label" // ✅ MUST match
-                  value={priority || "All"} // ✅ fallback
+                  labelId="priority-label"
+                  value={priority || "All"}
                   onChange={handlePriorityChange}
-                  label="Select Priority" // ✅ IMPORTANT
+                  label="Select Priority"
                 >
-                  <MenuItem value="All">
-                    <>All</>
-                  </MenuItem>
-
+                  <MenuItem value="All">All</MenuItem>
                   {priorities?.map((pri, index) => (
                     <MenuItem key={index} value={pri}>
                       {pri}
@@ -158,14 +151,17 @@ function NoticeBoardHeader({
                   ))}
                 </Select>
               </FormControl>
-              <IconButton>     
-              </IconButton>
-              
+
+              <IconButton></IconButton>
+
+              {/* Add Notice Button */}
               {isAdminOrAVP && (
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
-                  onClick={() => setOpen(true)}
+                  onClick={() => {
+                    if (isAdminOrAVP) setOpen(true);
+                  }}
                   className="h-[38px]"
                 >
                   Add Notice
