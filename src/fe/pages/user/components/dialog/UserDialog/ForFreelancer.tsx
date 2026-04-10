@@ -1,24 +1,42 @@
-import React, { useRef, useState } from "react";
-import { TextField, MenuItem } from "@/components/ui/Component";
+import { MenuItem, TextField } from "@/components/ui/Component";
 import { Typography } from "@mui/material";
-import { Field, FieldProps } from "formik";
+import { Field, FieldProps, useFormikContext } from "formik";
+import React, { useRef, useState, useMemo } from "react";
 import {
   FIELD_LABELS,
   BRANCH_LABELS,
   SLAB_OPTIONS,
 } from "@/fe/pages/user/constants/users";
-import { getSlabLabel } from "@/fe/pages/user/utils";
+import { getSlabLabel, getFilteredSlabOptions } from "@/fe/pages/user/utils";
 import { inputSx } from "./styles";
+import { ForFreelancerProps } from "@/fe/pages/user/types/documents";
 
 const menuProps = {
   MenuProps: { disablePortal: true, PaperProps: { style: { maxHeight: 240 } } },
 };
 
-const ForFreelancer: React.FC = () => {
+const ForFreelancer: React.FC<ForFreelancerProps> = ({
+  loggedInSlab,
+  isAdmin,
+}) => {
   const branchRef = useRef<HTMLDivElement>(null);
   const [branchPaperWidth, setBranchPaperWidth] = useState<
     number | undefined
   >();
+
+  const { values } = useFormikContext<any>();
+  const currentValue = values.slabPercentage;
+
+  const filteredSlabOptions = useMemo(
+    () =>
+      getFilteredSlabOptions(
+        SLAB_OPTIONS,
+        loggedInSlab,
+        isAdmin,
+        currentValue,
+      ),
+    [loggedInSlab, isAdmin, currentValue],
+  );
 
   return (
     <>
@@ -40,7 +58,7 @@ const ForFreelancer: React.FC = () => {
               helperText={meta.touched && meta.error}
               sx={inputSx}
             >
-              {SLAB_OPTIONS.map((opt) => (
+              {filteredSlabOptions.map((opt) => (
                 <MenuItem key={opt} value={opt}>
                   {getSlabLabel(opt)}
                 </MenuItem>

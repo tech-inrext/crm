@@ -41,6 +41,7 @@ interface User {
   joiningDate?: string;
   gender?: string;
   address?: string;
+  slabPercentage?: string;
 }
 
 interface AuthContextType {
