@@ -390,6 +390,10 @@ export default function AddNoticeModal({
                 </InputLabel>
                 <Select
                   labelId="department-label"
+<<<<<<< HEAD
+=======
+                  label={isSystemAdmin ? "Select AVP" : "Departments"} // ✅ IMPORTANT
+>>>>>>> a469d908cf9d6757d52223ab76106c83b5d193b2
                   value={selectedDepartment}
                   onChange={(e) =>
                     setSelectedDepartment(String(e.target.value))
@@ -441,7 +445,10 @@ export default function AddNoticeModal({
             <Box className="flex flex-col gap-2">
               <Box className="flex items-center justify-between">
                 <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                  ATTACHMENTS
+                  ATTACHMENTS{" "}
+                  <span className="text-[15px] normal-case font-normal text-slate-500">
+                    (please add files format pdf,jpg, jpeg, png)
+                  </span>
                 </Typography>
                 <Button
                   startIcon={<UploadFileIcon />}

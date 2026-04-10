@@ -118,7 +118,11 @@ async getAllNotices(req, res) {
     const employeeId = req.employee?._id;
     const isAVP = req.isAVP;
     const isSystemAdmin = req.isSystemAdmin;
+<<<<<<< HEAD
     console.log("Access Check - EmployeeID:", employeeId, "isAVP:", isAVP, "isSystemAdmin:", isSystemAdmin)
+=======
+    console.log("Access Check - EmployeeID:", employeeId, "isAVP:", isAVP, "isSystemAdmin:", isSystemAdmin);
+>>>>>>> a469d908cf9d6757d52223ab76106c83b5d193b2
 
     let teamMembers = [];
     let myManager = null;
