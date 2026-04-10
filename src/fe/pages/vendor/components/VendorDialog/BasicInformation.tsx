@@ -1,16 +1,17 @@
 import React from "react";
-import { TextField, Box, Typography } from "@/components/ui/Component";
+import { TextField } from "@/components/ui/Component";
 import { Field, FieldProps, useFormikContext } from "formik";
 import { FIELD_LABELS } from "@/fe/pages/vendor/constants/vendors";
+import { inputSx } from "./styles";
 
 const BasicInformation: React.FC = () => {
   const { setFieldTouched } = useFormikContext();
 
   return (
     <>
-      <Typography variant="h6" sx={{ mt: 1, fontWeight: 600 }}>
+      <p className="text-base font-semibold text-slate-700 mt-1">
         {FIELD_LABELS.BASIC_INFO}
-      </Typography>
+      </p>
 
       {/* Name */}
       <Field name="name">
@@ -20,10 +21,10 @@ const BasicInformation: React.FC = () => {
             label={FIELD_LABELS.FULL_NAME}
             autoFocus
             fullWidth
-            margin="normal"
+            size="small"
             error={!!meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
-            sx={{ bgcolor: "#fff", borderRadius: 1 }}
+            sx={inputSx}
             onChange={(e) => {
               setFieldTouched(field.name, true, true);
               field.onChange(e);
@@ -33,23 +34,17 @@ const BasicInformation: React.FC = () => {
       </Field>
 
       {/* Email + Phone */}
-      <Box
-        sx={{
-          display: "flex",
-          gap: 2,
-          flexDirection: { xs: "column", sm: "row" },
-        }}
-      >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         <Field name="email">
           {({ field, meta }: FieldProps) => (
             <TextField
               {...field}
               label={FIELD_LABELS.EMAIL}
               fullWidth
-              margin="normal"
+              size="small"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={inputSx}
               onChange={(e) => {
                 setFieldTouched(field.name, true, true);
                 field.onChange(e);
@@ -65,10 +60,10 @@ const BasicInformation: React.FC = () => {
               value={field.value ?? ""}
               label={FIELD_LABELS.PHONE}
               fullWidth
-              margin="normal"
+              size="small"
               error={!!meta.touched && !!meta.error}
               helperText={meta.touched && meta.error}
-              sx={{ bgcolor: "#fff", borderRadius: 1, flex: 1 }}
+              sx={inputSx}
               inputProps={{ inputMode: "numeric", pattern: "[0-9]*" }}
               onChange={(e) => {
                 setFieldTouched(field.name, true, true);
@@ -81,17 +76,18 @@ const BasicInformation: React.FC = () => {
             />
           )}
         </Field>
-      </Box>
+      </div>
+
       <Field name="panNumber">
         {({ field, meta }: FieldProps) => (
           <TextField
             {...field}
             label={FIELD_LABELS.PAN_NUMBER}
             fullWidth
-            margin="normal"
+            size="small"
             error={!!meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
-            sx={{ bgcolor: "#fff", borderRadius: 1 }}
+            sx={inputSx}
             onChange={(e) => {
               setFieldTouched(field.name, true, true);
               const val = (e.target as HTMLInputElement).value
@@ -110,10 +106,10 @@ const BasicInformation: React.FC = () => {
             {...field}
             label={FIELD_LABELS.ADDRESS}
             fullWidth
-            margin="normal"
+            size="small"
             error={!!meta.touched && !!meta.error}
             helperText={meta.touched && meta.error}
-            sx={{ bgcolor: "#fff", borderRadius: 1 }}
+            sx={inputSx}
           />
         )}
       </Field>

@@ -1,11 +1,11 @@
 import type { SxProps, Theme } from "@mui/material";
 
 /** 
- * Shared Grid layout for vendors list and skeletons 
+ * Shared Grid layout for booking list and skeletons 
  */
-export const vendorsGridSx: SxProps<Theme> = {
+export const bookingGridSx: SxProps<Theme> = {
   display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(290px, 1fr))",
+  gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
   gap: 3,
   mt: 2,
 } as const;
@@ -16,7 +16,7 @@ export const vendorsGridSx: SxProps<Theme> = {
 export const emptyStateContainerSx: SxProps<Theme> = {
   display: "flex",
   flexDirection: "column",
-  alignItems: "center", // Fixing typo from 'itemsAlign' in source
+  alignItems: "center",
   justifyContent: "center",
   py: 10,
   textAlign: "center",
@@ -41,13 +41,13 @@ export const emptyStateDescriptionSx: SxProps<Theme> = {
 } as const;
 
 /** 
- * Page Action Bar styles 
+ * Action Bar styles 
  */
-export const searchBarSx: SxProps<Theme> = {
-
-  width: "100%",
-  maxWidth: 600,
-  flexGrow: 1,
+export const actionBarContainerSx: SxProps<Theme> = {
+  display: "flex",
+  justifyContent: "space-between",
+  alignItems: "center",
+  mb: 4,
 } as const;
 
 /** 

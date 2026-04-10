@@ -1,8 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useDebounce } from "@/hooks/useDebounce";
-import { SEARCH_DEBOUNCE_DELAY } from "@/fe/pages/vendor/constants/vendors";
+import { 
+  SEARCH_DEBOUNCE_DELAY,
+  DEFAULT_PAGE_SIZE 
+} from "@/fe/pages/vendor/constants/vendors";
 import type { Vendor } from "@/fe/pages/vendor/types";
 import { useGetVendorsQuery } from "../vendorApi";
 import { useToast } from "@/fe/components/Toast/ToastContext";
@@ -20,7 +23,15 @@ export function useVendorsPage() {
   const [editId, setEditId] = useState<string | null>(null);
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
 
+  // ─── Search reset ─────────────────────────────────────────────────────────
+  // Reset page to 1 whenever search query changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch]);
+
   // ─── Data Fetching ──────────────────────────────────────────────────────
+  const [rowsPerPageLocal, setRowsPerPageLocal] = useState(DEFAULT_PAGE_SIZE);
+
   const {
     items: vendors,
     loading,
@@ -29,13 +40,18 @@ export function useVendorsPage() {
     totalItems,
     refetch,
     setPage,
-    setPageSize,
-  } = useGetVendorsQuery({ search: debouncedSearch, isCabVendor: true });
+    setPageSize: setQueryPageSize,
+  } = useGetVendorsQuery({ 
+    search: debouncedSearch, 
+    isCabVendor: true,
+    limit: rowsPerPageLocal // Explicitly pass limit to match backend expectation
+  });
 
-  // ─── Reset to page 1 when search changes ────────────────────────────────
-  useEffect(() => {
-    setPage(1);
-  }, [debouncedSearch]);
+  const handlePageSizeChange = useCallback((newSize: number) => {
+    setRowsPerPageLocal(newSize);
+    setQueryPageSize(newSize);
+    setPage(1); // Reset to page 1 when changing size
+  }, [setQueryPageSize, setPage]);
 
   // ─── Dialog handlers ─────────────────────────────────────────────────────
   const handleCloseDialog = useCallback(() => {
@@ -57,13 +73,6 @@ export function useVendorsPage() {
     [],
   );
 
-  const handlePageSizeChange = useCallback(
-    (newSize: number) => {
-      setPageSize(newSize);
-      setPage(1);
-    },
-    [setPageSize, setPage],
-  );
 
   const handleMutationSuccess = useCallback(async () => {
     invalidateQueryCache("/api/v0/employee");
@@ -89,10 +98,10 @@ export function useVendorsPage() {
     vendors,
     loading,
     page,
-    rowsPerPage,
+    rowsPerPage: rowsPerPageLocal, // Use local state to ensure consistency with 'limit'
     totalItems,
     setPage,
-    handlePageSizeChange,
+    setPageSize: handlePageSizeChange,
     handleMutationSuccess,
   } as const;
 }
