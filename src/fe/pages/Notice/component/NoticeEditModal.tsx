@@ -43,7 +43,7 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
   // ------------------- FIXED -------------------
   const [pendingFiles, setPendingFiles] = useState<any[]>(
     (notice?.attachments || []).map((f, index) => ({
-      id: Date.now() + index,        // ✅ unique id for React key and removal
+      id: Date.now() + index, // ✅ unique id for React key and removal
       filename: f.filename || f.name,
       url: f.url,
       customName: f.filename || f.name,
@@ -142,25 +142,26 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
             />
 
             {/* DESCRIPTION */}
-            <FormControl fullWidth size="small">
-              <InputLabel shrink={!!form.description}>Notice Description</InputLabel>
-              <Box className="!rounded-md cursor-text p-2">
-                <textarea
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  rows={5}
-                  className="w-full border-none outline-none resize-none"
-                />
-              </Box>
-            </FormControl>
+            <TextField
+              label="Notice Description"
+              name="description"
+              value={form.description}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
+              fullWidth
+              multiline
+              rows={5}
+              size="small"
+            />
 
             {/* CATEGORY + PRIORITY */}
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth size="small">
-                <InputLabel>Category</InputLabel>
+                <InputLabel id="category-label">Category</InputLabel>
                 <Select
+                  labelId="category-label"
+                  label="Category"
                   name="category"
                   value={form.category || ""}
                   onChange={handleChange}
@@ -180,8 +181,10 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
               </FormControl>
 
               <FormControl fullWidth size="small">
-                <InputLabel>Priority</InputLabel>
+                <InputLabel id="priority-label">Priority</InputLabel>
                 <Select
+                  labelId="priority-label"
+                  label="Priority"
                   name="priority"
                   value={form.priority || ""}
                   onChange={handleChange}
@@ -204,8 +207,12 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
             {/* DEPARTMENT + EXPIRY */}
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth size="small">
-                <InputLabel>{isAdmin ? "Department" : "Departments"}</InputLabel>
+                <InputLabel id="dept-label">
+                  {isAdmin ? "Department" : "Departments"}
+                </InputLabel>
                 <Select
+                  labelId="dept-label"
+                  label={isAdmin ? "Department" : "Departments"}
                   value={selectedDepartment}
                   onChange={(e) => setSelectedDepartment(e.target.value)}
                 >
