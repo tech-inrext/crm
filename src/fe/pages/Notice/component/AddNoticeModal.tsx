@@ -390,10 +390,9 @@ export default function AddNoticeModal({
                 </InputLabel>
                 <Select
                   labelId="department-label"
-<<<<<<< HEAD
-=======
+ 
                   label={isSystemAdmin ? "Select AVP" : "Departments"} // ✅ IMPORTANT
->>>>>>> a469d908cf9d6757d52223ab76106c83b5d193b2
+ 
                   value={selectedDepartment}
                   onChange={(e) =>
                     setSelectedDepartment(String(e.target.value))
