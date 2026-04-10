@@ -221,6 +221,28 @@ export const getSlabLabel = (opt: string) =>
                   ? " Manager"
                   : " (Sales Executive)");
 
+export const getFilteredSlabOptions = (
+  allOptions: string[],
+  loggedInSlab?: string,
+  isAdmin?: boolean,
+  currentValue?: string,
+) => {
+  if (isAdmin || !loggedInSlab) return allOptions;
+
+  const loggedInValue = parseInt(loggedInSlab);
+  if (isNaN(loggedInValue)) return allOptions;
+
+  return allOptions.filter((opt) => {
+    if (opt === "") return true;
+    const optValue = parseInt(opt);
+    // Always show options strictly less than logged-in user's slab
+    // OR the current value of the employee being edited (so it doesn't disappear)
+    return (
+      !isNaN(optValue) && (optValue < loggedInValue || opt === currentValue)
+    );
+  });
+};
+
 export const formatBranchForMenu = (label: string) =>
   label.split(", ").join(",\n");
 

@@ -19,6 +19,7 @@ import ForFreelancer from "./ForFreelancer";
 import RequiredDocuments from "./RequiredDocuments";
 import NomineeSection from "./NomineeSection";
 import type { UserFormData, UserDialogProps } from "@/fe/pages/user/types";
+import { useAuth } from "@/contexts/AuthContext";
 
 const UserDialog: React.FC<UserDialogProps> = ({
   open,
@@ -29,6 +30,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
 }) => {
   const { roles, managers, departments, loading, saving, handleSubmit } =
     useUserDialogData(open, editId);
+  const { user } = useAuth();
 
   if (!open) return null;
 
@@ -82,7 +84,12 @@ const UserDialog: React.FC<UserDialogProps> = ({
                     </div>
                   </div>
                   <BasicInformation editId={editId} />
-                  <ForFreelancer />
+                  {(user?.slabPercentage || user?.isSystemAdmin) && (
+                    <ForFreelancer
+                      loggedInSlab={user?.slabPercentage}
+                      isAdmin={user?.isSystemAdmin}
+                    />
+                  )}
                   <RequiredDocuments />
                   <NomineeSection />
                   <OrganizationSection

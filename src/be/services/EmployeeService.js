@@ -937,6 +937,8 @@ class EmployeeService extends Service {
           joiningDate: user.joiningDate,
           photo: user.photo || "",
           currentRole: req.roleId,
+          slabPercentage: user.slabPercentage,
+          branch: user.branch,
         },
       });
     } catch (error) {
