@@ -3,13 +3,8 @@ import type { SxProps, Theme } from "@mui/material";
 export const cardContainerSx: SxProps<Theme> = {
   position: "relative",
   "& .fill-form-btn": {
-    opacity: 0,
-    transform: "translateY(10px)",
-    transition: "all 0.3s ease-in-out",
-  },
-  "&:hover .fill-form-btn": {
     opacity: 1,
-    transform: "translateY(0)",
+    transition: "all 0.2s ease-in-out",
   },
 } as const;
 
@@ -33,8 +28,8 @@ export const fillFormButtonSx: SxProps<Theme> = {
   borderRadius: 2,
   boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
   "&:hover": {
-    background: "primary.main",
-    color: "white",
+    background: "rgba(25, 118, 210, 0.08)",
     borderColor: "primary.main",
+    color: "primary.main",
   },
 } as const;

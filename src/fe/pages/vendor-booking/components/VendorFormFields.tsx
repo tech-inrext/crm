@@ -10,6 +10,7 @@ import {
   Grid,
   Button
 } from "@/components/ui/Component";
+import { inputSx, formSectionTitleSx } from "./styles";
 
 interface Values {
   cabOwner: string;
@@ -40,7 +41,6 @@ const VendorFormFields: React.FC<Props> = ({
     touched,
     handleChange,
     setFieldValue,
-    setFieldError,
     setFieldTouched,
   } = useFormikContext<Values>();
 
@@ -56,251 +56,300 @@ const VendorFormFields: React.FC<Props> = ({
     if (file) {
       if (file.size > MAX_FILE_SIZE) {
         setFieldValue(name, null);
-        setFieldError(name, "File size must be 1 MB or smaller.");
         setError("File size must be 1 MB or smaller.");
       } else {
         setFieldValue(name, file);
-        setFieldError(name, undefined as any);
         setError(null);
       }
     } else {
       setFieldValue(name, null);
-      setFieldError(name, undefined as any);
       setError(null);
     }
   };
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Cab Owner Name"
-          name="cabOwner"
-          value={values.cabOwner}
-          onChange={handleChange}
-          onBlur={() => setFieldTouched("cabOwner", true)}
-          error={touched.cabOwner && !!errors.cabOwner}
-          helperText={touched.cabOwner && errors.cabOwner}
-          disabled={disabled}
-          required
-        />
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Driver Name"
-          name="driverName"
-          value={values.driverName}
-          onChange={handleChange}
-          onBlur={() => setFieldTouched("driverName", true)}
-          error={touched.driverName && !!errors.driverName}
-          helperText={touched.driverName && errors.driverName}
-          disabled={disabled}
-          required
-        />
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Aadhar Number (Driver)"
-          name="aadharNumber"
-          value={values.aadharNumber}
-          onChange={(e) => setFieldValue("aadharNumber", e.target.value.replace(/\D/g, ""))}
-          onBlur={() => setFieldTouched("aadharNumber", true)}
-          error={touched.aadharNumber && !!errors.aadharNumber}
-          helperText={touched.aadharNumber && errors.aadharNumber}
-          disabled={disabled}
-        />
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="DL Number (Driver)"
-          name="dlNumber"
-          value={values.dlNumber}
-          onChange={handleChange}
-          onBlur={() => setFieldTouched("dlNumber", true)}
-          error={touched.dlNumber && !!errors.dlNumber}
-          helperText={touched.dlNumber && errors.dlNumber}
-          disabled={disabled}
-        />
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Pickup Point"
-          name="pickupPoint"
-          value={values.pickupPoint}
-          onChange={handleChange}
-          onBlur={() => setFieldTouched("pickupPoint", true)}
-          error={touched.pickupPoint && !!errors.pickupPoint}
-          helperText={touched.pickupPoint && errors.pickupPoint}
-          disabled={disabled}
-          required
-        />
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Drop Point"
-          name="dropPoint"
-          value={values.dropPoint}
-          onChange={handleChange}
-          onBlur={() => setFieldTouched("dropPoint", true)}
-          error={touched.dropPoint && !!errors.dropPoint}
-          helperText={touched.dropPoint && errors.dropPoint}
-          disabled={disabled}
-          required
-        />
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          type="number"
-          label="Start Kilometers"
-          name="startKm"
-          value={values.startKm}
-          onChange={handleChange}
-          onBlur={() => setFieldTouched("startKm", true)}
-          error={touched.startKm && !!errors.startKm}
-          helperText={touched.startKm && errors.startKm}
-          disabled={disabled}
-          required
-        />
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <Box>
-          <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: "block" }}>
-            Odometer Start Image (Max 1 MB)
-          </Typography>
-          <Button
-            variant="outlined"
-            component="label"
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      {/* SECTION: Owner & Driver */}
+      <Box>
+        <Typography sx={formSectionTitleSx}>Owner & Driver Details</Typography>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <TextField
             fullWidth
+            size="small"
+            label="Cab Owner Name"
+            name="cabOwner"
+            value={values.cabOwner}
+            onChange={handleChange}
+            error={touched.cabOwner && !!errors.cabOwner}
+            helperText={touched.cabOwner && errors.cabOwner}
             disabled={disabled}
-            sx={{ height: 56, justifyContent: "flex-start", px: 2, textTransform: "none" }}
-          >
-            {values.odometerStart
-              ? typeof values.odometerStart === "string"
-                ? "Image Uploaded"
-                : (values.odometerStart as File).name
-              : "Choose File"}
-            <input
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={(e) => handleFileChange("odometerStart", e.target.files?.[0] || null)}
-            />
-          </Button>
-          {(odometerStartLocalError || (touched.odometerStart && errors.odometerStart)) && (
-            <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
-              {odometerStartLocalError || errors.odometerStart}
-            </Typography>
-          )}
-          {values.odometerStart && (
-            <Box sx={{ mt: 1, position: "relative", width: 120, height: 80 }}>
-              <Image
-                src={typeof values.odometerStart === "string" ? values.odometerStart : URL.createObjectURL(values.odometerStart)}
-                alt="odometer start"
-                fill
-                className="object-cover rounded border"
-              />
-            </Box>
-          )}
-        </Box>
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          type="number"
-          label="End Kilometers"
-          name="endKm"
-          value={values.endKm}
-          onChange={handleChange}
-          onBlur={() => setFieldTouched("endKm", true)}
-          error={touched.endKm && !!errors.endKm}
-          helperText={touched.endKm && errors.endKm}
-          disabled={disabled}
-          required
-        />
-      </Grid>
-
-      <Grid item xs={12} md={6}>
-        <Box>
-          <Typography variant="caption" color="textSecondary" sx={{ mb: 1, display: "block" }}>
-            Odometer End Image (Max 1 MB)
-          </Typography>
-          <Button
-            variant="outlined"
-            component="label"
+            required
+            sx={inputSx}
+          />
+          <TextField
             fullWidth
+            size="small"
+            label="Driver Name"
+            name="driverName"
+            value={values.driverName}
+            onChange={handleChange}
+            error={touched.driverName && !!errors.driverName}
+            helperText={touched.driverName && errors.driverName}
             disabled={disabled}
-            sx={{ height: 56, justifyContent: "flex-start", px: 2, textTransform: "none" }}
-          >
-            {values.odometerEnd
-              ? typeof values.odometerEnd === "string"
-                ? "Image Uploaded"
-                : (values.odometerEnd as File).name
-              : "Choose File"}
-            <input
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={(e) => handleFileChange("odometerEnd", e.target.files?.[0] || null)}
+            required
+            sx={inputSx}
+          />
+          <TextField
+            fullWidth
+            size="small"
+            label="Aadhar Number (Driver)"
+            name="aadharNumber"
+            value={values.aadharNumber}
+            onChange={(e) => setFieldValue("aadharNumber", e.target.value.replace(/\D/g, ""))}
+            error={touched.aadharNumber && !!errors.aadharNumber}
+            helperText={touched.aadharNumber && errors.aadharNumber}
+            disabled={disabled}
+            sx={inputSx}
+          />
+          <TextField
+            fullWidth
+            size="small"
+            label="DL Number (Driver)"
+            name="dlNumber"
+            value={values.dlNumber}
+            onChange={handleChange}
+            error={touched.dlNumber && !!errors.dlNumber}
+            helperText={touched.dlNumber && errors.dlNumber}
+            disabled={disabled}
+            sx={inputSx}
+          />
+        </div>
+      </Box>
+
+      {/* SECTION: Trip Locations */}
+      <Box>
+        <Typography sx={formSectionTitleSx}>Trip Locations</Typography>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <TextField
+            fullWidth
+            size="small"
+            label="Pickup Point"
+            name="pickupPoint"
+            value={values.pickupPoint}
+            onChange={handleChange}
+            error={touched.pickupPoint && !!errors.pickupPoint}
+            helperText={touched.pickupPoint && errors.pickupPoint}
+            disabled={disabled}
+            required
+            sx={inputSx}
+          />
+          <TextField
+            fullWidth
+            size="small"
+            label="Drop Point"
+            name="dropPoint"
+            value={values.dropPoint}
+            onChange={handleChange}
+            error={touched.dropPoint && !!errors.dropPoint}
+            helperText={touched.dropPoint && errors.dropPoint}
+            disabled={disabled}
+            required
+            sx={inputSx}
+          />
+        </div>
+      </Box>
+
+      {/* SECTION: Odometer & Fare */}
+      <Box>
+        <Typography sx={formSectionTitleSx}>Odometer & Fare</Typography>
+        <div className="grid grid-cols-1 gap-4">
+          
+          {/* Odometer Start Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <TextField
+              fullWidth
+              size="small"
+              type="number"
+              label="Start Kilometers"
+              name="startKm"
+              value={values.startKm}
+              onChange={handleChange}
+              error={touched.startKm && !!errors.startKm}
+              helperText={touched.startKm && errors.startKm}
+              disabled={disabled}
+              required
+              sx={inputSx}
             />
-          </Button>
-          {(odometerEndLocalError || (touched.odometerEnd && errors.odometerEnd)) && (
-            <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block" }}>
-              {odometerEndLocalError || errors.odometerEnd}
-            </Typography>
-          )}
-          {values.odometerEnd && (
-            <Box sx={{ mt: 1, position: "relative", width: 120, height: 80 }}>
-              <Image
-                src={typeof values.odometerEnd === "string" ? values.odometerEnd : URL.createObjectURL(values.odometerEnd)}
-                alt="odometer end"
-                fill
-                className="object-cover rounded border"
-              />
+            <Box>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                size="small"
+                disabled={disabled}
+                sx={{ 
+                  height: 40, 
+                  justifyContent: "space-between", 
+                  px: 1.5, 
+                  textTransform: "none",
+                  borderColor: (odometerStartLocalError || (touched.odometerStart && errors.odometerStart)) ? "error.main" : "divider",
+                  color: "text.primary",
+                  fontSize: "0.875rem",
+                  fontWeight: 400,
+                  "&:hover": {
+                    background: "rgba(25, 118, 210, 0.08)",
+                    borderColor: "primary.main",
+                    color: "primary.main",
+                  }
+                }}
+              >
+                <Typography variant="body2" noWrap sx={{ maxWidth: "70%", opacity: values.odometerStart ? 1 : 0.6 }}>
+                  {values.odometerStart
+                    ? typeof values.odometerStart === "string"
+                      ? "Odometer Start Image"
+                      : (values.odometerStart as File).name
+                    : "Upload Odometer Start"}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600 }}>
+                  CHOOSE
+                </Typography>
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={(e) => handleFileChange("odometerStart", e.target.files?.[0] || null)}
+                />
+              </Button>
+              {(odometerStartLocalError || (touched.odometerStart && errors.odometerStart)) && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block", ml: 1 }}>
+                  {odometerStartLocalError || errors.odometerStart}
+                </Typography>
+              )}
+              {values.odometerStart && (
+                <Box sx={{ mt: 1, position: "relative", width: 60, height: 40 }}>
+                  <Image
+                    src={typeof values.odometerStart === "string" ? values.odometerStart : URL.createObjectURL(values.odometerStart)}
+                    alt="odometer start"
+                    fill
+                    className="object-cover rounded border"
+                  />
+                </Box>
+              )}
             </Box>
-          )}
-        </Box>
-      </Grid>
+          </div>
 
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          label="Total Kilometers"
-          value={totalKm ?? ""}
-          disabled
-          InputProps={{ readOnly: true }}
-        />
-      </Grid>
+          {/* Odometer End Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 items-start">
+            <TextField
+              fullWidth
+              size="small"
+              type="number"
+              label="End Kilometers"
+              name="endKm"
+              value={values.endKm}
+              onChange={handleChange}
+              error={touched.endKm && !!errors.endKm}
+              helperText={touched.endKm && errors.endKm}
+              disabled={disabled}
+              required
+              sx={inputSx}
+            />
+            <Box>
+              <Button
+                variant="outlined"
+                component="label"
+                fullWidth
+                size="small"
+                disabled={disabled}
+                sx={{ 
+                    height: 40, 
+                    justifyContent: "space-between", 
+                    px: 1.5, 
+                    textTransform: "none",
+                    borderColor: (odometerEndLocalError || (touched.odometerEnd && errors.odometerEnd)) ? "error.main" : "divider",
+                    color: "text.primary",
+                    fontSize: "0.875rem",
+                    fontWeight: 400,
+                    "&:hover": { 
+                        borderColor: "primary.main",
+                        bgcolor: "rgba(25, 118, 210, 0.04)",
+                        color: "text.primary"
+                    }
+                }}
+              >
+                <Typography variant="body2" noWrap sx={{ maxWidth: "70%", opacity: values.odometerEnd ? 1 : 0.6 }}>
+                  {values.odometerEnd
+                    ? typeof values.odometerEnd === "string"
+                      ? "Odometer End Image"
+                      : (values.odometerEnd as File).name
+                    : "Upload Odometer End"}
+                </Typography>
+                <Typography variant="caption" sx={{ color: "primary.main", fontWeight: 600 }}>
+                  CHOOSE
+                </Typography>
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={(e) => handleFileChange("odometerEnd", e.target.files?.[0] || null)}
+                />
+              </Button>
+              {(odometerEndLocalError || (touched.odometerEnd && errors.odometerEnd)) && (
+                <Typography variant="caption" color="error" sx={{ mt: 0.5, display: "block", ml: 1 }}>
+                  {odometerEndLocalError || errors.odometerEnd}
+                </Typography>
+              )}
+              {values.odometerEnd && (
+                <Box sx={{ mt: 1, position: "relative", width: 60, height: 40 }}>
+                  <Image
+                    src={typeof values.odometerEnd === "string" ? values.odometerEnd : URL.createObjectURL(values.odometerEnd)}
+                    alt="odometer end"
+                    fill
+                    className="object-cover rounded border"
+                  />
+                </Box>
+              )}
+            </Box>
+          </div>
 
-      <Grid item xs={12} md={6}>
-        <TextField
-          fullWidth
-          type="number"
-          label="Fare"
-          name="fare"
-          value={values.fare}
-          onChange={handleChange}
-          onBlur={() => setFieldTouched("fare", true)}
-          error={touched.fare && !!errors.fare}
-          helperText={touched.fare && errors.fare}
-          disabled={disabled}
-        />
-      </Grid>
-    </Grid>
+          {/* Summary & Fare Row */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <TextField
+              fullWidth
+              size="small"
+              label="Total Kilometers"
+              value={totalKm ?? 0}
+              InputProps={{ readOnly: true }}
+              sx={{
+                ...inputSx,
+                "& .MuiInputBase-root": {
+                  ...inputSx["& .MuiInputBase-root"],
+                  bgcolor: "rgba(25, 118, 210, 0.04)",
+                },
+                "& .MuiInputBase-input": {
+                  ...inputSx["& .MuiInputBase-input"],
+                  color: "primary.main",
+                  fontWeight: 700,
+                }
+              }}
+            />
+            <TextField
+              fullWidth
+              size="small"
+              type="number"
+              label="Fare"
+              name="fare"
+              value={values.fare}
+              onChange={handleChange}
+              error={touched.fare && !!errors.fare}
+              helperText={touched.fare && errors.fare}
+              disabled={disabled}
+              sx={inputSx}
+            />
+          </div>
+        </div>
+      </Box>
+    </Box>
   );
 };
 
