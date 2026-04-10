@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import React, { useRef, useState, useEffect } from "react";
 import "quill/dist/quill.snow.css";
@@ -384,12 +384,14 @@ export default function AddNoticeModal({
 
             {/* DEPARTMENTS / AVP */}
             <Stack direction="row" spacing={2}>
-              <FormControl fullWidth size="small">
+              <FormControl fullWidth size="small" variant="outlined">
                 <InputLabel id="department-label">
                   {isSystemAdmin ? "Select AVP" : "Departments"}
                 </InputLabel>
+
                 <Select
                   labelId="department-label"
+                  label={isSystemAdmin ? "Select AVP" : "Departments"} // ✅ IMPORTANT
                   value={selectedDepartment}
                   onChange={(e) =>
                     setSelectedDepartment(String(e.target.value))
@@ -441,7 +443,10 @@ export default function AddNoticeModal({
             <Box className="flex flex-col gap-2">
               <Box className="flex items-center justify-between">
                 <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                  ATTACHMENTS
+                  ATTACHMENTS{" "}
+                  <span className="text-[15px] normal-case font-normal text-slate-500">
+                    (please add files format pdf,jpg, jpeg, png)
+                  </span>
                 </Typography>
                 <Button
                   startIcon={<UploadFileIcon />}
