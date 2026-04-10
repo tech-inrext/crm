@@ -1,5 +1,4 @@
 "use client";
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 import {
@@ -27,14 +26,14 @@ interface User {
     delete?: string[];
   }[]; // Backend returns array of role objects
   currentRole?:
-  | string
-  | {
-    _id: string;
-    name: string;
-    read?: string[];
-    write?: string[];
-    delete?: string[];
-  }; // Can be either role ID (string) or full role object
+    | string
+    | {
+        _id: string;
+        name: string;
+        read?: string[];
+        write?: string[];
+        delete?: string[];
+      }; // Can be either role ID (string) or full role object
   designation?: string;
   departmentId?: string;
   managerId?: string;
@@ -73,6 +72,8 @@ interface AuthContextType {
   roleSelected: boolean;
   setRoleSelected: (value: boolean) => void;
   hasAccountsRole: () => boolean;
+  isSystemAdmin: boolean;
+  isAVP: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -98,9 +99,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const [roleSelected, setRoleSelected] = useState<boolean>(false);
   const [postLoginRedirect, setPostLoginRedirect] = useState<string | null>(
-    null
+    null,
   );
-
+  const isSystemAdmin =
+    Boolean(
+      (user?.roles || []).find((r) => r._id === user?.currentRole)
+        ?.isSystemAdmin,
+    ) || false;
   const getCurrentRoleName = () => {
     if (!user) return null;
 
@@ -136,16 +141,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         // Checking all roles would incorrectly flag users who merely have
         // a system-admin role assigned but are not currently operating in it.
         const rolesArr = Array.isArray(profile.roles) ? profile.roles : [];
-        const currentRoleObj = rolesArr.find(
-          (r: any) => r._id === profile.currentRole
-        ) ?? (typeof profile.currentRole === "object" ? profile.currentRole : null);
-        const isSystemAdminFromCurrentRole = Boolean(currentRoleObj?.isSystemAdmin);
+        const currentRoleObj =
+          rolesArr.find((r: any) => r._id === profile.currentRole) ??
+          (typeof profile.currentRole === "object"
+            ? profile.currentRole
+            : null);
+        const isSystemAdminFromCurrentRole = Boolean(
+          currentRoleObj?.isSystemAdmin,
+        );
 
         const normalized = {
           ...profile,
           _id: profile._id || profile.id || undefined,
-          isSystemAdmin:
-            Boolean(profile.isSystemAdmin) || isSystemAdminFromCurrentRole,
+          isSystemAdmin: isSystemAdminFromCurrentRole,
+          isAVP: Boolean(
+  currentRoleObj?.isAVP || profile?.isAVP
+), // ✅ ADD THIS
           photo: profile.photo || "",
         } as User;
 
@@ -201,14 +212,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         const emp = response.employee;
         const empRoles = Array.isArray(emp?.roles) ? emp.roles : [];
         // Only check the current active role for isSystemAdmin, not all roles
-        const empCurrentRoleObj = empRoles.find(
-          (r: any) => r._id === emp?.currentRole || r._id?.toString() === emp?.currentRole?.toString()
-        ) ?? (typeof emp?.currentRole === "object" ? emp?.currentRole : null);
-        const isSystemAdminFromCurrentRole = Boolean(empCurrentRoleObj?.isSystemAdmin);
+        const empCurrentRoleObj =
+          empRoles.find(
+            (r: any) =>
+              r._id === emp?.currentRole ||
+              r._id?.toString() === emp?.currentRole?.toString(),
+          ) ?? (typeof emp?.currentRole === "object" ? emp?.currentRole : null);
+        const isSystemAdminFromCurrentRole = Boolean(
+          empCurrentRoleObj?.isSystemAdmin,
+        );
         const normalizedEmployee = {
           ...emp,
           _id: emp?._id || emp?.id || undefined,
-          isSystemAdmin: Boolean(emp?.isSystemAdmin) || isSystemAdminFromCurrentRole,
+          isSystemAdmin:
+            Boolean(emp?.isSystemAdmin) || isSystemAdminFromCurrentRole,
+          isAVP: Boolean(empCurrentRoleObj?.isAVP || response.employee?.isAVP), // ✅ ADD THIS
         };
         setUser(normalizedEmployee);
         if (!response?.employee?.currentRole) {
@@ -245,7 +263,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         {
           withCredentials: true,
           timeout: 5000,
-        }
+        },
       );
     } catch (error: unknown) {
       const axiosError = error as {
@@ -255,8 +273,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error(
         "Logout error:",
         axiosError.response?.data?.message ||
-        axiosError.message ||
-        "Unknown error"
+          axiosError.message ||
+          "Unknown error",
       );
     } finally {
       setUser(null);
@@ -274,7 +292,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         {
           withCredentials: true,
           timeout: 10000,
-        }
+        },
       );
 
       if (response.data.success) {
@@ -320,8 +338,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           const bookingId = params.get("bookingId");
           dest = bookingId
             ? `/dashboard/cab-booking?cabBooking=1&bookingId=${encodeURIComponent(
-              bookingId
-            )}`
+                bookingId,
+              )}`
             : "/dashboard/cab-booking";
         }
       }
@@ -330,13 +348,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         dest = "/dashboard/leads";
       }
 
-      // Instead of Next.js router transitions which might preserve stale state/cache 
+      // Instead of Next.js router transitions which might preserve stale state/cache
       // from the previous role's network requests, do a hard location redirect.
       const current =
         typeof window !== "undefined"
           ? window.location.pathname + window.location.search
           : null;
-          
+
       if (current && dest === current) {
         window.location.reload();
       } else {
@@ -425,7 +443,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const currentRoleName = getCurrentRoleName()?.toLowerCase();
     const isSystemAdmin = user.isSystemAdmin;
 
-    return currentRoleName === 'accounts' || currentRoleName === 'admin' || isSystemAdmin;
+    return (
+      currentRoleName === "accounts" ||
+      currentRoleName === "admin" ||
+      isSystemAdmin
+    );
   };
 
   // ✅ Function: Check if current user has the 'Accounts' role
@@ -438,7 +460,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     // Check if current role is "accounts" (case-insensitive)
     return currentRoleName === "accounts" || currentRoleName === "admin";
   };
-
 
   useEffect(() => {
     // Let's have this failing api for now
@@ -465,6 +486,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setPostLoginRedirect,
     postLoginRedirect,
     hasAccountsRole,
+    hasAdminRole, //  Add this line
+    isSystemAdmin,
+    isAVP: Boolean(
+  (typeof user?.currentRole === "object" && user?.currentRole?.isAVP) ||
+  (user?.roles || []).find((r) => r._id === user?.currentRole)?.isAVP
+),
   };
 
   return (
