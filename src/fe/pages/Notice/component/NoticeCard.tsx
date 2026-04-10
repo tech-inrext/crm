@@ -93,7 +93,6 @@ export default function NoticeCard({ notice }: { notice: Notice }) {
   const confirmDelete = async () => {
     try {
       await axios.delete(`/api/v0/notice/${notice._id}`);
-      alert("Notice deleted successfully");
       window.location.reload();
     } catch {
       alert("Delete failed");
