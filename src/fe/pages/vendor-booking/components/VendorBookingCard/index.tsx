@@ -2,7 +2,7 @@
 
 import React from "react";
 import { VendorBooking } from "../../types";
-import BookingCard from "@/components/cab-booking/BookingCard";
+import BookingCard from "@/fe/pages/cab-booking/components/BookingCard";
 import { Box, Button } from "@/components/ui/Component";
 import * as styles from "./styles";
 

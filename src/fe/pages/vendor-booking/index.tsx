@@ -4,7 +4,7 @@ import React, { useCallback } from "react";
 import { Box, Dialog, DialogContent } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
 import VendorBookingForm from "./components/VendorBookingForm";
-import BookingDetailsDialog from "@/components/cab-booking/BookingDetailsDialog";
+import BookingDetailsDialog from "@/fe/pages/cab-booking/components/BookingDetailsDialog";
 import { useUpdateBookingFieldsMutation } from "./vendorBookingApi";
 import { invalidateQueryCache, VENDOR_BOOKING_API_BASE } from "./constants";
 import { useVendorBookingPage } from "./hooks/useVendorBookingPage";
