@@ -11,6 +11,7 @@ import {
   DialogContent,
   DialogTitle,
   DialogActions,
+  Typography,
   TextField,
   Button,
   Stack,
@@ -325,7 +326,54 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
                 slotProps={{ textField: { fullWidth: true, size: "small" } }}
               />
             </Stack>
+            <Box className="flex flex-col gap-2">
+              <Box className="flex items-center justify-between">
+                <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                  ATTACHMENTS
+                </Typography>
 
+                <Button
+                  onClick={() => fileInputRef.current?.click()}
+                  size="small"
+                  variant="text"
+                >
+                  Add files
+                </Button>
+              </Box>
+
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                hidden
+                onChange={handleFilePick}
+              />
+
+              {pendingFiles.map((p) => (
+                <Box
+                  key={p.id}
+                  className="flex items-center justify-between border rounded px-3 py-2"
+                >
+                  <span className="text-sm">
+                    {p.customName || p.filename || p.file?.name}
+                  </span>
+
+                  <Button
+                    size="small"
+                    color="error"
+                    onClick={() => handleRemoveFile(p.id)}
+                  >
+                    Remove
+                  </Button>
+                </Box>
+              ))}
+
+              {!pendingFiles.length && (
+                <Typography className="text-sm text-gray-400">
+                  No attachments added
+                </Typography>
+              )}
+            </Box>
             <FormControlLabel
               control={
                 <Switch
