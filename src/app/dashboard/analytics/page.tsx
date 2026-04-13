@@ -211,9 +211,12 @@ export default function NewDashboardPage() {
         {((analyticsAccess.showCabBookingAnalytics && section === 2) ||
           (!analyticsAccess.showCabBookingAnalytics && section === 1)) && (
           <div className="flex flex-col gap-6">
-            <div className="flex flex-wrap gap-6 w-full items-stretch">
+            {/* First Row: Lead Conversion & Property On Demand */}
+            <div
+              className="flex flex-col md:flex-row flex-wrap gap-6 w-full items-stretch"
+            >
               <CardWrapper>
-                <div className="flex justify-between items-center px-2 pt-4 pb-0">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center px-2 pt-4 pb-0 gap-2">
                   <Typography
                     variant="h5"
                     className="font-semibold text-[#222]"
@@ -227,27 +230,34 @@ export default function NewDashboardPage() {
                         e.target.value as "week" | "month",
                       )
                     }
-                    className="px-3 py-1 rounded border border-gray-300 font-medium text-base text-[#222] bg-[#f7f9fa]"
+                    className="px-3 py-1 rounded border border-gray-300 font-medium text-base text-[#222] bg-[#f7f9fa] mt-2 sm:mt-0"
                   >
                     <option value="week">Week</option>
                     <option value="month">Month</option>
                   </select>
                 </div>
-                <LeadGenerationChart period={leadConversionPeriod} />
+                <div className="w-full min-h-[250px]">
+                  <LeadGenerationChart period={leadConversionPeriod} />
+                </div>
               </CardWrapper>
 
               <CardWrapper>
-                <div className="text-[1.3rem] font-bold text-[#333] mb-4 w-full text-center">
+                <div className="text-[1.1rem] sm:text-[1.3rem] font-bold text-[#333] mb-4 w-full text-center">
                   Property On Demand
                 </div>
-                <PropertyPieChart propertyData={propertyMetrics} />
+                <div className="w-full min-h-[250px] flex items-center justify-center">
+                  <PropertyPieChart propertyData={propertyMetrics} />
+                </div>
               </CardWrapper>
             </div>
 
-            <div className="flex flex-wrap gap-6 w-full items-stretch">
+            {/* Second Row: Leads by Source & Site Visit Conversion */}
+            <div
+              className="flex flex-col md:flex-row flex-wrap gap-6 w-full items-stretch"
+            >
               <CardWrapper>
-                <div className="flex justify-between items-center mb-3">
-                  <div className="text-[1.3rem] font-bold text-[#333] text-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-3 gap-2">
+                  <div className="text-[1.1rem] sm:text-[1.3rem] font-bold text-[#333] text-center">
                     Leads by Source
                   </div>
                   <div className="text-sm text-[#666]">
@@ -255,8 +265,10 @@ export default function NewDashboardPage() {
                   </div>
                 </div>
                 <div className="flex flex-col items-center gap-4 w-full flex-1">
-                  <div className="w-[350px] h-[350px] mx-auto">
-                    <LeadSourcesPieChart slices={leadsBySourceMetrics.slices} />
+                  <div className="w-full flex justify-center">
+                    <div className="w-[220px] h-[220px] sm:w-[300px] sm:h-[300px] md:w-[350px] md:h-[350px] mx-auto">
+                      <LeadSourcesPieChart slices={leadsBySourceMetrics.slices} />
+                    </div>
                   </div>
                   <LeadsBySourceList
                     leadsBySourceMetrics={leadsBySourceMetrics}
@@ -265,7 +277,9 @@ export default function NewDashboardPage() {
               </CardWrapper>
 
               <CardWrapper>
-                <SiteVisitConversionChart />
+                <div className="w-full min-h-[250px] flex items-center justify-center">
+                  <SiteVisitConversionChart />
+                </div>
               </CardWrapper>
             </div>
           </div>
