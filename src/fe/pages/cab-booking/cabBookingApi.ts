@@ -1,4 +1,4 @@
-import { Booking } from "@/types/cab-booking";
+import { Booking } from "@/fe/pages/cab-booking/types/cab-booking";
 
 const BASE_URL = "/api/v0/cab-booking";
 

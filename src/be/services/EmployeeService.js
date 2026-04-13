@@ -10,12 +10,15 @@ import validator from "validator";
 import Role from "../models/Role";
 import { sendNewEmployeeWelcomeEmail } from "../email-service/employee/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "../email-service/manager/managerNewReport.js";
+import { sendMOUApprovalRequestAVPMail } from "../email-service/mou/sendMOUApprovalRequestAVPMail.js";
 import { sendRoleChangeEmail } from "../email-service/role/sendRoleChangeEmail.js";
 import {
   notifyUserRegistration,
   notifyUserUpdate,
   notifyRoleChange,
 } from "../../lib/notification-helpers";
+import { sendEmployeeWelcomeWhatsappMessage } from "../whatsapp-msg-service/employee-welcome/employeeWelcome.js";
+import { sendMOUApprovalRequestWhatsappMessage } from "../whatsapp-msg-service/mou-notification/mouNotification.js";
 
 class EmployeeService extends Service {
   constructor() {
@@ -319,16 +322,16 @@ class EmployeeService extends Service {
         newManagerId = req.body.managerId ? String(req.body.managerId) : null;
       }
       const managerChanged = oldManagerId !== newManagerId;
-      
+
       /* ---------- MOU REGENERATION DETECTION ---------- */
       // Helper to compare trimmed strings safely
-      const hasStringChanged = (oldVal, newVal) => 
+      const hasStringChanged = (oldVal, newVal) =>
         String(oldVal || "").trim() !== String(newVal || "").trim();
 
-      const slabChanged = ("slabPercentage" in req.body) && 
+      const slabChanged = ("slabPercentage" in req.body) &&
         hasStringChanged(existingEmployee.slabPercentage, req.body.slabPercentage);
 
-      const branchChanged = ("branch" in req.body) && 
+      const branchChanged = ("branch" in req.body) &&
         hasStringChanged(existingEmployee.branch, req.body.branch);
 
       // If manager, slab, or branch changed → set MOU status to Pending
@@ -522,7 +525,7 @@ class EmployeeService extends Service {
         panNumber: formattedPan,
         password: hashedPassword,
         isCabVendor,
-        mouStatus: "Pending",
+        mouStatus: slabPercentage ? "Pending" : undefined,
         fatherName,
       };
 
@@ -595,18 +598,70 @@ class EmployeeService extends Service {
         // Email failed silently
       }
 
-      // 2) Send email to manager (if managerId is provided)
+      // 1.5) Send welcome WhatsApp to employee
+      try {
+        if (newEmployee.phone) {
+          await sendEmployeeWelcomeWhatsappMessage(
+            newEmployee.phone,
+            newEmployee.name,
+            `${process.env.APP_URL || "https://dashboard.inrext.com"}/login`
+          );
+        }
+      } catch (e) {
+        // WhatsApp failed silently
+      }
+
+      // 2) Notifications (Email/WhatsApp)
       if (managerId) {
         try {
+          // A) Always notify the direct manager about the new report
           const managerDoc = await Employee.findById(managerId).lean();
-          if (managerDoc?.email) {
+          if (managerDoc && managerDoc.email) {
             await sendManagerNewReportEmail({
               manager: managerDoc,
               employee: newEmployee.toObject(),
             });
           }
+
+          // B) Only send MOU notifications if this is a freelancer (has slabPercentage)
+          if (slabPercentage) {
+            // Find the AVP in the hierarchy for MOU approval
+            const avpDoc = await this.findAVPHierarchy(managerId);
+
+            if (avpDoc) {
+              // Send MOU approval request email to AVP
+              if (avpDoc.email) {
+                await sendMOUApprovalRequestAVPMail({
+                  avp: avpDoc,
+                  employee: newEmployee.toObject(),
+                });
+              }
+
+              // Send MOU approval request WhatsApp to AVP
+              if (avpDoc.phone) {
+                await sendMOUApprovalRequestWhatsappMessage(
+                  avpDoc.phone,
+                  avpDoc.name,
+                  newEmployee.name,
+                  newEmployee.employeeProfileId || newEmployee._id,
+                  `${process.env.APP_URL || "https://dashboard.inrext.com"}/dashboard/mou`
+                );
+              }
+            } else if (managerDoc) {
+              // Fallback: Notify immediate manager if no AVP found in higher hierarchy
+              if (managerDoc.phone) {
+                await sendMOUApprovalRequestWhatsappMessage(
+                  managerDoc.phone,
+                  managerDoc.name,
+                  newEmployee.name,
+                  newEmployee.employeeProfileId || newEmployee._id,
+                  `${process.env.APP_URL || "https://dashboard.inrext.com"}/dashboard/mou`
+                );
+              }
+            }
+          }
         } catch (e) {
-          // Email failed silently
+          console.error("AVP/Manager notification failed:", e);
         }
       }
 
@@ -882,6 +937,8 @@ class EmployeeService extends Service {
           joiningDate: user.joiningDate,
           photo: user.photo || "",
           currentRole: req.roleId,
+          slabPercentage: user.slabPercentage,
+          branch: user.branch,
         },
       });
     } catch (error) {
@@ -1397,6 +1454,27 @@ class EmployeeService extends Service {
         error: error.message,
       });
     }
+  }
+  async findAVPHierarchy(employeeId) {
+    if (!employeeId) return null;
+
+    try {
+      // Find employee and populate roles to check isAVP flag
+      const employee = await Employee.findById(employeeId).populate("roles");
+      if (!employee) return null;
+
+      // Check if current employee is an AVP
+      const isAVP = Array.isArray(employee.roles) && employee.roles.some((role) => role.isAVP === true);
+      if (isAVP) return employee.toObject();
+
+      // Recurse upward
+      if (employee.managerId) {
+        return await this.findAVPHierarchy(employee.managerId);
+      }
+    } catch (error) {
+      console.error("Error in findAVPHierarchy:", error);
+    }
+    return null;
   }
 
   /**

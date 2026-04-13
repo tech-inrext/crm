@@ -1,7 +1,7 @@
 import React from "react";
 import { Select, MenuItem, Chip } from "@/components/ui/Component";
-import { Booking } from "@/types/cab-booking";
-import { getStatusColor, statusOptions } from "@/constants/cab-booking";
+import { Booking } from "@/fe/pages/cab-booking/types/cab-booking";
+import { getStatusColor, statusOptions } from "@/fe/pages/cab-booking/constants/cab-booking";
 
 interface Props {
   booking: Booking;

@@ -30,9 +30,10 @@ export const UsersList: React.FC<UsersListProps> = ({
     <div className="flex justify-center mt-8">
       <Pagination
         page={page}
-        pageSize={rowsPerPage ?? 10}
+        pageSize={rowsPerPage ?? 8}
         total={totalItems}
         onPageChange={onPageChange}
+        pageSizeOptions={[4, 8, 12]}
         onPageSizeChange={onPageSizeChange}
       />
     </div>

@@ -6,7 +6,7 @@ const roleApi = createApi({
       url: "/api/v0/role",
       isPaginated: true,
       shouldCache: true,
-      defaultPageSize: 6,
+      defaultPageSize: 8,
     }),
   },
   mutations: {

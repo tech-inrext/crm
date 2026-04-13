@@ -45,6 +45,7 @@ export interface User {
   joiningDate?: string;
   gender?: string;
   address?: string;
+  slabPercentage?: string;
 }
 
 export interface Employee {
@@ -60,6 +61,7 @@ export interface Employee {
   departmentId?: string;
   managerId?: string;
   isCabVendor?: boolean;
+  slabPercentage?: string;
 }
 
 // ─── API types ────────────────────────────────────────────────────────────────
