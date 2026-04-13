@@ -7,11 +7,11 @@ import VendorBookingForm from "./components/VendorBookingForm";
 import BookingDetailsDialog from "@/fe/pages/cab-booking/components/BookingDetailsDialog";
 import { useUpdateBookingFieldsMutation } from "./vendorBookingApi";
 import { invalidateQueryCache, VENDOR_BOOKING_API_BASE } from "./constants";
-import { useVendorBookingPage } from "./hooks/useVendorBookingPage";
+import { useVendorBookingPage } from "./hooks";
 import VendorBookingActionBar from "./components/VendorBookingActionBar";
 import VendorBookingsList from "./components/VendorBookingsList";
 import { VendorBooking } from "./types";
-import { uploadFileToS3 } from "./utils/s3";
+import { uploadFileToS3 } from "./utils";
 
 const VendorBookingPage: React.FC = () => {
   const {

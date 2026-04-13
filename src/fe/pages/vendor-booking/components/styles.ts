@@ -58,6 +58,17 @@ export const skeletonBadgeSx: SxProps<Theme> = {
   mt: 0.6,
 } as const;
 
+export const skeletonCardSx: SxProps<Theme> = {
+  p: 2,
+  borderRadius: 3,
+  border: "1px solid",
+  borderColor: "divider",
+  height: "100%",
+  display: "flex",
+  flexDirection: "column",
+  gap: 2,
+} as const;
+
 /**
  * Shared MUI TextField sx prop used across vendor booking forms
  */
@@ -78,4 +89,81 @@ export const formSectionTitleSx: SxProps<Theme> = {
   color: "text.primary",
   mb: 1.5,
   mt: 1,
+} as const;
+
+/**
+ * Main vertical layout for form sections
+ */
+export const formContainerSx: SxProps<Theme> = {
+  display: "flex",
+  flexDirection: "column",
+  gap: 3,
+} as const;
+
+/**
+ * File upload button base styling
+ */
+export const fileUploadButtonSx: SxProps<Theme> = {
+  height: 40,
+  justifyContent: "space-between",
+  px: 1.5,
+  textTransform: "none",
+  color: "text.primary",
+  fontSize: "0.875rem",
+  fontWeight: 400,
+  "&:hover": {
+    background: "rgba(25, 118, 210, 0.08)",
+    borderColor: "primary.main",
+    color: "primary.main",
+  },
+} as const;
+
+/**
+ * Uploaded file name styling (caption/body2)
+ */
+export const fileNameSx: SxProps<Theme> = {
+  maxWidth: "70%",
+} as const;
+
+/**
+ * "CHOOSE" label inside upload button
+ */
+export const chooseTextSx: SxProps<Theme> = {
+  color: "primary.main",
+  fontWeight: 600,
+} as const;
+
+/**
+ * Error message for file uploads
+ */
+export const errorTextSx: SxProps<Theme> = {
+  mt: 0.5,
+  display: "block",
+  ml: 1,
+} as const;
+
+/**
+ * Image preview container
+ */
+export const imagePreviewBoxSx: SxProps<Theme> = {
+  mt: 1,
+  position: "relative",
+  width: 60,
+  height: 40,
+} as const;
+
+/**
+ * Read-only total KM field styling
+ */
+export const totalKmFieldSx: SxProps<Theme> = {
+  ...inputSx,
+  "& .MuiInputBase-root": {
+    ...inputSx["& .MuiInputBase-root"],
+    bgcolor: "rgba(25, 118, 210, 0.04)",
+  },
+  "& .MuiInputBase-input": {
+    ...inputSx["& .MuiInputBase-input" as any],
+    color: "primary.main",
+    fontWeight: 700,
+  },
 } as const;
