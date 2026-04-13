@@ -66,7 +66,7 @@ icon: <Campaign sx={{ color: "#3785FF" }} />  },
     icon: <ContactPhone sx={{ color: "#3785FF" }} />,
   },
   {
-    label: "Users",
+    label: "Business Partners",
     href: "/dashboard/users",
     module: "employee",
     icon: <Groups sx={{ color: "#3785FF" }} />,
