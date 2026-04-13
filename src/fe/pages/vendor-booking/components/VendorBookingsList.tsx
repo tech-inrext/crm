@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { VendorBooking } from "../types";
+import { VendorBooking, VendorBookingsListProps } from "../types";
 import { useGetVendorBookingsQuery } from "../vendorBookingApi";
 import VendorBookingCard from "./VendorBookingCard";
 import Pagination from "@/components/ui/Navigation/Pagination";
@@ -9,15 +9,6 @@ import { Typography, Box } from "@/components/ui/Component";
 import VendorBookingsSkeleton from "./VendorBookingsSkeleton";
 import * as styles from "./styles";
 
-interface VendorBookingsListProps {
-  onViewDetails: (booking: VendorBooking) => void;
-  onOpenForm: (bookingId: string, booking: VendorBooking) => void;
-  canWrite: boolean;
-  /** Call to get a refetch function back to the parent for post-submit refresh */
-  onReady?: (refetch: () => void) => void;
-  search?: string;
-  statusFilter?: string;
-}
 
 const VendorBookingsList: React.FC<VendorBookingsListProps> = ({
   onViewDetails,

@@ -1,9 +1,43 @@
 import { useState, useCallback, useEffect, useRef } from "react";
-import { VendorBooking } from "../types";
+import { useFormik } from "formik";
+import { VendorBooking, UseVendorBookingFormProps } from "./types";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDebounce } from "@/hooks/useDebounce";
-import { SEARCH_DEBOUNCE_DELAY } from "../constants";
+import { SEARCH_DEBOUNCE_DELAY } from "./constants";
+import { 
+  VENDOR_BOOKING_INITIAL_VALUES, 
+  VENDOR_BOOKING_VALIDATION_SCHEMA 
+} from "./constants/form";
+import { calculateTotalKm, mapFormValuesToPayload } from "./utils";
 
+/**
+ * Hook for managing the Vendor Booking form logic
+ */
+export const useVendorBookingForm = ({ onSubmit }: UseVendorBookingFormProps) => {
+  const formik = useFormik({
+    initialValues: VENDOR_BOOKING_INITIAL_VALUES,
+    validationSchema: VENDOR_BOOKING_VALIDATION_SCHEMA,
+    validateOnBlur: true,
+    validateOnChange: true,
+    onSubmit: (values, { setSubmitting }) => {
+      if (onSubmit) {
+        onSubmit(mapFormValuesToPayload(values));
+      }
+      setSubmitting(false);
+    },
+  });
+
+  const totalKm = calculateTotalKm(formik.values.startKm, formik.values.endKm);
+
+  return {
+    formik,
+    totalKm,
+  };
+};
+
+/**
+ * Hook for managing the Vendor Booking page state and interactions
+ */
 export function useVendorBookingPage() {
   const { getPermissions } = useAuth();
   const canWriteVendorBookings = getPermissions("cab-vendor").hasWriteAccess;

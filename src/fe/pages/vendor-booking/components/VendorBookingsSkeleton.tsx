@@ -3,10 +3,7 @@
 import React from "react";
 import { Box, Skeleton, Card } from "@/components/ui/Component";
 import * as styles from "./styles";
-
-interface VendorBookingsSkeletonProps {
-  count?: number;
-}
+import { VendorBookingsSkeletonProps } from "../types";
 
 const VendorBookingsSkeleton: React.FC<VendorBookingsSkeletonProps> = ({ count = 6 }) => {
   return (
@@ -14,16 +11,7 @@ const VendorBookingsSkeleton: React.FC<VendorBookingsSkeletonProps> = ({ count =
       {Array.from(new Array(count)).map((_, index) => (
         <Card
           key={index}
-          sx={{
-            p: 2,
-            borderRadius: 3,
-            border: "1px solid",
-            borderColor: "divider",
-            height: "100%",
-            display: "flex",
-            flexDirection: "column",
-            gap: 2,
-          }}
+          sx={styles.skeletonCardSx}
         >
           {/* Header Skeleton */}
           <Box className="flex justify-between items-start">
