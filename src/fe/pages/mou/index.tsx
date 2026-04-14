@@ -14,6 +14,7 @@ import PermissionGuard from "@/components/PermissionGuard";
 import MouList from "@/fe/pages/mou/components/MouList";
 import MouActionBar from "@/fe/pages/mou/components/MouActionBar";
 import { useMouPage } from "@/fe/pages/mou/hooks/useMouPage";
+import { Tabs, Tab, Badge } from "@/components/ui/Component";
 import {
   containerSx,
   loadingContainerSx,
@@ -21,6 +22,12 @@ import {
   listPaperSx,
   listTitleSx,
   paginationContainerSx,
+  tabsWrapperSx,
+  tabsSx,
+  tabSx,
+  tabLabelBoxSx,
+  badgeTypographySx,
+  tabTextTypographySx,
 } from "./styles";
 
 const MOUPage: React.FC = () => {
@@ -40,7 +47,13 @@ const MOUPage: React.FC = () => {
     handleMarkComplete,
     search,
     handleSearchChange,
+    pendingCount,
+    completedCount,
   } = useMouPage();
+
+  const handleTabChange = (_: React.SyntheticEvent, newValue: "pending" | "completed") => {
+    setView(newValue);
+  };
 
   return (
     <PermissionGuard module="mou">
@@ -48,9 +61,51 @@ const MOUPage: React.FC = () => {
         <MouActionBar
           search={search}
           onSearchChange={handleSearchChange}
-          view={view}
-          onViewChange={setView}
         />
+
+        <Box sx={tabsWrapperSx}>
+          <Tabs 
+            value={view} 
+            onChange={handleTabChange}
+            variant="fullWidth"
+            indicatorColor="primary"
+            textColor="primary"
+            sx={tabsSx}
+          >
+            <Tab 
+              value="pending" 
+              disableRipple
+              sx={tabSx}
+              label={
+                <Box sx={tabLabelBoxSx}>
+                  <Typography 
+                    variant="caption" 
+                    sx={badgeTypographySx("error")}
+                  >
+                    {pendingCount}
+                  </Typography>
+                  <Typography variant="body2" sx={tabTextTypographySx}>PENDING</Typography>
+                </Box>
+              }
+            />
+            <Tab 
+              value="completed" 
+              disableRipple
+              sx={tabSx}
+              label={
+                <Box sx={tabLabelBoxSx}>
+                  <Typography 
+                    variant="caption" 
+                    sx={badgeTypographySx("success")}
+                  >
+                    {completedCount}
+                  </Typography>
+                  <Typography variant="body2" sx={tabTextTypographySx}>COMPLETED</Typography>
+                </Box>
+              }
+            />
+          </Tabs>
+        </Box>
 
         {loading ? (
           <Box sx={loadingContainerSx}>
