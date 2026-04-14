@@ -13,14 +13,25 @@ import {
   DialogContentText,
   DialogActions,
   Divider,
+  IconButton,
+  DownloadIcon,
+  Check,
+  CloseIcon,
 } from "@/components/ui/Component";
 import { MouListProps } from "../types";
 import { useMouListActions } from "../hooks/useMouPage";
+import { useMouPreview } from "../hooks/useMouPreview";
 import {
   dialgonContentSx,
   previewContainerSx,
   noteTextSx,
   fullPreviewContentSx,
+  dialogTitleStackSx,
+  dialogActionsSx,
+  dialogBtnGroupSx,
+  approveBtnSx,
+  rejectBtnSx,
+  cancelBtnSx,
 } from "./styles";
 import MouCard from "./MouCard";
 import PreviewLoader from "./PreviewLoader";
@@ -47,6 +58,9 @@ const MouList: React.FC<MouListProps> = ({
     closePreview,
   } = useMouListActions(onApprove, onReject);
 
+  const { downloadPdf: downloadConfirmPdf } = useMouPreview(pendingAction?.id || "");
+  const { downloadPdf: downloadFullPdf } = useMouPreview(previewId || "");
+
   return (
     <Box>
       <Grid container spacing={2}>
@@ -65,9 +79,18 @@ const MouList: React.FC<MouListProps> = ({
       </Grid>
       <Dialog open={confirmOpen} onClose={handleCancel} fullWidth maxWidth="lg">
         <DialogTitle>
-          {pendingAction?.type === "approve"
-            ? "Preview & Confirm Approve"
-            : "Confirm Reject"}
+          <Box sx={dialogTitleStackSx}>
+            <Typography variant="h6">
+              {pendingAction?.type === "approve"
+                ? "Preview & Confirm Approve"
+                : "Confirm Reject"}
+            </Typography>
+            {pendingAction?.type === "approve" && (
+              <IconButton onClick={downloadConfirmPdf} color="primary" size="small">
+                <DownloadIcon />
+              </IconButton>
+            )}
+          </Box>
         </DialogTitle>
         <DialogContent sx={dialgonContentSx}>
           {pendingAction?.id && (
@@ -82,31 +105,46 @@ const MouList: React.FC<MouListProps> = ({
             </DialogContentText>
           )}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={dialogActionsSx}>
           {pendingAction?.type === "approve" && (
             <Typography variant="caption" sx={noteTextSx}>
               Note: Confirm will send email to associate with MOU pdf
             </Typography>
           )}
-          <Button onClick={handleCancel}>Cancel</Button>
-          <Button
-            type="button"
-            onClick={handleConfirm}
-            color={pendingAction?.type === "approve" ? "success" : "error"}
-            variant={
-              pendingAction?.type === "approve" ? "contained" : "outlined"
-            }
-          >
-            {pendingAction?.type === "approve" ? "Approve" : "Reject"}
-          </Button>
+          <Box sx={dialogBtnGroupSx}>
+            <Button onClick={handleCancel} variant="outlined" sx={cancelBtnSx}>
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleConfirm}
+              sx={pendingAction?.type === "approve" ? approveBtnSx : rejectBtnSx}
+              startIcon={
+                pendingAction?.type === "approve" ? (
+                  <Check fontSize="small" />
+                ) : (
+                  <CloseIcon fontSize="small" />
+                )
+              }
+            >
+              {pendingAction?.type === "approve" ? "Approve" : "Reject"}
+            </Button>
+          </Box>
         </DialogActions>
       </Dialog>
       <Dialog open={previewOpen} onClose={closePreview} fullWidth maxWidth="lg">
-        <DialogTitle>MOU Preview</DialogTitle>
+        <DialogTitle>
+          <Box sx={dialogTitleStackSx}>
+            <Typography variant="h6">MOU Preview</Typography>
+            <IconButton onClick={downloadFullPdf} color="primary" size="small">
+              <DownloadIcon />
+            </IconButton>
+          </Box>
+        </DialogTitle>
         <DialogContent sx={fullPreviewContentSx}>
           {previewId && <PreviewLoader id={previewId} />}
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={dialogActionsSx}>
           <Button onClick={closePreview}>Close</Button>
         </DialogActions>
       </Dialog>
