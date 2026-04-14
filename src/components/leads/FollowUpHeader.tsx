@@ -1,6 +1,51 @@
-import {Box, Typography, IconButton, Avatar, CloseIcon} from "@/components/ui/Component";
+import React, { useState, useEffect } from "react";
+import {Box, Typography, IconButton, Avatar, CloseIcon, TrendingUp, Phone, PersonAdd} from "@/components/ui/Component";
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
-export default function FollowUpHeader({leadInfo, handleDialogClose, isMobile}: {leadInfo: any, handleDialogClose: () => void, isMobile: boolean}) {
+import KeyboardArrowDown from "@mui/icons-material/KeyboardArrowDown";
+import AssignedDropdown from "./AssignedDropdown";
+
+export default function FollowUpHeader({
+  leadInfo, 
+  handleDialogClose, 
+  isMobile,
+  onLeadUpdate
+}: {
+  leadInfo: any, 
+  handleDialogClose: () => void, 
+  isMobile: boolean,
+  onLeadUpdate?: () => void
+}) {
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [assignedUser, setAssignedUser] = useState(leadInfo?.assignedTo || null);
+
+    useEffect(() => {
+        if (leadInfo?.assignedTo) {
+            setAssignedUser(leadInfo.assignedTo);
+        }
+    }, [leadInfo?.assignedTo]);
+
+    const handleAssignUser = async (user: any) => {
+        setAssignedUser(user);
+        try {
+            const leadId = leadInfo._id || leadInfo.id || leadInfo.leadId;
+            const response = await fetch(
+                `/api/v0/leads/${leadId}/assign?leadId=${leadId}`,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({ assignedTo: user._id }),
+                }
+            );
+            if (!response.ok) {
+                throw new Error("Failed to update assignment");
+            }
+            if (onLeadUpdate) onLeadUpdate();
+        } catch (error) {
+            console.error("Error updating assignment:", error);
+        }
+    };
     return (
         <div>
             <Box
@@ -73,33 +118,83 @@ export default function FollowUpHeader({leadInfo, handleDialogClose, isMobile}: 
                 : "?"}
             </Avatar>
             <Box sx={{ minWidth: 0, flex: 1 }}>
-              <Typography
-                sx={{
-                  fontSize: "0.8rem",
-                  fontWeight: 600,
-                  color: "#111827",
-                  lineHeight: 1.3,
-                  overflow: "hidden",
-                  textOverflow: "ellipsis",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                {leadInfo.fullName || "Unknown Lead"}
-              </Typography>
-              {leadInfo.phone && (
+              <Box sx={{ display: "flex", alignItems: "center", gap: 1.5, minWidth: 0 }}>
                 <Typography
-                  component="a"
-                  href={`tel:${leadInfo.phone}`}
                   sx={{
-                    fontSize: "0.7rem",
-                    color: "#6b7280",
-                    textDecoration: "none",
-                    "&:hover": { color: "#2563eb" },
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    color: "#111827",
+                    lineHeight: 1.3,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    whiteSpace: "nowrap",
+                    flexShrink: 1,
                   }}
                 >
-                  {leadInfo.phone}
+                  {leadInfo.fullName || "Unknown Lead"}
                 </Typography>
-              )}
+                <Box
+                  onClick={(e) => setAnchorEl(e.currentTarget)}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    cursor: "pointer",
+                    ml: 0.5,
+                    bgcolor: "action.hover",
+                    borderRadius: 1,
+                    px: 0.8,
+                    flexShrink: 0,
+                    "&:hover": { bgcolor: "action.selected" },
+                  }}
+                >
+                  <PersonAdd sx={{ fontSize: 13, color: "text.secondary", mr: 0.6 }} />
+                  <Typography variant="caption" sx={{ fontSize: "0.65rem", color: "text.secondary" }}>
+                    {assignedUser?.name || assignedUser?.fullName || "Unassigned"}
+                  </Typography>
+                  <KeyboardArrowDown sx={{ fontSize: 14, color: "text.secondary" }} />
+                </Box>
+              </Box>
+
+              <AssignedDropdown
+                assignedTo={assignedUser}
+                anchorEl={anchorEl}
+                onClose={() => setAnchorEl(null)}
+                onAssign={handleAssignUser}
+                managerId={leadInfo.managerId}
+              />
+              <Box sx={{ display: "flex", alignItems: "center", gap: 3, flexWrap: "wrap", mt: 0.5 }}>
+                {leadInfo.phone && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
+                    <Phone sx={{ fontSize: 13, color: "#6b7280" }} />
+                    <Typography
+                      component="a"
+                      href={`tel:${leadInfo.phone}`}
+                      sx={{
+                        fontSize: "0.7rem",
+                        color: "#6b7280",
+                        textDecoration: "none",
+                        "&:hover": { color: "#2563eb" },
+                      }}
+                    >
+                      {leadInfo.phone}
+                    </Typography>
+                  </Box>
+                )}
+                {leadInfo.budgetRange && (
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
+                    <TrendingUp sx={{ fontSize: 13, color: "#6b7280" }} />
+                    <Typography
+                      sx={{
+                        fontSize: "0.68rem",
+                        color: "#6b7280",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {leadInfo.budgetRange}
+                    </Typography>
+                  </Box>
+                )}
+              </Box>
             </Box>
           </Box>
         )}

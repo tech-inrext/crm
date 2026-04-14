@@ -386,12 +386,19 @@ class LeadService extends Service {
             .sort({ createdAt: -1 })
             .lean();
 
+          // 3. Get Recent 3 Activities
+          const recentActivities = await FollowUp.find({ leadId: lead._id })
+            .sort({ createdAt: -1 })
+            .limit(3)
+            .lean();
+
           return {
             ...lead,
             followUpCount: count, // Used for Badge
             nextFollowUp: latest ? latest.followUpDate : null,
             // Providing empty arrays as notes are no longer on Lead object
             followUpNotes: latest ? [latest.note] : [],
+            recentActivities: recentActivities || [],
           };
         }),
       );
