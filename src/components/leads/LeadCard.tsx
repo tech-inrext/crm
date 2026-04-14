@@ -262,7 +262,6 @@ const LeadCard = memo(
                 right: 15,
                 zIndex: 50,
               }}
-              onClick={(e) => e.stopPropagation()}
             >
               <PermissionGuard module="lead" action="write" fallback={<></>}>
                 <ClickAwayListener onClickAway={() => setActionsOpen(false)}>
@@ -285,6 +284,7 @@ const LeadCard = memo(
                           },
                         },
                       }}
+                      onClick={(e) => e.stopPropagation()}
                       icon={
                         <SpeedDialIcon
                           icon={<MoreVert sx={{ fontSize: 18 }} />}
