@@ -34,8 +34,6 @@ import StatusDropdown from "./StatusDropdown";
 import LeadTypeDropdown from "./LeadTypeDropdown";
 import PermissionGuard from "../PermissionGuard";
 
-import AssignedDropdown from "./AssignedDropdown";
-
 // Helper for row items with icons
 const InfoRow = ({
   icon,
@@ -142,65 +140,7 @@ const LeadCard = memo(
     onLeadTypeChange,
   }: LeadCardProps) => {
     const [actionsOpen, setActionsOpen] = useState(false);
-    const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
     const theme = useTheme();
-
-    const [assignedUser, setAssignedUser] = useState<any>(
-      lead.assignedTo || null
-    );
-    const [isManualAssign, setIsManualAssign] = useState(false);
-
-    const handleAssignedClick = (event: React.MouseEvent<HTMLElement>) => {
-      setAnchorEl(event.currentTarget);
-    };
-
-    const handleCloseMenu = () => {
-      setAnchorEl(null);
-    };
-
-    const handleAssignUser = async (user: any) => {
-      setAssignedUser(user);
-      setIsManualAssign(true);
-      try {
-        // Use query param for leadId as expected by backend
-        const response = await fetch(
-          `/api/v0/leads/${lead._id}/assign?leadId=${lead._id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ assignedTo: user._id }),
-          }
-        );
-        if (!response.ok) {
-          throw new Error("Failed to update assignment");
-        }
-        const data = await response.json();
-        // If backend returns a populated user object, use it. If only id, keep previous user object.
-        if (
-          data?.data?.assignedTo &&
-          typeof data.data.assignedTo === "object"
-        ) {
-          setAssignedUser(data.data.assignedTo);
-        } else if (
-          data?.data?.assignedTo &&
-          typeof data.data.assignedTo === "string"
-        ) {
-          // fallback: keep the user object from dropdown
-          setAssignedUser(user);
-        }
-        console.log(`Assigned to: ${user.name || user.fullName}`);
-      } catch (error) {
-        console.error("Error updating assignment:", error);
-      }
-    };
-
-    useEffect(() => {
-      if (!isManualAssign) {
-        setAssignedUser(lead.assignedTo || null);
-      }
-    }, [lead.assignedTo, isManualAssign]);
 
     const leadId = lead._id || lead.id || lead.leadId || "";
 
@@ -213,8 +153,8 @@ const LeadCard = memo(
           boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
           background: "#fff",
           position: "relative",
-          height: "340px",
-          minHeight: "340px",
+          height: "367px",
+          minHeight: "367px",
           display: "flex",
           flexDirection: "column",
           transition: "all 0.3s ease",
@@ -286,203 +226,279 @@ const LeadCard = memo(
                   {lead.location || "Location not set"}
                 </Typography>
               </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Phone sx={{ fontSize: 16, color: "text.secondary" }} />
+                <Typography
+                  component="a"
+                  href={lead.phone ? `tel:${lead.phone}` : "#"}
+                  variant="caption"
+                  color="text.secondary"
+                  noWrap
+                  onClick={(e) => e.stopPropagation()}
+                  sx={{
+                    textDecoration: "none",
+                    "&:hover": {
+                      color: "primary.main",
+                      // textDecoration: "underline",
+                    },
+                  }}
+                >
+                  {lead.phone || "Phone not set"}
+                </Typography>
+              </Box>
+              <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                <Email sx={{ fontSize: 16, color: "text.secondary" }} />
+                <Typography variant="caption" color="text.secondary" noWrap>
+                  {lead.email || "Email not set"}
+                </Typography>
+              </Box>
             </Stack>
+
+            {/* Quick Actions (3 dots) - Moved Above Divider */}
+            <Box
+              sx={{
+                position: "absolute",
+                top: 130,
+                right: 15,
+                zIndex: 50,
+              }}
+            >
+              <PermissionGuard module="lead" action="write" fallback={<></>}>
+                <ClickAwayListener onClickAway={() => setActionsOpen(false)}>
+                  <Box sx={{ position: "relative" }}>
+                    <SpeedDial
+                      ariaLabel="Actions"
+                      sx={{
+                        "& .MuiFab-root": {
+                          width: 32,
+                          height: 32,
+                          minHeight: 32,
+                          boxShadow: "none",
+                          border: `1px solid ${theme.palette.divider}`,
+                          bgcolor: "transparent",
+                          color: "text.secondary",
+                          "&:hover": {
+                            bgcolor: alpha(theme.palette.primary.main, 0.05),
+                            borderColor: theme.palette.primary.main,
+                            color: theme.palette.primary.main,
+                          },
+                        },
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      icon={
+                        <SpeedDialIcon
+                          icon={<MoreVert sx={{ fontSize: 18 }} />}
+                        />
+                      }
+                      onClose={(_, reason) => {
+                        if (
+                          reason === "toggle" ||
+                          reason === "escapeKeyDown" ||
+                          reason === "blur"
+                        ) {
+                          setActionsOpen(false);
+                        }
+                      }}
+                      onOpen={(_, reason) => {
+                        if (reason === "toggle") {
+                          setActionsOpen(true);
+                        }
+                      }}
+                      open={actionsOpen}
+                      direction="left"
+                    >
+                      <SpeedDialAction
+                        icon={
+                          <Edit
+                            sx={{
+                              fontSize: 16,
+                              color: theme.palette.primary.main,
+                            }}
+                          />
+                        }
+                        tooltipTitle="Edit"
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          minHeight: 32,
+                          bgcolor: alpha(theme.palette.primary.main, 0.1),
+                          "&:hover": {
+                            bgcolor: alpha(theme.palette.primary.main, 0.2),
+                          },
+                        }}
+                        onClick={() => {
+                          setActionsOpen(false);
+                          onEdit();
+                        }}
+                      />
+                      <SpeedDialAction
+                        icon={
+                          <NoteAlt
+                            sx={{
+                              fontSize: 16,
+                              color: theme.palette.warning.main,
+                            }}
+                          />
+                        }
+                        tooltipTitle="Notes"
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          minHeight: 32,
+                          bgcolor: alpha(theme.palette.warning.main, 0.1),
+                          "&:hover": {
+                            bgcolor: alpha(theme.palette.warning.main, 0.2),
+                          },
+                        }}
+                        onClick={() => {
+                          setActionsOpen(false);
+                          onOpenFeedback(
+                            lead._id || lead.id || lead.leadId || ""
+                          );
+                        }}
+                      />
+                      <SpeedDialAction
+                        icon={
+                          <Event
+                            sx={{
+                              fontSize: 16,
+                              color: theme.palette.secondary.main,
+                            }}
+                          />
+                        }
+                        tooltipTitle="Site Visit"
+                        sx={{
+                          width: 32,
+                          height: 32,
+                          minHeight: 32,
+                          bgcolor: alpha(theme.palette.secondary.main, 0.1),
+                          "&:hover": {
+                            bgcolor: alpha(theme.palette.secondary.main, 0.2),
+                          },
+                        }}
+                        onClick={() => {
+                          setActionsOpen(false);
+                          onScheduleSiteVisit(
+                            lead._id || lead.id || lead.leadId || ""
+                          );
+                        }}
+                      />
+                    </SpeedDial>
+                  </Box>
+                </ClickAwayListener>
+              </PermissionGuard>
+            </Box>
           </Box>
 
           <Divider sx={{ my: 2, borderStyle: "dashed" }} />
 
-          {/* Contact Details Grid */}
-          <Stack spacing={1.5}>
-            <Box
-              onClick={(e) => {
-                e.stopPropagation();
-                handleAssignedClick(e);
-              }}
+          {/* Recent Activities Section */}
+          <Box sx={{ mt: 0.5, minWidth: 0 }}>
+            <Typography
+              variant="caption"
+              fontWeight={700}
+              color="text.secondary"
               sx={{
-                position: "relative",
-                borderRadius: 2,
-                width: 240,
-                ml: 1,
-                // py: 0.5,
-                boxSizing: "border-box",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                cursor: "pointer",
+                textTransform: "uppercase",
+                letterSpacing: "0.05em",
+                display: "block",
+                mb: 1.5,
               }}
             >
-              <InfoRow
-                icon={<PersonAdd sx={{ fontSize: 16 }} />}
-                text={
-                  <Box sx={{ display: "inline-block" }}>
-                    <Box component="span" sx={{ color: "black" }}>
-                      {assignedUser?.name ||
-                        assignedUser?.fullName ||
-                        "Unassigned"}
-                    </Box>
-                  </Box>
-                }
-                color={theme.palette.secondary.main}
-              />
+              Recent Activities
+            </Typography>
 
-              {/* ✅ Dropdown Icon */}
-              <KeyboardArrowDown
-                sx={{
-                  fontSize: 20,
-                  color: alpha(theme.palette.secondary.main, 0.7),
-                }}
-              />
-            </Box>
-
-            <InfoRow
-              icon={<Email sx={{ fontSize: 18 }} />}
-              text={lead.email || "Not provided"}
-              color={theme.palette.info.main}
-            />
-            <InfoRow
-              icon={<Phone sx={{ fontSize: 18 }} />}
-              text={lead.phone}
-              color={theme.palette.success.main}
-              isLink
-              href={`tel:${lead.phone}`}
-            />
-            <InfoRow
-              icon={<TrendingUp sx={{ fontSize: 18 }} />}
-              text={lead.budgetRange || "Budget N/A"}
-              color={theme.palette.warning.main}
-            />
-
-            {/* AssignedDropdown rendered at root for proper closing */}
-            {anchorEl && (
-              <AssignedDropdown
-                assignedTo={assignedUser}
-                anchorEl={anchorEl}
-                onClose={() => {
-                  setAnchorEl(null);
-                }}
-                onAssign={handleAssignUser}
-                managerId={lead.managerId}
-              />
-            )}
-          </Stack>
-        </CardContent>
-        {/* Footer / Actions */}
-        <Box
-          sx={{
-            p: 2,
-            pt: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-            mt: "auto",
-          }}
-        >
-          <PermissionGuard module="lead" action="write" fallback={<></>}>
-            <ClickAwayListener onClickAway={() => setActionsOpen(false)}>
-              <Box
-                sx={{ position: "relative", zIndex: 20 }}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <SpeedDial
-                  ariaLabel="Actions"
-                  sx={{
-                    position: "absolute",
-                    bottom: 24,
-                    right: 0,
-                    "& .MuiFab-root": {
-                      width: 36,
-                      height: 36,
-                      minHeight: 36,
-                      boxShadow: "none",
-                      border: `1px solid ${theme.palette.divider}`,
-                      bgcolor: "transparent",
-                      color: "text.secondary",
-                    },
-                  }}
-                  icon={
-                    <SpeedDialIcon icon={<MoreVert sx={{ fontSize: 20 }} />} />
-                  }
-                  onClose={(_, reason) => {
-                    if (
-                      reason === "toggle" ||
-                      reason === "escapeKeyDown" ||
-                      reason === "blur"
-                    ) {
-                      setActionsOpen(false);
-                    }
-                  }}
-                  onOpen={(_, reason) => {
-                    if (reason === "toggle") {
-                      setActionsOpen(true);
-                    }
-                  }}
-                  open={actionsOpen}
-                  direction="up"
-                >
-                  <SpeedDialAction
-                    icon={
-                      <Edit
-                        sx={{ fontSize: 18, color: theme.palette.primary.main }}
-                      />
-                    }
-                    tooltipTitle="Edit"
-                    sx={{
-                      bgcolor: alpha(theme.palette.primary.main, 0.1),
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.primary.main, 0.2),
-                      },
-                    }}
-                    onClick={() => {
-                      setActionsOpen(false);
-                      onEdit();
-                    }}
-                  />
-                  <SpeedDialAction
-                    icon={
-                      <NoteAlt
-                        sx={{ fontSize: 18, color: theme.palette.warning.main }}
-                      />
-                    }
-                    tooltipTitle="Notes"
-                    sx={{
-                      bgcolor: alpha(theme.palette.warning.main, 0.1),
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.warning.main, 0.2),
-                      },
-                    }}
-                    onClick={() => {
-                      setActionsOpen(false);
-                      onOpenFeedback(lead._id || lead.id || lead.leadId || "");
-                    }}
-                  />
-                  <SpeedDialAction
-                    icon={
-                      <Event
+            <Stack spacing={1.5}>
+              {lead.recentActivities && lead.recentActivities.length > 0 ? (
+                lead.recentActivities.map((act: any) => (
+                  <Box
+                    key={act._id}
+                    sx={{ display: "flex", gap: 1.5, alignItems: "center" }}
+                  >
+                    <Avatar
+                      sx={{
+                        width: 28,
+                        height: 28,
+                        bgcolor: alpha(
+                          act.followUpType === "call back"
+                            ? theme.palette.info.main
+                            : act.followUpType === "site visit"
+                            ? theme.palette.secondary.main
+                            : theme.palette.success.main,
+                          0.1
+                        ),
+                        color:
+                          act.followUpType === "call back"
+                            ? "info.main"
+                            : act.followUpType === "site visit"
+                            ? "secondary.main"
+                            : "success.main",
+                      }}
+                    >
+                      {act.followUpType === "call back" && (
+                        <Phone sx={{ fontSize: 14 }} />
+                      )}
+                      {act.followUpType === "site visit" && (
+                        <Event sx={{ fontSize: 14 }} />
+                      )}
+                      {act.followUpType === "note" && (
+                        <NoteAlt sx={{ fontSize: 14 }} />
+                      )}
+                    </Avatar>
+                    <Box sx={{ minWidth: 0, flex: 1 }}>
+                      <Typography
+                        variant="caption"
+                        fontWeight={600}
+                        color="text.primary"
+                        display="block"
+                        sx={{ lineHeight: 1.1 }}
+                      >
+                        {act.followUpType.charAt(0).toUpperCase() +
+                          act.followUpType.slice(1)}
+                      </Typography>
+                      <Typography
+                        variant="caption"
+                        color="text.secondary"
+                        display="block"
                         sx={{
-                          fontSize: 18,
-                          color: theme.palette.secondary.main,
+                          fontSize: "0.65rem",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          display: "-webkit-box",
+                          WebkitLineClamp: 1,
+                          WebkitBoxOrient: "vertical",
                         }}
-                      />
-                    }
-                    tooltipTitle="Site Visit"
-                    sx={{
-                      bgcolor: alpha(theme.palette.secondary.main, 0.1),
-                      "&:hover": {
-                        bgcolor: alpha(theme.palette.secondary.main, 0.2),
-                      },
-                    }}
-                    onClick={() => {
-                      setActionsOpen(false);
-                      onScheduleSiteVisit(
-                        lead._id || lead.id || lead.leadId || ""
-                      );
-                    }}
-                  />
-                </SpeedDial>
-              </Box>
-            </ClickAwayListener>
-          </PermissionGuard>
-        </Box>
+                      >
+                        {act.note || "No details provided"}
+                      </Typography>
+                    </Box>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        fontSize: "0.65rem",
+                        color: "text.disabled",
+                        fontWeight: 500,
+                      }}
+                    >
+                      {new Date(act.createdAt).toLocaleDateString([], {
+                        month: "short",
+                        day: "numeric",
+                      })}
+                    </Typography>
+                  </Box>
+                ))
+              ) : (
+                <Typography
+                  variant="caption"
+                  color="text.secondary"
+                  sx={{ fontStyle: "italic", opacity: 0.7 }}
+                >
+                  No recent activities recorded
+                </Typography>
+              )}
+            </Stack>
+          </Box>
+        </CardContent>
       </Card>
     );
   }
