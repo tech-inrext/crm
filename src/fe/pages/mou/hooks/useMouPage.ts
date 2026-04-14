@@ -48,6 +48,22 @@ export function useMouPage() {
     search: debouncedSearch || undefined,
   });
 
+  // ─── Tab Counts ───────────────────────────────────────────────────────────
+  const { totalItems: pendingCount } = useGetMousQuery({
+    mouStatus: "Pending",
+    requireSlab: true,
+    managerId: (user?._id && !isSystemAdmin) ? user._id : undefined,
+    page: 1,
+    limit: 1,
+  });
+
+  const { totalItems: completedCount } = useGetMousQuery({
+    mouStatus: "Approved",
+    managerId: (user?._id && !isSystemAdmin) ? user._id : undefined,
+    page: 1,
+    limit: 1,
+  });
+
   // ─── Mutations ────────────────────────────────────────────────────────────
   const { mutate: updateMou } = useUpdateMouMutation();
   const { mutate: approveAndSend } = useApproveAndSendMutation();
@@ -158,6 +174,10 @@ export function useMouPage() {
     // Search
     search,
     handleSearchChange,
+
+    // Counts for tabs
+    pendingCount: pendingCount || 0,
+    completedCount: completedCount || 0,
 
     snackOpen: false, 
     setSnackOpen: () => {},

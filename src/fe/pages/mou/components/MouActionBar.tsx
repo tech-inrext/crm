@@ -16,8 +16,6 @@ const SEARCH_PLACEHOLDER = "Search MOU by employee name or email...";
 const MouActionBar: React.FC<MouActionBarProps> = ({
   search,
   onSearchChange,
-  view,
-  onViewChange,
 }) => {
   return (
     <PageHeader title="MOU">
@@ -27,23 +25,6 @@ const MouActionBar: React.FC<MouActionBarProps> = ({
           onChange={onSearchChange}
           placeholder={SEARCH_PLACEHOLDER}
         />
-      </Box>
-
-      <Box sx={actionBarButtonsSx}>
-        <Button
-          variant={view === "pending" ? "contained" : "outlined"}
-          onClick={() => onViewChange("pending")}
-          sx={actionBarButtonSx}
-        >
-          Pending
-        </Button>
-        <Button
-          variant={view === "completed" ? "contained" : "outlined"}
-          onClick={() => onViewChange("completed")}
-          sx={actionBarButtonSx}
-        >
-          Completed
-        </Button>
       </Box>
     </PageHeader>
   );

@@ -6,7 +6,6 @@ import { useDebounce } from "@/hooks/useDebounce";
 import {
   countNodes,
   filterHierarchy,
-  expandAllNodes,
   flattenHierarchy,
   findPathToNode,
 } from "@/fe/pages/teams/utils";
@@ -123,13 +122,7 @@ export function useTeamsPage() {
     setSelectedNodeState(nodeId);
   }, []);
 
-  const handleExpandAll = useCallback(() => {
-    if (hierarchy) setExpanded(expandAllNodes(hierarchy));
-  }, [hierarchy]);
 
-  const handleCollapseAll = useCallback(() => {
-    setExpanded(new Set());
-  }, []);
 
   const hierarchyOptions = useMemo(() => flattenHierarchy(hierarchy), [hierarchy]);
 
@@ -161,8 +154,6 @@ export function useTeamsPage() {
     // Tree controls
     toggleNode,
     setSelectedNode,
-    handleExpandAll,
-    handleCollapseAll,
     handleRefresh,
 
     // Admin employee search

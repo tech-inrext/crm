@@ -219,7 +219,12 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
         },
       }}
     >
-      <FollowUpHeader leadInfo={leadInfo} handleDialogClose={handleDialogClose} isMobile={isMobile} />
+      <FollowUpHeader 
+        leadInfo={leadInfo} 
+        handleDialogClose={handleDialogClose} 
+        isMobile={isMobile} 
+        onLeadUpdate={loadFollowUps}
+      />
       
 
       {/* History Section Header + Filter – pinned */}

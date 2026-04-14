@@ -19,7 +19,7 @@ const UsersPageActionBar: React.FC<Props> = ({
   isSystemAdmin,
 }) => {
   return (
-    <PageHeader title="Users">
+    <PageHeader title="Business Partners">
       <Box sx={{ width: "100%", maxWidth: "600px", flexGrow: 1 }}>
         <SearchBar
           value={search}

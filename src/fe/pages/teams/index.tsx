@@ -59,8 +59,6 @@ const TeamsPage: React.FC = () => {
           hierarchy={hierarchy}
           onSearchChange={handleSearchChange}
           onRefresh={handleRefresh}
-          onExpandAll={handleExpandAll}
-          onCollapseAll={handleCollapseAll}
           onClearSearch={() => setSearch("")}
           // Admin search props
           isAdmin={isAdmin}
@@ -86,8 +84,6 @@ const TeamsPage: React.FC = () => {
               searchQuery={debouncedSearch}
               onToggle={toggleNode}
               onSelect={setSelectedNode}
-              onExpandAll={handleExpandAll}
-              onCollapseAll={handleCollapseAll}
               onClearSearch={() => setSearch("")}
             />
           )}

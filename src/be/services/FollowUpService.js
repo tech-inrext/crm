@@ -81,13 +81,14 @@ class FollowUpService extends Service {
       // 1. Resolve Lead
       let targetLead = null;
       if (leadId) {
-        targetLead = await Lead.findById(leadId).populate("uploadedBy", "name email");
-        if (!targetLead) targetLead = await Lead.findOne({ leadId }).populate("uploadedBy", "name email");
+        targetLead = await Lead.findById(leadId).populate("uploadedBy", "name email").populate("assignedTo", "name email");
+        if (!targetLead) targetLead = await Lead.findOne({ leadId }).populate("uploadedBy", "name email").populate("assignedTo", "name email");
       }
       if (!targetLead && leadIdentifier) {
         targetLead = await this.findLeadByIdentifier(leadIdentifier);
         if (targetLead) {
           await targetLead.populate("uploadedBy", "name email");
+          await targetLead.populate("assignedTo", "name email");
         }
       }
 
@@ -147,7 +148,10 @@ class FollowUpService extends Service {
         lead: {
           fullName: targetLead.fullName,
           phone: targetLead.phone,
-          id: targetLead._id
+          id: targetLead._id,
+          assignedTo: targetLead.assignedTo,
+          managerId: targetLead.managerId,
+          budgetRange: targetLead.budgetRange
         }
       });
 
