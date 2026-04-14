@@ -40,8 +40,6 @@ export interface TeamsActionBarProps {
   hierarchy?: Employee | null;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   onRefresh: () => void;
-  onExpandAll?: () => void;
-  onCollapseAll?: () => void;
   onClearSearch?: () => void;
   
   // Admin search props
@@ -64,8 +62,6 @@ export interface HierarchyControlsProps {
   hierarchy?: Employee | null;
   onSearchChange: (search: string) => void;
   onRefresh: () => void;
-  onExpandAll?: () => void;
-  onCollapseAll?: () => void;
   onClearSearch?: () => void;
 }
 export interface HierarchyNodeProps {
@@ -84,8 +80,6 @@ export interface HierarchyTreeProps {
   searchQuery: string;
   onToggle: (id: string) => void;
   onSelect: (id: string) => void;
-  onExpandAll: () => void;
-  onCollapseAll: () => void;
   onClearSearch: () => void;
 }
 

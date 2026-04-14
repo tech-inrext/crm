@@ -13,8 +13,6 @@ import {
   Refresh,
   Person as PersonIcon,
   People as PeopleIcon,
-  ExpandMore,
-  ChevronRight,
   Autocomplete,
   Typography,
   CircularProgress,
@@ -29,6 +27,7 @@ import {
   actionButtonSx,
   textActionButtonSx,
   searchTextFieldSx,
+  infoLabelSx,
 } from "./styles";
 
  export const TeamsActionBar: React.FC<TeamsActionBarProps> = ({
@@ -39,8 +38,6 @@ import {
   hierarchy,
   onSearchChange,
   onRefresh,
-  onExpandAll,
-  onCollapseAll,
   isAdmin,
   employeeOptions,
   hierarchyOptions,
@@ -83,46 +80,22 @@ import {
             sx={rightActionsStackSx}
           >
             {managerName && (
-              <Tooltip title="Your Direct Manager">
-                <Button
-                  size="small"
-                  variant="outlined"
-                  startIcon={<PersonIcon fontSize="small" />}
-                  sx={actionButtonSx}
-                >
-                  {`Manager: ${managerName}`}
-                </Button>
-              </Tooltip>
+              <Box
+                sx={infoLabelSx}
+              >
+                <PersonIcon color="inherit" />
+                {`Manager: ${managerName}`}
+              </Box>
             )}
 
-            <Tooltip title="Total members in this hierarchy">
-              <Button
-                variant="outlined"
-                startIcon={<PeopleIcon fontSize="small" />}
-                sx={actionButtonSx}
-              >
-                {`${totalCount} Members`}
-              </Button>
-            </Tooltip>
+            <Box
+              sx={infoLabelSx}
+            >
+              <PeopleIcon color="inherit" />
+              {`${totalCount} Members`}
+            </Box>
 
-            <Button
-              size="small"
-              variant="text"
-              startIcon={<ExpandMore />}
-              onClick={onExpandAll}
-              sx={textActionButtonSx}
-            >
-              Expand All
-            </Button>
-            <Button
-              size="small"
-              variant="text"
-              startIcon={<ChevronRight />}
-              onClick={onCollapseAll}
-              sx={textActionButtonSx}
-            >
-              Collapse All
-            </Button>
+
 
             <Tooltip title="Refresh hierarchy">
               <IconButton color="primary" onClick={onRefresh} disabled={loading}>
