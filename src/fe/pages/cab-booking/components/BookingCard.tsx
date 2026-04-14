@@ -25,14 +25,14 @@ import PermissionGuard from "@/components/PermissionGuard";
 import CardComponent from "@/components/ui/card/Card";
 import Avatar from "@/components/ui/Component/Avatar";
 import MODULE_STYLES from "@/styles/moduleStyles";
-import { Booking } from "@/types/cab-booking";
+import { Booking } from "@/fe/pages/cab-booking/types/cab-booking";
 import {
   getStatusColor,
   formatDateTime,
   getProjectName,
   statusOptions,
-} from "@/constants/cab-booking";
-import { useCabBooking } from "@/hooks/useCabBooking";
+} from "@/fe/pages/cab-booking/constants/cab-booking";
+import { useCabBooking } from "@/fe/pages/cab-booking/hooks/useCabBooking";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface BookingCardProps {

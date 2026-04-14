@@ -1,32 +1,37 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import DOMPurify from "dompurify";
+import axios from "axios";
 
 import {
   Card,
   CardContent,
   Typography,
-  Stack,
   Chip,
-  Divider,
   Box,
-  Dialog,
-  DialogContent,
-  DialogTitle,
-  IconButton,
-  Grid,
-  Button,
   CardMedia,
+  IconButton,
+  Menu,
+  MenuItem,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Button,
 } from "@mui/material";
 
-import CloseIcon from "@mui/icons-material/Close";
-import AttachFileIcon from "@mui/icons-material/AttachFile";
+import ArrowBackIosNewIcon from "@mui/icons-material/ArrowBackIosNew";
+import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
 
-import {
-  categoryColors,
-  priorityColors,
-} from "@/fe/pages/Notice/utils/noticeUtils";
+import NoticePreviewModal from "../hooks/NoticePreviewModal";
+import { categoryColors } from "@/fe/pages/Notice/utils/noticeUtils";
+
+/* ✅ AUTH */
+import { useAuth } from "@/contexts/AuthContext";
 
 type Attachment = {
   url: string;
@@ -38,302 +43,258 @@ type Notice = {
   title: string;
   description: string;
   category: string;
-  priority: string;
-  pinned: boolean;
   createdAt: string;
   attachments?: Attachment[];
-  createdBy?: {
-    name: string;
-  };
 };
 
-export default function NoticeCard({
-  notice,
-  showBorder = true,
-}: {
-  notice: Notice;
-  showBorder?: boolean;
-}) {
+export default function NoticeCard({ notice }: { notice: Notice }) {
   const color = categoryColors[notice.category] || "#1976d2";
-  const priorityColor = priorityColors[notice.priority] || "#1976d2";
+  const sanitizedHTML = DOMPurify.sanitize(notice.description || "");
 
   const [open, setOpen] = useState(false);
-  const attachmentCount = notice.attachments?.length || 0;
 
-  const sanitizedHTML = DOMPurify.sanitize(notice.description || "");
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const openMenu = Boolean(anchorEl);
+
+  const [deleteOpen, setDeleteOpen] = useState(false);
+
+  const carouselRef = useRef<HTMLDivElement>(null);
+
+  /* ✅ ROLE CHECK */
+  const { user } = useAuth();
+
+  const currentRoleName =
+    typeof user?.currentRole === "object"
+      ? user?.currentRole?.name
+      : user?.roles?.find((r: any) => r._id === user?.currentRole)?.name;
+
+  const isAdminOrAVP =
+    currentRoleName?.toLowerCase() === "admin" ||
+    currentRoleName?.toLowerCase() === "avp";
+
+  const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    setAnchorEl(e.currentTarget);
+  };
+
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleEdit = () => {
+    handleMenuClose();
+    setOpen(true);
+  };
+
+  /* ✅ DELETE FLOW */
+  const handleDeleteClick = () => {
+    handleMenuClose();
+    setDeleteOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    try {
+      await axios.delete(`/api/v0/notice/${notice._id}`);
+      window.location.reload();
+    } catch {
+      alert("Delete failed");
+    } finally {
+      setDeleteOpen(false);
+    }
+  };
+
+  const imageAttachments =
+    notice.attachments?.filter((att) =>
+      /\.(jpeg|jpg|png|gif|webp)$/i.test(att.url)
+    ) || [];
+
+  const scrollNext = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    carouselRef.current?.scrollBy({
+      left: carouselRef.current.offsetWidth,
+      behavior: "smooth",
+    });
+  };
+
+  const scrollPrev = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    carouselRef.current?.scrollBy({
+      left: -carouselRef.current.offsetWidth,
+      behavior: "smooth",
+    });
+  };
+
+  const isLatest =
+    new Date(notice.createdAt).getTime() >
+    Date.now() - 1000 * 60 * 60 * 24;
 
   return (
     <>
-      {/* ================= CARD ================= */}
       <Card
         onClick={() => setOpen(true)}
-        className="!rounded-2xl !flex !flex-col !h-full !min-h-[200px] !cursor-pointer !transition-all !duration-300 hover:!shadow-[0px_6px_20px_rgba(0,0,0,0.15)] hover:!-translate-y-[3px]"
-        style={{
-          borderLeft: showBorder ? `4px solid ${color}` : "none",
-        }}
+        className="!rounded-2xl w-[90%] max-w-md mx-auto cursor-pointer bg-white flex flex-col h-[380px]"
       >
-        <CardContent className="!flex !flex-col !flex-grow !p-5">
-          {/* Top Row */}
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-            className="!mb-2"
-          >
-            <Chip
-              label={notice.category}
-              size="small"
-              variant="outlined"
-              className="!font-semibold !rounded-lg"
-              style={{
-                color: color,
-                borderColor: `${color}40`,
-                backgroundColor: `${color}10`,
-              }}
-            />
+        {/* IMAGE */}
+        <Box className="relative h-[200px] flex-shrink-0">
+          {imageAttachments.length > 0 ? (
+            <>
+              <Box
+                ref={carouselRef}
+                className="flex overflow-x-auto h-full scrollbar-hide"
+              >
+                {imageAttachments.map((img, idx) => (
+                  <CardMedia
+                    key={idx}
+                    component="img"
+                    image={img.url}
+                    alt={img.filename}
+                    className="w-full h-full object-cover flex-shrink-0"
+                  />
+                ))}
+              </Box>
 
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Chip
-                size="small"
-                icon={<AttachFileIcon className="!text-[16px]" />}
-                label={attachmentCount}
-                className="!font-semibold"
-                style={{ backgroundColor: "#f1f5f9" }}
-              />
-
-              {notice.priority && (
-                <Chip
-                  size="small"
-                  label={
-                    <span className="flex items-center gap-2 font-semibold">
-                      <span className="relative flex h-3 w-3">
-                        <span
-                          className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                          style={{ backgroundColor: priorityColor }}
-                        />
-                        <span
-                          className="relative inline-flex rounded-full h-3 w-3"
-                          style={{ backgroundColor: priorityColor }}
-                        />
-                      </span>
-                      {notice.priority}
-                    </span>
-                  }
-                  className="!font-semibold"
-                  style={{
-                    backgroundColor: `${priorityColor}20`,
-                    color: priorityColor,
-                  }}
-                />
+              {isLatest && (
+                <Box className="absolute top-2 right-2 z-10">
+                  <Chip
+                    label="Latest"
+                    size="small"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      height: 22,
+                      color: "#16a34a",
+                      backgroundColor: "#dcfce7",
+                    }}
+                  />
+                </Box>
               )}
-            </Stack>
-          </Stack>
 
-          {/* Title */}
-          <Typography className="!font-semibold !text-[18px] !mb-0.5 !mt-1 !leading-[1.5] !min-h-[48px]">
+              {imageAttachments.length > 1 && (
+                <>
+                  <IconButton
+                    onClick={scrollPrev}
+                    className="!absolute top-1/2 left-1 -translate-y-1/2 !bg-white/40 !text-black/30 w-5 h-5"
+                  >
+                    <ArrowBackIosNewIcon fontSize="small" />
+                  </IconButton>
+
+                  <IconButton
+                    onClick={scrollNext}
+                    className="!absolute top-1/2 right-1 -translate-y-1/2 !bg-white/40 !text-black/30 w-5 h-5"
+                  >
+                    <ArrowForwardIosIcon fontSize="small" />
+                  </IconButton>
+                </>
+              )}
+            </>
+          ) : (
+            <>
+              <Box className="h-full bg-slate-100" />
+
+              {isLatest && (
+                <Box className="absolute top-2 right-2">
+                  <Chip
+                    label="Latest"
+                    size="small"
+                    sx={{
+                      fontWeight: 600,
+                      fontSize: 11,
+                      height: 22,
+                      color: "#16a34a",
+                      backgroundColor: "#dcfce7",
+                    }}
+                  />
+                </Box>
+              )}
+            </>
+          )}
+        </Box>
+
+        {/* HEADER */}
+        <Box className="!px-2.5 !pt-3 !flex !items-center !justify-between flex-shrink-0">
+          <Chip
+            label={notice.category}
+            size="small"
+            sx={{
+              fontWeight: 600,
+              color: color,
+              border: `1px solid ${color}`,
+              backgroundColor: `${color}15`,
+            }}
+          />
+
+          {isAdminOrAVP && (
+            <Box>
+              <IconButton size="small" onClick={handleMenuOpen}>
+                <MoreVertIcon fontSize="small" />
+              </IconButton>
+
+              <Menu
+                anchorEl={anchorEl}
+                open={openMenu}
+                onClose={handleMenuClose}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MenuItem onClick={handleEdit}>
+                  <EditIcon fontSize="small" className="mr-2" />
+                  Edit
+                </MenuItem>
+
+                <MenuItem onClick={handleDeleteClick}>
+                  <DeleteIcon fontSize="small" className="mr-2" />
+                  Delete
+                </MenuItem>
+              </Menu>
+            </Box>
+          )}
+        </Box>
+
+        {/* CONTENT */}
+        <CardContent className="p-4 flex-1 overflow-hidden">
+          <Typography className="!font-bold !text-[17px] text-slate-800">
             {notice.title}
           </Typography>
 
-          {/* Rich Text Preview (CLAMPED) */}
-          <Box
-            className="prose max-w-none flex-grow mb-2 !text-[14px] line-clamp-2"
+          <div
+            className="text-sm !text-slate-600 !mt-2 !line-clamp-3"
             dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
           />
-
-          <Divider />
-
-          {/* Footer */}
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            className="!mt-auto !pt-2"
-          >
-            <Typography className="!text-[12px] !font-semibold !text-gray-500">
-              {notice.createdBy
-                ? `By ${notice.createdBy.name}`
-                : "Unknown Author"}
-            </Typography>
-
-            <Typography className="!text-[12px] !text-gray-500">
-              {new Date(notice.createdAt).toLocaleDateString()}
-            </Typography>
-          </Stack>
         </CardContent>
       </Card>
 
-      {/* ================= MODAL ================= */}
-      <Dialog
+      {/* PREVIEW MODAL */}
+      <NoticePreviewModal
         open={open}
         onClose={() => setOpen(false)}
-        fullWidth
-        maxWidth="sm"
-        PaperProps={{
-          className: "!rounded-2xl !p-4", // smooth rounded modal
-        }}
+        notice={notice}
+        editMode={true}
+      />
+
+      {/* ✅ DELETE CONFIRM MODAL */}
+      <Dialog
+        open={deleteOpen}
+        onClose={() => setDeleteOpen(false)}
+        onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header */}
-        <DialogTitle>
-          <Stack
-            direction="row"
-            justifyContent="space-between"
-            alignItems="center"
-          >
-            <Typography className="!font-bold !text-lg">
-              Notice Preview
-            </Typography>
-            <IconButton onClick={() => setOpen(false)}>
-              <CloseIcon />
-            </IconButton>
-          </Stack>
-        </DialogTitle>
+        <DialogTitle>Delete Notice</DialogTitle>
 
-        <Divider />
-
-        {/* Modal Body */}
         <DialogContent>
-          <Stack spacing={3}>
-            {/* Top Row: Category, Attachments, Priority */}
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              alignItems="center"
-            >
-              <Chip
-                label={notice.category}
-                size="small"
-                variant="outlined"
-                className="!font-semibold"
-                style={{
-                  color: color,
-                  borderColor: `${color}40`,
-                  backgroundColor: `${color}10`,
-                }}
-              />
-
-              <Stack direction="row" spacing={1}>
-                <Chip
-                  size="small"
-                  icon={<AttachFileIcon />}
-                  label={`${attachmentCount} Files`}
-                />
-
-                {notice.priority && (
-                <Chip
-                  size="small"
-                  label={
-                    <span className="flex items-center gap-2 font-semibold">
-                      <span className="relative flex h-3 w-3">
-                        <span
-                          className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75"
-                          style={{ backgroundColor: priorityColor }}
-                        />
-                        <span
-                          className="relative inline-flex rounded-full h-3 w-3"
-                          style={{ backgroundColor: priorityColor }}
-                        />
-                      </span>
-                      {notice.priority}
-                    </span>
-                  }
-                  className="!font-semibold"
-                  style={{
-                    backgroundColor: `${priorityColor}20`,
-                    color: priorityColor,
-                  }}
-                />
-              )}
-              </Stack>
-            </Stack>
-
-            {/* Title */}
-            {/* Title */}
-            <Typography className="!text-[17px] !font-bold">
-              {notice.title}
-            </Typography>
-
-            {/* Author & Date */}
-            <Stack
-              direction="row"
-              justifyContent="space-between"
-              className="!mt-1"
-            >
-              <Typography className="!text-[12px] !font-semibold !text-gray-500 !mt-1 !mb-0">
-                {notice.createdBy
-                  ? `By ${notice.createdBy.name}`
-                  : "Unknown Author"}
-              </Typography>
-              <Typography className="!text-[12px] !font-semibold !text-gray-500 !mt-1 !mb-0">
-                {new Date(notice.createdAt).toLocaleDateString()}
-              </Typography>
-            </Stack>
-
-            <Divider />
-
-            {/* Description */}
-            <Box>
-              <Typography className="!font-semibold !text-sm !mb-1">
-                Description
-              </Typography>
-              <Box
-                className="prose max-w-none !text-sm"
-                dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
-              />
-            </Box>
-
-            {/* Attachments */}
-            {attachmentCount > 0 && (
-              <>
-                <Divider />
-                <Box>
-                  <Typography className="!font-semibold !mb-2">
-                    Attachments
-                  </Typography>
-                  <Grid container spacing={2}>
-                    {notice.attachments?.map((att, index) => {
-                      const isImage = /\.(jpeg|jpg|png|gif|webp)$/i.test(
-                        att.url,
-                      );
-
-                      return (
-                        <Grid item xs={12} sm={6} md={4} key={index}>
-                          {isImage ? (
-                            <Card className="!rounded-lg !overflow-hidden hover:!shadow-lg">
-                              <CardMedia
-                                component="img"
-                                height="80"
-                                image={att.url}
-                              />
-                              <CardContent className="!p-2">
-                                <Typography className="!text-xs !truncate">
-                                  {att.filename}
-                                </Typography>
-                              </CardContent>
-                            </Card>
-                          ) : (
-                            <Card className="!text-center !p-2 !rounded-lg">
-                              <Typography className="!text-xs !mb-1">
-                                {att.filename}
-                              </Typography>
-                              <Button
-                                size="small"
-                                variant="outlined"
-                                href={att.url}
-                                target="_blank"
-                                fullWidth
-                              >
-                                Download
-                              </Button>
-                            </Card>
-                          )}
-                        </Grid>
-                      );
-                    })}
-                  </Grid>
-                </Box>
-              </>
-            )}
-          </Stack>
+          <Typography>
+            Are you sure you want to delete this notice?
+          </Typography>
         </DialogContent>
+
+        <DialogActions>
+          <Button onClick={() => setDeleteOpen(false)}>
+            Cancel
+          </Button>
+
+          <Button
+            onClick={confirmDelete}
+            color="error"
+            variant="contained"
+          >
+            Delete
+          </Button>
+        </DialogActions>
       </Dialog>
     </>
   );

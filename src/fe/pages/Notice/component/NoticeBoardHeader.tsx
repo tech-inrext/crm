@@ -43,18 +43,24 @@ function NoticeBoardHeader({
   categories: string[];
   priorities: string[];
 }) {
-  const { user } = useAuth();
+  /* ---------------- AUTH ---------------- */
+
+  const auth = useAuth();
+  const { user } = auth;
 
   /* ---------------- ROLE CHECK ---------------- */
+  const roleName = String(user?.currentRole?.name || "").toLowerCase();
 
-  const currentRoleName =
-    typeof user?.currentRole === "object"
-      ? user?.currentRole?.name
-      : user?.roles?.find((r) => r._id === user?.currentRole)?.name;
+  const isSystemAdmin =
+    auth?.isSystemAdmin === true ||
+    user?.isSystemAdmin === true ||
+    user?.currentRole?.isSystemAdmin === true ||
+    roleName === "admin";
 
-  const isAdminOrAVP =
-    currentRoleName?.toLowerCase() === "admin" ||
-    currentRoleName?.toLowerCase() === "avp";
+  const isAVP =
+    auth?.isAVP === true || user?.isAVP === true || roleName === "avp";
+
+  const isAdminOrAVP = isSystemAdmin || isAVP;
 
   /* ---------------- HOOK ---------------- */
 
@@ -76,12 +82,11 @@ function NoticeBoardHeader({
   return (
     <>
       {/* Add Notice Modal */}
-
       {isAdminOrAVP && (
         <AddNoticeModal
           open={open}
           onClose={() => setOpen(false)}
-          onNoticeAdded={onNoticeAdded}   // ✅ important
+          onNoticeAdded={onNoticeAdded}
         />
       )}
 
@@ -95,7 +100,6 @@ function NoticeBoardHeader({
               flexWrap="wrap"
             >
               {/* Search */}
-
               <Box className="flex items-center bg-white rounded-lg px-3 h-10 w-full md:w-90 border border-gray-500">
                 <SearchIcon className="text-gray-500 text-[18px] mr-2" />
                 <InputBase
@@ -107,18 +111,18 @@ function NoticeBoardHeader({
               </Box>
 
               {/* Category */}
-
               <FormControl
                 size="small"
                 sx={{ minWidth: { xs: "100%", md: 200 } }}
               >
-                <InputLabel>Select category</InputLabel>
+                <InputLabel id="category-label">Select Category</InputLabel>
                 <Select
-                  label="Select category"
-                  value={category}
+                  labelId="category-label"
+                  value={category || "All"}
                   onChange={handleCategoryChange}
+                  label="Select Category"
                 >
-                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="All">All</MenuItem>
                   {categories?.map((cat, index) => (
                     <MenuItem key={index} value={cat}>
                       {cat}
@@ -128,18 +132,18 @@ function NoticeBoardHeader({
               </FormControl>
 
               {/* Priority */}
-
               <FormControl
                 size="small"
                 sx={{ minWidth: { xs: "100%", md: 150 } }}
               >
-                <InputLabel>Select priority</InputLabel>
+                <InputLabel id="priority-label">Select Priority</InputLabel>
                 <Select
-                  label="Select priority"
-                  value={priority}
+                  labelId="priority-label"
+                  value={priority || "All"}
                   onChange={handlePriorityChange}
+                  label="Select Priority"
                 >
-                  <MenuItem value="">All</MenuItem>
+                  <MenuItem value="All">All</MenuItem>
                   {priorities?.map((pri, index) => (
                     <MenuItem key={index} value={pri}>
                       {pri}
@@ -148,60 +152,22 @@ function NoticeBoardHeader({
                 </Select>
               </FormControl>
 
-              {/* Date */}
-
-              <LocalizationProvider dateAdapter={AdapterDayjs}>
-                <DatePicker
-                  label="Select Date"
-                  value={date}
-                  onChange={handleDateChange}
-                  format="MM/DD/YYYY"
-                  slotProps={{
-                    textField: {
-                      size: "small",
-                      className: "bg-white w-full md:w-[150px]",
-                    },
-                  }}
-                />
-              </LocalizationProvider>
-
-              <IconButton className="!bg-white !h-[38px] !w-[36px]">
-                <FilterListIcon />
-              </IconButton>
+              <IconButton></IconButton>
 
               {/* Add Notice Button */}
-
               {isAdminOrAVP && (
                 <Button
                   variant="contained"
                   startIcon={<AddIcon />}
-                  onClick={() => setOpen(true)}
+                  onClick={() => {
+                    if (isAdminOrAVP) setOpen(true);
+                  }}
                   className="h-[38px]"
                 >
                   Add Notice
                 </Button>
               )}
             </Stack>
-          </Box>
-
-          {/* Tabs */}
-
-          <Box sx={{ display: { xs: "none", md: "block" } }}>
-            <Tabs value={tab} onChange={handleTabChange}>
-              {NOTICE_TABS.map((item, idx) => (
-                <Tab
-                  key={idx}
-                  icon={item.icon}
-                  iconPosition="start"
-                  label={item.label}
-                  className={`!normal-case !mt-1 !text-md !mr-2 !font-medium !min-h-[40px] !px-6 border border-gray-300 rounded-md ${
-                    tab === idx
-                      ? "!bg-[#e6f0ff] !text-blue-600"
-                      : "text-gray-600 hover:bg-white"
-                  }`}
-                />
-              ))}
-            </Tabs>
           </Box>
         </Box>
       </Box>
