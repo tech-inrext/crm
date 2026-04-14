@@ -1,0 +1,1 @@
+export {default} from "@/fe/pages/holiday"

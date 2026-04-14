@@ -27,7 +27,7 @@ import {
   Assignment,
   Campaign,
 } from "@mui/icons-material";
-
+import EventIcon from "@mui/icons-material/Event";
 // const AppIcon = ({
 //   src,
 //   alt,
@@ -58,7 +58,13 @@ export const DASHBOARD_SIDEBAR_LINKS = [
   {
     label: "Notice Board",
     href: "/dashboard/Notice-Board",
-icon: <Campaign sx={{ color: "#3785FF" }} />  },
+    icon: <Campaign sx={{ color: "#3785FF" }} />,
+  },
+  {
+    label: "Holiday",
+    href: "/dashboard/holiday",
+    icon: <EventIcon sx={{ color: "#3785FF" }} />, // clean + professional
+  },
   {
     label: "Leads",
     href: "/dashboard/leads",
