@@ -103,7 +103,7 @@ const UserDialog: React.FC<UserDialogProps> = ({
                 </div>
 
                 <div className="flex items-center justify-end gap-3 px-6 py-3 border-t border-slate-100 bg-white rounded-b-2xl">
-                  <Button variant="text" onClick={onClose} disabled={saving}>
+                  <Button color="secondary" onClick={onClose} disabled={saving}>
                     {BUTTON_LABELS.CANCEL}
                   </Button>
                   <Button
