@@ -8,6 +8,8 @@ import {
   Button,
   Snackbar,
   Alert,
+  useTheme,
+  useMediaQuery,
 } from "@/components/ui/Component";
 import Pagination from "@/components/ui/Navigation/Pagination";
 import PermissionGuard from "@/components/PermissionGuard";
@@ -20,7 +22,6 @@ import {
   loadingContainerSx,
   contentGridSx,
   listPaperSx,
-  listTitleSx,
   paginationContainerSx,
   tabsWrapperSx,
   tabsSx,
@@ -51,6 +52,9 @@ const MOUPage: React.FC = () => {
     completedCount,
   } = useMouPage();
 
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
   const handleTabChange = (_: React.SyntheticEvent, newValue: "pending" | "completed") => {
     setView(newValue);
   };
@@ -67,7 +71,7 @@ const MOUPage: React.FC = () => {
           <Tabs 
             value={view} 
             onChange={handleTabChange}
-            variant="fullWidth"
+            variant={isMobile ? "fullWidth" : "standard"}
             indicatorColor="primary"
             textColor="primary"
             sx={tabsSx}
@@ -114,11 +118,6 @@ const MOUPage: React.FC = () => {
         ) : (
           <Box sx={contentGridSx}>
             <Paper sx={listPaperSx} elevation={1}>
-              <Typography variant="h6" sx={listTitleSx}>
-                {view === "completed"
-                  ? `Completed MOU (${items.length})`
-                  : `Pending MOU (${items.length})`}
-              </Typography>
               {items.length === 0 ? (
                 <Typography>
                   {view === "pending"

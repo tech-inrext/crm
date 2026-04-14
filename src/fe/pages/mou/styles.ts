@@ -19,7 +19,6 @@ export const tabsWrapperSx: SxProps<Theme> = {
   mt: 2,
   mb: 2,
   maxWidth: "1200px",
-  mx: "auto",
   width: "100%",
 };
 
@@ -56,11 +55,6 @@ export const listPaperSx: SxProps<Theme> = {
   p: 2,
 };
 
-export const listTitleSx: SxProps<Theme> = {
-  fontWeight: 600,
-  mb: 1,
-};
-
 export const paginationContainerSx: SxProps<Theme> = {
   mt: 2,
 };
@@ -80,6 +74,7 @@ export const tabsSx: SxProps<Theme> = {
 export const tabSx: SxProps<Theme> = {
   minHeight: 0,
   py: 1.5,
+  minWidth: { md: 160 },
   textTransform: "none",
   "&.Mui-selected": { color: "primary.main" },
   "&:focus": { outline: "none" },

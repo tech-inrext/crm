@@ -72,36 +72,54 @@ export const approveBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
   minWidth: 140,
+  height: 34,
   borderRadius: 2,
+  backgroundColor: "success.main",
+  color: "white",
+  boxShadow: "0 2px 4px rgba(46, 125, 50, 0.15)",
+  "&:hover": {
+    backgroundColor: "success.dark",
+    boxShadow: "0 4px 12px rgba(46, 125, 50, 0.25)",
+  },
 };
 
 export const rejectBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
   minWidth: 120,
+  height: 34,
   borderRadius: 2,
+  border: "1.5px solid",
+  borderColor: "error.main",
+  color: "error.main",
+  backgroundColor: "white",
+  "&:hover": {
+    borderColor: "error.dark",
+    backgroundColor: "rgba(211, 47, 47, 0.04)",
+    boxShadow: "0 4px 12px rgba(211, 47, 47, 0.1)",
+  },
 };
 
 export const previewBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
   minWidth: 120,
+  height: 34,
   borderRadius: 2,
+  "&:hover": {
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+  },
 };
 
 export const resendBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
   minWidth: 140,
+  height: 34,
   borderRadius: 2,
-};
-
-export const statusChipSx: SxProps<Theme> = {
-  position: "absolute",
-  top: 12,
-  right: 12,
-  textTransform: "none",
-  fontWeight: 600,
+  "&:hover": {
+    boxShadow: "0 4px 12px rgba(25, 118, 210, 0.2)",
+  },
 };
 
 // ─── PreviewLoader Styles ───────────────────────────────────────────────────
