@@ -72,20 +72,50 @@ export const approveBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
   minWidth: 140,
+  height: 34,
   borderRadius: 2,
+  backgroundColor: "success.main",
+  color: "white",
+  boxShadow: "0 2px 4px rgba(46, 125, 50, 0.15)",
+  "&:hover": {
+    backgroundColor: "success.dark",
+    boxShadow: "0 4px 12px rgba(46, 125, 50, 0.25)",
+  },
 };
 
 export const rejectBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
   minWidth: 120,
+  height: 34,
   borderRadius: 2,
+  border: "1.5px solid",
+  borderColor: "error.main",
+  color: "error.main",
+  backgroundColor: "white",
+  "&:hover": {
+    borderColor: "error.dark",
+    backgroundColor: "rgba(211, 47, 47, 0.04)",
+    boxShadow: "0 4px 12px rgba(211, 47, 47, 0.1)",
+  },
 };
 
 export const previewBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
   minWidth: 120,
+  height: 34,
+  borderRadius: 2,
+  "&:hover": {
+    boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
+  },
+};
+
+export const cancelBtnSx: SxProps<Theme> = {
+  textTransform: "none",
+  fontWeight: 700,
+  minWidth: 140,
+  height: 34,
   borderRadius: 2,
 };
 
@@ -93,15 +123,11 @@ export const resendBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
   minWidth: 140,
+  height: 34,
   borderRadius: 2,
-};
-
-export const statusChipSx: SxProps<Theme> = {
-  position: "absolute",
-  top: 12,
-  right: 12,
-  textTransform: "none",
-  fontWeight: 600,
+  "&:hover": {
+    boxShadow: "0 4px 12px rgba(25, 118, 210, 0.2)",
+  },
 };
 
 // ─── PreviewLoader Styles ───────────────────────────────────────────────────
@@ -125,11 +151,11 @@ export const previewIframeContainerSx: SxProps<Theme> = {
   flexDirection: "column",
 };
 
-export const previewIframeHeaderSx: SxProps<Theme> = {
+export const dialogTitleStackSx: SxProps<Theme> = {
   display: "flex",
-  justifyContent: "flex-end",
-  gap: 1,
-  mb: 1,
+  alignItems: "center",
+  justifyContent: "space-between",
+  width: "100%",
 };
 
 export const previewIframeStyle: React.CSSProperties = {
@@ -154,8 +180,29 @@ export const previewContainerSx: SxProps<Theme> = {
 
 export const noteTextSx: SxProps<Theme> = {
   color: "text.secondary",
-  mr: "auto",
-  pl: 1,
+  textAlign: { xs: "center", sm: "left" },
+  width: { xs: "100%", sm: "auto" },
+  flex: { xs: "none", sm: 1 },
+  mb: { xs: 1.5, sm: 0 },
+};
+
+export const dialogActionsSx: SxProps<Theme> = {
+  flexDirection: { xs: "column", sm: "row" },
+  alignItems: "center",
+  justifyContent: "flex-end",
+  gap: 1.5,
+  px: 3,
+  pb: 3,
+};
+
+export const dialogBtnGroupSx: SxProps<Theme> = {
+  display: "flex",
+  gap: 2,
+  justifyContent: "center",
+  width: { xs: "100%", sm: "auto" },
+  "& > *": {
+    flex: { xs: 1, sm: "none" },
+  },
 };
 
 export const fullPreviewContentSx: SxProps<Theme> = {

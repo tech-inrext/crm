@@ -5,10 +5,10 @@ import {
   Paper,
   Typography,
   Button,
-  Chip,
   Avatar,
   Divider,
   Check,
+  CloseIcon,
 } from "@/components/ui/Component";
 import { MouCardProps } from "../types";
 import { getInitials } from "../utils";
@@ -27,7 +27,6 @@ import {
   rejectBtnSx,
   previewBtnSx,
   resendBtnSx,
-  statusChipSx,
 } from "./styles";
 
 const MouCard: React.FC<MouCardProps> = ({
@@ -77,6 +76,7 @@ const MouCard: React.FC<MouCardProps> = ({
                   size="medium"
                   color="error"
                   variant="outlined"
+                  startIcon={<CloseIcon fontSize="small" />}
                   onClick={() => {
                     if (!emp._id) return;
                     onRejectConfirm(emp._id);
@@ -123,12 +123,6 @@ const MouCard: React.FC<MouCardProps> = ({
           </Box>
         </Box>
       </Box>
-      <Chip
-        label={emp.mouStatus || "-"}
-        color={emp.mouStatus === "Completed" ? "success" : "warning"}
-        size="small"
-        sx={statusChipSx}
-      />
     </Paper>
   );
 };
