@@ -1,7 +1,9 @@
-"use client";
+ "use client";
 
 import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
+import "quill/dist/quill.snow.css";
+import Quill from "quill";
 import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
@@ -36,6 +38,12 @@ import { useNoticeForm } from "../hooks/useNoticeForm";
 export default function NoticeEditDialog({ open, onClose, notice }: any) {
   const { categories, priorities, loading, departments } = useNoticeMeta();
   const { form, setForm } = useNoticeForm(notice);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const quillRef = useRef<any>(null);
+  const [editorFocused, setEditorFocused] = useState(false);
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   const [avpList, setAvpList] = useState([]);
   useEffect(() => {
     fetch("/api/v0/employee/getAllAVPEmployees")
@@ -43,8 +51,58 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
       .then((data) => setAvpList(data?.data || []))
       .catch(() => setAvpList([]));
   }, []);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // ---------------- QUILL ----------------
+  useEffect(() => {
+    if (!open) return;
 
+    const timer = setTimeout(() => {
+      if (!editorRef.current) return;
+
+      if (quillRef.current) {
+        quillRef.current.off("text-change");
+        quillRef.current.off("selection-change");
+        quillRef.current = null;
+      }
+
+      const quill = new Quill(editorRef.current, {
+        theme: "snow",
+        modules: {
+          toolbar: [
+            ["bold", "italic", "underline", "strike"],
+            ["link"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["clean"],
+          ],
+        },
+      });
+
+      const root = quill.root;
+      root.style.fontSize = "1rem";
+      root.style.fontFamily = '"Roboto","Helvetica","Arial",sans-serif';
+      root.style.padding = "8.5px 14px";
+      root.style.minHeight = "80px";
+
+      // ✅ load existing description
+      quill.clipboard.dangerouslyPasteHTML(form.description || "");
+
+      quill.on("text-change", () => {
+        const html = quill.root.innerHTML;
+        setForm((prev: any) => ({
+          ...prev,
+          description: html === "<p><br></p>" ? "" : html,
+        }));
+      });
+
+      quill.on("selection-change", (range: any) => {
+        setEditorFocused(!!range);
+      });
+
+      quillRef.current = quill;
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [open]);
+ 
   // ✅ FILE STATE (UNCHANGED)
   const [pendingFiles, setPendingFiles] = useState<any[]>([]);
 
@@ -198,65 +256,74 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
             />
 
             {/* DESCRIPTION */}
-            <FormControl fullWidth size="small">
-              <InputLabel shrink={!!form.description}>
+             <FormControl
+              fullWidth
+              size="small"
+              className={`!border ${
+                editorFocused ? "!border-blue-500" : "!border-gray-300"
+              } !rounded-md`}
+            >
+              <InputLabel
+                shrink={!!form.description || editorFocused}
+                className="!bg-white !px-1"
+              >
                 Notice Description
               </InputLabel>
-              <Box className="!rounded-md cursor-text p-2">
-                <textarea
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  rows={5}
-                  className="w-full border-none outline-none resize-none"
-                />
+
+              <Box onClick={() => quillRef.current?.focus()}>
+                <div ref={editorRef} />
               </Box>
             </FormControl>
 
             {/* CATEGORY + PRIORITY */}
             <Stack direction="row" spacing={2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>Category</InputLabel>
-                <Select
-                  name="category"
-                  value={form.category || ""}
-                  onChange={handleChange}
-                >
-                  {loading ? (
-                    <MenuItem>
-                      <CircularProgress size={20} />
-                    </MenuItem>
-                  ) : (
-                    categories.map((cat: any) => (
-                      <MenuItem key={cat} value={cat}>
-                        {cat}
-                      </MenuItem>
-                    ))
-                  )}
-                </Select>
-              </FormControl>
+             <FormControl fullWidth size="small">
+  <InputLabel id="category-label">Category</InputLabel>
 
-              <FormControl fullWidth size="small">
-                <InputLabel>Priority</InputLabel>
-                <Select
-                  name="priority"
-                  value={form.priority || ""}
-                  onChange={handleChange}
-                >
-                  {loading ? (
-                    <MenuItem>
-                      <CircularProgress size={20} />
-                    </MenuItem>
-                  ) : (
-                    priorities.map((pri: any) => (
-                      <MenuItem key={pri} value={pri}>
-                        {pri}
-                      </MenuItem>
-                    ))
-                  )}
-                </Select>
-              </FormControl>
+  <Select
+    labelId="category-label"
+    label="Category"
+    name="category"
+    value={form.category || ""}
+    onChange={handleChange}
+  >
+    {loading ? (
+      <MenuItem>
+        <CircularProgress size={20} />
+      </MenuItem>
+    ) : (
+      categories.map((cat: any) => (
+        <MenuItem key={cat} value={cat}>
+          {cat}
+        </MenuItem>
+      ))
+    )}
+  </Select>
+</FormControl>
+
+            <FormControl fullWidth size="small" variant="outlined">
+  <InputLabel id="priority-label">Priority</InputLabel>
+
+  <Select
+    labelId="priority-label"
+    label="Priority"
+    name="priority"
+    value={form.priority || ""}
+    onChange={handleChange}
+  >
+    {loading ? (
+      <MenuItem>
+        <CircularProgress size={20} />
+      </MenuItem>
+    ) : (
+      priorities.map((pri: any) => (
+        <MenuItem key={pri} value={pri}>
+          {pri}
+        </MenuItem>
+      ))
+    )}
+  </Select>
+</FormControl>
             </Stack>
 
             {/* ✅ FIXED DROPDOWN */}
