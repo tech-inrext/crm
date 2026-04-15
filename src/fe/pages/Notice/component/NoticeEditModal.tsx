@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
@@ -102,13 +102,12 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
 
     return () => clearTimeout(timer);
   }, [open]);
- 
+
   // ✅ FILE STATE (UNCHANGED)
   const [pendingFiles, setPendingFiles] = useState<any[]>([]);
 
   // ✅ FIXED: correct initialization
   const [selectedDepartment, setSelectedDepartment] = useState<string>("All");
-
   const auth = useAuth();
 
   const isSystemAdmin = Boolean(auth?.isSystemAdmin);
@@ -125,19 +124,19 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
     if (isSystemAdmin) {
       if (!avpList || avpList.length === 0) return;
 
-      const value = notice?.targetAVP || "All";
-      setSelectedDepartment(value);
-    } else if (isAVP) {
+      setSelectedDepartment(
+        notice?.targetAVP ? String(notice.targetAVP) : "All",
+      );
+    } else {
       if (!departments || departments.length === 0) return;
 
-      const value = notice?.departments?.[0] || "All";
-      setSelectedDepartment(value);
+      setSelectedDepartment(notice?.departments?.[0] || "All");
     }
-  }, [open, notice, avpList, departments, isSystemAdmin, isAVP]);
+  }, [open, notice, avpList, departments]); // ✅ ONLY depends on open
   useEffect(() => {
     if (!open || !notice) return;
 
-    // attachments
+    // ✅ ONLY attachments logic here
     setPendingFiles(
       (notice?.attachments || []).map((f: any, index: number) => ({
         id: Date.now() + index,
@@ -146,16 +145,6 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
         customName: f.filename || f.name,
       })),
     );
-
-    // ✅ FIX: normalize selected department
-    // ✅ ONLY set initially if not already set
-    if (!selectedDepartment) {
-      if (isSystemAdmin) {
-        setSelectedDepartment(notice?.targetAVP || "All");
-      } else {
-        setSelectedDepartment(notice?.departments?.[0] || "All");
-      }
-    }
   }, [open, notice]);
 
   const handleChange = (e: any) => {
@@ -256,7 +245,7 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
             />
 
             {/* DESCRIPTION */}
-             <FormControl
+            <FormControl
               fullWidth
               size="small"
               className={`!border ${
@@ -277,53 +266,53 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
 
             {/* CATEGORY + PRIORITY */}
             <Stack direction="row" spacing={2}>
-             <FormControl fullWidth size="small">
-  <InputLabel id="category-label">Category</InputLabel>
+              <FormControl fullWidth size="small">
+                <InputLabel id="category-label">Category</InputLabel>
 
-  <Select
-    labelId="category-label"
-    label="Category"
-    name="category"
-    value={form.category || ""}
-    onChange={handleChange}
-  >
-    {loading ? (
-      <MenuItem>
-        <CircularProgress size={20} />
-      </MenuItem>
-    ) : (
-      categories.map((cat: any) => (
-        <MenuItem key={cat} value={cat}>
-          {cat}
-        </MenuItem>
-      ))
-    )}
-  </Select>
-</FormControl>
+                <Select
+                  labelId="category-label"
+                  label="Category"
+                  name="category"
+                  value={form.category || ""}
+                  onChange={handleChange}
+                >
+                  {loading ? (
+                    <MenuItem>
+                      <CircularProgress size={20} />
+                    </MenuItem>
+                  ) : (
+                    categories.map((cat: any) => (
+                      <MenuItem key={cat} value={cat}>
+                        {cat}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
 
-            <FormControl fullWidth size="small" variant="outlined">
-  <InputLabel id="priority-label">Priority</InputLabel>
+              <FormControl fullWidth size="small" variant="outlined">
+                <InputLabel id="priority-label">Priority</InputLabel>
 
-  <Select
-    labelId="priority-label"
-    label="Priority"
-    name="priority"
-    value={form.priority || ""}
-    onChange={handleChange}
-  >
-    {loading ? (
-      <MenuItem>
-        <CircularProgress size={20} />
-      </MenuItem>
-    ) : (
-      priorities.map((pri: any) => (
-        <MenuItem key={pri} value={pri}>
-          {pri}
-        </MenuItem>
-      ))
-    )}
-  </Select>
-</FormControl>
+                <Select
+                  labelId="priority-label"
+                  label="Priority"
+                  name="priority"
+                  value={form.priority || ""}
+                  onChange={handleChange}
+                >
+                  {loading ? (
+                    <MenuItem>
+                      <CircularProgress size={20} />
+                    </MenuItem>
+                  ) : (
+                    priorities.map((pri: any) => (
+                      <MenuItem key={pri} value={pri}>
+                        {pri}
+                      </MenuItem>
+                    ))
+                  )}
+                </Select>
+              </FormControl>
             </Stack>
 
             {/* ✅ FIXED DROPDOWN */}
@@ -334,41 +323,45 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
                 </InputLabel>
 
                 <Select
-                  value={selectedDepartment || "All"}
-                  onChange={(e) =>
-                    setSelectedDepartment(String(e.target.value))
-                  }
+                  value={selectedDepartment} // ✅ REMOVE fallback here
+                  onChange={(e) => {
+                    const value = String(e.target.value);
+                    setSelectedDepartment(value);
+                  }}
                   label={isSystemAdmin ? "Select AVP" : "Departments"}
+                  displayEmpty
                   renderValue={(selected) => {
                     if (!selected) return "Select...";
 
                     if (isSystemAdmin) {
                       if (selected === "All") return "All";
+
                       const found = avpList?.find(
-                        (a: any) => a._id === selected,
+                        (a: any) => String(a._id) === String(selected),
                       );
-                      return found?.name || "Select AVP";
+
+                      return found ? found.name : "Select...";
                     }
 
                     return selected;
                   }}
                 >
-                  {isSystemAdmin ? (
-                    <>
-                      <MenuItem value="All">All</MenuItem>
-                      {avpList?.map((a: any) => (
-                        <MenuItem key={a._id} value={a._id}>
-                          {a.name}
+                  {isSystemAdmin
+                    ? [
+                        <MenuItem key="all" value="All">
+                          All
+                        </MenuItem>,
+                        ...avpList.map((a: any) => (
+                          <MenuItem key={a._id} value={String(a._id)}>
+                            {a.name}
+                          </MenuItem>
+                        )),
+                      ]
+                    : finalDepartments.map((d: any) => (
+                        <MenuItem key={d} value={d}>
+                          {d}
                         </MenuItem>
                       ))}
-                    </>
-                  ) : (
-                    finalDepartments.map((d: any) => (
-                      <MenuItem key={d} value={d}>
-                        {d}
-                      </MenuItem>
-                    ))
-                  )}
                 </Select>
               </FormControl>
 
@@ -376,6 +369,7 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
                 label="Expiry Date"
                 value={form.expiry}
                 onChange={(val) => setForm({ ...form, expiry: val })}
+                disablePast
                 slotProps={{
                   textField: { fullWidth: true, size: "small" },
                 }}
