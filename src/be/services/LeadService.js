@@ -171,6 +171,14 @@ class LeadService extends Service {
     });
   }
 
+  // 🔹 Helper to mask phone number
+  static maskPhone(phone) {
+    if (!phone) return phone;
+    const phoneStr = String(phone);
+    if (phoneStr.length < 10) return "*******";
+    return phoneStr.slice(0, 2) + "******" + phoneStr.slice(-2);
+  }
+
   // 🔹 Helper to fetch all subordinates in a hierarchy (downline)
   async getDownlineIds(managerId) {
     if (!managerId) return [];
@@ -392,7 +400,7 @@ class LeadService extends Service {
             .limit(3)
             .lean();
 
-          return {
+          const leadObj = {
             ...lead,
             followUpCount: count, // Used for Badge
             nextFollowUp: latest ? latest.followUpDate : null,
@@ -400,6 +408,17 @@ class LeadService extends Service {
             followUpNotes: latest ? [latest.note] : [],
             recentActivities: recentActivities || [],
           };
+
+          // 🛡️ Mask Phone based on access
+          const isUploader = String(lead.uploadedBy?._id || lead.uploadedBy) === String(loggedInUserId);
+          const isAssignee = String(lead.assignedTo?._id || lead.assignedTo) === String(loggedInUserId);
+          const isSystemAdmin = req.isSystemAdmin;
+
+          if (!isUploader && !isAssignee && !isSystemAdmin) {
+            leadObj.phone = LeadService.maskPhone(lead.phone);
+          }
+
+          return leadObj;
         }),
       );
 
@@ -462,6 +481,15 @@ class LeadService extends Service {
 
       leadObj.followUpCount = count;
       leadObj.nextFollowUp = latest ? latest.followUpDate : null;
+
+      // 🛡️ Mask Phone based on access
+      const isUploader = String(lead.uploadedBy) === String(loggedInUserId);
+      const isAssignee = String(lead.assignedTo) === String(loggedInUserId);
+      const isSystemAdmin = req.isSystemAdmin;
+
+      if (!isUploader && !isAssignee && !isSystemAdmin) {
+        leadObj.phone = LeadService.maskPhone(lead.phone);
+      }
 
       return res.status(200).json({ success: true, data: leadObj });
     } catch (error) {

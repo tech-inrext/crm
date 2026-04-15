@@ -3,6 +3,7 @@ import { Service } from "@framework";
 import FollowUp from "../models/FollowUp";
 import Lead from "../models/Lead";
 import LeadActivity from "../models/LeadActivity";
+import LeadService from "./LeadService";
 import dbConnect from "../../lib/mongodb";
 import mongoose from "mongoose";
 
@@ -120,14 +121,24 @@ class FollowUpService extends Service {
         outcome: doc.outcome || "pending"
       }));
 
-      const formattedActivities = activities.map(doc => ({
-        _id: doc._id,
-        followUpType: "history",
-        change: doc.change,
-        createdAt: doc.createdAt,
-        updatedAt: doc.updatedAt,
-        submittedByName: doc.updatedBy?.name || "System/Unknown",
-      }));
+      const formattedActivities = activities.map(doc => {
+        let change = doc.change;
+        // 🛡️ Mask phone in logs if unauthorized
+        if (change && change.phone && !isUploader && !isAssignee && !isSystemAdmin) {
+          change = { ...change };
+          if (change.phone.prev) change.phone.prev = LeadService.maskPhone(change.phone.prev);
+          if (change.phone.new) change.phone.new = LeadService.maskPhone(change.phone.new);
+        }
+
+        return {
+          _id: doc._id,
+          followUpType: "history",
+          change: change,
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+          submittedByName: doc.updatedBy?.name || "System/Unknown",
+        };
+      });
 
       const creationEntry = {
         _id: targetLead._id + "_creation",
@@ -142,12 +153,22 @@ class FollowUpService extends Service {
       const combinedArr = [creationEntry, ...formattedHistory, ...formattedActivities];
       combinedArr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
+      const loggedInUserId = req.employee?._id;
+      const isUploader = String(targetLead.uploadedBy?._id || targetLead.uploadedBy) === String(loggedInUserId);
+      const isAssignee = String(targetLead.assignedTo?._id || targetLead.assignedTo) === String(loggedInUserId);
+      const isSystemAdmin = req.isSystemAdmin;
+
+      let displayPhone = targetLead.phone;
+      if (!isUploader && !isAssignee && !isSystemAdmin) {
+        displayPhone = LeadService.maskPhone(targetLead.phone);
+      }
+
       return res.status(200).json({
         success: true,
         data: combinedArr,
         lead: {
           fullName: targetLead.fullName,
-          phone: targetLead.phone,
+          phone: displayPhone,
           id: targetLead._id,
           assignedTo: targetLead.assignedTo,
           managerId: targetLead.managerId,
