@@ -46,13 +46,9 @@ const logs = [
 
 export default function LogHistoryCard() {
   return (
-    <Box className="p-4">
+    <Box className="p-4" >
       <Box
-        className="rounded-2xl p-4 shadow-sm"
-        sx={{
-          background:
-            "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)",
-        }}
+        className="rounded-2xl p-4 shadow-sm bg-white border border-gray-500"
       >
         {/* Header */}
         <Box className="flex items-center justify-between mb-3">
@@ -72,17 +68,17 @@ export default function LogHistoryCard() {
               <Box className="flex items-start justify-between py-3">
                 {/* Left */}
                 <Box className="flex items-start gap-3">
-                  <Avatar className="!w-9 !h-9" />
+                  <Avatar className="!w-9 !h-9 bg-blue-500 " />
 
                   <Box>
-                    <Typography className="text-sm text-gray-700">
+                    <Typography className="!text-sm text-gray-700">
                       <span className="font-semibold">{log.name}</span>{" "}
-                      <span className="text-gray-400 text-xs">
+                      <span className="text-gray-400 !text-xs">
                         {log.time}
                       </span>
                     </Typography>
 
-                    <Typography className="text-sm text-gray-600 whitespace-pre-line">
+                    <Typography className="!text-sm text-gray-600 whitespace-pre-line">
                       {log.action}
                     </Typography>
                   </Box>

@@ -16,19 +16,16 @@ const holidays = [
     name: "Diwali",
     date: "Nov 12, 2026",
     color: "bg-orange-100 text-orange-500",
-    emoji: "🪔",
   },
   {
     name: "Thanksgiving",
     date: "Dec 26, 2026",
     color: "bg-blue-100 text-blue-500",
-    emoji: "🧈",
   },
   {
     name: "New Year's",
     date: "Dec 31, 2026",
     color: "bg-green-100 text-green-500",
-    emoji: "🥗",
   },
 ];
 
@@ -36,11 +33,8 @@ export default function UpcomingHolidaysCard() {
   return (
     <Box className="p-4">
       <Box
-        className="rounded-2xl p-4 shadow-sm"
-        sx={{
-          background:
-            "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)",
-        }}
+        className="rounded-2xl p-4 border border-gray-500 bg-white"
+        
       >
         {/* Header */}
         <Box className="flex items-center justify-between mb-3">
@@ -49,7 +43,7 @@ export default function UpcomingHolidaysCard() {
           </Typography>
 
           <IconButton size="small">
-            <MoreHorizIcon className="text-gray-400" />
+            <MoreHorizIcon className="text-gray-500" />
           </IconButton>
         </Box>
 
@@ -61,18 +55,18 @@ export default function UpcomingHolidaysCard() {
                 {/* Left */}
                 <Box className="flex items-center gap-3">
                   <Box
-                    className={`w-10 h-10 flex items-center justify-center rounded-full ${item.color}`}
+                    className={`w-8 h-8 flex items-center justify-center rounded-full ${item.color}`}
                   >
-                    <span className="text-lg">{item.emoji}</span>
+                    <span className="text-md">{item.name.charAt(0)}</span>
                   </Box>
 
-                  <Typography className="!font-medium text-gray-700">
+                  <Typography className="!font-medium !text-sm text-gray-700">
                     {item.name}
                   </Typography>
                 </Box>
 
                 {/* Right */}
-                <Typography className="text-gray-500 text-sm">
+                <Typography className="text-gray-500 !text-sm">
                   {item.date}
                 </Typography>
               </Box>
@@ -88,7 +82,7 @@ export default function UpcomingHolidaysCard() {
         <Box className="mt-4">
           <Button
             variant="contained"
-            className="!bg-gray-200 !text-gray-700 !normal-case !rounded-lg hover:!bg-gray-300"
+            className="!bg-blue-500 !text-white !normal-case !rounded-lg hover:!bg-gray-300"
           >
             View Past Holidays
           </Button>

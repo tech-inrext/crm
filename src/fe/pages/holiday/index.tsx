@@ -32,7 +32,7 @@ export default function HolidayPlanner() {
 
       {/* Calendar + Right Sidebar */}
       {tab === 0 && (
-        <Box className="flex gap-4 p-4">
+        <Box className="flex gap-1 p-1">
           {/* Left */}
           <Box className="flex-1">
             <CalendarView onOpen={() => setDrawerOpen(true)} />
@@ -40,7 +40,7 @@ export default function HolidayPlanner() {
           </Box>
 
           {/* Right */}
-          <Box className="w-[320px] hidden lg:block">
+          <Box className="w-[420px] hidden lg:block">
             <Box className="sticky top-4">
               <LogHistoryCard />
             </Box>

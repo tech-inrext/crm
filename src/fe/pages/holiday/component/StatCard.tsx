@@ -36,25 +36,21 @@ const stats = [
 
 export default function StatsCards() {
   return (
-    <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 p-4">
+    <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 !p-6">
       {stats.map((item, index) => (
         <Box
           key={index}
-          className={`flex items-center gap-4 p-4 rounded-xl shadow-sm ${item.bg}`}
-          sx={{
-            background:
-              "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)",
-          }}
+          className={`!flex items-center !gap-4 !p-6 !border border-gray-600 !rounded-xl !bg-white ${item.bg}`} 
         >
           {/* Icon */}
-          <Box className="text-3xl">{item.icon}</Box>
+          <Box className="!text-6xl mt-1  ">{item.icon}</Box>
 
           {/* Text */}
           <Box>
-            <Typography className="text-xl font-semibold text-gray-700">
+            <Typography className="!text-xl !font-semibold  !text-gray-700">
               {item.value}
             </Typography>
-            <Typography className="text-sm text-gray-600">
+            <Typography className="!text-sm !text-gray-600">
               {item.label}
             </Typography>
           </Box>

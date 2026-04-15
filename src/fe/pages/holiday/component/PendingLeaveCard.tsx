@@ -14,7 +14,7 @@ import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 const leaves = [
   {
     name: "John Doe",
-    period: "Apr 13, 2026 - Apr 15, 2026",
+    period: "Apr 13, 2026",
     duration: "3 Days",
     reason: "Vacation",
     status: "Pending",
@@ -32,11 +32,7 @@ export default function PendingLeaveCard() {
   return (
     <Box className="p-4">
       <Box
-        className="rounded-2xl p-4 shadow-sm"
-        sx={{
-          background:
-            "linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%)",
-        }}
+        className="rounded-2xl p-4 border border-gray-500 bg-white"
       >
         {/* Header */}
         <Box className="flex items-center justify-between mb-3">
@@ -63,18 +59,22 @@ export default function PendingLeaveCard() {
         {/* Rows */}
         {leaves.map((item, index) => (
           <React.Fragment key={index}>
-            <Box className="grid grid-cols-5 items-center px-2 py-3 text-sm text-gray-700">
-              <Typography className="font-medium">
+            <Box className="grid grid-cols-5 items-center px-2 py-3 !text-xs text-gray-700">
+              <Typography className="font-medium !text-sm">
                 {item.name}
               </Typography>
 
-              <Typography className="text-gray-600">
+              <Typography className="text-gray-600 !text-sm">
                 {item.period}
               </Typography>
 
-              <Typography>{item.duration}</Typography>
+              <Typography className="!text-sm">
+                {item.duration}
+              </Typography>
 
-              <Typography>{item.reason}</Typography>
+              <Typography className="!text-sm">
+                {item.reason}
+              </Typography>
 
               <Box>
                 {item.status === "Pending" ? (
