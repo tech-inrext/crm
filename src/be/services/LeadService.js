@@ -179,6 +179,14 @@ class LeadService extends Service {
     return phoneStr.slice(0, 2) + "******" + phoneStr.slice(-2);
   }
 
+  // 🔹 Helper to mask email address
+  static maskEmail(email) {
+    if (!email || !email.includes("@")) return email;
+    const [user, domain] = email.split("@");
+    if (user.length <= 2) return user.slice(0, 1) + "******" + "@" + domain;
+    return user.slice(0, 2) + "******" + user.slice(-1) + "@" + domain;
+  }
+
   // 🔹 Helper to fetch all subordinates in a hierarchy (downline)
   async getDownlineIds(managerId) {
     if (!managerId) return [];
@@ -416,6 +424,7 @@ class LeadService extends Service {
 
           if (!isUploader && !isAssignee && !isSystemAdmin) {
             leadObj.phone = LeadService.maskPhone(lead.phone);
+            leadObj.email = LeadService.maskEmail(lead.email);
           }
 
           return leadObj;
@@ -489,6 +498,7 @@ class LeadService extends Service {
 
       if (!isUploader && !isAssignee && !isSystemAdmin) {
         leadObj.phone = LeadService.maskPhone(lead.phone);
+        leadObj.email = LeadService.maskEmail(lead.email);
       }
 
       return res.status(200).json({ success: true, data: leadObj });

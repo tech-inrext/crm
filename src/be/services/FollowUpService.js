@@ -98,6 +98,12 @@ class FollowUpService extends Service {
         return res.status(200).json({ success: true, data: [] });
       }
 
+      // 🛡️ Resolve Access Permissions early for masking
+      const loggedInUserId = req.employee?._id;
+      const isUploader = String(targetLead.uploadedBy?._id || targetLead.uploadedBy) === String(loggedInUserId);
+      const isAssignee = String(targetLead.assignedTo?._id || targetLead.assignedTo) === String(loggedInUserId);
+      const isSystemAdmin = req.isSystemAdmin;
+
       // 2. Fetch History
       // Find ALL documents matching this leadId
       const history = await FollowUp.find({ leadId: targetLead._id })
@@ -124,10 +130,18 @@ class FollowUpService extends Service {
       const formattedActivities = activities.map(doc => {
         let change = doc.change;
         // 🛡️ Mask phone in logs if unauthorized
-        if (change && change.phone && !isUploader && !isAssignee && !isSystemAdmin) {
+        if (change && !isUploader && !isAssignee && !isSystemAdmin) {
           change = { ...change };
-          if (change.phone.prev) change.phone.prev = LeadService.maskPhone(change.phone.prev);
-          if (change.phone.new) change.phone.new = LeadService.maskPhone(change.phone.new);
+          // Mask phone if changed
+          if (change.phone) {
+            if (change.phone.prev) change.phone.prev = LeadService.maskPhone(change.phone.prev);
+            if (change.phone.new) change.phone.new = LeadService.maskPhone(change.phone.new);
+          }
+          // Mask email if changed
+          if (change.email) {
+            if (change.email.prev) change.email.prev = LeadService.maskEmail(change.email.prev);
+            if (change.email.new) change.email.new = LeadService.maskEmail(change.email.new);
+          }
         }
 
         return {
@@ -153,14 +167,13 @@ class FollowUpService extends Service {
       const combinedArr = [creationEntry, ...formattedHistory, ...formattedActivities];
       combinedArr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
-      const loggedInUserId = req.employee?._id;
-      const isUploader = String(targetLead.uploadedBy?._id || targetLead.uploadedBy) === String(loggedInUserId);
-      const isAssignee = String(targetLead.assignedTo?._id || targetLead.assignedTo) === String(loggedInUserId);
-      const isSystemAdmin = req.isSystemAdmin;
+
 
       let displayPhone = targetLead.phone;
+      let displayEmail = targetLead.email;
       if (!isUploader && !isAssignee && !isSystemAdmin) {
         displayPhone = LeadService.maskPhone(targetLead.phone);
+        displayEmail = LeadService.maskEmail(targetLead.email);
       }
 
       return res.status(200).json({
@@ -169,6 +182,7 @@ class FollowUpService extends Service {
         lead: {
           fullName: targetLead.fullName,
           phone: displayPhone,
+          email: displayEmail,
           id: targetLead._id,
           assignedTo: targetLead.assignedTo,
           managerId: targetLead.managerId,
