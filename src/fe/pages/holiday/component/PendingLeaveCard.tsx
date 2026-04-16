@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -10,30 +10,31 @@ import {
 } from "@mui/material";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 
-// Dummy Data
-const leaves = [
-  {
-    name: "John Doe",
-    period: "Apr 13, 2026",
-    duration: "3 Days",
-    reason: "Vacation",
-    status: "Pending",
-  },
-  {
-    name: "Jane Smith",
-    period: "Apr 18, 2026",
-    duration: "1 Day",
-    reason: "Medical",
-    status: "Approved",
-  },
-];
-
 export default function PendingLeaveCard() {
+  const [leaves, setLeaves] = useState([]);
+
+  // ================= FETCH LEAVES =================
+  const fetchLeaves = async () => {
+    try {
+      const res = await fetch("/api/v0/leave");
+      const data = await res.json();
+
+      if (data.success) {
+        setLeaves(data.data);
+      }
+    } catch (error) {
+      console.error("Fetch error:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchLeaves();
+  }, []);
+
   return (
     <Box className="p-4">
-      <Box
-        className="rounded-2xl p-4 border border-gray-500 bg-white"
-      >
+      <Box className="rounded-2xl p-4 border border-gray-500 bg-white">
+
         {/* Header */}
         <Box className="flex items-center justify-between mb-3">
           <Typography className="!text-gray-700 !font-semibold">
@@ -58,32 +59,43 @@ export default function PendingLeaveCard() {
 
         {/* Rows */}
         {leaves.map((item, index) => (
-          <React.Fragment key={index}>
-            <Box className="grid grid-cols-5 items-center px-2 py-3 !text-xs text-gray-700">
+          <React.Fragment key={item._id || index}>
+            <Box className="grid grid-cols-5 items-center px-2 py-3 text-xs text-gray-700">
+
+              {/* Employee */}
               <Typography className="font-medium !text-sm">
-                {item.name}
+                {item.employeeId || "N/A"}
               </Typography>
 
+              {/* Period */}
               <Typography className="text-gray-600 !text-sm">
-                {item.period}
+                {new Date(item.start_date).toLocaleDateString()} -{" "}
+                {new Date(item.end_date).toLocaleDateString()}
               </Typography>
 
+              {/* Duration */}
               <Typography className="!text-sm">
                 {item.duration}
               </Typography>
 
+              {/* Reason */}
               <Typography className="!text-sm">
                 {item.reason}
               </Typography>
 
+              {/* Status */}
               <Box>
-                {item.status === "Pending" ? (
+                {item.status === "pending" ? (
                   <Box className="inline-block px-3 py-1 rounded-md bg-yellow-100 text-yellow-700 text-xs font-medium">
                     ● Pending
                   </Box>
-                ) : (
+                ) : item.status === "approved" ? (
                   <Box className="inline-block px-3 py-1 rounded-md bg-blue-100 text-blue-600 text-xs font-medium">
-                    ✓ Approve
+                    ✓ Approved
+                  </Box>
+                ) : (
+                  <Box className="inline-block px-3 py-1 rounded-md bg-red-100 text-red-600 text-xs font-medium">
+                    ✕ Rejected
                   </Box>
                 )}
               </Box>
@@ -93,7 +105,7 @@ export default function PendingLeaveCard() {
           </React.Fragment>
         ))}
 
-        {/* Footer Actions */}
+        {/* Footer Actions (UI only for now) */}
         <Box className="flex justify-end gap-3 mt-4">
           <Button
             variant="outlined"
@@ -109,6 +121,7 @@ export default function PendingLeaveCard() {
             Reject
           </Button>
         </Box>
+
       </Box>
     </Box>
   );

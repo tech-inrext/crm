@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
@@ -10,32 +10,38 @@ import {
 } from "@mui/material";
 import MoreHorizIcon from "@mui/icons-material/MoreHoriz";
 
-// Dummy data
-const holidays = [
-  {
-    name: "Diwali",
-    date: "Nov 12, 2026",
-    color: "bg-orange-100 text-orange-500",
-  },
-  {
-    name: "Thanksgiving",
-    date: "Dec 26, 2026",
-    color: "bg-blue-100 text-blue-500",
-  },
-  {
-    name: "New Year's",
-    date: "Dec 31, 2026",
-    color: "bg-green-100 text-green-500",
-  },
-];
-
 export default function UpcomingHolidaysCard() {
+  const [holidays, setHolidays] = useState([]);
+
+  // 🔥 Fetch from backend
+  const fetchHolidays = async () => {
+    try {
+      const res = await fetch("/api/v0/holiday");  
+      const data = await res.json();
+
+      if (data.success) {
+        // ✅ Only upcoming holidays filter
+        const today = new Date();
+
+        const upcoming = data.data.filter((h) => {
+          return new Date(h.date) >= today;
+        });
+
+        setHolidays(upcoming);
+      }
+    } catch (error) {
+      console.error("Fetch Holiday Error:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchHolidays();
+  }, []);
+
   return (
     <Box className="p-4">
-      <Box
-        className="rounded-2xl p-4 border border-gray-500 bg-white"
+      <Box className="rounded-2xl p-4 border border-gray-500 bg-white">
         
-      >
         {/* Header */}
         <Box className="flex items-center justify-between mb-3">
           <Typography className="!text-gray-700 !font-semibold">
@@ -49,40 +55,45 @@ export default function UpcomingHolidaysCard() {
 
         {/* List */}
         <Box>
-          {holidays.map((item, index) => (
-            <React.Fragment key={index}>
-              <Box className="flex items-center justify-between py-2">
-                {/* Left */}
-                <Box className="flex items-center gap-3">
-                  <Box
-                    className={`w-8 h-8 flex items-center justify-center rounded-full ${item.color}`}
-                  >
-                    <span className="text-md">{item.name.charAt(0)}</span>
+          {holidays.length === 0 ? (
+            <Typography className="text-gray-400 text-sm">
+              No upcoming holidays
+            </Typography>
+          ) : (
+            holidays.map((item, index) => (
+              <React.Fragment key={item._id || index}>
+                <Box className="flex items-center justify-between py-2">
+                  
+                  {/* Left */}
+                  <Box className="flex items-center gap-3">
+                    <Box className="w-8 h-8 flex items-center justify-center rounded-full bg-blue-100 text-blue-600">
+                      {item.name?.charAt(0)}
+                    </Box>
+
+                    <Typography className="!font-medium !text-sm text-gray-700">
+                      {item.name}
+                    </Typography>
                   </Box>
 
-                  <Typography className="!font-medium !text-sm text-gray-700">
-                    {item.name}
+                  {/* Right */}
+                  <Typography className="text-gray-500 !text-sm">
+                    {new Date(item.date).toLocaleDateString()}
                   </Typography>
                 </Box>
 
-                {/* Right */}
-                <Typography className="text-gray-500 !text-sm">
-                  {item.date}
-                </Typography>
-              </Box>
-
-              {index !== holidays.length - 1 && (
-                <Divider className="!border-gray-200" />
-              )}
-            </React.Fragment>
-          ))}
+                {index !== holidays.length - 1 && (
+                  <Divider className="!border-gray-200" />
+                )}
+              </React.Fragment>
+            ))
+          )}
         </Box>
 
         {/* Footer */}
         <Box className="mt-4">
           <Button
             variant="contained"
-            className="!bg-blue-500 !text-white !normal-case !rounded-lg hover:!bg-gray-300"
+            className="!bg-blue-500 !text-white !normal-case !rounded-lg hover:!bg-blue-600"
           >
             View Past Holidays
           </Button>

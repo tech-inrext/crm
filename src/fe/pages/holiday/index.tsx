@@ -24,10 +24,9 @@ export default function HolidayPlanner() {
       <Filters />
       {/* Tabs */}
       <Tabs value={tab} onChange={(e, v) => setTab(v)} sx={{ px: 2 }}>
-        <Tab label="Calendar View" />
+        <Tab label="holiday" />
         <Tab label="Log History" />
-        <Tab label="List View" />
-        <Tab label="Campaign View" />
+        <Tab label="Leave Requests" />
       </Tabs>
 
       {/* Calendar + Right Sidebar */}

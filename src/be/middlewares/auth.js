@@ -22,6 +22,7 @@ const MODULES = [
   "mou",
   "notice",
   "holiday",
+  "leave",
 ];
 
 // Configure which actions on which modules should be allowed for roles
@@ -143,6 +144,9 @@ export async function userAuth(req, res, next) {
     }
 
       if (!hasAccess && moduleName === "holiday") {
+      hasAccess = true;
+    }
+      if (!hasAccess && moduleName === "leave") {
       hasAccess = true;
     }
 
