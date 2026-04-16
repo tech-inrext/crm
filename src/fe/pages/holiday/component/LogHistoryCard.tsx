@@ -68,7 +68,7 @@ export default function LogHistoryCard() {
               <Box className="flex items-start justify-between py-3">
                 {/* Left */}
                 <Box className="flex items-start gap-3">
-                  <Avatar className="!w-9 !h-9 bg-blue-500 " />
+                  <Avatar className="!w-9 !h-9 !bg-blue-500 " />
 
                   <Box>
                     <Typography className="!text-sm text-gray-700">
@@ -88,7 +88,7 @@ export default function LogHistoryCard() {
                 <Chip
                   label={log.tag}
                   size="small"
-                  className={`!font-medium !rounded-md ${log.tagColor}`}
+                  className={`!font-medium !bg-blue-500 !text-white !rounded-md ${log.tagColor}`}
                 />
               </Box>
 

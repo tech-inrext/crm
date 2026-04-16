@@ -12,9 +12,7 @@ class LeaveService extends Service {
     const s = new Date(start);
     const e = new Date(end);
 
-    return Math.ceil(
-      (e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)
-    ) + 1;
+    return Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
   }
 
   // ================= APPLY LEAVE =================
@@ -71,11 +69,12 @@ class LeaveService extends Service {
   }
 
   // ================= GET LEAVES =================
-  async getLeave(req, res) {
+  async getAllLeaves(req, res) {
     try {
       const employeeId = req.employee?._id;
 
       const leaves = await Leave.find({ employeeId })
+        .populate("employeeId", "name email") // ✅ fetch employee data
         .sort({ createdAt: -1 })
         .lean();
 
@@ -112,7 +111,7 @@ class LeaveService extends Service {
           approvedBy: req.employee?._id || null,
           approvedAt: new Date(),
         },
-        { new: true }
+        { new: true },
       );
 
       return res.status(200).json({
@@ -149,7 +148,7 @@ class LeaveService extends Service {
           rejectedBy: req.employee?._id || null,
           rejectedAt: new Date(),
         },
-        { new: true }
+        { new: true },
       );
 
       return res.status(200).json({

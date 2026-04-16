@@ -64,7 +64,7 @@ export default function PendingLeaveCard() {
 
               {/* Employee */}
               <Typography className="font-medium !text-sm">
-                {item.employeeId || "N/A"}
+                {item.employeeId.name || "N/A"}
               </Typography>
 
               {/* Period */}
@@ -86,7 +86,7 @@ export default function PendingLeaveCard() {
               {/* Status */}
               <Box>
                 {item.status === "pending" ? (
-                  <Box className="inline-block px-3 py-1 rounded-md bg-yellow-100 text-yellow-700 text-xs font-medium">
+                  <Box className="inline-block px-3 py-1 rounded-md bg-amber-200 border  text-yellow-700 text-xs font-medium">
                     ● Pending
                   </Box>
                 ) : item.status === "approved" ? (
