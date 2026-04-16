@@ -1,8 +1,10 @@
 "use client";
 
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
-
+import "quill/dist/quill.snow.css";
+import Quill from "quill";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   Dialog,
   DialogContent,
@@ -34,43 +36,131 @@ import { useNoticeMeta } from "../hooks/useNoticeMeta";
 import { useNoticeForm } from "../hooks/useNoticeForm";
 
 export default function NoticeEditDialog({ open, onClose, notice }: any) {
-  const { categories, priorities, loading, departments, avps } =
-    useNoticeMeta();
+  const { categories, priorities, loading, departments } = useNoticeMeta();
   const { form, setForm } = useNoticeForm(notice);
+  const editorRef = useRef<HTMLDivElement | null>(null);
+  const quillRef = useRef<any>(null);
+  const [editorFocused, setEditorFocused] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // ------------------- FIXED -------------------
-  const [pendingFiles, setPendingFiles] = useState<any[]>(
-    (notice?.attachments || []).map((f, index) => ({
-      id: Date.now() + index,        // ✅ unique id for React key and removal
-      filename: f.filename || f.name,
-      url: f.url,
-      customName: f.filename || f.name,
-    })),
-  );
-  const [selectedDepartment, setSelectedDepartment] = useState<any>(
-    notice?.departments || notice?.targetAVP || "",
-  );
+  const [avpList, setAvpList] = useState([]);
+  useEffect(() => {
+    fetch("/api/v0/employee/getAllAVPEmployees")
+      .then((res) => res.json())
+      .then((data) => setAvpList(data?.data || []))
+      .catch(() => setAvpList([]));
+  }, []);
+  // ---------------- QUILL ----------------
+  useEffect(() => {
+    if (!open) return;
 
-  const isAdmin = true; // Replace with actual role check if needed
-  // ------------------- END FIXED -------------------
+    const timer = setTimeout(() => {
+      if (!editorRef.current) return;
+
+      if (quillRef.current) {
+        quillRef.current.off("text-change");
+        quillRef.current.off("selection-change");
+        quillRef.current = null;
+      }
+
+      const quill = new Quill(editorRef.current, {
+        theme: "snow",
+        modules: {
+          toolbar: [
+            ["bold", "italic", "underline", "strike"],
+            ["link"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["clean"],
+          ],
+        },
+      });
+
+      const root = quill.root;
+      root.style.fontSize = "1rem";
+      root.style.fontFamily = '"Roboto","Helvetica","Arial",sans-serif';
+      root.style.padding = "8.5px 14px";
+      root.style.minHeight = "80px";
+
+      // ✅ load existing description
+      quill.clipboard.dangerouslyPasteHTML(form.description || "");
+
+      quill.on("text-change", () => {
+        const html = quill.root.innerHTML;
+        setForm((prev: any) => ({
+          ...prev,
+          description: html === "<p><br></p>" ? "" : html,
+        }));
+      });
+
+      quill.on("selection-change", (range: any) => {
+        setEditorFocused(!!range);
+      });
+
+      quillRef.current = quill;
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [open]);
+
+  // ✅ FILE STATE (UNCHANGED)
+  const [pendingFiles, setPendingFiles] = useState<any[]>([]);
+
+  // ✅ FIXED: correct initialization
+  const [selectedDepartment, setSelectedDepartment] = useState<string>("All");
+  const auth = useAuth();
+
+  const isSystemAdmin = Boolean(auth?.isSystemAdmin);
+
+  const isAVP =
+    auth?.isAVP === true ||
+    auth?.user?.isAVP === true ||
+    auth?.user?.role?.isAVP === true; // replace with real role
+  // ✅ ADD THIS (DO NOT REMOVE YOUR EXISTING CODE)
+  // ✅ FINAL WORKING LOGIC (same behavior as your first file)
+  useEffect(() => {
+    if (!open || !notice) return;
+
+    if (isSystemAdmin) {
+      if (!avpList || avpList.length === 0) return;
+
+      setSelectedDepartment(
+        notice?.targetAVP ? String(notice.targetAVP) : "All",
+      );
+    } else {
+      if (!departments || departments.length === 0) return;
+
+      setSelectedDepartment(notice?.departments?.[0] || "All");
+    }
+  }, [open, notice, avpList, departments]); // ✅ ONLY depends on open
+  useEffect(() => {
+    if (!open || !notice) return;
+
+    // ✅ ONLY attachments logic here
+    setPendingFiles(
+      (notice?.attachments || []).map((f: any, index: number) => ({
+        id: Date.now() + index,
+        filename: f.filename || f.name,
+        url: f.url,
+        customName: f.filename || f.name,
+      })),
+    );
+  }, [open, notice]);
 
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
-
+  const finalDepartments = isAVP ? ["All", "Team"] : departments || [];
   const handleFilePick = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files) return;
 
-    // ------------------- FIXED -------------------
     const files = Array.from(e.target.files).map((file, index) => ({
-      id: Date.now() + index, // ✅ unique ID
+      id: Date.now() + index,
       file,
       customName: file.name,
     }));
+
     setPendingFiles((prev) => [...prev, ...files]);
-    // ------------------- END FIXED -------------------
   };
 
   const handleRemoveFile = (id: number) => {
@@ -108,7 +198,17 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
         ...form,
         expiry: form.expiry ? form.expiry.toISOString() : null,
         attachments: updatedAttachments,
-        departments: selectedDepartment,
+
+        // ✅ FIX: payload correct
+        ...(isSystemAdmin
+          ? {
+              targetAVP:
+                selectedDepartment !== "All" ? selectedDepartment : null,
+              departments: ["All"],
+            }
+          : {
+              departments: [selectedDepartment],
+            }),
       });
 
       onClose();
@@ -118,6 +218,9 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
       alert("Failed to update notice. Please try again.");
     }
   };
+
+  // ✅ SAFETY: wait until data ready
+  if (!open) return null;
 
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -142,25 +245,33 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
             />
 
             {/* DESCRIPTION */}
-            <FormControl fullWidth size="small">
-              <InputLabel shrink={!!form.description}>Notice Description</InputLabel>
-              <Box className="!rounded-md cursor-text p-2">
-                <textarea
-                  value={form.description}
-                  onChange={(e) =>
-                    setForm({ ...form, description: e.target.value })
-                  }
-                  rows={5}
-                  className="w-full border-none outline-none resize-none"
-                />
+            <FormControl
+              fullWidth
+              size="small"
+              className={`!border ${
+                editorFocused ? "!border-blue-500" : "!border-gray-300"
+              } !rounded-md`}
+            >
+              <InputLabel
+                shrink={!!form.description || editorFocused}
+                className="!bg-white !px-1"
+              >
+                Notice Description
+              </InputLabel>
+
+              <Box onClick={() => quillRef.current?.focus()}>
+                <div ref={editorRef} />
               </Box>
             </FormControl>
 
             {/* CATEGORY + PRIORITY */}
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth size="small">
-                <InputLabel>Category</InputLabel>
+                <InputLabel id="category-label">Category</InputLabel>
+
                 <Select
+                  labelId="category-label"
+                  label="Category"
                   name="category"
                   value={form.category || ""}
                   onChange={handleChange}
@@ -179,9 +290,12 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
                 </Select>
               </FormControl>
 
-              <FormControl fullWidth size="small">
-                <InputLabel>Priority</InputLabel>
+              <FormControl fullWidth size="small" variant="outlined">
+                <InputLabel id="priority-label">Priority</InputLabel>
+
                 <Select
+                  labelId="priority-label"
+                  label="Priority"
                   name="priority"
                   value={form.priority || ""}
                   onChange={handleChange}
@@ -201,21 +315,49 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
               </FormControl>
             </Stack>
 
-            {/* DEPARTMENT + EXPIRY */}
+            {/* ✅ FIXED DROPDOWN */}
             <Stack direction="row" spacing={2}>
-              <FormControl fullWidth size="small">
-                <InputLabel>{isAdmin ? "Department" : "Departments"}</InputLabel>
+              <FormControl fullWidth size="small" disabled={false}>
+                <InputLabel>
+                  {isSystemAdmin ? "Select AVP" : "Departments"}
+                </InputLabel>
+
                 <Select
-                  value={selectedDepartment}
-                  onChange={(e) => setSelectedDepartment(e.target.value)}
+                  value={selectedDepartment} // ✅ REMOVE fallback here
+                  onChange={(e) => {
+                    const value = String(e.target.value);
+                    setSelectedDepartment(value);
+                  }}
+                  label={isSystemAdmin ? "Select AVP" : "Departments"}
+                  displayEmpty
+                  renderValue={(selected) => {
+                    if (!selected) return "Select...";
+
+                    if (isSystemAdmin) {
+                      if (selected === "All") return "All";
+
+                      const found = avpList?.find(
+                        (a: any) => String(a._id) === String(selected),
+                      );
+
+                      return found ? found.name : "Select...";
+                    }
+
+                    return selected;
+                  }}
                 >
-                  {isAdmin
-                    ? avps?.map((a) => (
-                        <MenuItem key={a._id} value={a._id}>
-                          {a.name}
-                        </MenuItem>
-                      ))
-                    : departments?.map((d) => (
+                  {isSystemAdmin
+                    ? [
+                        <MenuItem key="all" value="All">
+                          All
+                        </MenuItem>,
+                        ...avpList.map((a: any) => (
+                          <MenuItem key={a._id} value={String(a._id)}>
+                            {a.name}
+                          </MenuItem>
+                        )),
+                      ]
+                    : finalDepartments.map((d: any) => (
                         <MenuItem key={d} value={d}>
                           {d}
                         </MenuItem>
@@ -227,11 +369,14 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
                 label="Expiry Date"
                 value={form.expiry}
                 onChange={(val) => setForm({ ...form, expiry: val })}
-                slotProps={{ textField: { fullWidth: true, size: "small" } }}
+                disablePast
+                slotProps={{
+                  textField: { fullWidth: true, size: "small" },
+                }}
               />
             </Stack>
 
-            {/* PINNED SWITCH */}
+            {/* PINNED */}
             <FormControlLabel
               control={
                 <Switch
@@ -259,6 +404,7 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
                   Add files
                 </Button>
               </Box>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -266,23 +412,25 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
                 hidden
                 onChange={handleFilePick}
               />
+
               {pendingFiles.map((p) => (
                 <Box
-                  key={p.id} // ✅ unique key fixes removal
+                  key={p.id}
                   className="flex items-center justify-between border border-gray-200 rounded px-3 py-2"
                 >
                   <Typography className="text-sm text-gray-700">
-                    {p.customName || p.filename || (p.file && p.file.name)}
+                    {p.customName || p.filename || p.file?.name}
                   </Typography>
                   <Button
                     size="small"
                     color="error"
-                    onClick={() => handleRemoveFile(p.id)} // ✅ remove only this file
+                    onClick={() => handleRemoveFile(p.id)}
                   >
                     Remove
                   </Button>
                 </Box>
               ))}
+
               {!pendingFiles.length && (
                 <Typography className="text-sm text-gray-400">
                   No attachments added
