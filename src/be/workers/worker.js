@@ -11,6 +11,7 @@ import sendLeadFollowUpNotification from "./sendLeadFollowUpNotification.js";
 import bulkAssignLeads from "./bulkAssignLeads.js";
 import revertBulkAssign from "./revertBulkAssign.js";
 import checkFollowUpsJob from "./checkFollowUpsJob.js";
+import weeklyPerformanceSummary from "./weeklyPerformanceSummary.js";
 
 
 // Attach different workers here
@@ -27,6 +28,7 @@ worker.addJobListener(
 worker.addJobListener("bulkAssignLeads", bulkAssignLeads);
 worker.addJobListener("revertBulkAssign", revertBulkAssign);
 worker.addJobListener("checkFollowUps", checkFollowUpsJob);
+worker.addJobListener("weeklyPerformanceSummary", weeklyPerformanceSummary);
 
 //Cron jobs
 worker.addCron('checkFollowUps', 60000, 'checkFollowUps-cron');
@@ -36,6 +38,9 @@ worker.addCron('notificationCleanup', 60 * 60 * 1000, 'notificationCleanup-cron'
 worker.addCron('notificationCleanup', 24 * 60 * 60 * 1000, 'notificationCleanup-cron', {
   action: "all"
 });
+
+// Weekly Summary: Every Tuesday at 9:30 AM IST
+worker.addCron('weeklyPerformanceSummary', '30 9 * * 2', 'weeklyPerformanceSummary-cron');
 
 
 
