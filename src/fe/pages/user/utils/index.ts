@@ -137,8 +137,8 @@ export const getInitialUserForm = (form: any) => {
     departmentId: formData.departmentId || "",
     roles: Array.isArray(formData.roles)
       ? (formData.roles as any[]).map((r: any) =>
-          typeof r === "string" ? r : r._id || r.id || "",
-        )
+        typeof r === "string" ? r : r._id || r.id || "",
+      )
       : [],
     joiningDate,
     aadharUrl: formData.aadharUrl || "",
@@ -206,20 +206,21 @@ export const previewIsImage = (v: string) =>
 export const getSlabLabel = (opt: string) =>
   opt === ""
     ? "Select a slab"
-    : `${opt}%` +
-      (opt === "100"
-        ? " President"
-        : opt === "95"
-          ? " V.P."
-          : opt === "90"
-            ? " A.V.P. (Core Member)"
+    : (opt === "100"
+      ? "100% DIRECTOR"
+      : opt === "95"
+        ? "95% ADDITIONAL DIRECTOR"
+        : opt === "90"
+          ? "90% PRESIDENT"
+          : opt === "85"
+            ? "85% VICE PRESIDENT"
             : opt === "80"
-              ? " General Manager"
+              ? "80% GENERAL MANAGER"
               : opt === "70"
-                ? " Senior Manager"
+                ? "70% SENIOR MANAGER"
                 : opt === "60"
-                  ? " Manager"
-                  : " (Sales Executive)");
+                  ? "60% TEAM MANAGER"
+                  : "50% BUSINESS DEVELOPMENT MANAGER");
 
 export const getFilteredSlabOptions = (
   allOptions: string[],
@@ -295,17 +296,17 @@ export const getOrgInfo = (user: {
   managerName?: string;
   departmentName?: string;
 }) => [
-  {
-    icon: Person,
-    label: "Manager:",
-    value: user.managerName || "N/A",
-    key: "manager",
-  },
-  {
-    icon: Work,
-    label: "Dept:",
-    value: user.departmentName || "N/A",
-    key: "dept",
-  },
-];
+    {
+      icon: Person,
+      label: "Manager:",
+      value: user.managerName || "N/A",
+      key: "manager",
+    },
+    {
+      icon: Work,
+      label: "Dept:",
+      value: user.departmentName || "N/A",
+      key: "dept",
+    },
+  ];
 
