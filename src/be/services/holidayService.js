@@ -84,6 +84,7 @@ class HolidayService extends Service {
       const totalItems = await Holiday.countDocuments(query);
 
       const holidays = await Holiday.find(query)
+        .populate("createdBy", "name email") // ✅ ADD THIS
         .sort({ date: 1 })
         .skip(skip)
         .limit(limitNumber)
