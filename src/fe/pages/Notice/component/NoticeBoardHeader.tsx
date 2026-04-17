@@ -5,11 +5,10 @@ import AddNoticeModal from "@/fe/pages/Notice/component/AddNoticeModal";
 import useNoticeBoardHeader from "@/fe/pages/Notice/hooks/useNoticeBoardHeader";
 import { NOTICE_TABS } from "@/fe/pages/Notice/utils/noticeTab";
 import { useAuth } from "@/contexts/AuthContext";
-
+import { MODULE_STYLES } from "@/styles/moduleStyles";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-
 import {
   Box,
   Button,
@@ -21,7 +20,7 @@ import {
   Stack,
 } from "../../../../components/ui/Component";
 
-import { InputBase, Tabs, Tab } from "@mui/material";
+import { InputBase, Tabs, Tab, Typography } from "@mui/material";
 
 import SearchIcon from "@mui/icons-material/Search";
 import FilterListIcon from "@mui/icons-material/FilterList";
@@ -91,8 +90,11 @@ function NoticeBoardHeader({
       )}
 
       <Box className="px-6 mr-2 py-2 bg-white rounded-xl border mb-5 border-gray-200 max-w-full">
-        <Box className="rounded-2xl space-y-4">
-          <Box className="p-2 rounded-2xl">
+        <Box className="rounded-2xl">
+          <Typography variant="h4" sx={MODULE_STYLES.layout.moduleTitle}>
+            Notice Board
+          </Typography>
+          <Box className=" rounded-2xl">
             <Stack
               direction={{ xs: "column", md: "row" }}
               spacing={2}

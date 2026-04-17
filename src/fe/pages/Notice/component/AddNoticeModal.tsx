@@ -434,6 +434,7 @@ export default function AddNoticeModal({
                   label="Expiry Date"
                   value={expiry}
                   onChange={(val) => setExpiry(val)}
+                  disablePast
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
                 />
               </Box>
