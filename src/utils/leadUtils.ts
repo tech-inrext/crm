@@ -14,8 +14,7 @@ export interface LeadFormData {
   manager?: string; // UI-only field for manager autocomplete
   managerId?: string; // ObjectId reference to Employee (lead manager)
   assignedTo?: string; // ObjectId reference to Employee (assigned team member)
-  // nextFollowUp?: string; // REMOVED
-  // followUpNotes: Array<{ note: string; date: string }>; // REMOVED
+  uploadedBy?: string; // ObjectId reference to Employee (creator)
 }
 
 export const formatLeadValue = (value?: number): string => {
@@ -128,6 +127,9 @@ export const transformAPILeadToForm = (apiLead: Lead): LeadFormData => {
     assignedTo: apiLead.assignedTo
       ? (apiLead.assignedTo as any)._id || String(apiLead.assignedTo)
       : "",
+    uploadedBy: apiLead.uploadedBy
+      ? (apiLead.uploadedBy as any)._id || String(apiLead.uploadedBy)
+      : "",
     // NO follow up fields
   };
 };
@@ -164,10 +166,23 @@ export const transformFormToAPI = (
   // Only include fields that are present and valid
   if (formData.fullName && formData.fullName.trim() !== "")
     payload.fullName = formData.fullName.trim();
-  if (formData.email && formData.email.trim() !== "")
+
+  // 🛡️ Filter out masked email from payload
+  if (
+    formData.email &&
+    formData.email.trim() !== "" &&
+    !formData.email.includes("*")
+  )
     payload.email = formData.email.trim();
+
   // Only include phone if not editing (backend does not allow phone update)
-  if (!isEdit && formData.phone && formData.phone.trim() !== "")
+  // 🛡️ Also filter out masked phone
+  if (
+    !isEdit &&
+    formData.phone &&
+    formData.phone.trim() !== "" &&
+    !formData.phone.includes("*")
+  )
     payload.phone = formData.phone.trim();
   if (formData.propertyName && formData.propertyName.trim() !== "")
     payload.propertyName = formData.propertyName.trim();
@@ -227,6 +242,7 @@ export const getDefaultLeadFormData = (): LeadFormData => {
     manager: "",
     managerId: "",
     assignedTo: "",
+    uploadedBy: "",
     // nextFollowUp: "", // REMOVED
     // followUpNotes: [], // REMOVED
   };

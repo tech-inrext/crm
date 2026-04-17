@@ -167,8 +167,16 @@ export default function FollowUpHeader({
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
                     <Phone sx={{ fontSize: 13, color: "#6b7280" }} />
                     <Typography
-                      component="a"
-                      href={`tel:${leadInfo.phone}`}
+                      component={
+                        leadInfo.phone && !leadInfo.phone.includes("*")
+                          ? "a"
+                          : "span"
+                      }
+                      href={
+                        leadInfo.phone && !leadInfo.phone.includes("*")
+                          ? `tel:${leadInfo.phone}`
+                          : undefined
+                      }
                       sx={{
                         fontSize: "0.7rem",
                         color: "#6b7280",
