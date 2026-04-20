@@ -9,10 +9,10 @@ export const DEFAULT_PAGE_SIZE = 10;
 // File Upload Constants
 export const MAX_FILE_SIZE = 1 * 1024 * 1024; // 1MB in bytes
 export const ALLOWED_FILE_TYPES = [
-  'image/jpeg', 
-  'image/jpg', 
-  'image/png', 
-  'image/webp', 
+  'image/jpeg',
+  'image/jpg',
+  'image/png',
+  'image/webp',
   'application/pdf'
 ];
 
@@ -27,14 +27,14 @@ export const DEFAULT_BOOKING_LOGIN_FORM = {
   email: "",
   unitNo: "",
   area: "",
-  floor: "", 
-  plcType: "percentage", 
+  floor: "",
+  plcType: "percentage",
   plcValue: "",
   otherCharges1: "",
   paymentPlan: "",
   projectRate: "",
   companyDiscount: "",
-  companyLoggedInRate: "", 
+  companyLoggedInRate: "",
   salesPersonDiscountBSP: "",
   salesPersonDiscountPLC: "",
   salesPersonDiscountClub: "",
@@ -45,13 +45,13 @@ export const DEFAULT_BOOKING_LOGIN_FORM = {
   soldPriceOthers: "",
   netSoldCopAmount: "",
   bookingAmount: "",
-  paymentMode: "cheque", 
+  paymentMode: "cheque",
   chequeNumber: "",
   transactionId: "",
   cashReceiptNumber: "",
   transactionDate: "",
   bankDetails: "",
-  slabPercentage: "50% Sales Executive",
+  slabPercentage: "50% BUSINESS DEVELOPMENT MANAGER",
   totalDiscountFromComm: "",
   netApplicableComm: "",
   salesPersonName: "",
@@ -88,13 +88,14 @@ export const PAYMENT_MODE_OPTIONS = [
 
 // Slab Percentage Options
 export const SLAB_PERCENTAGE_OPTIONS = [
-  "50% Sales Executive",
-  "60% Manager",
-  "70% Senior Manager",
-  "80% General Manager",
-  "90% A.V.P (Core Member)",
-  "95% V.P",
-  "100% President",
+  "50% BUSINESS DEVELOPMENT MANAGER",
+  "60% TEAM MANAGER",
+  "70% SENIOR MANAGER",
+  "80% GENERAL MANAGER",
+  "85% VICE PRESIDENT",
+  "90% PRESIDENT",
+  "95% ADDITIONAL DIRECTOR",
+  "100% DIRECTOR",
 ];
 
 // Table Header Configuration
