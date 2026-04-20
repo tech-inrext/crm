@@ -77,6 +77,7 @@ export const SLAB_OPTIONS: string[] = [
   "100",
   "95",
   "90",
+  "85",
   "80",
   "70",
   "60",
