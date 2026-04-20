@@ -1,86 +1,79 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { buildNoticeQuery } from "@/fe/pages/Notice/utils/noticeUtils";
 
-export type Notice = {
-  _id: string;
-  title: string;
-  description: string;
-  category: string;
-  priority: string;
-  pinned: boolean;
-  createdAt: string;
-  createdBy?: {
-    name: string;
-  };
-};
-
-export type Meta = {
-  categories: string[];
-  priorities: string[];
-};
-
 export default function useNotices() {
-  const [notices, setNotices] = useState<Notice[]>([]);
-  const [meta, setMeta] = useState<Meta>({
-    categories: [],
-    priorities: [],
-  });
-  const [loading, setLoading] = useState(true);
+  const [notices, setNotices] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch Meta
-  const fetchMeta = async () => {
+  const requestInProgress = useRef(false);
+
+  const getAllNotice = useCallback(async (filters: any = {}, force = false) => {
+    const query = buildNoticeQuery(filters);
+
+    // ✅ only block parallel requests (NOT same query blocking)
+    if (requestInProgress.current && !force) return;
+
+    requestInProgress.current = true;
+    setLoading(true);
+
     try {
-      const res = await fetch("/api/v0/notice/meta");
+      const res = await fetch(`/api/v0/notice${query ? `?${query}` : ""}`);
       const data = await res.json();
 
-      if (data.success) {
-        setMeta(data.data);
-      }
-    } catch (error) {
-      console.error("Meta Fetch Error:", error);
-    }
-  };
-
-  // Fetch Notices
-  const fetchNotices = async (filters: any = {}) => {
-    try {
-      setLoading(true);
-
-      const query = buildNoticeQuery(filters);
-
-      const url = `/api/v0/notice${query ? `?${query}` : ""}`;
-
-      const res = await fetch(url);
-      const data = await res.json();
-
-      if (data.success) {
-        setNotices(data.data);
-      } else {
-        setNotices([]);
-      }
-    } catch (error) {
-      console.error("Fetch Notice Error:", error);
+      setNotices(data?.success ? data.data || [] : []);
+    } catch (err) {
+      console.error("getAllNotice error:", err);
     } finally {
       setLoading(false);
+      requestInProgress.current = false;
     }
-  };
-
-  useEffect(() => {
-    fetchMeta();
-    fetchNotices();
   }, []);
 
-  const pinnedNotices = notices.filter((n) => n.pinned);
-  const regularNotices = notices.filter((n) => !n.pinned);
+  // initial load
+  useEffect(() => {
+    getAllNotice({}, true);
+  }, [getAllNotice]);
+
+  // ✅ instant UI add
+  const addNoticeLocal = useCallback((notice: any) => {
+    setNotices((prev) => [notice, ...prev]);
+  }, []);
+
+  // ✅ instant UI update
+const updateNoticeLocal = (updated: any) => {
+  setNotices((prev) =>
+    prev.map((item) =>
+      item._id === updated._id ? { ...item, ...updated } : item
+    )
+  );
+};
+  
+
+  // ✅ instant delete
+  const deleteNoticeLocal = useCallback((id: string) => {
+    setNotices((prev) => prev.filter((n) => n._id !== id));
+  }, []);
+
+  const pinnedNotices = useMemo(
+    () => notices.filter((n: any) => n.pinned),
+    [notices]
+  );
+
+  const regularNotices = useMemo(
+    () => notices.filter((n: any) => !n.pinned),
+    [notices]
+  );
 
   return {
     notices,
-    meta,
     loading,
-    fetchNotices,
+    getAllNotice,
     pinnedNotices,
     regularNotices,
+    addNoticeLocal,
+    updateNoticeLocal,
+    deleteNoticeLocal,
   };
 }

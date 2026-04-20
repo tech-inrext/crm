@@ -34,23 +34,88 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
 import { useNoticeMeta } from "../hooks/useNoticeMeta";
 import { useNoticeForm } from "../hooks/useNoticeForm";
-
-export default function NoticeEditDialog({ open, onClose, notice }: any) {
+import useNotices from "@/fe/pages/Notice/hooks/useNoticeDashboard";
+export default function NoticeEditDialog({ open, onClose, notice,   updateNoticeLocal,
+ }: any) {
   const { categories, priorities, loading, departments } = useNoticeMeta();
   const { form, setForm } = useNoticeForm(notice);
   const editorRef = useRef<HTMLDivElement | null>(null);
   const quillRef = useRef<any>(null);
   const [editorFocused, setEditorFocused] = useState(false);
-
+  // const { getAllNotice } = useNotices();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
+  let avpCache: any[] | null = null;
+  let avpPromise: Promise<any> | null = null;
   const [avpList, setAvpList] = useState([]);
+  const avpFetchedRef = useRef(false);
+const getFileNameWithExt = (file: any) => {
+  const url = file?.url || "";
+
+  // 1. try from filename
+  if (file?.filename && file.filename.includes(".")) {
+    return file.filename;
+  }
+
+  // 2. try from URL
+  const urlName = url.split("?")[0].split("/").pop() || "";
+  if (urlName.includes(".")) return urlName;
+
+  // 3. infer from mime type OR fallback
+  const type = file?.type || file?.mimeType;
+
+  let ext = "";
+
+  switch (type) {
+    case "application/pdf":
+      ext = ".pdf";
+      break;
+    case "image/png":
+      ext = ".png";
+      break;
+    case "image/jpeg":
+      ext = ".jpg";
+      break;
+    case "application/msword":
+      ext = ".doc";
+      break;
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      ext = ".docx";
+      break;
+    default:
+      ext = "";
+  }
+
+  const baseName =
+    file?.filename ||
+    file?.customName ||
+    urlName ||
+    "file";
+
+  return baseName.includes(".") ? baseName : baseName + ext;
+};
   useEffect(() => {
-    fetch("/api/v0/employee/getAllAVPEmployees")
-      .then((res) => res.json())
-      .then((data) => setAvpList(data?.data || []))
-      .catch(() => setAvpList([]));
-  }, []);
+    if (!open) return;
+
+    // ✅ already cached → no API call
+    if (avpCache) {
+      setAvpList(avpCache);
+      return;
+    }
+
+    // ✅ prevent duplicate API calls
+    if (!avpPromise) {
+      avpPromise = fetch("/api/v0/employee/getAllAVPEmployees")
+        .then((res) => res.json())
+        .then((data) => {
+          avpCache = data?.data || [];
+          return avpCache;
+        });
+    }
+
+    avpPromise.then((data) => {
+      setAvpList(data);
+    });
+  }, [open]);
   // ---------------- QUILL ----------------
   useEffect(() => {
     if (!open) return;
@@ -137,16 +202,19 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
     if (!open || !notice) return;
 
     // ✅ ONLY attachments logic here
-    setPendingFiles(
-      (notice?.attachments || []).map((f: any, index: number) => ({
-        id: Date.now() + index,
-        filename: f.filename || f.name,
-        url: f.url,
-        customName: f.filename || f.name,
-      })),
-    );
+  setPendingFiles(
+  (notice?.attachments || []).map((f: any, index: number) => ({
+    id: Date.now() + index,
+    filename:getFileNameWithExt(f), // ✅ ensures extension always exists
+    url: f.url,
+    customName:getFileNameWithExt(f),
+  })),
+);
   }, [open, notice]);
-
+  const canEdit =
+    auth?.isSystemAdmin &&
+    String(notice?.createdBy?._id || notice?.createdBy) ===
+      String(auth?.user?._id);
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -181,47 +249,58 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
     });
     return data.fileUrl;
   };
+const handleUpdate = async () => {
+  try {
+    const updatedAttachments = await Promise.all(
+      pendingFiles.map(async (f) => {
+        if (f.file) {
+          const url = await uploadToS3(f.file);
+          return { filename: f.customName || f.file.name, url };
+        }
+       return {
+  filename:getFileNameWithExt(f), // ✅ always safe with extension
+  url: f.url || "",
+};
+      })
+    );
 
-  const handleUpdate = async () => {
-    try {
-      const updatedAttachments = await Promise.all(
-        pendingFiles.map(async (f) => {
-          if (f.file) {
-            const url = await uploadToS3(f.file);
-            return { filename: f.customName || f.file.name, url };
+    const res = await axios.put(`/api/v0/notice/${notice._id}`, {
+      ...form,
+      expiry: form.expiry ? form.expiry.toISOString() : null,
+      attachments: updatedAttachments,
+      ...(isSystemAdmin
+        ? {
+            targetAVP:
+              selectedDepartment !== "All" ? selectedDepartment : null,
+            departments: ["All"],
           }
-          return { filename: f.customName || f.filename, url: f.url || "" };
-        }),
-      );
+        : {
+            departments: [selectedDepartment],
+          }),
+    });
 
-      await axios.put(`/api/v0/notice/${notice._id}`, {
-        ...form,
-        expiry: form.expiry ? form.expiry.toISOString() : null,
-        attachments: updatedAttachments,
+    // 🔥 SAFE RESPONSE CHECK
+    const updatedNotice = res?.data?.data;
 
-        // ✅ FIX: payload correct
-        ...(isSystemAdmin
-          ? {
-              targetAVP:
-                selectedDepartment !== "All" ? selectedDepartment : null,
-              departments: ["All"],
-            }
-          : {
-              departments: [selectedDepartment],
-            }),
-      });
-
-      onClose();
-      window.location.reload();
-    } catch (err: any) {
-      console.error("Update failed:", err);
-      alert("Failed to update notice. Please try again.");
+    if (!updatedNotice) {
+      throw new Error("No updated data returned from API");
     }
-  };
 
+    // ✅ 1. update UI instantly (NO FULL API RECALL)
+    updateNoticeLocal?.(updatedNotice);
+
+    // ✅ 2. close modal
+    onClose?.();
+
+    window.location.reload();
+
+  } catch (err) {
+    console.error("UPDATE ERROR:", err);
+    alert("Update failed");
+  }
+};
   // ✅ SAFETY: wait until data ready
-  if (!open) return null;
-
+  if (!open || !canEdit) return null;
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
@@ -391,15 +470,17 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
 
             {/* ATTACHMENTS */}
             <Box className="flex flex-col gap-2">
-              <Box className="flex items-center justify-between">
-                <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                  ATTACHMENTS
+
+              <Box className="flex justify-between items-center">
+                <Typography className="text-xs font-semibold uppercase text-slate-600">
+                  Attachments
                 </Typography>
+
                 <Button
                   startIcon={<UploadFileIcon />}
-                  onClick={() => fileInputRef.current?.click()}
-                  size="small"
-                  variant="text"
+                  onClick={() =>
+                    fileInputRef.current?.click()
+                  }
                 >
                   Add files
                 </Button>
@@ -416,15 +497,18 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
               {pendingFiles.map((p) => (
                 <Box
                   key={p.id}
-                  className="flex items-center justify-between border border-gray-200 rounded px-3 py-2"
+                  className="flex justify-between border rounded px-3 py-2"
                 >
-                  <Typography className="text-sm text-gray-700">
-                    {p.customName || p.filename || p.file?.name}
+                  <Typography className="text-sm">
+                    {p.customName || p.filename}
                   </Typography>
+
                   <Button
-                    size="small"
                     color="error"
-                    onClick={() => handleRemoveFile(p.id)}
+                    size="small"
+                    onClick={() =>
+                      handleRemoveFile(p.id)
+                    }
                   >
                     Remove
                   </Button>
@@ -432,7 +516,7 @@ export default function NoticeEditDialog({ open, onClose, notice }: any) {
               ))}
 
               {!pendingFiles.length && (
-                <Typography className="text-sm text-gray-400">
+                <Typography className="text-gray-400 text-sm">
                   No attachments added
                 </Typography>
               )}
