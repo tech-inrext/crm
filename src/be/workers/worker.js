@@ -39,8 +39,8 @@ worker.addCron('notificationCleanup', 24 * 60 * 60 * 1000, 'notificationCleanup-
   action: "all"
 });
 
-// Weekly Summary: Every Tuesday at 9:30 AM IST
-worker.addCron('weeklyPerformanceSummary', '30 9 * * 2', 'weeklyPerformanceSummary-cron');
+// Weekly Summary: Every Monday at 9:00 AM IST
+worker.addCron('weeklyPerformanceSummary', '0 9 * * 1', 'weeklyPerformanceSummary-cron');
 
 
 
