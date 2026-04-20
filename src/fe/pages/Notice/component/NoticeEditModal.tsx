@@ -211,10 +211,12 @@ const getFileNameWithExt = (file: any) => {
   })),
 );
   }, [open, notice]);
-  const canEdit =
-    auth?.isSystemAdmin &&
-    String(notice?.createdBy?._id || notice?.createdBy) ===
-      String(auth?.user?._id);
+ const isOwner =
+  String(notice?.createdBy?._id || notice?.createdBy) ===
+  String(auth?.user?._id);
+
+const canEdit =
+  auth?.isSystemAdmin || (isAVP && isOwner);
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
