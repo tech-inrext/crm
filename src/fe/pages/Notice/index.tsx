@@ -20,6 +20,7 @@ export default function NoticesDashboard() {
     pinnedNotices,
     regularNotices,
     deleteNoticeLocal,
+    updateNoticeLocal
   } = useNotices();
 
   /* ✅ FILTER */
@@ -87,6 +88,9 @@ export default function NoticesDashboard() {
                   <NoticeCard
                     key={notice._id}
                     notice={notice}
+                    getAllNotice = {getAllNotice}
+                    updateNoticeLocal = {updateNoticeLocal}
+
                     onDelete={deleteNoticeLocal}
                   />
                 ))}
@@ -114,6 +118,8 @@ export default function NoticesDashboard() {
                   key={notice._id}
                   notice={notice}
                   onDelete={deleteNoticeLocal}
+                  getAllNotice = {getAllNotice}
+                  updateNoticeLocal = {updateNoticeLocal}
                 />
               ))
             ) : (

@@ -35,8 +35,12 @@ import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 import { useNoticeMeta } from "../hooks/useNoticeMeta";
 import { useNoticeForm } from "../hooks/useNoticeForm";
 import useNotices from "@/fe/pages/Notice/hooks/useNoticeDashboard";
-export default function NoticeEditDialog({ open, onClose, notice,   updateNoticeLocal,
- }: any) {
+export default function NoticeEditDialog({
+  open,
+  onClose,
+  notice,
+  onNoticeUpdated,
+}: any) {
   const { categories, priorities, loading, departments } = useNoticeMeta();
   const { form, setForm } = useNoticeForm(notice);
   const editorRef = useRef<HTMLDivElement | null>(null);
@@ -48,51 +52,47 @@ export default function NoticeEditDialog({ open, onClose, notice,   updateNotice
   let avpPromise: Promise<any> | null = null;
   const [avpList, setAvpList] = useState([]);
   const avpFetchedRef = useRef(false);
-const getFileNameWithExt = (file: any) => {
-  const url = file?.url || "";
+  const getFileNameWithExt = (file: any) => {
+    const url = file?.url || "";
 
-  // 1. try from filename
-  if (file?.filename && file.filename.includes(".")) {
-    return file.filename;
-  }
+    // 1. try from filename
+    if (file?.filename && file.filename.includes(".")) {
+      return file.filename;
+    }
 
-  // 2. try from URL
-  const urlName = url.split("?")[0].split("/").pop() || "";
-  if (urlName.includes(".")) return urlName;
+    // 2. try from URL
+    const urlName = url.split("?")[0].split("/").pop() || "";
+    if (urlName.includes(".")) return urlName;
 
-  // 3. infer from mime type OR fallback
-  const type = file?.type || file?.mimeType;
+    // 3. infer from mime type OR fallback
+    const type = file?.type || file?.mimeType;
 
-  let ext = "";
+    let ext = "";
 
-  switch (type) {
-    case "application/pdf":
-      ext = ".pdf";
-      break;
-    case "image/png":
-      ext = ".png";
-      break;
-    case "image/jpeg":
-      ext = ".jpg";
-      break;
-    case "application/msword":
-      ext = ".doc";
-      break;
-    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-      ext = ".docx";
-      break;
-    default:
-      ext = "";
-  }
+    switch (type) {
+      case "application/pdf":
+        ext = ".pdf";
+        break;
+      case "image/png":
+        ext = ".png";
+        break;
+      case "image/jpeg":
+        ext = ".jpg";
+        break;
+      case "application/msword":
+        ext = ".doc";
+        break;
+      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        ext = ".docx";
+        break;
+      default:
+        ext = "";
+    }
 
-  const baseName =
-    file?.filename ||
-    file?.customName ||
-    urlName ||
-    "file";
+    const baseName = file?.filename || file?.customName || urlName || "file";
 
-  return baseName.includes(".") ? baseName : baseName + ext;
-};
+    return baseName.includes(".") ? baseName : baseName + ext;
+  };
   useEffect(() => {
     if (!open) return;
 
@@ -202,21 +202,20 @@ const getFileNameWithExt = (file: any) => {
     if (!open || !notice) return;
 
     // ✅ ONLY attachments logic here
-  setPendingFiles(
-  (notice?.attachments || []).map((f: any, index: number) => ({
-    id: Date.now() + index,
-    filename:getFileNameWithExt(f), // ✅ ensures extension always exists
-    url: f.url,
-    customName:getFileNameWithExt(f),
-  })),
-);
+    setPendingFiles(
+      (notice?.attachments || []).map((f: any, index: number) => ({
+        id: Date.now() + index,
+        filename: getFileNameWithExt(f), // ✅ ensures extension always exists
+        url: f.url,
+        customName: getFileNameWithExt(f),
+      })),
+    );
   }, [open, notice]);
- const isOwner =
-  String(notice?.createdBy?._id || notice?.createdBy) ===
-  String(auth?.user?._id);
+  const isOwner =
+    String(notice?.createdBy?._id || notice?.createdBy) ===
+    String(auth?.user?._id);
 
-const canEdit =
-  auth?.isSystemAdmin || (isAVP && isOwner);
+  const canEdit = auth?.isSystemAdmin || (isAVP && isOwner);
   const handleChange = (e: any) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -251,56 +250,55 @@ const canEdit =
     });
     return data.fileUrl;
   };
-const handleUpdate = async () => {
-  try {
-    const updatedAttachments = await Promise.all(
-      pendingFiles.map(async (f) => {
-        if (f.file) {
-          const url = await uploadToS3(f.file);
-          return { filename: f.customName || f.file.name, url };
-        }
-       return {
-  filename:getFileNameWithExt(f), // ✅ always safe with extension
-  url: f.url || "",
-};
-      })
-    );
-
-    const res = await axios.put(`/api/v0/notice/${notice._id}`, {
-      ...form,
-      expiry: form.expiry ? form.expiry.toISOString() : null,
-      attachments: updatedAttachments,
-      ...(isSystemAdmin
-        ? {
-            targetAVP:
-              selectedDepartment !== "All" ? selectedDepartment : null,
-            departments: ["All"],
+  const handleUpdate = async () => {
+    try {
+      const updatedAttachments = await Promise.all(
+        pendingFiles.map(async (f) => {
+          if (f.file) {
+            const url = await uploadToS3(f.file);
+            return { filename: f.customName || f.file.name, url };
           }
-        : {
-            departments: [selectedDepartment],
-          }),
-    });
+          return {
+            filename: getFileNameWithExt(f), // ✅ always safe with extension
+            url: f.url || "",
+          };
+        }),
+      );
 
-    // 🔥 SAFE RESPONSE CHECK
-    const updatedNotice = res?.data?.data;
+      const res = await axios.put(`/api/v0/notice/${notice._id}`, {
+        ...form,
+        expiry: form.expiry ? form.expiry.toISOString() : null,
+        attachments: updatedAttachments,
+        ...(isSystemAdmin
+          ? {
+              targetAVP:
+                selectedDepartment !== "All" ? selectedDepartment : null,
+              departments: ["All"],
+            }
+          : {
+              departments: [selectedDepartment],
+            }),
+      });
 
-    if (!updatedNotice) {
-      throw new Error("No updated data returned from API");
+      // 🔥 SAFE RESPONSE CHECK
+      const updatedNotice = res?.data?.data;
+
+      if (!updatedNotice) {
+        throw new Error("No updated data returned from API");
+      }
+
+      // ✅ 1. update UI instantly (NO FULL API RECALL)
+      onNoticeUpdated(updatedNotice);
+
+      // ✅ 2. close modal
+      onClose?.();
+
+      
+    } catch (err) {
+      console.error("UPDATE ERROR:", err);
+      alert("Update failed");
     }
-
-    // ✅ 1. update UI instantly (NO FULL API RECALL)
-    updateNoticeLocal?.(updatedNotice);
-
-    // ✅ 2. close modal
-    onClose?.();
-
-    window.location.reload();
-
-  } catch (err) {
-    console.error("UPDATE ERROR:", err);
-    alert("Update failed");
-  }
-};
+  };
   // ✅ SAFETY: wait until data ready
   if (!open || !canEdit) return null;
   return (
@@ -472,7 +470,6 @@ const handleUpdate = async () => {
 
             {/* ATTACHMENTS */}
             <Box className="flex flex-col gap-2">
-
               <Box className="flex justify-between items-center">
                 <Typography className="text-xs font-semibold uppercase text-slate-600">
                   Attachments
@@ -480,9 +477,7 @@ const handleUpdate = async () => {
 
                 <Button
                   startIcon={<UploadFileIcon />}
-                  onClick={() =>
-                    fileInputRef.current?.click()
-                  }
+                  onClick={() => fileInputRef.current?.click()}
                 >
                   Add files
                 </Button>
@@ -508,9 +503,7 @@ const handleUpdate = async () => {
                   <Button
                     color="error"
                     size="small"
-                    onClick={() =>
-                      handleRemoveFile(p.id)
-                    }
+                    onClick={() => handleRemoveFile(p.id)}
                   >
                     Remove
                   </Button>
