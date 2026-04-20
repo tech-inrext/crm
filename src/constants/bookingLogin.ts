@@ -51,7 +51,7 @@ export const DEFAULT_BOOKING_LOGIN_FORM = {
   cashReceiptNumber: "",
   transactionDate: "",
   bankDetails: "",
-  slabPercentage: "BUSINESS DEVELOPMENT MANAGER — 50%",
+  slabPercentage: "50% BUSINESS DEVELOPMENT MANAGER",
   totalDiscountFromComm: "",
   netApplicableComm: "",
   salesPersonName: "",
