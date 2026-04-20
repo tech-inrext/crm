@@ -46,8 +46,11 @@ const priorities = ["Urgent", "Important", "Info"];
 
 type PendingFile = { id: string; file: File; customName: string };
 
-type Props = { open: boolean; onClose: () => void; onNoticeAdded?: () => void };
-
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  onNoticeAdded?: () => void;
+};
 export default function AddNoticeModal({
   open,
   onClose,
@@ -73,9 +76,54 @@ export default function AddNoticeModal({
   const [snackbarSeverity, setSnackbarSeverity] = useState<"error" | "success">(
     "error",
   );
+  const getFileNameWithExt = (file: any) => {
+  const url = file?.url || "";
+
+  // 1. try from filename
+  if (file?.filename && file.filename.includes(".")) {
+    return file.filename;
+  }
+
+  // 2. try from URL
+  const urlName = url.split("?")[0].split("/").pop() || "";
+  if (urlName.includes(".")) return urlName;
+
+  // 3. infer from mime type OR fallback
+  const type = file?.type || file?.mimeType;
+
+  let ext = "";
+
+  switch (type) {
+    case "application/pdf":
+      ext = ".pdf";
+      break;
+    case "image/png":
+      ext = ".png";
+      break;
+    case "image/jpeg":
+      ext = ".jpg";
+      break;
+    case "application/msword":
+      ext = ".doc";
+      break;
+    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+      ext = ".docx";
+      break;
+    default:
+      ext = "";
+  }
+
+  const baseName =
+    file?.filename ||
+    file?.customName ||
+    urlName ||
+    "file";
+
+  return baseName.includes(".") ? baseName : baseName + ext;
+};
   const [editorFocused, setEditorFocused] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
+  const avpFetchedRef = useRef(false);
   const auth = useAuth();
   const isSystemAdmin = Boolean(auth?.isSystemAdmin);
   const isAVP =
@@ -149,54 +197,45 @@ export default function AddNoticeModal({
   }, [open]);
 
   /* ---------------- META ---------------- */
-  useEffect(() => {
-    const loadMeta = async () => {
-      try {
-        const res = await fetch("/api/v0/notice/meta");
-        const data = await res.json();
+  const metaLoadedRef = useRef(false);
 
-        if (isSystemAdmin) {
-          setDepartments(["All"]);
-        } else if (isAVP) {
-          setDepartments(["All", "Team"]);
-        } else {
-          setDepartments(data?.data?.departments || ["All"]);
-        }
-      } catch {
-        setDepartments(isAVP ? ["All", "Team"] : ["All"]);
-      }
-    };
+useEffect(() => {
+  if (!isSystemAdmin) return;
 
-    loadMeta();
-  }, [isSystemAdmin, isAVP]);
+  if (avpFetchedRef.current) return;
+  avpFetchedRef.current = true;
 
-  // Admin sees AVPs
-  useEffect(() => {
-    if (isSystemAdmin) {
-      fetch("/api/v0/employee/getAllAVPEmployees")
-        .then((res) => res.json())
-        .then((data) => setAvps(data?.data || []))
-        .catch(() => setAvps([]));
+  const loadAVPs = async () => {
+    try {
+      const res = await fetch("/api/v0/employee/getAllAVPEmployees");
+      const data = await res.json();
+      setAvps(data?.data || []);
+    } catch {
+      setAvps([]);
     }
-  }, [isSystemAdmin]);
+  };
+
+  loadAVPs();
+}, [isSystemAdmin]);
 
   // AVP sees "All" / "Team"
 
   /* ---------------- FILES ---------------- */
-  const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files ?? []);
-    if (!files.length) return;
-    setPendingFiles((prev) => [
-      ...prev,
-      ...files.map((f) => ({
-        id: `${f.name}-${Date.now()}`,
-        file: f,
-        customName: f.name.replace(/\.[^.]+$/, ""),
-      })),
-    ]);
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  };
+const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = Array.from(e.target.files ?? []);
+  if (!files.length) return;
 
+  setPendingFiles((prev) => [
+    ...prev,
+    ...files.map((f) => ({
+      id: `${f.name}-${Date.now()}`,
+      file: f,
+      customName: f.name, // ✅ KEEP EXTENSION
+    })),
+  ]);
+
+  if (fileInputRef.current) fileInputRef.current.value = "";
+};
   const uploadToS3 = async (file: File): Promise<string> => {
     const res = await fetch("/api/v0/s3/upload-url", {
       method: "POST",
@@ -219,77 +258,83 @@ export default function AddNoticeModal({
   };
 
   /* ---------------- SUBMIT ---------------- */
-  const handleSubmit = async () => {
-    try {
-      await noticeValidationSchema.validate(
-        {
-          title,
-          description,
-          category,
-          priority,
-          departments: selectedDepartment,
-          expiry,
-          pinned,
-          attachments: pendingFiles,
-        },
-        { abortEarly: false },
-      );
+ const handleSubmit = async (e?: React.MouseEvent | React.FormEvent) => {
+  // 🔥 HARD STOP ALL DEFAULT BEHAVIOR
+  if (e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
 
-      setErrors({});
-      setLoading(true);
+  // 🔥 BLOCK DOUBLE CLICK / DOUBLE API
+  if (loading) return;
 
-      const uploadedAttachments = await Promise.all(
-        pendingFiles.map(async (p) => ({
-          url: await uploadToS3(p.file),
-          filename: p.customName.trim() || p.file.name,
-        })),
-      );
+  try {
+    setLoading(true);
 
-      const payload: any = {
+    // ✅ VALIDATION
+    await noticeValidationSchema.validate(
+      {
         title,
         description,
         category,
         priority,
-        expiry: expiry ? dayjs(expiry).format("YYYY-MM-DD") : null,
+        departments: selectedDepartment,
+        expiry,
         pinned,
-        attachments: uploadedAttachments,
-      };
+        attachments: pendingFiles,
+      },
+      { abortEarly: false }
+    );
 
-      if (isSystemAdmin) {
-        payload.targetAVP =
-          selectedDepartment !== "All" ? selectedDepartment : null;
-        payload.departments = ["All"]; // Admin notices are considered public for others
-      } else {
-        payload.departments = [selectedDepartment]; // AVP sends "All" or "Team"
-      }
-      const res = await fetch("/api/v0/notice", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const result = await res.json();
+    setErrors({});
 
-      if (!result.success) throw new Error(result.message);
+    // ✅ UPLOAD FILES
+    const uploadedAttachments = await Promise.all(
+      pendingFiles.map(async (p) => ({
+        url: await uploadToS3(p.file),
+        filename: p.customName.trim() || p.file.name,
+      }))
+    );
 
-      notify("Notice added successfully!", "success");
-      resetForm();
-      onNoticeAdded?.();
-      onClose();
-    } catch (err: any) {
-      if (err.inner) {
-        const validationErrors: Record<string, string> = {};
-        err.inner.forEach((e: any) => {
-          if (!validationErrors[e.path]) validationErrors[e.path] = e.message;
-        });
-        setErrors(validationErrors);
-        return;
-      }
-      notify(err?.message || "Failed");
-    } finally {
-      setLoading(false);
+    // ✅ PAYLOAD
+    const payload: any = {
+      title,
+      description,
+      category,
+      priority,
+      expiry: expiry ? dayjs(expiry).format("YYYY-MM-DD") : null,
+      pinned,
+      attachments: uploadedAttachments,
+    };
+
+    if (isSystemAdmin) {
+      payload.targetAVP =
+        selectedDepartment !== "All" ? selectedDepartment : null;
+      payload.departments = ["All"];
+    } else {
+      payload.departments = [selectedDepartment];
     }
-  };
 
+    // ✅ API CALL
+    const res = await fetch("/api/v0/notice", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    const result = await res.json();
+    if (!result.success) throw new Error(result.message);
+
+    // ✅ IMPORTANT ORDER (NO RELOAD BUG)
+    onNoticeAdded?.();   // 1️⃣ trigger parent update
+    handleClose();       // 2️⃣ close modal AFTER
+
+  } catch (err: any) {
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+};
   const handleClose = () => {
     resetForm();
     onClose();
@@ -441,59 +486,65 @@ export default function AddNoticeModal({
             </Stack>
 
             {/* ATTACHMENTS */}
-            <Box className="flex flex-col gap-2">
-              <Box className="flex items-center justify-between">
-                <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-                  ATTACHMENTS{" "}
-                  <span className="text-[15px] normal-case font-normal text-slate-500">
-                    (please add files format pdf,jpg, jpeg, png)
-                  </span>
-                </Typography>
-                <Button
-                  startIcon={<UploadFileIcon />}
-                  onClick={() => fileInputRef.current?.click()}
-                  size="small"
-                  variant="text"
-                  className="!text-xs !font-semibold !text-blue-600 hover:!text-blue-800 !min-w-0"
-                >
-                  Add files
-                </Button>
-              </Box>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                hidden
-                onChange={pickFiles}
-              />
-              {pendingFiles.map((p, i) => (
-                <Box
-                  key={p.id}
-                  className="flex items-center justify-between border border-gray-200 rounded px-3 py-2"
-                >
-                  <Typography className="text-sm text-gray-700">
-                    {p.customName}
-                  </Typography>
-                  <Button
-                    size="small"
-                    color="error"
-                    className="!text-xs !min-w-0"
-                    onClick={() =>
-                      setPendingFiles((prev) =>
-                        prev.filter((_, index) => index !== i),
-                      )
-                    }
-                  >
-                    Remove
-                  </Button>
-                </Box>
-              ))}
-              {!pendingFiles.length && (
-                <Typography className="text-sm text-gray-400">
-                  No attachments added
-                </Typography>
-              )}
-            </Box>
+           <Box className="flex flex-col gap-2">
+  <Box className="flex items-center justify-between">
+    <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+      ATTACHMENTS{" "}
+      <span className="text-[15px] normal-case font-normal text-slate-500">
+        (please add files format pdf, jpg, jpeg, png)
+      </span>
+    </Typography>
+
+    <Button
+      startIcon={<UploadFileIcon />}
+      onClick={() => fileInputRef.current?.click()}
+      size="small"
+      variant="text"
+      className="!text-xs !font-semibold !text-blue-600 hover:!text-blue-800 !min-w-0"
+    >
+      Add files
+    </Button>
+  </Box>
+
+  <input
+    ref={fileInputRef}
+    type="file"
+    multiple
+    hidden
+    onChange={pickFiles}
+  />
+
+  {/* FILE LIST */}
+  {pendingFiles.map((p, i) => (
+    <Box
+      key={p.id}
+      className="flex items-center justify-between border border-gray-200 rounded px-3 py-2 bg-white"
+    >
+      <Typography className="text-sm text-gray-700 truncate max-w-[70%]">
+        {getFileNameWithExt(p)}
+      </Typography>
+
+      <Button
+        size="small"
+        color="error"
+        className="!text-xs !min-w-0"
+        onClick={() =>
+          setPendingFiles((prev) =>
+            prev.filter((_, index) => index !== i)
+          )
+        }
+      >
+        Remove
+      </Button>
+    </Box>
+  ))}
+
+  {!pendingFiles.length && (
+    <Typography className="text-sm text-gray-400">
+      No attachments added
+    </Typography>
+  )}
+</Box>
 
             <FormControlLabel
               control={
@@ -508,17 +559,17 @@ export default function AddNoticeModal({
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button type="button" onClick={handleClose}>
+            Cancel
+          </Button>
+
           <Button
+            type="button" // 🔥 CRITICAL
             onClick={handleSubmit}
             disabled={loading}
-            className="!bg-blue-600 !text-white hover:!bg-blue-700"
+            className="!bg-blue-600 !text-white"
           >
-            {loading ? (
-              <CircularProgress size={20} className="text-white" />
-            ) : (
-              "Publish"
-            )}
+            {loading ? <CircularProgress size={20} /> : "Publish"}
           </Button>
         </DialogActions>
       </Dialog>
