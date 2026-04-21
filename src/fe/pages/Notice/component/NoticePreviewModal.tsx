@@ -62,6 +62,22 @@ export default function NoticePreviewDialog({
   const imageAttachments =
     notice?.attachments?.filter((att: any) => isImageFile(att.url)) || [];
 
+  const handleDownload = async (url, filename) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename || "file";
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Download failed", error);
+    }
+  };
   const handleImageClick = (index: number) => {
     setSelectedIndex(index);
     setPreviewOpen(true);
@@ -226,9 +242,10 @@ export default function NoticePreviewDialog({
                               <Button
                                 size="small"
                                 variant="contained"
-                                href={att.url}
-                                download
                                 fullWidth
+                                onClick={() =>
+                                  handleDownload(att.url, att.filename)
+                                }
                               >
                                 Download
                               </Button>

@@ -127,7 +127,7 @@ export default function AddNoticeModal({
     (auth?.user as any)?.isAVP === true ||
     (auth?.user as any)?.role?.isAVP === true;
 
-  /* ---------------- RESET ---------------- */
+  /* ---------------- RESET  when the file get updated form will open with blank---------------- */
   const resetForm = () => {
     setTitle("");
     setDescription("");
