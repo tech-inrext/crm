@@ -292,8 +292,6 @@ export default function NoticeEditDialog({
 
       // ✅ 2. close modal
       onClose?.();
-
-      
     } catch (err) {
       console.error("UPDATE ERROR:", err);
       alert("Update failed");

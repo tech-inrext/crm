@@ -20,10 +20,10 @@ export const priorityColors: Record<string, string> = {
 export const gridStyles = {
   display: "grid",
   gridTemplateColumns: {
-    xs: "1fr",                 // mobile
-    sm: "repeat(2, 1fr)",     // tablet
-    md: "repeat(3, 1fr)",     // small laptop
-    lg: "repeat(4, 1fr)",     // desktop ✅
+    xs: "1fr", // mobile
+    sm: "repeat(2, 1fr)", // tablet
+    md: "repeat(3, 1fr)", // small laptop
+    lg: "repeat(4, 1fr)", // desktop ✅
   },
   gap: 2,
   width: "100%",
@@ -78,8 +78,7 @@ export const buildNoticeQuery = (filters: NoticeFilters = {}) => {
 export const isImageFile = (url: string) =>
   /\.(jpg|jpeg|png|gif|webp)$/i.test(url);
 
-export const formatDate = (date: string) =>
-  new Date(date).toLocaleDateString();
+export const formatDate = (date: string) => new Date(date).toLocaleDateString();
 
 import dayjs, { Dayjs } from "dayjs";
 
@@ -111,7 +110,12 @@ export const uploadToS3 = async (file: File): Promise<string> => {
 // ---------------- NOTIFICATION ----------------
 export type NotifyFn = (msg: string, type?: "error" | "success") => void;
 
-export const notify = (setMsg: (msg: string) => void, setSeverity: (type: "error" | "success") => void, setOpen: (open: boolean) => void) =>
+export const notify =
+  (
+    setMsg: (msg: string) => void,
+    setSeverity: (type: "error" | "success") => void,
+    setOpen: (open: boolean) => void,
+  ) =>
   (msg: string, type: "error" | "success" = "error") => {
     setMsg(msg);
     setSeverity(type);
@@ -121,6 +125,3 @@ export const notify = (setMsg: (msg: string) => void, setSeverity: (type: "error
 // ---------------- DATE ----------------
 export const formatDayjs = (date: Dayjs | null): string | null =>
   date ? dayjs(date).format("YYYY-MM-DD") : null;
-
-
-
