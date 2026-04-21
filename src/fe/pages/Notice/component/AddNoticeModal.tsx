@@ -258,14 +258,13 @@ const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
   };
 
   /* ---------------- SUBMIT ---------------- */
- const handleSubmit = async (e?: React.MouseEvent | React.FormEvent) => {
-  // 🔥 HARD STOP ALL DEFAULT BEHAVIOR
+   // ---------------- SUBMIT ----------------
+const handleSubmit = async (e?: React.MouseEvent | React.FormEvent) => {
   if (e) {
     e.preventDefault();
     e.stopPropagation();
   }
 
-  // 🔥 BLOCK DOUBLE CLICK / DOUBLE API
   if (loading) return;
 
   try {
@@ -286,6 +285,7 @@ const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
       { abortEarly: false }
     );
 
+    // ✅ CLEAR OLD ERRORS IF VALID
     setErrors({});
 
     // ✅ UPLOAD FILES
@@ -325,75 +325,93 @@ const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const result = await res.json();
     if (!result.success) throw new Error(result.message);
 
-    // ✅ IMPORTANT ORDER (NO RELOAD BUG)
-    onNoticeAdded?.();   // 1️⃣ trigger parent update
-    handleClose();       // 2️⃣ close modal AFTER
-
+    // ✅ SUCCESS FLOW
+    onNoticeAdded?.();
+    handleClose();
   } catch (err: any) {
     console.error(err);
+
+    // 🔥 FIX: MAP YUP ERRORS TO UI
+    if (err.inner && Array.isArray(err.inner)) {
+      const formErrors: Record<string, string> = {};
+
+      err.inner.forEach((e: any) => {
+        if (e.path && !formErrors[e.path]) {
+          formErrors[e.path] = e.message;
+        }
+      });
+
+      setErrors(formErrors);
+    } else {
+      notify(err.message || "Something went wrong");
+    }
   } finally {
     setLoading(false);
   }
 };
-  const handleClose = () => {
-    resetForm();
-    onClose();
-  };
 
-  if (!open) return null;
-  if (!isAVP && !isSystemAdmin) return null;
+const handleClose = () => {
+  resetForm();
+  onClose();
+};
 
-  return (
-    <LocalizationProvider dateAdapter={AdapterDayjs}>
-      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-        <DialogTitle>
-          Create New Notice
-          <IconButton
-            onClick={handleClose}
-            className="!absolute !right-4 !top-4"
+if (!open) return null;
+if (!isAVP && !isSystemAdmin) return null;
+
+return (
+  <LocalizationProvider dateAdapter={AdapterDayjs}>
+    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+      <DialogTitle>
+        Create New Notice
+        <IconButton
+          onClick={handleClose}
+          className="!absolute !right-4 !top-4"
+        >
+          <CloseIcon />
+        </IconButton>
+      </DialogTitle>
+
+      <DialogContent dividers>
+        <Stack spacing={2}>
+          {/* TITLE */}
+          <TextField
+            label="Notice Title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+            fullWidth
+            size="small"
+            error={!!errors.title}
+            helperText={errors.title}
+          />
+
+          {/* DESCRIPTION */}
+          <FormControl
+            fullWidth
+            size="small"
+            className={`!rounded-md !border ${
+              editorFocused ? "!border-blue-500" : "!border-gray-300"
+            }`}
           >
-            <CloseIcon />
-          </IconButton>
-        </DialogTitle>
-
-        <DialogContent dividers>
-          <Stack spacing={2}>
-            {/* TITLE */}
-            <TextField
-              label="Notice Title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              fullWidth
-              size="small"
-              error={!!errors.title}
-              helperText={errors.title}
-            />
-
-            {/* DESCRIPTION */}
-            <FormControl
-              fullWidth
-              size="small"
-              className={`!rounded-md !border ${editorFocused ? "!border-blue-500" : "!border-gray-300"}`}
+            <InputLabel
+              shrink={!!description || editorFocused}
+              className="!bg-white !px-1"
             >
-              <InputLabel
-                shrink={!!description || editorFocused}
-                className="!bg-white !px-1"
-              >
-                Notice Description
-              </InputLabel>
-              <Box
-                className="!rounded-md cursor-text"
-                onClick={() => quillRef.current?.focus()}
-              >
-                <div ref={editorRef} />
-              </Box>
-            </FormControl>
-            {errors.description && (
-              <Typography className="text-red-700 !mt3 !text-[13px] !ml-4">
-                {errors.description}
-              </Typography>
-            )}
+              Notice Description
+            </InputLabel>
+            <Box
+              className="!rounded-md cursor-text"
+              onClick={() => quillRef.current?.focus()}
+            >
+              <div ref={editorRef} />
+            </Box>
+          </FormControl>
 
+          {/* 🔥 ERROR FIX FOR DESCRIPTION */}
+          {errors.description && (
+            <Typography className="text-red-700 !mt-1 !text-[13px] !ml-2">
+              {errors.description}
+            </Typography>
+          )}
             {/* CATEGORY + PRIORITY */}
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth size="small">
