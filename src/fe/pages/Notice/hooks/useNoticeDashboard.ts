@@ -42,14 +42,13 @@ export default function useNotices() {
   }, []);
 
   // ✅ instant UI update
-const updateNoticeLocal = (updated: any) => {
-  setNotices((prev) =>
-    prev.map((item) =>
-      item._id === updated._id ? { ...item, ...updated } : item
-    )
-  );
-};
-  
+  const updateNoticeLocal = (updated: any) => {
+    setNotices((prev) =>
+      prev.map((item) =>
+        item._id === updated._id ? { ...item, ...updated } : item,
+      ),
+    );
+  };
 
   // ✅ instant delete
   const deleteNoticeLocal = useCallback((id: string) => {
@@ -58,12 +57,12 @@ const updateNoticeLocal = (updated: any) => {
 
   const pinnedNotices = useMemo(
     () => notices.filter((n: any) => n.pinned),
-    [notices]
+    [notices],
   );
 
   const regularNotices = useMemo(
     () => notices.filter((n: any) => !n.pinned),
-    [notices]
+    [notices],
   );
 
   return {

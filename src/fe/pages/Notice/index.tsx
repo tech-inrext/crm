@@ -20,7 +20,7 @@ export default function NoticesDashboard() {
     pinnedNotices,
     regularNotices,
     deleteNoticeLocal,
-    updateNoticeLocal
+    updateNoticeLocal,
   } = useNotices();
 
   /* ✅ FILTER */
@@ -28,7 +28,7 @@ export default function NoticesDashboard() {
     (filters: any) => {
       getAllNotice(filters);
     },
-    [getAllNotice]
+    [getAllNotice],
   );
 
   /* ✅ ONLY API AFTER CREATE */
@@ -52,7 +52,7 @@ export default function NoticesDashboard() {
 
   const paginatedNotices = (regularNotices || []).slice(
     (page - 1) * rowsPerPage,
-    page * rowsPerPage
+    page * rowsPerPage,
   );
 
   return (
@@ -76,7 +76,13 @@ export default function NoticesDashboard() {
           {/* PINNED */}
           {pinnedNotices?.length > 0 && (
             <>
-              <Stack direction="row" alignItems="center" spacing={1} mt={4} mb={2}>
+              <Stack
+                direction="row"
+                alignItems="center"
+                spacing={1}
+                mt={4}
+                mb={2}
+              >
                 <PushPinIcon />
                 <Typography variant="h6" fontWeight={600}>
                   Pinned Notices
@@ -88,9 +94,8 @@ export default function NoticesDashboard() {
                   <NoticeCard
                     key={notice._id}
                     notice={notice}
-                    getAllNotice = {getAllNotice}
-                    updateNoticeLocal = {updateNoticeLocal}
-
+                    getAllNotice={getAllNotice}
+                    updateNoticeLocal={updateNoticeLocal}
                     onDelete={deleteNoticeLocal}
                   />
                 ))}
@@ -118,8 +123,8 @@ export default function NoticesDashboard() {
                   key={notice._id}
                   notice={notice}
                   onDelete={deleteNoticeLocal}
-                  getAllNotice = {getAllNotice}
-                  updateNoticeLocal = {updateNoticeLocal}
+                  getAllNotice={getAllNotice}
+                  updateNoticeLocal={updateNoticeLocal}
                 />
               ))
             ) : (

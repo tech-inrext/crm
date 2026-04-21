@@ -77,50 +77,46 @@ export default function AddNoticeModal({
     "error",
   );
   const getFileNameWithExt = (file: any) => {
-  const url = file?.url || "";
+    const url = file?.url || "";
 
-  // 1. try from filename
-  if (file?.filename && file.filename.includes(".")) {
-    return file.filename;
-  }
+    // 1. try from filename
+    if (file?.filename && file.filename.includes(".")) {
+      return file.filename;
+    }
 
-  // 2. try from URL
-  const urlName = url.split("?")[0].split("/").pop() || "";
-  if (urlName.includes(".")) return urlName;
+    // 2. try from URL
+    const urlName = url.split("?")[0].split("/").pop() || "";
+    if (urlName.includes(".")) return urlName;
 
-  // 3. infer from mime type OR fallback
-  const type = file?.type || file?.mimeType;
+    // 3. infer from mime type OR fallback
+    const type = file?.type || file?.mimeType;
 
-  let ext = "";
+    let ext = "";
 
-  switch (type) {
-    case "application/pdf":
-      ext = ".pdf";
-      break;
-    case "image/png":
-      ext = ".png";
-      break;
-    case "image/jpeg":
-      ext = ".jpg";
-      break;
-    case "application/msword":
-      ext = ".doc";
-      break;
-    case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
-      ext = ".docx";
-      break;
-    default:
-      ext = "";
-  }
+    switch (type) {
+      case "application/pdf":
+        ext = ".pdf";
+        break;
+      case "image/png":
+        ext = ".png";
+        break;
+      case "image/jpeg":
+        ext = ".jpg";
+        break;
+      case "application/msword":
+        ext = ".doc";
+        break;
+      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        ext = ".docx";
+        break;
+      default:
+        ext = "";
+    }
 
-  const baseName =
-    file?.filename ||
-    file?.customName ||
-    urlName ||
-    "file";
+    const baseName = file?.filename || file?.customName || urlName || "file";
 
-  return baseName.includes(".") ? baseName : baseName + ext;
-};
+    return baseName.includes(".") ? baseName : baseName + ext;
+  };
   const [editorFocused, setEditorFocused] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const avpFetchedRef = useRef(false);
@@ -199,43 +195,43 @@ export default function AddNoticeModal({
   /* ---------------- META ---------------- */
   const metaLoadedRef = useRef(false);
 
-useEffect(() => {
-  if (!isSystemAdmin) return;
+  useEffect(() => {
+    if (!isSystemAdmin) return;
 
-  if (avpFetchedRef.current) return;
-  avpFetchedRef.current = true;
+    if (avpFetchedRef.current) return;
+    avpFetchedRef.current = true;
 
-  const loadAVPs = async () => {
-    try {
-      const res = await fetch("/api/v0/employee/getAllAVPEmployees");
-      const data = await res.json();
-      setAvps(data?.data || []);
-    } catch {
-      setAvps([]);
-    }
-  };
+    const loadAVPs = async () => {
+      try {
+        const res = await fetch("/api/v0/employee/getAllAVPEmployees");
+        const data = await res.json();
+        setAvps(data?.data || []);
+      } catch {
+        setAvps([]);
+      }
+    };
 
-  loadAVPs();
-}, [isSystemAdmin]);
+    loadAVPs();
+  }, [isSystemAdmin]);
 
   // AVP sees "All" / "Team"
 
   /* ---------------- FILES ---------------- */
-const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = Array.from(e.target.files ?? []);
-  if (!files.length) return;
+  const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files ?? []);
+    if (!files.length) return;
 
-  setPendingFiles((prev) => [
-    ...prev,
-    ...files.map((f) => ({
-      id: `${f.name}-${Date.now()}`,
-      file: f,
-      customName: f.name, // ✅ KEEP EXTENSION
-    })),
-  ]);
+    setPendingFiles((prev) => [
+      ...prev,
+      ...files.map((f) => ({
+        id: `${f.name}-${Date.now()}`,
+        file: f,
+        customName: f.name, // ✅ KEEP EXTENSION
+      })),
+    ]);
 
-  if (fileInputRef.current) fileInputRef.current.value = "";
-};
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
   const uploadToS3 = async (file: File): Promise<string> => {
     const res = await fetch("/api/v0/s3/upload-url", {
       method: "POST",
@@ -258,160 +254,160 @@ const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
   };
 
   /* ---------------- SUBMIT ---------------- */
-   // ---------------- SUBMIT ----------------
-const handleSubmit = async (e?: React.MouseEvent | React.FormEvent) => {
-  if (e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
+  // ---------------- SUBMIT ----------------
+  const handleSubmit = async (e?: React.MouseEvent | React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
 
-  if (loading) return;
+    if (loading) return;
 
-  try {
-    setLoading(true);
+    try {
+      setLoading(true);
 
-    // ✅ VALIDATION
-    await noticeValidationSchema.validate(
-      {
+      // ✅ VALIDATION
+      await noticeValidationSchema.validate(
+        {
+          title,
+          description,
+          category,
+          priority,
+          departments: selectedDepartment,
+          expiry,
+          pinned,
+          attachments: pendingFiles,
+        },
+        { abortEarly: false },
+      );
+
+      // ✅ CLEAR OLD ERRORS IF VALID
+      setErrors({});
+
+      // ✅ UPLOAD FILES
+      const uploadedAttachments = await Promise.all(
+        pendingFiles.map(async (p) => ({
+          url: await uploadToS3(p.file),
+          filename: p.customName.trim() || p.file.name,
+        })),
+      );
+
+      // ✅ PAYLOAD
+      const payload: any = {
         title,
         description,
         category,
         priority,
-        departments: selectedDepartment,
-        expiry,
+        expiry: expiry ? dayjs(expiry).format("YYYY-MM-DD") : null,
         pinned,
-        attachments: pendingFiles,
-      },
-      { abortEarly: false }
-    );
+        attachments: uploadedAttachments,
+      };
 
-    // ✅ CLEAR OLD ERRORS IF VALID
-    setErrors({});
+      if (isSystemAdmin) {
+        payload.targetAVP =
+          selectedDepartment !== "All" ? selectedDepartment : null;
+        payload.departments = ["All"];
+      } else {
+        payload.departments = [selectedDepartment];
+      }
 
-    // ✅ UPLOAD FILES
-    const uploadedAttachments = await Promise.all(
-      pendingFiles.map(async (p) => ({
-        url: await uploadToS3(p.file),
-        filename: p.customName.trim() || p.file.name,
-      }))
-    );
-
-    // ✅ PAYLOAD
-    const payload: any = {
-      title,
-      description,
-      category,
-      priority,
-      expiry: expiry ? dayjs(expiry).format("YYYY-MM-DD") : null,
-      pinned,
-      attachments: uploadedAttachments,
-    };
-
-    if (isSystemAdmin) {
-      payload.targetAVP =
-        selectedDepartment !== "All" ? selectedDepartment : null;
-      payload.departments = ["All"];
-    } else {
-      payload.departments = [selectedDepartment];
-    }
-
-    // ✅ API CALL
-    const res = await fetch("/api/v0/notice", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    const result = await res.json();
-    if (!result.success) throw new Error(result.message);
-
-    // ✅ SUCCESS FLOW
-    onNoticeAdded?.();
-    handleClose();
-  } catch (err: any) {
-    console.error(err);
-
-    // 🔥 FIX: MAP YUP ERRORS TO UI
-    if (err.inner && Array.isArray(err.inner)) {
-      const formErrors: Record<string, string> = {};
-
-      err.inner.forEach((e: any) => {
-        if (e.path && !formErrors[e.path]) {
-          formErrors[e.path] = e.message;
-        }
+      // ✅ API CALL
+      const res = await fetch("/api/v0/notice", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
       });
 
-      setErrors(formErrors);
-    } else {
-      notify(err.message || "Something went wrong");
+      const result = await res.json();
+      if (!result.success) throw new Error(result.message);
+
+      // ✅ SUCCESS FLOW
+      onNoticeAdded?.();
+      handleClose();
+    } catch (err: any) {
+      console.error(err);
+
+      // 🔥 FIX: MAP YUP ERRORS TO UI
+      if (err.inner && Array.isArray(err.inner)) {
+        const formErrors: Record<string, string> = {};
+
+        err.inner.forEach((e: any) => {
+          if (e.path && !formErrors[e.path]) {
+            formErrors[e.path] = e.message;
+          }
+        });
+
+        setErrors(formErrors);
+      } else {
+        notify(err.message || "Something went wrong");
+      }
+    } finally {
+      setLoading(false);
     }
-  } finally {
-    setLoading(false);
-  }
-};
+  };
 
-const handleClose = () => {
-  resetForm();
-  onClose();
-};
+  const handleClose = () => {
+    resetForm();
+    onClose();
+  };
 
-if (!open) return null;
-if (!isAVP && !isSystemAdmin) return null;
+  if (!open) return null;
+  if (!isAVP && !isSystemAdmin) return null;
 
-return (
-  <LocalizationProvider dateAdapter={AdapterDayjs}>
-    <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
-      <DialogTitle>
-        Create New Notice
-        <IconButton
-          onClick={handleClose}
-          className="!absolute !right-4 !top-4"
-        >
-          <CloseIcon />
-        </IconButton>
-      </DialogTitle>
-
-      <DialogContent dividers>
-        <Stack spacing={2}>
-          {/* TITLE */}
-          <TextField
-            label="Notice Title"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            fullWidth
-            size="small"
-            error={!!errors.title}
-            helperText={errors.title}
-          />
-
-          {/* DESCRIPTION */}
-          <FormControl
-            fullWidth
-            size="small"
-            className={`!rounded-md !border ${
-              editorFocused ? "!border-blue-500" : "!border-gray-300"
-            }`}
+  return (
+    <LocalizationProvider dateAdapter={AdapterDayjs}>
+      <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
+        <DialogTitle>
+          Create New Notice
+          <IconButton
+            onClick={handleClose}
+            className="!absolute !right-4 !top-4"
           >
-            <InputLabel
-              shrink={!!description || editorFocused}
-              className="!bg-white !px-1"
-            >
-              Notice Description
-            </InputLabel>
-            <Box
-              className="!rounded-md cursor-text"
-              onClick={() => quillRef.current?.focus()}
-            >
-              <div ref={editorRef} />
-            </Box>
-          </FormControl>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
 
-          {/* 🔥 ERROR FIX FOR DESCRIPTION */}
-          {errors.description && (
-            <Typography className="text-red-700 !mt-1 !text-[13px] !ml-2">
-              {errors.description}
-            </Typography>
-          )}
+        <DialogContent dividers>
+          <Stack spacing={2}>
+            {/* TITLE */}
+            <TextField
+              label="Notice Title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              fullWidth
+              size="small"
+              error={!!errors.title}
+              helperText={errors.title}
+            />
+
+            {/* DESCRIPTION */}
+            <FormControl
+              fullWidth
+              size="small"
+              className={`!rounded-md !border ${
+                editorFocused ? "!border-blue-500" : "!border-gray-300"
+              }`}
+            >
+              <InputLabel
+                shrink={!!description || editorFocused}
+                className="!bg-white !px-1"
+              >
+                Notice Description
+              </InputLabel>
+              <Box
+                className="!rounded-md cursor-text"
+                onClick={() => quillRef.current?.focus()}
+              >
+                <div ref={editorRef} />
+              </Box>
+            </FormControl>
+
+            {/* 🔥 ERROR FIX FOR DESCRIPTION */}
+            {errors.description && (
+              <Typography className="text-red-700 !mt-1 !text-[13px] !ml-2">
+                {errors.description}
+              </Typography>
+            )}
             {/* CATEGORY + PRIORITY */}
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth size="small">
@@ -504,65 +500,65 @@ return (
             </Stack>
 
             {/* ATTACHMENTS */}
-           <Box className="flex flex-col gap-2">
-  <Box className="flex items-center justify-between">
-    <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
-      ATTACHMENTS{" "}
-      <span className="text-[15px] normal-case font-normal text-slate-500">
-        (please add files format pdf, jpg, jpeg, png)
-      </span>
-    </Typography>
+            <Box className="flex flex-col gap-2">
+              <Box className="flex items-center justify-between">
+                <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
+                  ATTACHMENTS{" "}
+                  <span className="text-[15px] normal-case font-normal text-slate-500">
+                    (please add files format pdf, jpg, jpeg, png)
+                  </span>
+                </Typography>
 
-    <Button
-      startIcon={<UploadFileIcon />}
-      onClick={() => fileInputRef.current?.click()}
-      size="small"
-      variant="text"
-      className="!text-xs !font-semibold !text-blue-600 hover:!text-blue-800 !min-w-0"
-    >
-      Add files
-    </Button>
-  </Box>
+                <Button
+                  startIcon={<UploadFileIcon />}
+                  onClick={() => fileInputRef.current?.click()}
+                  size="small"
+                  variant="text"
+                  className="!text-xs !font-semibold !text-blue-600 hover:!text-blue-800 !min-w-0"
+                >
+                  Add files
+                </Button>
+              </Box>
 
-  <input
-    ref={fileInputRef}
-    type="file"
-    multiple
-    hidden
-    onChange={pickFiles}
-  />
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                hidden
+                onChange={pickFiles}
+              />
 
-  {/* FILE LIST */}
-  {pendingFiles.map((p, i) => (
-    <Box
-      key={p.id}
-      className="flex items-center justify-between border border-gray-200 rounded px-3 py-2 bg-white"
-    >
-      <Typography className="text-sm text-gray-700 truncate max-w-[70%]">
-        {getFileNameWithExt(p)}
-      </Typography>
+              {/* FILE LIST */}
+              {pendingFiles.map((p, i) => (
+                <Box
+                  key={p.id}
+                  className="flex items-center justify-between border border-gray-200 rounded px-3 py-2 bg-white"
+                >
+                  <Typography className="text-sm text-gray-700 truncate max-w-[70%]">
+                    {getFileNameWithExt(p)}
+                  </Typography>
 
-      <Button
-        size="small"
-        color="error"
-        className="!text-xs !min-w-0"
-        onClick={() =>
-          setPendingFiles((prev) =>
-            prev.filter((_, index) => index !== i)
-          )
-        }
-      >
-        Remove
-      </Button>
-    </Box>
-  ))}
+                  <Button
+                    size="small"
+                    color="error"
+                    className="!text-xs !min-w-0"
+                    onClick={() =>
+                      setPendingFiles((prev) =>
+                        prev.filter((_, index) => index !== i),
+                      )
+                    }
+                  >
+                    Remove
+                  </Button>
+                </Box>
+              ))}
 
-  {!pendingFiles.length && (
-    <Typography className="text-sm text-gray-400">
-      No attachments added
-    </Typography>
-  )}
-</Box>
+              {!pendingFiles.length && (
+                <Typography className="text-sm text-gray-400">
+                  No attachments added
+                </Typography>
+              )}
+            </Box>
 
             <FormControlLabel
               control={

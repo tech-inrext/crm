@@ -33,10 +33,7 @@ type Props = {
   priorities: string[];
 };
 
-function NoticeBoardHeader({
-  onFilterChange,
-  onNoticeAdded,
-}: Props) {
+function NoticeBoardHeader({ onFilterChange, onNoticeAdded }: Props) {
   const auth = useAuth();
   const { user } = auth;
 
@@ -106,7 +103,10 @@ function NoticeBoardHeader({
             </Box>
 
             {/* Category */}
-            <FormControl size="small" sx={{ minWidth: { xs: "100%", md: 200 } }}>
+            <FormControl
+              size="small"
+              sx={{ minWidth: { xs: "100%", md: 200 } }}
+            >
               <InputLabel>Select Category</InputLabel>
               <Select
                 value={category || "All"}
@@ -123,7 +123,10 @@ function NoticeBoardHeader({
             </FormControl>
 
             {/* Priority */}
-            <FormControl size="small" sx={{ minWidth: { xs: "100%", md: 150 } }}>
+            <FormControl
+              size="small"
+              sx={{ minWidth: { xs: "100%", md: 150 } }}
+            >
               <InputLabel>Select Priority</InputLabel>
               <Select
                 value={priority || "All"}

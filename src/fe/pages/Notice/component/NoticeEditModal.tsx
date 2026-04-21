@@ -1,4 +1,4 @@
- "use client";
+"use client";
 
 import React, { useRef, useState, useEffect } from "react";
 import axios from "axios";
@@ -292,8 +292,6 @@ export default function NoticeEditDialog({
 
       // ✅ 2. close modal
       onClose?.();
-
-      
     } catch (err) {
       console.error("UPDATE ERROR:", err);
       alert("Update failed");
