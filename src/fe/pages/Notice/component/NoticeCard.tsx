@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, Dispatch, SetStateAction } from "react";
 import DOMPurify from "dompurify";
 import axios from "axios";
 
@@ -48,9 +48,13 @@ type Notice = {
 export default function NoticeCard({
   notice,
   onDelete, // ✅ NEW PROP
+  getAllNotice,
+  updateNoticeLocal,
 }: {
   notice: Notice;
   onDelete?: (id: string) => void;
+  getAllNotice: () => Promise<Notice[]>;
+  updateNoticeLocal: () => void;
 }) {
   const color = categoryColors[notice.category] || "#1976d2";
   const sanitizedHTML = DOMPurify.sanitize(notice.description || "");
@@ -234,7 +238,8 @@ export default function NoticeCard({
         open={open}
         onClose={() => setOpen(false)}
         notice={notice}
-        editMode
+        getAllNotice={getAllNotice}
+        updateNoticeLocal={updateNoticeLocal}
       />
 
       {/* DELETE MODAL */}

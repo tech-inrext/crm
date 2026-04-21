@@ -36,8 +36,6 @@ type Props = {
 function NoticeBoardHeader({
   onFilterChange,
   onNoticeAdded,
-  categories,
-  priorities,
 }: Props) {
   const auth = useAuth();
   const { user } = auth;
@@ -55,26 +53,20 @@ function NoticeBoardHeader({
 
   const isAdminOrAVP = isSystemAdmin || isAVP;
 
-  // ✅ MEMOIZE filter function (prevents hook loop)
-  const stableFilterChange = useCallback(
-    (filters: any) => {
-      onFilterChange?.(filters);
-    },
-    [onFilterChange],
-  );
-
+  // ✅ SAFE direct pass (no wrapper needed)
   const {
     open,
     setOpen,
     searchText,
     category,
     priority,
+    categories,
+    priorities,
     handleSearchChange,
     handleCategoryChange,
     handlePriorityChange,
-  } = useNoticeBoardHeader(stableFilterChange, NOTICE_TABS);
+  } = useNoticeBoardHeader(onFilterChange, NOTICE_TABS);
 
-  // ✅ MEMOIZED wrapper (prevents re-render chain)
   const handleNoticeAdded = useCallback(() => {
     onNoticeAdded?.();
   }, [onNoticeAdded]);
@@ -86,7 +78,7 @@ function NoticeBoardHeader({
         <AddNoticeModal
           open={open}
           onClose={() => setOpen(false)}
-          onNoticeAdded={onNoticeAdded} // ✅ direct pass
+          onNoticeAdded={handleNoticeAdded}
         />
       )}
 
@@ -114,10 +106,7 @@ function NoticeBoardHeader({
             </Box>
 
             {/* Category */}
-            <FormControl
-              size="small"
-              sx={{ minWidth: { xs: "100%", md: 200 } }}
-            >
+            <FormControl size="small" sx={{ minWidth: { xs: "100%", md: 200 } }}>
               <InputLabel>Select Category</InputLabel>
               <Select
                 value={category || "All"}
@@ -134,10 +123,7 @@ function NoticeBoardHeader({
             </FormControl>
 
             {/* Priority */}
-            <FormControl
-              size="small"
-              sx={{ minWidth: { xs: "100%", md: 150 } }}
-            >
+            <FormControl size="small" sx={{ minWidth: { xs: "100%", md: 150 } }}>
               <InputLabel>Select Priority</InputLabel>
               <Select
                 value={priority || "All"}
@@ -156,7 +142,7 @@ function NoticeBoardHeader({
             {/* Add Button */}
             {isAdminOrAVP && (
               <Button
-                type="button" // ✅ prevent accidental form submit
+                type="button"
                 variant="contained"
                 startIcon={<AddIcon />}
                 onClick={() => setOpen(true)}

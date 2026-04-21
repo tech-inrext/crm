@@ -29,6 +29,14 @@ export default function NoticePreviewModal({
     setEditOpen(false);
   }, [notice?._id]);
 
+  const onNoticeUpdated = async (updatedNotice: any) => {
+    // 1. Instant update (BEST UX)
+    updateNoticeLocal(updatedNotice);
+
+    // 2. Optional sync with backend
+    await getAllNotice?.();
+  };
+
   return (
     <>
       {/* PREVIEW */}
@@ -44,13 +52,7 @@ export default function NoticePreviewModal({
         open={editOpen}
         onClose={handleCloseAll}
         notice={notice}
-        onNoticeUpdated={async (updatedNotice: any) => {
-          // 1. Instant update (BEST UX)
-          updateNoticeLocal?.(updatedNotice);
-
-          // 2. Optional sync with backend
-          await getAllNotice?.();
-        }}
+        onNoticeUpdated={onNoticeUpdated}
       />
     </>
   );
