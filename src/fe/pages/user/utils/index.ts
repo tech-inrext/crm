@@ -222,10 +222,10 @@ export const getFilteredSlabOptions = (
   return allOptions.filter((opt) => {
     if (opt === "") return true;
     const optValue = parseInt(opt);
-    // Always show options strictly less than logged-in user's slab
+    // Always show options less than or equal to logged-in user's slab
     // OR the current value of the employee being edited (so it doesn't disappear)
     return (
-      !isNaN(optValue) && (optValue < loggedInValue || opt === currentValue)
+      !isNaN(optValue) && (optValue <= loggedInValue || opt === currentValue)
     );
   });
 };
