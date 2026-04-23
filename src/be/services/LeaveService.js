@@ -66,21 +66,41 @@ class LeaveService extends Service {
     }
   }
 
-  // ================= EMPLOYEE LEAVES =================
+  // ================= GET LEAVES (SMART ROLE BASED) =================
   async getAllLeaves(req, res) {
     try {
-      const employeeId = req.employee?._id;
+      const userId = req.employee?._id;
+      const role = req.employee?.role;
 
-      const leaves = await Leave.find({ employeeId })
+      if (!userId) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized",
+        });
+      }
+
+      let query = {};
+
+      // ✅ Manager → team leaves
+      if (role === "manager") {
+        query.assignedTo = userId;
+      } 
+      // ✅ Employee → own leaves
+      else {
+        query.employeeId = userId;
+      }
+
+      const leaves = await Leave.find(query)
         .populate("employeeId", "name email")
         .sort({ createdAt: -1 })
         .lean();
 
       return res.json({
         success: true,
-        data: leaves,
+        data: leaves || [],
       });
     } catch (error) {
+      console.error("Fetch Leave Error:", error);
       return res.status(500).json({
         success: false,
         message: "Failed to fetch leaves",
@@ -88,105 +108,101 @@ class LeaveService extends Service {
     }
   }
 
-  // ================= MANAGER LEAVES =================
-  async getManagerLeaves(req, res) {
-    try {
-      const managerId = req.employee?._id;
+  // ================= UPDATE STATUS =================
+async updateLeaveStatus(req, res) {
+  try {
+    const id = req.params?.id;
+    const { status } = req.body;
+    const managerId = req.employee?._id;
+    const role = req.employee?.role;
 
-      const leaves = await Leave.find({
-        assignedTo: managerId,
-      })
-        .populate("employeeId", "name email")
-        .sort({ createdAt: -1 })
-        .lean();
-
-      return res.json({
-        success: true,
-        data: leaves,
-      });
-    } catch (error) {
-      return res.status(500).json({
+    // 🔒 ONLY MANAGER CAN UPDATE
+    if (role !== "manager") {
+      return res.status(403).json({
         success: false,
-        message: "Failed to fetch manager leaves",
+        message: "Only manager can update leave status",
       });
     }
-  }
 
-  // ================= UPDATE STATUS (FIXED FINAL) =================
-  async updateLeaveStatus(req, res) {
-    try {
-      const id = req.params?.id;
-      const { status } = req.body;
-
-      // ✅ VALIDATE ID (IMPORTANT)
-      if (!id || !mongoose.Types.ObjectId.isValid(id)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid leave ID",
-        });
-      }
-
-      // ✅ VALIDATE STATUS
-      if (!["approved", "rejected"].includes(status)) {
-        return res.status(400).json({
-          success: false,
-          message: "Invalid status",
-        });
-      }
-
-      const leave = await Leave.findById(id);
-
-      if (!leave) {
-        return res.status(404).json({
-          success: false,
-          message: "Leave not found",
-        });
-      }
-
-      const managerId = req.employee?._id;
-
-      // ✅ MANAGER CHECK
-      if (String(leave.assignedTo) !== String(managerId)) {
-        return res.status(403).json({
-          success: false,
-          message: "Not authorized to update this leave",
-        });
-      }
-
-      // ❌ ALREADY PROCESSED
-      if (leave.status !== "pending") {
-        return res.status(400).json({
-          success: false,
-          message: "Leave already processed",
-        });
-      }
-
-      // ✅ UPDATE STATUS
-      leave.status = status;
-
-      if (status === "approved") {
-        leave.approvedBy = managerId;
-        leave.approvedAt = new Date();
-      } else {
-        leave.rejectedBy = managerId;
-        leave.rejectedAt = new Date();
-      }
-
-      await leave.save();
-
-      return res.json({
-        success: true,
-        message: `Leave ${status}`,
-        data: leave,
-      });
-    } catch (error) {
-      console.error("Update Leave Error:", error);
-      return res.status(500).json({
+    // ✅ VALIDATE ID
+    if (!id || !mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
         success: false,
-        message: "Update failed",
+        message: "Invalid leave ID",
       });
     }
+
+    // ✅ VALIDATE STATUS
+    if (!["approved", "rejected"].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid status",
+      });
+    }
+
+    const leave = await Leave.findById(id);
+
+    if (!leave) {
+      return res.status(404).json({
+        success: false,
+        message: "Leave not found",
+      });
+    }
+
+    // 🔒 MUST BELONG TO THIS MANAGER
+    if (!leave.assignedTo || String(leave.assignedTo) !== String(managerId)) {
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized to update this leave",
+      });
+    }
+
+    // 🔒 MANAGER CANNOT APPROVE OWN LEAVE
+    if (String(leave.employeeId) === String(managerId)) {
+      return res.status(403).json({
+        success: false,
+        message: "You cannot approve your own leave",
+      });
+    }
+
+    // ❌ PREVENT DOUBLE ACTION
+    if (leave.status !== "pending") {
+      return res.status(400).json({
+        success: false,
+        message: "Leave already processed",
+      });
+    }
+
+    // ✅ UPDATE
+    leave.status = status;
+
+    if (status === "approved") {
+      leave.approvedBy = managerId;
+      leave.rejectedBy = null;
+      leave.approvedAt = new Date();
+      leave.rejectedAt = null;
+    } else {
+      leave.rejectedBy = managerId;
+      leave.approvedBy = null;
+      leave.rejectedAt = new Date();
+      leave.approvedAt = null;
+    }
+
+    await leave.save();
+
+    return res.json({
+      success: true,
+      message: `Leave ${status} successfully`,
+      data: leave,
+    });
+  } catch (error) {
+    console.error("Update Leave Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Update failed",
+    });
   }
+}
 }
 
 export default LeaveService;

@@ -1,11 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
+import SearchIcon from "@mui/icons-material/Search";
 import {
   Box,
   Button,
-  Tabs,
-  Tab,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -16,22 +15,18 @@ import {
   Select,
   FormControl,
   InputLabel,
+  InputAdornment,
   IconButton,
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import HolidayDialog from "@/fe/pages/holiday/hooks/Addholiday";
 
-const tabs = [
-  { label: "Upcoming Holidays", key: "upcoming" },
-  { label: "Past Holidays", key: "past" },
-];
-
-// ✅ ACCEPT onRefresh PROP
 export default function Header({ onRefresh }) {
-  const [activeTab, setActiveTab] = useState("upcoming");
-
   const [openHoliday, setOpenHoliday] = useState(false);
   const [openLeave, setOpenLeave] = useState(false);
+
+  const [loadingHoliday, setLoadingHoliday] = useState(false);
+  const [loadingLeave, setLoadingLeave] = useState(false);
 
   const [holiday, setHoliday] = useState({
     name: "",
@@ -52,10 +47,6 @@ export default function Header({ onRefresh }) {
     handover_to: "",
   });
 
-  const handleChange = (_: any, newValue: string) => {
-    setActiveTab(newValue);
-  };
-
   const getDays = () => {
     if (!leave.start_date || !leave.end_date) return 0;
     const start = new Date(leave.start_date);
@@ -65,24 +56,21 @@ export default function Header({ onRefresh }) {
     );
   };
 
-  // ✅ HOLIDAY SUBMIT WITH REFRESH
+  // ✅ HOLIDAY SUBMIT
   const handleHolidaySubmit = async () => {
     try {
+      setLoadingHoliday(true);
+
       const res = await fetch("/api/v0/holiday", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(holiday),
       });
 
       const data = await res.json();
 
       if (data.success) {
-        alert("Holiday Added Successfully ✅");
-
-        // 🔥 TRIGGER RE-RENDER
-        onRefresh && onRefresh();
+        onRefresh?.(); // ✅ clean call
 
         setHoliday({
           name: "",
@@ -101,27 +89,26 @@ export default function Header({ onRefresh }) {
       }
     } catch (error) {
       console.error("Holiday Error:", error);
+    } finally {
+      setLoadingHoliday(false);
     }
   };
 
-  // ✅ LEAVE SUBMIT WITH REFRESH
+  // ✅ LEAVE SUBMIT
   const handleLeaveSubmit = async () => {
     try {
+      setLoadingLeave(true);
+
       const res = await fetch("/api/v0/leave", {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(leave),
       });
 
       const data = await res.json();
 
       if (data.success) {
-        alert("Leave Applied Successfully ✅");
-
-        // 🔥 TRIGGER RE-RENDER
-        onRefresh && onRefresh();
+        onRefresh?.(); // ✅ clean call
 
         setLeave({
           leave_type: "casual",
@@ -137,61 +124,49 @@ export default function Header({ onRefresh }) {
       }
     } catch (error) {
       console.error("Leave Error:", error);
+    } finally {
+      setLoadingLeave(false);
     }
   };
 
   return (
     <Box className="w-full px-4 pt-1">
-      <Box className="px-6 py-3 mr-2 bg-white rounded-xl border border-gray-200 mb-5 max-w-full shadow-sm">
-        <Stack
-          direction={{ xs: "column", md: "row" }}
-          spacing={2}
-          alignItems={{ xs: "stretch", md: "center" }}
-          justifyContent="space-between"
-          flexWrap="wrap"
-        >
-          {/* Tabs */}
-          <Tabs
-            value={activeTab}
-            onChange={handleChange}
-            variant="scrollable"
-            scrollButtons="auto"
-            TabIndicatorProps={{ style: { display: "none" } }}
+      <Box className="px-6 py-3 mr-2 bg-white rounded-xl border border-gray-200 mb-5 shadow-sm flex justify-between items-center">
+        {/* LEFT: Search */}
+        <TextField
+          size="small"
+          placeholder="Search..."
+          variant="outlined"
+          sx={{ width: 340 }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon />
+              </InputAdornment>
+            ),
+          }}
+        />
+
+        {/* RIGHT: Buttons */}
+        <Box className="flex gap-2">
+          {/* Apply Leave */}
+          <Button
+            variant="outlined"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenLeave(true)}
           >
-            {tabs.map((tab) => (
-              <Tab
-                key={tab.key}
-                value={tab.key}
-                label={tab.label}
-                className={`!normal-case !text-sm !font-medium !rounded-lg !px-4 !py-2
-                ${
-                  activeTab === tab.key
-                    ? "!bg-blue-600 !text-white"
-                    : "!text-gray-600 hover:!bg-gray-100"
-                }`}
-              />
-            ))}
-          </Tabs>
+            Apply Leave
+          </Button>
 
-          {/* Buttons */}
-          <Box className="flex gap-2 flex-wrap justify-end">
-            <Button
-              variant="outlined"
-              startIcon={<AddIcon />}
-              onClick={() => setOpenLeave(true)}
-            >
-              Apply Leave
-            </Button>
-
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={() => setOpenHoliday(true)}
-            >
-              Add Holiday
-            </Button>
-          </Box>
-        </Stack>
+          {/* Add Holiday */}
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpenHoliday(true)}
+          >
+            Add Holiday
+          </Button>
+        </Box>
       </Box>
 
       {/* HOLIDAY MODAL */}
@@ -201,10 +176,16 @@ export default function Header({ onRefresh }) {
         holiday={holiday}
         setHoliday={setHoliday}
         onSubmit={handleHolidaySubmit}
+        loading={loadingHoliday}
       />
 
       {/* LEAVE MODAL */}
-      <Dialog open={openLeave} onClose={() => setOpenLeave(false)} fullWidth maxWidth="sm">
+      <Dialog
+        open={openLeave}
+        onClose={() => setOpenLeave(false)}
+        fullWidth
+        maxWidth="sm"
+      >
         <DialogTitle>
           Apply Leave
           <IconButton
@@ -270,9 +251,7 @@ export default function Header({ onRefresh }) {
               multiline
               rows={3}
               value={leave.reason}
-              onChange={(e) =>
-                setLeave({ ...leave, reason: e.target.value })
-              }
+              onChange={(e) => setLeave({ ...leave, reason: e.target.value })}
               fullWidth
               size="small"
             />
@@ -291,8 +270,12 @@ export default function Header({ onRefresh }) {
 
         <DialogActions>
           <Button onClick={() => setOpenLeave(false)}>Cancel</Button>
-          <Button variant="contained" onClick={handleLeaveSubmit}>
-            Apply Leave
+          <Button
+            variant="contained"
+            onClick={handleLeaveSubmit}
+            disabled={loadingLeave}
+          >
+            {loadingLeave ? "Applying..." : "Apply Leave"}
           </Button>
         </DialogActions>
       </Dialog>

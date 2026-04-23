@@ -8,6 +8,13 @@ const LeaveSchema = new mongoose.Schema(
       required: true,
     },
 
+    // ✅ ADD THIS (CRITICAL)
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
+    },
+
     leave_type: {
       type: String,
       enum: ["casual", "sick", "earned"],
@@ -44,6 +51,22 @@ const LeaveSchema = new mongoose.Schema(
       enum: ["pending", "approved", "rejected"],
       default: "pending",
     },
+
+    // ✅ ADD THESE (TRACK ACTIONS)
+    approvedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
+    },
+
+    rejectedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+      default: null,
+    },
+
+    approvedAt: Date,
+    rejectedAt: Date,
   },
   {
     timestamps: true,

@@ -1,21 +1,53 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Tabs, Tab } from "@mui/material";
 
-import Header from "@/fe/pages/holiday/component/Header"; 
- import PendingLeaveCard from "@/fe/pages/holiday/component/PendingLeaveCard";
+import Header from "@/fe/pages/holiday/component/Header";
+import PendingLeaveCard from "@/fe/pages/holiday/component/PendingLeaveCard";
 import UpcomingHolidaysCard from "@/fe/pages/holiday/component/UpcomingHoliday";
 
 export default function HolidayPlanner() {
   const [tab, setTab] = useState(0);
-  const [drawerOpen, setDrawerOpen] = useState(false);
+
+  // ✅ MAIN STATE (single source of truth)
+  const [holidays, setHolidays] = useState([]);
+  const [leaves, setLeaves] = useState([]);
+
+  // ✅ FETCH ALL DATA
+  const fetchAllData = async () => {
+    try {
+      const [holidayRes, leaveRes] = await Promise.all([
+        fetch("/api/v0/holiday"),
+        fetch("/api/v0/leave"),
+      ]);
+
+      const holidayData = await holidayRes.json();
+      const leaveData = await leaveRes.json();
+
+      if (holidayData.success) setHolidays(holidayData.data || []);
+      if (leaveData.success) setLeaves(leaveData.data || []);
+    } catch (err) {
+      console.error("Fetch Error:", err);
+    }
+  };
+
+  // ✅ INITIAL LOAD
+  useEffect(() => {
+    fetchAllData();
+  }, []);
+
+  // ✅ REFRESH HANDLER (used by Header)
+  const handleRefresh = () => {
+    fetchAllData();
+  };
 
   return (
     <Box className="w-full">
-      <Header />
+      {/* ✅ PASS REFRESH FUNCTION */}
+      <Header onRefresh={handleRefresh} />
 
-      {/* ✅ TABS */}
+      {/* TABS */}
       <Box className="px-4 pt-2">
         <Tabs
           value={tab}
@@ -33,28 +65,20 @@ export default function HolidayPlanner() {
       {/* 🟦 UPCOMING HOLIDAYS */}
       {tab === 0 && (
         <Box className="flex gap-4 p-4">
-          {/* LEFT */}
           <Box className="flex-1">
-            <UpcomingHolidaysCard onOpen={() => setDrawerOpen(true)} />
+            {/* ✅ PASS DATA */}
+            <UpcomingHolidaysCard holidays={holidays} />
           </Box>
-
-          {/* RIGHT */}
-          {/* <Box className="w-[420px] hidden lg:block">
-            <Box className="sticky top-4 space-y-4">
-              <LogHistoryCard />
-            </Box>
-          </Box> */}
         </Box>
       )}
 
       {/* 🟩 LEAVE REQUESTS */}
       {tab === 1 && (
         <Box className="p-4">
-          {/* Replace this later with full Leave Page */}
-          <PendingLeaveCard />
+          {/* ✅ PASS DATA */}
+          <PendingLeaveCard leaves={leaves} />
         </Box>
       )}
-
     </Box>
   );
 }

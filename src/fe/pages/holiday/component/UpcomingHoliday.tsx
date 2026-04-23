@@ -87,7 +87,7 @@ export default function UpcomingHolidaysCard() {
         {/* CARDS */}
         <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* LOADING */}
-          {loading && [1, 2, 3].map((i) => <SkeletonCard key={i} />)}
+          {loading && [1, 2, 6].map((i) => <SkeletonCard key={i} />)}
 
           {/* EMPTY */}
           {!loading && holidays.length === 0 && (
