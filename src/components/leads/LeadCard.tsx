@@ -229,8 +229,14 @@ const LeadCard = memo(
               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                 <Phone sx={{ fontSize: 16, color: "text.secondary" }} />
                 <Typography
-                  component="a"
-                  href={lead.phone ? `tel:${lead.phone}` : "#"}
+                  component={
+                    lead.phone && !lead.phone.includes("*") ? "a" : "span"
+                  }
+                  href={
+                    lead?.phone && !lead.phone.includes("*")
+                      ? `tel:${lead.phone}`
+                      : undefined
+                  }
                   variant="caption"
                   color="text.secondary"
                   noWrap
