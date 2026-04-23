@@ -12,7 +12,7 @@ class LeaveByIdController extends Controller {
   }
 
   async put(req, res) {
-    return this.service.updateLeave(req, res);
+    return this.service.updateLeaveStatus(req, res);
   }
 
   async delete(req, res) {

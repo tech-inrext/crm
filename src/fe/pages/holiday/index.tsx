@@ -3,12 +3,9 @@
 import React, { useState } from "react";
 import { Box, Tabs, Tab } from "@mui/material";
 
-import Header from "@/fe/pages/holiday/component/Header";
-import CalendarView from "@/fe/pages/holiday/component/CalenderView";
-import HolidayDrawer from "@/fe/pages/holiday/hooks/HolidayDrawer";
-
-import LogHistoryCard from "@/fe/pages/holiday/component/LogHistoryCard";
-import PendingLeaveCard from "@/fe/pages/holiday/component/PendingLeaveCard";
+import Header from "@/fe/pages/holiday/component/Header"; 
+ import PendingLeaveCard from "@/fe/pages/holiday/component/PendingLeaveCard";
+import UpcomingHolidaysCard from "@/fe/pages/holiday/component/UpcomingHoliday";
 
 export default function HolidayPlanner() {
   const [tab, setTab] = useState(0);
@@ -38,7 +35,7 @@ export default function HolidayPlanner() {
         <Box className="flex gap-4 p-4">
           {/* LEFT */}
           <Box className="flex-1">
-            <CalendarView onOpen={() => setDrawerOpen(true)} />
+            <UpcomingHolidaysCard onOpen={() => setDrawerOpen(true)} />
           </Box>
 
           {/* RIGHT */}
@@ -58,11 +55,6 @@ export default function HolidayPlanner() {
         </Box>
       )}
 
-      {/* DRAWER */}
-      <HolidayDrawer
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-      />
     </Box>
   );
 }

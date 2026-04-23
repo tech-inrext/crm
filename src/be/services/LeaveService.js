@@ -1,18 +1,19 @@
 import { Service } from "@framework";
 import Leave from "../models/Leave";
 import mongoose from "mongoose";
+import TeamService from "./analytics/TeamService";
 
 class LeaveService extends Service {
   constructor() {
     super();
+    this.teamService = new TeamService();
   }
 
   // ================= HELPER =================
   getDays(start, end) {
     const s = new Date(start);
     const e = new Date(end);
-
-    return Math.ceil((e.getTime() - s.getTime()) / (1000 * 60 * 60 * 24)) + 1;
+    return Math.ceil((e - s) / (1000 * 60 * 60 * 24)) + 1;
   }
 
   // ================= APPLY LEAVE =================
@@ -33,135 +34,156 @@ class LeaveService extends Service {
       if (!employeeId) {
         return res.status(401).json({
           success: false,
-          message: "Unauthorized: employee not found",
+          message: "Unauthorized",
         });
       }
 
-      const newLeave = new Leave({
+      const managerId = await this.teamService.getMyManager(employeeId);
+
+      const leave = await Leave.create({
         leave_type,
         start_date: new Date(start_date),
         end_date: new Date(end_date),
         reason: reason.trim(),
         handover_to: handover_to || null,
-
         employeeId,
-
+        assignedTo: managerId || null,
         duration: this.getDays(start_date, end_date),
-
         status: "pending",
       });
 
-      await newLeave.save();
-
       return res.status(201).json({
         success: true,
-        message: "Leave applied successfully",
-        data: newLeave,
+        message: "Leave created",
+        data: leave,
       });
     } catch (error) {
-      console.error("Apply Leave Error:", error);
+      console.error("Create Leave Error:", error);
       return res.status(500).json({
         success: false,
         message: "Failed to apply leave",
-        error: error.message,
       });
     }
   }
 
-  // ================= GET LEAVES =================
+  // ================= EMPLOYEE LEAVES =================
   async getAllLeaves(req, res) {
     try {
       const employeeId = req.employee?._id;
 
       const leaves = await Leave.find({ employeeId })
-        .populate("employeeId", "name email") // ✅ fetch employee data
+        .populate("employeeId", "name email")
         .sort({ createdAt: -1 })
         .lean();
 
-      return res.status(200).json({
+      return res.json({
         success: true,
         data: leaves,
       });
     } catch (error) {
-      console.error("Fetch Leave Error:", error);
       return res.status(500).json({
         success: false,
         message: "Failed to fetch leaves",
-        error: error.message,
       });
     }
   }
 
-  // ================= APPROVE =================
-  async approveLeave(req, res) {
+  // ================= MANAGER LEAVES =================
+  async getManagerLeaves(req, res) {
+    try {
+      const managerId = req.employee?._id;
+
+      const leaves = await Leave.find({
+        assignedTo: managerId,
+      })
+        .populate("employeeId", "name email")
+        .sort({ createdAt: -1 })
+        .lean();
+
+      return res.json({
+        success: true,
+        data: leaves,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Failed to fetch manager leaves",
+      });
+    }
+  }
+
+  // ================= UPDATE STATUS (FIXED FINAL) =================
+  async updateLeaveStatus(req, res) {
     try {
       const id = req.params?.id;
+      const { status } = req.body;
 
-      if (!mongoose.Types.ObjectId.isValid(id)) {
+      // ✅ VALIDATE ID (IMPORTANT)
+      if (!id || !mongoose.Types.ObjectId.isValid(id)) {
         return res.status(400).json({
           success: false,
           message: "Invalid leave ID",
         });
       }
 
-      const updated = await Leave.findByIdAndUpdate(
-        id,
-        {
-          status: "approved",
-          approvedBy: req.employee?._id || null,
-          approvedAt: new Date(),
-        },
-        { new: true },
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: "Leave approved",
-        data: updated,
-      });
-    } catch (error) {
-      console.error("Approve Error:", error);
-      return res.status(500).json({
-        success: false,
-        message: "Approval failed",
-        error: error.message,
-      });
-    }
-  }
-
-  // ================= REJECT =================
-  async rejectLeave(req, res) {
-    try {
-      const id = req.params?.id;
-
-      if (!mongoose.Types.ObjectId.isValid(id)) {
+      // ✅ VALIDATE STATUS
+      if (!["approved", "rejected"].includes(status)) {
         return res.status(400).json({
           success: false,
-          message: "Invalid leave ID",
+          message: "Invalid status",
         });
       }
 
-      const updated = await Leave.findByIdAndUpdate(
-        id,
-        {
-          status: "rejected",
-          rejectedBy: req.employee?._id || null,
-          rejectedAt: new Date(),
-        },
-        { new: true },
-      );
+      const leave = await Leave.findById(id);
 
-      return res.status(200).json({
+      if (!leave) {
+        return res.status(404).json({
+          success: false,
+          message: "Leave not found",
+        });
+      }
+
+      const managerId = req.employee?._id;
+
+      // ✅ MANAGER CHECK
+      if (String(leave.assignedTo) !== String(managerId)) {
+        return res.status(403).json({
+          success: false,
+          message: "Not authorized to update this leave",
+        });
+      }
+
+      // ❌ ALREADY PROCESSED
+      if (leave.status !== "pending") {
+        return res.status(400).json({
+          success: false,
+          message: "Leave already processed",
+        });
+      }
+
+      // ✅ UPDATE STATUS
+      leave.status = status;
+
+      if (status === "approved") {
+        leave.approvedBy = managerId;
+        leave.approvedAt = new Date();
+      } else {
+        leave.rejectedBy = managerId;
+        leave.rejectedAt = new Date();
+      }
+
+      await leave.save();
+
+      return res.json({
         success: true,
-        message: "Leave rejected",
-        data: updated,
+        message: `Leave ${status}`,
+        data: leave,
       });
     } catch (error) {
-      console.error("Reject Error:", error);
+      console.error("Update Leave Error:", error);
       return res.status(500).json({
         success: false,
-        message: "Rejection failed",
-        error: error.message,
+        message: "Update failed",
       });
     }
   }

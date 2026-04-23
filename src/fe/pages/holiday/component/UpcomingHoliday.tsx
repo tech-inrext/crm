@@ -58,13 +58,9 @@ export default function UpcomingHolidaysCard() {
   };
 
   const getChipStyle = (days) => {
-    if (days === 0) {
-      return { color: "#16a34a", backgroundColor: "#dcfce7" };
-    }
-    if (days === 1) {
-      return { color: "#f59e0b", backgroundColor: "#fef3c7" };
-    }
-    return { color: "#2563eb", backgroundColor: "#dbeafe" };
+    if (days === 0) return "!bg-green-100 !text-green-600";
+    if (days === 1) return "!bg-yellow-100 !text-yellow-600";
+    return "!bg-blue-100 !text-blue-600";
   };
 
   // ================= SKELETON =================
@@ -80,23 +76,16 @@ export default function UpcomingHolidaysCard() {
   // ================= UI =================
   return (
     <Box>
-      <Box className="rounded-2xl p-5">
+      <Box className="rounded-2xl !p-2">
         {/* HEADER */}
         <Box className="flex items-center justify-between mb-4">
           <Typography className="!font-semibold !text-xl !text-gray-800">
             Upcoming Holidays
           </Typography>
-
-          <button
-            onClick={() => router.push("/holidays")}
-            className="text-blue-600 text-sm font-medium hover:underline"
-          >
-            View All
-          </button>
         </Box>
 
         {/* CARDS */}
-        <Box className="flex gap-4 overflow-x-auto pb-2">
+        <Box className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* LOADING */}
           {loading && [1, 2, 3].map((i) => <SkeletonCard key={i} />)}
 
@@ -128,59 +117,50 @@ export default function UpcomingHolidaysCard() {
                 <Card
                   key={item._id}
                   onClick={() => router.push(`/holidays/${item._id}`)}
-                  className="!rounded-2xl min-w-[300px] h-[180px] cursor-pointer bg-white flex flex-col justify-between p-3 transition hover:shadow-md border border-gray-100"
+                  className="!rounded-2xl w-[300px] h-[200px] flex-shrink-0 cursor-pointer bg-[#f9fafb] flex flex-col p-4 border border-gray-200 shadow-sm hover:shadow-md transition-all duration-200"
                 >
                   {/* TOP ROW */}
-                  <Box className="flex justify-between items-start">
+                  <Box className="flex justify-between items-center">
                     <Chip
-                      label={item.type || "Holiday"}
+                      icon={
+                        <CalendarTodayIcon className="!text-[13px] !text-blue-600" />
+                      }
+                      label={item.type || "Public"}
                       size="small"
-                      className="!bg-blue-100 !text-blue-600 !font-medium"
+                      className="!bg-blue-100 !border !text-blue-500 !font-medium !text-xs !rounded-full px-3"
                     />
 
-                    <Box className="flex items-center gap-1">
-                      {daysLeft >= 0 && (
-                        <Chip
-                          label={getDayLabel(daysLeft)}
-                          size="small"
-                          sx={{
-                            fontWeight: 700,
-                            fontSize: 11,
-                            height: 22,
-                            ...getChipStyle(daysLeft),
-                          }}
-                        />
-                      )}
-                    </Box>
+                    {daysLeft >= 0 && (
+                      <Chip
+                        label={getDayLabel(daysLeft)}
+                        size="small"
+                        className={`!text-xs !font-medium !border !rounded-full px-2 ${getChipStyle(daysLeft)}`}
+                      />
+                    )}
                   </Box>
 
-                  {/* TITLE */}
-                  <Box className="flex justify-between items-start mt-2">
-                    <Typography className="!font-semibold text-slate-800 !text-[19px] line-clamp-1">
+                  {/* TITLE + MENU */}
+                  <Box className="flex justify-between items-start mt-3 min-h-[49px] max-h-[49px]">
+                    <Typography className="!font-semibold text-gray-900 !text-[18px] leading-snug line-clamp-1">
                       {item.name}
                     </Typography>
 
-                    <IconButton size="small">
+                    <IconButton size="small" className="!p-1 !text-gray-500">
                       <MoreVertIcon fontSize="small" />
                     </IconButton>
                   </Box>
 
-                  {/* DATE */}
-                  <Box className="flex items-center gap-1 text-gray-500 text-xs mt-1">
-                    <CalendarTodayIcon fontSize="inherit" />
-                    <span>
-                      {holidayDate.toLocaleDateString("en-IN", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}
-                    </span>
-                  </Box>
-
                   {/* DESCRIPTION */}
-                  <Typography className="text-sm text-gray-600 mt-2 line-clamp-2">
-                    {item.description || "No description available"}
-                  </Typography>
+                  <Box
+                    dangerouslySetInnerHTML={{
+                      __html: item.description || "",
+                    }}
+                    sx={{
+                      fontSize: "15px",
+                      color: "#555",
+                      lineHeight: 1.5,
+                    }}
+                  />
                 </Card>
               );
             })}

@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -14,7 +14,13 @@ import {
   FormControl,
   InputLabel,
   IconButton,
+  Box,
+  Typography,
 } from "@mui/material";
+
+import CloseIcon from "@mui/icons-material/Close";
+import Quill from "quill";
+import "quill/dist/quill.snow.css";
 
 export default function HolidayDialog({
   open,
@@ -23,6 +29,70 @@ export default function HolidayDialog({
   setHoliday,
   onSubmit,
 }) {
+  const editorRef = useRef(null);
+  const quillRef = useRef(null);
+
+  const [editorFocused, setEditorFocused] = useState(false);
+
+  /* ---------------- QUILL INIT ---------------- */
+  useEffect(() => {
+    if (!open) return;
+
+    const timer = setTimeout(() => {
+      if (!editorRef.current) return;
+
+      // cleanup old instance
+      if (quillRef.current) {
+        quillRef.current.off("text-change");
+        quillRef.current.off("selection-change");
+        quillRef.current = null;
+      }
+
+      const quill = new Quill(editorRef.current, {
+        theme: "snow",
+        modules: {
+          toolbar: [
+            ["bold", "italic", "underline", "strike"],
+            ["link"],
+            [{ list: "ordered" }, { list: "bullet" }],
+            ["clean"],
+          ],
+        },
+      });
+
+      // styling same as notice
+      const ql = quill.root;
+      ql.style.fontSize = "1rem";
+      ql.style.fontFamily =
+        '"Roboto", "Helvetica", "Arial", sans-serif';
+      ql.style.padding = "8.5px 14px";
+      ql.style.minHeight = "56px";
+      ql.style.lineHeight = "1.4375em";
+
+      // set existing value (edit case)
+      if (holiday.description) {
+        quill.clipboard.dangerouslyPasteHTML(holiday.description);
+      }
+
+      quill.on("text-change", () => {
+        const html = quill.root.innerHTML;
+        setHoliday({
+          ...holiday,
+          description: html === "<p><br></p>" ? "" : html,
+        });
+      });
+
+      quill.on("selection-change", (range) => {
+        setEditorFocused(!!range);
+      });
+
+      quillRef.current = quill;
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [open]);
+
+  /* ---------------- UI ---------------- */
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
@@ -31,7 +101,7 @@ export default function HolidayDialog({
           onClick={onClose}
           className="!absolute !right-4 !top-4"
         >
-          ✕
+          <CloseIcon />
         </IconButton>
       </DialogTitle>
 
@@ -117,21 +187,34 @@ export default function HolidayDialog({
             />
           </Stack>
 
-          {/* DESCRIPTION */}
-          <TextField
-            label="Description"
-            multiline
-            rows={3}
-            value={holiday.description}
-            onChange={(e) =>
-              setHoliday({
-                ...holiday,
-                description: e.target.value,
-              })
-            }
+          {/* ✅ QUILL DESCRIPTION (REPLACED TEXTFIELD) */}
+          <FormControl
             fullWidth
             size="small"
-          />
+            className={`!rounded-md !border ${
+              editorFocused ? "!border-blue-500" : "!border-gray-300"
+            }`}
+          >
+            <InputLabel
+              shrink={!!holiday.description || editorFocused}
+              className="!bg-white !px-1"
+            >
+              Description
+            </InputLabel>
+
+            <Box
+              className="!rounded-md cursor-text"
+              onClick={() => quillRef.current?.focus()}
+            >
+              <div ref={editorRef} />
+            </Box>
+          </FormControl>
+
+          {!holiday.description && (
+            <Typography className="text-gray-400 text-sm">
+              Enter holiday description...
+            </Typography>
+          )}
         </Stack>
       </DialogContent>
 

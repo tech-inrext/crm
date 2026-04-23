@@ -7,6 +7,8 @@ import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 export default function LeaveRequestsCard() {
   const [leaves, setLeaves] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("pending");
+  const [updatingId, setUpdatingId] = useState(null); // ✅ track loading button
 
   // ================= FETCH =================
   const fetchLeaves = async () => {
@@ -30,7 +32,44 @@ export default function LeaveRequestsCard() {
     fetchLeaves();
   }, []);
 
-  // ================= STATUS UI =================
+  // ================= UPDATE STATUS =================
+  const updateLeaveStatus = async (id, status) => {
+    try {
+      setUpdatingId(id);
+
+      const res = await fetch(`/api/v0/leave/${id}`, {
+        method: "PUT", // or PATCH
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status }),
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        // ✅ Update UI instantly
+        setLeaves((prev) =>
+          prev.map((item) =>
+            item._id === id ? { ...item, status } : item
+          )
+        );
+      }
+    } catch (error) {
+      console.error("Update error:", error);
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  // ================= FILTER =================
+  const filteredLeaves = leaves.filter((item) => {
+    if (activeTab === "pending") return item.status === "pending";
+    if (activeTab === "approved") return item.status === "approved";
+    return true;
+  });
+
+  // ================= STATUS CHIP =================
   const getStatusChip = (status) => {
     if (status === "pending") {
       return (
@@ -59,7 +98,7 @@ export default function LeaveRequestsCard() {
     );
   };
 
-  // ================= SKELETON CARD =================
+  // ================= SKELETON =================
   const SkeletonCard = () => (
     <Box className="border border-gray-200 rounded-xl p-4 bg-white">
       <Box className="flex justify-between">
@@ -87,113 +126,114 @@ export default function LeaveRequestsCard() {
   );
 
   return (
-    <Box className="p-4">
-      <Box className="rounded-2xl p-4 ">
+    <Box className="p-3">
+      <Box className="rounded-2xl">
         {/* HEADER */}
-        <Box className="flex items-center justify-between mb-4">
-          <Typography className="!font-semibold !text-gray-800">
-            Leave Requests
-          </Typography>
-
-          <Box className="flex gap-2">
-            <Button size="small" variant="outlined">
-              All Status
-            </Button>
-            <Button size="small" className="!bg-yellow-100 !text-yellow-700">
+        <Box className="mb-4">
+          <Box className="flex gap-6 border-b border-gray-200">
+            <Typography
+              onClick={() => setActiveTab("pending")}
+              className={`cursor-pointer pb-2 text-sm font-medium ${
+                activeTab === "pending"
+                  ? "text-yellow-700 border-b-2 border-yellow-500"
+                  : "text-gray-500"
+              }`}
+            >
               Pending
-            </Button>
-            <Button size="small" className="!bg-green-100 !text-green-700">
+            </Typography>
+
+            <Typography
+              onClick={() => setActiveTab("approved")}
+              className={`cursor-pointer pb-2 text-sm font-medium ${
+                activeTab === "approved"
+                  ? "text-green-700 border-b-2 border-green-500"
+                  : "text-gray-500"
+              }`}
+            >
               Approved
-            </Button>
-            <Button size="small" className="!bg-red-100 !text-red-600">
-              Rejected
-            </Button>
+            </Typography>
           </Box>
         </Box>
 
         {/* GRID */}
         <Box className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {/* 🔥 LOADING */}
+          {/* LOADING */}
           {loading && [1, 2, 3].map((i) => <SkeletonCard key={i} />)}
 
-          {/* ❌ EMPTY */}
-          {!loading && leaves.length === 0 && (
+          {/* EMPTY */}
+          {!loading && filteredLeaves.length === 0 && (
             <Typography className="text-gray-400 text-sm">
-              No leave requests found
+              No {activeTab} leave requests
             </Typography>
           )}
 
-          {/* ✅ DATA */}
+          {/* DATA */}
           {!loading &&
-            leaves.map((item, index) => (
+            filteredLeaves.map((item, index) => (
               <Box
                 key={item._id || index}
-                className="border border-gray-200 !rounded-xl !p-4 !bg-white !shadow-sm !hover:shadow-md transition"
+                className="border border-gray-200 !rounded-xl !p-4 !bg-white !shadow-sm hover:!shadow-md transition"
               >
                 {/* TOP */}
-                <Box className="flex justify-between !items-start">
-                  <Box className="flex !items-center !gap-3">
-                    <Box className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
+                <Box className="flex justify-between items-start">
+                  <Box className="flex items-center gap-3">
+                    <Box className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-semibold">
                       {item.employeeId?.name?.charAt(0) || "U"}
                     </Box>
 
-                    <Box>
-                      <Typography className="!font-semibold text-sm">
-                        {item.employeeId?.name}
-                      </Typography>
-                    </Box>
+                    <Typography className="!font-semibold !text-lg">
+                      {item.employeeId?.name}
+                    </Typography>
                   </Box>
 
                   {getStatusChip(item.status)}
                 </Box>
 
                 {/* DATE */}
-                <Box className="flex items-center justify-between !font-semibold ml-1 mt-3 text-gray-700">
-                  <Box className="flex items-center gap-1">
-                    <CalendarTodayIcon sx={{ fontSize: 14 }} />
-                    <Typography sx={{ fontSize: "11px" }}>
-                      {new Date(item.start_date).toDateString()} -{" "}
-                      {new Date(item.end_date).toDateString()}
-                    </Typography>
-                  </Box>
+                <Box className="flex items-center mt-4 text-gray-700">
+                  <CalendarTodayIcon sx={{ fontSize: 16 }} />
+                  <Typography sx={{ fontSize: "14px", ml: 1 }}>
+                    {new Date(item.start_date).toDateString()} -{" "}
+                    {new Date(item.end_date).toDateString()}
+                  </Typography>
                 </Box>
+
                 {/* TYPE */}
-                <Box className="!mt-2 !text-sm !ml-1 text-gray-600">
+                <Box className="mt-2 ml-6 text-sm text-gray-600">
                   {item.leave_type || "Leave"}
                 </Box>
 
                 {/* REASON */}
-                <Box className="!mt-1 !text-md text-black">
+                <Box className="mt-1 ml-6 text-sm text-black">
                   {item.reason || "No reason"}
                 </Box>
 
-                {/* APPLIED DATE */}
-                <Box className="mt-2 text-xs text-gray-400">
-                  Applied on {new Date(item.createdAt).toDateString()}
-                </Box>
-
                 {/* ACTIONS */}
-                <Box className="flex justify-end gap-2 mt-3">
-                  <Button size="small" variant="outlined">
-                    View
-                  </Button>
-
+                <Box className="border-t border-gray-200 mt-4 pt-3">
                   {item.status === "pending" && (
-                    <>
+                    <Box className="flex justify-center gap-3">
                       <Button
                         size="small"
-                        className="!bg-green-500 !text-white hover:!bg-green-600"
+                        disabled={updatingId === item._id}
+                        onClick={() =>
+                          updateLeaveStatus(item._id, "approved")
+                        }
+                        className="!bg-green-800 !px-4 !text-white hover:!bg-green-600"
                       >
-                        Approve
+                        {updatingId === item._id ? "..." : "Approve"}
                       </Button>
 
                       <Button
                         size="small"
-                        className="!bg-red-500 !text-white hover:!bg-red-600"
+                        disabled={updatingId === item._id}
+                        onClick={() =>
+                          updateLeaveStatus(item._id, "rejected")
+                        }
+                        className="!bg-red-50 !px-4 !text-red-600 hover:!bg-red-100"
                       >
                         Reject
                       </Button>
-                    </>
+                    </Box>
                   )}
                 </Box>
               </Box>
@@ -203,3 +243,4 @@ export default function LeaveRequestsCard() {
     </Box>
   );
 }
+ 

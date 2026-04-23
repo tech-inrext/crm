@@ -20,21 +20,19 @@ import {
 } from "@mui/material";
 import AddIcon from "@mui/icons-material/Add";
 import HolidayDialog from "@/fe/pages/holiday/hooks/Addholiday";
+
 const tabs = [
   { label: "Upcoming Holidays", key: "upcoming" },
   { label: "Past Holidays", key: "past" },
-  { label: "Leave Requests", key: "leave" },
 ];
 
-export default function Header() {
+// ✅ ACCEPT onRefresh PROP
+export default function Header({ onRefresh }) {
   const [activeTab, setActiveTab] = useState("upcoming");
 
-  // Modal states
   const [openHoliday, setOpenHoliday] = useState(false);
   const [openLeave, setOpenLeave] = useState(false);
 
-  // Form states
-  // Holiday State (PRO)
   const [holiday, setHoliday] = useState({
     name: "",
     date: "",
@@ -46,7 +44,6 @@ export default function Header() {
     description: "",
   });
 
-  // Leave State (PRO)
   const [leave, setLeave] = useState({
     leave_type: "casual",
     start_date: "",
@@ -59,7 +56,6 @@ export default function Header() {
     setActiveTab(newValue);
   };
 
-  // Auto calculate days
   const getDays = () => {
     if (!leave.start_date || !leave.end_date) return 0;
     const start = new Date(leave.start_date);
@@ -69,7 +65,7 @@ export default function Header() {
     );
   };
 
-  // Submit handlers
+  // ✅ HOLIDAY SUBMIT WITH REFRESH
   const handleHolidaySubmit = async () => {
     try {
       const res = await fetch("/api/v0/holiday", {
@@ -85,7 +81,9 @@ export default function Header() {
       if (data.success) {
         alert("Holiday Added Successfully ✅");
 
-        // reset form
+        // 🔥 TRIGGER RE-RENDER
+        onRefresh && onRefresh();
+
         setHoliday({
           name: "",
           date: "",
@@ -106,6 +104,7 @@ export default function Header() {
     }
   };
 
+  // ✅ LEAVE SUBMIT WITH REFRESH
   const handleLeaveSubmit = async () => {
     try {
       const res = await fetch("/api/v0/leave", {
@@ -120,6 +119,9 @@ export default function Header() {
 
       if (data.success) {
         alert("Leave Applied Successfully ✅");
+
+        // 🔥 TRIGGER RE-RENDER
+        onRefresh && onRefresh();
 
         setLeave({
           leave_type: "casual",
@@ -137,83 +139,72 @@ export default function Header() {
       console.error("Leave Error:", error);
     }
   };
+
   return (
     <Box className="w-full px-4 pt-1">
       <Box className="px-6 py-3 mr-2 bg-white rounded-xl border border-gray-200 mb-5 max-w-full shadow-sm">
-        <Box className="rounded-2xl space-y-4">
-          <Box className="p-1">
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              spacing={2}
-              alignItems={{ xs: "stretch", md: "center" }}
-              justifyContent="space-between"
-              flexWrap="wrap"
-            >
-              {/* Tabs */}
-              <Tabs
-                value={activeTab}
-                onChange={handleChange}
-                variant="scrollable"
-                scrollButtons="auto"
-                TabIndicatorProps={{ style: { display: "none" } }}
-                className="!min-h-0"
-              >
-                {tabs.map((tab) => (
-                  <Tab
-                    key={tab.key}
-                    value={tab.key}
-                    label={tab.label}
-                    className={`!normal-case !text-sm !font-medium !rounded-lg !px-4 !py-2 !min-h-0
+        <Stack
+          direction={{ xs: "column", md: "row" }}
+          spacing={2}
+          alignItems={{ xs: "stretch", md: "center" }}
+          justifyContent="space-between"
+          flexWrap="wrap"
+        >
+          {/* Tabs */}
+          <Tabs
+            value={activeTab}
+            onChange={handleChange}
+            variant="scrollable"
+            scrollButtons="auto"
+            TabIndicatorProps={{ style: { display: "none" } }}
+          >
+            {tabs.map((tab) => (
+              <Tab
+                key={tab.key}
+                value={tab.key}
+                label={tab.label}
+                className={`!normal-case !text-sm !font-medium !rounded-lg !px-4 !py-2
                 ${
                   activeTab === tab.key
                     ? "!bg-blue-600 !text-white"
                     : "!text-gray-600 hover:!bg-gray-100"
                 }`}
-                  />
-                ))}
-              </Tabs>
+              />
+            ))}
+          </Tabs>
 
-              {/* Buttons */}
-              <Box className="flex gap-2 flex-wrap justify-end">
-                {/* Apply Leave */}
-                <Button
-                  variant="outlined"
-                  startIcon={<AddIcon />}
-                  onClick={() => setOpenLeave(true)}
-                  className="!normal-case !rounded-lg !border-gray-300 !text-gray-700 hover:!bg-gray-100"
-                >
-                  Apply Leave
-                </Button>
+          {/* Buttons */}
+          <Box className="flex gap-2 flex-wrap justify-end">
+            <Button
+              variant="outlined"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenLeave(true)}
+            >
+              Apply Leave
+            </Button>
 
-                {/* Add Holiday */}
-                <Button
-                  variant="contained"
-                  startIcon={<AddIcon />}
-                  onClick={() => setOpenHoliday(true)}
-                  className="!normal-case !rounded-lg !bg-blue-600 hover:!bg-blue-700"
-                >
-                  Add Holiday
-                </Button>
-              </Box>
-            </Stack>
+            <Button
+              variant="contained"
+              startIcon={<AddIcon />}
+              onClick={() => setOpenHoliday(true)}
+            >
+              Add Holiday
+            </Button>
           </Box>
-        </Box>
+        </Stack>
       </Box>
-      {/* ================= HOLIDAY MODAL ================= */}
-     <HolidayDialog
-  open={openHoliday}
-  onClose={() => setOpenHoliday(false)}
-  holiday={holiday}
-  setHoliday={setHoliday}
-  onSubmit={handleHolidaySubmit}
-/>
-      {/* ================= LEAVE MODAL ================= */}
-      <Dialog
-        open={openLeave}
-        onClose={() => setOpenLeave(false)}
-        fullWidth
-        maxWidth="sm"
-      >
+
+      {/* HOLIDAY MODAL */}
+      <HolidayDialog
+        open={openHoliday}
+        onClose={() => setOpenHoliday(false)}
+        holiday={holiday}
+        setHoliday={setHoliday}
+        onSubmit={handleHolidaySubmit}
+      />
+
+      {/* LEAVE MODAL */}
+      <Dialog open={openLeave} onClose={() => setOpenLeave(false)} fullWidth maxWidth="sm">
         <DialogTitle>
           Apply Leave
           <IconButton
@@ -226,7 +217,6 @@ export default function Header() {
 
         <DialogContent dividers>
           <Stack spacing={2}>
-            {/* LEAVE TYPE */}
             <FormControl fullWidth size="small">
               <InputLabel>Leave Type</InputLabel>
               <Select
@@ -242,7 +232,6 @@ export default function Header() {
               </Select>
             </FormControl>
 
-            {/* DATES */}
             <Stack direction="row" spacing={2}>
               <TextField
                 type="date"
@@ -255,7 +244,6 @@ export default function Header() {
                 fullWidth
                 size="small"
               />
-
               <TextField
                 type="date"
                 label="End Date"
@@ -269,7 +257,6 @@ export default function Header() {
               />
             </Stack>
 
-            {/* DURATION */}
             <TextField
               label="Duration"
               value={`${getDays()} Days`}
@@ -278,18 +265,18 @@ export default function Header() {
               size="small"
             />
 
-            {/* REASON */}
             <TextField
               label="Reason"
               multiline
               rows={3}
               value={leave.reason}
-              onChange={(e) => setLeave({ ...leave, reason: e.target.value })}
+              onChange={(e) =>
+                setLeave({ ...leave, reason: e.target.value })
+              }
               fullWidth
               size="small"
             />
 
-            {/* HANDOVER */}
             <TextField
               label="Work Handover To"
               value={leave.handover_to}
