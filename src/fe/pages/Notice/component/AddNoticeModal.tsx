@@ -122,10 +122,11 @@ export default function AddNoticeModal({
   const avpFetchedRef = useRef(false);
   const auth = useAuth();
   const isSystemAdmin = Boolean(auth?.isSystemAdmin);
-  const isAVP =
-    auth?.isAVP === true ||
-    (auth?.user as any)?.isAVP === true ||
-    (auth?.user as any)?.role?.isAVP === true;
+ const isAVP = Boolean(
+  auth?.user?.role?.name === "AVP" ||
+  auth?.user?.role?.isAVP === true ||
+  auth?.isAVP === true
+);
 
   /* ---------------- RESET  when the file get updated form will open with blank---------------- */
   const resetForm = () => {
