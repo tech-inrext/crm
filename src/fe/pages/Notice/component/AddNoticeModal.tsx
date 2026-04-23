@@ -122,11 +122,11 @@ export default function AddNoticeModal({
   const avpFetchedRef = useRef(false);
   const auth = useAuth();
   const isSystemAdmin = Boolean(auth?.isSystemAdmin);
- const isAVP = Boolean(
-  auth?.user?.role?.name === "AVP" ||
-  auth?.user?.role?.isAVP === true ||
-  auth?.isAVP === true
-);
+  const isAVP = Boolean(
+    auth?.user?.role?.name === "AVP" ||
+    auth?.user?.role?.isAVP === true ||
+    auth?.isAVP === true,
+  );
 
   /* ---------------- RESET  when the file get updated form will open with blank---------------- */
   const resetForm = () => {
@@ -479,13 +479,19 @@ export default function AddNoticeModal({
                             ))
                           : []),
                       ]
-                    : Array.isArray(departments)
-                      ? departments.map((d) => (
+                    : isAVP
+                      ? ["All", "Team"].map((d) => (
                           <MenuItem key={d} value={d}>
                             {d}
                           </MenuItem>
                         ))
-                      : []}
+                      : []
+                        ? departments.map((d) => (
+                            <MenuItem key={d} value={d}>
+                              {d}
+                            </MenuItem>
+                          ))
+                        : []}
                 </Select>
               </FormControl>
 
