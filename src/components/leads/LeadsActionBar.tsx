@@ -185,7 +185,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
           width: "100%",
         }}
       >
-        {/* Search Bar */}
+        {/* Search & Actions Group */}
         <Box
           sx={{
             flexGrow: 1,
