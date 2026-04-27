@@ -169,54 +169,132 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
     <Box
       sx={{
         display: "flex",
-        flexDirection: { xs: "column", sm: "column", md: "row" },
-        gap: { xs: 1.5, sm: 2, md: 3 },
-        alignItems: { xs: "stretch", md: "center" },
+        flexDirection: "column",
+        gap: { xs: 1.5, md: 2 },
         width: "100%",
         overflow: "visible",
       }}
     >
-      {/* Controls Row */}
       <Box
         sx={{
           display: "flex",
-          flexDirection: "row",
-          gap: 2,
-          alignItems: "center",
-          justifyContent: "flex-start",
+          flexDirection: { xs: "column", sm: "row" },
+          gap: { xs: 1.5, sm: 2 },
+          alignItems: { xs: "stretch", sm: "center" },
           width: "100%",
         }}
       >
-        {/* Search Bar */}
+        {/* Search & Actions Group */}
         <Box
           sx={{
-            width: "100%",
-            maxWidth: "300px",
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
             flexGrow: 1,
             order: { xs: 1, sm: 1 },
-            minWidth: 0, 
           }}
         >
-          <SearchBar
-            sx={{
-              width: "100%",
-              minWidth: 0,
-              maxWidth: "300px",
-              "& .MuiInputBase-input:focus::placeholder": {
-                opacity: 0.4,
-              },
-              "& .MuiInputLabel-root": {
-                fontSize: "0.75rem",
-              },
-              "& .MuiInputLabel-shrink": {
-                fontSize: "0.875rem",
-              },
-            }}
-            value={search}
-            onChange={onSearchChange}
-            placeholder="Search leads by name, email, phone..."
-          />
+          {/* Filter Icon (Desktop only, before Search) */}
+          <Tooltip title="Filter leads">
+            <IconButton
+              size="small"
+              onClick={openFilter}
+              sx={{
+                display: { xs: "none", sm: "flex" },
+                height: 40,
+                width: 40,
+                backgroundColor: activeFilterCount > 0 ? alpha(theme.palette.primary.main, 0.08) : "#fff",
+                color: activeFilterCount > 0 ? "primary.main" : "text.secondary",
+                border: `1px solid ${activeFilterCount > 0 ? theme.palette.primary.main : alpha(theme.palette.divider, 0.8)}`,
+                borderRadius: 2,
+                transition: "all 0.2s",
+                "&:hover": {
+                  backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                  borderColor: theme.palette.primary.main,
+                },
+              }}
+            >
+              <Badge 
+                badgeContent={activeFilterCount} 
+                color="primary" 
+                overlap="circular"
+                sx={{ "& .MuiBadge-badge": { fontSize: "0.65rem", height: 16, minWidth: 16 } }}
+              >
+                <FilterAltIcon fontSize="small" />
+              </Badge>
+            </IconButton>
+          </Tooltip>
+
+          {/* Search Bar */}
+          <Box sx={{ flexGrow: 1, minWidth: 0, maxWidth: { sm: 400 } }}>
+            <SearchBar
+              sx={{
+                width: "100%",
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 2,
+                  bgcolor: alpha(theme.palette.common.white, 0.8),
+                  transition: "all 0.2s",
+                  "&:hover": {
+                    bgcolor: theme.palette.common.white,
+                    boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+                  },
+                  "&.Mui-focused": {
+                    bgcolor: theme.palette.common.white,
+                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                  },
+                },
+              }}
+              value={search}
+              onChange={onSearchChange}
+              placeholder="Search leads..."
+            />
+          </Box>
+
+          {/* Quick Actions (Filter + More) - Visible only on mobile */}
+          <Box sx={{ display: { xs: "flex", sm: "none" }, gap: 1 }}>
+            <Tooltip title="Filters">
+              <IconButton
+                onClick={openFilter}
+                sx={{
+                  bgcolor: activeFilterCount > 0 ? alpha(theme.palette.primary.main, 0.1) : "white",
+                  color: activeFilterCount > 0 ? "primary.main" : "text.secondary",
+                  border: `1px solid ${activeFilterCount > 0 ? theme.palette.primary.main : alpha(theme.palette.divider, 0.8)}`,
+                  borderRadius: 2,
+                }}
+              >
+                <Badge badgeContent={activeFilterCount} color="primary">
+                  <FilterAltIcon fontSize="small" />
+                </Badge>
+              </IconButton>
+            </Tooltip>
+            <IconButton
+              onClick={openActionsMenu}
+              sx={{
+                bgcolor: "white",
+                border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                borderRadius: 2,
+              }}
+            >
+              <MoreVert fontSize="small" />
+            </IconButton>
+          </Box>
         </Box>
+
+        {/* Filter Controls Group */}
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            gap: 1.5,
+            order: { xs: 2, sm: 2 },
+            flexWrap: { xs: "nowrap", sm: "wrap" },
+            overflowX: { xs: "auto", sm: "visible" },
+            pb: { xs: 0.5, sm: 0 },
+            "&::-webkit-scrollbar": { display: "none" },
+            msOverflowStyle: "none",
+            scrollbarWidth: "none",
+          }}
+        >
 
         {/* Team Members Dropdown */}
         <Box sx={{ order: { xs: 2, sm: 2 } }}>
@@ -403,7 +481,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               gap: 1.5
             }}
           >
-            <ArrowForward sx={{ color: "text.secondary", fontSize: 20, opacity: 0.6 }} />
+            <ArrowForward sx={{ color: "text.secondary", fontSize: 18, opacity: 0.4, display: { xs: "none", sm: "block" } }} />
             <Box>
               <Button
                 onClick={openModeFilter}
@@ -494,33 +572,62 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
         )}
 
 
+        {/* Desktop Actions */}
         <Box
           sx={{
-            display: "flex",
+            display: { xs: "none", sm: "flex" },
             alignItems: "center",
-            ml: 1,
+            gap: 1.5,
+            ml: "auto",
           }}
         >
-          <Tooltip title="Filter leads">
-            <IconButton
-              size="small"
-              onClick={openFilter}
-              sx={{
-                backgroundColor: activeFilterCount > 0 ? "primary.main" : "#fff",
-                color: activeFilterCount > 0 ? "white" : "inherit",
-                boxShadow: 1,
-                padding: "8px",
-                "&:hover": {
-                  backgroundColor: activeFilterCount > 0 ? "primary.dark" : "#f5f5f5",
-                },
-              }}
-            >
-              <Badge badgeContent={activeFilterCount} color="error" overlap="circular" 
-                sx={{ "& .MuiBadge-badge": { right: -2, top: -2, border: `2px solid ${activeFilterCount > 0 ? theme.palette.primary.main : "#fff"}` } }}>
-                <FilterAltIcon fontSize="small" />
-              </Badge>
-            </IconButton>
-          </Tooltip>
+
+
+          {/* Action Menu (Desktop) */}
+          <PermissionGuard module="lead" action="write" fallback={<></>}>
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              {!isTablet && (
+                <Button
+                  variant="contained"
+                  startIcon={<PersonAdd />}
+                  onClick={onAdd}
+                  disabled={saving}
+                  sx={{
+                    height: 40,
+                    px: 3,
+                    borderRadius: 2,
+                    fontWeight: 600,
+                    textTransform: "none",
+                    backgroundColor: theme.palette.primary.main,
+                    color: "white",
+                    boxShadow: "0 4px 12px rgba(25, 118, 210, 0.2)",
+                    "&:hover": {
+                      backgroundColor: theme.palette.primary.dark,
+                      boxShadow: "0 6px 16px rgba(25, 118, 210, 0.3)",
+                    },
+                  }}
+                >
+                  {saving ? <CircularProgress size={20} color="inherit" /> : "Add Lead"}
+                </Button>
+              )}
+              <IconButton
+                onClick={openActionsMenu}
+                sx={{
+                  height: 40,
+                  width: 40,
+                  bgcolor: "white",
+                  border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                  borderRadius: 2,
+                  "&:hover": { bgcolor: alpha(theme.palette.divider, 0.05) },
+                }}
+              >
+                <MoreVert fontSize="small" />
+              </IconButton>
+            </Stack>
+          </PermissionGuard>
+        </Box>
+      </Box>
+    </Box>
 
           <Popover
             open={filterOpen}
@@ -721,233 +828,165 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
             </Box>
 
           </Popover>
-        </Box>
 
-        {/* Action Menu */}
-        <PermissionGuard module="lead" action="write" fallback={<></>}>
-          <Box
+      {/* Menu & Dialogs */}
+      <Menu
+        id="lead-actions-menu"
+        anchorEl={actionsAnchor}
+        open={actionsMenuOpen}
+        onClose={closeActionsMenu}
+        MenuListProps={{ sx: { p: 0.5 } }}
+      >
+        <Stack
+          direction="column"
+          spacing={0.5}
+          sx={{
+            minWidth: 220,
+          }}
+        >
+          <MenuItem
+            onClick={async () => {
+              try {
+                const XLSX = await import("xlsx");
+                const data = [
+                  ["fullName", "email", "phone"],
+                  ["Sample Lead Name 1", "lead1@gmail.com", "7500000001"],
+                  [
+                    "Sample Lead Name 2",
+                    "(leave blank if not available)",
+                    "7500000002",
+                  ],
+                  ["Sample Lead Name 3", "lead3@gmail.com", "7500000003"],
+                  [
+                    "Sample Lead Name 4",
+                    "(leave blank if not available)",
+                    "7500000004",
+                  ],
+                  [
+                    "(leave blank if not available)",
+                    "lead5@gmail.com",
+                    "7500000005",
+                  ],
+                ];
+                const ws = XLSX.utils.aoa_to_sheet(data);
+                const wb = XLSX.utils.book_new();
+                XLSX.utils.book_append_sheet(wb, ws, "Template");
+                XLSX.writeFile(wb, "lead_upload_template.xlsx");
+              } catch (error) {
+                console.error("Error downloading template:", error);
+              } finally {
+                closeActionsMenu();
+              }
+            }}
             sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: 1,
-              justifyContent: { xs: "center", sm: "flex-end" },
-              order: { xs: 3, sm: 3 },
+              borderRadius: 1,
+              gap: 1.5,
+              py: 1,
+              px: 1.5,
+              fontSize: "0.9rem",
+              fontWeight: 600,
             }}
           >
-            {!isTablet && (
-              <Button
-                variant="contained"
-                startIcon={<PersonAdd />}
-                onClick={onAdd}
-                disabled={saving}
-                sx={{
-                  minWidth: { xs: "auto", sm: 140 },
-                  height: { xs: 42, sm: 38 },
-                  borderRadius: 1.5,
-                  fontWeight: 500,
-                  fontSize: { xs: "0.85rem", sm: "0.95rem" },
-                  textTransform: "none",
-                  backgroundColor: "#e8f1ff",
-                  color: "#1e5fbf",
-                  boxShadow: "none",
-                  border: "1px solid rgba(30, 95, 191, 0.18)",
-                  "& .MuiButton-startIcon": {
-                    marginRight: "6px",
-                  },
-                  "&:hover": {
-                    backgroundColor: "#deebff",
-                    borderColor: "rgba(30, 95, 191, 0.28)",
-                    boxShadow: "none",
-                  },
-                }}
-              >
-                {saving ? (
-                  <CircularProgress size={20} color="inherit" />
-                ) : (
-                  "Add Lead"
-                )}
-              </Button>
-            )}
-            <Tooltip title="Lead actions">
-              <IconButton
-                size="small"
-                onClick={openActionsMenu}
-                sx={{ background: "#fff", boxShadow: 1 }}
-                aria-controls={
-                  actionsMenuOpen ? "lead-actions-menu" : undefined
-                }
-                aria-haspopup="true"
-                aria-expanded={actionsMenuOpen ? "true" : undefined}
-              >
-                <MoreVert fontSize="small" />
-              </IconButton>
-            </Tooltip>
-            <Menu
-              id="lead-actions-menu"
-              anchorEl={actionsAnchor}
-              open={actionsMenuOpen}
-              onClose={closeActionsMenu}
-              MenuListProps={{ sx: { p: 0.5 } }}
-            >
-              <Stack
-                direction="column"
-                spacing={0.5}
-                sx={{
-                  minWidth: 220,
-                }}
-              >
-                <MenuItem
-                  onClick={async () => {
-                    try {
-                      const XLSX = await import("xlsx");
-                      const data = [
-                        ["fullName", "email", "phone"],
-                        ["Sample Lead Name 1", "lead1@gmail.com", "7500000001"],
-                        [
-                          "Sample Lead Name 2",
-                          "(leave blank if not available)",
-                          "7500000002",
-                        ],
-                        ["Sample Lead Name 3", "lead3@gmail.com", "7500000003"],
-                        [
-                          "Sample Lead Name 4",
-                          "(leave blank if not available)",
-                          "7500000004",
-                        ],
-                        [
-                          "(leave blank if not available)",
-                          "lead5@gmail.com",
-                          "7500000005",
-                        ],
-                      ];
-                      const ws = XLSX.utils.aoa_to_sheet(data);
-                      const wb = XLSX.utils.book_new();
-                      XLSX.utils.book_append_sheet(wb, ws, "Template");
-                      XLSX.writeFile(wb, "lead_upload_template.xlsx");
-                    } catch (error) {
-                      console.error("Error downloading template:", error);
-                    } finally {
-                      closeActionsMenu();
-                    }
-                  }}
-                  sx={{
-                    borderRadius: 1,
-                    gap: 1.5,
-                    py: 1,
-                    px: 1.5,
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  <DownloadIcon fontSize="small" />
-                  {isTablet ? "Template" : "Download Template"}
-                </MenuItem>
+            <DownloadIcon fontSize="small" />
+            {isTablet ? "Template" : "Download Template"}
+          </MenuItem>
 
-                <MenuItem
-                  onClick={() => {
-                    closeActionsMenu();
-                    setBulkUploadDialogOpen(true);
-                  }}
-                  sx={{
-                    borderRadius: 1,
-                    gap: 1.5,
-                    py: 1,
-                    px: 1.5,
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  <UploadFile fontSize="small" />
-                  Bulk Upload
-                </MenuItem>
+          <MenuItem
+            onClick={() => {
+              closeActionsMenu();
+              setBulkUploadDialogOpen(true);
+            }}
+            sx={{
+              borderRadius: 1,
+              gap: 1.5,
+              py: 1,
+              px: 1.5,
+              fontSize: "0.9rem",
+              fontWeight: 600,
+            }}
+          >
+            <UploadFile fontSize="small" />
+            Bulk Upload
+          </MenuItem>
 
-                <MenuItem
-                  onClick={() => {
-                    closeActionsMenu();
-                    setTimeout(() => {
-                      const trigger = document.getElementById(
-                        "bulk-assign-trigger"
-                      );
-                      trigger?.dispatchEvent(
-                        new MouseEvent("click", { bubbles: true })
-                      );
-                    }, 0);
-                  }}
-                  sx={{
-                    borderRadius: 1,
-                    gap: 1.5,
-                    py: 1,
-                    px: 1.5,
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  <AssignmentInd fontSize="small" />
-                  Bulk Assign
-                </MenuItem>
+          <MenuItem
+            onClick={() => {
+              closeActionsMenu();
+              setTimeout(() => {
+                const trigger = document.getElementById(
+                  "bulk-assign-trigger"
+                );
+                trigger?.dispatchEvent(
+                  new MouseEvent("click", { bubbles: true })
+                );
+              }, 0);
+            }}
+            sx={{
+              borderRadius: 1,
+              gap: 1.5,
+              py: 1,
+              px: 1.5,
+              fontSize: "0.9rem",
+              fontWeight: 600,
+            }}
+          >
+            <AssignmentInd fontSize="small" />
+            Bulk Assign
+          </MenuItem>
 
-                <MenuItem
-                  onClick={() => {
-                    setUploadStatusOpen(true);
-                    closeActionsMenu();
-                  }}
-                  sx={{
-                    borderRadius: 1,
-                    gap: 1.5,
-                    py: 1,
-                    px: 1.5,
-                    fontSize: "0.9rem",
-                    fontWeight: 600,
-                  }}
-                >
-                  <History fontSize="small" />
-                  {isTablet ? "Upload Status" : "Check Upload Status"}
-                </MenuItem>
+          <MenuItem
+            onClick={() => {
+              setUploadStatusOpen(true);
+              closeActionsMenu();
+            }}
+            sx={{
+              borderRadius: 1,
+              gap: 1.5,
+              py: 1,
+              px: 1.5,
+              fontSize: "0.9rem",
+              fontWeight: 600,
+            }}
+          >
+            <History fontSize="small" />
+            {isTablet ? "Upload Status" : "Check Upload Status"}
+          </MenuItem>
 
-                {isTablet && (
-                  <MenuItem
-                    onClick={() => {
-                      onAdd();
-                      closeActionsMenu();
-                    }}
-                    disabled={saving}
-                    sx={{
-                      borderRadius: 1,
-                      gap: 1.5,
-                      py: 1,
-                      px: 1.5,
-                      fontSize: "0.9rem",
-                      fontWeight: 600,
-                    }}
-                  >
-                    {saving ? (
-                      <CircularProgress size={18} color="inherit" />
-                    ) : (
-                      <>
-                        <Add fontSize="small" />
-                        Add Lead
-                      </>
-                    )}
-                  </MenuItem>
-                )}
-              </Stack>
-            </Menu>
-            <Box
+          {isTablet && (
+            <MenuItem
+              onClick={() => {
+                onAdd();
+                closeActionsMenu();
+              }}
+              disabled={saving}
               sx={{
-                position: "absolute",
-                width: 0,
-                height: 0,
-                overflow: "hidden",
+                borderRadius: 1,
+                gap: 1.5,
+                py: 1,
+                px: 1.5,
+                fontSize: "0.9rem",
+                fontWeight: 600,
               }}
             >
-              <BulkAssign
-                onSuccess={loadLeads}
-                hideButton
-                buttonId="bulk-assign-trigger"
-              />
-            </Box>
-          </Box>
-        </PermissionGuard>
+              {saving ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <>
+                  <Add fontSize="small" />
+                  Add Lead
+                </>
+              )}
+            </MenuItem>
+          )}
+        </Stack>
+      </Menu>
+
+      <Box sx={{ position: "absolute", width: 0, height: 0, overflow: "hidden" }}>
+        <BulkAssign
+          onSuccess={loadLeads}
+          hideButton
+          buttonId="bulk-assign-trigger"
+        />
       </Box>
 
       {/* Upload Status Dialog */}
