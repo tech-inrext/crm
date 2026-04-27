@@ -43,21 +43,41 @@ export default function NoticePreviewDialog({
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   /* ✅ ROLE CHECK START */
-  const { user } = useAuth();
+  const auth = useAuth();
 
-  const currentRoleName =
-    typeof user?.currentRole === "object"
-      ? user?.currentRole?.name
-      : user?.roles?.find((r: any) => r._id === user?.currentRole)?.name;
+  const isAdmin = auth?.isSystemAdmin;
 
-  const isAdminOrAVP =
-    currentRoleName?.toLowerCase() === "admin" ||
-    currentRoleName?.toLowerCase() === "avp";
+  const isAVP =
+    auth?.isAVP === true ||
+    auth?.user?.isAVP === true ||
+    auth?.user?.role?.isAVP === true;
+
+  const isOwner =
+    String(notice?.createdBy?._id || notice?.createdBy) ===
+    String(auth?.user?._id);
+
+  const canEdit = isAdmin || (isAVP && isOwner);
   /* ✅ ROLE CHECK END */
 
   const imageAttachments =
     notice?.attachments?.filter((att: any) => isImageFile(att.url)) || [];
 
+  const handleDownload = async (url, filename) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+
+      const link = document.createElement("a");
+      link.href = window.URL.createObjectURL(blob);
+      link.download = filename || "file";
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (error) {
+      console.error("Download failed", error);
+    }
+  };
   const handleImageClick = (index: number) => {
     setSelectedIndex(index);
     setPreviewOpen(true);
@@ -222,9 +242,10 @@ export default function NoticePreviewDialog({
                               <Button
                                 size="small"
                                 variant="contained"
-                                href={att.url}
-                                download
                                 fullWidth
+                                onClick={() =>
+                                  handleDownload(att.url, att.filename)
+                                }
                               >
                                 Download
                               </Button>
@@ -243,7 +264,7 @@ export default function NoticePreviewDialog({
         <Divider />
 
         {/* ✅ EDIT BUTTON ONLY FOR ADMIN / AVP */}
-        {isAdminOrAVP && (
+        {canEdit && (
           <Box className="!p-4 !flex !justify-end">
             <Button variant="contained" onClick={onEdit}>
               Edit
