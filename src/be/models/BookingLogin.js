@@ -146,17 +146,17 @@ const bookingLoginSchema = new mongoose.Schema(
       default: "cheque"
     },
     chequeNumber: {
-    type: String,
-    trim: true,
-  },
-  transactionId: {
-    type: String,
-    trim: true,
-  },
-  cashReceiptNumber: {
-    type: String,
-    trim: true,
-  },
+      type: String,
+      trim: true,
+    },
+    transactionId: {
+      type: String,
+      trim: true,
+    },
+    cashReceiptNumber: {
+      type: String,
+      trim: true,
+    },
     transactionDate: {
       type: Date,
     },
@@ -167,16 +167,16 @@ const bookingLoginSchema = new mongoose.Schema(
     slabPercentage: {
       type: String,
       enum: [
-        "BUSINESS DEVELOPMENT MANAGER — 50%",
-        "TEAM MANAGER — 60%",
-        "SENIOR MANAGER — 70%",
-        "GENERAL MANAGER — 80%",
-        "VICE PRESIDENT — 85%",
-        "PRESIDENT — 90%",
-        "ADDITIONAL DIRECTOR — 95%",
-        "DIRECTOR — 100%"
+        "50% BUSINESS DEVELOPMENT MANAGER",
+        "60% TEAM MANAGER",
+        "70% SENIOR MANAGER",
+        "80% GENERAL MANAGER",
+        "85% VICE PRESIDENT",
+        "90% PRESIDENT",
+        "95% ADDITIONAL DIRECTOR",
+        "100% DIRECTOR"
       ],
-      default: "BUSINESS DEVELOPMENT MANAGER — 50%",
+      default: "50% BUSINESS DEVELOPMENT MANAGER",
     },
     totalDiscountFromComm: {
       type: String,
@@ -227,22 +227,22 @@ const bookingLoginSchema = new mongoose.Schema(
 );
 
 // Method to calculate netSoldCopAmount
-bookingLoginSchema.methods.calculateNetSoldCopAmount = function() {
+bookingLoginSchema.methods.calculateNetSoldCopAmount = function () {
   const area = parseFloat(this.area) || 0;
   const projectRate = parseFloat(this.projectRate) || 0;
   const otherCharges1 = parseFloat(this.otherCharges1) || 0;
   const companyDiscount = parseFloat(this.companyDiscount) || 0;
   const plcValue = parseFloat(this.plcValue) || 0;
-  
+
   // Base amount
   let baseAmount = area * projectRate;
-  
+
   // Add other charges
   baseAmount += otherCharges1;
-  
+
   // Apply company discount
   baseAmount -= companyDiscount;
-  
+
   // Apply PLC calculation based on type
   if (this.plcType && plcValue > 0) {
     switch (this.plcType) {
@@ -260,15 +260,15 @@ bookingLoginSchema.methods.calculateNetSoldCopAmount = function() {
         break;
     }
   }
-  
+
   return Math.max(0, baseAmount).toString();
 };
 
 // Pre-save middleware to auto-calculate netSoldCopAmount
-bookingLoginSchema.pre('save', function(next) {
-  if (this.isModified('area') || this.isModified('projectRate') || 
-      this.isModified('otherCharges1') || this.isModified('companyDiscount') ||
-      this.isModified('plcType') || this.isModified('plcValue')) {
+bookingLoginSchema.pre('save', function (next) {
+  if (this.isModified('area') || this.isModified('projectRate') ||
+    this.isModified('otherCharges1') || this.isModified('companyDiscount') ||
+    this.isModified('plcType') || this.isModified('plcValue')) {
     this.netSoldCopAmount = this.calculateNetSoldCopAmount();
   }
   next();

@@ -1,4 +1,4 @@
-import { DEFAULT_USER_FORM } from "@/fe/pages/user/constants/users";
+import { DEFAULT_USER_FORM, SLAB_LABELS } from "@/fe/pages/user/constants/users";
 import { uploadFile } from "@/fe/pages/user/utils/uploadFile";
 import type { UserFormData, Employee } from "@/fe/pages/user/types";
 import {
@@ -203,24 +203,10 @@ export const formatDate = (dateString: string | undefined) => {
 export const previewIsImage = (v: string) =>
   /\.(jpe?g|png|gif|webp|avif|svg)$/i.test(v);
 
-export const getSlabLabel = (opt: string) =>
-  opt === ""
-    ? "Select a slab"
-    : (opt === "100"
-      ? "100% DIRECTOR"
-      : opt === "95"
-        ? "95% ADDITIONAL DIRECTOR"
-        : opt === "90"
-          ? "90% PRESIDENT"
-          : opt === "85"
-            ? "85% VICE PRESIDENT"
-            : opt === "80"
-              ? "80% GENERAL MANAGER"
-              : opt === "70"
-                ? "70% SENIOR MANAGER"
-                : opt === "60"
-                  ? "60% TEAM MANAGER"
-                  : "50% BUSINESS DEVELOPMENT MANAGER");
+export const getSlabLabel = (opt: string) => {
+  if (opt === "") return "Select a slab";
+  return SLAB_LABELS[opt] || "50% BUSINESS DEVELOPMENT MANAGER";
+};
 
 export const getFilteredSlabOptions = (
   allOptions: string[],
@@ -236,10 +222,10 @@ export const getFilteredSlabOptions = (
   return allOptions.filter((opt) => {
     if (opt === "") return true;
     const optValue = parseInt(opt);
-    // Always show options strictly less than logged-in user's slab
+    // Always show options less than or equal to logged-in user's slab
     // OR the current value of the employee being edited (so it doesn't disappear)
     return (
-      !isNaN(optValue) && (optValue < loggedInValue || opt === currentValue)
+      !isNaN(optValue) && (optValue <= loggedInValue || opt === currentValue)
     );
   });
 };
