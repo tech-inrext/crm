@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { AddIcon } from "@/components/ui/Component";
+import { AddIcon, Box } from "@/components/ui/Component";
 import PermissionGuard from "@/components/PermissionGuard";
 import { UserDialog, UserDialogView as UserDetailsDialog } from "./components/dialog";
 import UsersPageActionBar from "./components/UsersPageActionBar";
@@ -44,30 +44,42 @@ const UsersPage: React.FC = () => {
   } = useUsersPage();
 
   return (
-    <div className="p-4 sm:p-6">
+    <Box
+      sx={{
+        height: "calc(100vh - 64px)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
+        p: { xs: 1, sm: 2 },
+      }}
+    >
       {/* Header + search/add bar */}
-      <UsersPageActionBar
-        search={search}
-        onSearchChange={handleSearchChange}
-        onAdd={() => setOpen(true)}
-        showAllEmployees={showAllEmployees}
-        onToggleAllEmployees={() => setShowAllEmployees((v) => !v)}
-        isSystemAdmin={currentUser?.isSystemAdmin}
-      />
+      <Box sx={{ flexShrink: 0, mb: 2 }}>
+        <UsersPageActionBar
+          search={search}
+          onSearchChange={handleSearchChange}
+          onAdd={() => setOpen(true)}
+          showAllEmployees={showAllEmployees}
+          onToggleAllEmployees={() => setShowAllEmployees((v) => !v)}
+          isSystemAdmin={currentUser?.isSystemAdmin}
+        />
+      </Box>
 
       {/* Table / card list */}
-      <UsersList
-        loading={loading}
-        employees={employees}
-        page={page}
-        rowsPerPage={rowsPerPage}
-        totalItems={totalItems}
-        onPageChange={setPage}
-        onPageSizeChange={handlePageSizeChange}
-        onEditUser={openEditDialog}
-        onViewUser={openViewDialog}
-        canEdit={(user: Employee) => canEditEmployee(currentUser, user)}
-      />
+      <Box sx={{ flex: 1, overflow: "hidden" }}>
+        <UsersList
+          loading={loading}
+          employees={employees}
+          page={page}
+          rowsPerPage={rowsPerPage}
+          totalItems={totalItems}
+          onPageChange={setPage}
+          onPageSizeChange={handlePageSizeChange}
+          onEditUser={openEditDialog}
+          onViewUser={openViewDialog}
+          canEdit={(user: Employee) => canEditEmployee(currentUser, user)}
+        />
+      </Box>
 
       {/* Floating action button – mobile only */}
       <PermissionGuard
@@ -85,7 +97,7 @@ const UsersPage: React.FC = () => {
             zIndex: FAB_POSITION.zIndex,
             background: GRADIENTS.button,
           }}
-          className="fixed flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95"
+          className="fixed flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95 sm:hidden"
         >
           <AddIcon />
         </button>
@@ -107,8 +119,7 @@ const UsersPage: React.FC = () => {
           />
         )}
       </PermissionGuard>
-
-    </div>
+    </Box>
   );
 };
 

@@ -27,7 +27,7 @@ export const UsersList: React.FC<UsersListProps> = ({
   const employeeList = employees || [];
 
   const paginationBar = (
-    <div className="flex justify-center mt-8">
+    <div className=" py-4">
       <Pagination
         page={page}
         pageSize={rowsPerPage ?? 8}
@@ -40,37 +40,41 @@ export const UsersList: React.FC<UsersListProps> = ({
   );
 
   return (
-    <div className="w-full">
-      {loading || !employees ? (
-        <UsersSkeleton rows={rowsPerPage || 10} />
-      ) : employeeList.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {employeeList.map((user: Employee) => (
-            <UserCard
-              key={user.id ?? user._id}
-              user={{
-                name: user.name,
-                email: user.email,
-                designation: user.designation,
-                avatarUrl: user.avatarUrl,
-                photo: (user as any).photo,
-                phone: user.phone,
-                managerId: user.managerId,
-                departmentId: user.departmentId,
-                managerName: (user as any).managerName,
-                departmentName: (user as any).departmentName,
-              }}
-              onEdit={canEdit(user) ? () => onEditUser(user) : undefined}
-              onView={() => onViewUser(user)}
-              managers={managers}
-              departments={departments}
-            />
-          ))}
-        </div>
-      )}
-      {paginationBar}
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar pb-4">
+        {loading || !employees ? (
+          <UsersSkeleton rows={rowsPerPage || 10} />
+        ) : employeeList.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {employeeList.map((user: Employee) => (
+              <UserCard
+                key={user.id ?? user._id}
+                user={{
+                  name: user.name,
+                  email: user.email,
+                  designation: user.designation,
+                  avatarUrl: user.avatarUrl,
+                  photo: (user as any).photo,
+                  phone: user.phone,
+                  managerId: user.managerId,
+                  departmentId: user.departmentId,
+                  managerName: (user as any).managerName,
+                  departmentName: (user as any).departmentName,
+                }}
+                onEdit={canEdit(user) ? () => onEditUser(user) : undefined}
+                onView={() => onViewUser(user)}
+                managers={managers}
+                departments={departments}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+      <div className="flex-shrink-0 border-t border-gray-100 backdrop-blur-sm z-10">
+        {paginationBar}
+      </div>
     </div>
   );
 };
