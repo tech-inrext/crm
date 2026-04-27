@@ -55,7 +55,7 @@ export const MODULE_LAYOUT_STYLES = {
   // Mobile FAB styles
   mobileFab: {
     position: "fixed",
-    bottom: 24,
+    bottom: 120,
     right: 24,
     display: { xs: "flex", md: "none" },
     zIndex: 1201,
@@ -234,7 +234,7 @@ export const ROLES_STYLES = {
   // Roles FAB (no zIndex override)
   rolesFab: {
     position: "fixed",
-    bottom: 24,
+    bottom: 120,
     right: 24,
     display: { xs: "flex", md: "none" },
   } as SxProps<Theme>,
@@ -285,7 +285,7 @@ export const PROPERTIES_STYLES = {
   // Properties FAB
   propertiesFab: {
     position: "fixed",
-    bottom: 24,
+    bottom: 120,
     right: 24,
     display: { xs: "flex", md: "none" },
     zIndex: 1201,

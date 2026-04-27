@@ -345,19 +345,21 @@ const Leads: React.FC = () => {
       </React.Suspense>
 
       <PermissionGuard module="lead" action="write" fallback={<></>}>
-        <Fab
-          color="primary"
-          aria-label="add lead"
-          onClick={() => setOpen(true)}
-          disabled={saving}
-          sx={{
-            ...MODULE_STYLES.layout.mobileFab,
-            background: GRADIENTS.button,
-            "&:hover": { background: GRADIENTS.buttonHover },
-          }}
-        >
-          {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
-        </Fab>
+        {!open && !feedbackOpen && !siteVisitOpen && (
+          <Fab
+            color="primary"
+            aria-label="add lead"
+            onClick={() => setOpen(true)}
+            disabled={saving}
+            sx={{
+              ...MODULE_STYLES.layout.mobileFab,
+              background: GRADIENTS.button,
+              "&:hover": { background: GRADIENTS.buttonHover },
+            }}
+          >
+            {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
+          </Fab>
+        )}
       </PermissionGuard>
 
       <Snackbar
