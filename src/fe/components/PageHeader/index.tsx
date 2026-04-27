@@ -37,26 +37,35 @@ const PageHeader: React.FC<PageHeaderProps> = ({
 }) => {
   return (
     <Paper
-      elevation={2}
+      elevation={0}
       className={className}
       sx={{
-        p: 2,
-        borderRadius: { xs: 1, sm: 2, md: 3 },
-        mb: { xs: 1.5, sm: 2, md: 3 },
+        p: { xs: 2, sm: 2.5, md: 3 },
+        borderRadius: { xs: 2, sm: 3, md: 4 },
+        mb: { xs: 2, sm: 2.5, md: 3 },
         mt: 0,
-        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+        background: "#ffffff",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)",
+        border: "1px solid",
+        borderColor: "divider",
+        display: "flex",
+        flexDirection: "column",
+        gap: { xs: 2, md: 3 },
+        alignItems: "flex-start",
+        position: "relative",
         overflow: "visible",
       }}
     >
-      <Box sx={{ mb: { xs: 1.5, md: 3 } }}>
+      <Box sx={{ width: "100%" }}>
         <Typography
           variant="h4"
           sx={{
-            fontWeight: 700,
-            fontSize: { xs: "1.3rem", sm: "2rem", md: "2.5rem" },
+            fontWeight: 800,
+            fontSize: { xs: "1.75rem", sm: "2.25rem", md: "2.5rem" },
             color: "text.primary",
             mb: 0,
-            textAlign: { xs: "center", sm: "left" },
+            textAlign: "left",
+            letterSpacing: "-0.02em",
           }}
         >
           {title}
@@ -67,9 +76,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             variant="body2"
             sx={{
               color: "text.secondary",
-              fontSize: { xs: "0.8rem", sm: "0.9rem" },
-              textAlign: { xs: "center", sm: "left" },
+              fontSize: { xs: "0.85rem", sm: "0.95rem" },
+              textAlign: "left",
               mt: 0.5,
+              fontWeight: 500,
+              opacity: 0.8,
             }}
           >
             {subtitle}
@@ -80,12 +91,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
       {children && (
         <Box
           sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "column", md: "row" },
-            gap: { xs: 1.5, sm: 2, md: 3 },
-            alignItems: { xs: "stretch", md: "center" },
             width: "100%",
-            overflow: "visible",
+            display: "flex",
+            flexDirection: "column",
+            gap: { xs: 1.5, md: 2 },
+            alignItems: "stretch",
           }}
         >
           {children}
