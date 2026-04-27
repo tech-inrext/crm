@@ -11,7 +11,7 @@ dotenv.config({ path: path.join(__dirname, "../../../.env") });
 import dbConnect from "../../lib/mongodb.js";
 import Employee from "../models/Employee.js";
 import mongoose from "mongoose";
-import { calculateEmployeeStats } from "../workers/weeklyPerformanceSummary.js";
+import { calculateEmployeeStats, sendWeeklySummaryWhatsApp } from "../workers/weeklyPerformanceSummary.js";
 import { sendWeeklySummaryEmail } from "../email-service/weekly-performance-summary/weeklyPerformanceEmail.js";
 
 async function testSummaryMail() {
@@ -71,6 +71,9 @@ async function testSummaryMail() {
 
     console.log("📧 Sending Summary Email...");
     await sendWeeklySummaryEmail(employee, stats, dateRange);
+
+    console.log("📲 Sending Summary WhatsApp...");
+    await sendWeeklySummaryWhatsApp(employee, stats, dateRange);
 
     console.log("✅ Test completed successfully!");
     process.exit(0);

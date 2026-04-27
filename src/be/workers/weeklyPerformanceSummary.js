@@ -26,7 +26,7 @@ const weeklyPerformanceSummary = async (job) => {
         
         // Send WhatsApp if phone exists
         if (employee.phone) {
-          await sendWeeklySummaryWhatsApp(employee, stats);
+          await sendWeeklySummaryWhatsApp(employee, stats, dateRange);
         }
 
         // Send Email
@@ -122,28 +122,33 @@ export async function calculateEmployeeStats(employee, sinceDate) {
   return { leadStats, activityStats, mouStats };
 }
 
-async function sendWeeklySummaryWhatsApp(employee, stats) {
+export async function sendWeeklySummaryWhatsApp(employee, stats, dateRange) {
   try {
     if (!twilio.templates.weekly_performance_summary) return;
+
+    const { overallTotal, overallClosed } = stats.leadStats;
+    const conversionRate = overallTotal > 0 ? ((overallClosed / overallTotal) * 100).toFixed(1) : "0.0";
     
     await twilio.client.messages.create({
       from: twilio.whatsappNumber,
       to: `whatsapp:+91${employee.phone}`,
       contentSid: twilio.templates.weekly_performance_summary,
       contentVariables: JSON.stringify({
-        1: employee.name,
-        2: String(stats.leadStats.new),
-        3: String(stats.leadStats.inProgress),
-        4: String(stats.leadStats.detailsShared),
-        5: String(stats.leadStats.closed),
-        6: String(stats.leadStats.notInterested),
-        7: String(stats.activityStats.callsDone),
-        8: String(stats.activityStats.callbacksPending),
+        1: dateRange,
+        2: employee.name,
+        3: String(stats.leadStats.new),
+        4: String(stats.leadStats.inProgress),
+        5: String(stats.leadStats.detailsShared),
+        6: String(stats.leadStats.closed),
+        7: String(stats.leadStats.notInterested),
+        8: String(stats.activityStats.callsDone),
         9: String(stats.activityStats.siteVisitsDone),
-        10: String(stats.activityStats.siteVisitsPending),
-        11: String(stats.mouStats.generated),
-        12: String(stats.mouStats.approved),
-        13: String(stats.mouStats.pending),
+        10: String(stats.mouStats.generated),
+        11: String(stats.mouStats.approved),
+        12: String(stats.mouStats.pending),
+        13: String(overallTotal),
+        14: String(overallClosed),
+        15: String(conversionRate),
       })
     });
   } catch (error) {
