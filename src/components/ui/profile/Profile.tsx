@@ -258,8 +258,8 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
             </Typography>
             <Box sx={{ mt: 1, mb: 3, p: 2, borderRadius: 3, bgcolor: '#fff', border: '1px solid #f1f5f9' }}>
               <InfoRow icon={BusinessIcon} label="Department" value={user.departmentName || 'N/A'} />
+              <InfoRow icon={BadgeIcon} label="Designation" value={user.designation || 'N/A'} />
               <InfoRow icon={SupervisorAccountIcon} label="Manager" value={user.managerName || 'N/A'} />
-              <InfoRow icon={WorkIcon} label="Specialization" value={user.specialization || 'General'} />
               <InfoRow 
                 icon={CalendarTodayIcon} 
                 label="Joined" 
