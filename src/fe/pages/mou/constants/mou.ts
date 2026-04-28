@@ -5,7 +5,7 @@ export const MOU_APPROVE_URL = (id: string) =>
 export const MOU_RESEND_URL = (id: string) => `/api/v0/mou/resend-mail/${id}`;
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
-export const DEFAULT_PAGE_SIZE = 5;
+export const DEFAULT_PAGE_SIZE = 8;
 
 // ─── Permissions ──────────────────────────────────────────────────────────────
 export const MOU_PERMISSION_MODULE = "mou";

@@ -25,7 +25,7 @@ export function useMouPage() {
 
   // ─── Pagination & Search State ─────────────────────────────────────────────
   const [currentPage, setLocalPage] = useState(1);
-  const [pageSize, setLocalPageSize] = useState(DEFAULT_PAGE_SIZE);
+  const [pageSize, setLocalPageSize] = useState(8);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
 

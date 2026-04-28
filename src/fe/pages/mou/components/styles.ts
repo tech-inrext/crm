@@ -1,7 +1,7 @@
 import { SxProps, Theme } from "@mui/material";
 
 export const cardPaperSx: SxProps<Theme> = {
-  p: 4,
+  p: 1.5,
   position: "relative",
   borderRadius: 3,
   minHeight: 170,
@@ -40,12 +40,18 @@ export const avatarSx: SxProps<Theme> = {
 export const nameSx: SxProps<Theme> = {
   fontWeight: 800,
   fontSize: 18,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 };
 
 export const emailSx: SxProps<Theme> = {
   color: "text.secondary",
   fontSize: 14,
   mt: 0.5,
+  overflow: "hidden",
+  textOverflow: "ellipsis",
+  whiteSpace: "nowrap",
 };
 
 export const designationSx: SxProps<Theme> = {
@@ -64,14 +70,14 @@ export const actionWrapperSx: SxProps<Theme> = {
 export const buttonGroupSx: SxProps<Theme> = {
   display: "flex",
   justifyContent: "center",
-  gap: 2,
+  gap: 1,
   pt: 1,
 };
 
 export const approveBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
-  minWidth: 140,
+  minWidth: 100,
   height: 34,
   borderRadius: 2,
   backgroundColor: "success.main",
@@ -86,7 +92,7 @@ export const approveBtnSx: SxProps<Theme> = {
 export const rejectBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
-  minWidth: 120,
+  minWidth: 90,
   height: 34,
   borderRadius: 2,
   border: "1.5px solid",
@@ -103,7 +109,7 @@ export const rejectBtnSx: SxProps<Theme> = {
 export const previewBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
-  minWidth: 120,
+  minWidth: 90,
   height: 34,
   borderRadius: 2,
   "&:hover": {
@@ -122,7 +128,7 @@ export const cancelBtnSx: SxProps<Theme> = {
 export const resendBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
-  minWidth: 140,
+  minWidth: 100,
   height: 34,
   borderRadius: 2,
   "&:hover": {

@@ -5,7 +5,6 @@ import {
   Paper,
   Typography,
   Button,
-  Grid,
   Stack,
   Dialog,
   DialogTitle,
@@ -63,20 +62,30 @@ const MouList: React.FC<MouListProps> = ({
 
   return (
     <Box>
-      <Grid container spacing={2}>
+      <Box
+        sx={{
+          display: "grid",
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, 1fr)",
+            md: "repeat(3, 1fr)",
+            lg: "repeat(4, 1fr)",
+          },
+          gap: 1.5,
+        }}
+      >
         {items.map((emp) => (
-          <Grid item xs={12} sm={6} md={6} lg={4} key={emp._id}>
-            <MouCard
-              emp={emp}
-              view={view}
-              onApproveConfirm={(id) => openConfirm("approve", id)}
-              onRejectConfirm={(id) => openConfirm("reject", id)}
-              onPreview={openPreview}
-              onResend={onResend}
-            />
-          </Grid>
+          <MouCard
+            key={emp._id}
+            emp={emp}
+            view={view}
+            onApproveConfirm={(id) => openConfirm("approve", id)}
+            onRejectConfirm={(id) => openConfirm("reject", id)}
+            onPreview={openPreview}
+            onResend={onResend}
+          />
         ))}
-      </Grid>
+      </Box>
       <Dialog open={confirmOpen} onClose={handleCancel} fullWidth maxWidth="lg">
         <DialogTitle>
           <Box sx={dialogTitleStackSx}>
