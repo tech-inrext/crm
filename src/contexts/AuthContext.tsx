@@ -14,6 +14,7 @@ axios.defaults.withCredentials = true;
 
 interface User {
   _id: string;
+  employeeProfileId?: string;
   isSystemAdmin?: boolean;
   name: string;
   email: string;
@@ -36,6 +37,7 @@ interface User {
       }; // Can be either role ID (string) or full role object
   designation?: string;
   departmentId?: string;
+  departmentName?: string;
   managerId?: string;
   joiningDate?: string;
   gender?: string;
