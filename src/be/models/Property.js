@@ -130,7 +130,7 @@ const propertySchema = new mongoose.Schema(
     },
     sizeUnit: {
       type: String,
-      enum: ["sq.ft.", "sq.m.", "sq.yd.", "acres", "hectares", ""],
+      enum: ["sq.ft.", "sq.m.", "sq.yd.", "acres", "acre", "hectares", ""],
       default: "sq.ft.",
     },
 

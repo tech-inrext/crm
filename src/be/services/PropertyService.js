@@ -85,6 +85,55 @@ class PropertyService extends Service {
   }
 
   // GET all properties with filtering and pagination
+  // Helper to format property for frontend
+  async formatPropertyForFrontend(property, withChildren = "false") {
+    if (!property) return null;
+    
+    // Convert to plain object if it's a Mongoose document
+    const propertyObj = property.toObject ? property.toObject() : { ...property };
+    
+    // Ensure propertyType is an array
+    const originalType = propertyObj.propertyType;
+    const propertyTypes = Array.isArray(originalType) ? originalType : [originalType];
+    
+    // For main projects, identify sub-types
+    if (propertyObj.parentId === null) {
+      if (!propertyTypes.includes("project")) {
+        propertyTypes.unshift("project");
+      }
+      
+      const subTypes = await Property.distinct("propertyType", { parentId: propertyObj._id });
+      subTypes.forEach(type => {
+        if (type !== "project" && !propertyTypes.includes(type)) {
+          propertyTypes.push(type);
+        }
+      });
+      
+      // Categorize sub-properties if requested or available
+      if (withChildren === "true" || propertyObj.subProperties) {
+        let subProperties = propertyObj.subProperties;
+        if (!subProperties && withChildren === "true") {
+          subProperties = await Property.find({ parentId: propertyObj._id }).lean();
+          propertyObj.subProperties = subProperties;
+        }
+        
+        if (subProperties) {
+          propertyObj.residentialProperties = subProperties.filter(p => p.propertyType === 'residential');
+          propertyObj.commercialProperties = subProperties.filter(p => p.propertyType === 'commercial');
+          propertyObj.plotProperties = subProperties.filter(p => p.propertyType === 'plot');
+        }
+      }
+    } else {
+      // For sub-properties, populate the specific array for frontend forms
+      if (originalType === "residential") propertyObj.residentialProperties = [{ ...propertyObj }];
+      else if (originalType === "commercial") propertyObj.commercialProperties = [{ ...propertyObj }];
+      else if (originalType === "plot") propertyObj.plotProperties = [{ ...propertyObj }];
+    }
+    
+    propertyObj.propertyType = propertyTypes;
+    return propertyObj;
+  }
+
   async getAllProperties(req, res) {
     try {
       const { 
@@ -203,34 +252,14 @@ class PropertyService extends Service {
         Property.countDocuments(query)
       ]);
 
-      // For main projects, count sub-properties
-      if (parentOnly === "true" || parentId === "null") {
-        for (let property of properties) {
-          const subPropertyCount = await Property.countDocuments({
-            parentId: property._id,
-          });
-          property.subPropertyCount = subPropertyCount;
-        }
-      }
-
-      // Include children if requested
-      if (includeChildren === "true") {
-        for (let property of properties) {
-          if (property.parentId === null) {
-            const children = await Property.find({
-              parentId: property._id,
-            })
-            .populate("createdBy", "name email")
-            .lean();
-            
-            property.children = children;
-          }
-        }
-      }
+      // Post-process properties to handle hierarchy and property types
+      const formattedProperties = await Promise.all(
+        properties.map(p => this.formatPropertyForFrontend(p, includeChildren))
+      );
 
       return res.status(200).json({
         success: true,
-        data: properties,
+        data: formattedProperties,
         pagination: {
           totalItems: totalProperties,
           currentPage,
@@ -742,9 +771,12 @@ class PropertyService extends Service {
         await newProperty.populate("parentId", "projectName builderName location price minPrice maxPrice");
       }
 
+      // Format response for frontend
+      const formattedProperty = await this.formatPropertyForFrontend(newProperty);
+
       return res.status(201).json({
         success: true,
-        data: newProperty,
+        data: formattedProperty,
         message: finalData.parentId 
           ? `${propertyType} property created successfully under main project` 
           : "Main project created successfully"
@@ -1036,14 +1068,14 @@ class PropertyService extends Service {
         createdSubProperties.push(subProperty);
       }
 
-      // Populate main project for response
-      await mainProject.populate("createdBy", "name email");
+      // Format response
+      const formattedProject = await this.formatPropertyForFrontend(mainProject, "true");
 
       return res.status(201).json({
         success: true,
         data: {
-          mainProject,
-          subProperties: createdSubProperties
+          mainProject: formattedProject,
+          subProperties: formattedProject.subProperties
         },
         message: `Main project created with ${createdSubProperties.length} sub-properties: ${filteredTypes.join(', ')}`
       });
@@ -1117,7 +1149,37 @@ class PropertyService extends Service {
         });
       }
 
-      // If requested, include child properties
+      // Ensure propertyType is an array for frontend compatibility
+      const propertyTypes = Array.isArray(property.propertyType)
+        ? property.propertyType
+        : [property.propertyType];
+
+      // Add project type to list if it's a main project and not already there
+      if (property.parentId === null && !propertyTypes.includes("project")) {
+        propertyTypes.unshift("project");
+      }
+
+      // Populate nested property arrays for frontend forms
+      if (property.propertyType === "residential") {
+        property.residentialProperties = [ { ...property } ];
+      } else if (property.propertyType === "commercial") {
+        property.commercialProperties = [ { ...property } ];
+      } else if (property.propertyType === "plot") {
+        property.plotProperties = [ { ...property } ];
+      }
+
+      // If it's a main project, always identify what types of sub-properties it has
+      // to ensure the frontend selector shows them as selected
+      if (property.parentId === null) {
+        const subTypes = await Property.distinct("propertyType", { parentId: property._id });
+        subTypes.forEach(type => {
+          if (!propertyTypes.includes(type)) {
+            propertyTypes.push(type);
+          }
+        });
+      }
+
+      // If requested, include full child properties and categorize them
       if (withChildren === "true" && property.parentId === null) {
         const subProperties = await Property.find({
           parentId: property._id,
@@ -1126,11 +1188,26 @@ class PropertyService extends Service {
           .lean();
 
         property.subProperties = subProperties;
+
+        // Also categorize sub-properties by type for unified forms
+        property.residentialProperties = subProperties.filter(p => p.propertyType === 'residential');
+        property.commercialProperties = subProperties.filter(p => p.propertyType === 'commercial');
+        property.plotProperties = subProperties.filter(p => p.propertyType === 'plot');
+
+        // Add child types to propertyTypes array
+        subProperties.forEach(p => {
+          if (!propertyTypes.includes(p.propertyType)) {
+            propertyTypes.push(p.propertyType);
+          }
+        });
       }
+
+      // Format response
+      const formattedProperty = await this.formatPropertyForFrontend(property, withChildren);
 
       return res.status(200).json({
         success: true,
-        data: property,
+        data: formattedProperty,
       });
     } catch (error) {
       console.error("Error fetching Property:", error);
@@ -1169,6 +1246,21 @@ class PropertyService extends Service {
         });
       }
 
+      // Helper for formatting media assets
+      const formatMediaArray = (arr) => {
+        if (!arr || !Array.isArray(arr)) return undefined;
+        return arr.map(item => {
+          const itemData = {
+            url: item.url || (typeof item === 'string' ? item : ''),
+            title: item.title || '',
+            description: item.description || '',
+            isPrimary: item.isPrimary || false,
+            uploadedAt: item.uploadedAt || new Date().toISOString()
+          };
+          return itemData.url ? itemData : null;
+        }).filter(item => item !== null);
+      };
+
       // Check if price is being updated
       const isPriceChanging = req.body.price !== undefined && 
                              req.body.price !== existingProperty.price;
@@ -1187,13 +1279,16 @@ class PropertyService extends Service {
             delete updateData.propertyType;
           }
         }
-        // Ensure it's a valid enum value
-        const validTypes = ["project", "residential", "commercial", "plot"];
-        if (!validTypes.includes(updateData.propertyType)) {
-          return res.status(400).json({
-            success: false,
-            message: `Invalid property type. Must be one of: ${validTypes.join(', ')}`
-          });
+        
+        // Ensure it's a valid enum value if it still exists in updateData
+        if (updateData.propertyType) {
+          const validTypes = ["project", "residential", "commercial", "plot"];
+          if (!validTypes.includes(updateData.propertyType)) {
+            return res.status(400).json({
+              success: false,
+              message: `Invalid property type. Must be one of: ${validTypes.join(', ')}`
+            });
+          }
         }
       }
 
@@ -1212,113 +1307,119 @@ class PropertyService extends Service {
         updateData.slug = undefined;
       }
 
-      // Prevent changing parentId for main projects with children
-      if (updateData.parentId !== undefined) {
+      // Prevent changing parentId for main projects with children (cannot turn project with children into a sub-property)
+      if (updateData.parentId && updateData.parentId !== null) {
         if (existingProperty && existingProperty.parentId === null) {
           const childCount = await Property.countDocuments({ parentId: existingProperty._id });
           if (childCount > 0) {
             return res.status(400).json({
               success: false,
-              message: "Cannot change parentId for main project with existing sub-properties",
+              message: "Cannot assign a parent to a main project that already has sub-properties",
             });
           }
         }
       }
 
-      // Remove nested property arrays if they exist (these should only be used during creation)
-      // During updates, we should only update the main property fields
-      delete updateData.residentialProperties;
-      delete updateData.commercialProperties;
-      delete updateData.plotProperties;
-
-      // Also need to handle propertyImages, floorPlans, etc. appropriately
-      // Convert arrays to proper format if they exist
-      if (updateData.propertyImages && Array.isArray(updateData.propertyImages)) {
-        updateData.propertyImages = updateData.propertyImages.map(img => {
-          // Handle both string URLs and object formats
-          const imageData = {
-            url: img.url || (typeof img === 'string' ? img : ''),
-            title: img.title || '',
-            description: img.description || '',
-            isPrimary: img.isPrimary || false,
-            uploadedAt: img.uploadedAt || new Date().toISOString()
-          };
-          // Only include if URL exists
-          return imageData.url ? imageData : null;
-        }).filter(img => img !== null);
+      // Safety check: Prevent self-referencing parentId
+      if (updateData.parentId && updateData.parentId.toString() === existingProperty._id.toString()) {
+        updateData.parentId = null;
       }
 
-      if (updateData.floorPlans && Array.isArray(updateData.floorPlans)) {
-        updateData.floorPlans = updateData.floorPlans.map(plan => {
-          const planData = {
-            url: plan.url || (typeof plan === 'string' ? plan : ''),
-            title: plan.title || '',
-            description: plan.description || '',
-            type: plan.type || '2d',
-            uploadedAt: plan.uploadedAt || new Date().toISOString()
-          };
-          return planData.url ? planData : null;
-        }).filter(plan => plan !== null);
-      }
+      // Handle sub-property updates if this is a main project and sub-properties were provided in req.body
+      if (existingProperty.parentId === null) {
+        const subPropArrays = [
+          { key: 'residentialProperties', type: 'residential' },
+          { key: 'commercialProperties', type: 'commercial' },
+          { key: 'plotProperties', type: 'plot' }
+        ];
 
-      if (updateData.images && Array.isArray(updateData.images)) {
-        updateData.images = updateData.images.map(img => {
-          const imageData = {
-            url: img.url || (typeof img === 'string' ? img : ''),
-            title: img.title || '',
-            description: img.description || '',
-            isPrimary: img.isPrimary || false,
-            uploadedAt: img.uploadedAt || new Date().toISOString()
-          };
-          return imageData.url ? imageData : null;
-        }).filter(img => img !== null);
-      }
+        for (const { key, type } of subPropArrays) {
+          if (req.body[key] && Array.isArray(req.body[key])) {
+            for (const subData of req.body[key]) {
+              // Safety: don't process if it's the main project itself
+              if (subData._id && subData._id.toString() === existingProperty._id.toString()) continue;
 
-      const updatedProperty = await Property.findByIdAndUpdate(
-        existingProperty._id,
-        { $set: updateData },
-        {
-          new: true,
-          runValidators: true,
-          context: "query",
-        }
-      ).populate("createdBy", "name email");
-
-      if (!updatedProperty) {
-        return res.status(404).json({
-          success: false,
-          message: "Property not found after update",
-        });
-      }
-
-      // ✅ If this is a main project and its price changed, update sub-properties' price
-      if (updateData.price && existingProperty.parentId === null) {
-        const subProperties = await Property.find({ parentId: existingProperty._id });
-        if (subProperties.length > 0) {
-          // Update all sub-properties that don't have their own price set
-          for (const subProp of subProperties) {
-            if (!subProp.price || subProp.price === 'Contact for price') {
-              await Property.findByIdAndUpdate(subProp._id, {
-                $set: { price: updateData.price }
-              });
+              if (subData._id && mongoose.Types.ObjectId.isValid(subData._id)) {
+                // Update existing sub-property
+                const { _id, createdAt, updatedAt, __v, ...updateFields } = subData;
+                // Ensure sub-property keeps its parent
+                updateFields.parentId = existingProperty._id;
+                
+                // Format media arrays if they exist in updateFields
+                if (updateFields.propertyImages) updateFields.propertyImages = formatMediaArray(updateFields.propertyImages);
+                if (updateFields.floorPlans) updateFields.floorPlans = formatMediaArray(updateFields.floorPlans);
+                
+                await Property.findByIdAndUpdate(_id, { $set: updateFields });
+              } else if (subData.propertyName || subData.price) {
+                // Create new sub-property
+                const newSub = new Property({
+                  ...subData,
+                  parentId: existingProperty._id,
+                  propertyType: type,
+                  projectName: updateData.projectName || existingProperty.projectName,
+                  builderName: updateData.builderName || existingProperty.builderName,
+                  location: updateData.location || existingProperty.location,
+                  paymentPlan: subData.paymentPlan || updateData.paymentPlan || existingProperty.paymentPlan,
+                  createdBy: req.employee?._id || req.user?._id || existingProperty.createdBy,
+                  hierarchyLevel: 1,
+                  propertyImages: formatMediaArray(subData.propertyImages),
+                  floorPlans: formatMediaArray(subData.floorPlans)
+                });
+                await newSub.save();
+              }
             }
           }
         }
       }
 
-      // If this is a sub-property AND its price changed, update parent's price range
-      if (isPriceChanging && updatedProperty.parentId) {
-        try {
-          await Property.updateParentPriceRange(updatedProperty.parentId);
-        } catch (parentUpdateError) {
-          console.error("Failed to update parent price range:", parentUpdateError);
-          // Don't fail the main request if parent update fails
+      // Also need to handle propertyImages, floorPlans, etc. appropriately
+      if (updateData.propertyImages) updateData.propertyImages = formatMediaArray(updateData.propertyImages);
+      if (updateData.floorPlans) updateData.floorPlans = formatMediaArray(updateData.floorPlans);
+      if (updateData.images) updateData.images = formatMediaArray(updateData.images);
+      if (updateData.creatives) updateData.creatives = formatMediaArray(updateData.creatives);
+      if (updateData.videos) updateData.videos = formatMediaArray(updateData.videos);
+
+      // Final cleanup of updateData to ensure no arrays that might interfere with root update
+      delete updateData.residentialProperties;
+      delete updateData.commercialProperties;
+      delete updateData.plotProperties;
+
+      const updatedProperty = await Property.findByIdAndUpdate(
+        existingProperty._id,
+        { $set: updateData },
+        { new: true, runValidators: true }
+      );
+
+      // ✅ Update price range and sub-property prices
+      if (existingProperty.parentId === null) {
+        await Property.updateParentPriceRange(existingProperty._id);
+        
+        if (updateData.price) {
+          const subProperties = await Property.find({ parentId: existingProperty._id });
+          for (const subProp of subProperties) {
+            if (!subProp.price || subProp.price === 'Contact for price') {
+              await Property.findByIdAndUpdate(subProp._id, { $set: { price: updateData.price } });
+            }
+          }
+        }
+      } else {
+        // If this is a sub-property AND its price changed, update parent's price range
+        if (isPriceChanging) {
+          try {
+            await Property.updateParentPriceRange(updatedProperty.parentId);
+          } catch (parentUpdateError) {
+            console.error("Failed to update parent price range:", parentUpdateError);
+          }
         }
       }
 
+      // Format response
+      const finalProperty = await this.formatPropertyForFrontend(updatedProperty, "true");
+
       return res.status(200).json({
         success: true,
-        data: updatedProperty,
+        data: finalProperty,
+        message: "Property updated successfully",
       });
     } catch (error) {
       console.error("Error updating property:", error);
