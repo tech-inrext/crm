@@ -29,6 +29,7 @@ import {
   tabLabelBoxSx,
   badgeTypographySx,
   tabTextTypographySx,
+  mouListScrollContainerSx,
 } from "./styles";
 
 const MOUPage: React.FC = () => {
@@ -82,13 +83,13 @@ const MOUPage: React.FC = () => {
               sx={tabSx}
               label={
                 <Box sx={tabLabelBoxSx}>
+                  <Typography variant="body2" sx={tabTextTypographySx}>PENDING</Typography>
                   <Typography 
                     variant="caption" 
                     sx={badgeTypographySx("error")}
                   >
                     {pendingCount}
                   </Typography>
-                  <Typography variant="body2" sx={tabTextTypographySx}>PENDING</Typography>
                 </Box>
               }
             />
@@ -98,13 +99,13 @@ const MOUPage: React.FC = () => {
               sx={tabSx}
               label={
                 <Box sx={tabLabelBoxSx}>
+                  <Typography variant="body2" sx={tabTextTypographySx}>COMPLETED</Typography>
                   <Typography 
                     variant="caption" 
                     sx={badgeTypographySx("success")}
                   >
                     {completedCount}
                   </Typography>
-                  <Typography variant="body2" sx={tabTextTypographySx}>COMPLETED</Typography>
                 </Box>
               }
             />
@@ -117,24 +118,28 @@ const MOUPage: React.FC = () => {
           </Box>
         ) : (
           <Box sx={contentGridSx}>
-            <Paper sx={listPaperSx} elevation={1}>
+            <Box sx={listPaperSx}>
               {items.length === 0 ? (
-                <Typography>
-                  {view === "pending"
-                    ? "No pending MOUs."
-                    : "No completed MOUs."}
-                </Typography>
+                <Box sx={mouListScrollContainerSx}>
+                  <Typography>
+                    {view === "pending"
+                      ? "No pending MOUs."
+                      : "No completed MOUs."}
+                  </Typography>
+                </Box>
               ) : (
                 <>
-                  <MouList
-                    items={items}
-                    loading={loading}
-                    view={view}
-                    onMarkComplete={handleMarkComplete}
-                    onApprove={handleApprove}
-                    onReject={handleReject}
-                    onResend={handleResend}
-                  />
+                  <Box sx={mouListScrollContainerSx}>
+                    <MouList
+                      items={items}
+                      loading={loading}
+                      view={view}
+                      onMarkComplete={handleMarkComplete}
+                      onApprove={handleApprove}
+                      onReject={handleReject}
+                      onResend={handleResend}
+                    />
+                  </Box>
 
                   <Box sx={paginationContainerSx}>
                     <Pagination
@@ -146,11 +151,12 @@ const MOUPage: React.FC = () => {
                         setRowsPerPage(s);
                         setPage(1);
                       }}
+                      pageSizeOptions={[8, 16, 24, 32]}
                     />
                   </Box>
                 </>
               )}
-            </Paper>
+            </Box>
           </Box>
         )}
       </Box>

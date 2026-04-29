@@ -1,12 +1,12 @@
 import { SxProps, Theme } from "@mui/material";
 
 export const containerSx: SxProps<Theme> = {
-  p: { xs: 1, sm: 2, md: 3 },
-  pt: { xs: 2, sm: 3, md: 4 },
-  minHeight: "100vh",
-  bgcolor: "background.default",
+  p: { xs: 1, sm: 2 },
+  height: "calc(100vh - 64px)",
   width: "100%",
   overflow: "hidden",
+  display: "flex",
+  flexDirection: "column",
 };
 
 export const searchContainerSx: SxProps<Theme> = {
@@ -16,8 +16,6 @@ export const searchContainerSx: SxProps<Theme> = {
 };
 
 export const tabsWrapperSx: SxProps<Theme> = {
-  mt: 2,
-  mb: 2,
   maxWidth: "1200px",
   width: "100%",
 };
@@ -47,16 +45,34 @@ export const loadingContainerSx: SxProps<Theme> = {
 };
 
 export const contentGridSx: SxProps<Theme> = {
-  display: "grid",
-  gap: 2,
+  flex: 1,
+  overflow: "hidden",
+  display: "flex",
+  flexDirection: "column",
 };
 
 export const listPaperSx: SxProps<Theme> = {
   p: 2,
+  flex: 1,
+  overflow: "hidden",
+  display: "flex",
+  flexDirection: "column",
+  backgroundColor: "transparent",
+  backgroundImage: "none",
+  boxShadow: "none",
+};
+
+export const mouListScrollContainerSx: SxProps<Theme> = {
+  flex: 1,
+  overflowY: "auto",
+  pr: 1,
+  pt: 1.5,
+  pb: 2,
 };
 
 export const paginationContainerSx: SxProps<Theme> = {
-  mt: 2,
+  mt: "auto",
+  pt: 1,
 };
 
 export const tabsSx: SxProps<Theme> = {
@@ -83,9 +99,9 @@ export const tabSx: SxProps<Theme> = {
 
 export const tabLabelBoxSx: SxProps<Theme> = {
   display: "flex",
-  flexDirection: "column",
+  flexDirection: "row",
   alignItems: "center",
-  gap: 0.5,
+  gap: 1,
 };
 
 export const badgeTypographySx = (type: "error" | "success"): SxProps<Theme> => ({

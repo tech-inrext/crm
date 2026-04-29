@@ -43,7 +43,7 @@ const MouCard: React.FC<MouCardProps> = ({
         <Box sx={headerStackSx}>
           <Box sx={infoStackSx}>
             <Avatar sx={avatarSx}>{getInitials(emp.name)}</Avatar>
-            <Box>
+            <Box sx={{ minWidth: 0, flex: 1 }}>
               <Typography sx={nameSx}>{emp.name}</Typography>
               <Typography sx={emailSx}>{emp.email}</Typography>
               {emp.designation && (
