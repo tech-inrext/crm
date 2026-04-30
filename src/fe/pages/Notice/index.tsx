@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect } from "react";
+import React, { useEffect, useCallback } from "react";
 import NoticeBoardHeader from "@/fe/pages/Notice/component/NoticeBoardHeader";
 import Pagination from "@/components/ui/Navigation/Pagination";
 import { Box, Typography, Stack, Container } from "@mui/material";
@@ -13,23 +13,30 @@ import { gridStyles } from "@/fe/pages/Notice/utils/noticeUtils";
 import { useNoticePagination } from "@/fe/pages/Notice/hooks/useNoticePagination";
 
 export default function NoticesDashboard() {
-  const { meta, loading, fetchNotices, pinnedNotices, regularNotices } =
-    useNotices();
+  const {
+    meta,
+    loading,
+    getAllNotice,
+    pinnedNotices,
+    regularNotices,
+    deleteNoticeLocal,
+    updateNoticeLocal,
+  } = useNotices();
 
-  /* ---------------- FILTER ---------------- */
+  /* ✅ FILTER */
+  const handleFilterChange = useCallback(
+    (filters: any) => {
+      getAllNotice(filters);
+    },
+    [getAllNotice],
+  );
 
-  const handleFilterChange = (filters: any) => {
-    fetchNotices(filters);
-  };
+  /* ✅ ONLY API AFTER CREATE */
+  const handleNoticeAdded = useCallback(() => {
+    getAllNotice();
+  }, [getAllNotice]);
 
-  /* ---------------- AUTO REFRESH ---------------- */
-
-  const handleNoticeAdded = () => {
-    fetchNotices(); // refresh notices after publish
-  };
-
-  /* ---------------- PAGINATION ---------------- */
-
+  /* ✅ PAGINATION */
   const {
     page,
     rowsPerPage,
@@ -40,30 +47,22 @@ export default function NoticesDashboard() {
   } = useNoticePagination(1, 8);
 
   useEffect(() => {
-    setTotalItems(regularNotices.length);
+    setTotalItems(regularNotices?.length || 0);
   }, [regularNotices, setTotalItems]);
 
-  const paginatedNotices = regularNotices.slice(
+  const paginatedNotices = (regularNotices || []).slice(
     (page - 1) * rowsPerPage,
-    page * rowsPerPage
+    page * rowsPerPage,
   );
 
   return (
-    <Container
-      maxWidth={false}
-      sx={{
-        bgcolor: "#fafaf9",
-        p: 1,
-        ml: { xs: 0, sm: 0.5 },
-      }}
-    >
+    <Container maxWidth={false} sx={{ bgcolor: "#fafaf9", p: 1 }}>
       {/* HEADER */}
-
       <NoticeBoardHeader
         onFilterChange={handleFilterChange}
-        onNoticeAdded={handleNoticeAdded}   // ✅ important
-        categories={meta.categories}
-        priorities={meta.priorities}
+        onNoticeAdded={handleNoticeAdded}
+        categories={meta?.categories || []}
+        priorities={meta?.priorities || []}
       />
 
       {loading ? (
@@ -74,9 +73,8 @@ export default function NoticesDashboard() {
         </Box>
       ) : (
         <>
-          {/* Pinned Notices */}
-
-          {pinnedNotices.length > 0 && (
+          {/* PINNED */}
+          {pinnedNotices?.length > 0 && (
             <>
               <Stack
                 direction="row"
@@ -93,76 +91,58 @@ export default function NoticesDashboard() {
 
               <Box sx={gridStyles} mb={4}>
                 {pinnedNotices.map((notice) => (
-                  <NoticeCard key={notice._id} notice={notice} />
+                  <NoticeCard
+                    key={notice._id}
+                    notice={notice}
+                    getAllNotice={getAllNotice}
+                    updateNoticeLocal={updateNoticeLocal}
+                    onDelete={deleteNoticeLocal}
+                  />
                 ))}
               </Box>
             </>
           )}
 
-          {/* All Notices */}
-
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-            mb={2}
-          >
-            <Stack direction="row" alignItems="center" spacing={1}>
+          {/* ALL */}
+          <Stack direction="row" justifyContent="space-between" mb={2}>
+            <Stack direction="row" spacing={1}>
               <ViewListIcon />
-              <Typography variant="h6" fontWeight={600}>
-                All Notices
-              </Typography>
+              <Typography variant="h6">All Notices</Typography>
             </Stack>
 
-            <Box className="bg-white border border-blue-300 min-w-[38px] h-[38px] flex items-center mr-5 justify-center rounded-full text-[13px] font-semibold">
-              {regularNotices.length}
+            <Box className="bg-white border min-w-[38px] h-[38px] flex items-center justify-center rounded-full">
+              {regularNotices?.length || 0}
             </Box>
           </Stack>
 
-          {/* Regular Notices */}
-
-          <Box
-            sx={{
-              ...gridStyles,
-              minHeight: 380,
-              display: regularNotices.length === 0 ? "flex" : "grid",
-              alignItems: "center",
-              justifyContent: "center",
-              gridAutoRows: "max-content",
-            }}
-          >
+          {/* LIST */}
+          <Box sx={gridStyles}>
             {paginatedNotices.length > 0 ? (
               paginatedNotices.map((notice) => (
                 <NoticeCard
                   key={notice._id}
                   notice={notice}
-                  showBorder={false}
+                  onDelete={deleteNoticeLocal}
+                  getAllNotice={getAllNotice}
+                  updateNoticeLocal={updateNoticeLocal}
                 />
               ))
             ) : (
-              <Typography
-                color="text.secondary"
-                className="text-center text-lg font-medium"
-              >
-                No notices found
-              </Typography>
+              <Typography textAlign="center">No notices found</Typography>
             )}
           </Box>
 
-          {/* Pagination */}
-
-          <Box sx={{ mt: 2 }}>
-            <Pagination
-              page={page}
-              pageSize={rowsPerPage}
-              total={totalItems}
-              onPageChange={(p) => setPage(p)}
-              onPageSizeChange={(s) => {
-                setRowsPerPage(s);
-                setPage(1);
-              }}
-            />
-          </Box>
+          {/* PAGINATION */}
+          <Pagination
+            page={page}
+            pageSize={rowsPerPage}
+            total={totalItems}
+            onPageChange={(p) => setPage(p)}
+            onPageSizeChange={(s) => {
+              setRowsPerPage(s);
+              setPage(1);
+            }}
+          />
         </>
       )}
     </Container>

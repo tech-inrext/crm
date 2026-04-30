@@ -46,8 +46,11 @@ const priorities = ["Urgent", "Important", "Info"];
 
 type PendingFile = { id: string; file: File; customName: string };
 
-type Props = { open: boolean; onClose: () => void; onNoticeAdded?: () => void };
-
+type Props = {
+  open: boolean;
+  onClose: () => void;
+  onNoticeAdded?: () => void;
+};
 export default function AddNoticeModal({
   open,
   onClose,
@@ -73,9 +76,50 @@ export default function AddNoticeModal({
   const [snackbarSeverity, setSnackbarSeverity] = useState<"error" | "success">(
     "error",
   );
+  const getFileNameWithExt = (file: any) => {
+    const url = file?.url || "";
+
+    // 1. try from filename
+    if (file?.filename && file.filename.includes(".")) {
+      return file.filename;
+    }
+
+    // 2. try from URL
+    const urlName = url.split("?")[0].split("/").pop() || "";
+    if (urlName.includes(".")) return urlName;
+
+    // 3. infer from mime type OR fallback
+    const type = file?.type || file?.mimeType;
+
+    let ext = "";
+
+    switch (type) {
+      case "application/pdf":
+        ext = ".pdf";
+        break;
+      case "image/png":
+        ext = ".png";
+        break;
+      case "image/jpeg":
+        ext = ".jpg";
+        break;
+      case "application/msword":
+        ext = ".doc";
+        break;
+      case "application/vnd.openxmlformats-officedocument.wordprocessingml.document":
+        ext = ".docx";
+        break;
+      default:
+        ext = "";
+    }
+
+    const baseName = file?.filename || file?.customName || urlName || "file";
+
+    return baseName.includes(".") ? baseName : baseName + ext;
+  };
   const [editorFocused, setEditorFocused] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
-
+  const avpFetchedRef = useRef(false);
   const auth = useAuth();
   const isSystemAdmin = Boolean(auth?.isSystemAdmin);
   const isAVP =
@@ -149,35 +193,25 @@ export default function AddNoticeModal({
   }, [open]);
 
   /* ---------------- META ---------------- */
-  useEffect(() => {
-    const loadMeta = async () => {
-      try {
-        const res = await fetch("/api/v0/notice/meta");
-        const data = await res.json();
+  const metaLoadedRef = useRef(false);
 
-        if (isSystemAdmin) {
-          setDepartments(["All"]);
-        } else if (isAVP) {
-          setDepartments(["All", "Team"]);
-        } else {
-          setDepartments(data?.data?.departments || ["All"]);
-        }
+  useEffect(() => {
+    if (!isSystemAdmin) return;
+
+    if (avpFetchedRef.current) return;
+    avpFetchedRef.current = true;
+
+    const loadAVPs = async () => {
+      try {
+        const res = await fetch("/api/v0/employee/getAllAVPEmployees");
+        const data = await res.json();
+        setAvps(data?.data || []);
       } catch {
-        setDepartments(isAVP ? ["All", "Team"] : ["All"]);
+        setAvps([]);
       }
     };
 
-    loadMeta();
-  }, [isSystemAdmin, isAVP]);
-
-  // Admin sees AVPs
-  useEffect(() => {
-    if (isSystemAdmin) {
-      fetch("/api/v0/employee/getAllAVPEmployees")
-        .then((res) => res.json())
-        .then((data) => setAvps(data?.data || []))
-        .catch(() => setAvps([]));
-    }
+    loadAVPs();
   }, [isSystemAdmin]);
 
   // AVP sees "All" / "Team"
@@ -186,17 +220,18 @@ export default function AddNoticeModal({
   const pickFiles = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files ?? []);
     if (!files.length) return;
+
     setPendingFiles((prev) => [
       ...prev,
       ...files.map((f) => ({
         id: `${f.name}-${Date.now()}`,
         file: f,
-        customName: f.name.replace(/\.[^.]+$/, ""),
+        customName: f.name, // ✅ KEEP EXTENSION
       })),
     ]);
+
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
-
   const uploadToS3 = async (file: File): Promise<string> => {
     const res = await fetch("/api/v0/s3/upload-url", {
       method: "POST",
@@ -219,8 +254,19 @@ export default function AddNoticeModal({
   };
 
   /* ---------------- SUBMIT ---------------- */
-  const handleSubmit = async () => {
+  // ---------------- SUBMIT ----------------
+  const handleSubmit = async (e?: React.MouseEvent | React.FormEvent) => {
+    if (e) {
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    if (loading) return;
+
     try {
+      setLoading(true);
+
+      // ✅ VALIDATION
       await noticeValidationSchema.validate(
         {
           title,
@@ -235,9 +281,10 @@ export default function AddNoticeModal({
         { abortEarly: false },
       );
 
+      // ✅ CLEAR OLD ERRORS IF VALID
       setErrors({});
-      setLoading(true);
 
+      // ✅ UPLOAD FILES
       const uploadedAttachments = await Promise.all(
         pendingFiles.map(async (p) => ({
           url: await uploadToS3(p.file),
@@ -245,6 +292,7 @@ export default function AddNoticeModal({
         })),
       );
 
+      // ✅ PAYLOAD
       const payload: any = {
         title,
         description,
@@ -258,33 +306,41 @@ export default function AddNoticeModal({
       if (isSystemAdmin) {
         payload.targetAVP =
           selectedDepartment !== "All" ? selectedDepartment : null;
-        payload.departments = ["All"]; // Admin notices are considered public for others
+        payload.departments = ["All"];
       } else {
-        payload.departments = [selectedDepartment]; // AVP sends "All" or "Team"
+        payload.departments = [selectedDepartment];
       }
+
+      // ✅ API CALL
       const res = await fetch("/api/v0/notice", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      const result = await res.json();
 
+      const result = await res.json();
       if (!result.success) throw new Error(result.message);
 
-      notify("Notice added successfully!", "success");
-      resetForm();
+      // ✅ SUCCESS FLOW
       onNoticeAdded?.();
-      onClose();
+      handleClose();
     } catch (err: any) {
-      if (err.inner) {
-        const validationErrors: Record<string, string> = {};
+      console.error(err);
+
+      // 🔥 FIX: MAP YUP ERRORS TO UI
+      if (err.inner && Array.isArray(err.inner)) {
+        const formErrors: Record<string, string> = {};
+
         err.inner.forEach((e: any) => {
-          if (!validationErrors[e.path]) validationErrors[e.path] = e.message;
+          if (e.path && !formErrors[e.path]) {
+            formErrors[e.path] = e.message;
+          }
         });
-        setErrors(validationErrors);
-        return;
+
+        setErrors(formErrors);
+      } else {
+        notify(err.message || "Something went wrong");
       }
-      notify(err?.message || "Failed");
     } finally {
       setLoading(false);
     }
@@ -328,7 +384,9 @@ export default function AddNoticeModal({
             <FormControl
               fullWidth
               size="small"
-              className={`!rounded-md !border ${editorFocused ? "!border-blue-500" : "!border-gray-300"}`}
+              className={`!rounded-md !border ${
+                editorFocused ? "!border-blue-500" : "!border-gray-300"
+              }`}
             >
               <InputLabel
                 shrink={!!description || editorFocused}
@@ -343,12 +401,13 @@ export default function AddNoticeModal({
                 <div ref={editorRef} />
               </Box>
             </FormControl>
+
+            {/* 🔥 ERROR FIX FOR DESCRIPTION */}
             {errors.description && (
-              <Typography className="text-red-700 !mt3 !text-[13px] !ml-4">
+              <Typography className="text-red-700 !mt-1 !text-[13px] !ml-2">
                 {errors.description}
               </Typography>
             )}
-
             {/* CATEGORY + PRIORITY */}
             <Stack direction="row" spacing={2}>
               <FormControl fullWidth size="small">
@@ -434,6 +493,7 @@ export default function AddNoticeModal({
                   label="Expiry Date"
                   value={expiry}
                   onChange={(val) => setExpiry(val)}
+                  disablePast
                   slotProps={{ textField: { size: "small", fullWidth: true } }}
                 />
               </Box>
@@ -445,9 +505,10 @@ export default function AddNoticeModal({
                 <Typography className="text-xs font-semibold text-slate-600 uppercase tracking-wide">
                   ATTACHMENTS{" "}
                   <span className="text-[15px] normal-case font-normal text-slate-500">
-                    (please add files format pdf,jpg, jpeg, png)
+                    (please add files format pdf, jpg, jpeg, png)
                   </span>
                 </Typography>
+
                 <Button
                   startIcon={<UploadFileIcon />}
                   onClick={() => fileInputRef.current?.click()}
@@ -458,6 +519,7 @@ export default function AddNoticeModal({
                   Add files
                 </Button>
               </Box>
+
               <input
                 ref={fileInputRef}
                 type="file"
@@ -465,14 +527,17 @@ export default function AddNoticeModal({
                 hidden
                 onChange={pickFiles}
               />
+
+              {/* FILE LIST */}
               {pendingFiles.map((p, i) => (
                 <Box
                   key={p.id}
-                  className="flex items-center justify-between border border-gray-200 rounded px-3 py-2"
+                  className="flex items-center justify-between border border-gray-200 rounded px-3 py-2 bg-white"
                 >
-                  <Typography className="text-sm text-gray-700">
-                    {p.customName}
+                  <Typography className="text-sm text-gray-700 truncate max-w-[70%]">
+                    {getFileNameWithExt(p)}
                   </Typography>
+
                   <Button
                     size="small"
                     color="error"
@@ -487,6 +552,7 @@ export default function AddNoticeModal({
                   </Button>
                 </Box>
               ))}
+
               {!pendingFiles.length && (
                 <Typography className="text-sm text-gray-400">
                   No attachments added
@@ -507,17 +573,17 @@ export default function AddNoticeModal({
         </DialogContent>
 
         <DialogActions>
-          <Button onClick={handleClose}>Cancel</Button>
+          <Button type="button" onClick={handleClose}>
+            Cancel
+          </Button>
+
           <Button
+            type="button" // 🔥 CRITICAL
             onClick={handleSubmit}
             disabled={loading}
-            className="!bg-blue-600 !text-white hover:!bg-blue-700"
+            className="!bg-blue-600 !text-white"
           >
-            {loading ? (
-              <CircularProgress size={20} className="text-white" />
-            ) : (
-              "Publish"
-            )}
+            {loading ? <CircularProgress size={20} /> : "Publish"}
           </Button>
         </DialogActions>
       </Dialog>
