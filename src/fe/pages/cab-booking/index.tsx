@@ -95,15 +95,13 @@ const CabBooking: React.FC<CabBookingProps> = ({
 
         <Box sx={contentGridSx}>
           <Box sx={listPaperSx}>
-            <Box sx={scrollContainerSx}>
-              {activeView === "tracking" && (
-                <BookingsList 
-                  statusFilter={statusFilter} 
-                  refreshKey={refreshKey} 
-                  search={search}
-                />
-              )}
-            </Box>
+            {activeView === "tracking" && (
+              <BookingsList 
+                statusFilter={statusFilter} 
+                refreshKey={refreshKey} 
+                search={search}
+              />
+            )}
           </Box>
         </Box>
 

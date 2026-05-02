@@ -8,12 +8,14 @@ interface CardComponentProps {
   title?: string;
   content?: React.ReactNode;
   actions?: React.ReactNode;
+  contentSx?: any;
 }
 
 const CardComponent: React.FC<CardComponentProps> = ({
   title,
   content,
   actions,
+  contentSx,
 }) => (
   <Card
     sx={{
@@ -31,7 +33,11 @@ const CardComponent: React.FC<CardComponentProps> = ({
         <Typography variant="h5">{title}</Typography>
       </CardContent>
     )}
-    {content && <CardContent>{content}</CardContent>}
+    {content && (
+      <CardContent sx={{ p: 1, "&:last-child": { pb: 1 }, ...contentSx }}>
+        {content}
+      </CardContent>
+    )}
     {actions && <CardActions>{actions}</CardActions>}
   </Card>
 );

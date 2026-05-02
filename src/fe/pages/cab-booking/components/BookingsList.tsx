@@ -106,18 +106,20 @@ const BookingsList: React.FC<BookingsListProps> = ({
   if (!rows.length) return <div>No bookings found.</div>;
 
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {rows.map((booking) => (
-          <BookingCard
-            key={booking._id}
-            booking={booking}
-            onViewDetails={handleViewDetails}
-          />
-        ))}
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto pr-2 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {rows.map((booking) => (
+            <BookingCard
+              key={booking._id}
+              booking={booking}
+              onViewDetails={handleViewDetails}
+            />
+          ))}
+        </div>
       </div>
 
-      <div className="flex justify-center mt-4">
+      <div className="pt-4 pb-2 border-t border-gray-100 sticky bottom-0 z-10">
         <Pagination
           page={page}
           pageSize={pageSize}
@@ -133,7 +135,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
         open={!!viewingBooking}
         onClose={handleCloseDialog}
       />
-    </>
+    </div>
   );
 };
 

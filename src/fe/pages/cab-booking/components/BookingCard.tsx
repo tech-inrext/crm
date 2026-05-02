@@ -105,7 +105,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
         content={
           <Box
             sx={{
-              background: MODULE_STYLES.visual.gradients.card,
+              background: "white",
               p: 1.5,
               display: "flex",
               flexDirection: "column",
@@ -206,7 +206,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
                           size="small"
                           onClick={() => setAssignOpen(true)}
                           sx={{
-                            background: "#fafafa",
                             boxShadow: 1,
                             "&:hover": { background: "#f0f0f0" },
                           }}
@@ -222,7 +221,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
                     size="small"
                     onClick={() => setShareOpen(true)}
                     sx={{
-                      background: "#fafafa",
                       boxShadow: 1,
                       "&:hover": { background: "#f0f0f0" },
                     }}
@@ -235,7 +233,6 @@ const BookingCard: React.FC<BookingCardProps> = ({
                     size="small"
                     onClick={() => onViewDetails(booking)}
                     sx={{
-                      background: "#fafafa",
                       boxShadow: 1,
                       "&:hover": { background: "#f0f0f0" },
                     }}

@@ -23,7 +23,7 @@ export const contentGridSx: SxProps<Theme> = {
 };
 
 export const listPaperSx: SxProps<Theme> = {
-  p: 2,
+  p: 0,
   flex: 1,
   overflow: "hidden",
   display: "flex",
@@ -37,7 +37,7 @@ export const scrollContainerSx: SxProps<Theme> = {
   flex: 1,
   overflowY: "auto",
   pr: 1,
-  pt: 1.5,
+  pt: 0,
   pb: 2,
 };
 

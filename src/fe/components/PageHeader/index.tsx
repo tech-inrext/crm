@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Paper, Typography, Box } from "@/components/ui/Component";
+import { Paper, Typography, Box, SxProps, Theme } from "@/components/ui/Component";
 
 interface PageHeaderProps {
   /** Page title rendered as an h4 */
@@ -15,6 +15,8 @@ interface PageHeaderProps {
   children?: React.ReactNode;
   /** Extra className applied to the outer Paper */
   className?: string;
+  /** Custom styles for the header */
+  sx?: SxProps<Theme>;
 }
 
 /**
@@ -34,6 +36,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
   subtitle,
   children,
   className = "",
+  sx = {},
 }) => {
   return (
     <Paper
@@ -46,6 +49,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         mt: 0,
         background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
         overflow: "visible",
+        ...sx,
       }}
     >
       <Box sx={{ mb: { xs: 1.5, md: 3 } }}>
