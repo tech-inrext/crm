@@ -108,7 +108,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="flex-1 overflow-y-auto pr-2 pb-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {rows.map((booking) => (
             <BookingCard
               key={booking._id}

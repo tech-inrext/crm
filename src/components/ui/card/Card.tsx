@@ -21,10 +21,10 @@ const CardComponent: React.FC<CardComponentProps> = ({
     sx={{
       borderRadius: 3,
       boxShadow: 2,
-      transition: "transform 0.2s ease, box-shadow 0.2s ease",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       "&:hover": {
-        transform: "translateY(-2px)",
-        boxShadow: 3,
+        transform: "translateY(-4px)",
+        boxShadow: "0 12px 24px -10px rgba(0,0,0,0.15)",
       },
     }}
   >
