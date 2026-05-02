@@ -32,7 +32,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
 
   // server-side pagination controls
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(6);
+  const [pageSize, setPageSize] = useState(8);
 
   // data from API
   const [rows, setRows] = useState<Booking[]>([]);
@@ -126,7 +126,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
           total={totalItems}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
-          pageSizeOptions={[6, 12, 24, 36]}
+          pageSizeOptions={[8, 16, 24, 32]}
         />
       </div>
 
