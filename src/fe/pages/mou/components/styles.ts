@@ -69,16 +69,16 @@ export const actionWrapperSx: SxProps<Theme> = {
 
 export const buttonGroupSx: SxProps<Theme> = {
   display: "flex",
-  justifyContent: "center",
-  gap: 1,
+  gap: 1.5,
   pt: 1,
+  width: "100%",
 };
 
 export const approveBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
-  minWidth: 100,
-  height: 34,
+  flex: 1,
+  height: 38,
   borderRadius: 2,
   backgroundColor: "success.main",
   color: "white",
@@ -92,8 +92,8 @@ export const approveBtnSx: SxProps<Theme> = {
 export const rejectBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
-  minWidth: 90,
-  height: 34,
+  flex: 1,
+  height: 38,
   borderRadius: 2,
   border: "1.5px solid",
   borderColor: "error.main",
@@ -109,8 +109,8 @@ export const rejectBtnSx: SxProps<Theme> = {
 export const previewBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
-  minWidth: 90,
-  height: 34,
+  flex: 1,
+  height: 38,
   borderRadius: 2,
   "&:hover": {
     boxShadow: "0 4px 12px rgba(0, 0, 0, 0.1)",
@@ -120,16 +120,16 @@ export const previewBtnSx: SxProps<Theme> = {
 export const cancelBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
-  minWidth: 140,
-  height: 34,
+  flex: 1,
+  height: 38,
   borderRadius: 2,
 };
 
 export const resendBtnSx: SxProps<Theme> = {
   textTransform: "none",
   fontWeight: 700,
-  minWidth: 100,
-  height: 34,
+  flex: 1,
+  height: 38,
   borderRadius: 2,
   "&:hover": {
     boxShadow: "0 4px 12px rgba(25, 118, 210, 0.2)",
