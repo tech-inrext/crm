@@ -58,3 +58,6 @@ export const getProjectName = (project: string | { name: string }): string => {
   }
   return "Unknown Project";
 };
+
+export const CAB_BOOKING_PERMISSION_MODULE = "cab-booking";
+export const SEARCH_PLACEHOLDER = "Search bookings...";
