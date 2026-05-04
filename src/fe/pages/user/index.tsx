@@ -50,11 +50,13 @@ const UsersPage: React.FC = () => {
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        p: { xs: 1, sm: 2 },
+        px: { xs: 1, sm: 2 },
+        pt: { xs: 1, sm: 2 },
+        pb: 0,
       }}
     >
       {/* Header + search/add bar */}
-      <Box sx={{ flexShrink: 0, mb: 2 }}>
+      <Box sx={{ flexShrink: 0, mb: 1 }}>
         <UsersPageActionBar
           search={search}
           onSearchChange={handleSearchChange}

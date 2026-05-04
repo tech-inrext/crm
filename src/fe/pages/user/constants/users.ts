@@ -15,8 +15,8 @@ export const USER_CACHE_KEYS = {
   /** Invalidates all department cache entries */
   DEPARTMENTS: DEPARTMENTS_API_BASE,
 } as const;
-export const USERS_ROWS_PER_PAGE_OPTIONS = [5, 10, 15, 25] as const;
-export const DEFAULT_PAGE_SIZE = 5;
+export const USERS_ROWS_PER_PAGE_OPTIONS = [8, 16, 24, 32] as const;
+export const DEFAULT_PAGE_SIZE = 8;
 
 // ─── Form defaults ────────────────────────────────────────────────────────────
 export const DEFAULT_USER_FORM = {
