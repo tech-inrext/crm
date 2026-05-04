@@ -22,14 +22,10 @@ interface PageHeaderProps {
 /**
  * PageHeader – shared top-of-page chrome used by every module.
  *
- * Mirrors the existing LeadsActionBar look with proper Material-UI styling
- * but is open for extension via `children` so each page can slot in
- * its own action bar without touching this component.
- *
- * @example
- * <PageHeader title="Users">
- *   <UsersActionBar search={search} onSearchChange={…} onAdd={…} />
- * </PageHeader>
+ * Matches the Leads section layout exactly:
+ *  - White Paper with subtle shadow + border
+ *  - Big bold module title at top (same font weight & size as Leads)
+ *  - Children (search + buttons) rendered below in a responsive row
  */
 const PageHeader: React.FC<PageHeaderProps> = ({
   title,
@@ -45,7 +41,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
       sx={{
         p: { xs: 2, sm: 2.5, md: 3 },
         borderRadius: { xs: 2, sm: 3, md: 4 },
-        mb: { xs: 2, sm: 2.5, md: 3 },
+        mb: 1,
         mt: 0,
         background: "#ffffff",
         boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)",
@@ -60,16 +56,20 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         ...sx,
       }}
     >
+      {/* Title block — matches MODULE_STYLES.layout.moduleTitle */}
       <Box sx={{ width: "100%" }}>
         <Typography
           variant="h4"
+          component="h1"
           sx={{
             fontWeight: 800,
-            fontSize: { xs: "1.75rem", sm: "2.25rem", md: "2.5rem" },
             color: "text.primary",
+            fontSize: { xs: "1.75rem", sm: "2.25rem", md: "2.5rem" },
+            letterSpacing: "-0.02em",
             mb: 0,
             textAlign: "left",
-            letterSpacing: "-0.02em",
+            width: "100%",
+            lineHeight: 1.2,
           }}
         >
           {title}
@@ -80,11 +80,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             variant="body2"
             sx={{
               color: "text.secondary",
-              fontSize: { xs: "0.85rem", sm: "0.95rem" },
-              textAlign: "left",
+              fontSize: { xs: "0.82rem", sm: "0.9rem" },
               mt: 0.5,
-              fontWeight: 500,
+              fontWeight: 400,
               opacity: 0.8,
+              lineHeight: 1.5,
             }}
           >
             {subtitle}
@@ -92,14 +92,15 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         )}
       </Box>
 
+      {/* Controls slot — search + buttons row, matching LeadsActionBar wrapper */}
       {children && (
         <Box
           sx={{
             width: "100%",
             display: "flex",
-            flexDirection: "column",
-            gap: { xs: 1.5, md: 2 },
-            alignItems: "stretch",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: { xs: 1.5, sm: 2 },
+            alignItems: { xs: "stretch", sm: "center" },
           }}
         >
           {children}

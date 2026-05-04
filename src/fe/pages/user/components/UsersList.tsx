@@ -27,13 +27,13 @@ export const UsersList: React.FC<UsersListProps> = ({
   const employeeList = employees || [];
 
   const paginationBar = (
-    <div className=" py-4">
+    <div className=" py-3">
       <Pagination
         page={page}
         pageSize={rowsPerPage ?? 8}
         total={totalItems}
         onPageChange={onPageChange}
-        pageSizeOptions={[4, 8, 12]}
+        pageSizeOptions={[8, 16, 24, 32]}
         onPageSizeChange={onPageSizeChange}
       />
     </div>
