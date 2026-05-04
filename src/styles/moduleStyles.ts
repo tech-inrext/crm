@@ -12,27 +12,31 @@ export const MODULE_LAYOUT_STYLES = {
 
   // Header paper styles
   headerPaper: {
-    p: 2,
-    borderRadius: { xs: 1, sm: 2, md: 3 },
-    mb: { xs: 1.5, sm: 2, md: 3 }, // add bottom margin so content below isn't touched
-    mt: 0, // Removed top margin from headerPaper
-    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-    overflow: "hidden",
-    elevation: 2,
+    p: { xs: 2, sm: 2.5, md: 3 },
+    borderRadius: { xs: 2, sm: 3, md: 4 },
+    mb: { xs: 2, sm: 2.5, md: 3 },
+    mt: 0,
+    background: "#ffffff",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)",
+    border: "1px solid",
+    borderColor: "divider",
     display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    flexWrap: "wrap",
+    flexDirection: "column",
+    gap: { xs: 2, md: 3 },
+    alignItems: "flex-start",
+    position: "relative",
+    overflow: "visible",
   } as SxProps<Theme>,
 
   // Module title styles
   moduleTitle: {
-    fontWeight: 700,
+    fontWeight: 800,
     color: "text.primary",
-    fontSize: { xs: "1.3rem", sm: "2rem", md: "2.5rem" },
-    mb: { xs: 1.5, md: 3 },
-    textAlign: { xs: "center", sm: "left" },
+    fontSize: { xs: "1.75rem", sm: "2.25rem", md: "2.5rem" },
+    letterSpacing: "-0.02em",
+    mb: 0,
+    textAlign: "left",
+    width: "100%",
   } as SxProps<Theme>,
 
   // Loading container
@@ -51,7 +55,7 @@ export const MODULE_LAYOUT_STYLES = {
   // Mobile FAB styles
   mobileFab: {
     position: "fixed",
-    bottom: 24,
+    bottom: 120,
     right: 24,
     display: { xs: "flex", md: "none" },
     zIndex: 1201,
@@ -230,7 +234,7 @@ export const ROLES_STYLES = {
   // Roles FAB (no zIndex override)
   rolesFab: {
     position: "fixed",
-    bottom: 24,
+    bottom: 120,
     right: 24,
     display: { xs: "flex", md: "none" },
   } as SxProps<Theme>,
@@ -281,7 +285,7 @@ export const PROPERTIES_STYLES = {
   // Properties FAB
   propertiesFab: {
     position: "fixed",
-    bottom: 24,
+    bottom: 120,
     right: 24,
     display: { xs: "flex", md: "none" },
     zIndex: 1201,
