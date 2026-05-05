@@ -586,6 +586,19 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
           {/* Action Menu (Desktop) */}
           <PermissionGuard module="lead" action="write" fallback={<></>}>
             <Stack direction="row" spacing={1.5} alignItems="center">
+              <IconButton
+                onClick={openActionsMenu}
+                sx={{
+                  height: 40,
+                  width: 40,
+                  bgcolor: "white",
+                  border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
+                  borderRadius: 2,
+                  "&:hover": { bgcolor: alpha(theme.palette.divider, 0.05) },
+                }}
+              >
+                <MoreVert fontSize="small" />
+              </IconButton>
               {!isTablet && (
                 <Button
                   variant="contained"
@@ -610,19 +623,6 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                   {saving ? <CircularProgress size={20} color="inherit" /> : "Add Lead"}
                 </Button>
               )}
-              <IconButton
-                onClick={openActionsMenu}
-                sx={{
-                  height: 40,
-                  width: 40,
-                  bgcolor: "white",
-                  border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
-                  borderRadius: 2,
-                  "&:hover": { bgcolor: alpha(theme.palette.divider, 0.05) },
-                }}
-              >
-                <MoreVert fontSize="small" />
-              </IconButton>
             </Stack>
           </PermissionGuard>
         </Box>
