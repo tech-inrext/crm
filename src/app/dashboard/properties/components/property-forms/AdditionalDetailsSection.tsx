@@ -36,6 +36,24 @@ const AdditionalDetailsSection: React.FC<AdditionalDetailsSectionProps> = ({
   validationErrors,
 }) => {
   const [geocoding, setGeocoding] = useState(false);
+  const [nearbyInput, setNearbyInput] = useState("");
+
+  const handleAddNearby = () => {
+    if (nearbyInput.trim()) {
+      setFormData((prev: any) => ({
+        ...prev,
+        nearby: [...(prev.nearby || []), nearbyInput.trim()]
+      }));
+      setNearbyInput("");
+    }
+  };
+
+  const handleRemoveNearby = (indexToRemove: number) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      nearby: (prev.nearby || []).filter((_: any, index: number) => index !== indexToRemove)
+    }));
+  };
 
   const geocodeAddress = useCallback(async (address: string) => {
     
@@ -155,31 +173,46 @@ const AdditionalDetailsSection: React.FC<AdditionalDetailsSectionProps> = ({
         </Grid>
 
         <Grid size={{ xs: 12, md: 6 }}>
-          <FormControl fullWidth sx={{ mb: 2 }}>
-            <InputLabel>Nearby Locations</InputLabel>
-            <Select
-              multiple
-              value={formData.nearby || []}
-              onChange={(e) => setFormData((prev: any) => ({ ...prev, nearby: e.target.value as string[] }))}
-              input={<OutlinedInput label="Nearby Locations" />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {(selected as string[]).map((value) => (
-                    <Chip key={value} label={value} size="small" />
-                  ))}
-                </Box>
-              )}
+          <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
+            <TextField
+              fullWidth
+              label="Add Nearby Location"
+              placeholder="e.g. Sector 62 Metro, City Hospital"
+              value={nearbyInput}
+              onChange={(e) => setNearbyInput(e.target.value)}
+              onKeyPress={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  handleAddNearby();
+                }
+              }}
+              sx={{ mb: 1 }}
+            />
+            <Button 
+              variant="contained" 
+              onClick={handleAddNearby}
+              sx={{ height: 56, minWidth: 80 }}
             >
-              {[
-                "Metro Station", "Bus Stand", "Railway Station", "Airport", "Shopping Mall",
-                "Hospital", "School", "College", "Market", "Restaurant", "Bank", "ATM"
-              ].map(location => (
-                <MenuItem key={location} value={location}>
-                  {location}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+              Add
+            </Button>
+          </Box>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 2, minHeight: 32 }}>
+            {(formData.nearby || []).map((location: string, index: number) => (
+              <Chip 
+                key={`${location}-${index}`} 
+                label={location} 
+                onDelete={() => handleRemoveNearby(index)}
+                size="small"
+                color="primary"
+                variant="outlined"
+              />
+            ))}
+            {(formData.nearby || []).length === 0 && (
+              <Typography variant="caption" color="text.secondary">
+                No nearby locations added yet
+              </Typography>
+            )}
+          </Box>
         </Grid>
         
         <Grid size={{ xs: 12 }}>
