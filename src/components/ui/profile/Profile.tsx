@@ -166,6 +166,22 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
       }}
       fullScreen={typeof window !== 'undefined' && window.innerWidth < 600}
     >
+      <IconButton
+        onClick={onClose}
+        sx={{
+          position: "absolute",
+          top: 12,
+          right: 12,
+          zIndex: 10,
+          color: "white",
+          bgcolor: "rgba(0, 0, 0, 0.2)",
+          "&:hover": { bgcolor: "rgba(0, 0, 0, 0.3)" },
+          backdropFilter: "blur(4px)",
+        }}
+      >
+        <CloseIcon fontSize="small" />
+      </IconButton>
+
       <DialogContent sx={{ p: 0, position: 'relative', bgcolor: '#fdfdfd' }}>
         {/* HEADER HERO SECTION */}
         <Box 
@@ -175,19 +191,6 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
             position: 'relative'
           }}
         >
-          <IconButton
-            onClick={onClose}
-            sx={{
-              position: "absolute",
-              top: 12,
-              right: 12,
-              color: "white",
-              bgcolor: "rgba(255,255,255,0.2)",
-              "&:hover": { bgcolor: "rgba(255,255,255,0.3)" }
-            }}
-          >
-            <CloseIcon fontSize="small" />
-          </IconButton>
         </Box>
 
         {/* PROFILE INFO OVERLAY */}
