@@ -434,7 +434,18 @@ propertySchema.statics.updateParentPriceRange = async function (parentId) {
       })
       .filter((price) => price !== null);
 
-    // If we have valid prices, update the parent
+    // Extract sizes
+    const validSizes = subProperties
+      .map(prop => prop.minSize || prop.maxSize || null)
+      .filter(size => size !== null);
+    
+    const sizeUnit = subProperties.find(prop => prop.sizeUnit)?.sizeUnit || 'sq.ft.';
+
+    const updateFields = {
+      $set: {}
+    };
+
+    // If we have valid prices, update the price range
     if (validPrices.length > 0) {
       const minPrice = Math.min(...validPrices);
       const maxPrice = Math.max(...validPrices);
@@ -451,30 +462,28 @@ propertySchema.statics.updateParentPriceRange = async function (parentId) {
         priceDisplay = `${formatPrice(minPrice)} - ${formatPrice(maxPrice)}`;
       }
 
-      // Update the parent property
-      await this.findByIdAndUpdate(parentId, {
-        $set: {
-          price: priceDisplay,
-          minPrice: minPrice,
-          maxPrice: maxPrice,
-        },
-      });
-
-      return true;
+      updateFields.$set.price = priceDisplay;
+      updateFields.$set.minPrice = minPrice;
+      updateFields.$set.maxPrice = maxPrice;
+    } else {
+      updateFields.$set.price = "Contact for price";
+      updateFields.$set.minPrice = null;
+      updateFields.$set.maxPrice = null;
     }
 
-    // If no valid prices, set default
-    await this.findByIdAndUpdate(parentId, {
-      $set: {
-        price: "Contact for price",
-        minPrice: null,
-        maxPrice: null,
-      },
-    });
+    // Update size range
+    if (validSizes.length > 0) {
+      updateFields.$set.minSize = Math.min(...validSizes);
+      updateFields.$set.maxSize = Math.max(...validSizes);
+      updateFields.$set.sizeUnit = sizeUnit;
+    }
+
+    // Update the parent property
+    await this.findByIdAndUpdate(parentId, updateFields);
 
     return true;
   } catch (error) {
-    console.error("Error updating parent price range:", error);
+    console.error("Error updating parent ranges:", error);
     throw error;
   }
 };

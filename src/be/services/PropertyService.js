@@ -662,8 +662,8 @@ class PropertyService extends Service {
             finalData.price = existingMainProject.price;
           }
           
-          // ✅ Update existing main project's price range
-          await this.updateMainProjectPriceRange(existingMainProject._id);
+          // ✅ Update existing main project's price and size range
+          await Property.updateParentPriceRange(existingMainProject._id);
           
         } else {
           // Generate unique slug for main project
@@ -696,7 +696,10 @@ class PropertyService extends Service {
             createdBy: req.employee._id,
             parentId: null,
             hierarchyLevel: 0,
-            slug: slug
+            slug: slug,
+            sizeUnit: finalData.sizeUnit || 'sq.ft.',
+            minSize: finalData.minSize,
+            maxSize: finalData.maxSize
           };
 
           const mainProject = new Property(mainProjectData);
@@ -850,7 +853,10 @@ class PropertyService extends Service {
         createdBy: req.employee._id,
         parentId: null,
         hierarchyLevel: 0,
-        slug: slug
+        slug: slug,
+        sizeUnit: otherData.sizeUnit || (otherData.residentialProperties?.[0]?.sizeUnit) || (otherData.plotProperties?.[0]?.sizeUnit) || 'sq.ft.',
+        minSize: otherData.minSize,
+        maxSize: otherData.maxSize
       };
 
       const mainProject = new Property(mainProjectData);
@@ -1106,32 +1112,6 @@ class PropertyService extends Service {
     }
   }
 
-  // Update main project based on sub-properties
-  async updateMainProjectPriceRange(mainProjectId) {
-    try {
-      const subProperties = await Property.find({
-        parentId: mainProjectId,
-      });
-      
-      const validPrices = subProperties
-        .map(prop => extractNumericPrice(prop.price))
-        .filter(price => price !== null);
-      
-      if (validPrices.length > 0) {
-        const minPrice = Math.min(...validPrices);
-        const maxPrice = Math.max(...validPrices);
-        const priceRange = formatPriceRange(minPrice, maxPrice);
-        
-        await Property.findByIdAndUpdate(mainProjectId, {
-          price: priceRange,
-          minPrice: minPrice,
-          maxPrice: maxPrice
-        });
-      }
-    } catch (error) {
-      console.error("Error updating main project price range:", error);
-    }
-  }
 
   // GET property by ID
   async getPropertyById(req, res) {
