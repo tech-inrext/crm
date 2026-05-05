@@ -56,7 +56,9 @@ const PropertyDetailsSection: React.FC<PropertyDetailsSectionProps> = ({
               color: 'text.secondary', 
               lineHeight: 1.8,
               fontSize: '1.1rem',
-              mb: 4
+              mb: 4,
+              whiteSpace: 'pre-wrap',
+              wordBreak: 'break-word'
             }}>
               {property?.propertyDescription || 'No description available.'}
             </Typography>
