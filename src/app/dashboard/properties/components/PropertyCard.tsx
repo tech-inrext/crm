@@ -502,6 +502,23 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
               }}
             >
               {project.price || "Contact for Price"}
+              {project.price &&
+                project.price !== "Contact for Price" &&
+                project.sizeUnit && (
+                  <Typography
+                    component="span"
+                    variant="body2"
+                    sx={{
+                      ml: 0.5,
+                      verticalAlign: "baseline",
+                      opacity: 0.8,
+                      fontSize: "0.85rem",
+                      fontWeight: 400,
+                    }}
+                  >
+                    / {project.sizeUnit}
+                  </Typography>
+                )}
             </Typography>
           </Box>
         </Box>
