@@ -374,6 +374,43 @@ export const VISUAL_CONSTANTS = {
   },
 };
 
+// Vendors module specific styles
+export const VENDORS_STYLES = {
+  vendorsContainer: {
+    p: { xs: 0.5, sm: 1, md: 2 },
+    pt: { xs: 1, sm: 1.5 },
+    mt: 0,
+    height: "calc(100vh - 64px)",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    bgcolor: "#f9f9f9",
+  } as SxProps<Theme>,
+
+  cardsGrid: {
+    display: "grid",
+    gridTemplateColumns: {
+      xs: "1fr",
+      sm: "repeat(2, 1fr)",
+      md: "repeat(3, 1fr)",
+      lg: "repeat(4, 1fr)",
+    },
+    flex: 1,
+    overflowY: "auto",
+    gap: { xs: 1, sm: 1.5, md: 2 },
+    p: 1,
+  } as SxProps<Theme>,
+
+  paginationWrapper: {
+    py: 1,
+    px: 2,
+    // bgcolor: "background.paper",
+    // borderTop: "1px solid",
+    borderColor: "divider",
+    flexShrink: 0,
+  } as SxProps<Theme>,
+};
+
 // Combined export for easy importing
 export const MODULE_STYLES = {
   layout: MODULE_LAYOUT_STYLES,
@@ -381,6 +418,7 @@ export const MODULE_STYLES = {
   users: USERS_STYLES,
   roles: ROLES_STYLES,
   properties: PROPERTIES_STYLES,
+  vendors: VENDORS_STYLES,
   common: COMMON_COMPONENT_STYLES,
   visual: VISUAL_CONSTANTS,
 };

@@ -1,12 +1,10 @@
 import { SxProps, Theme } from "@mui/material";
 
 export const cardRoot: SxProps<Theme> = {
-  my: 1,
-  mx: { xs: "auto", sm: 0 },
-  borderRadius: 4,
-  p: 2.5,
-  width: { xs: "95%", sm: 300 },
-  minHeight: 180,
+  borderRadius: 3,
+  p: 2,
+  width: "100%",
+  minHeight: 185,
   boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
   background: "#ffffff",
   border: "1px solid rgba(0, 0, 0, 0.06)",
