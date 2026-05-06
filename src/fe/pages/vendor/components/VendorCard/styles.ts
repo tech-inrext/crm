@@ -1,11 +1,9 @@
 import { SxProps, Theme } from "@mui/material";
 
 export const cardRoot: SxProps<Theme> = {
-  my: 1,
-  mx: { xs: "auto", sm: 0 },
-  borderRadius: 4,
-  p: 2.5,
-  width: { xs: "95%", sm: 300 },
+  borderRadius: 3,
+  p: 2,
+  width: "100%",
   minHeight: 180,
   boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
   background: "#ffffff",
@@ -93,7 +91,7 @@ export const contactItem: SxProps<Theme> = {
   display: "flex",
   alignItems: "center",
   gap: 1.5,
-  mb: 1.5,
+  mb: 1,
 };
 
 export const iconShell: SxProps<Theme> = {

@@ -12,7 +12,8 @@ import {
   GRADIENTS,
 } from "@/fe/pages/vendor/constants/vendors";
 import { getInitialVendorForm } from "@/fe/pages/vendor/utils";
-import { AddIcon, Fab } from "@/components/ui/Component";
+import { Box, AddIcon, Fab } from "@/components/ui/Component";
+import { MODULE_STYLES } from "@/styles/moduleStyles";
 
 const VendorsPage: React.FC = () => {
   const {
@@ -36,23 +37,29 @@ const VendorsPage: React.FC = () => {
 
   return (
     <PermissionGuard module={VENDORS_PERMISSION_MODULE}>
-      <div className="p-4 sm:p-6">
-        <VendorsPageActionBar
-          search={search}
-          onSearchChange={handleSearchChange}
-          onAdd={() => setOpen(true)}
-        />
+      <Box sx={MODULE_STYLES.vendors.vendorsContainer}>
+        {/* Header Section */}
+        <Box sx={{ flexShrink: 0, mb: 0.5 }}>
+          <VendorsPageActionBar
+            search={search}
+            onSearchChange={handleSearchChange}
+            onAdd={() => setOpen(true)}
+          />
+        </Box>
 
-        <VendorsList
-          loading={loading}
-          vendors={vendors}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          totalItems={totalItems}
-          onPageChange={setPage}
-          onPageSizeChange={setPageSize}
-          onEditVendor={openEditDialog}
-        />
+        {/* Content Section */}
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <VendorsList
+            loading={loading}
+            vendors={vendors}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalItems={totalItems}
+            onPageChange={setPage}
+            onPageSizeChange={setPageSize}
+            onEditVendor={openEditDialog}
+          />
+        </Box>
 
         {/* Mobile FAB */}
         <PermissionGuard
@@ -87,7 +94,7 @@ const VendorsPage: React.FC = () => {
           onClose={handleCloseDialog}
           onSave={handleMutationSuccess}
         />
-      </div>
+      </Box>
     </PermissionGuard>
   );
 };
