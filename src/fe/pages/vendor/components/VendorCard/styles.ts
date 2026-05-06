@@ -4,7 +4,7 @@ export const cardRoot: SxProps<Theme> = {
   borderRadius: 3,
   p: 2,
   width: "100%",
-  maxHeight: 185,
+  minHeight: 180,
   boxShadow: "0 4px 20px rgba(0, 0, 0, 0.05)",
   background: "#ffffff",
   border: "1px solid rgba(0, 0, 0, 0.06)",
@@ -91,7 +91,7 @@ export const contactItem: SxProps<Theme> = {
   display: "flex",
   alignItems: "center",
   gap: 1.5,
-  mb: 1.5,
+  mb: 1,
 };
 
 export const iconShell: SxProps<Theme> = {

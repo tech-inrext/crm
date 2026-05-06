@@ -380,7 +380,7 @@ export const VENDORS_STYLES = {
     p: { xs: 0.5, sm: 1, md: 2 },
     pt: { xs: 1, sm: 1.5 },
     mt: 0,
-    height: "calc(100vh - 64px)",
+    height: "100%",
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
