@@ -399,6 +399,7 @@ export const VENDORS_STYLES = {
     overflowY: "auto",
     gap: { xs: 1, sm: 1.5, md: 2 },
     p: 1,
+    alignContent: "start",
   } as SxProps<Theme>,
 
   paginationWrapper: {
@@ -406,6 +407,42 @@ export const VENDORS_STYLES = {
     px: 2,
     // bgcolor: "background.paper",
     // borderTop: "1px solid",
+    borderColor: "divider",
+    flexShrink: 0,
+  } as SxProps<Theme>,
+};
+
+// Departments module specific styles
+export const DEPARTMENTS_STYLES = {
+  departmentsContainer: {
+    p: { xs: 0.5, sm: 1, md: 2 },
+    pt: { xs: 1, sm: 1.5 },
+    mt: 0,
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    bgcolor: "#f9f9f9",
+  } as SxProps<Theme>,
+
+  cardsGrid: {
+    display: "grid",
+    gridTemplateColumns: {
+      xs: "1fr",
+      sm: "repeat(2, 1fr)",
+      md: "repeat(3, 1fr)",
+      lg: "repeat(4, 1fr)",
+    },
+    flex: 1,
+    overflowY: "auto",
+    gap: { xs: 1, sm: 1.5, md: 2 },
+    p: 1,
+    alignContent: "start",
+  } as SxProps<Theme>,
+
+  paginationWrapper: {
+    py: 1,
+    px: 2,
     borderColor: "divider",
     flexShrink: 0,
   } as SxProps<Theme>,
@@ -419,6 +456,7 @@ export const MODULE_STYLES = {
   roles: ROLES_STYLES,
   properties: PROPERTIES_STYLES,
   vendors: VENDORS_STYLES,
+  departments: DEPARTMENTS_STYLES,
   common: COMMON_COMPONENT_STYLES,
   visual: VISUAL_CONSTANTS,
 };

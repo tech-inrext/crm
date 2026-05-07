@@ -30,14 +30,26 @@ const InfoRow = ({
   text: string;
   color: string;
 }) => (
-  <div className="flex items-start gap-0">
+  <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
     <Box sx={iconBubbleSx(color)}>{icon}</Box>
-    <div className="flex-1 min-w-0">
-      <span className="block text-sm font-medium text-gray-700 leading-relaxed">
+    <Box sx={{ flex: 1, minWidth: 0 }}>
+      <Box
+        component="span"
+        sx={{
+          display: "block",
+          fontSize: "0.875rem",
+          fontWeight: 500,
+          color: "text.secondary",
+          lineHeight: 1.5,
+          overflow: "hidden",
+          textOverflow: "ellipsis",
+          whiteSpace: "nowrap",
+        }}
+      >
         {text}
-      </span>
-    </div>
-  </div>
+      </Box>
+    </Box>
+  </Box>
 );
 
 const DepartmentCard: React.FC<DepartmentCardProps> = memo(
@@ -54,56 +66,68 @@ const DepartmentCard: React.FC<DepartmentCardProps> = memo(
 
     return (
       <Card elevation={0} sx={cardSx}>
-        <CardContent className="flex-1 !p-6">
+        <CardContent className="flex-1 !p-4">
           {/* Header */}
-          <div className="flex items-center gap-4 mb-4">
+          <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5, mb: 1.5 }}>
             <Avatar sx={avatarSx(theme.palette.primary.main)}>{initial}</Avatar>
-            <div className="min-w-0 flex-1">
-              <h3 className="text-xl font-bold leading-tight text-gray-900 mb-1">
-                {department.name}
-              </h3>
-            </div>
-          </div>
+            <Box sx={{ minWidth: 0, flex: 1 }}>
+              <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+                <Box
+                  component="h3"
+                  sx={{
+                    fontSize: "1.125rem",
+                    fontWeight: 700,
+                    lineHeight: 1.2,
+                    color: "text.primary",
+                    mb: 0.25,
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                    display: "-webkit-box",
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: "vertical",
+                  }}
+                >
+                  {department.name}
+                </Box>
+                <PermissionGuard
+                  module={DEPARTMENTS_PERMISSION_MODULE}
+                  action="write"
+                  fallback={<></>}
+                >
+                  <IconButton
+                    size="small"
+                    onClick={onEdit}
+                    sx={editBtnSx(theme.palette.primary.main)}
+                    title="Edit Department"
+                  >
+                    <Edit sx={{ fontSize: 18 }} />
+                  </IconButton>
+                </PermissionGuard>
+              </Box>
+            </Box>
+          </Box>
 
           <Divider sx={dividerSx} />
 
           {/* Info Section */}
-          <div className="space-y-4 mt-4">
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5, mt: 1.5 }}>
             <InfoRow
-              icon={<PersonOutlined sx={{ fontSize: 18 }} />}
+              icon={<PersonOutlined sx={{ fontSize: 16 }} />}
               text={managerName}
               color={theme.palette.secondary.main}
             />
             <InfoRow
-              icon={<DescriptionOutlined sx={{ fontSize: 18 }} />}
+              icon={<DescriptionOutlined sx={{ fontSize: 16 }} />}
               text={department.description || "No description available"}
               color={theme.palette.info.main}
             />
             <InfoRow
-              icon={<BadgeOutlined sx={{ fontSize: 18 }} />}
+              icon={<BadgeOutlined sx={{ fontSize: 16 }} />}
               text={`${attachmentCount} attachment${attachmentCount !== 1 ? "s" : ""}`}
               color={theme.palette.warning.main}
             />
-          </div>
+          </Box>
         </CardContent>
-
-        {/* Footer */}
-        <div className="flex justify-end px-5 pb-4">
-          <PermissionGuard
-            module={DEPARTMENTS_PERMISSION_MODULE}
-            action="write"
-            fallback={<></>}
-          >
-            <IconButton
-              size="small"
-              onClick={onEdit}
-              sx={editBtnSx(theme.palette.primary.main)}
-              title="Edit Department"
-            >
-              <Edit sx={{ fontSize: 18 }} />
-            </IconButton>
-          </PermissionGuard>
-        </div>
       </Card>
     );
   },

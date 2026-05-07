@@ -2,7 +2,6 @@
 
 import React from "react";
 import PageHeader from "@/fe/components/PageHeader";
-import { CircularProgress, Add } from "@/components/ui/Component";
 import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import {
@@ -11,48 +10,88 @@ import {
 } from "@/fe/pages/department/constants/departments";
 import type { DepartmentsActionBarProps } from "@/fe/pages/department/types";
 
+import { Button, Box, useTheme, alpha } from "@/components/ui/Component";
+import { Add as AddIcon } from "@mui/icons-material";
+
 const DepartmentsPageActionBar: React.FC<DepartmentsActionBarProps> = ({
   search,
   onSearchChange,
   onAdd,
   saving,
 }) => {
-  return (
-    <PageHeader title="Departments">
-      <div className="flex flex-col md:flex-row md:items-center gap-2 md:gap-3 mb-2">
-        <div className="w-full md:w-auto flex-1">
-          <SearchBar
-            className="w-full min-w-[280px]"
-            value={search}
-            onChange={onSearchChange}
-            placeholder={SEARCH_PLACEHOLDER}
-          />
-        </div>
+  const theme = useTheme();
 
-        <div className="hidden md:block">
-          <PermissionGuard
-            module={DEPARTMENTS_PERMISSION_MODULE}
-            action="write"
-            fallback={<></>}
+  return (
+    <PageHeader title="Departments" sx={{ mb: 0 }}>
+      {/* Search — grows to fill available space, capped on desktop */}
+      <Box sx={{ flexGrow: 1, minWidth: 0, maxWidth: { sm: 400 } }}>
+        <SearchBar
+          sx={{
+            width: "100%",
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.common.white, 0.8),
+              transition: "all 0.2s",
+              "&:hover": {
+                bgcolor: theme.palette.common.white,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              },
+              "&.Mui-focused": {
+                bgcolor: theme.palette.common.white,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              },
+            },
+          }}
+          value={search}
+          onChange={onSearchChange}
+          placeholder={SEARCH_PLACEHOLDER}
+        />
+      </Box>
+
+      {/* Action buttons — pinned right, never stretch */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 1.5,
+          ml: { xs: 0, sm: "auto" },
+          flexShrink: 0,
+          width: { xs: "100%", sm: "auto" },
+        }}
+      >
+        <PermissionGuard
+          module={DEPARTMENTS_PERMISSION_MODULE}
+          action="write"
+          fallback={<></>}
+        >
+          <Button
+            variant="contained"
+            onClick={onAdd}
+            disabled={saving}
+            startIcon={<AddIcon />}
+            size="small"
+            sx={{
+              height: 40,
+              px: 3,
+              borderRadius: 2,
+              fontWeight: 600,
+              textTransform: "none",
+              whiteSpace: "nowrap",
+              flex: { xs: 1, sm: "none" },
+              backgroundColor: theme.palette.primary.main,
+              color: "#fff",
+              boxShadow: "0 4px 12px rgba(25, 118, 210, 0.2)",
+              "&:hover": {
+                backgroundColor: theme.palette.primary.dark,
+                boxShadow: "0 6px 16px rgba(25, 118, 210, 0.3)",
+              },
+            }}
           >
-            <button
-              type="button"
-              onClick={onAdd}
-              disabled={saving}
-              className="flex items-center justify-center gap-2 px-4 py-2 min-w-[180px] h-10 rounded-lg font-semibold text-white bg-blue-600 hover:bg-blue-700 shadow-md transition-transform disabled:opacity-60"
-            >
-              {saving ? (
-                <CircularProgress size={20} color="inherit" />
-              ) : (
-                <>
-                  <Add />
-                  <span>Add Department</span>
-                </>
-              )}
-            </button>
-          </PermissionGuard>
-        </div>
-      </div>
+            Add Department
+          </Button>
+        </PermissionGuard>
+      </Box>
     </PageHeader>
   );
 };

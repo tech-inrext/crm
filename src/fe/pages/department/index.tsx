@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useCallback } from "react";
-import { AddIcon, CircularProgress } from "@/components/ui/Component";
 import useDepartmentsPage from "@/fe/pages/department/hooks/useDepartmentsPage";
 import PermissionGuard from "@/components/PermissionGuard";
 import DepartmentDialog from "@/fe/pages/department/components/dialog/departmentDialog";
@@ -13,14 +12,16 @@ import {
   DEPARTMENTS_PERMISSION_MODULE,
   DEFAULT_DEPARTMENT_FORM,
   DEPARTMENTS_API_BASE,
+  DEFAULT_PAGE_SIZE,
 } from "@/fe/pages/department/constants/departments";
 import type { TostProps } from "@/fe/pages/department/types";
 
 import {
   useGetDepartmentsQuery,
-  useDeleteDepartmentMutation,
 } from "@/fe/pages/department/departmentApi";
 import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";
+import { Box, Add as AddIcon, CircularProgress } from "@/components/ui/Component";
+import { MODULE_STYLES } from "@/styles/moduleStyles";
 
 const Toast: React.FC<TostProps> = ({ open, message, severity, onClose }) => {
   if (!open) return null;
@@ -67,6 +68,8 @@ const DepartmentsPage: React.FC = () => {
     setSnackbarSeverity,
   } = useDepartmentsPage();
 
+  const [rowsPerPageLocal, setRowsPerPageLocal] = React.useState(DEFAULT_PAGE_SIZE);
+
   const {
     data: departmentsData,
     loading,
@@ -75,18 +78,19 @@ const DepartmentsPage: React.FC = () => {
     rowsPerPage,
     setPage,
     setPageSize,
-  } = useGetDepartmentsQuery({ search: debouncedSearch });
+  } = useGetDepartmentsQuery({ 
+    search: debouncedSearch,
+    limit: rowsPerPageLocal
+  });
 
   const handlePageSizeChange = useCallback(
     (newSize: number) => {
+      setRowsPerPageLocal(newSize);
       setPageSize(newSize);
       setPage(1);
     },
     [setPageSize, setPage],
   );
-
-  const { mutate: deleteMutate, loading: deleteLoading } =
-    useDeleteDepartmentMutation();
 
   const handleMutationSuccess = useCallback(async () => {
     invalidateQueryCache(DEPARTMENTS_API_BASE);
@@ -96,7 +100,7 @@ const DepartmentsPage: React.FC = () => {
     setSnackbarSeverity("success");
     setSnackbarOpen(true);
     setTimeout(() => setSnackbarOpen(false), 2000);
-  }, [refetch, handleCloseDialog, setSnackbarMessage, setSnackbarOpen]);
+  }, [refetch, handleCloseDialog, setSnackbarMessage, setSnackbarOpen, setSnackbarSeverity]);
 
   const initialData = selectedDepartment
     ? {
@@ -120,73 +124,77 @@ const DepartmentsPage: React.FC = () => {
     (departmentsData as any)?.pagination?.totalItems ?? departments.length;
 
   return (
-    <div className="p-4 sm:p-6">
-      {/* Header + search/add bar */}
-      <DepartmentsPageActionBar
-        search={search}
-        onSearchChange={handleSearchChange}
-        onAdd={() => setOpen(true)}
-        saving={loading}
-      />
+    <PermissionGuard module={DEPARTMENTS_PERMISSION_MODULE}>
+      <Box sx={MODULE_STYLES.departments.departmentsContainer}>
+        {/* Header Section */}
+        <Box sx={{ flexShrink: 0, mb: 0.5 }}>
+          <DepartmentsPageActionBar
+            search={search}
+            onSearchChange={handleSearchChange}
+            onAdd={() => setOpen(true)}
+            saving={loading}
+          />
+        </Box>
 
-      {/* Card list */}
-      <div className="mt-2">
-        <DepartmentsList
-          loading={loading}
-          departments={departments}
-          page={page}
-          rowsPerPage={rowsPerPage}
-          totalItems={totalItems}
-          onPageChange={setPage}
-          onPageSizeChange={handlePageSizeChange}
-          onEditDepartment={openEditDialog}
-        />
-      </div>
+        {/* Content Section */}
+        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
+          <DepartmentsList
+            loading={loading}
+            departments={departments}
+            page={page}
+            rowsPerPage={rowsPerPage}
+            totalItems={totalItems}
+            onPageChange={setPage}
+            onPageSizeChange={handlePageSizeChange}
+            onEditDepartment={openEditDialog}
+          />
+        </Box>
 
-      {/* Floating action button – mobile only */}
-      <PermissionGuard
-        module={DEPARTMENTS_PERMISSION_MODULE}
-        action="write"
-        fallback={<></>}
-      >
-        <button
-          type="button"
-          aria-label="Add department"
-          onClick={() => setOpen(true)}
-          disabled={loading}
-          style={{
-            bottom: FAB_POSITION.bottom,
-            right: FAB_POSITION.right,
-            zIndex: FAB_POSITION.zIndex,
-            background: GRADIENTS.button,
-          }}
-          className="fixed md:hidden flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95 disabled:opacity-60"
+        {/* Floating action button – mobile only */}
+        <PermissionGuard
+          module={DEPARTMENTS_PERMISSION_MODULE}
+          action="write"
+          fallback={<></>}
         >
-          {loading ? (
-            <CircularProgress size={24} color="inherit" />
-          ) : (
-            <AddIcon />
-          )}
-        </button>
+          <button
+            type="button"
+            aria-label="Add department"
+            onClick={() => setOpen(true)}
+            disabled={loading}
+            style={{
+              bottom: FAB_POSITION.bottom,
+              right: FAB_POSITION.right,
+              zIndex: FAB_POSITION.zIndex,
+              background: GRADIENTS.button,
+            }}
+            className="fixed md:hidden flex items-center justify-center w-14 h-14 rounded-full text-white shadow-xl transition-transform active:scale-95 disabled:opacity-60"
+          >
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              <AddIcon />
+            )}
+          </button>
 
-        {/* Dialog */}
-        <DepartmentDialog
-          open={open}
-          editId={editId}
-          initialData={initialData}
-          onClose={handleCloseDialog}
-          onSave={handleMutationSuccess}
+          {/* Dialog */}
+          <DepartmentDialog
+            open={open}
+            editId={editId}
+            initialData={initialData}
+            onClose={handleCloseDialog}
+            onSave={handleMutationSuccess}
+          />
+        </PermissionGuard>
+
+        {/* Snackbar / Toast */}
+        <Toast
+          open={snackbarOpen}
+          message={snackbarMessage}
+          severity={snackbarSeverity}
+          onClose={() => setSnackbarOpen(false)}
         />
-      </PermissionGuard>
-
-      {/* Snackbar / Toast */}
-      <Toast
-        open={snackbarOpen}
-        message={snackbarMessage}
-        severity={snackbarSeverity}
-        onClose={() => setSnackbarOpen(false)}
-      />
-    </div>
+      </Box>
+    </PermissionGuard>
   );
 };
 
