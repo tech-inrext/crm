@@ -8,11 +8,11 @@ export const cardSx: SxProps<Theme> = {
   border: "1px solid rgba(0,0,0,0.04)",
   position: "relative",
   height: "100%",
-  minHeight: "280px",
+  minHeight: "220px",
   display: "flex",
   flexDirection: "column",
   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-  overflow: "visible",
+  overflow: "hidden",
   "&:hover": {
     boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
     transform: "translateY(-2px)",
@@ -21,18 +21,18 @@ export const cardSx: SxProps<Theme> = {
 };
 
 export const avatarSx = (bgColor: string): SxProps<Theme> => ({
-  width: 52,
-  height: 52,
+  width: 44,
+  height: 44,
   bgcolor: bgColor,
   fontWeight: 700,
-  fontSize: 22,
+  fontSize: 18,
   flexShrink: 0,
   boxShadow: `0 3px 12px ${alpha(bgColor, 0.25)}`,
   border: `2px solid ${alpha(bgColor, 0.1)}`,
 });
 
 export const dividerSx: SxProps<Theme> = {
-  my: 2,
+  my: 1.5,
   borderStyle: "solid",
   borderColor: "rgba(0,0,0,0.06)",
   opacity: 0.7,
@@ -42,9 +42,9 @@ export const iconBubbleSx = (color: string): SxProps<Theme> => ({
   display: "flex",
   alignItems: "center",
   justifyContent: "center",
-  width: 36,
-  height: 36,
-  borderRadius: 2,
+  width: 28,
+  height: 28,
+  borderRadius: 1.5,
   bgcolor: alpha(color, 0.08),
   color,
   flexShrink: 0,

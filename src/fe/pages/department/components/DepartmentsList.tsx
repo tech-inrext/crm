@@ -1,4 +1,7 @@
 import React from "react";
+import {
+  DEPARTMENTS_ROWS_PER_PAGE_OPTIONS,
+} from "@/fe/pages/department/constants/departments";
 import type {
   DepartmentsListProps,
   Department,
@@ -6,24 +9,44 @@ import type {
 import DepartmentCard from "@/fe/pages/department/components/DepartmentCard";
 import dynamic from "next/dynamic";
 import { useGetDepartmentsQuery } from "@/fe/pages/department/departmentApi";
+import { Box, CircularProgress } from "@/components/ui/Component";
+import { MODULE_STYLES } from "@/styles/moduleStyles";
 
 const Pagination = dynamic(
   () => import("@/components/ui/Navigation/Pagination"),
   { ssr: false },
 );
 
+
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
 const LoadingSpinner: React.FC = () => (
-  <div className="flex justify-center items-center py-16">
-    <div className="w-10 h-10 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin" />
-  </div>
+  <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", py: 8 }}>
+    <CircularProgress />
+  </Box>
 );
 
 const EmptyState: React.FC = () => (
-  <div className="flex flex-col items-center justify-center py-16 text-gray-400">
-    <svg
-      className="w-12 h-12 mb-3 opacity-40"
+  <Box
+    sx={{
+      display: "flex",
+      flexDirection: "column",
+      itemsCenter: "center",
+      justifyContent: "center",
+      py: 8,
+      color: "text.secondary",
+      textAlign: "center",
+    }}
+  >
+    <Box
+      component="svg"
+      sx={{
+        width: 48,
+        height: 48,
+        mb: 2,
+        opacity: 0.4,
+        mx: "auto",
+      }}
       fill="none"
       stroke="currentColor"
       viewBox="0 0 24 24"
@@ -34,12 +57,12 @@ const EmptyState: React.FC = () => (
         strokeWidth={1.5}
         d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
       />
-    </svg>
-    <p className="text-sm font-medium">No departments found</p>
-    <p className="text-xs mt-1 opacity-60">
+    </Box>
+    <Box component="p" sx={{ fontSize: "0.875rem", fontWeight: 500 }}>No departments found</Box>
+    <Box component="p" sx={{ fontSize: "0.75rem", mt: 1, opacity: 0.6 }}>
       Try adjusting your search or add a new department
-    </p>
-  </div>
+    </Box>
+  </Box>
 );
 
 // ─── Main Component ───────────────────────────────────────────────────────────
@@ -55,29 +78,36 @@ export const DepartmentsList: React.FC<DepartmentsListProps> = ({
   onEditDepartment,
 }) => {
   if (loading) return <LoadingSpinner />;
-  if (departments.length === 0) return <EmptyState />;
 
   return (
-    <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 mb-2">
-        {departments.map((dept: Department) => (
-          <DepartmentCard
-            key={dept.id ?? dept._id}
-            department={dept}
-            onEdit={() => onEditDepartment(dept)}
-          />
-        ))}
-      </div>
-      <div className="flex justify-center mt-4">
+    <>
+      <Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        {departments.length === 0 ? (
+          <EmptyState />
+        ) : (
+          <Box sx={MODULE_STYLES.departments.cardsGrid}>
+            {departments.map((dept: Department) => (
+              <DepartmentCard
+                key={dept.id ?? dept._id}
+                department={dept}
+                onEdit={() => onEditDepartment(dept)}
+              />
+            ))}
+          </Box>
+        )}
+      </Box>
+
+      <Box sx={MODULE_STYLES.departments.paginationWrapper}>
         <Pagination
           page={page}
           pageSize={rowsPerPage ?? 10}
           total={totalItems}
           onPageChange={onPageChange}
+          pageSizeOptions={[...DEPARTMENTS_ROWS_PER_PAGE_OPTIONS]}
           onPageSizeChange={onPageSizeChange}
         />
-      </div>
-    </div>
+      </Box>
+    </>
   );
 };
 
