@@ -2,44 +2,94 @@
 
 import React from "react";
 import PageHeader from "@/fe/components/PageHeader";
-import { Add, Button, Box, PermissionGuard } from "@/components/ui/Component";
+import { PermissionGuard } from "@/components/ui/Component";
 import SearchBar from "@/components/ui/search/SearchBar";
 import {
   ROLES_PERMISSION_MODULE,
   SEARCH_PLACEHOLDER,
 } from "@/fe/pages/roles/constants/roles";
-import { addRoleButtonSx } from "@/fe/pages/roles/styles";
 import { RolesPageActionBarProps } from "@/fe/pages/roles/types";
+
+import { Button, Box, useTheme, alpha } from "@/components/ui/Component";
+import { Add as AddIcon } from "@mui/icons-material";
 
 const RolesPageActionBar: React.FC<RolesPageActionBarProps> = ({
   search,
   onSearchChange,
   onAdd,
 }) => {
+  const theme = useTheme();
+
   return (
-    <PageHeader title="Roles">
-      <Box sx={{ width: "100%", maxWidth: "600px", flexGrow: 1 }}>
+    <PageHeader title="Roles" sx={{ mb: 0 }}>
+      {/* Search — grows to fill available space, capped on desktop */}
+      <Box sx={{ flexGrow: 1, minWidth: 0, maxWidth: { sm: 400 } }}>
         <SearchBar
+          sx={{
+            width: "100%",
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.common.white, 0.8),
+              transition: "all 0.2s",
+              "&:hover": {
+                bgcolor: theme.palette.common.white,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              },
+              "&.Mui-focused": {
+                bgcolor: theme.palette.common.white,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              },
+            },
+          }}
           value={search}
           onChange={onSearchChange}
           placeholder={SEARCH_PLACEHOLDER}
         />
       </Box>
 
-      <PermissionGuard
-        module={ROLES_PERMISSION_MODULE}
-        action="write"
-        fallback={<></>}
+      {/* Action buttons — pinned right, never stretch */}
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          gap: 1.5,
+          ml: { xs: 0, sm: "auto" },
+          flexShrink: 0,
+          width: { xs: "100%", sm: "auto" },
+        }}
       >
-        <Button
-          variant="contained"
-          onClick={onAdd}
-          startIcon={<Add />}
-          sx={addRoleButtonSx}
+        <PermissionGuard
+          module={ROLES_PERMISSION_MODULE}
+          action="write"
+          fallback={<></>}
         >
-          Add Role
-        </Button>
-      </PermissionGuard>
+          <Button
+            variant="contained"
+            onClick={onAdd}
+            startIcon={<AddIcon />}
+            size="small"
+            sx={{
+              height: 40,
+              px: 3,
+              borderRadius: 2,
+              fontWeight: 600,
+              textTransform: "none",
+              whiteSpace: "nowrap",
+              flex: { xs: 1, sm: "none" },
+              backgroundColor: theme.palette.primary.main,
+              color: "#fff",
+              boxShadow: "0 4px 12px rgba(25, 118, 210, 0.2)",
+              "&:hover": {
+                backgroundColor: theme.palette.primary.dark,
+                boxShadow: "0 6px 16px rgba(25, 118, 210, 0.3)",
+              },
+            }}
+          >
+            Add Role
+          </Button>
+        </PermissionGuard>
+      </Box>
     </PageHeader>
   );
 };

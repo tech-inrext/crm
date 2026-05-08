@@ -28,9 +28,9 @@ const RoleCard: React.FC<RoleCardProps> = ({
 }) => {
   return (
     <Card elevation={0} sx={roleCardStyles.card}>
-      <CardContent sx={{ p: { xs: 1.5, sm: 2 }, height: "100%" }}>
+      <CardContent sx={{ p: 2, height: "100%" }}>
         <Stack spacing={1} sx={{ height: "100%" }}>
-          <Box sx={{ display: "flex", alignItems: "center", gap: 1.5 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
             <Avatar className="role-avatar" sx={roleCardStyles.avatar}>
               <Security fontSize="small" />
             </Avatar>
@@ -47,10 +47,11 @@ const RoleCard: React.FC<RoleCardProps> = ({
                 className="view-permissions-button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
                   onViewPermissions(role);
                 }}
                 size="small"
-                sx={roleCardStyles.editButton}
+                sx={roleCardStyles.viewButton}
               >
                 <Visibility fontSize="small" />
               </IconButton>
@@ -60,6 +61,7 @@ const RoleCard: React.FC<RoleCardProps> = ({
                 className="edit-button"
                 onClick={(e) => {
                   e.stopPropagation();
+                  e.preventDefault();
                   openEdit(role);
                 }}
                 size="small"
