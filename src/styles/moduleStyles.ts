@@ -192,24 +192,17 @@ export const USERS_STYLES = {
 
 // Roles module specific styles
 export const ROLES_STYLES = {
-  // Roles main container with additional top margin
   rolesContainer: {
-    p: { xs: 1, sm: 2, md: 3 },
-    mt: 0, // Removed top margin for roles module
-    minHeight: "100vh",
-    bgcolor: "background.default",
+    p: { xs: 0.5, sm: 1, md: 2 },
+    pt: { xs: 1, sm: 1.5 },
+    mt: 0,
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    bgcolor: "#f9f9f9",
   } as SxProps<Theme>,
 
-  // Roles title
-  rolesTitle: {
-    fontWeight: 700,
-    color: "text.primary",
-    fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
-    mb: { xs: 2, md: 3 },
-    textAlign: { xs: "center", sm: "left" },
-  } as SxProps<Theme>,
-
-  // Roles grid layout
   rolesGrid: {
     display: "grid",
     gridTemplateColumns: {
@@ -219,24 +212,19 @@ export const ROLES_STYLES = {
       lg: "repeat(auto-fill, minmax(280px, 1fr))",
       xl: "repeat(auto-fill, minmax(300px, 1fr))",
     },
-    gap: { xs: 2, sm: 2.5, md: 3 },
-    mb: { xs: 2, sm: 3 },
-    width: "100%",
-    alignItems: "stretch",
+    flex: 1,
+    overflowY: "auto",
+    rowGap: { xs: 2.5, sm: 3, md: 4 },
+    columnGap: { xs: 2.5, sm: 3, md: 4 },
+    p: { xs: 1, sm: 1.5 },
+    alignContent: "start",
   } as SxProps<Theme>,
 
-  // Role card wrapper
-  roleCardWrapper: {
-    display: "flex",
-    minHeight: "100%",
-  } as SxProps<Theme>,
-
-  // Roles FAB (no zIndex override)
-  rolesFab: {
-    position: "fixed",
-    bottom: 120,
-    right: 24,
-    display: { xs: "flex", md: "none" },
+  paginationWrapper: {
+    py: 1,
+    px: 2,
+    borderColor: "divider",
+    flexShrink: 0,
   } as SxProps<Theme>,
 };
 
