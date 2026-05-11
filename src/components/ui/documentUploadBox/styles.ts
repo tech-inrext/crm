@@ -83,7 +83,45 @@ export const documentUploadStyles = {
     right: 4,
     backgroundColor: "rgba(255,255,255,0.9)",
     "&:hover": { backgroundColor: "#ffebee" },
+    zIndex: 2,
   } as SxProps<Theme>,
+
+  viewButton: {
+    position: "absolute",
+    bottom: 4,
+    right: 4,
+    backgroundColor: "rgba(255,255,255,0.9)",
+    "&:hover": { backgroundColor: "#e3f2fd" },
+    zIndex: 2,
+  } as SxProps<Theme>,
+
+  previewDialog: {
+    zIndex: "20000 !important",
+    "& .MuiDialog-paper": {
+      maxWidth: "90vw",
+      maxHeight: "90vh",
+      borderRadius: 2,
+      overflow: "hidden",
+      boxShadow: "0 24px 48px rgba(0,0,0,0.4)",
+    },
+  } as SxProps<Theme>,
+
+  previewHeader: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    p: 2,
+    borderBottom: "1px solid",
+    borderColor: "divider",
+  } as SxProps<Theme>,
+
+  fullPreviewImage: {
+    maxWidth: "100%",
+    maxHeight: "70vh",
+    objectFit: "contain",
+    display: "block",
+    margin: "0 auto",
+  } as React.CSSProperties,
 
   emptyStateBox: {
     display: "flex",
