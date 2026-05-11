@@ -29,6 +29,12 @@ import TransgenderIcon from "@mui/icons-material/Transgender";
 import VerifiedUserIcon from "@mui/icons-material/VerifiedUser";
 import ShieldIcon from "@mui/icons-material/Shield";
 import GroupIcon from "@mui/icons-material/Group";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
+
+import { uploadFile } from "@/fe/pages/user/utils/uploadFile";
+import { useAuth } from "@/contexts/AuthContext";
+import CircularProgress from "@/components/ui/Component/CircularProgress";
+import axios from "axios";
 
 import ShareMenu from "./ShareMenu";
 
@@ -108,6 +114,9 @@ const InfoRow = ({ icon: Icon, label, value, color = "text.primary" }: any) => (
 
 const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
   const [anchorEl, setAnchorEl] = React.useState<HTMLElement | null>(null);
+  const { checkAuth } = useAuth();
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   const handleShareOpen = (e: React.MouseEvent<HTMLButtonElement>) => {
     setAnchorEl(e.currentTarget);
@@ -122,6 +131,34 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
       const visitingCardUrl = `https://inrext.com/visiting-card/${user._id}`;
       window.open(visitingCardUrl, '_blank');
       onClose();
+    }
+  };
+
+  const handleAvatarClick = () => {
+    if (!uploading) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const photoUrl = await uploadFile(file);
+      if (photoUrl) {
+        await axios.post("/api/v0/employee/updateProfilePicture", {
+          photo: photoUrl,
+        });
+        await checkAuth(); // Refresh user data to update UI everywhere
+      }
+    } catch (error) {
+      console.error("Failed to update profile picture:", error);
+    } finally {
+      setUploading(false);
+      // Reset input value to allow selecting same file again if needed
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   };
 
@@ -195,21 +232,93 @@ const Profile: React.FC<ProfileProps> = ({ open, onClose, user }) => {
 
         {/* PROFILE INFO OVERLAY */}
         <Box sx={{ px: { xs: 2, sm: 3 }, pb: 3, mt: -6, position: 'relative', textAlign: 'center' }}>
-          <Avatar
-            src={hasPhoto ? user.photo : undefined}
-            alt={user.name}
+          <Box
             sx={{
+              position: "relative",
               width: { xs: 80, sm: 100 },
               height: { xs: 80, sm: 100 },
-              margin: '0 auto',
-              border: "4px solid #fff",
-              boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
-              bgcolor: "primary.main",
-              fontSize: 40,
+              margin: "0 auto",
+              cursor: uploading ? "default" : "pointer",
+              "&:hover .avatar-edit-overlay": {
+                opacity: 1,
+              },
             }}
+            onClick={handleAvatarClick}
           >
-            {!hasPhoto && user.name?.[0]?.toUpperCase()}
-          </Avatar>
+            <Avatar
+              src={hasPhoto ? user.photo : undefined}
+              alt={user.name}
+              sx={{
+                width: "100%",
+                height: "100%",
+                border: "4px solid #fff",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
+                bgcolor: "primary.main",
+                fontSize: 40,
+              }}
+            >
+              {!hasPhoto && user.name?.[0]?.toUpperCase()}
+            </Avatar>
+
+            {/* EDIT OVERLAY */}
+            <Box
+              className="avatar-edit-overlay"
+              sx={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: "100%",
+                height: "100%",
+                borderRadius: "50%",
+                bgcolor: "rgba(0, 0, 0, 0.4)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                color: "white",
+                opacity: uploading ? 1 : 0,
+                transition: "opacity 0.2s ease",
+                zIndex: 2,
+              }}
+            >
+              {uploading && <CircularProgress size={24} color="inherit" />}
+            </Box>
+
+            {/* PERMANENT EDIT ICON AT CORNER */}
+            {!uploading && (
+              <Box
+                sx={{
+                  position: "absolute",
+                  bottom: { xs: 2, sm: 4 },
+                  right: { xs: 2, sm: 4 },
+                  width: { xs: 24, sm: 28 },
+                  height: { xs: 24, sm: 28 },
+                  borderRadius: "50%",
+                  bgcolor: "white",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                  color: "primary.main",
+                  border: "2px solid #fff",
+                  zIndex: 3,
+                  transition: "transform 0.2s ease",
+                  "&:hover": {
+                    transform: "scale(1.1)",
+                  },
+                }}
+              >
+                <CameraAltIcon sx={{ fontSize: { xs: 14, sm: 16 } }} />
+              </Box>
+            )}
+
+            <input
+              type="file"
+              ref={fileInputRef}
+              style={{ display: "none" }}
+              accept="image/*"
+              onChange={handleFileChange}
+            />
+          </Box>
 
           <Typography variant="h5" fontWeight={800} sx={{ mt: 2, color: 'text.primary', fontSize: { xs: '1.25rem', sm: '1.5rem' } }}>
             {user.name}

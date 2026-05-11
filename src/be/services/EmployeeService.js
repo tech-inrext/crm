@@ -1563,6 +1563,59 @@ class EmployeeService extends Service {
       };
     }
   }
+
+  /**
+   * Update the profile picture for the logged-in employee.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>}
+   */
+  async updateProfilePicture(req, res) {
+    try {
+      const { photo } = req.body;
+      const employeeId = req.employee?._id;
+
+      if (!employeeId) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized: No employee context found",
+        });
+      }
+
+      if (!photo) {
+        return res.status(400).json({
+          success: false,
+          message: "Photo URL is required",
+        });
+      }
+
+      // Update the employee's photo field
+      const updatedEmployee = await Employee.findByIdAndUpdate(
+        employeeId,
+        { photo },
+        { new: true }
+      ).populate("roles");
+
+      if (!updatedEmployee) {
+        return res.status(404).json({
+          success: false,
+          message: "Employee not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Profile picture updated successfully",
+      });
+    } catch (error) {
+      console.error("Update Profile Picture Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
+    }
+  }
 }
 
 export default EmployeeService;
