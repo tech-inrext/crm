@@ -8,6 +8,7 @@ import { leadQueue } from "../queue/leadQueue.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
 import Role from "../models/Role";
+import Department from "../models/Department";
 import { sendNewEmployeeWelcomeEmail } from "../email-service/employee/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "../email-service/manager/managerNewReport.js";
 import { sendMOUApprovalRequestAVPMail } from "../email-service/mou/sendMOUApprovalRequestAVPMail.js";
@@ -920,10 +921,23 @@ class EmployeeService extends Service {
         if (manager) managerName = manager.name;
       }
 
+      // Fetch department name if departmentId exists
+      let departmentName = "N/A";
+      if (user.departmentId) {
+        if (mongoose.Types.ObjectId.isValid(user.departmentId)) {
+          const dept = await Department.findById(user.departmentId).select("name");
+          if (dept) departmentName = dept.name;
+        } else {
+          // If it's already a name string (fallback)
+          departmentName = user.departmentId;
+        }
+      }
+
       return res.status(200).json({
         success: true,
         data: {
           id: user._id,
+          employeeProfileId: user.employeeProfileId,
           name: user.name,
           email: user.email,
           phone: user.phone,
@@ -932,6 +946,7 @@ class EmployeeService extends Service {
           address: user.address,
           designation: user.designation,
           departmentId: user.departmentId,
+          departmentName: departmentName,
           managerId: user.managerId,
           managerName: managerName,
           joiningDate: user.joiningDate,
@@ -941,11 +956,10 @@ class EmployeeService extends Service {
           branch: user.branch,
         },
       });
-    } catch (error) {
+    } catch (err) {
       return res.status(500).json({
         success: false,
-        message: "Failed to fetch profile",
-        error: error.message,
+        message: `Error fetching profile: ${err.message}`,
       });
     }
   }
