@@ -19,14 +19,14 @@ export const ValueChip = ({
       lineHeight: 1.6,
       ...(color === "old"
         ? {
-            bgcolor: "rgba(0,0,0,0.05)",
+            bgcolor: "action.hover",
             color: "text.secondary",
             textDecoration: "line-through",
-            textDecorationColor: "rgba(0,0,0,0.25)",
+            textDecorationColor: (theme) => theme.palette.text.secondary,
           }
         : {
-            bgcolor: "rgba(46,125,50,0.08)",
-            color: "success.dark",
+            bgcolor: "success.light",
+            color: "success.contrastText",
           }),
     }}
   >

@@ -7,6 +7,7 @@ import { useTheme, useMediaQuery } from "../Component";
 import AvatarComponent from "@/components/ui/Component/Avatar";
 import ProfileMenu from "../profile/ProfileMenu";
 import NotificationBell from "../notifications/NotificationBell";
+import ThemeToggle from "../ThemeToggle";
 
 interface NavbarProps {
   sidebarOpen: boolean;
@@ -17,20 +18,40 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const isSmallMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isDarkMode = theme.palette.mode === "dark";
 
   return (
-    <Box className="fixed top-0 left-0 right-0 z-[1300] flex items-center justify-between bg-white h-auto border-b border-[#E6EEF5] overflow-visible">
+    <Box 
+      sx={{
+        position: "fixed",
+        top: 0,
+        left: 0,
+        right: 0,
+        zIndex: 1300,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "between",
+        bgcolor: "background.paper",
+        borderBottom: 1,
+        borderColor: "divider",
+        height: "auto",
+        overflow: "visible"
+      }}
+    >
       <Box
-        className="
-  flex items-center min-w-0
-  gap-[2px] sm:gap-1 md:gap-2
-  pl-[50px] sm:pl-[20px] md:pl-[30px] lg:pl-[30px]
-  pr-1 sm:pr-2
-  w-auto md:w-[260px]
-  px-[2px] sm:px-1 md:px-1.5 lg:px-1
-  py-[2px] sm:py-1 md:py-1
-  lg:border-r lg:border-[#E6EEF5]
-"
+        sx={{
+          display: "flex",
+          alignItems: "center",
+          minWidth: 0,
+          gap: { xs: "2px", sm: 1, md: 2 },
+          pl: { xs: "50px", sm: "20px", md: "30px", lg: "30px" },
+          pr: { xs: 1, sm: 2 },
+          width: { xs: "auto", md: "260px" },
+          px: { xs: "2px", sm: 1, md: 1.5, lg: 1 },
+          py: { xs: "2px", sm: 1, md: 1 },
+          borderRight: { lg: 1 },
+          borderColor: { lg: "divider" }
+        }}
       >
         <Box
           sx={{
@@ -39,6 +60,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
             display: "flex",
             alignItems: "center",
             flexShrink: 0,
+            filter: isDarkMode ? "brightness(0) invert(1)" : "none"
           }}
         >
           <img
@@ -53,14 +75,16 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           />
         </Box>
       </Box>
-      {/* <ProfileMenu /> */}
+      
+      <Box sx={{ flex: 1 }} />
+
       <IconButton
         color="inherit"
         edge="start"
         onClick={() => setSidebarOpen(!sidebarOpen)}
         sx={{
-          mr: { xs: 0.2, sm: 0.5, md: 2 }, // slight gap for xs
-          ml: { xs: 0.5, sm: 0, md: 0 }, // add left margin for xs
+          mr: { xs: 0.2, sm: 0.5, md: 2 },
+          ml: { xs: 0.5, sm: 0, md: 0 },
           display: { xs: "block", lg: "none" },
           p: { xs: 0.5, sm: 1, md: 1.5 },
           minWidth: { xs: 44, sm: 64, md: 80 },
@@ -74,7 +98,7 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
           boxShadow: "none",
           background: "none",
           "&:hover": {
-            bgcolor: "rgba(255,255,255,0.1)",
+            bgcolor: "action.hover",
           },
           "&:focus": {
             outline: "none",
@@ -84,7 +108,9 @@ const Navbar: React.FC<NavbarProps> = ({ sidebarOpen, setSidebarOpen }) => {
       >
         <MenuIcon sx={{ fontSize: { xs: 32, md: 24 } }} />
       </IconButton>
-      <Box sx={{ display: "flex", alignItems: "center" }}>
+      
+      <Box sx={{ display: "flex", alignItems: "center", gap: 1, pr: 2 }}>
+        <ThemeToggle />
         <NotificationBell />
         <ProfileMenu />
       </Box>

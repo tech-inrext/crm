@@ -130,7 +130,7 @@ export default function NoticeCard({ notice }: { notice: Notice }) {
     <>
       <Card
         onClick={() => setOpen(true)}
-        className="!rounded-2xl w-[90%] max-w-md mx-auto cursor-pointer bg-white flex flex-col h-[380px]"
+        className="!rounded-2xl w-[90%] max-w-md mx-auto cursor-pointer bg-white dark:bg-slate-800 flex flex-col h-[380px]"
       >
         {/* IMAGE */}
         <Box className="relative h-[200px] flex-shrink-0">
@@ -187,7 +187,7 @@ export default function NoticeCard({ notice }: { notice: Notice }) {
             </>
           ) : (
             <>
-              <Box className="h-full bg-slate-100" />
+              <Box className="h-full bg-slate-100 dark:bg-slate-700" />
 
               {isLatest && (
                 <Box className="absolute top-2 right-2">
@@ -249,12 +249,12 @@ export default function NoticeCard({ notice }: { notice: Notice }) {
 
         {/* CONTENT */}
         <CardContent className="p-4 flex-1 overflow-hidden">
-          <Typography className="!font-bold !text-[17px] text-slate-800">
+          <Typography className="!font-bold !text-[17px] text-slate-800 dark:text-slate-100">
             {notice.title}
           </Typography>
 
           <div
-            className="text-sm !text-slate-600 !mt-2 !line-clamp-3"
+            className="text-sm !text-slate-600 dark:!text-slate-400 !mt-2 !line-clamp-3"
             dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
           />
         </CardContent>

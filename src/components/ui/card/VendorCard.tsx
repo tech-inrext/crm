@@ -48,13 +48,12 @@ const VendorCard: React.FC<VendorCardProps> = ({
         p: 3,
         width: { xs: "95%", sm: 290 },
         minHeight: 140,
-        boxShadow: "0 6px 18px rgba(16,24,40,0.06)",
-        background:
-          "linear-gradient(180deg, rgba(255,255,255,0.9) 0%, rgba(243,247,255,0.7) 100%)",
+        boxShadow: "0 6px 18px rgba(0,0,0,0.06)",
+        bgcolor: "background.paper",
         transition: "transform 0.18s ease, box-shadow 0.18s ease",
         "&:hover": {
           transform: "translateY(-4px)",
-          boxShadow: "0 10px 30px rgba(16,24,40,0.12)",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
         },
         display: "flex",
         flexDirection: "column",
@@ -116,7 +115,7 @@ const VendorCard: React.FC<VendorCardProps> = ({
               <IconButton
                 size="small"
                 onClick={onView}
-                sx={{ background: "#ffffff", boxShadow: 1 }}
+                sx={{ bgcolor: "action.hover", boxShadow: 1 }}
               >
                 <VisibilityIcon fontSize="small" />
               </IconButton>

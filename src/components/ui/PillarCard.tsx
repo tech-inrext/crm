@@ -100,7 +100,8 @@ const PillarCard: React.FC<PillarCardProps> = ({
               right: 16,
               width: 80,
               height: 80,
-              border: '4px solid white',
+              border: '4px solid',
+              borderColor: 'background.paper',
               boxShadow: 2,
             }}
           />
@@ -115,9 +116,11 @@ const PillarCard: React.FC<PillarCardProps> = ({
               position: 'absolute',
               top: 8,
               right: 8,
-              backgroundColor: 'rgba(255,255,255,0.9)',
+              backgroundColor: 'background.paper',
+              opacity: 0.9,
               '&:hover': {
-                backgroundColor: 'white',
+                backgroundColor: 'background.paper',
+                opacity: 1,
               },
             }}
           >

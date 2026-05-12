@@ -74,12 +74,12 @@ export const infoLabelSx: SxProps<Theme> = {
   px: { xs: 1.5, md: 2 },
   py: 0.75,
   borderRadius: "6px",
-  bgcolor: "#fafbfcff",
-  color: "#3f51b5",
+  bgcolor: "action.hover",
+  color: "primary.main",
   fontWeight: 600,
   fontSize: "0.875rem",
   border: "1px solid",
-  borderColor: "#e0e7ff",
+  borderColor: "divider",
   whiteSpace: "nowrap",
   "& svg": { fontSize: "1.1rem" },
 };
@@ -100,7 +100,7 @@ export const managerAutocompleteSx: SxProps<Theme> = {
 };
 
 export const searchTextFieldSx: SxProps<Theme> = {
-  bgcolor: "white",
+  bgcolor: "background.paper",
   borderRadius: 1,
   width: "100%",
   "& .MuiOutlinedInput-root": {

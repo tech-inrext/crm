@@ -5,7 +5,7 @@ import { AuthProvider } from "../contexts/AuthContext";
 import { NotificationProvider } from "../contexts/NotificationContext";
 import { ToastProvider } from "../fe/components/Toast/ToastContext";
 import MuiRootProvider from "../components/ui/provider/MuiRootProvider";
-import { PermissionsProvider } from "../contexts/AuthContext";
+import { ThemeContextProvider } from "../contexts/ThemeContext";
 import LoginWrapper from "../components/ui/wrapper/LoginWrapper";
 
 const geistSans = Geist({
@@ -37,15 +37,17 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <MuiRootProvider>
-          <AuthProvider>
-            <ToastProvider>
-              <NotificationProvider>
-                <LoginWrapper>{children}</LoginWrapper>
-              </NotificationProvider>
-            </ToastProvider>
-          </AuthProvider>
-        </MuiRootProvider>
+        <ThemeContextProvider>
+          <MuiRootProvider>
+            <AuthProvider>
+              <ToastProvider>
+                <NotificationProvider>
+                  <LoginWrapper>{children}</LoginWrapper>
+                </NotificationProvider>
+              </ToastProvider>
+            </AuthProvider>
+          </MuiRootProvider>
+        </ThemeContextProvider>
       </body>
     </html>
   );
