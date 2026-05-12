@@ -233,8 +233,9 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
           px: 2.5,
           pt: 1,
           pb: 0.75,
-          bgcolor: "#f8fafc",
-          borderBottom: "1px solid #e5e7eb",
+          bgcolor: "background.default",
+          borderBottom: "1px solid",
+          borderColor: "divider",
         }}
       >
         <Stack
@@ -273,10 +274,10 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                   borderRadius: "12px",
                   cursor: "pointer",
                   transition: "all 0.15s",
-                  bgcolor: historyFilter === key ? "#1e293b" : "transparent",
-                  color: historyFilter === key ? "#fff" : "#64748b",
+                  bgcolor: historyFilter === key ? "primary.main" : "transparent",
+                  color: historyFilter === key ? "primary.contrastText" : "text.secondary",
                   "&:hover": {
-                    bgcolor: historyFilter === key ? "#1e293b" : "#e2e8f0",
+                    bgcolor: historyFilter === key ? "primary.main" : "action.hover",
                   },
                 }}
               >
@@ -288,7 +289,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
       </Box>
 
       {/* Scrollable History Area */}
-      <Box sx={{ p: 0, bgcolor: "#f8fafc", flexGrow: 1, overflowY: "auto" }}>
+      <Box sx={{ p: 0, bgcolor: "background.default", flexGrow: 1, overflowY: "auto" }}>
         <Stack spacing={0}>
           <Box
             ref={historyContainerRef}
@@ -317,7 +318,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                 sx={{
                   p: 2,
                   textAlign: "center",
-                  bgcolor: "#fee2e2",
+                  bgcolor: "error.light",
                   borderRadius: 2,
                 }}
               >
@@ -374,11 +375,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                         data-pending={isPendingAction ? "true" : undefined}
                         sx={{
                           width: "100%",
-                          bgcolor: "#fff",
+                          bgcolor: "background.paper",
                           borderRadius: 1.5,
-                          border: "1px solid #e5e7eb",
+                          border: "1px solid",
+                          borderColor: "divider",
                           borderLeft: `3px solid ${accentColor}`,
-                          boxShadow: "0 2px 6px rgba(0, 0, 0, 0.06)",
+                          boxShadow: (theme) => theme.palette.mode === 'dark' 
+                            ? "0 4px 12px rgba(0,0,0,0.4)" 
+                            : "0 2px 6px rgba(0, 0, 0, 0.06)",
                           transition: "all 0.2s ease-in-out",
                           position: "relative",
                           overflow: "hidden",
@@ -561,7 +565,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                             variant="body2"
                             component="div"
                             sx={{
-                              color: "#374151",
+                              color: "text.primary",
                               fontSize: "0.85rem",
                               lineHeight: 1.45,
                               whiteSpace: "pre-wrap",
@@ -619,12 +623,13 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                     })}`}
                                     size="small"
                                     sx={{
-                                      bgcolor: "#f3f4f6",
-                                      border: "1px solid #e5e7eb",
+                                      bgcolor: "action.hover",
+                                      border: "1px solid",
+                                      borderColor: "divider",
                                       fontWeight: 600,
                                       fontSize: "0.6rem",
                                       height: 22,
-                                      color: "#1f2937",
+                                      color: "text.primary",
                                     }}
                                   />
                                 )}
@@ -662,7 +667,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                   <Typography
                                     variant="subtitle2"
                                     sx={{
-                                      color: "#111827",
+                                      color: "text.primary",
                                       fontSize: "0.6rem",
                                       lineHeight: 1.2,
                                     }}
@@ -683,7 +688,8 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                 sx={{
                                   mt: 1.5,
                                   pt: 1.25,
-                                  borderTop: "1px solid #f1f5f9",
+                                  borderTop: "1px solid",
+                                  borderColor: "divider",
                                 }}
                               >
                                 {new Date() > new Date(it.followUpDate) &&
@@ -781,13 +787,13 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                             borderRadius: isMobile ? "8px" : "6px",
                                             whiteSpace: "nowrap",
                                             minWidth: "auto",
-                                            borderColor: "#d74040ff", // Soft red border (before hover)
-                                            color: "#d32f2f",
-                                            bgcolor: "#fff",
+                                            borderColor: "error.main", // Soft red border (before hover)
+                                            color: "error.main",
+                                            bgcolor: "background.paper",
                                             transition: "all 0.2s ease",
                                             "&:hover": {
-                                              borderColor: "#d32f2f", // Intense red border (after hover)
-                                              bgcolor: "#fff5f5", // Light pink background (after hover)
+                                              borderColor: "error.dark", // Intense red border (after hover)
+                                              bgcolor: "error.light", // Light pink background (after hover)
                                               borderWidth: 1,
                                             },
                                             "&:focus, &:active": {
@@ -886,8 +892,9 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                       disabled={loadingItems}
                       size="small"
                       sx={{
-                        color: "#94a3b8",
-                        border: "1px solid #e2e8f0",
+                        color: "text.secondary",
+                        border: "1px solid",
+                        borderColor: "divider",
                         borderRadius: "8px",
                         px: 1.5,
                         py: 0.4,
@@ -895,9 +902,9 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                         gap: 0.5,
                         transition: "all 0.15s",
                         "&:hover": {
-                          color: "#2563eb",
-                          borderColor: "#bfdbfe",
-                          bgcolor: "#eff6ff",
+                          color: "primary.main",
+                          borderColor: "primary.light",
+                          bgcolor: "action.hover",
                         },
                       }}
                     >
@@ -948,8 +955,9 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
               mt: 0.5,
               px: 1.5,
               py: 0.6,
-              bgcolor: "#fef3c7",
-              border: "1px solid #fde68a",
+              bgcolor: "warning.light",
+              border: "1px solid",
+              borderColor: "warning.main",
               borderRadius: "8px",
               display: "flex",
               alignItems: "center",
@@ -957,7 +965,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
               gap: 1,
               cursor: "pointer",
               transition: "all 0.15s",
-              "&:hover": { bgcolor: "#fde68a", borderColor: "#f59e0b" },
+              "&:hover": { bgcolor: "warning.main", borderColor: "warning.dark" },
             }}
           >
             <Stack direction="row" alignItems="center" spacing={1}>
@@ -1008,8 +1016,9 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
           px: 2,
           pt: 1.5,
           pb: 1.5,
-          bgcolor: "#fff",
-          borderTop: "1px solid #e5e7eb",
+          bgcolor: "background.paper",
+          borderTop: "1px solid",
+          borderColor: "divider",
         }}
       >
         {/* Type toggle – small pill buttons */}
@@ -1090,11 +1099,11 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                     sx: {
                       "& .MuiOutlinedInput-root": {
                         borderRadius: "8px",
-                        bgcolor: "#f9fafb",
+                        bgcolor: "action.hover",
                         fontSize: "0.8rem",
                         height: 34,
                       },
-                      "& .MuiInputBase-input": { py: 0.5 },
+                      "& .MuiInputBase-input": { py: 0.5, color: "text.primary" },
                     },
                   },
                 }}
@@ -1117,9 +1126,10 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
             sx={{
               "& .MuiOutlinedInput-root": {
                 borderRadius: "8px",
-                bgcolor: "#f9fafb",
+                bgcolor: "action.hover",
                 fontSize: "0.8rem",
               },
+              "& .MuiInputBase-input": { color: "text.primary" },
             }}
           />
           <Button

@@ -4,14 +4,19 @@ export const roleCardStyles = {
   card: {
     borderRadius: 3,
     transition: "all 0.3s ease",
-    boxShadow: "0 2px 12px rgba(25, 118, 210, 0.08)",
+    boxShadow: (theme: Theme) => theme.palette.mode === 'dark' 
+      ? "0 4px 12px rgba(0,0,0,0.4)" 
+      : "0 2px 12px rgba(25, 118, 210, 0.08)",
     "&:hover": {
-      boxShadow: "0 8px 24px rgba(25, 118, 210, 0.2)",
+      boxShadow: (theme: Theme) => theme.palette.mode === 'dark' 
+        ? "0 12px 30px rgba(0,0,0,0.6)" 
+        : "0 8px 24px rgba(25, 118, 210, 0.2)",
       transform: "translateY(-4px)",
       "& .role-avatar": { transform: "scale(1.05)" },
     },
-    border: "1px solid rgba(25, 118, 210, 0.12)",
-    background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)",
+    border: "1px solid",
+    borderColor: "divider",
+    bgcolor: "background.paper",
     width: "100%",
     height: "100%",
     minHeight: { xs: "80px", sm: "90px" },
@@ -39,10 +44,7 @@ export const roleCardStyles = {
   title: {
     fontSize: { xs: "0.95rem", sm: "1.05rem" },
     fontWeight: 700,
-    background: "linear-gradient(45deg, #1976d2, #42a5f5)",
-    backgroundClip: "text",
-    WebkitBackgroundClip: "text",
-    WebkitTextFillColor: "transparent",
+    color: "primary.main",
   } as SxProps<Theme>,
 
   viewButton: {
@@ -74,14 +76,14 @@ export const roleCardStyles = {
   } as SxProps<Theme>,
 
   expandedContent: {
-    background: "rgba(25, 118, 210, 0.04)",
+    background: (theme: Theme) => alpha(theme.palette.primary.main, 0.04),
     borderRadius: 2,
     p: 1.5,
     mt: 1,
   } as SxProps<Theme>,
 
   permissionsSummary: {
-    background: "rgba(25, 118, 210, 0.04)",
+    background: (theme: Theme) => alpha(theme.palette.primary.main, 0.04),
     borderRadius: 2,
     p: 1.5,
     mt: 1,
@@ -111,8 +113,9 @@ export const roleCardStyles = {
   loadingCard: {
     p: 2,
     borderRadius: 3,
-    border: "1px solid rgba(25, 118, 210, 0.1)",
-    background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)",
+    border: "1px solid",
+    borderColor: "divider",
+    bgcolor: "background.paper",
   } as SxProps<Theme>,
 };
 
@@ -125,12 +128,13 @@ export const permissionColors = {
 export const rolePermissionsDialogStyles = {
   dialog: {
     borderRadius: { xs: 2, sm: 3 },
-    background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)",
+    bgcolor: "background.paper",
     minWidth: { xs: "unset", sm: "320px", md: "500px" },
     maxWidth: { xs: "95vw", sm: "90vw", md: "600px" },
     width: { xs: "95vw", sm: "auto" },
     maxHeight: { xs: "90vh", sm: "none" },
     margin: { xs: 1, sm: 1, md: "auto" },
+    backgroundImage: "none",
   } as SxProps<Theme>,
 
   dialogTitle: {

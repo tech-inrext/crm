@@ -9,7 +9,7 @@ const SearchBar = forwardRef<HTMLDivElement, SearchBarProps>(
   ({ sx, InputProps, ...props }, ref) => (
     <Box
       ref={ref}
-      sx={{ minWidth: 200, bgcolor: "white", borderRadius: 1, ...sx }}
+      sx={{ minWidth: 200, bgcolor: "background.paper", borderRadius: 1, ...sx }}
     >
       <TextField
         size="small"

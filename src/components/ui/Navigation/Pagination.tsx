@@ -63,9 +63,13 @@ const Pagination: React.FC<PaginationProps> = ({
         justifyContent: "center",
         flexWrap: "wrap",
         padding: { xs: "8px", sm: "6px" },
-        bgcolor: "#f8fafc",
-        border: "1px solid #e2e8f0",
+        bgcolor: "background.paper",
+        border: "1px solid",
+        borderColor: "divider",
         borderRadius: 999,
+        boxShadow: (theme) => theme.palette.mode === 'dark' 
+          ? "0 4px 20px rgba(0,0,0,0.5)" 
+          : "0 2px 10px rgba(0,0,0,0.05)",
       }}
     >
       {/* Previous Button */}
@@ -74,10 +78,11 @@ const Pagination: React.FC<PaginationProps> = ({
         onClick={() => canPrev && onPageChange(page - 1)}
         disabled={!canPrev}
         sx={{
-          bgcolor: "#fff",
-          color: "#475569",
-          border: "1px solid #e2e8f0",
-          "&:hover": { bgcolor: "#f1f5f9" },
+          bgcolor: "background.default",
+          color: "text.secondary",
+          border: "1px solid",
+          borderColor: "divider",
+          "&:hover": { bgcolor: "action.hover" },
           fontSize: { xs: "14px", sm: "16px" },
           padding: { xs: "4px", sm: "6px" },
           boxShadow: "none",
@@ -88,28 +93,34 @@ const Pagination: React.FC<PaginationProps> = ({
 
       {/* Page Input */}
       <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
-        <Typography sx={{ color: "#64748b", fontSize: { xs: 12, sm: 14 } }}>
+        <Typography sx={{ color: "text.secondary", fontSize: { xs: 12, sm: 14 } }}>
           Page
         </Typography>
-        <input
+        <Box
+          component="input"
           type="text"
           value={inputPage}
           onChange={handleInputChange}
           onKeyDown={handlePageSubmit}
-          onBlur={triggerPageChange} // Trigger onBlur
-          style={{
+          onBlur={triggerPageChange}
+          sx={{
             width: "48px",
             padding: "2px 6px",
-            borderRadius: 8,
-            border: "1px solid #e2e8f0",
-            background: "#fff",
-            color: "#0f172a",
+            borderRadius: 2,
+            border: "1px solid",
+            borderColor: "divider",
+            bgcolor: "background.default",
+            color: "text.primary",
             fontWeight: 500,
             textAlign: "center",
             fontSize: "13px",
+            outline: "none",
+            "&:focus": {
+              borderColor: "primary.main",
+            }
           }}
         />
-        <Typography sx={{ color: "#64748b", fontSize: { xs: 12, sm: 14 } }}>
+        <Typography sx={{ color: "text.secondary", fontSize: { xs: 12, sm: 14 } }}>
           of {totalPages}
         </Typography>
       </Box>
@@ -120,10 +131,11 @@ const Pagination: React.FC<PaginationProps> = ({
         onClick={() => canNext && onPageChange(page + 1)}
         disabled={!canNext}
         sx={{
-          bgcolor: "#fff",
-          color: "#475569",
-          border: "1px solid #e2e8f0",
-          "&:hover": { bgcolor: "#f1f5f9" },
+          bgcolor: "background.default",
+          color: "text.secondary",
+          border: "1px solid",
+          borderColor: "divider",
+          "&:hover": { bgcolor: "action.hover" },
           fontSize: { xs: "14px", sm: "16px" },
           padding: { xs: "4px", sm: "6px" },
           boxShadow: "none",
@@ -133,35 +145,42 @@ const Pagination: React.FC<PaginationProps> = ({
       </IconButton>
       
       {/* Total Count */}
-      <Typography sx={{ color: "#64748b", fontSize: { xs: 12, sm: 14 }, mx: 1 }}>
+      <Typography sx={{ color: "text.secondary", fontSize: { xs: 12, sm: 14 }, mx: 1 }}>
         Total: {total}
       </Typography>
 
       {/* Page Size Selector */}
       {onPageSizeChange && (
         <Box sx={{ ml: 1, display: "flex", alignItems: "center", gap: 0.75 }}>
-          <Typography sx={{ color: "#64748b", fontSize: { xs: 12, sm: 14 } }}>
+          <Typography sx={{ color: "text.secondary", fontSize: { xs: 12, sm: 14 } }}>
             Rows:
           </Typography>
-          <select
+          <Box
+            component="select"
             value={pageSize}
-            onChange={(e) => onPageSizeChange(Number(e.target.value))}
-            style={{
+            onChange={(e: any) => onPageSizeChange(Number(e.target.value))}
+            sx={{
               padding: "2px 8px",
-              borderRadius: 8,
-              border: "1px solid #e2e8f0",
-              background: "#fff",
-              color: "#0f172a",
+              borderRadius: 2,
+              border: "1px solid",
+              borderColor: "divider",
+              bgcolor: "background.default",
+              color: "text.primary",
               fontWeight: 500,
               fontSize: "13px",
+              outline: "none",
+              cursor: "pointer",
+              "&:focus": {
+                borderColor: "primary.main",
+              }
             }}
           >
             {pageSizeOptions.map((opt) => (
-              <option key={opt} value={opt}>
+              <option key={opt} value={opt} style={{ background: 'inherit', color: 'inherit' }}>
                 {opt}
               </option>
             ))}
-          </select>
+          </Box>
         </Box>
       )}
     </Box>

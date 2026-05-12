@@ -105,7 +105,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
         content={
           <Box
             sx={{
-              background: "white",
+              bgcolor: "background.paper",
               p: 2,
               display: "flex",
               flexDirection: "column",
@@ -173,7 +173,8 @@ const BookingCard: React.FC<BookingCardProps> = ({
               sx={{
                 mt: "auto",
                 pt: 1.5,
-                borderTop: "1px solid #f1f5f9",
+                borderTop: "1px solid",
+                borderColor: "divider",
                 display: "flex",
                 justifyContent: "space-between",
                 alignItems: "center",

@@ -43,7 +43,7 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         borderRadius: { xs: 2, sm: 3, md: 4 },
         mb: 1,
         mt: 0,
-        background: "#ffffff",
+        bgcolor: "background.paper",
         boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)",
         border: "1px solid",
         borderColor: "divider",

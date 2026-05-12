@@ -3,9 +3,12 @@ import type { SxProps, Theme } from "@mui/material";
 
 export const cardSx: SxProps<Theme> = {
   borderRadius: 3,
-  boxShadow: "0 2px 8px rgba(0,0,0,0.06)",
-  background: "linear-gradient(145deg, #ffffff 0%, #fafbfc 100%)",
-  border: "1px solid rgba(0,0,0,0.04)",
+  boxShadow: (theme) => theme.palette.mode === 'dark' 
+    ? "0 4px 12px rgba(0,0,0,0.4)" 
+    : "0 2px 8px rgba(0,0,0,0.06)",
+  bgcolor: "background.paper",
+  border: "1px solid",
+  borderColor: "divider",
   position: "relative",
   height: "100%",
   minHeight: "220px",
@@ -14,9 +17,11 @@ export const cardSx: SxProps<Theme> = {
   transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
   overflow: "hidden",
   "&:hover": {
-    boxShadow: "0 8px 25px rgba(0,0,0,0.1)",
+    boxShadow: (theme) => theme.palette.mode === 'dark' 
+      ? "0 12px 30px rgba(0,0,0,0.6)" 
+      : "0 8px 25px rgba(0,0,0,0.1)",
     transform: "translateY(-2px)",
-    borderColor: "rgba(0,0,0,0.08)",
+    borderColor: "primary.main",
   },
 };
 
@@ -34,7 +39,7 @@ export const avatarSx = (bgColor: string): SxProps<Theme> => ({
 export const dividerSx: SxProps<Theme> = {
   my: 1.5,
   borderStyle: "solid",
-  borderColor: "rgba(0,0,0,0.06)",
+  borderColor: "divider",
   opacity: 0.7,
 };
 

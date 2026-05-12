@@ -203,13 +203,13 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 display: { xs: "none", sm: "flex" },
                 height: 40,
                 width: 40,
-                backgroundColor: activeFilterCount > 0 ? alpha(theme.palette.primary.main, 0.08) : "#fff",
+                backgroundColor: activeFilterCount > 0 ? alpha(theme.palette.primary.main, 0.1) : "background.paper",
                 color: activeFilterCount > 0 ? "primary.main" : "text.secondary",
                 border: `1px solid ${activeFilterCount > 0 ? theme.palette.primary.main : alpha(theme.palette.divider, 0.8)}`,
                 borderRadius: 2,
                 transition: "all 0.2s",
                 "&:hover": {
-                  backgroundColor: alpha(theme.palette.primary.main, 0.12),
+                  backgroundColor: "action.hover",
                   borderColor: theme.palette.primary.main,
                 },
               }}
@@ -232,14 +232,14 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 width: "100%",
                 "& .MuiOutlinedInput-root": {
                   borderRadius: 2,
-                  bgcolor: alpha(theme.palette.common.white, 0.8),
+                  bgcolor: "action.hover",
                   transition: "all 0.2s",
                   "&:hover": {
-                    bgcolor: theme.palette.common.white,
+                    bgcolor: "action.selected",
                     boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
                   },
                   "&.Mui-focused": {
-                    bgcolor: theme.palette.common.white,
+                    bgcolor: "background.paper",
                     boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                   },
                 },
@@ -256,7 +256,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               <IconButton
                 onClick={openFilter}
                 sx={{
-                  bgcolor: activeFilterCount > 0 ? alpha(theme.palette.primary.main, 0.1) : "white",
+                  bgcolor: activeFilterCount > 0 ? alpha(theme.palette.primary.main, 0.1) : "background.paper",
                   color: activeFilterCount > 0 ? "primary.main" : "text.secondary",
                   border: `1px solid ${activeFilterCount > 0 ? theme.palette.primary.main : alpha(theme.palette.divider, 0.8)}`,
                   borderRadius: 2,
@@ -270,7 +270,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
             <IconButton
               onClick={openActionsMenu}
               sx={{
-                bgcolor: "white",
+                bgcolor: "background.paper",
                 border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
                 borderRadius: 2,
               }}
@@ -306,7 +306,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               height: 40,
               px: 2,
               borderRadius: 2,
-              bgcolor: selectedAssignedTo.length > 0 ? alpha(theme.palette.primary.main, 0.08) : "#fff",
+              bgcolor: selectedAssignedTo.length > 0 ? alpha(theme.palette.primary.main, 0.1) : "background.paper",
               border: `1px solid ${selectedAssignedTo.length > 0 ? theme.palette.primary.main : alpha(theme.palette.divider, 0.8)}`,
               color: selectedAssignedTo.length > 0 ? "primary.main" : "text.primary",
               textTransform: "none",
@@ -343,7 +343,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               },
             }}
           >
-            <Box sx={{ py: 1.5, px: 2, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#f8faff" }}>
+            <Box sx={{ py: 1.5, px: 2, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover" }}>
               <Typography sx={{ fontWeight: 700, fontSize: "0.85rem", color: "text.primary", textTransform: "uppercase", letterSpacing: 0.5 }}>
                 Select Team
               </Typography>
@@ -490,7 +490,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                   height: 40,
                   px: 2,
                   borderRadius: 2,
-                  bgcolor: "#fff",
+                  bgcolor: "background.paper",
                   border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
                   color: "text.primary",
                   textTransform: "none",
@@ -591,10 +591,10 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 sx={{
                   height: 40,
                   width: 40,
-                  bgcolor: "white",
+                  bgcolor: "background.paper",
                   border: `1px solid ${alpha(theme.palette.divider, 0.8)}`,
                   borderRadius: 2,
-                  "&:hover": { bgcolor: alpha(theme.palette.divider, 0.05) },
+                  "&:hover": { bgcolor: "action.hover" },
                 }}
               >
                 <MoreVert fontSize="small" />
@@ -611,11 +611,11 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                     borderRadius: 2,
                     fontWeight: 600,
                     textTransform: "none",
-                    backgroundColor: theme.palette.primary.main,
-                    color: "white",
+                    backgroundColor: "primary.main",
+                    color: "primary.contrastText",
                     boxShadow: "0 4px 12px rgba(25, 118, 210, 0.2)",
                     "&:hover": {
-                      backgroundColor: theme.palette.primary.dark,
+                      backgroundColor: "primary.dark",
                       boxShadow: "0 6px 16px rgba(25, 118, 210, 0.3)",
                     },
                   }}
@@ -654,8 +654,8 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
               },
             }}
           >
-            <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "#f8faff" }}>
-              <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "#1a2027" }}>
+            <Box sx={{ p: 2, display: "flex", justifyContent: "space-between", alignItems: "center", bgcolor: "action.hover" }}>
+              <Typography sx={{ fontWeight: 700, fontSize: "1rem", color: "text.primary" }}>
                 Filter Leads
               </Typography>
               {activeFilterCount > 0 && (

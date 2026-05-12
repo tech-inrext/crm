@@ -16,7 +16,7 @@ export const MODULE_LAYOUT_STYLES = {
     borderRadius: { xs: 2, sm: 3, md: 4 },
     mb: { xs: 2, sm: 2.5, md: 3 },
     mt: 0,
-    background: "#ffffff",
+    bgcolor: "background.paper",
     boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)",
     border: "1px solid",
     borderColor: "divider",
@@ -200,7 +200,7 @@ export const ROLES_STYLES = {
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    bgcolor: "#f9f9f9",
+    bgcolor: "background.default",
   } as SxProps<Theme>,
 
   rolesGrid: {
@@ -305,7 +305,7 @@ export const PROPERTIES_STYLES = {
     mt: 2,
     p: 2,
     borderRadius: 2,
-    backgroundColor: "grey.50",
+    bgcolor: "action.hover",
     border: "1px solid",
     borderColor: "grey.200",
   } as SxProps<Theme>,

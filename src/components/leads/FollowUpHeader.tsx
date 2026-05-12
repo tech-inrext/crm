@@ -50,8 +50,9 @@ export default function FollowUpHeader({
         <div>
             <Box
         sx={{
-          bgcolor: "#fff",
-          borderBottom: "1px solid #f3f4f6",
+          bgcolor: "background.paper",
+          borderBottom: "1px solid",
+          borderColor: "divider",
           pt: "10px",
         }}
       >
@@ -98,7 +99,7 @@ export default function FollowUpHeader({
           {isMobile && (
             <ChevronLeftIcon 
               onClick={handleDialogClose}
-              sx={{ cursor: "pointer", ml: -1 }}
+              sx={{ cursor: "pointer", ml: -1, color: "text.primary" }}
             />
           )}
 
@@ -108,9 +109,10 @@ export default function FollowUpHeader({
                 height: 32,
                 fontSize: "0.75rem",
                 fontWeight: 700,
-                bgcolor: "#eff6ff",
-                color: "#2563eb",
-                border: "1.5px solid #dbeafe",
+                bgcolor: (theme) => theme.palette.mode === 'dark' ? 'primary.dark' : '#eff6ff',
+                color: (theme) => theme.palette.mode === 'dark' ? 'primary.contrastText' : '#2563eb',
+                border: "1.5px solid",
+                borderColor: "divider",
               }}
             >
               {leadInfo.fullName
@@ -123,7 +125,7 @@ export default function FollowUpHeader({
                   sx={{
                     fontSize: "0.8rem",
                     fontWeight: 600,
-                    color: "#111827",
+                    color: "text.primary",
                     lineHeight: 1.3,
                     overflow: "hidden",
                     textOverflow: "ellipsis",
@@ -165,7 +167,7 @@ export default function FollowUpHeader({
               <Box sx={{ display: "flex", alignItems: "center", gap: 3, flexWrap: "wrap", mt: 0.5 }}>
                 {leadInfo.phone && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
-                    <Phone sx={{ fontSize: 13, color: "#6b7280" }} />
+                    <Phone sx={{ fontSize: 13, color: "text.secondary" }} />
                     <Typography
                       component={
                         leadInfo.phone && !leadInfo.phone.includes("*")
@@ -179,9 +181,9 @@ export default function FollowUpHeader({
                       }
                       sx={{
                         fontSize: "0.7rem",
-                        color: "#6b7280",
+                        color: "text.secondary",
                         textDecoration: "none",
-                        "&:hover": { color: "#2563eb" },
+                        "&:hover": { color: "primary.main" },
                       }}
                     >
                       {leadInfo.phone}
@@ -190,11 +192,11 @@ export default function FollowUpHeader({
                 )}
                 {leadInfo.budgetRange && (
                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.4 }}>
-                    <TrendingUp sx={{ fontSize: 13, color: "#6b7280" }} />
+                    <TrendingUp sx={{ fontSize: 13, color: "text.secondary" }} />
                     <Typography
                       sx={{
                         fontSize: "0.68rem",
-                        color: "#6b7280",
+                        color: "text.secondary",
                         fontWeight: 500,
                       }}
                     >

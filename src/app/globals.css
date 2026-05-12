@@ -13,6 +13,7 @@
 
 :root {
   --background: #ffffff;
+  --foreground: #1e293b;
   --mobile-padding: 8px;
   --tablet-padding: 16px;
   --desktop-padding: 24px;
@@ -24,6 +25,18 @@
   --mobile-spacing-sm: 8px;
   --mobile-spacing-md: 12px;
   --mobile-spacing-lg: 16px;
+  
+  --scrollbar-track: #f1f1f1;
+  --scrollbar-thumb: #c1c1c1;
+  --scrollbar-thumb-hover: #a8a8a8;
+}
+
+.dark {
+  --background: #0f172a;
+  --foreground: #f1f5f9;
+  --scrollbar-track: #1e293b;
+  --scrollbar-thumb: #475569;
+  --scrollbar-thumb-hover: #64748b;
 }
 
 * {
@@ -40,6 +53,7 @@ body {
   min-height: 100vh;
   /* Ensure minimum touch target size */
   -webkit-tap-highlight-color: transparent;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 html {
@@ -98,18 +112,18 @@ html {
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--scrollbar-track);
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: var(--scrollbar-thumb);
   border-radius: 3px;
   transition: background 0.2s ease;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: var(--scrollbar-thumb-hover);
 }
 
 /* Mobile-first main content layout */

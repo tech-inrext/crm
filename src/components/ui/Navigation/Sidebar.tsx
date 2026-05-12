@@ -53,9 +53,10 @@ const SidebarContent = ({ links, onClose }) => {
       sx={{
         width: { xs: 260, sm: 280, md: 300, lg: 260 }, // Better responsive width
         height: "100%",
-        background: "#fff",
-        color: "#fff",
-        borderRight: "1px solid #E6EEF5",
+        bgcolor: "background.paper",
+        color: "text.primary",
+        borderRight: 1,
+        borderColor: "divider",
         overflow: "hidden",
       }}
     >
@@ -79,7 +80,7 @@ const SidebarContent = ({ links, onClose }) => {
               selected={isActive}
               onClick={(e) => handleClick(e, link)}
               sx={{
-                color: "#000",
+                color: "text.primary",
                 borderRadius: { xs: 1, sm: 2 },
                 mx: { xs: 0.25, sm: 0.5, md: 1 }, // Reduced margin on mobile
                 mb: { xs: 0.25, sm: 0.5 }, // Reduced bottom margin

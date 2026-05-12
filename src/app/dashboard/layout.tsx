@@ -53,94 +53,95 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "Analytics",
     href: "/dashboard/analytics",
     module: "analytics",
-    icon: <Analytics sx={{ color: "#3785FF" }} />,
+    icon: <Analytics color="primary" />,
   },
   {
     label: "Notice Board",
     href: "/dashboard/Notice-Board",
-icon: <Campaign sx={{ color: "#3785FF" }} />  },
+    icon: <Campaign color="primary" />
+  },
   {
     label: "Leads",
     href: "/dashboard/leads",
     module: "lead",
-    icon: <ContactPhone sx={{ color: "#3785FF" }} />,
+    icon: <ContactPhone color="primary" />,
   },
   {
     label: "Business Partners",
     href: "/dashboard/users",
     module: "employee",
-    icon: <Groups sx={{ color: "#3785FF" }} />,
+    icon: <Groups color="primary" />,
   },
   {
     label: "Roles",
     href: "/dashboard/roles",
     module: "role",
-    icon: <ManageAccounts sx={{ color: "#3785FF" }} />,
+    icon: <ManageAccounts color="primary" />,
   },
   {
     label: "Teams",
     href: "/dashboard/teams",
     module: "team",
-    icon: <GroupAdd sx={{ color: "#3785FF" }} />,
+    icon: <GroupAdd color="primary" />,
   },
   {
     label: "Pillars",
     href: "/dashboard/pillars",
     module: "pillar",
-    icon: <People sx={{ color: "#3785FF" }} />,
+    icon: <People color="primary" />,
   },
   {
     label: "MOU",
     href: "/dashboard/mou",
     module: "mou",
-    icon: <Diversity3 sx={{ color: "#3785FF" }} />,
+    icon: <Diversity3 color="primary" />,
   },
   {
     label: "Vendors",
     href: "/dashboard/vendor",
     module: "vendor",
-    icon: <Person sx={{ color: "#3785FF" }} />,
+    icon: <Person color="primary" />,
   },
   {
     label: "Cab Booking",
     href: "/dashboard/cab-booking",
     module: "cab-booking",
-    icon: <LocalTaxi sx={{ color: "#3785FF" }} />,
+    icon: <LocalTaxi color="primary" />,
   },
   {
     label: "Vendor Booking",
     href: "/dashboard/vendor-booking",
     module: "cab-vendor",
-    icon: <Assignment sx={{ color: "#3785FF" }} />,
+    icon: <Assignment color="primary" />,
   },
   {
     label: "Properties",
     href: "/dashboard/properties",
     module: "property",
-    icon: <Apartment sx={{ color: "#3785FF" }} />,
+    icon: <Apartment color="primary" />,
   },
   {
     label: "Booking Login",
     href: "/dashboard/booking-login",
     module: "booking-login",
-    icon: <Description sx={{ color: "#3785FF" }} />,
+    icon: <Description color="primary" />,
   },
   {
     label: "Training Videos",
     href: "/dashboard/training-videos",
     module: "training-videos",
-    icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
+    icon: <VideoLibrary color="primary" />,
   },
   {
     label: "Departments",
     href: "/dashboard/department",
     module: "department",
-    icon: <GroupIcon sx={{ color: "#3785FF" }} />,
+    icon: <GroupIcon color="primary" />,
   },
   {
     label: "Notifications",
     href: "/dashboard/notifications",
-    icon: <Notifications sx={{ color: "#3785FF" }} />,
+    icon: <Notifications color="primary" />,
   },
 ];
 
@@ -204,7 +205,7 @@ export default function DashboardLayout({
   return (
     <>
       {user && (
-        <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "#f5f7fa" }}>
+        <Box sx={{ display: "flex", minHeight: "100vh", bgcolor: "background.default" }}>
           {!isMobile && !pendingRoleSelection && (
             <Sidebar
               open={true}
@@ -230,7 +231,7 @@ export default function DashboardLayout({
                 pr: { xs: 0 },
                 transition: "padding-left 0.3s ease",
                 height: "calc(100vh - 64px)",
-                backgroundColor: "#f9f9f9",
+                bgcolor: "background.default",
                 width: "100%",
               }}
             >

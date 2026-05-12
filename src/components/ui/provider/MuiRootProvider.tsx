@@ -1,8 +1,10 @@
 "use client";
 import * as React from "react";
-import { ThemeProvider, CssBaseline, createTheme } from "@mui/material";
+import { ThemeProvider, CssBaseline } from "@mui/material";
 import { CacheProvider, EmotionCache } from "@emotion/react";
 import createCache from "@emotion/cache";
+import { useThemeContext } from "../../../contexts/ThemeContext";
+import { createAppTheme } from "../../../styles/theme";
 
 // Create emotion cache
 const createEmotionCache = () => {
@@ -11,12 +13,6 @@ const createEmotionCache = () => {
 
 const clientSideEmotionCache = createEmotionCache();
 
-const theme = createTheme({
-  palette: {
-    mode: "light",
-  },
-});
-
 export default function MuiRootProvider({
   children,
   emotionCache = clientSideEmotionCache,
@@ -24,6 +20,9 @@ export default function MuiRootProvider({
   children: React.ReactNode;
   emotionCache?: EmotionCache;
 }) {
+  const { mode } = useThemeContext();
+  const theme = React.useMemo(() => createAppTheme(mode), [mode]);
+
   return (
     <CacheProvider value={emotionCache}>
       <ThemeProvider theme={theme}>

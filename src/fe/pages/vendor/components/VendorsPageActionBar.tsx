@@ -29,14 +29,14 @@ const VendorsPageActionBar: React.FC<VendorsPageActionBarProps> = ({
             width: "100%",
             "& .MuiOutlinedInput-root": {
               borderRadius: 2,
-              bgcolor: alpha(theme.palette.common.white, 0.8),
+              bgcolor: "action.hover",
               transition: "all 0.2s",
               "&:hover": {
-                bgcolor: theme.palette.common.white,
+                bgcolor: "action.selected",
                 boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
               },
               "&.Mui-focused": {
-                bgcolor: theme.palette.common.white,
+                bgcolor: "background.paper",
                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
               },
             },
@@ -78,11 +78,11 @@ const VendorsPageActionBar: React.FC<VendorsPageActionBarProps> = ({
               textTransform: "none",
               whiteSpace: "nowrap",
               flex: { xs: 1, sm: "none" },
-              backgroundColor: theme.palette.primary.main,
-              color: "#fff",
+              backgroundColor: "primary.main",
+              color: "primary.contrastText",
               boxShadow: "0 4px 12px rgba(25, 118, 210, 0.2)",
               "&:hover": {
-                backgroundColor: theme.palette.primary.dark,
+                backgroundColor: "primary.dark",
                 boxShadow: "0 6px 16px rgba(25, 118, 210, 0.3)",
               },
             }}

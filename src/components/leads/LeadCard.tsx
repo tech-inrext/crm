@@ -151,7 +151,7 @@ const LeadCard = memo(
         sx={{
           borderRadius: 4,
           boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-          background: "#fff",
+          bgcolor: "background.paper",
           position: "relative",
           height: "367px",
           minHeight: "367px",
@@ -160,9 +160,14 @@ const LeadCard = memo(
           transition: "all 0.3s ease",
           overflow: "visible",
           cursor: "pointer",
+          border: "1px solid",
+          borderColor: "divider",
           "&:hover": {
-            boxShadow: "0 16px 32px rgba(0,0,0,0.12)",
+            boxShadow: theme.palette.mode === 'dark' 
+              ? "0 16px 32px rgba(0,0,0,0.4)" 
+              : "0 16px 32px rgba(0,0,0,0.12)",
             transform: "translateY(-4px)",
+            borderColor: "primary.main",
           },
         }}
       >
