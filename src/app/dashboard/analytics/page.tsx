@@ -5,6 +5,12 @@ import { Box, Typography, Container, Paper } from "@mui/material";
 import { Analytics as AnalyticsIcon } from "@mui/icons-material";
 
 export default function AnalyticsPage() {
+  const isProduction = process.env.NEXT_PUBLIC_APP_ENV === "production";
+
+  if (isProduction) {
+    return null; // or redirect, or show 404
+  }
+
   return (
     <Box
       sx={{

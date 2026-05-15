@@ -159,8 +159,13 @@ export default function DashboardLayout({
 
   // Compute accessible sidebar links
   const sidebarLinks = useMemo(() => {
+    const isProduction = process.env.NEXT_PUBLIC_APP_ENV === "production";
+
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
+          // Hide Analytics in production
+          if (isProduction && link.module === "analytics") return false;
+
           if (!link.module) return true;
 
           // Roles module only for system admins
