@@ -1,5 +1,5 @@
 import { Controller } from "@framework";
-import TeamService from "@/be/services/analytics/TeamService";
+import TeamService from "@/be/services/TeamService";
 
 class TeamController extends Controller {
   constructor() {
