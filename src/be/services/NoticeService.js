@@ -1,7 +1,7 @@
 import { Service } from "@framework";
 import Notice from "../models/Notice";
 import mongoose from "mongoose";
-import TeamService from "./analytics/TeamService";
+import TeamService from "./TeamService";
 
 class NoticeService extends Service {
   constructor() {
