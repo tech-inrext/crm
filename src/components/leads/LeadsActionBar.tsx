@@ -79,6 +79,8 @@ interface LeadsActionBarProps {
   onAssignedToChange: (ids: string[]) => void;
   assignedToMode: "direct" | "hierarchy";
   onAssignedToModeChange: (mode: "direct" | "hierarchy") => void;
+  selectedScheduledEvents?: string[];
+  onScheduledEventsChange?: (events: string[]) => void;
   onClearAllFilters?: () => void;
   onClearPanelFilters?: () => void;
   teamMembers: any[];
@@ -105,6 +107,8 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   onAssignedToChange,
   assignedToMode,
   onAssignedToModeChange,
+  selectedScheduledEvents = [],
+  onScheduledEventsChange,
   onClearAllFilters,
   onClearPanelFilters,
   teamMembers = [],
@@ -153,7 +157,8 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
     selectedStatuses.length + 
     selectedLeadTypes.length + 
     selectedProperties.length + 
-    selectedBudgets.length;
+    selectedBudgets.length +
+    selectedScheduledEvents.length;
 
   const uniqueProperties = useMemo(() => {
     const props = leads
@@ -678,6 +683,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 { label: "Lead Type", icon: <TrendingUpIcon />, items: LEAD_TYPES, selected: selectedLeadTypes, onChange: onLeadTypesChange, color: "warning.main" },
                 { label: "Property", icon: <HomeIcon />, items: uniqueProperties, selected: selectedProperties, onChange: onPropertiesChange, color: "success.main", scrollable: true },
                 { label: "Budget Range", icon: <RupeeIcon />, items: budgetRanges, selected: selectedBudgets, onChange: onBudgetsChange, color: "error.main" },
+                { label: "Scheduled Events", icon: <AssignmentInd />, items: ["Site Visit", "Call Back Scheduled"], selected: selectedScheduledEvents, onChange: onScheduledEventsChange, color: "secondary.main" },
               ].map((section, idx) => (
                 <React.Fragment key={section.label}>
                   <Accordion 
