@@ -226,6 +226,7 @@ class LeadService extends Service {
         propertyName,
         budgetRange,
         assignedTo,
+        scheduledEvents,
       } = req.query;
       const currentPage = parseInt(page);
       const itemsPerPage = parseInt(limit);
@@ -369,6 +370,29 @@ class LeadService extends Service {
         }
       }
 
+      let scheduledEventsQuery = {};
+      if (scheduledEvents) {
+        const events = Array.isArray(scheduledEvents)
+          ? scheduledEvents
+          : String(scheduledEvents)
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+            
+        if (events.length) {
+          // Normalize to match enum values: "site visit", "call back"
+          const normalizedEvents = events.map(e => e.toLowerCase() === "call back scheduled" ? "call back" : e.toLowerCase());
+          
+          const matchingFollowUps = await FollowUp.find({
+            outcome: "pending",
+            followUpType: { $in: normalizedEvents }
+          }).select("leadId").lean();
+          
+          const leadIds = matchingFollowUps.map(f => f.leadId);
+          scheduledEventsQuery = { _id: { $in: leadIds } };
+        }
+      }
+
       const queryParts = [baseQuery];
       if (Object.keys(searchQuery).length) queryParts.push(searchQuery);
       if (Object.keys(statusQuery).length) queryParts.push(statusQuery);
@@ -376,6 +400,7 @@ class LeadService extends Service {
       if (Object.keys(propertyQuery).length) queryParts.push(propertyQuery);
       if (Object.keys(budgetQuery).length) queryParts.push(budgetQuery);
       if (Object.keys(assignedToQuery).length) queryParts.push(assignedToQuery);
+      if (Object.keys(scheduledEventsQuery).length) queryParts.push(scheduledEventsQuery);
 
       const query = queryParts.length > 1 ? { $and: queryParts } : baseQuery;
 
