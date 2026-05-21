@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { PhoneCallback, EventAvailable, TrendingUp, Today } from "@mui/icons-material";
 
 interface ActivityStats {
@@ -42,6 +43,21 @@ const ActivityCards: React.FC<ActivityCardsProps> = ({ stats }) => {
     },
   ];
 
+  const router = useRouter();
+
+  const handleCardClick = (title: string) => {
+    let url = "/dashboard/leads";
+    if (title === "Call Backs") {
+      url += "?scheduledEvents=Call Back Scheduled";
+    } else if (title === "Site Visits") {
+      url += "?scheduledEvents=Site Visit";
+    } else {
+      // For overdue or others, just go to leads for now
+      // If overdue filtering is supported in the future, add it here
+    }
+    router.push(url);
+  };
+
   return (
     <div className="p-6 rounded-2xl border border-gray-200 bg-white w-full h-full flex flex-col shadow-sm">
       <div className="flex items-center gap-2 mb-6">
@@ -53,7 +69,8 @@ const ActivityCards: React.FC<ActivityCardsProps> = ({ stats }) => {
         {items.map((item, index) => (
           <div
             key={index}
-            className={`p-4 rounded-xl border flex items-center gap-4 transition-all hover:scale-[1.02] ${item.colorClass}`}
+            onClick={() => handleCardClick(item.title)}
+            className={`p-4 rounded-xl border flex items-center gap-4 transition-all hover:scale-[1.02] cursor-pointer ${item.colorClass}`}
           >
             <div className={`p-2 rounded-lg bg-white/50 flex items-center justify-center`}>
               {item.icon}

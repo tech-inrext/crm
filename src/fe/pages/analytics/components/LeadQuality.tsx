@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { Whatshot, LocalFireDepartment, AcUnit, WorkspacePremium } from "@mui/icons-material";
 
 interface QualityData {
@@ -12,6 +13,12 @@ interface LeadQualityProps {
 }
 
 const LeadQuality: React.FC<LeadQualityProps> = ({ data }) => {
+  const router = useRouter();
+
+  const handleCardClick = (key: string) => {
+    router.push(`/dashboard/leads?leadType=${encodeURIComponent(key)}`);
+  };
+
   const qualityItems = [
     { label: "Hot Lead", key: "hot lead", colorClass: "text-red-500 bg-red-50 border-red-100", icon: <Whatshot className="text-red-500" />, desc: "High conversion intent" },
     { label: "Warm Lead", key: "warm lead", colorClass: "text-orange-500 bg-orange-50 border-orange-100", icon: <LocalFireDepartment className="text-orange-500" />, desc: "Steady interest shown" },
@@ -29,7 +36,8 @@ const LeadQuality: React.FC<LeadQualityProps> = ({ data }) => {
         {qualityItems.map((item) => (
           <div
             key={item.key}
-            className={`p-4 rounded-xl border flex items-center gap-4 transition-all hover:scale-[1.02] ${item.colorClass}`}
+            onClick={() => handleCardClick(item.key)}
+            className={`p-4 rounded-xl border flex items-center gap-4 transition-all hover:scale-[1.02] cursor-pointer ${item.colorClass}`}
           >
             <div className="p-2 rounded-lg bg-white/50 flex items-center justify-center">
               {item.icon}
