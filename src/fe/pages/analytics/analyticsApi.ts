@@ -9,6 +9,10 @@ class AnalyticsApi extends BaseService {
   async getTodayActivity() {
     return this.get("/leads/activity");
   }
+
+  async getUserActivity() {
+    return this.get("/user/activity");
+  }
 }
 
 export const analyticsApi = new AnalyticsApi();

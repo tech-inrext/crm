@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDebounce } from "@/hooks/useDebounce";
 import { DEFAULT_PAGE_SIZE } from "@/fe/pages/mou/constants/mou";
@@ -20,7 +21,9 @@ export function useMouPage() {
   const { showToast } = useToast();
 
   // ─── View toggle ──────────────────────────────────────────────────────────
-  const [view, setView] = useState<MouView>("pending");
+  const searchParams = useSearchParams();
+  const initialView = (searchParams.get("view") as MouView) || "pending";
+  const [view, setView] = useState<MouView>(initialView);
   const status = view === "pending" ? "Pending" : "Approved";
 
   // ─── Pagination & Search State ─────────────────────────────────────────────
