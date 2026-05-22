@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { Description } from "@mui/icons-material";
 
 interface MouOverviewProps {
@@ -14,6 +15,16 @@ const MouOverview: React.FC<MouOverviewProps> = ({ data, total }) => {
     { label: "Approved", key: "approved", colorClass: "bg-green-500", textClass: "text-green-500", bgLightClass: "bg-green-50" },
     { label: "Rejected", key: "rejected", colorClass: "bg-red-500", textClass: "text-red-500", bgLightClass: "bg-red-50" },
   ];
+
+  const router = useRouter();
+
+  const handleStageClick = (key: string) => {
+    let view = "pending";
+    if (key === "approved" || key === "rejected") {
+      view = "completed";
+    }
+    router.push(`/dashboard/mou?view=${view}`);
+  };
 
   return (
     <div className="p-6 rounded-2xl border border-gray-200 bg-white w-full h-full flex flex-col shadow-sm">
@@ -33,7 +44,11 @@ const MouOverview: React.FC<MouOverviewProps> = ({ data, total }) => {
           const percentage = total > 0 ? (count / total) * 100 : 0;
 
           return (
-            <div key={stage.key} className="w-full">
+            <div 
+              key={stage.key} 
+              className="w-full cursor-pointer hover:bg-gray-50 p-2 rounded transition-colors"
+              onClick={() => handleStageClick(stage.key)}
+            >
               <div className="flex justify-between items-center mb-1.5">
                 <span className="text-[11px] font-bold text-gray-700 uppercase tracking-wide">{stage.label}</span>
                 <span className={`text-xs font-extrabold ${stage.textClass}`}>
