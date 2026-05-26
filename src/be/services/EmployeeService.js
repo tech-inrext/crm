@@ -1416,14 +1416,19 @@ class EmployeeService extends Service {
         .select("_id managerId")
         .lean();
       const ids = [managerId.toString()];
+      const visited = new Set([managerId.toString()]);
 
       const findSubordinates = (mId) => {
         const subs = allEmployees.filter(
-          (e) => String(e.managerId) === String(mId),
+          (e) => String(e.managerId) === String(mId) && String(e._id) !== String(mId)
         );
         subs.forEach((s) => {
-          ids.push(s._id.toString());
-          findSubordinates(s._id);
+          const sIdStr = s._id.toString();
+          if (!visited.has(sIdStr)) {
+            visited.add(sIdStr);
+            ids.push(sIdStr);
+            findSubordinates(s._id);
+          }
         });
       };
 
