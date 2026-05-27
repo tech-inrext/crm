@@ -102,7 +102,7 @@ icon: <Campaign sx={{ color: "#3785FF" }} />  },
     icon: <Person sx={{ color: "#3785FF" }} />,
   },
   {
-    label: "Cab Booking",
+    label: "Cab Status",
     href: "/dashboard/cab-booking",
     module: "cab-booking",
     icon: <LocalTaxi sx={{ color: "#3785FF" }} />,
