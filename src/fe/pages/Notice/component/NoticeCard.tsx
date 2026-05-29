@@ -68,16 +68,9 @@ export default function NoticeCard({
   const openMenu = Boolean(anchorEl);
 
   /* ✅ ROLE CHECK */
-  const { user } = useAuth();
+  const { user, isSystemAdmin, isAVP } = useAuth();
 
-  const currentRoleName =
-    typeof user?.currentRole === "object"
-      ? user?.currentRole?.name
-      : user?.roles?.find((r: any) => r._id === user?.currentRole)?.name;
-
-  const isAdminOrAVP =
-    currentRoleName?.toLowerCase() === "admin" ||
-    currentRoleName?.toLowerCase() === "avp";
+  const isAdminOrAVP = Boolean(isSystemAdmin || isAVP);
 
   const handleMenuOpen = (e: React.MouseEvent<HTMLElement>) => {
     e.stopPropagation();
