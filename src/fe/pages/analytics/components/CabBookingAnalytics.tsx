@@ -5,13 +5,14 @@ import CabBookingPipeline from "./CabBookingPipeline";
 import CabCostRoi from "./CabCostRoi";
 import CabVendorPerformance from "./CabVendorPerformance";
 import CabPickupHotspots from "./CabPickupHotspots";
+import { analyticsApi } from "../analyticsApi";
 
 const mockCabData = {
   pipeline: {
     totalScheduled: 15,
-    completed: 10,
-    cancelled: 3,
-    noShow: 2,
+    pending: 5,
+    completed: 8,
+    cancelled: 2,
   },
   roi: {
     totalSpent: 12500,
@@ -36,15 +37,23 @@ const CabBookingAnalytics = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate API call
-    const fetchMockData = async () => {
-      setTimeout(() => {
+    const fetchRealData = async () => {
+      try {
+        const res = await analyticsApi.getCabBookingActivity();
+        if (res.success) {
+          setData(res.data);
+        } else {
+          setData(mockCabData);
+        }
+      } catch (err) {
+        console.error("Failed to fetch cab booking analytics:", err);
         setData(mockCabData);
+      } finally {
         setLoading(false);
-      }, 800);
+      }
     };
 
-    fetchMockData();
+    fetchRealData();
   }, []);
 
   if (loading) {

@@ -25,15 +25,21 @@ class LeadAnalyticsService extends Service {
       const myLeads = await Lead.find({ assignedTo: employeeId }).select("_id").lean();
       const myLeadIds = myLeads.map((l) => l._id);
 
-      // Find follow-ups for those leads scheduled for today
-      const todayFollowUps = await FollowUp.find({
+      // Find unique lead IDs with follow-ups scheduled for today
+      const todayCallBackLeadIds = await FollowUp.distinct("leadId", {
         leadId: { $in: myLeadIds },
         followUpDate: { $gte: startOfToday, $lte: endOfToday },
-        followUpType: { $in: ["site visit", "call back"] },
-      }).lean();
+        followUpType: "call back",
+      });
 
-      // Find overdue follow-ups (past date and still pending)
-      const overdueFollowUps = await FollowUp.countDocuments({
+      const todaySiteVisitLeadIds = await FollowUp.distinct("leadId", {
+        leadId: { $in: myLeadIds },
+        followUpDate: { $gte: startOfToday, $lte: endOfToday },
+        followUpType: "site visit",
+      });
+
+      // Find unique lead IDs with overdue follow-ups (past date and still pending)
+      const overdueLeadIds = await FollowUp.distinct("leadId", {
         leadId: { $in: myLeadIds },
         followUpDate: { $lt: startOfToday },
         outcome: "pending",
@@ -47,16 +53,21 @@ class LeadAnalyticsService extends Service {
       ]);
 
       const stats = {
-        callBackCount: todayFollowUps.filter((f) => f.followUpType === "call back").length,
-        siteVisitCount: todayFollowUps.filter((f) => f.followUpType === "site visit").length,
-        overdueCount: overdueFollowUps,
+        callBackCount: todayCallBackLeadIds.length,
+        siteVisitCount: todaySiteVisitLeadIds.length,
+        overdueCount: overdueLeadIds.length,
         statusDistribution: statusCounts.reduce((acc, curr) => {
           acc[curr._id || "new"] = curr.count;
           return acc;
         }, {}),
         qualityDistribution: (
           await Lead.aggregate([
-            { $match: { assignedTo: new mongoose.Types.ObjectId(employeeId) } },
+            { 
+              $match: { 
+                assignedTo: new mongoose.Types.ObjectId(employeeId),
+                status: { $nin: ["closed", "not interested"] }
+              } 
+            },
             { $group: { _id: "$leadType", count: { $sum: 1 } } },
           ])
         ).reduce((acc, curr) => {
@@ -90,7 +101,7 @@ class LeadAnalyticsService extends Service {
             };
           })
         ),
-        total: todayFollowUps.length + overdueFollowUps,
+        total: todayCallBackLeadIds.length + todaySiteVisitLeadIds.length + overdueLeadIds.length,
       };
 
       return res.status(200).json({

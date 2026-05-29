@@ -6,18 +6,18 @@ import { DirectionsCar } from "@mui/icons-material";
 interface CabBookingPipelineProps {
   data: {
     totalScheduled: number;
+    pending: number;
     completed: number;
     cancelled: number;
-    noShow: number;
   } | undefined;
 }
 
 const CabBookingPipeline: React.FC<CabBookingPipelineProps> = ({ data }) => {
   const total = data?.totalScheduled || 0;
   const stages = [
+    { label: "Pending", key: "pending", colorClass: "bg-blue-500", textClass: "text-blue-500", bgLightClass: "bg-blue-50" },
     { label: "Completed", key: "completed", colorClass: "bg-green-500", textClass: "text-green-500", bgLightClass: "bg-green-50" },
     { label: "Cancelled", key: "cancelled", colorClass: "bg-orange-500", textClass: "text-orange-500", bgLightClass: "bg-orange-50" },
-    { label: "No Show", key: "noShow", colorClass: "bg-red-500", textClass: "text-red-500", bgLightClass: "bg-red-50" },
   ];
 
   return (

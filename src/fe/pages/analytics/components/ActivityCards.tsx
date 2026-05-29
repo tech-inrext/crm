@@ -48,12 +48,11 @@ const ActivityCards: React.FC<ActivityCardsProps> = ({ stats }) => {
   const handleCardClick = (title: string) => {
     let url = "/dashboard/leads";
     if (title === "Call Backs") {
-      url += "?scheduledEvents=Call Back Scheduled";
+      url += "?scheduledEvents=Call Back Scheduled&scheduledRange=Today";
     } else if (title === "Site Visits") {
-      url += "?scheduledEvents=Site Visit";
-    } else {
-      // For overdue or others, just go to leads for now
-      // If overdue filtering is supported in the future, add it here
+      url += "?scheduledEvents=Site Visit&scheduledRange=Today";
+    } else if (title === "Overdue") {
+      url += "?scheduledRange=Overdue";
     }
     router.push(url);
   };

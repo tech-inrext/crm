@@ -37,7 +37,7 @@ import {
   TextField,
   alpha,
 } from "@/components/ui/Component";
-import { MoreVert } from "@mui/icons-material";
+import { MoreVert, Today as TodayIcon } from "@mui/icons-material";
 import SearchBar from "@/components/ui/search/SearchBar";
 import PermissionGuard from "@/components/PermissionGuard";
 import dynamic from "next/dynamic";
@@ -81,6 +81,8 @@ interface LeadsActionBarProps {
   onAssignedToModeChange: (mode: "direct" | "hierarchy") => void;
   selectedScheduledEvents?: string[];
   onScheduledEventsChange?: (events: string[]) => void;
+  selectedScheduledRanges?: string[];
+  onScheduledRangesChange?: (ranges: string[]) => void;
   onClearAllFilters?: () => void;
   onClearPanelFilters?: () => void;
   teamMembers: any[];
@@ -109,6 +111,8 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
   onAssignedToModeChange,
   selectedScheduledEvents = [],
   onScheduledEventsChange,
+  selectedScheduledRanges = [],
+  onScheduledRangesChange,
   onClearAllFilters,
   onClearPanelFilters,
   teamMembers = [],
@@ -158,7 +162,8 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
     selectedLeadTypes.length + 
     selectedProperties.length + 
     selectedBudgets.length +
-    selectedScheduledEvents.length;
+    selectedScheduledEvents.length +
+    selectedScheduledRanges.length;
 
   const uniqueProperties = useMemo(() => {
     const props = leads
@@ -684,6 +689,7 @@ const LeadsActionBar: React.FC<LeadsActionBarProps> = ({
                 { label: "Property", icon: <HomeIcon />, items: uniqueProperties, selected: selectedProperties, onChange: onPropertiesChange, color: "success.main", scrollable: true },
                 { label: "Budget Range", icon: <RupeeIcon />, items: budgetRanges, selected: selectedBudgets, onChange: onBudgetsChange, color: "error.main" },
                 { label: "Scheduled Events", icon: <AssignmentInd />, items: ["Site Visit", "Call Back Scheduled"], selected: selectedScheduledEvents, onChange: onScheduledEventsChange, color: "secondary.main" },
+                { label: "Scheduled Date", icon: <TodayIcon />, items: ["Overdue", "Today", "Future"], selected: selectedScheduledRanges, onChange: onScheduledRangesChange, color: "info.main" },
               ].map((section, idx) => (
                 <React.Fragment key={section.label}>
                   <Accordion 

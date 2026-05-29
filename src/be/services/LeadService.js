@@ -227,6 +227,7 @@ class LeadService extends Service {
         budgetRange,
         assignedTo,
         scheduledEvents,
+        scheduledRange,
       } = req.query;
       const currentPage = parseInt(page);
       const itemsPerPage = parseInt(limit);
@@ -371,26 +372,64 @@ class LeadService extends Service {
       }
 
       let scheduledEventsQuery = {};
-      if (scheduledEvents) {
-        const events = Array.isArray(scheduledEvents)
-          ? scheduledEvents
-          : String(scheduledEvents)
-            .split(",")
-            .map((s) => s.trim())
-            .filter(Boolean);
-            
-        if (events.length) {
-          // Normalize to match enum values: "site visit", "call back"
-          const normalizedEvents = events.map(e => e.toLowerCase() === "call back scheduled" ? "call back" : e.toLowerCase());
-          
-          const matchingFollowUps = await FollowUp.find({
-            outcome: "pending",
-            followUpType: { $in: normalizedEvents }
-          }).select("leadId").lean();
-          
-          const leadIds = matchingFollowUps.map(f => f.leadId);
-          scheduledEventsQuery = { _id: { $in: leadIds } };
+      if (scheduledEvents || scheduledRange) {
+        const followUpQuery = { outcome: "pending" };
+
+        if (scheduledEvents) {
+          const events = Array.isArray(scheduledEvents)
+            ? scheduledEvents
+            : String(scheduledEvents)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+          if (events.length) {
+            // Normalize to match enum values: "site visit", "call back"
+            const normalizedEvents = events.map(e => e.toLowerCase() === "call back scheduled" ? "call back" : e.toLowerCase());
+            followUpQuery.followUpType = { $in: normalizedEvents };
+          }
+        } else if (scheduledRange) {
+          // If a scheduled range is requested but no specific event type, restrict to scheduled event types only
+          followUpQuery.followUpType = { $in: ["site visit", "call back"] };
         }
+
+        if (scheduledRange) {
+          const ranges = Array.isArray(scheduledRange)
+            ? scheduledRange
+            : String(scheduledRange)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+          if (ranges.length) {
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+            const endOfToday = new Date();
+            endOfToday.setHours(23, 59, 59, 999);
+
+            const rangeQueries = [];
+            ranges.forEach(range => {
+              const r = range.toLowerCase();
+              if (r === "today") {
+                rangeQueries.push({ followUpDate: { $gte: startOfToday, $lte: endOfToday } });
+              } else if (r === "overdue") {
+                rangeQueries.push({ followUpDate: { $lt: startOfToday } });
+              } else if (r === "future") {
+                rangeQueries.push({ followUpDate: { $gt: endOfToday } });
+              }
+            });
+
+            if (rangeQueries.length === 1) {
+              followUpQuery.followUpDate = rangeQueries[0].followUpDate;
+            } else if (rangeQueries.length > 1) {
+              followUpQuery.$or = rangeQueries.map(rq => ({ followUpDate: rq.followUpDate }));
+            }
+          }
+        }
+
+        const matchingFollowUps = await FollowUp.find(followUpQuery).select("leadId").lean();
+        const leadIds = matchingFollowUps.map(f => f.leadId);
+        scheduledEventsQuery = { _id: { $in: leadIds } };
       }
 
       const queryParts = [baseQuery];
