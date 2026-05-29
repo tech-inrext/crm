@@ -33,6 +33,7 @@ export function useLeadsPage() {
       assignedTo: defaultAssignedTo,
       assignedToMode: (searchParams.get("assignedToMode") as "direct" | "hierarchy") || "direct",
       scheduledEvents: searchParams.get("scheduledEvents")?.split(",").filter(Boolean) || [],
+      scheduledRange: searchParams.get("scheduledRange")?.split(",").filter(Boolean) || [],
       search: searchParams.get("search") || "",
     };
   }, [searchParams, user?._id]);
@@ -67,6 +68,8 @@ export function useLeadsPage() {
     setAssignedToMode,
     selectedScheduledEvents,
     setSelectedScheduledEvents,
+    selectedScheduledRanges,
+    setSelectedScheduledRanges,
     open: internalOpen,
     setOpen: setInternalOpen,
     editId: internalEditId,
@@ -170,6 +173,10 @@ export function useLeadsPage() {
     const newScheduledEvents = scheduledEventsParam ? scheduledEventsParam.split(",").filter(Boolean) : [];
     setSelectedScheduledEvents((prev) => prev.join(",") === newScheduledEvents.join(",") ? prev : newScheduledEvents);
 
+    const scheduledRangeParam = searchParams.get("scheduledRange");
+    const newScheduledRanges = scheduledRangeParam ? scheduledRangeParam.split(",").filter(Boolean) : [];
+    setSelectedScheduledRanges((prev) => prev.join(",") === newScheduledRanges.join(",") ? prev : newScheduledRanges);
+
     const assignedToParam = searchParams.get("assignedTo");
     // If the URL has an explicitly empty assignedTo or lacks it, default to the current user 
     // to maintain 'Assigned to me' default scoping naturally, mirroring the initialFilters fallback.
@@ -195,7 +202,7 @@ export function useLeadsPage() {
       setDialogMode(prev => prev === (mode || "view") ? prev : (mode || "view"));
       setOpen(prev => prev === true ? prev : true);
     }
-  }, [searchParams, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setAssignedToMode, setSelectedScheduledEvents, setEditId, setDialogMode, setOpen]);
+  }, [searchParams, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setAssignedToMode, setSelectedScheduledEvents, setSelectedScheduledRanges, setEditId, setDialogMode, setOpen]);
 
   // Sync debounced search
   useEffect(() => {
@@ -331,6 +338,22 @@ export function useLeadsPage() {
     [searchParams, router, setSelectedScheduledEvents, setPage]
   );
 
+  const handleScheduledRangesChange = useCallback(
+    (ranges: string[]) => {
+      setSelectedScheduledRanges(ranges);
+      setPage(0);
+
+      const params = new URLSearchParams(searchParams.toString());
+      if (ranges.length > 0) {
+        params.set("scheduledRange", ranges.join(","));
+      } else {
+        params.delete("scheduledRange");
+      }
+      router.push(`?${params.toString()}`, { scroll: false });
+    },
+    [searchParams, router, setSelectedScheduledRanges, setPage]
+  );
+
   const handleClearAllFilters = useCallback(() => {
     setSelectedStatuses([]);
     setSelectedLeadTypes([]);
@@ -340,6 +363,7 @@ export function useLeadsPage() {
     setSelectedAssignedTo(defaultAssignedTo);
     setAssignedToMode("direct");
     setSelectedScheduledEvents([]);
+    setSelectedScheduledRanges([]);
     setSearchInput("");
     setPage(0);
 
@@ -355,10 +379,11 @@ export function useLeadsPage() {
     }
     params.delete("assignedToMode");
     params.delete("scheduledEvents");
+    params.delete("scheduledRange");
     params.delete("search");
 
     router.push(`?${params.toString()}`, { scroll: false });
-  }, [searchParams, router, user?._id, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setAssignedToMode, setSelectedScheduledEvents, setSearchInput, setPage]);
+  }, [searchParams, router, user?._id, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedAssignedTo, setAssignedToMode, setSelectedScheduledEvents, setSelectedScheduledRanges, setSearchInput, setPage]);
 
   const handleClearPanelFilters = useCallback(() => {
     setSelectedStatuses([]);
@@ -366,6 +391,7 @@ export function useLeadsPage() {
     setSelectedProperties([]);
     setSelectedBudgets([]);
     setSelectedScheduledEvents([]);
+    setSelectedScheduledRanges([]);
     setPage(0);
 
     const params = new URLSearchParams(searchParams.toString());
@@ -374,9 +400,10 @@ export function useLeadsPage() {
     params.delete("propertyName");
     params.delete("budgetRange");
     params.delete("scheduledEvents");
+    params.delete("scheduledRange");
 
     router.push(`?${params.toString()}`, { scroll: false });
-  }, [searchParams, router, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedScheduledEvents, setPage]);
+  }, [searchParams, router, setSelectedStatuses, setSelectedLeadTypes, setSelectedProperties, setSelectedBudgets, setSelectedScheduledEvents, setSelectedScheduledRanges, setPage]);
 
   const handleEdit = useCallback((leadId: string, mode: "edit" | "view" = "edit") => {
     setEditId(leadId);
@@ -450,6 +477,7 @@ export function useLeadsPage() {
     selectedAssignedTo,
     assignedToMode,
     selectedScheduledEvents,
+    selectedScheduledRanges,
     teamMembers,
     hierarchyLoading,
     page,
@@ -467,6 +495,7 @@ export function useLeadsPage() {
     handleAssignedToChange,
     handleAssignedToModeChange,
     handleScheduledEventsChange,
+    handleScheduledRangesChange,
     handleClearAllFilters,
     handleClearPanelFilters,
     handleEdit,

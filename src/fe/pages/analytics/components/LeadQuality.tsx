@@ -16,7 +16,8 @@ const LeadQuality: React.FC<LeadQualityProps> = ({ data }) => {
   const router = useRouter();
 
   const handleCardClick = (key: string) => {
-    router.push(`/dashboard/leads?leadType=${encodeURIComponent(key)}`);
+    const activeStatuses = ["new", "in progress", "details shared"].join(",");
+    router.push(`/dashboard/leads?leadType=${encodeURIComponent(key)}&status=${encodeURIComponent(activeStatuses)}`);
   };
 
   const qualityItems = [

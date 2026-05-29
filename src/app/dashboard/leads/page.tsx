@@ -86,6 +86,7 @@ const Leads: React.FC = () => {
     selectedAssignedTo,
     assignedToMode,
     selectedScheduledEvents,
+    selectedScheduledRanges,
     teamMembers,
     hierarchyLoading,
     page,
@@ -101,6 +102,7 @@ const Leads: React.FC = () => {
     handleAssignedToChange,
     handleAssignedToModeChange,
     handleScheduledEventsChange,
+    handleScheduledRangesChange,
     handleClearAllFilters,
     handleClearPanelFilters,
     handleEdit,
@@ -240,6 +242,8 @@ const Leads: React.FC = () => {
           onAssignedToModeChange={handleAssignedToModeChange}
           selectedScheduledEvents={selectedScheduledEvents}
           onScheduledEventsChange={handleScheduledEventsChange}
+          selectedScheduledRanges={selectedScheduledRanges}
+          onScheduledRangesChange={handleScheduledRangesChange}
           onClearAllFilters={handleClearAllFilters}
           onClearPanelFilters={handleClearPanelFilters}
           teamMembers={teamMembers}
