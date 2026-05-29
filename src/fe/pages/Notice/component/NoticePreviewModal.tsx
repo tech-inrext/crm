@@ -43,16 +43,20 @@ export default function NoticePreviewDialog({
   const [selectedIndex, setSelectedIndex] = useState(0);
 
   /* ✅ ROLE CHECK START */
-  const { user } = useAuth();
+  const auth = useAuth();
 
-  const currentRoleName =
-    typeof user?.currentRole === "object"
-      ? user?.currentRole?.name
-      : user?.roles?.find((r: any) => r._id === user?.currentRole)?.name;
+  const isAdmin = auth?.isSystemAdmin;
 
-  const isAdminOrAVP =
-    currentRoleName?.toLowerCase() === "admin" ||
-    currentRoleName?.toLowerCase() === "avp";
+  const isAVP =
+    auth?.isAVP === true ||
+    auth?.user?.isAVP === true ||
+    auth?.user?.role?.isAVP === true;
+
+  const isOwner =
+    String(notice?.createdBy?._id || notice?.createdBy) ===
+    String(auth?.user?._id);
+
+  const canEdit = isAdmin || (isAVP && isOwner);
   /* ✅ ROLE CHECK END */
 
   const imageAttachments =
@@ -243,7 +247,7 @@ export default function NoticePreviewDialog({
         <Divider />
 
         {/* ✅ EDIT BUTTON ONLY FOR ADMIN / AVP */}
-        {isAdminOrAVP && (
+        {canEdit && (
           <Box className="!p-4 !flex !justify-end">
             <Button variant="contained" onClick={onEdit}>
               Edit

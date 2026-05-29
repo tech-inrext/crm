@@ -1,30 +1,59 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 
+let cachedMeta = null; // ✅ GLOBAL CACHE
+let isFetching = false;
+let subscribers = [];
+
+const notifySubscribers = (data) => {
+  subscribers.forEach((cb) => cb(data));
+};
+
 export const useNoticeMeta = () => {
-  const [categories, setCategories] = useState<string[]>([]);
-  const [priorities, setPriorities] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [data, setData] = useState(cachedMeta);
 
   useEffect(() => {
+    subscribers.push(setData);
+
+    // if already cached → no API call
+    if (cachedMeta) {
+      setData(cachedMeta);
+      return;
+    }
+
     const fetchMeta = async () => {
+      if (isFetching) return; // 🚫 prevent duplicate calls
+
       try {
-        setLoading(true);
+        isFetching = true;
+
         const res = await axios.get("/api/v0/notice/meta");
 
         if (res.data?.success) {
-          setCategories(res.data.data?.categories || []);
-          setPriorities(res.data.data?.priorities || []);
+          cachedMeta = {
+            categories: res.data.data?.categories || [],
+            priorities: res.data.data?.priorities || [],
+          };
+
+          notifySubscribers(cachedMeta);
         }
       } catch (err) {
         console.error("Meta fetch error:", err);
       } finally {
-        setLoading(false);
+        isFetching = false;
       }
     };
 
     fetchMeta();
+
+    return () => {
+      subscribers = subscribers.filter((s) => s !== setData);
+    };
   }, []);
 
-  return { categories, priorities, loading };
+  return {
+    categories: data?.categories || [],
+    priorities: data?.priorities || [],
+    loading: !data,
+  };
 };

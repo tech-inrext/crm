@@ -7,19 +7,16 @@ export function useNoticePagination(initialPage = 1, initialRows = 6) {
   const [rowsPerPage, setRowsPerPage] = useState(initialRows);
   const [totalItems, setTotalItems] = useState(0);
 
-  const handlePageChange = useCallback(
-    (event: unknown, newPage: number) => {
-      setPage(newPage + 1);
-    },
-    []
-  );
+  const handlePageChange = useCallback((event: unknown, newPage: number) => {
+    setPage(newPage + 1);
+  }, []);
 
   const handleRowsPerPageChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       setRowsPerPage(parseInt(event.target.value, 10));
       setPage(1);
     },
-    []
+    [],
   );
 
   return {

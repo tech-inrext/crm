@@ -1,13 +1,7 @@
 "use client";
 
 import React from "react";
-import {
-  Card,
-  CardContent,
-  Skeleton,
-  Stack,
-  Divider,
-} from "@mui/material";
+import { Card, CardContent, Skeleton, Stack, Divider } from "@mui/material";
 
 export default function NoticeShimmer() {
   return (

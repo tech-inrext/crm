@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import dayjs from "dayjs";
 
 type FilterType = {
@@ -17,7 +17,6 @@ export default function useNoticeBoardHeader(
   const [tab, setTab] = useState(0);
   const [open, setOpen] = useState(false);
 
-  // ✅ Default = "All"
   const [searchText, setSearchText] = useState("");
   const [category, setCategory] = useState("All");
   const [priority, setPriority] = useState("All");
@@ -25,6 +24,9 @@ export default function useNoticeBoardHeader(
 
   const [categories, setCategories] = useState<string[]>([]);
   const [priorities, setPriorities] = useState<string[]>([]);
+
+  // ✅ FIX: prevent duplicate initial filter call
+  const initializedRef = useRef(false);
 
   // =========================
   // Fetch Meta
@@ -55,7 +57,7 @@ export default function useNoticeBoardHeader(
   };
 
   // =========================
-  // Trigger Filter
+  // Trigger Filter (FIXED: stable calls)
   // =========================
   const triggerFilter = (
     s = searchText,
@@ -72,16 +74,20 @@ export default function useNoticeBoardHeader(
   };
 
   // =========================
-  // Initial Load → Show All
+  // Initial Load → FIXED (no duplicate API recall)
   // =========================
   useEffect(() => {
+    if (initializedRef.current) return;
+
+    initializedRef.current = true;
+
     onFilterChange({
       searchText: "",
       category: "",
       priority: "",
       date: "",
     });
-  }, []);
+  }, [onFilterChange]);
 
   // =========================
   // Handlers
