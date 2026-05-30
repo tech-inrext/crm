@@ -64,13 +64,17 @@ class InrextWorker extends Worker {
     this[jobName] = cb;
   }
 
-  async addCron(jobName, interval, id, param = {}) {
+  async addCron(jobName, schedule, id, param = {}) {
     if (leadQueue) {
+      const repeatOptions = typeof schedule === "string" 
+        ? { cron: schedule, tz: "Asia/Kolkata" } 
+        : { every: schedule };
+
       await leadQueue.add(
         jobName,
         param,
         {
-          repeat: { every: interval },
+          repeat: repeatOptions,
           jobId: id,
         }
       );
