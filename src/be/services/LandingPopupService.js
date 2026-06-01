@@ -8,25 +8,57 @@ class LandingPopupService extends Service {
 
   async getLandingPopup(req, res) {
     try {
-      const popup = await LandingPopup.findOne();
+      const activePopups = await LandingPopup.find({ isActive: true }).sort({
+        createdAt: -1,
+      });
 
-      if (!popup) {
+      if (activePopups && activePopups.length > 0) {
+        return res.status(200).json({
+          success: true,
+          message: "Published landing popups retrieved successfully",
+          data: activePopups,
+        });
+      }
+
+      const fallbackPopup = await LandingPopup.findOne().sort({
+        createdAt: -1,
+      });
+      if (!fallbackPopup) {
         return res.status(404).json({
           success: false,
-          message: "Landing popup not found",
+          message: "No landing popups found",
         });
       }
 
       return res.status(200).json({
         success: true,
         message: "Landing popup retrieved successfully",
-        data: popup,
+        data: [fallbackPopup],
       });
     } catch (error) {
       console.error("Error fetching landing popup:", error);
       return res.status(500).json({
         success: false,
         message: "Error fetching landing popup",
+        error: error.message,
+      });
+    }
+  }
+
+  async getAllLandingPopups(req, res) {
+    try {
+      const popups = await LandingPopup.find().sort({ createdAt: -1 });
+
+      return res.status(200).json({
+        success: true,
+        message: "Landing popups retrieved successfully",
+        data: popups,
+      });
+    } catch (error) {
+      console.error("Error fetching landing popups:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Error fetching landing popups",
         error: error.message,
       });
     }
@@ -45,21 +77,12 @@ class LandingPopupService extends Service {
         });
       }
 
-      //   // Check if popup already exists
-      //   const existingPopup = await LandingPopup.findOne();
-      //   if (existingPopup) {
-      //     return res.status(400).json({
-      //       success: false,
-      //       message: "Landing popup already exists. Please update the existing one.",
-      //     });
-      //   }
-
       const popup = new LandingPopup({
         propertyName,
         location,
         imageUrl,
         buttonText,
-        isActive: isActive !== undefined ? isActive : true,
+        isActive: isActive !== undefined ? isActive : false,
       });
 
       const savedPopup = await popup.save();
@@ -81,11 +104,11 @@ class LandingPopupService extends Service {
 
   async updateLandingPopup(req, res) {
     try {
+      const { id } = req.query;
       const { propertyName, location, imageUrl, buttonText, isActive } =
         req.body;
 
-      // Find the existing popup
-      const popup = await LandingPopup.findOne();
+      const popup = await LandingPopup.findById(id);
       if (!popup) {
         return res.status(404).json({
           success: false,
@@ -119,7 +142,8 @@ class LandingPopupService extends Service {
 
   async deleteLandingPopup(req, res) {
     try {
-      const popup = await LandingPopup.findOne();
+      const { id } = req.query;
+      const popup = await LandingPopup.findById(id);
       if (!popup) {
         return res.status(404).json({
           success: false,
@@ -127,7 +151,7 @@ class LandingPopupService extends Service {
         });
       }
 
-      await LandingPopup.deleteOne({ _id: popup._id });
+      await LandingPopup.deleteOne({ _id: id });
 
       return res.status(200).json({
         success: true,

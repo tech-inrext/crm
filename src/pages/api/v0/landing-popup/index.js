@@ -7,16 +7,12 @@ class LandingPopupIndexController extends Controller {
     this.service = new LandingPopupService();
   }
 
+  async get(req, res) {
+    return this.service.getAllLandingPopups(req, res);
+  }
+
   async post(req, res) {
     return this.service.createLandingPopup(req, res);
-  }
-
-  async patch(req, res) {
-    return this.service.updateLandingPopup(req, res);
-  }
-
-  async delete(req, res) {
-    return this.service.deleteLandingPopup(req, res);
   }
 }
 

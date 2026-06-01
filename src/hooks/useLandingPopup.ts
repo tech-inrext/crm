@@ -8,27 +8,29 @@ interface LandingPopupData {
   imageUrl: string;
   buttonText: string;
   isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export function useLandingPopup() {
-  const [popup, setPopup] = useState<LandingPopupData | null>(null);
+  const [popups, setPopups] = useState<LandingPopupData[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const loadLandingPopup = useCallback(async () => {
+  const loadLandingPopups = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await axios.get("/api/v0/public/landing-popup");
+      const res = await axios.get("/api/v0/landing-popup");
       if (res.data && res.data.success) {
-        setPopup(res.data.data || null);
+        setPopups(res.data.data || []);
       } else {
-        setPopup(null);
+        setPopups([]);
       }
     } catch (err: any) {
-      console.error("Failed to load landing popup", err);
-      setError(err.response?.data?.message || err.message || "Failed to load landing popup");
-      setPopup(null);
+      console.error("Failed to load landing popups", err);
+      setError(err.response?.data?.message || err.message || "Failed to load landing popups");
+      setPopups([]);
     } finally {
       setLoading(false);
     }
@@ -38,46 +40,50 @@ export function useLandingPopup() {
     try {
       const res = await axios.post("/api/v0/landing-popup", data);
       if (!res.data.success) throw new Error(res.data.message || "Failed to create");
-      await loadLandingPopup();
+      setPopups((current) => [res.data.data, ...current]);
       return res.data.data;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || err.message || "Failed to create landing popup");
     }
-  }, [loadLandingPopup]);
+  }, []);
 
-  const updateLandingPopup = useCallback(async (data: Partial<LandingPopupData>) => {
+  const updateLandingPopup = useCallback(async (id: string, data: Partial<LandingPopupData>) => {
     try {
-      const res = await axios.patch("/api/v0/landing-popup", data);
+      const res = await axios.patch(`/api/v0/landing-popup/${id}`, data);
       if (!res.data.success) throw new Error(res.data.message || "Failed to update");
-      await loadLandingPopup();
+      setPopups((current) =>
+        current.map((popup) =>
+          popup._id === id ? { ...popup, ...res.data.data } : popup,
+        ),
+      );
       return res.data.data;
     } catch (err: any) {
       throw new Error(err.response?.data?.message || err.message || "Failed to update landing popup");
     }
-  }, [loadLandingPopup]);
+  }, []);
 
-  const deleteLandingPopup = useCallback(async () => {
+  const deleteLandingPopup = useCallback(async (id: string) => {
     try {
-      const res = await axios.delete("/api/v0/landing-popup");
+      const res = await axios.delete(`/api/v0/landing-popup/${id}`);
       if (!res.data.success) throw new Error(res.data.message || "Failed to delete");
-      await loadLandingPopup();
+      setPopups((current) => current.filter((popup) => popup._id !== id));
     } catch (err: any) {
       throw new Error(err.response?.data?.message || err.message || "Failed to delete landing popup");
     }
-  }, [loadLandingPopup]);
+  }, []);
 
   useEffect(() => {
-    loadLandingPopup();
-  }, [loadLandingPopup]);
+    loadLandingPopups();
+  }, [loadLandingPopups]);
 
   return {
-    popup,
+    popups,
     loading,
     error,
     createLandingPopup,
     updateLandingPopup,
     deleteLandingPopup,
-    refresh: loadLandingPopup,
+    refresh: loadLandingPopups,
   };
 }
 
