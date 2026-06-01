@@ -132,6 +132,12 @@ icon: <Campaign sx={{ color: "#3785FF" }} />  },
     icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
   },
   {
+    label: "Landing Popup",
+    href: "/dashboard/landing-popup",
+    module: "landing-popup",
+    icon: <Campaign sx={{ color: "#3785FF" }} />,
+  },
+  {
     label: "Departments",
     href: "/dashboard/department",
     module: "department",
