@@ -2,24 +2,13 @@ import mongoose from "mongoose";
 
 const LandingPopupSchema = new mongoose.Schema(
   {
-    propertyName: {
-      type: String,
-      required: true,
-      default: "Corbett County",
-    },
-    location: {
-      type: String,
-      required: true,
-      default: "Jim Corbett National Park, Uttarakhand",
-    },
     imageUrl: {
       type: String,
       required: true,
-      default: "/images/corbett_county_ad.png",
     },
     buttonText: {
       type: String,
-      // required: true,
+      required: true,
       default: "GET CALL BACK",
     },
     isActive: {
