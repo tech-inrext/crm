@@ -66,11 +66,11 @@ class LandingPopupService extends Service {
 
   async createLandingPopup(req, res) {
     try {
-      const { propertyName, location, imageUrl, buttonText, isActive } =
+      const { imageUrl, buttonText, isActive } =
         req.body;
 
       // Validate required fields
-      if (!propertyName || !location || !imageUrl || !buttonText) {
+      if (!imageUrl || !buttonText) {
         return res.status(400).json({
           success: false,
           message: "Please provide all required fields",
@@ -78,8 +78,6 @@ class LandingPopupService extends Service {
       }
 
       const popup = new LandingPopup({
-        propertyName,
-        location,
         imageUrl,
         buttonText,
         isActive: isActive !== undefined ? isActive : false,
@@ -105,7 +103,7 @@ class LandingPopupService extends Service {
   async updateLandingPopup(req, res) {
     try {
       const { id } = req.query;
-      const { propertyName, location, imageUrl, buttonText, isActive } =
+      const { imageUrl, buttonText, isActive } =
         req.body;
 
       const popup = await LandingPopup.findById(id);
@@ -117,8 +115,6 @@ class LandingPopupService extends Service {
       }
 
       // Update fields if provided
-      if (propertyName !== undefined) popup.propertyName = propertyName;
-      if (location !== undefined) popup.location = location;
       if (imageUrl !== undefined) popup.imageUrl = imageUrl;
       if (buttonText !== undefined) popup.buttonText = buttonText;
       if (isActive !== undefined) popup.isActive = isActive;

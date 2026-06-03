@@ -42,9 +42,11 @@ const LandingPopupPage: React.FC = () => {
   const { uploadFile, uploading: fileUploading } = useFileUpload();
   const [openDialog, setOpenDialog] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    propertyName: "",
-    location: "",
+  const [form, setForm] = useState<{
+    imageUrl: string;
+    buttonText: string;
+    isActive: boolean;
+  }>({
     imageUrl: "",
     buttonText: "GET CALL BACK",
     isActive: false,
@@ -64,8 +66,6 @@ const LandingPopupPage: React.FC = () => {
     if (popup) {
       setEditingId(popup._id || null);
       setForm({
-        propertyName: popup.propertyName,
-        location: popup.location,
         imageUrl: popup.imageUrl,
         buttonText: popup.buttonText,
         isActive: popup.isActive,
@@ -73,8 +73,6 @@ const LandingPopupPage: React.FC = () => {
     } else {
       setEditingId(null);
       setForm({
-        propertyName: "",
-        location: "",
         imageUrl: "",
         buttonText: "GET CALL BACK",
         isActive: false,
@@ -125,8 +123,6 @@ const LandingPopupPage: React.FC = () => {
 
   const handleSave = async () => {
     if (
-      !form.propertyName ||
-      !form.location ||
       !form.imageUrl ||
       !form.buttonText
     ) {
@@ -246,7 +242,7 @@ const LandingPopupPage: React.FC = () => {
                   component="img"
                   height="120"
                   image={popup.imageUrl}
-                  alt={popup.propertyName}
+                  alt="Landing Popup"
                   sx={{ objectFit: "cover" }}
                 />
 
@@ -264,7 +260,7 @@ const LandingPopupPage: React.FC = () => {
                       variant="subtitle2"
                       sx={{ fontWeight: 600, fontSize: "0.9rem" }}
                     >
-                      {popup.propertyName}
+                      Landing Popup
                     </Typography>
                     <Box
                       sx={{
@@ -284,13 +280,6 @@ const LandingPopupPage: React.FC = () => {
                     </Box>
                   </Box>
 
-                  <Typography
-                    variant="body2"
-                    color="textSecondary"
-                    sx={{ mb: 0.5, fontSize: "0.85rem" }}
-                  >
-                    📍 {popup.location}
-                  </Typography>
                   <Typography
                     variant="body2"
                     color="textSecondary"
@@ -394,22 +383,6 @@ const LandingPopupPage: React.FC = () => {
           {editingId ? "Edit Landing Popup" : "Create New Landing Popup"}
         </DialogTitle>
         <DialogContent sx={{ display: "grid", gap: 2, pt: 2 }}>
-          <TextField
-            label="Property Name"
-            value={form.propertyName}
-            onChange={(e) => handleChange("propertyName", e.target.value)}
-            fullWidth
-            size="small"
-          />
-
-          <TextField
-            label="Location"
-            value={form.location}
-            onChange={(e) => handleChange("location", e.target.value)}
-            fullWidth
-            size="small"
-          />
-
           <Box>
             <Typography
               variant="subtitle2"

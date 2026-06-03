@@ -3,8 +3,6 @@ import axios from "axios";
 
 interface LandingPopupData {
   _id?: string;
-  propertyName: string;
-  location: string;
   imageUrl: string;
   buttonText: string;
   isActive: boolean;
