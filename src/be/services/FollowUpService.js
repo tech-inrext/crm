@@ -124,7 +124,11 @@ class FollowUpService extends Service {
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
         submittedByName: doc.submittedBy?.name || "System/Unknown",
-        outcome: doc.outcome || "pending"
+        outcome: doc.outcome || "pending",
+        feedbackRemarks: doc.feedbackRemarks || "",
+        interestLevel: doc.interestLevel || "",
+        missedReason: doc.missedReason || "",
+        missedReasonDetails: doc.missedReasonDetails || ""
       }));
 
       const formattedActivities = activities.map(doc => {
@@ -199,7 +203,14 @@ class FollowUpService extends Service {
   async updateFollowUpOutcome(req, res) {
     try {
       await dbConnect();
-      const { followUpId, outcome } = req.body || {};
+      const { 
+        followUpId, 
+        outcome,
+        feedbackRemarks,
+        interestLevel,
+        missedReason,
+        missedReasonDetails
+      } = req.body || {};
 
       if (!followUpId || !outcome) {
         return res.status(400).json({ success: false, message: "Missing required fields" });
@@ -210,9 +221,22 @@ class FollowUpService extends Service {
         return res.status(400).json({ success: false, message: "Invalid outcome value" });
       }
 
+      const updateData = { outcome };
+      if (outcome === "completed") {
+        updateData.feedbackRemarks = feedbackRemarks || "";
+        updateData.interestLevel = interestLevel || "";
+        updateData.missedReason = "";
+        updateData.missedReasonDetails = "";
+      } else if (outcome === "missed") {
+        updateData.missedReason = missedReason || "";
+        updateData.missedReasonDetails = missedReasonDetails || "";
+        updateData.feedbackRemarks = "";
+        updateData.interestLevel = "";
+      }
+
       const updatedFollowUp = await FollowUp.findByIdAndUpdate(
         followUpId,
-        { outcome },
+        updateData,
         { new: true }
       );
 
