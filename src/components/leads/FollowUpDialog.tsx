@@ -199,6 +199,12 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
     (followUpType === "note" && !note.trim()) ||
     (followUpType === "call back" && !followUpDate);
 
+  const hasPendingSiteVisit = items.some(
+    (it) =>
+      it.followUpType === "site visit" &&
+      (!it.outcome || it.outcome === "pending")
+  );
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const historyContainerRef = useRef<HTMLDivElement>(null);
 
@@ -1268,19 +1274,28 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
 
           {onScheduleSiteVisit && (
             <Box
-              onClick={() => onScheduleSiteVisit(finalLeadIdentifier)}
+              onClick={() => {
+                if (hasPendingSiteVisit) {
+                  // alert("Please complete the pending site visit before scheduling a new one.");
+                  return;
+                }
+                onScheduleSiteVisit(finalLeadIdentifier);
+              }}
               sx={{
                 px: 1.5,
                 py: 0.4,
                 fontSize: "0.7rem",
                 fontWeight: 600,
                 borderRadius: "20px",
-                cursor: "pointer",
+                cursor: hasPendingSiteVisit ? "not-allowed" : "pointer",
                 transition: "all 0.15s",
-                color: "#7c3aed",
-                border: "1.5px solid #ede9fe",
-                "&:hover": { bgcolor: "#f5f3ff" },
+                color: hasPendingSiteVisit ? "#9ca3af" : "#7c3aed",
+                border: `1.5px solid ${hasPendingSiteVisit ? "#e5e7eb" : "#ede9fe"}`,
+                bgcolor: hasPendingSiteVisit ? "#f3f4f6" : "transparent",
+                "&:hover": { bgcolor: hasPendingSiteVisit ? "#f3f4f6" : "#f5f3ff" },
+                opacity: hasPendingSiteVisit ? 0.7 : 1,
               }}
+              title={hasPendingSiteVisit ? "Please complete the pending site visit first" : ""}
             >
               Site Visit
             </Box>
