@@ -6,6 +6,8 @@ import LeadActivity from "../models/LeadActivity";
 import LeadService from "./LeadService";
 import dbConnect from "../../lib/mongodb";
 import mongoose from "mongoose";
+import { sendLeadSiteVisitFeedback } from "../whatsapp-msg-service/lead-notifications/leadNotify.js";
+import { sendSiteVisitFeedbackEmail } from "../email-service/follow-up-email/sendSiteVisitFeedbackMail.js";
 
 class FollowUpService extends Service {
   // Helper to find lead ID
@@ -243,6 +245,48 @@ class FollowUpService extends Service {
       if (!updatedFollowUp) {
         return res.status(404).json({ success: false, message: "Follow-up not found" });
       }
+
+      // --- mForm Feedback Integration ---
+      if (updatedFollowUp.followUpType === "site visit" && outcome === "completed") {
+         const leadForFeedback = await Lead.findById(updatedFollowUp.leadId);
+         if (leadForFeedback && process.env.MFORM_API_URL && process.env.MFORM_API_KEY && process.env.MFORM_SITE_VISIT_FORM_ID) {
+            try {
+               const mformRes = await fetch(`${process.env.MFORM_API_URL}/api/external/v0/forms/${process.env.MFORM_SITE_VISIT_FORM_ID}/invites`, {
+                  method: 'POST',
+                  headers: {
+                    'Content-Type': 'application/json',
+                    'x-api-key': process.env.MFORM_API_KEY
+                  },
+                  body: JSON.stringify({
+                    name: leadForFeedback.fullName || '',
+                    phone: leadForFeedback.phone || '',
+                    email: leadForFeedback.email || ''
+                  })
+               });
+               const mformData = await mformRes.json();
+               if (mformData.success && mformData.url) {
+                  const feedbackUrl = mformData.url;
+                  
+                  // Save url in followUp
+                  updatedFollowUp.feedbackFormUrl = feedbackUrl;
+                  await updatedFollowUp.save();
+
+                  // Send WhatsApp
+                  if (leadForFeedback.phone) {
+                    await sendLeadSiteVisitFeedback(leadForFeedback.phone, leadForFeedback.fullName, feedbackUrl);
+                  }
+                  
+                  // Send Email
+                  if (leadForFeedback.email) {
+                    await sendSiteVisitFeedbackEmail(leadForFeedback.email, leadForFeedback.fullName, feedbackUrl);
+                  }
+               }
+            } catch (err) {
+               console.error("[FollowUpService] Failed to generate mForm feedback link:", err);
+            }
+         }
+      }
+      // ----------------------------------
 
       return res.status(200).json({ success: true, data: updatedFollowUp, message: "Outcome updated successfully" });
     } catch (error) {

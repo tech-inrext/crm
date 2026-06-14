@@ -44,3 +44,18 @@ export const sendLeadSiteVisitReminder = async (to, leadName, projectName, timeR
   }
 };
 
+/**
+ * Sends a WhatsApp message to a lead with a feedback form link.
+ */
+export const sendLeadSiteVisitFeedback = async (to, leadName, feedbackUrl) => {
+  try {
+    console.log("📲 [Whatsapp] Sending site visit feedback request to lead:", to);
+    await twilio.client.messages.create({
+      from: twilio.whatsappNumber,
+      to: `whatsapp:+91${to}`,
+      body: `Hi ${leadName}, thank you for visiting the site! We value your feedback. Please share your experience by clicking here: ${feedbackUrl}`
+    });
+  } catch (error) {
+    console.error("Error sending site visit feedback request to lead:", error);
+  }
+};
