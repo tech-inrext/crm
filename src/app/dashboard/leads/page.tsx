@@ -130,6 +130,7 @@ const Leads: React.FC = () => {
   const [selectedLeadForSiteVisit, setSelectedLeadForSiteVisit] = useState<
     string | null
   >(null);
+  const [siteVisitSavedCount, setSiteVisitSavedCount] = useState(0);
   const leadIdentifierFromUrl = searchParams.get("leadIdentifier");
 
   useEffect(() => {
@@ -303,6 +304,7 @@ const Leads: React.FC = () => {
             open={feedbackOpen}
             onClose={closeFeedback}
             leadIdentifier={selectedLeadForFeedback}
+            refreshTrigger={siteVisitSavedCount}
             onSaved={async () => {
               // Intentionally left blank: rely on the dialog's robust internal data
               // fetching instead of aggressively reloading the entire background table.
@@ -345,8 +347,8 @@ const Leads: React.FC = () => {
             }
             onSaved={async () => {
               showSnackbar("Site visit scheduled successfully", "success");
-              // Intentionally avoided calling loadLeads() here to prevent 
-              // a jarring full-page skeleton loading blink and dropped URL filters.
+              // Notify FollowUpDialog to refresh its list immediately
+              setSiteVisitSavedCount((c) => c + 1);
             }}
           />
         )}

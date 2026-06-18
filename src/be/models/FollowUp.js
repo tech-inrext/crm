@@ -68,6 +68,17 @@ const followUpSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+
+    // mForm integration
+    feedbackFormUrl: {
+      type: String,
+      default: null,
+    },
+
+    feedbackToken: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

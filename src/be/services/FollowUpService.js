@@ -130,7 +130,9 @@ class FollowUpService extends Service {
         feedbackRemarks: doc.feedbackRemarks || "",
         interestLevel: doc.interestLevel || "",
         missedReason: doc.missedReason || "",
-        missedReasonDetails: doc.missedReasonDetails || ""
+        missedReasonDetails: doc.missedReasonDetails || "",
+        feedbackFormUrl: doc.feedbackFormUrl || null,
+        feedbackToken: doc.feedbackToken || null,
       }));
 
       const formattedActivities = activities.map(doc => {
@@ -266,9 +268,11 @@ class FollowUpService extends Service {
                const mformData = await mformRes.json();
                if (mformData.success && mformData.url) {
                   const feedbackUrl = mformData.url;
+                  const feedbackToken = mformData.token;
                   
-                  // Save url in followUp
+                  // Save url + token in followUp
                   updatedFollowUp.feedbackFormUrl = feedbackUrl;
+                  updatedFollowUp.feedbackToken = feedbackToken;
                   await updatedFollowUp.save();
 
                   // Send WhatsApp
@@ -291,6 +295,54 @@ class FollowUpService extends Service {
       return res.status(200).json({ success: true, data: updatedFollowUp, message: "Outcome updated successfully" });
     } catch (error) {
       console.error("[FollowUpService] Update Outcome Error:", error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  /**
+   * Fetches the mForm feedback submission for a completed site visit.
+   * The CRM calls mForm's external API using the stored feedbackToken.
+   * Query: ?followUpId=<id>
+   */
+  async getFeedbackSubmission(req, res) {
+    try {
+      await dbConnect();
+      const { followUpId } = req.query;
+
+      if (!followUpId) {
+        return res.status(400).json({ success: false, message: "followUpId is required" });
+      }
+
+      const followUp = await FollowUp.findById(followUpId);
+      if (!followUp) {
+        return res.status(404).json({ success: false, message: "Follow-up not found" });
+      }
+
+      if (!followUp.feedbackToken) {
+        return res.status(200).json({ success: true, data: null, message: "No feedback link was generated for this follow-up" });
+      }
+
+      const { MFORM_API_URL, MFORM_API_KEY, MFORM_SITE_VISIT_FORM_ID } = process.env;
+      if (!MFORM_API_URL || !MFORM_API_KEY || !MFORM_SITE_VISIT_FORM_ID) {
+        return res.status(500).json({ success: false, message: "mForm integration is not configured" });
+      }
+
+      const mformRes = await fetch(
+        `${MFORM_API_URL}/api/external/v0/forms/${MFORM_SITE_VISIT_FORM_ID}/invites/${followUp.feedbackToken}`,
+        { headers: { "x-api-key": MFORM_API_KEY } }
+      );
+
+      const mformData = await mformRes.json();
+
+      return res.status(mformRes.status).json({
+        success: mformData.success,
+        invite: mformData.invite,
+        submission: mformData.submission || null,
+        feedbackFormUrl: followUp.feedbackFormUrl,
+      });
+
+    } catch (error) {
+      console.error("[FollowUpService] getFeedbackSubmission Error:", error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }
