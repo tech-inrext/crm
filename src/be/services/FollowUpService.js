@@ -6,7 +6,7 @@ import LeadActivity from "../models/LeadActivity";
 import LeadService from "./LeadService";
 import dbConnect from "../../lib/mongodb";
 import mongoose from "mongoose";
-import { sendLeadSiteVisitFeedback } from "../whatsapp-msg-service/lead-notifications/leadNotify.js";
+import { sendSiteVisitFeedbackWhatsappMessage } from "../whatsapp-msg-service/lead-notifications/siteVisitFeedback.js";
 import { sendSiteVisitFeedbackEmail } from "../email-service/follow-up-email/sendSiteVisitFeedbackMail.js";
 
 class FollowUpService extends Service {
@@ -250,7 +250,7 @@ class FollowUpService extends Service {
 
       // --- mForm Feedback Integration ---
       if (updatedFollowUp.followUpType === "site visit" && outcome === "completed") {
-         const leadForFeedback = await Lead.findById(updatedFollowUp.leadId);
+         const leadForFeedback = await Lead.findById(updatedFollowUp.leadId).populate("assignedTo", "name");
          if (leadForFeedback && process.env.MFORM_API_URL && process.env.MFORM_API_KEY && process.env.MFORM_SITE_VISIT_FORM_ID) {
             try {
                const mformRes = await fetch(`${process.env.MFORM_API_URL}/api/external/v0/forms/${process.env.MFORM_SITE_VISIT_FORM_ID}/invites`, {
@@ -275,10 +275,17 @@ class FollowUpService extends Service {
                   updatedFollowUp.feedbackToken = feedbackToken;
                   await updatedFollowUp.save();
 
-                  // Send WhatsApp
-                  if (leadForFeedback.phone) {
-                    await sendLeadSiteVisitFeedback(leadForFeedback.phone, leadForFeedback.fullName, feedbackUrl);
-                  }
+                   // Send WhatsApp
+                   if (leadForFeedback.phone) {
+                     const agentName = leadForFeedback.assignedTo?.name || "our agent";
+                     await sendSiteVisitFeedbackWhatsappMessage(
+                       leadForFeedback.phone,
+                       leadForFeedback.fullName,
+                       leadForFeedback.propertyName || "the property",
+                       agentName,
+                       feedbackUrl
+                     );
+                   }
                   
                   // Send Email
                   if (leadForFeedback.email) {
