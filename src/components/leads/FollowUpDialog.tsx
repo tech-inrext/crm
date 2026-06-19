@@ -101,6 +101,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
   const [interestLevel, setInterestLevel] = useState<"high" | "medium" | "low" | "">("");
   const [missedReason, setMissedReason] = useState("");
   const [missedReasonDetails, setMissedReasonDetails] = useState("");
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
 
   // mForm feedback submission viewer
   const [feedbackViewOpen, setFeedbackViewOpen] = useState(false);
@@ -984,12 +985,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                           size="small"
                                           variant="contained"
                                           disabled={
-                                            activeFeedbackForm?.outcome === "completed" 
+                                            feedbackSubmitting ||
+                                            (activeFeedbackForm?.outcome === "completed" 
                                               ? !feedbackRemarks.trim() || !interestLevel
-                                              : !missedReason || !missedReasonDetails.trim()
+                                              : !missedReason || !missedReasonDetails.trim())
                                           }
                                           onClick={async () => {
                                             if (!activeFeedbackForm) return;
+                                            setFeedbackSubmitting(true);
                                             try {
                                               const payload = {
                                                 followUpId: it._id,
@@ -1011,11 +1014,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                               setItems(res.data.data || []);
                                             } catch (err) {
                                               console.error("Failed to submit feedback", err);
+                                            } finally {
+                                              setFeedbackSubmitting(false);
                                             }
                                           }}
                                           sx={{
                                             fontSize: "0.7rem",
                                             textTransform: "none",
+                                            minWidth: 72,
                                             bgcolor: activeFeedbackForm?.outcome === "completed" ? "#10b981" : "#ef4444",
                                             color: "#fff",
                                             "&:hover": {
@@ -1023,7 +1029,11 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                             }
                                           }}
                                         >
-                                          Submit
+                                          {feedbackSubmitting ? (
+                                            <CircularProgress size={14} thickness={5} sx={{ color: "#fff" }} />
+                                          ) : (
+                                            "Submit"
+                                          )}
                                         </Button>
                                       </Stack>
                                     </Box>
