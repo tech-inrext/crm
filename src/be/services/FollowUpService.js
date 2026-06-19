@@ -8,6 +8,7 @@ import dbConnect from "../../lib/mongodb";
 import mongoose from "mongoose";
 import { sendSiteVisitFeedbackWhatsappMessage } from "../whatsapp-msg-service/lead-notifications/siteVisitFeedback.js";
 import { sendSiteVisitFeedbackEmail } from "../email-service/follow-up-email/sendSiteVisitFeedbackMail.js";
+import { createSiteVisitFeedbackInvite, getSiteVisitFeedbackSubmission } from "../mform-service/form-invites/siteVisitFeedback.js";
 
 class FollowUpService extends Service {
   // Helper to find lead ID
@@ -250,52 +251,40 @@ class FollowUpService extends Service {
 
       // --- mForm Feedback Integration ---
       if (updatedFollowUp.followUpType === "site visit" && outcome === "completed") {
-         const leadForFeedback = await Lead.findById(updatedFollowUp.leadId).populate("assignedTo", "name");
-         if (leadForFeedback && process.env.MFORM_API_URL && process.env.MFORM_API_KEY && process.env.MFORM_SITE_VISIT_FORM_ID) {
-            try {
-               const mformRes = await fetch(`${process.env.MFORM_API_URL}/api/external/v0/forms/${process.env.MFORM_SITE_VISIT_FORM_ID}/invites`, {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'x-api-key': process.env.MFORM_API_KEY
-                  },
-                  body: JSON.stringify({
-                    name: leadForFeedback.fullName || '',
-                    phone: leadForFeedback.phone || '',
-                    email: leadForFeedback.email || ''
-                  })
-               });
-               const mformData = await mformRes.json();
-               if (mformData.success && mformData.url) {
-                  const feedbackUrl = mformData.url;
-                  const feedbackToken = mformData.token;
-                  
-                  // Save url + token in followUp
-                  updatedFollowUp.feedbackFormUrl = feedbackUrl;
-                  updatedFollowUp.feedbackToken = feedbackToken;
-                  await updatedFollowUp.save();
+        const leadForFeedback = await Lead.findById(updatedFollowUp.leadId).populate("assignedTo", "name");
+        if (leadForFeedback) {
+          try {
+            const { url: feedbackUrl, token: feedbackToken } = await createSiteVisitFeedbackInvite({
+              name:  leadForFeedback.fullName || "",
+              phone: leadForFeedback.phone || "",
+              email: leadForFeedback.email || "",
+            });
 
-                   // Send WhatsApp
-                   if (leadForFeedback.phone) {
-                     const agentName = leadForFeedback.assignedTo?.name || "our agent";
-                     await sendSiteVisitFeedbackWhatsappMessage(
-                       leadForFeedback.phone,
-                       leadForFeedback.fullName,
-                       leadForFeedback.propertyName || "the property",
-                       agentName,
-                       feedbackUrl
-                     );
-                   }
-                  
-                  // Send Email
-                  if (leadForFeedback.email) {
-                    await sendSiteVisitFeedbackEmail(leadForFeedback.email, leadForFeedback.fullName, feedbackUrl);
-                  }
-               }
-            } catch (err) {
-               console.error("[FollowUpService] Failed to generate mForm feedback link:", err);
+            // Save url + token in followUp
+            updatedFollowUp.feedbackFormUrl = feedbackUrl;
+            updatedFollowUp.feedbackToken   = feedbackToken;
+            await updatedFollowUp.save();
+
+            // Send WhatsApp
+            if (leadForFeedback.phone) {
+              const agentName = leadForFeedback.assignedTo?.name || "our agent";
+              await sendSiteVisitFeedbackWhatsappMessage(
+                leadForFeedback.phone,
+                leadForFeedback.fullName,
+                leadForFeedback.propertyName || "the property",
+                agentName,
+                feedbackUrl
+              );
             }
-         }
+
+            // Send Email
+            if (leadForFeedback.email) {
+              await sendSiteVisitFeedbackEmail(leadForFeedback.email, leadForFeedback.fullName, feedbackUrl);
+            }
+          } catch (err) {
+            console.error("[FollowUpService] Failed to generate mForm feedback link:", err);
+          }
+        }
       }
       // ----------------------------------
 
@@ -329,19 +318,9 @@ class FollowUpService extends Service {
         return res.status(200).json({ success: true, data: null, message: "No feedback link was generated for this follow-up" });
       }
 
-      const { MFORM_API_URL, MFORM_API_KEY, MFORM_SITE_VISIT_FORM_ID } = process.env;
-      if (!MFORM_API_URL || !MFORM_API_KEY || !MFORM_SITE_VISIT_FORM_ID) {
-        return res.status(500).json({ success: false, message: "mForm integration is not configured" });
-      }
+      const mformData = await getSiteVisitFeedbackSubmission(followUp.feedbackToken);
 
-      const mformRes = await fetch(
-        `${MFORM_API_URL}/api/external/v0/forms/${MFORM_SITE_VISIT_FORM_ID}/invites/${followUp.feedbackToken}`,
-        { headers: { "x-api-key": MFORM_API_KEY } }
-      );
-
-      const mformData = await mformRes.json();
-
-      return res.status(mformRes.status).json({
+      return res.status(200).json({
         success: mformData.success,
         invite: mformData.invite,
         submission: mformData.submission || null,
