@@ -224,6 +224,11 @@ class CabBookingService extends Service {
             select: "name username email",
           })
           .populate({
+            path: "cabBookedBy",
+            model: "Employee",
+            select: "name username email",
+          })
+          .populate({
             path: "driver",
             model: "Employee",
             select: "username phoneNumber",
@@ -247,6 +252,11 @@ class CabBookingService extends Service {
           .sort(sort)
           .populate({
             path: "managerId",
+            model: "Employee",
+            select: "name username email",
+          })
+          .populate({
+            path: "cabBookedBy",
             model: "Employee",
             select: "name username email",
           })
