@@ -7,8 +7,8 @@ export const ROLE_CACHE_KEYS = {
 } as const;
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
-export const ROLES_ROWS_PER_PAGE_OPTIONS = [3, 6, 12, 24] as const;
-export const DEFAULT_PAGE_SIZE = 6;
+export const ROLES_ROWS_PER_PAGE_OPTIONS = [8, 16, 24, 32] as const;
+export const DEFAULT_PAGE_SIZE = 8;
 
 // ─── Search ───────────────────────────────────────────────────────────────────
 export const SEARCH_PLACEHOLDER = "Search roles by name...";

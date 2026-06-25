@@ -47,6 +47,38 @@ const followUpSchema = new mongoose.Schema(
       enum: ["pending", "completed", "missed"],
       default: "pending",
     },
+
+    feedbackRemarks: {
+      type: String,
+      trim: true,
+    },
+
+    interestLevel: {
+      type: String,
+      enum: ["high", "medium", "low", ""],
+      default: "",
+    },
+
+    missedReason: {
+      type: String,
+      trim: true,
+    },
+
+    missedReasonDetails: {
+      type: String,
+      trim: true,
+    },
+
+    // mForm integration
+    feedbackFormUrl: {
+      type: String,
+      default: null,
+    },
+
+    feedbackToken: {
+      type: String,
+      default: null,
+    },
   },
   { timestamps: true }
 );

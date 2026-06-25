@@ -25,6 +25,7 @@ import {
   Groups,
   GroupAdd,
   Assignment,
+  Campaign,
 } from "@mui/icons-material";
 
 // const AppIcon = ({
@@ -55,13 +56,17 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <Analytics sx={{ color: "#3785FF" }} />,
   },
   {
+    label: "Notice Board",
+    href: "/dashboard/Notice-Board",
+icon: <Campaign sx={{ color: "#3785FF" }} />  },
+  {
     label: "Leads",
     href: "/dashboard/leads",
     module: "lead",
     icon: <ContactPhone sx={{ color: "#3785FF" }} />,
   },
   {
-    label: "Users",
+    label: "Business Partners",
     href: "/dashboard/users",
     module: "employee",
     icon: <Groups sx={{ color: "#3785FF" }} />,
@@ -97,7 +102,7 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <Person sx={{ color: "#3785FF" }} />,
   },
   {
-    label: "Cab Booking",
+    label: "Cab Status",
     href: "/dashboard/cab-booking",
     module: "cab-booking",
     icon: <LocalTaxi sx={{ color: "#3785FF" }} />,
@@ -127,6 +132,12 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
   },
   {
+    label: "Landing Popup",
+    href: "/dashboard/landing-popup",
+    module: "landing-popup",
+    icon: <Campaign sx={{ color: "#3785FF" }} />,
+  },
+  {
     label: "Departments",
     href: "/dashboard/department",
     module: "department",
@@ -154,8 +165,13 @@ export default function DashboardLayout({
 
   // Compute accessible sidebar links
   const sidebarLinks = useMemo(() => {
+    const isStaging = process.env.NEXT_PUBLIC_APP_ENV === "staging";
+
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
+          // Hide Analytics if not staging
+          if (!isStaging && link.module === "analytics") return false;
+
           if (!link.module) return true;
 
           // Roles module only for system admins
@@ -211,7 +227,11 @@ export default function DashboardLayout({
           <Box sx={{ flex: 1, display: "flex", flexDirection: "column" }}>
             <Navbar sidebarOpen={sidebarOpen} setSidebarOpen={setSidebarOpen} />
             <Box
-              key={String(typeof user?.currentRole === "object" ? user?.currentRole?._id : user?.currentRole)}
+              key={String(
+                typeof user?.currentRole === "object"
+                  ? user?.currentRole?._id
+                  : user?.currentRole,
+              )}
               component="main"
               sx={{
                 flexGrow: 1,

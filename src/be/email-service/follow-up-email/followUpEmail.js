@@ -1,6 +1,7 @@
 import mailer from "../mailer.js";
 import Lead from "../../models/Lead.js";
 import FollowUp from "../../models/FollowUp.js";
+import { emailTemplates } from "../templates/email-templates.js";
 
 export async function sendFollowUpEmail(recipientEmail, notification) {
   try {
@@ -47,6 +48,7 @@ export async function sendFollowUpEmail(recipientEmail, notification) {
     throw error;
   }
 }
+
 
 function generateFollowUpTemplate(data) {
   const baseUrl = process.env.APP_URL || "http://localhost:3000";

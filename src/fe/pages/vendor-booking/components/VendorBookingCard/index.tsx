@@ -1,17 +1,10 @@
 "use client";
 
 import React from "react";
-import { VendorBooking } from "../../types";
-import BookingCard from "@/components/cab-booking/BookingCard";
+import BookingCard from "@/fe/pages/cab-booking/components/BookingCard";
 import { Box, Button } from "@/components/ui/Component";
 import * as styles from "./styles";
-
-interface VendorBookingCardProps {
-  booking: VendorBooking;
-  canWrite: boolean;
-  onViewDetails: (booking: VendorBooking) => void;
-  onOpenForm: (bookingId: string, booking: VendorBooking) => void;
-}
+import { VendorBookingCardProps } from "../../types";
 
 const VendorBookingCard: React.FC<VendorBookingCardProps> = ({
   booking,

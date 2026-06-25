@@ -171,6 +171,22 @@ class LeadService extends Service {
     });
   }
 
+  // 🔹 Helper to mask phone number
+  static maskPhone(phone) {
+    if (!phone) return phone;
+    const phoneStr = String(phone);
+    if (phoneStr.length < 10) return "*******";
+    return phoneStr.slice(0, 2) + "******" + phoneStr.slice(-2);
+  }
+
+  // 🔹 Helper to mask email address
+  static maskEmail(email) {
+    if (!email || !email.includes("@")) return email;
+    const [user, domain] = email.split("@");
+    if (user.length <= 2) return user.slice(0, 1) + "******" + "@" + domain;
+    return user.slice(0, 2) + "******" + user.slice(-1) + "@" + domain;
+  }
+
   // 🔹 Helper to fetch all subordinates in a hierarchy (downline)
   async getDownlineIds(managerId) {
     if (!managerId) return [];
@@ -210,6 +226,8 @@ class LeadService extends Service {
         propertyName,
         budgetRange,
         assignedTo,
+        scheduledEvents,
+        scheduledRange,
       } = req.query;
       const currentPage = parseInt(page);
       const itemsPerPage = parseInt(limit);
@@ -353,6 +371,67 @@ class LeadService extends Service {
         }
       }
 
+      let scheduledEventsQuery = {};
+      if (scheduledEvents || scheduledRange) {
+        const followUpQuery = { outcome: "pending" };
+
+        if (scheduledEvents) {
+          const events = Array.isArray(scheduledEvents)
+            ? scheduledEvents
+            : String(scheduledEvents)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+          if (events.length) {
+            // Normalize to match enum values: "site visit", "call back"
+            const normalizedEvents = events.map(e => e.toLowerCase() === "call back scheduled" ? "call back" : e.toLowerCase());
+            followUpQuery.followUpType = { $in: normalizedEvents };
+          }
+        } else if (scheduledRange) {
+          // If a scheduled range is requested but no specific event type, restrict to scheduled event types only
+          followUpQuery.followUpType = { $in: ["site visit", "call back"] };
+        }
+
+        if (scheduledRange) {
+          const ranges = Array.isArray(scheduledRange)
+            ? scheduledRange
+            : String(scheduledRange)
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean);
+
+          if (ranges.length) {
+            const startOfToday = new Date();
+            startOfToday.setHours(0, 0, 0, 0);
+            const endOfToday = new Date();
+            endOfToday.setHours(23, 59, 59, 999);
+
+            const rangeQueries = [];
+            ranges.forEach(range => {
+              const r = range.toLowerCase();
+              if (r === "today") {
+                rangeQueries.push({ followUpDate: { $gte: startOfToday, $lte: endOfToday } });
+              } else if (r === "overdue") {
+                rangeQueries.push({ followUpDate: { $lt: startOfToday } });
+              } else if (r === "future") {
+                rangeQueries.push({ followUpDate: { $gt: endOfToday } });
+              }
+            });
+
+            if (rangeQueries.length === 1) {
+              followUpQuery.followUpDate = rangeQueries[0].followUpDate;
+            } else if (rangeQueries.length > 1) {
+              followUpQuery.$or = rangeQueries.map(rq => ({ followUpDate: rq.followUpDate }));
+            }
+          }
+        }
+
+        const matchingFollowUps = await FollowUp.find(followUpQuery).select("leadId").lean();
+        const leadIds = matchingFollowUps.map(f => f.leadId);
+        scheduledEventsQuery = { _id: { $in: leadIds } };
+      }
+
       const queryParts = [baseQuery];
       if (Object.keys(searchQuery).length) queryParts.push(searchQuery);
       if (Object.keys(statusQuery).length) queryParts.push(statusQuery);
@@ -360,6 +439,7 @@ class LeadService extends Service {
       if (Object.keys(propertyQuery).length) queryParts.push(propertyQuery);
       if (Object.keys(budgetQuery).length) queryParts.push(budgetQuery);
       if (Object.keys(assignedToQuery).length) queryParts.push(assignedToQuery);
+      if (Object.keys(scheduledEventsQuery).length) queryParts.push(scheduledEventsQuery);
 
       const query = queryParts.length > 1 ? { $and: queryParts } : baseQuery;
 
@@ -386,13 +466,32 @@ class LeadService extends Service {
             .sort({ createdAt: -1 })
             .lean();
 
-          return {
+          // 3. Get Recent 3 Activities
+          const recentActivities = await FollowUp.find({ leadId: lead._id })
+            .sort({ createdAt: -1 })
+            .limit(3)
+            .lean();
+
+          const leadObj = {
             ...lead,
             followUpCount: count, // Used for Badge
             nextFollowUp: latest ? latest.followUpDate : null,
             // Providing empty arrays as notes are no longer on Lead object
             followUpNotes: latest ? [latest.note] : [],
+            recentActivities: recentActivities || [],
           };
+
+          // 🛡️ Mask Phone based on access
+          const isUploader = String(lead.uploadedBy?._id || lead.uploadedBy) === String(loggedInUserId);
+          const isAssignee = String(lead.assignedTo?._id || lead.assignedTo) === String(loggedInUserId);
+          const isSystemAdmin = req.isSystemAdmin;
+
+          if (!isUploader && !isAssignee && !isSystemAdmin) {
+            leadObj.phone = LeadService.maskPhone(lead.phone);
+            leadObj.email = LeadService.maskEmail(lead.email);
+          }
+
+          return leadObj;
         }),
       );
 
@@ -455,6 +554,16 @@ class LeadService extends Service {
 
       leadObj.followUpCount = count;
       leadObj.nextFollowUp = latest ? latest.followUpDate : null;
+
+      // 🛡️ Mask Phone based on access
+      const isUploader = String(lead.uploadedBy) === String(loggedInUserId);
+      const isAssignee = String(lead.assignedTo) === String(loggedInUserId);
+      const isSystemAdmin = req.isSystemAdmin;
+
+      if (!isUploader && !isAssignee && !isSystemAdmin) {
+        leadObj.phone = LeadService.maskPhone(lead.phone);
+        leadObj.email = LeadService.maskEmail(lead.email);
+      }
 
       return res.status(200).json({ success: true, data: leadObj });
     } catch (error) {

@@ -15,8 +15,8 @@ export const USER_CACHE_KEYS = {
   /** Invalidates all department cache entries */
   DEPARTMENTS: DEPARTMENTS_API_BASE,
 } as const;
-export const USERS_ROWS_PER_PAGE_OPTIONS = [5, 10, 15, 25] as const;
-export const DEFAULT_PAGE_SIZE = 5;
+export const USERS_ROWS_PER_PAGE_OPTIONS = [8, 16, 24, 32] as const;
+export const DEFAULT_PAGE_SIZE = 8;
 
 // ─── Form defaults ────────────────────────────────────────────────────────────
 export const DEFAULT_USER_FORM = {
@@ -77,11 +77,23 @@ export const SLAB_OPTIONS: string[] = [
   "100",
   "95",
   "90",
+  "85",
   "80",
   "70",
   "60",
   "50",
 ];
+
+export const SLAB_LABELS: Record<string, string> = {
+  "100": "100% DIRECTOR",
+  "95": "95% ADDITIONAL DIRECTOR",
+  "90": "90% PRESIDENT",
+  "85": "85% VICE PRESIDENT",
+  "80": "80% GENERAL MANAGER",
+  "70": "70% SENIOR MANAGER",
+  "60": "60% TEAM MANAGER",
+  "50": "50% BUSINESS DEVELOPMENT MANAGER",
+};
 
 // ─── Search ───────────────────────────────────────────────────────────────────
 export const SEARCH_PLACEHOLDER = "Search users by name, email, phone…";

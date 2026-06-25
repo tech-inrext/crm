@@ -24,9 +24,12 @@ import {
   TableContainer,
   TableHead,
   TableRow,
+  IconButton,
+  Tooltip,
 } from "@mui/material";
 import Alert from "@mui/material/Alert";
-import { Add, Search } from "@mui/icons-material";
+import { alpha } from "@mui/material/styles";
+import { Add, Search, MoreVert } from "@mui/icons-material";
 import { usePillars } from "@/hooks/usePillars";
 import { useDebounce } from "@/hooks/useDebounce";
 import PermissionGuard from "@/components/PermissionGuard";
@@ -41,10 +44,9 @@ import {
   FAB_POSITION,
 } from "@/constants/pillars";
 import { MODULE_STYLES } from "@/styles/moduleStyles";
+import PageHeader from "@/fe/components/PageHeader";
 
-const Pagination = dynamic(() => import("@/components/ui/Navigation/Pagination"), {
-  ssr: false,
-});
+import Pagination from "@/components/ui/Navigation/Pagination";
 
 const CATEGORIES = [
   { value: "", label: "All Categories" },
@@ -69,53 +71,104 @@ const PillarsActionBar: React.FC<PillarsActionBarProps> = ({
   onCategoryChange,
   onAdd,
 }) => {
+  const theme = useTheme();
+  
   return (
-    <Box sx={{ mb: 3 }}>
-      <Grid container spacing={2} alignItems="center">
-        <Grid size={{ xs: 12, md: 4 }}>
-          <TextField
-            fullWidth
-            placeholder="Search pillars, expertise, skills..."
-            value={search}
-            onChange={onSearchChange}
-            InputProps={{
-              startAdornment: <Search sx={{ color: 'text.secondary', mr: 1 }} />,
-            }}
-            size="small"
-          />
-        </Grid>
-        
-        <Grid size={{ xs: 12, md: 4 }}>
-          <FormControl fullWidth size="small">
-            <InputLabel>Category</InputLabel>
-            <Select
-              value={category}
-              label="Category"
-              onChange={onCategoryChange}
-            >
-              {CATEGORIES.map((cat) => (
-                <MenuItem key={cat.value} value={cat.value}>
-                  {cat.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-        </Grid>
+    <Box sx={{ 
+      display: "flex", 
+      alignItems: "center", 
+      gap: { xs: 1.5, sm: 2 }, 
+      width: "100%",
+      flexWrap: { xs: "wrap", sm: "nowrap" }
+    }}>
+      {/* Search Bar */}
+      <Box sx={{ flexGrow: 1, minWidth: 0, maxWidth: { sm: 400 }, width: { xs: "100%", sm: "auto" } }}>
+        <TextField
+          fullWidth
+          size="small"
+          placeholder="Search pillars, expertise, skills..."
+          value={search}
+          onChange={onSearchChange}
+          InputProps={{
+            startAdornment: <Search sx={{ color: 'text.secondary', mr: 1, fontSize: 20 }} />,
+          }}
+          sx={{
+            "& .MuiOutlinedInput-root": {
+              borderRadius: 2,
+              bgcolor: alpha(theme.palette.common.white, 0.8),
+              transition: "all 0.2s",
+              "&:hover": {
+                bgcolor: theme.palette.common.white,
+                boxShadow: "0 2px 8px rgba(0,0,0,0.05)",
+              },
+              "&.Mui-focused": {
+                bgcolor: theme.palette.common.white,
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+              },
+            },
+          }}
+        />
+      </Box>
+      
+      {/* Category Dropdown */}
+      <FormControl size="small" sx={{ minWidth: { xs: "100%", sm: 200 } }}>
+        <InputLabel>Category</InputLabel>
+        <Select
+          value={category}
+          label="Category"
+          onChange={onCategoryChange}
+          sx={{
+            borderRadius: 2,
+            bgcolor: alpha(theme.palette.common.white, 0.8),
+            "& .MuiOutlinedInput-notchedOutline": {
+              borderColor: alpha(theme.palette.divider, 0.8),
+            },
+            "&:hover .MuiOutlinedInput-notchedOutline": {
+              borderColor: theme.palette.primary.main,
+            }
+          }}
+        >
+          {CATEGORIES.map((cat) => (
+            <MenuItem key={cat.value} value={cat.value}>
+              {cat.label}
+            </MenuItem>
+          ))}
+        </Select>
+      </FormControl>
 
-        <Grid size={{ xs: 12, md: 4 }}>
-          <PermissionGuard module="pillar" action="write" fallback={<Box />}>
-            <Button
-              variant="contained"
-              startIcon={<Add />}
-              onClick={onAdd}
-              fullWidth
-              sx={{ height: '40px' }}
-            >
-              Add Pillar
-            </Button>
-          </PermissionGuard>
-        </Grid>
-      </Grid>
+      {/* Actions */}
+      <Box sx={{ 
+        ml: { sm: "auto" }, 
+        display: "flex", 
+        alignItems: "center", 
+        gap: 1.5,
+        width: { xs: "100%", sm: "auto" },
+        justifyContent: { xs: "flex-end", sm: "flex-start" }
+      }}>
+        <PermissionGuard module="pillar" action="write" fallback={<Box />}>
+          <Button
+            variant="contained"
+            startIcon={<Add />}
+            onClick={onAdd}
+            sx={{ 
+              height: 40, 
+              px: 3,
+              borderRadius: 2,
+              fontWeight: 600,
+              textTransform: "none",
+              backgroundColor: theme.palette.primary.main,
+              whiteSpace: "nowrap",
+              boxShadow: "0 4px 12px rgba(25, 118, 210, 0.2)",
+              "&:hover": {
+                backgroundColor: theme.palette.primary.dark,
+                boxShadow: "0 6px 16px rgba(25, 118, 210, 0.3)",
+              },
+            }}
+          >
+            Add Pillar
+          </Button>
+        </PermissionGuard>
+      </Box>
     </Box>
   );
 };
@@ -231,40 +284,27 @@ const Pillars: React.FC = () => {
   };
 
   return (
-    <Box sx={MODULE_STYLES.users.usersContainer}>
+    <Box sx={{ 
+      ...MODULE_STYLES.users.usersContainer, 
+      height: "100%", 
+      display: "flex", 
+      flexDirection: "column",
+      minHeight: 0,
+      overflow: "hidden",
+      bgcolor: "#f9f9f9", // Match layout background
+    }}>
       {/* Header Section */}
-      <Paper
-        elevation={2}
-        sx={{
-          p: { xs: 1, sm: 2, md: 3 },
-          borderRadius: { xs: 1, sm: 2, md: 3 },
-          mb: { xs: 1, sm: 2, md: 3 },
-          mt: { xs: 0.5, sm: 1, md: 2 },
-          background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-          overflow: "hidden",
-        }}
-      >
-        <Typography
-          variant="h4"
-          sx={{
-            fontWeight: 700,
-            color: "text.primary",
-            fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
-            mb: { xs: 2, md: 3 },
-            textAlign: { xs: "left", sm: "left" },
-          }}
-        >
-          Pillars
-        </Typography>
-
-        <PillarsActionBar
-          search={search}
-          category={category}
-          onSearchChange={handleSearchChange}
-          onCategoryChange={handleCategoryChange}
-          onAdd={handleAddPillar}
-        />
-      </Paper>
+      <Box sx={{ flexShrink: 0, mb: 1 }}>
+        <PageHeader title="Pillars">
+          <PillarsActionBar
+            search={search}
+            category={category}
+            onSearchChange={handleSearchChange}
+            onCategoryChange={handleCategoryChange}
+            onAdd={handleAddPillar}
+          />
+        </PageHeader>
+      </Box>
 
       {/* Content Section */}
       {loading ? (
@@ -295,27 +335,29 @@ const Pillars: React.FC = () => {
           </PermissionGuard>
         </Box>
       ) : (
-        <Box>
+        <Box sx={{ flexGrow: 1, display: "flex", flexDirection: "column", overflow: "hidden" }}>
           {/* Table View */}
           <Paper
             elevation={1}
             sx={{
-              display: "grid",
-              gridTemplateColumns: "1fr",
-              gap: 1.5,
-              mb: 2,
+              flexGrow: 1,
+              display: "flex",
+              flexDirection: "column",
+              overflow: "hidden",
+              borderRadius: 2,
+              mb: 0,
             }}
           >
-            <TableContainer>
-              <Table>
+            <TableContainer sx={{ flexGrow: 1, overflow: "auto" }}>
+              <Table stickyHeader>
                 <TableHead>
                   <TableRow>
-                    <TableCell sx={{fontSize:"1.2rem", fontWeight:900}}>Profile</TableCell>
-                    <TableCell sx={{fontSize:"1.2rem", fontWeight:900}}>Name</TableCell>
-                    <TableCell sx={{fontSize:"1.2rem", fontWeight:900}}>Designation</TableCell>
-                    <TableCell sx={{fontSize:"1.2rem", fontWeight:900}}>Experience</TableCell>
-                    <TableCell sx={{fontSize:"1.2rem", fontWeight:900}}>Projects</TableCell>
-                    <TableCell sx={{fontSize:"1.2rem", fontWeight:900}}>Actions</TableCell>
+                    <TableCell sx={{fontSize:"1.1rem", fontWeight:800, bgcolor: "white"}}>Profile</TableCell>
+                    <TableCell sx={{fontSize:"1.1rem", fontWeight:800, bgcolor: "white"}}>Name</TableCell>
+                    <TableCell sx={{fontSize:"1.1rem", fontWeight:800, bgcolor: "white"}}>Designation</TableCell>
+                    <TableCell sx={{fontSize:"1.1rem", fontWeight:800, bgcolor: "white"}}>Experience</TableCell>
+                    <TableCell sx={{fontSize:"1.1rem", fontWeight:800, bgcolor: "white"}}>Projects</TableCell>
+                    <TableCell sx={{fontSize:"1.1rem", fontWeight:800, bgcolor: "white"}}>Actions</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -333,12 +375,15 @@ const Pillars: React.FC = () => {
             </TableContainer>
           </Paper>
 
-          {/* Pagination */}
           <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            mt: 4,
-            mb: 2 
+            // display: 'flex', 
+            // justifyContent: 'center', 
+            py: 1,
+            // flexShrink: 0,
+            // borderTop: 1,
+            // borderColor: 'divider',
+            // bgcolor: 'background.paper',
+            borderRadius: 2,
           }}>
             <Pagination
               page={page}

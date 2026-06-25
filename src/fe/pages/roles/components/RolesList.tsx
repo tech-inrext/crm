@@ -7,7 +7,8 @@ import RolesSkeleton from "@/fe/pages/roles/components/RolesSkeleton";
 import EmptyState from "./EmptyState";
 import dynamic from "next/dynamic";
 import type { Role, RolesListProps } from "@/fe/pages/roles/types";
-import { rolesGridSx, roleCardWrapperSx } from "@/fe/pages/roles/styles";
+import { MODULE_STYLES } from "@/styles/moduleStyles";
+import { ROLES_ROWS_PER_PAGE_OPTIONS } from "@/fe/pages/roles/constants/roles";
 
 const Pagination = dynamic(
   () => import("@/components/ui/Navigation/Pagination"),
@@ -25,37 +26,38 @@ const RolesList: React.FC<RolesListProps> = ({
   onEditRole,
   onViewPermissions,
 }) => {
-  if (loading) return <RolesSkeleton count={rowsPerPage || 6} />;
+  if (loading) return <RolesSkeleton count={rowsPerPage || 8} />;
 
   return (
     <>
-      {roles.length > 0 ? (
-        <Box sx={rolesGridSx}>
-          {roles.map((role, idx) => (
-            <Box key={role._id || idx} sx={roleCardWrapperSx}>
+      <Box sx={{ flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+        {roles.length > 0 ? (
+          <Box sx={MODULE_STYLES.roles.rolesGrid}>
+            {roles.map((role, idx) => (
               <RoleCard
+                key={role._id || idx}
                 role={role}
                 idx={idx}
                 openEdit={() => onEditRole(role)}
                 onViewPermissions={onViewPermissions}
               />
-            </Box>
-          ))}
-        </Box>
-      ) : (
-        <EmptyState />
-      )}
+            ))}
+          </Box>
+        ) : (
+          <EmptyState />
+        )}
+      </Box>
 
-      <div className="flex justify-center mt-4">
+      <Box sx={MODULE_STYLES.roles.paginationWrapper}>
         <Pagination
           page={page}
           pageSize={rowsPerPage ?? 8}
           total={totalItems}
           onPageChange={onPageChange}
-          pageSizeOptions={[4, 8, 12, 24]}
+          pageSizeOptions={[...ROLES_ROWS_PER_PAGE_OPTIONS]}
           onPageSizeChange={onPageSizeChange}
         />
-      </div>
+      </Box>
     </>
   );
 };

@@ -85,6 +85,8 @@ const Leads: React.FC = () => {
     selectedBudgets,
     selectedAssignedTo,
     assignedToMode,
+    selectedScheduledEvents,
+    selectedScheduledRanges,
     teamMembers,
     hierarchyLoading,
     page,
@@ -99,6 +101,8 @@ const Leads: React.FC = () => {
     handleBudgetChange,
     handleAssignedToChange,
     handleAssignedToModeChange,
+    handleScheduledEventsChange,
+    handleScheduledRangesChange,
     handleClearAllFilters,
     handleClearPanelFilters,
     handleEdit,
@@ -126,6 +130,7 @@ const Leads: React.FC = () => {
   const [selectedLeadForSiteVisit, setSelectedLeadForSiteVisit] = useState<
     string | null
   >(null);
+  const [siteVisitSavedCount, setSiteVisitSavedCount] = useState(0);
   const leadIdentifierFromUrl = searchParams.get("leadIdentifier");
 
   useEffect(() => {
@@ -211,7 +216,7 @@ const Leads: React.FC = () => {
 
   return (
     <Box sx={MODULE_STYLES.leads.leadsContainer}>
-      <Paper elevation={2} sx={MODULE_STYLES.layout.headerPaper}>
+      <Paper elevation={0} sx={MODULE_STYLES.layout.headerPaper}>
         <Typography variant="h4" sx={MODULE_STYLES.layout.moduleTitle}>
           Leads
         </Typography>
@@ -236,6 +241,10 @@ const Leads: React.FC = () => {
           onAssignedToChange={handleAssignedToChange}
           assignedToMode={assignedToMode}
           onAssignedToModeChange={handleAssignedToModeChange}
+          selectedScheduledEvents={selectedScheduledEvents}
+          onScheduledEventsChange={handleScheduledEventsChange}
+          selectedScheduledRanges={selectedScheduledRanges}
+          onScheduledRangesChange={handleScheduledRangesChange}
           onClearAllFilters={handleClearAllFilters}
           onClearPanelFilters={handleClearPanelFilters}
           teamMembers={teamMembers}
@@ -295,6 +304,7 @@ const Leads: React.FC = () => {
             open={feedbackOpen}
             onClose={closeFeedback}
             leadIdentifier={selectedLeadForFeedback}
+            refreshTrigger={siteVisitSavedCount}
             onSaved={async () => {
               // Intentionally left blank: rely on the dialog's robust internal data
               // fetching instead of aggressively reloading the entire background table.
@@ -337,27 +347,29 @@ const Leads: React.FC = () => {
             }
             onSaved={async () => {
               showSnackbar("Site visit scheduled successfully", "success");
-              // Intentionally avoided calling loadLeads() here to prevent 
-              // a jarring full-page skeleton loading blink and dropped URL filters.
+              // Notify FollowUpDialog to refresh its list immediately
+              setSiteVisitSavedCount((c) => c + 1);
             }}
           />
         )}
       </React.Suspense>
 
       <PermissionGuard module="lead" action="write" fallback={<></>}>
-        <Fab
-          color="primary"
-          aria-label="add lead"
-          onClick={() => setOpen(true)}
-          disabled={saving}
-          sx={{
-            ...MODULE_STYLES.layout.mobileFab,
-            background: GRADIENTS.button,
-            "&:hover": { background: GRADIENTS.buttonHover },
-          }}
-        >
-          {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
-        </Fab>
+        {!open && !feedbackOpen && !siteVisitOpen && (
+          <Fab
+            color="primary"
+            aria-label="add lead"
+            onClick={() => setOpen(true)}
+            disabled={saving}
+            sx={{
+              ...MODULE_STYLES.layout.mobileFab,
+              background: GRADIENTS.button,
+              "&:hover": { background: GRADIENTS.buttonHover },
+            }}
+          >
+            {saving ? <CircularProgress size={24} color="inherit" /> : <Add />}
+          </Fab>
+        )}
       </PermissionGuard>
 
       <Snackbar

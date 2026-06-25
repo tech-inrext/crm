@@ -3,8 +3,12 @@ import { Service } from "@framework";
 import FollowUp from "../models/FollowUp";
 import Lead from "../models/Lead";
 import LeadActivity from "../models/LeadActivity";
+import LeadService from "./LeadService";
 import dbConnect from "../../lib/mongodb";
 import mongoose from "mongoose";
+import { sendSiteVisitFeedbackWhatsappMessage } from "../whatsapp-msg-service/lead-notifications/siteVisitFeedback.js";
+import { sendSiteVisitFeedbackEmail } from "../email-service/follow-up-email/sendSiteVisitFeedbackMail.js";
+import { createSiteVisitFeedbackInvite, getSiteVisitFeedbackSubmission } from "../mform-service/form-invites/siteVisitFeedback.js";
 
 class FollowUpService extends Service {
   // Helper to find lead ID
@@ -81,13 +85,14 @@ class FollowUpService extends Service {
       // 1. Resolve Lead
       let targetLead = null;
       if (leadId) {
-        targetLead = await Lead.findById(leadId).populate("uploadedBy", "name email");
-        if (!targetLead) targetLead = await Lead.findOne({ leadId }).populate("uploadedBy", "name email");
+        targetLead = await Lead.findById(leadId).populate("uploadedBy", "name email").populate("assignedTo", "name email");
+        if (!targetLead) targetLead = await Lead.findOne({ leadId }).populate("uploadedBy", "name email").populate("assignedTo", "name email");
       }
       if (!targetLead && leadIdentifier) {
         targetLead = await this.findLeadByIdentifier(leadIdentifier);
         if (targetLead) {
           await targetLead.populate("uploadedBy", "name email");
+          await targetLead.populate("assignedTo", "name email");
         }
       }
 
@@ -95,6 +100,12 @@ class FollowUpService extends Service {
         // Return empty if lead not found (soft fail for frontend search)
         return res.status(200).json({ success: true, data: [] });
       }
+
+      // 🛡️ Resolve Access Permissions early for masking
+      const loggedInUserId = req.employee?._id;
+      const isUploader = String(targetLead.uploadedBy?._id || targetLead.uploadedBy) === String(loggedInUserId);
+      const isAssignee = String(targetLead.assignedTo?._id || targetLead.assignedTo) === String(loggedInUserId);
+      const isSystemAdmin = req.isSystemAdmin;
 
       // 2. Fetch History
       // Find ALL documents matching this leadId
@@ -116,17 +127,41 @@ class FollowUpService extends Service {
         createdAt: doc.createdAt,
         updatedAt: doc.updatedAt,
         submittedByName: doc.submittedBy?.name || "System/Unknown",
-        outcome: doc.outcome || "pending"
+        outcome: doc.outcome || "pending",
+        feedbackRemarks: doc.feedbackRemarks || "",
+        interestLevel: doc.interestLevel || "",
+        missedReason: doc.missedReason || "",
+        missedReasonDetails: doc.missedReasonDetails || "",
+        feedbackFormUrl: doc.feedbackFormUrl || null,
+        feedbackToken: doc.feedbackToken || null,
       }));
 
-      const formattedActivities = activities.map(doc => ({
-        _id: doc._id,
-        followUpType: "history",
-        change: doc.change,
-        createdAt: doc.createdAt,
-        updatedAt: doc.updatedAt,
-        submittedByName: doc.updatedBy?.name || "System/Unknown",
-      }));
+      const formattedActivities = activities.map(doc => {
+        let change = doc.change;
+        // 🛡️ Mask phone in logs if unauthorized
+        if (change && !isUploader && !isAssignee && !isSystemAdmin) {
+          change = { ...change };
+          // Mask phone if changed
+          if (change.phone) {
+            if (change.phone.prev) change.phone.prev = LeadService.maskPhone(change.phone.prev);
+            if (change.phone.new) change.phone.new = LeadService.maskPhone(change.phone.new);
+          }
+          // Mask email if changed
+          if (change.email) {
+            if (change.email.prev) change.email.prev = LeadService.maskEmail(change.email.prev);
+            if (change.email.new) change.email.new = LeadService.maskEmail(change.email.new);
+          }
+        }
+
+        return {
+          _id: doc._id,
+          followUpType: "history",
+          change: change,
+          createdAt: doc.createdAt,
+          updatedAt: doc.updatedAt,
+          submittedByName: doc.updatedBy?.name || "System/Unknown",
+        };
+      });
 
       const creationEntry = {
         _id: targetLead._id + "_creation",
@@ -141,13 +176,26 @@ class FollowUpService extends Service {
       const combinedArr = [creationEntry, ...formattedHistory, ...formattedActivities];
       combinedArr.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
 
+
+
+      let displayPhone = targetLead.phone;
+      let displayEmail = targetLead.email;
+      if (!isUploader && !isAssignee && !isSystemAdmin) {
+        displayPhone = LeadService.maskPhone(targetLead.phone);
+        displayEmail = LeadService.maskEmail(targetLead.email);
+      }
+
       return res.status(200).json({
         success: true,
         data: combinedArr,
         lead: {
           fullName: targetLead.fullName,
-          phone: targetLead.phone,
-          id: targetLead._id
+          phone: displayPhone,
+          email: displayEmail,
+          id: targetLead._id,
+          assignedTo: targetLead.assignedTo,
+          managerId: targetLead.managerId,
+          budgetRange: targetLead.budgetRange
         }
       });
 
@@ -160,7 +208,14 @@ class FollowUpService extends Service {
   async updateFollowUpOutcome(req, res) {
     try {
       await dbConnect();
-      const { followUpId, outcome } = req.body || {};
+      const { 
+        followUpId, 
+        outcome,
+        feedbackRemarks,
+        interestLevel,
+        missedReason,
+        missedReasonDetails
+      } = req.body || {};
 
       if (!followUpId || !outcome) {
         return res.status(400).json({ success: false, message: "Missing required fields" });
@@ -171,9 +226,22 @@ class FollowUpService extends Service {
         return res.status(400).json({ success: false, message: "Invalid outcome value" });
       }
 
+      const updateData = { outcome };
+      if (outcome === "completed") {
+        updateData.feedbackRemarks = feedbackRemarks || "";
+        updateData.interestLevel = interestLevel || "";
+        updateData.missedReason = "";
+        updateData.missedReasonDetails = "";
+      } else if (outcome === "missed") {
+        updateData.missedReason = missedReason || "";
+        updateData.missedReasonDetails = missedReasonDetails || "";
+        updateData.feedbackRemarks = "";
+        updateData.interestLevel = "";
+      }
+
       const updatedFollowUp = await FollowUp.findByIdAndUpdate(
         followUpId,
-        { outcome },
+        updateData,
         { new: true }
       );
 
@@ -181,9 +249,86 @@ class FollowUpService extends Service {
         return res.status(404).json({ success: false, message: "Follow-up not found" });
       }
 
+      // --- mForm Feedback Integration ---
+      if (updatedFollowUp.followUpType === "site visit" && outcome === "completed") {
+        const leadForFeedback = await Lead.findById(updatedFollowUp.leadId).populate("assignedTo", "name");
+        if (leadForFeedback) {
+          try {
+            const { url: feedbackUrl, token: feedbackToken } = await createSiteVisitFeedbackInvite({
+              name:  leadForFeedback.fullName || "",
+              phone: leadForFeedback.phone || "",
+              email: leadForFeedback.email || "",
+            });
+
+            // Save url + token in followUp
+            updatedFollowUp.feedbackFormUrl = feedbackUrl;
+            updatedFollowUp.feedbackToken   = feedbackToken;
+            await updatedFollowUp.save();
+
+            // Send WhatsApp
+            if (leadForFeedback.phone) {
+              const agentName = leadForFeedback.assignedTo?.name || "our agent";
+              await sendSiteVisitFeedbackWhatsappMessage(
+                leadForFeedback.phone,
+                leadForFeedback.fullName,
+                leadForFeedback.propertyName || "the property",
+                agentName,
+                feedbackUrl
+              );
+            }
+
+            // Send Email
+            if (leadForFeedback.email) {
+              await sendSiteVisitFeedbackEmail(leadForFeedback.email, leadForFeedback.fullName, feedbackUrl);
+            }
+          } catch (err) {
+            console.error("[FollowUpService] Failed to generate mForm feedback link:", err);
+          }
+        }
+      }
+      // ----------------------------------
+
       return res.status(200).json({ success: true, data: updatedFollowUp, message: "Outcome updated successfully" });
     } catch (error) {
       console.error("[FollowUpService] Update Outcome Error:", error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
+  /**
+   * Fetches the mForm feedback submission for a completed site visit.
+   * The CRM calls mForm's external API using the stored feedbackToken.
+   * Query: ?followUpId=<id>
+   */
+  async getFeedbackSubmission(req, res) {
+    try {
+      await dbConnect();
+      const { followUpId } = req.query;
+
+      if (!followUpId) {
+        return res.status(400).json({ success: false, message: "followUpId is required" });
+      }
+
+      const followUp = await FollowUp.findById(followUpId);
+      if (!followUp) {
+        return res.status(404).json({ success: false, message: "Follow-up not found" });
+      }
+
+      if (!followUp.feedbackToken) {
+        return res.status(200).json({ success: true, data: null, message: "No feedback link was generated for this follow-up" });
+      }
+
+      const mformData = await getSiteVisitFeedbackSubmission(followUp.feedbackToken);
+
+      return res.status(200).json({
+        success: mformData.success,
+        invite: mformData.invite,
+        submission: mformData.submission || null,
+        feedbackFormUrl: followUp.feedbackFormUrl,
+      });
+
+    } catch (error) {
+      console.error("[FollowUpService] getFeedbackSubmission Error:", error);
       return res.status(500).json({ success: false, message: error.message });
     }
   }

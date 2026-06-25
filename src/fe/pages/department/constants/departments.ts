@@ -12,8 +12,8 @@ export const DEPARTMENT_CACHE_KEYS = {
 } as const;
 
 // ─── Pagination ───────────────────────────────────────────────────────────────
-export const DEPARTMENTS_ROWS_PER_PAGE_OPTIONS = [5, 10, 15, 25] as const;
-export const DEFAULT_PAGE_SIZE = 10;
+export const DEPARTMENTS_ROWS_PER_PAGE_OPTIONS = [8, 16, 24, 32] as const;
+export const DEFAULT_PAGE_SIZE = 8;
 
 // ─── Form defaults ────────────────────────────────────────────────────────────
 export const DEFAULT_DEPARTMENT_FORM = {

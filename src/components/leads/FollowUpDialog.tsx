@@ -48,6 +48,8 @@ interface FollowUpDialogProps {
   leadIdentifier: string; // leadId or _id
   onSaved?: () => void;
   onScheduleSiteVisit?: (leadId: string) => void;
+  /** Increment this value from the parent to trigger an automatic refresh of the follow-up list */
+  refreshTrigger?: number;
 }
 
 const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
@@ -56,6 +58,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
   leadIdentifier,
   onSaved,
   onScheduleSiteVisit,
+  refreshTrigger,
 }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -88,6 +91,41 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
   const [loadingItems, setLoadingItems] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
   const { user } = useAuth();
+
+  // Feedback form states for site visit completion/missed
+  const [activeFeedbackForm, setActiveFeedbackForm] = useState<{
+    followUpId: string;
+    outcome: "completed" | "missed";
+  } | null>(null);
+  const [feedbackRemarks, setFeedbackRemarks] = useState("");
+  const [interestLevel, setInterestLevel] = useState<"high" | "medium" | "low" | "">("");
+  const [missedReason, setMissedReason] = useState("");
+  const [missedReasonDetails, setMissedReasonDetails] = useState("");
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState(false);
+
+  // mForm feedback submission viewer
+  const [feedbackViewOpen, setFeedbackViewOpen] = useState(false);
+  const [feedbackData, setFeedbackData] = useState<any>(null);
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedbackError, setFeedbackError] = useState<string | null>(null);
+
+  const handleViewFeedback = async (followUpId: string) => {
+    setFeedbackViewOpen(true);
+    setFeedbackData(null);
+    setFeedbackError(null);
+    setFeedbackLoading(true);
+    try {
+      const res = await axios.get(`/api/v0/lead/feedback-submission`, {
+        params: { followUpId },
+        withCredentials: true,
+      });
+      setFeedbackData(res.data);
+    } catch (err: any) {
+      setFeedbackError(err?.response?.data?.message || "Failed to load feedback.");
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
@@ -184,10 +222,23 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
     loadFollowUps();
   }, [loadFollowUps]);
 
+  // Refresh when parent signals (e.g. after a site visit is saved from SiteVisitDialog)
+  useEffect(() => {
+    if (refreshTrigger && refreshTrigger > 0) {
+      loadFollowUps();
+    }
+  }, [refreshTrigger]);
+
   const isSubmitDisabled =
     submitting ||
     (followUpType === "note" && !note.trim()) ||
     (followUpType === "call back" && !followUpDate);
+
+  const hasPendingSiteVisit = items.some(
+    (it) =>
+      it.followUpType === "site visit" &&
+      (!it.outcome || it.outcome === "pending")
+  );
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const historyContainerRef = useRef<HTMLDivElement>(null);
@@ -219,7 +270,12 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
         },
       }}
     >
-      <FollowUpHeader leadInfo={leadInfo} handleDialogClose={handleDialogClose} isMobile={isMobile} />
+      <FollowUpHeader 
+        leadInfo={leadInfo} 
+        handleDialogClose={handleDialogClose} 
+        isMobile={isMobile} 
+        onLeadUpdate={loadFollowUps}
+      />
       
 
       {/* History Section Header + Filter – pinned */}
@@ -683,6 +739,7 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                               >
                                 {new Date() > new Date(it.followUpDate) &&
                                 (it.outcome === "pending" || !it.outcome) ? (
+                                  (!activeFeedbackForm || activeFeedbackForm.followUpId !== it._id) ? (
                                     <Stack
                                       direction={isMobile ? "column" : "row"}
                                       alignItems={isMobile ? "stretch" : "center"}
@@ -724,12 +781,15 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                               sx={{ fontSize: "14px !important", color: "#fff" }}
                                             />
                                           }
-                                          onClick={() =>
-                                            handleUpdateOutcome(
-                                              it._id,
-                                              "completed"
-                                            )
-                                          }
+                                          onClick={() => {
+                                            if (isSiteVisit) {
+                                              setActiveFeedbackForm({ followUpId: it._id, outcome: "completed" });
+                                              setFeedbackRemarks("");
+                                              setInterestLevel("medium");
+                                            } else {
+                                              handleUpdateOutcome(it._id, "completed");
+                                            }
+                                          }}
                                           sx={{
                                             flex: isMobile ? 1 : "initial",
                                             height: isMobile ? 36 : 28,
@@ -763,9 +823,15 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                               sx={{ fontSize: "14px !important", color: "#d32f2f" }}
                                             />
                                           }
-                                          onClick={() =>
-                                            handleUpdateOutcome(it._id, "missed")
-                                          }
+                                          onClick={() => {
+                                            if (isSiteVisit) {
+                                              setActiveFeedbackForm({ followUpId: it._id, outcome: "missed" });
+                                              setMissedReason("");
+                                              setMissedReasonDetails("");
+                                            } else {
+                                              handleUpdateOutcome(it._id, "missed");
+                                            }
+                                          }}
                                           sx={{
                                             flex: isMobile ? 1 : "initial",
                                             height: isMobile ? 36 : 28,
@@ -776,13 +842,13 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                             borderRadius: isMobile ? "8px" : "6px",
                                             whiteSpace: "nowrap",
                                             minWidth: "auto",
-                                            borderColor: "#d74040ff", // Soft red border (before hover)
+                                            borderColor: "#d74040ff",
                                             color: "#d32f2f",
                                             bgcolor: "#fff",
                                             transition: "all 0.2s ease",
                                             "&:hover": {
-                                              borderColor: "#d32f2f", // Intense red border (after hover)
-                                              bgcolor: "#fff5f5", // Light pink background (after hover)
+                                              borderColor: "#d32f2f",
+                                              bgcolor: "#fff5f5",
                                               borderWidth: 1,
                                             },
                                             "&:focus, &:active": {
@@ -796,69 +862,295 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                         </Button>
                                       </Stack>
                                     </Stack>
+                                  ) : (
+                                    <Box sx={{ width: "100%", p: 1.5, border: "1px solid #e2e8f0", borderRadius: "8px", bgcolor: "#f8fafc" }}>
+                                      {activeFeedbackForm?.outcome === "completed" ? (
+                                        <Stack spacing={1.25}>
+                                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#1e293b", fontSize: "0.75rem" }}>
+                                            Site Visit Feedback Form
+                                          </Typography>
+                                          
+                                          <Box>
+                                            <Typography variant="caption" sx={{ fontWeight: 600, color: "#475569", display: "block", mb: 0.5 }}>
+                                              Customer Interest Level
+                                            </Typography>
+                                            <select
+                                              value={interestLevel}
+                                              onChange={(e) => setInterestLevel(e.target.value as any)}
+                                              style={{
+                                                width: "100%",
+                                                padding: "6px 10px",
+                                                borderRadius: "6px",
+                                                border: "1px solid #cbd5e1",
+                                                fontSize: "0.75rem",
+                                                backgroundColor: "#fff",
+                                                color: "#334155",
+                                                outline: "none",
+                                              }}
+                                            >
+                                              <option value="">-- Select Interest Level --</option>
+                                              <option value="high">High</option>
+                                              <option value="medium">Medium</option>
+                                              <option value="low">Low</option>
+                                            </select>
+                                          </Box>
+
+                                          <Box>
+                                            <Typography variant="caption" sx={{ fontWeight: 600, color: "#475569", display: "block", mb: 0.5 }}>
+                                              Remarks / Comments
+                                            </Typography>
+                                            <TextField
+                                              fullWidth
+                                              multiline
+                                              rows={2}
+                                              value={feedbackRemarks}
+                                              onChange={(e) => setFeedbackRemarks(e.target.value)}
+                                              placeholder="Enter site visit feedback..."
+                                              size="small"
+                                              sx={{
+                                                "& .MuiOutlinedInput-root": {
+                                                  fontSize: "0.75rem",
+                                                  bgcolor: "#fff",
+                                                }
+                                              }}
+                                            />
+                                          </Box>
+                                        </Stack>
+                                      ) : (
+                                        <Stack spacing={1.25}>
+                                          <Typography variant="subtitle2" sx={{ fontWeight: 700, color: "#991b1b", fontSize: "0.75rem" }}>
+                                            Reason for Missed Site Visit
+                                          </Typography>
+
+                                          <Box>
+                                            <Typography variant="caption" sx={{ fontWeight: 600, color: "#475569", display: "block", mb: 0.5 }}>
+                                              Select Reason
+                                            </Typography>
+                                            <select
+                                              value={missedReason}
+                                              onChange={(e) => setMissedReason(e.target.value)}
+                                              style={{
+                                                width: "100%",
+                                                padding: "6px 10px",
+                                                borderRadius: "6px",
+                                                border: "1px solid #cbd5e1",
+                                                fontSize: "0.75rem",
+                                                backgroundColor: "#fff",
+                                                color: "#334155",
+                                                outline: "none",
+                                              }}
+                                            >
+                                              <option value="">-- Select a Reason --</option>
+                                              <option value="Client Cancelled">Client Cancelled</option>
+                                              <option value="Client No Show">Client No Show / Unreachable</option>
+                                              <option value="Executive Unavailability">Executive/Agent Unavailability</option>
+                                              <option value="Rescheduled">Rescheduled by Client</option>
+                                              <option value="Other">Other</option>
+                                            </select>
+                                          </Box>
+
+                                          <Box>
+                                            <Typography variant="caption" sx={{ fontWeight: 600, color: "#475569", display: "block", mb: 0.5 }}>
+                                              Additional Details
+                                            </Typography>
+                                            <TextField
+                                              fullWidth
+                                              multiline
+                                              rows={2}
+                                              value={missedReasonDetails}
+                                              onChange={(e) => setMissedReasonDetails(e.target.value)}
+                                              placeholder="Provide details about why the visit was missed..."
+                                              size="small"
+                                              sx={{
+                                                "& .MuiOutlinedInput-root": {
+                                                  fontSize: "0.75rem",
+                                                  bgcolor: "#fff",
+                                                }
+                                              }}
+                                            />
+                                          </Box>
+                                        </Stack>
+                                      )}
+
+                                      <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 1.5 }}>
+                                        <Button
+                                          size="small"
+                                          variant="text"
+                                          onClick={() => setActiveFeedbackForm(null)}
+                                          sx={{ fontSize: "0.7rem", textTransform: "none", color: "#64748b" }}
+                                        >
+                                          Cancel
+                                        </Button>
+                                        <Button
+                                          size="small"
+                                          variant="contained"
+                                          disabled={
+                                            feedbackSubmitting ||
+                                            (activeFeedbackForm?.outcome === "completed" 
+                                              ? !feedbackRemarks.trim() || !interestLevel
+                                              : !missedReason || !missedReasonDetails.trim())
+                                          }
+                                          onClick={async () => {
+                                            if (!activeFeedbackForm) return;
+                                            setFeedbackSubmitting(true);
+                                            try {
+                                              const payload = {
+                                                followUpId: it._id,
+                                                outcome: activeFeedbackForm.outcome,
+                                                ...(activeFeedbackForm.outcome === "completed" 
+                                                  ? { interestLevel, feedbackRemarks }
+                                                  : { missedReason, missedReasonDetails }
+                                                )
+                                              };
+                                              await axios.patch(`/api/v0/lead/follow-up`, payload, {
+                                                withCredentials: true,
+                                              });
+                                              setActiveFeedbackForm(null);
+                                              // Refresh list
+                                              const res = await axios.get(`/api/v0/lead/follow-up`, {
+                                                params: { leadIdentifier: finalLeadIdentifier },
+                                                withCredentials: true,
+                                              });
+                                              setItems(res.data.data || []);
+                                            } catch (err) {
+                                              console.error("Failed to submit feedback", err);
+                                            } finally {
+                                              setFeedbackSubmitting(false);
+                                            }
+                                          }}
+                                          sx={{
+                                            fontSize: "0.7rem",
+                                            textTransform: "none",
+                                            minWidth: 72,
+                                            bgcolor: activeFeedbackForm?.outcome === "completed" ? "#10b981" : "#ef4444",
+                                            color: "#fff",
+                                            "&:hover": {
+                                              bgcolor: activeFeedbackForm?.outcome === "completed" ? "#059669" : "#dc2626",
+                                            }
+                                          }}
+                                        >
+                                          {feedbackSubmitting ? (
+                                            <CircularProgress size={14} thickness={5} sx={{ color: "#fff" }} />
+                                          ) : (
+                                            "Submit"
+                                          )}
+                                        </Button>
+                                      </Stack>
+                                    </Box>
+                                  )
                                 ) : it.outcome && it.outcome !== "pending" ? (
-                                  <Box
-                                    sx={{
-                                      display: "flex",
-                                      alignItems: "center",
-                                      gap: 1,
-                                    }}
-                                  >
-                                    <Chip
-                                      label={
-                                        it.outcome === "completed"
-                                          ? isCallBack
-                                            ? "Call Completed"
-                                            : "Visit Done"
-                                          : isCallBack
-                                          ? "Call Missed"
-                                          : "Visit Missed"
-                                      }
-                                      size="small"
-                                      icon={
-                                        it.outcome === "completed" ? (
-                                          <Check
-                                            sx={{
-                                              fontSize: "12px !important",
-                                              color: "white !important",
-                                            }}
-                                          />
-                                        ) : (
-                                          <Clear
-                                            sx={{
-                                              fontSize: "12px !important",
-                                              color: "white !important",
-                                            }}
-                                          />
-                                        )
-                                      }
+                                  <Box sx={{ width: "100%" }}>
+                                    <Box
                                       sx={{
-                                        height: 22,
-                                        fontSize: "0.65rem",
-                                        fontWeight: 700,
-                                        bgcolor:
-                                          it.outcome === "completed"
-                                            ? "#10b981"
-                                            : "#ef4444",
-                                        color: "#fff",
-                                        "& .MuiChip-label": { px: 1 },
-                                      }}
-                                    />
-                                    <Typography
-                                      variant="caption"
-                                      sx={{
-                                        color: "text.secondary",
-                                        fontStyle: "italic",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: 1,
+                                        mb: isSiteVisit ? 0.75 : 0,
                                       }}
                                     >
-                                      {it.outcome === "completed"
-                                        ? `This ${
-                                            isCallBack ? "call" : "visit"
-                                          } was successfully conducted.`
-                                        : `The scheduled ${
-                                            isCallBack ? "call" : "site visit"
-                                          } was marked as not done.`}
-                                    </Typography>
+                                      <Chip
+                                        label={
+                                          it.outcome === "completed"
+                                            ? isCallBack
+                                              ? "Call Completed"
+                                              : "Visit Done"
+                                            : isCallBack
+                                            ? "Call Missed"
+                                            : "Visit Missed"
+                                        }
+                                        size="small"
+                                        icon={
+                                          it.outcome === "completed" ? (
+                                            <Check
+                                              sx={{
+                                                fontSize: "12px !important",
+                                                color: "white !important",
+                                              }}
+                                            />
+                                          ) : (
+                                            <Clear
+                                              sx={{
+                                                fontSize: "12px !important",
+                                                color: "white !important",
+                                              }}
+                                            />
+                                          )
+                                        }
+                                        sx={{
+                                          height: 22,
+                                          fontSize: "0.65rem",
+                                          fontWeight: 700,
+                                          bgcolor:
+                                            it.outcome === "completed"
+                                              ? "#10b981"
+                                              : "#ef4444",
+                                          color: "#fff",
+                                          "& .MuiChip-label": { px: 1 },
+                                        }}
+                                      />
+                                      <Typography
+                                        variant="caption"
+                                        sx={{
+                                          color: "text.secondary",
+                                          fontStyle: "italic",
+                                        }}
+                                      >
+                                        {it.outcome === "completed"
+                                          ? `This ${
+                                              isCallBack ? "call" : "visit"
+                                            } was successfully conducted.`
+                                          : `The scheduled ${
+                                              isCallBack ? "call" : "site visit"
+                                            } was marked as not done.`}
+                                      </Typography>
+                                    </Box>
+
+                                    {/* Display saved feedback for Site Visit */}
+                                    {isSiteVisit && it.outcome === "completed" && (
+                                      <Box sx={{ mt: 0.5, pl: 1, borderLeft: "2px solid #10b981", py: 0.25 }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 600, color: "#1e293b", display: "block" }}>
+                                          Interest Level: <span style={{ 
+                                            textTransform: "capitalize", 
+                                            color: it.interestLevel === "high" ? "#10b981" : it.interestLevel === "medium" ? "#f59e0b" : "#ef4444",
+                                            fontWeight: 700 
+                                          }}>{it.interestLevel || "N/A"}</span>
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: "#475569", display: "block", mt: 0.25 }}>
+                                          <strong>Feedback:</strong> {it.feedbackRemarks || "No remarks provided."}
+                                        </Typography>
+                                        {/* View mForm Feedback Button */}
+                                        {it.feedbackToken && (
+                                          <Button
+                                            size="small"
+                                            variant="outlined"
+                                            onClick={() => handleViewFeedback(it._id)}
+                                            sx={{
+                                              mt: 1,
+                                              fontSize: "0.68rem",
+                                              textTransform: "none",
+                                              fontWeight: 600,
+                                              borderColor: "#3b82f6",
+                                              color: "#3b82f6",
+                                              py: 0.25,
+                                              "&:hover": { bgcolor: "#eff6ff" }
+                                            }}
+                                          >
+                                            📋 View Client Feedback
+                                          </Button>
+                                        )}
+                                      </Box>
+                                    )}
+
+                                    {isSiteVisit && it.outcome === "missed" && (
+                                      <Box sx={{ mt: 0.5, pl: 1, borderLeft: "2px solid #ef4444", py: 0.25 }}>
+                                        <Typography variant="caption" sx={{ fontWeight: 600, color: "#1e293b", display: "block" }}>
+                                          Reason: <span style={{ color: "#ef4444", fontWeight: 700 }}>{it.missedReason || "N/A"}</span>
+                                        </Typography>
+                                        <Typography variant="caption" sx={{ color: "#475569", display: "block", mt: 0.25 }}>
+                                          <strong>Details:</strong> {it.missedReasonDetails || "No details provided."}
+                                        </Typography>
+                                      </Box>
+                                    )}
                                   </Box>
                                 ) : null}
                               </Box>
@@ -1046,19 +1338,28 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
 
           {onScheduleSiteVisit && (
             <Box
-              onClick={() => onScheduleSiteVisit(finalLeadIdentifier)}
+              onClick={() => {
+                if (hasPendingSiteVisit) {
+                  // alert("Please complete the pending site visit before scheduling a new one.");
+                  return;
+                }
+                onScheduleSiteVisit(finalLeadIdentifier);
+              }}
               sx={{
                 px: 1.5,
                 py: 0.4,
                 fontSize: "0.7rem",
                 fontWeight: 600,
                 borderRadius: "20px",
-                cursor: "pointer",
+                cursor: hasPendingSiteVisit ? "not-allowed" : "pointer",
                 transition: "all 0.15s",
-                color: "#7c3aed",
-                border: "1.5px solid #ede9fe",
-                "&:hover": { bgcolor: "#f5f3ff" },
+                color: hasPendingSiteVisit ? "#9ca3af" : "#7c3aed",
+                border: `1.5px solid ${hasPendingSiteVisit ? "#e5e7eb" : "#ede9fe"}`,
+                bgcolor: hasPendingSiteVisit ? "#f3f4f6" : "transparent",
+                "&:hover": { bgcolor: hasPendingSiteVisit ? "#f3f4f6" : "#f5f3ff" },
+                opacity: hasPendingSiteVisit ? 0.7 : 1,
               }}
+              title={hasPendingSiteVisit ? "Please complete the pending site visit first" : ""}
             >
               Site Visit
             </Box>
@@ -1163,6 +1464,110 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
           {user?.name || "Anonymous"}
         </Typography>
       </Box>
+
+      {/* mForm Client Feedback Submission Dialog */}
+      {feedbackViewOpen && (
+        <Box
+          sx={{
+            position: "fixed", inset: 0, zIndex: 1400,
+            bgcolor: "rgba(15,23,42,0.5)", backdropFilter: "blur(4px)",
+            display: "flex", alignItems: "center", justifyContent: "center", p: 2,
+          }}
+          onClick={() => setFeedbackViewOpen(false)}
+        >
+          <Box
+            sx={{
+              bgcolor: "#fff", borderRadius: 4, maxWidth: 500, width: "100%",
+              maxHeight: "85vh", overflow: "hidden", display: "flex", flexDirection: "column",
+              boxShadow: "0 25px 50px rgba(0,0,0,0.25)",
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <Box sx={{ background: "linear-gradient(135deg, #1e293b 0%, #334155 100%)", px: 3, py: 2.5, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+              <Box>
+                <Typography variant="subtitle1" sx={{ color: "#fff", fontWeight: 800, lineHeight: 1.2 }}>Client Feedback</Typography>
+                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.6)" }}>Submitted via mForm</Typography>
+              </Box>
+              <IconButton size="small" onClick={() => setFeedbackViewOpen(false)} sx={{ color: "rgba(255,255,255,0.7)", "&:hover": { color: "#fff" } }}>
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+
+            {/* Body */}
+            <Box sx={{ overflowY: "auto", flex: 1, p: 3 }}>
+              {feedbackLoading && (
+                <Box sx={{ display: "flex", justifyContent: "center", py: 6 }}>
+                  <CircularProgress size={32} />
+                </Box>
+              )}
+              {feedbackError && (
+                <Box sx={{ p: 2, bgcolor: "#fef2f2", borderRadius: 2, border: "1px solid #fecaca" }}>
+                  <Typography variant="body2" color="error">{feedbackError}</Typography>
+                </Box>
+              )}
+              {!feedbackLoading && !feedbackError && feedbackData && (
+                <>
+                  {/* Invite Status */}
+                  <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2.5 }}>
+                    <Box sx={{
+                      px: 1.5, py: 0.5, borderRadius: 99,
+                      bgcolor: feedbackData.invite?.status === "completed" ? "#dcfce7" : "#fef3c7",
+                      border: "1px solid",
+                      borderColor: feedbackData.invite?.status === "completed" ? "#86efac" : "#fcd34d",
+                    }}>
+                      <Typography variant="caption" sx={{ fontWeight: 700, color: feedbackData.invite?.status === "completed" ? "#15803d" : "#92400e" }}>
+                        {feedbackData.invite?.status === "completed" ? "✓ Feedback Received" : "⏳ Awaiting Response"}
+                      </Typography>
+                    </Box>
+                    {feedbackData.feedbackFormUrl && (
+                      <Button size="small" variant="text" onClick={() => window.open(feedbackData.feedbackFormUrl, "_blank")}
+                        sx={{ fontSize: "0.68rem", textTransform: "none", color: "#3b82f6" }}>
+                        Open Link ↗
+                      </Button>
+                    )}
+                  </Box>
+
+                  {feedbackData.submission ? (
+                    <>
+                      {/* Submitter info */}
+                      <Typography variant="overline" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: "0.08em", fontSize: "0.65rem" }}>Respondent</Typography>
+                      <Box sx={{ mt: 0.75, mb: 2.5, p: 2, borderRadius: 2, bgcolor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                        <Stack direction="row" spacing={3}>
+                          <Box><Typography variant="caption" sx={{ color: "#94a3b8", display: "block", fontWeight: 600 }}>NAME</Typography><Typography variant="body2" fontWeight={700}>{feedbackData.submission.submittedBy?.name || "—"}</Typography></Box>
+                          <Box><Typography variant="caption" sx={{ color: "#94a3b8", display: "block", fontWeight: 600 }}>PHONE</Typography><Typography variant="body2" fontWeight={700}>{feedbackData.submission.submittedBy?.phone || "—"}</Typography></Box>
+                          <Box><Typography variant="caption" sx={{ color: "#94a3b8", display: "block", fontWeight: 600 }}>EMAIL</Typography><Typography variant="body2" fontWeight={700}>{feedbackData.submission.submittedBy?.email || "—"}</Typography></Box>
+                        </Stack>
+                      </Box>
+
+                      {/* Answers */}
+                      <Typography variant="overline" sx={{ color: "#64748b", fontWeight: 700, letterSpacing: "0.08em", fontSize: "0.65rem" }}>Answers</Typography>
+                      <Stack spacing={1.5} sx={{ mt: 0.75 }}>
+                        {feedbackData.submission.answers?.map((ans: any, idx: number) => (
+                          <Box key={idx} sx={{ p: 2, borderRadius: 2, bgcolor: "#f8fafc", border: "1px solid #e2e8f0" }}>
+                            <Typography variant="caption" sx={{ color: "#64748b", fontWeight: 700, display: "block", mb: 0.5, textTransform: "uppercase", letterSpacing: "0.05em", fontSize: "0.62rem" }}>
+                              {ans.fieldLabel || ans.fieldId}
+                            </Typography>
+                            <Typography variant="body2" fontWeight={600} color="#0f172a">
+                              {Array.isArray(ans.value) ? ans.value.join(", ") : (ans.value?.toString() || "—")}
+                            </Typography>
+                          </Box>
+                        ))}
+                      </Stack>
+                    </>
+                  ) : (
+                    <Box sx={{ textAlign: "center", py: 4 }}>
+                      <Typography sx={{ fontSize: "2.5rem", mb: 1 }}>📭</Typography>
+                      <Typography variant="body2" color="text.secondary" fontWeight={600}>Client hasn&apos;t submitted the feedback yet.</Typography>
+                      <Typography variant="caption" color="text.disabled">The link has been sent. Check back later.</Typography>
+                    </Box>
+                  )}
+                </>
+              )}
+            </Box>
+          </Box>
+        </Box>
+      )}
     </Drawer>
   );
 };

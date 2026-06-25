@@ -8,21 +8,23 @@ interface CardComponentProps {
   title?: string;
   content?: React.ReactNode;
   actions?: React.ReactNode;
+  contentSx?: any;
 }
 
 const CardComponent: React.FC<CardComponentProps> = ({
   title,
   content,
   actions,
+  contentSx,
 }) => (
   <Card
     sx={{
       borderRadius: 3,
       boxShadow: 2,
-      transition: "transform 0.2s ease, box-shadow 0.2s ease",
+      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       "&:hover": {
-        transform: "translateY(-2px)",
-        boxShadow: 3,
+        transform: "translateY(-4px)",
+        boxShadow: "0 12px 24px -10px rgba(0,0,0,0.15)",
       },
     }}
   >
@@ -31,7 +33,11 @@ const CardComponent: React.FC<CardComponentProps> = ({
         <Typography variant="h5">{title}</Typography>
       </CardContent>
     )}
-    {content && <CardContent>{content}</CardContent>}
+    {content && (
+      <CardContent sx={{ p: 1, "&:last-child": { pb: 1 }, ...contentSx }}>
+        {content}
+      </CardContent>
+    )}
     {actions && <CardActions>{actions}</CardActions>}
   </Card>
 );

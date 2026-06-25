@@ -4,7 +4,13 @@ import * as Yup from "yup";
 export const leadValidationSchema = Yup.object({
   phone: Yup.string()
     .required("Phone number is required")
-    .matches(/^[0-9]{10}$/, "Phone must contain only digits and 10 digits long")
+    .test("is-valid-phone", "Invalid phone format", (value) => {
+      if (!value) return false;
+      // Allow masked phone (e.g., 73******21)
+      if (value.includes("*")) return true;
+      // standard 10 digit regex
+      return /^[0-9]{10}$/.test(value);
+    })
     .trim(),
   fullName: Yup.string()
     .min(3, "name must be at least 3 characters")
@@ -12,8 +18,13 @@ export const leadValidationSchema = Yup.object({
     // .required("Full Name is required")
     .trim(),
   email: Yup.string()
-    .email("Invalid email format")
-    .matches(/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/, "Invalid email format")
+    .test("is-valid-email", "Invalid email format", (value) => {
+      if (!value) return true;
+      // Allow masked email (e.g., mo******v@gmail.com)
+      if (value.includes("*")) return true;
+      // standard regex
+      return /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(value);
+    })
     .trim()
     .max(100, "Email must be less than 100 characters"),
   propertyType: Yup.string().oneOf(

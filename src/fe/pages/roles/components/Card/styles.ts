@@ -9,12 +9,12 @@ export const roleCardStyles = {
       boxShadow: "0 8px 24px rgba(25, 118, 210, 0.2)",
       transform: "translateY(-4px)",
       "& .role-avatar": { transform: "scale(1.05)" },
-      "& .edit-button": { backgroundColor: "primary.main", color: "white" },
     },
     border: "1px solid rgba(25, 118, 210, 0.12)",
     background: "linear-gradient(135deg, #ffffff 0%, #f8fbff 100%)",
     width: "100%",
     height: "100%",
+    minHeight: { xs: "80px", sm: "90px" },
     cursor: "pointer",
     position: "relative",
     "&::before": {
@@ -45,13 +45,32 @@ export const roleCardStyles = {
     WebkitTextFillColor: "transparent",
   } as SxProps<Theme>,
 
+  viewButton: {
+    width: 34,
+    height: 34,
+    backgroundColor: "rgba(2, 136, 209, 0.08)",
+    color: "info.main",
+    borderRadius: 2,
+    transition: "all 0.2s ease",
+    "&:hover": {
+      backgroundColor: "info.main",
+      color: "white",
+      boxShadow: "0 2px 8px rgba(2, 136, 209, 0.3)",
+    }
+  } as SxProps<Theme>,
+
   editButton: {
-    width: 28,
-    height: 28,
+    width: 34,
+    height: 34,
     backgroundColor: "rgba(25, 118, 210, 0.08)",
     color: "primary.main",
     borderRadius: 2,
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    "&:hover": {
+      backgroundColor: "primary.main",
+      color: "white",
+      boxShadow: "0 2px 8px rgba(25, 118, 210, 0.3)",
+    }
   } as SxProps<Theme>,
 
   expandedContent: {

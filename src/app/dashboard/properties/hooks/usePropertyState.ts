@@ -266,110 +266,75 @@ export const usePropertyState = (filters: Filters) => {
   }, []);
 
   // Dialog functions
-  const handleOpenDialog = useCallback((property: Property | null = null) => {
-    if (property) {
-      const cleanedProperty = cleanPropertyBase64(property);
-      setEditingProperty(cleanedProperty);
+  const handleOpenDialog = useCallback(async (property: Property | null = null) => {
+    if (property && property._id) {
+      try {
+        setLoading(true);
+        // Fetch full property details with children to populate all forms correctly
+        const response = await propertyService.getPropertyById(property._id, "true");
+        
+        if (!response.success || !response.data) {
+          throw new Error(response.message || "Failed to fetch property details");
+        }
 
-      setFormData({
-        projectName: cleanedProperty.projectName || "",
-        builderName: cleanedProperty.builderName || "",
-        location: cleanedProperty.location || "",
-        paymentPlan: cleanedProperty.paymentPlan || "",
-        propertyType: [cleanedProperty.propertyType],
-        description: cleanedProperty.description || "",
-        propertyName: cleanedProperty.propertyName || "",
-        propertyDescription: cleanedProperty.propertyDescription || "",
-        price: cleanedProperty.price || "",
-        minSize: cleanedProperty.minSize || "",
-        maxSize: cleanedProperty.maxSize || "",
-        sizeUnit: cleanedProperty.sizeUnit || "",
-        bedrooms: cleanedProperty.bedrooms || 0,
-        bathrooms: cleanedProperty.bathrooms || 0,
-        toilet: cleanedProperty.toilet || 0,
-        balcony: cleanedProperty.balcony || 0,
-        carpetArea: cleanedProperty.carpetArea || "",
-        builtUpArea: cleanedProperty.builtUpArea || "",
-        ownershipType: cleanedProperty.ownershipType || "Freehold",
-        landType: cleanedProperty.landType || "Residential Plot",
-        approvedBy: cleanedProperty.approvedBy || "",
-        boundaryWall: cleanedProperty.boundaryWall || false,
-        amenities: cleanedProperty.amenities || [],
-        status: cleanedProperty.status || [],
-        nearby: cleanedProperty.nearby || [],
-        projectHighlights: cleanedProperty.projectHighlights || [],
-        images: cleanedProperty.images || [],
-        propertyImages: cleanedProperty.propertyImages || [],
-        floorPlans: cleanedProperty.floorPlans || [],
-        creatives: cleanedProperty.creatives || [],
-        videos: cleanedProperty.videos || [],
-        brochureUrls: cleanedProperty.brochureUrls || [],
-        mapLocation: cleanedProperty.mapLocation || { lat: 0, lng: 0 },
-        isActive:
-          cleanedProperty.isActive !== undefined
-            ? cleanedProperty.isActive
-            : true,
-        isPublic: cleanedProperty.isPublic || false,
-        isFeatured: cleanedProperty.isFeatured || false,
-        parentId: cleanedProperty.parentId || null,
-        residentialProperties:
-          cleanedProperty.propertyType === "residential"
-            ? [
-                {
-                  propertyName: cleanedProperty.propertyName,
-                  propertyDescription: cleanedProperty.propertyDescription,
-                  price: cleanedProperty.price,
-                  paymentPlan: cleanedProperty.paymentPlan,
-                  bedrooms: cleanedProperty.bedrooms,
-                  bathrooms: cleanedProperty.bathrooms,
-                  toilet: cleanedProperty.toilet,
-                  balcony: cleanedProperty.balcony,
-                  carpetArea: cleanedProperty.carpetArea,
-                  builtUpArea: cleanedProperty.builtUpArea,
-                  minSize: cleanedProperty.minSize,
-                  maxSize: cleanedProperty.maxSize,
-                  sizeUnit: cleanedProperty.sizeUnit,
-                  amenities: cleanedProperty.amenities,
-                },
-              ]
-            : [],
-        commercialProperties:
-          cleanedProperty.propertyType === "commercial"
-            ? [
-                {
-                  propertyName: cleanedProperty.propertyName,
-                  propertyDescription: cleanedProperty.propertyDescription,
-                  price: cleanedProperty.price,
-                  paymentPlan: cleanedProperty.paymentPlan,
-                  carpetArea: cleanedProperty.carpetArea,
-                  builtUpArea: cleanedProperty.builtUpArea,
-                  minSize: cleanedProperty.minSize,
-                  maxSize: cleanedProperty.maxSize,
-                  sizeUnit: cleanedProperty.sizeUnit,
-                  amenities: cleanedProperty.amenities,
-                },
-              ]
-            : [],
-        plotProperties:
-          cleanedProperty.propertyType === "plot"
-            ? [
-                {
-                  propertyName: cleanedProperty.propertyName,
-                  propertyDescription: cleanedProperty.propertyDescription,
-                  price: cleanedProperty.price,
-                  paymentPlan: cleanedProperty.paymentPlan,
-                  ownershipType: cleanedProperty.ownershipType,
-                  landType: cleanedProperty.landType,
-                  approvedBy: cleanedProperty.approvedBy,
-                  boundaryWall: cleanedProperty.boundaryWall,
-                  minSize: cleanedProperty.minSize,
-                  maxSize: cleanedProperty.maxSize,
-                  sizeUnit: cleanedProperty.sizeUnit,
-                  amenities: cleanedProperty.amenities,
-                },
-              ]
-            : [],
-      });
+        const fullProperty = response.data;
+        const cleanedProperty = cleanPropertyBase64(fullProperty);
+        setEditingProperty(cleanedProperty);
+
+        setFormData({
+          projectName: cleanedProperty.projectName || "",
+          builderName: cleanedProperty.builderName || "",
+          location: cleanedProperty.location || "",
+          paymentPlan: cleanedProperty.paymentPlan || "",
+          propertyType: Array.isArray(cleanedProperty.propertyType) 
+            ? cleanedProperty.propertyType 
+            : [cleanedProperty.propertyType],
+          description: cleanedProperty.description || "",
+          propertyName: cleanedProperty.propertyName || "",
+          propertyDescription: cleanedProperty.propertyDescription || "",
+          price: cleanedProperty.price || "",
+          minSize: cleanedProperty.minSize || "",
+          maxSize: cleanedProperty.maxSize || "",
+          sizeUnit: cleanedProperty.sizeUnit || "",
+          bedrooms: cleanedProperty.bedrooms || 0,
+          bathrooms: cleanedProperty.bathrooms || 0,
+          toilet: cleanedProperty.toilet || 0,
+          balcony: cleanedProperty.balcony || 0,
+          carpetArea: cleanedProperty.carpetArea || "",
+          builtUpArea: cleanedProperty.builtUpArea || "",
+          ownershipType: cleanedProperty.ownershipType || "Freehold",
+          landType: cleanedProperty.landType || "Residential Plot",
+          approvedBy: cleanedProperty.approvedBy || "",
+          boundaryWall: cleanedProperty.boundaryWall || false,
+          amenities: cleanedProperty.amenities || [],
+          status: cleanedProperty.status || [],
+          nearby: cleanedProperty.nearby || [],
+          projectHighlights: cleanedProperty.projectHighlights || [],
+          images: cleanedProperty.images || [],
+          propertyImages: cleanedProperty.propertyImages || [],
+          floorPlans: cleanedProperty.floorPlans || [],
+          creatives: cleanedProperty.creatives || [],
+          videos: cleanedProperty.videos || [],
+          brochureUrls: cleanedProperty.brochureUrls || [],
+          mapLocation: cleanedProperty.mapLocation || { lat: 0, lng: 0 },
+          isActive:
+            cleanedProperty.isActive !== undefined
+              ? cleanedProperty.isActive
+              : true,
+          isPublic: cleanedProperty.isPublic || false,
+          isFeatured: cleanedProperty.isFeatured || false,
+          parentId: cleanedProperty.parentId || null,
+          residentialProperties: cleanedProperty.residentialProperties || [],
+          commercialProperties: cleanedProperty.commercialProperties || [],
+          plotProperties: cleanedProperty.plotProperties || [],
+        });
+        
+        setOpenDialog(true);
+      } catch (error: any) {
+        toast.error(error.message || "Error loading property details");
+      } finally {
+        setLoading(false);
+      }
     } else {
       setEditingProperty(null);
       setFormData({
@@ -414,9 +379,9 @@ export const usePropertyState = (filters: Filters) => {
         commercialProperties: [],
         plotProperties: [],
       });
+      setOpenDialog(true);
     }
     setValidationErrors({});
-    setOpenDialog(true);
   }, [cleanPropertyBase64]);
 
   const handleCloseDialog = useCallback(() => {
@@ -694,6 +659,17 @@ export const usePropertyState = (filters: Filters) => {
           }
           if (data.brochureUrls && data.brochureUrls.length > 0) {
             updateData.brochureUrls = data.brochureUrls;
+          }
+
+          // Include sub-properties for main project updates
+          if (data.residentialProperties && data.residentialProperties.length > 0) {
+            updateData.residentialProperties = data.residentialProperties;
+          }
+          if (data.commercialProperties && data.commercialProperties.length > 0) {
+            updateData.commercialProperties = data.commercialProperties;
+          }
+          if (data.plotProperties && data.plotProperties.length > 0) {
+            updateData.plotProperties = data.plotProperties;
           }
 
           const response = await propertyService.updateProperty(editingProperty._id, updateData);

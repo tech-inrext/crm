@@ -12,27 +12,31 @@ export const MODULE_LAYOUT_STYLES = {
 
   // Header paper styles
   headerPaper: {
-    p: 2,
-    borderRadius: { xs: 1, sm: 2, md: 3 },
-    mb: { xs: 1.5, sm: 2, md: 3 }, // add bottom margin so content below isn't touched
-    mt: 0, // Removed top margin from headerPaper
-    background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
-    overflow: "hidden",
-    elevation: 2,
+    p: { xs: 2, sm: 2.5, md: 3 },
+    borderRadius: { xs: 2, sm: 3, md: 4 },
+    mb: { xs: 2, sm: 2.5, md: 3 },
+    mt: 0,
+    background: "#ffffff",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)",
+    border: "1px solid",
+    borderColor: "divider",
     display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    justifyContent: "flex-start",
-    flexWrap: "wrap",
+    flexDirection: "column",
+    gap: { xs: 2, md: 3 },
+    alignItems: "flex-start",
+    position: "relative",
+    overflow: "visible",
   } as SxProps<Theme>,
 
   // Module title styles
   moduleTitle: {
-    fontWeight: 700,
+    fontWeight: 800,
     color: "text.primary",
-    fontSize: { xs: "1.3rem", sm: "2rem", md: "2.5rem" },
-    mb: { xs: 1.5, md: 3 },
-    textAlign: { xs: "center", sm: "left" },
+    fontSize: { xs: "1.75rem", sm: "2.25rem", md: "2.5rem" },
+    letterSpacing: "-0.02em",
+    mb: 0,
+    textAlign: "left",
+    width: "100%",
   } as SxProps<Theme>,
 
   // Loading container
@@ -51,7 +55,7 @@ export const MODULE_LAYOUT_STYLES = {
   // Mobile FAB styles
   mobileFab: {
     position: "fixed",
-    bottom: 24,
+    bottom: 120,
     right: 24,
     display: { xs: "flex", md: "none" },
     zIndex: 1201,
@@ -188,24 +192,17 @@ export const USERS_STYLES = {
 
 // Roles module specific styles
 export const ROLES_STYLES = {
-  // Roles main container with additional top margin
   rolesContainer: {
-    p: { xs: 1, sm: 2, md: 3 },
-    mt: 0, // Removed top margin for roles module
-    minHeight: "100vh",
-    bgcolor: "background.default",
+    p: { xs: 0.5, sm: 1, md: 2 },
+    pt: { xs: 1, sm: 1.5 },
+    mt: 0,
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    bgcolor: "#f9f9f9",
   } as SxProps<Theme>,
 
-  // Roles title
-  rolesTitle: {
-    fontWeight: 700,
-    color: "text.primary",
-    fontSize: { xs: "1.5rem", sm: "2rem", md: "2.5rem" },
-    mb: { xs: 2, md: 3 },
-    textAlign: { xs: "center", sm: "left" },
-  } as SxProps<Theme>,
-
-  // Roles grid layout
   rolesGrid: {
     display: "grid",
     gridTemplateColumns: {
@@ -215,24 +212,19 @@ export const ROLES_STYLES = {
       lg: "repeat(auto-fill, minmax(280px, 1fr))",
       xl: "repeat(auto-fill, minmax(300px, 1fr))",
     },
-    gap: { xs: 2, sm: 2.5, md: 3 },
-    mb: { xs: 2, sm: 3 },
-    width: "100%",
-    alignItems: "stretch",
+    flex: 1,
+    overflowY: "auto",
+    rowGap: { xs: 2.5, sm: 3, md: 4 },
+    columnGap: { xs: 2.5, sm: 3, md: 4 },
+    p: { xs: 1, sm: 1.5 },
+    alignContent: "start",
   } as SxProps<Theme>,
 
-  // Role card wrapper
-  roleCardWrapper: {
-    display: "flex",
-    minHeight: "100%",
-  } as SxProps<Theme>,
-
-  // Roles FAB (no zIndex override)
-  rolesFab: {
-    position: "fixed",
-    bottom: 24,
-    right: 24,
-    display: { xs: "flex", md: "none" },
+  paginationWrapper: {
+    py: 1,
+    px: 2,
+    borderColor: "divider",
+    flexShrink: 0,
   } as SxProps<Theme>,
 };
 
@@ -281,7 +273,7 @@ export const PROPERTIES_STYLES = {
   // Properties FAB
   propertiesFab: {
     position: "fixed",
-    bottom: 24,
+    bottom: 120,
     right: 24,
     display: { xs: "flex", md: "none" },
     zIndex: 1201,
@@ -370,6 +362,80 @@ export const VISUAL_CONSTANTS = {
   },
 };
 
+// Vendors module specific styles
+export const VENDORS_STYLES = {
+  vendorsContainer: {
+    p: { xs: 0.5, sm: 1, md: 2 },
+    pt: { xs: 1, sm: 1.5 },
+    mt: 0,
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    bgcolor: "#f9f9f9",
+  } as SxProps<Theme>,
+
+  cardsGrid: {
+    display: "grid",
+    gridTemplateColumns: {
+      xs: "1fr",
+      sm: "repeat(2, 1fr)",
+      md: "repeat(3, 1fr)",
+      lg: "repeat(4, 1fr)",
+    },
+    flex: 1,
+    overflowY: "auto",
+    gap: { xs: 1, sm: 1.5, md: 2 },
+    p: 1,
+    alignContent: "start",
+  } as SxProps<Theme>,
+
+  paginationWrapper: {
+    py: 1,
+    px: 2,
+    // bgcolor: "background.paper",
+    // borderTop: "1px solid",
+    borderColor: "divider",
+    flexShrink: 0,
+  } as SxProps<Theme>,
+};
+
+// Departments module specific styles
+export const DEPARTMENTS_STYLES = {
+  departmentsContainer: {
+    p: { xs: 0.5, sm: 1, md: 2 },
+    pt: { xs: 1, sm: 1.5 },
+    mt: 0,
+    height: "100%",
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
+    bgcolor: "#f9f9f9",
+  } as SxProps<Theme>,
+
+  cardsGrid: {
+    display: "grid",
+    gridTemplateColumns: {
+      xs: "1fr",
+      sm: "repeat(2, 1fr)",
+      md: "repeat(3, 1fr)",
+      lg: "repeat(4, 1fr)",
+    },
+    flex: 1,
+    overflowY: "auto",
+    gap: { xs: 1, sm: 1.5, md: 2 },
+    p: 1,
+    alignContent: "start",
+  } as SxProps<Theme>,
+
+  paginationWrapper: {
+    py: 1,
+    px: 2,
+    borderColor: "divider",
+    flexShrink: 0,
+  } as SxProps<Theme>,
+};
+
 // Combined export for easy importing
 export const MODULE_STYLES = {
   layout: MODULE_LAYOUT_STYLES,
@@ -377,6 +443,8 @@ export const MODULE_STYLES = {
   users: USERS_STYLES,
   roles: ROLES_STYLES,
   properties: PROPERTIES_STYLES,
+  vendors: VENDORS_STYLES,
+  departments: DEPARTMENTS_STYLES,
   common: COMMON_COMPONENT_STYLES,
   visual: VISUAL_CONSTANTS,
 };

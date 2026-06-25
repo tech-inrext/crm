@@ -13,7 +13,7 @@ import {
 } from "./styles";
 
 const PreviewLoader: React.FC<PreviewLoaderProps> = ({ id }) => {
-  const { loading, error, iframeSrc, downloadPdf } = useMouPreview(id);
+  const { loading, error, iframeSrc } = useMouPreview(id);
 
   if (loading) {
     return (
@@ -34,11 +34,6 @@ const PreviewLoader: React.FC<PreviewLoaderProps> = ({ id }) => {
   if (iframeSrc) {
     return (
       <Box sx={previewIframeContainerSx}>
-        <Box sx={previewIframeHeaderSx}>
-          <Button size="small" variant="outlined" onClick={downloadPdf}>
-            Download
-          </Button>
-        </Box>
         <iframe
           title="MOU Preview"
           src={iframeSrc}

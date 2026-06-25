@@ -39,6 +39,7 @@ export interface Lead {
   updatedBy?: string; // ObjectId reference to Employee (who last updated the lead)
   createdAt?: string;
   updatedAt?: string;
+  recentActivities?: any[];
 }
 
 // Alias for consistency

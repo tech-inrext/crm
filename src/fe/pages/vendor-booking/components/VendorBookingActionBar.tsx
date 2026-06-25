@@ -6,13 +6,7 @@ import { Box, MenuItem, Select, FilterAltIcon, Typography } from "@/components/u
 import SearchBar from "@/components/ui/search/SearchBar";
 import { SEARCH_PLACEHOLDER, BOOKING_STATUSES } from "../constants";
 import * as styles from "./styles";
-
-interface VendorBookingActionBarProps {
-  search: string;
-  onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  statusFilter: string;
-  onStatusChange: (status: string) => void;
-}
+import { VendorBookingActionBarProps } from "../types";
 
 const VendorBookingActionBar: React.FC<VendorBookingActionBarProps> = ({
   search,

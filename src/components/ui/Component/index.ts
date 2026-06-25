@@ -55,6 +55,8 @@ export { default as TableCell } from "./TableCell";
 export { default as TableContainer } from "./TableContainer";
 export { default as TableHead } from "./TableHead";
 export { default as TableRow } from "./TableRow";
+export { default as Tabs } from "./Tabs";
+export { default as Tab } from "./Tab";
 export { default as TextField } from "./TextField";
 export { default as Tooltip } from "./Tooltip";
 export { default as Typography } from "./Typography";

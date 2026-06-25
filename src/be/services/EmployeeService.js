@@ -8,6 +8,7 @@ import { leadQueue } from "../queue/leadQueue.js";
 import bcrypt from "bcryptjs";
 import validator from "validator";
 import Role from "../models/Role";
+import Department from "../models/Department";
 import { sendNewEmployeeWelcomeEmail } from "../email-service/employee/newEmployeeWelcome";
 import { sendManagerNewReportEmail } from "../email-service/manager/managerNewReport.js";
 import { sendMOUApprovalRequestAVPMail } from "../email-service/mou/sendMOUApprovalRequestAVPMail.js";
@@ -920,10 +921,23 @@ class EmployeeService extends Service {
         if (manager) managerName = manager.name;
       }
 
+      // Fetch department name if departmentId exists
+      let departmentName = "N/A";
+      if (user.departmentId) {
+        if (mongoose.Types.ObjectId.isValid(user.departmentId)) {
+          const dept = await Department.findById(user.departmentId).select("name");
+          if (dept) departmentName = dept.name;
+        } else {
+          // If it's already a name string (fallback)
+          departmentName = user.departmentId;
+        }
+      }
+
       return res.status(200).json({
         success: true,
         data: {
           id: user._id,
+          employeeProfileId: user.employeeProfileId,
           name: user.name,
           email: user.email,
           phone: user.phone,
@@ -932,18 +946,20 @@ class EmployeeService extends Service {
           address: user.address,
           designation: user.designation,
           departmentId: user.departmentId,
+          departmentName: departmentName,
           managerId: user.managerId,
           managerName: managerName,
           joiningDate: user.joiningDate,
           photo: user.photo || "",
           currentRole: req.roleId,
+          slabPercentage: user.slabPercentage,
+          branch: user.branch,
         },
       });
-    } catch (error) {
+    } catch (err) {
       return res.status(500).json({
         success: false,
-        message: "Failed to fetch profile",
-        error: error.message,
+        message: `Error fetching profile: ${err.message}`,
       });
     }
   }
@@ -1400,14 +1416,19 @@ class EmployeeService extends Service {
         .select("_id managerId")
         .lean();
       const ids = [managerId.toString()];
+      const visited = new Set([managerId.toString()]);
 
       const findSubordinates = (mId) => {
         const subs = allEmployees.filter(
-          (e) => String(e.managerId) === String(mId),
+          (e) => String(e.managerId) === String(mId) && String(e._id) !== String(mId)
         );
         subs.forEach((s) => {
-          ids.push(s._id.toString());
-          findSubordinates(s._id);
+          const sIdStr = s._id.toString();
+          if (!visited.has(sIdStr)) {
+            visited.add(sIdStr);
+            ids.push(sIdStr);
+            findSubordinates(s._id);
+          }
         });
       };
 
@@ -1545,6 +1566,59 @@ class EmployeeService extends Service {
         authorized: false,
         message: "Internal security check failed: " + error.message,
       };
+    }
+  }
+
+  /**
+   * Update the profile picture for the logged-in employee.
+   * @param {Object} req - Express request object.
+   * @param {Object} res - Express response object.
+   * @returns {Promise<void>}
+   */
+  async updateProfilePicture(req, res) {
+    try {
+      const { photo } = req.body;
+      const employeeId = req.employee?._id;
+
+      if (!employeeId) {
+        return res.status(401).json({
+          success: false,
+          message: "Unauthorized: No employee context found",
+        });
+      }
+
+      if (!photo) {
+        return res.status(400).json({
+          success: false,
+          message: "Photo URL is required",
+        });
+      }
+
+      // Update the employee's photo field
+      const updatedEmployee = await Employee.findByIdAndUpdate(
+        employeeId,
+        { photo },
+        { new: true }
+      ).populate("roles");
+
+      if (!updatedEmployee) {
+        return res.status(404).json({
+          success: false,
+          message: "Employee not found",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        message: "Profile picture updated successfully",
+      });
+    } catch (error) {
+      console.error("Update Profile Picture Error:", error);
+      return res.status(500).json({
+        success: false,
+        message: "Internal server error",
+        error: error.message,
+      });
     }
   }
 }

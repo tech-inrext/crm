@@ -17,6 +17,7 @@ export const useMouPreview = (id: string) => {
   const [iframeSrc, setIframeSrc] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!id) return;
     let active = true;
 
     async function load() {

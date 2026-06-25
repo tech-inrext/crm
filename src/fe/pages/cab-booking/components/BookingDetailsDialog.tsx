@@ -55,8 +55,12 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
           return;
         }
         const mgrId = booking.managerId || booking.manager || null;
-        const bookedById =
-          (booking as any).cabBookedBy || (booking as any).cabBookedBy || null;
+        const cabBookedByData = (booking as any).cabBookedBy;
+        const bookedById = cabBookedByData
+          ? typeof cabBookedByData === "object"
+            ? cabBookedByData._id || cabBookedByData.id
+            : cabBookedByData
+          : null;
         if (!mgrId && !bookedById) return;
         const res = await fetch("/api/v0/employee/getAllEmployeeList");
         if (!res.ok) return;
@@ -230,11 +234,13 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
             <AssignmentInd color="action" fontSize="small" />
             <Typography fontSize={15}>
               <b>Booked By:</b>{" "}
-              {((booking as any).cabBookedBy &&
-                (booking as any).cabBookedBy.name) ||
-                bookedByName ||
-                (booking as any).cabBookedBy ||
-                "-"}
+              {(() => {
+                const cabBookedByObj = (booking as any).cabBookedBy;
+                if (typeof cabBookedByObj === "object" && cabBookedByObj !== null) {
+                  return cabBookedByObj.name || cabBookedByObj.username || cabBookedByObj.email || bookedByName || String(cabBookedByObj._id || cabBookedByObj);
+                }
+                return bookedByName || cabBookedByObj || "-";
+              })()}
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>

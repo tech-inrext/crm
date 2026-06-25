@@ -166,8 +166,17 @@ const bookingLoginSchema = new mongoose.Schema(
     },
     slabPercentage: {
       type: String,
-      enum: ["50% Sales Executive", "60% Manager", "70% Senior Manager", "80% General Manager", "90% A.V.P (Core Member)", "95% V.P", "100% President"],
-      default: "50% Sales Executive",
+      enum: [
+        "50% BUSINESS DEVELOPMENT MANAGER",
+        "60% TEAM MANAGER",
+        "70% SENIOR MANAGER",
+        "80% GENERAL MANAGER",
+        "85% VICE PRESIDENT",
+        "90% PRESIDENT",
+        "95% ADDITIONAL DIRECTOR",
+        "100% DIRECTOR"
+      ],
+      default: "50% BUSINESS DEVELOPMENT MANAGER",
     },
     totalDiscountFromComm: {
       type: String,

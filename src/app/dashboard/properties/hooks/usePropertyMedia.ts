@@ -129,28 +129,48 @@ export const usePropertyMedia = ({ loadProperties, formData, setFormData }: UseP
   // Download utility functions
   const handleDownloadFile = useCallback(async (url: string, filename: string) => {
     try {
+      if (!url) return false;
+      
       if (url.startsWith("data:")) {
         toast.error(
           "Cannot download base64 files. File needs to be re-uploaded to S3."
         );
-        return;
+        return false;
       }
 
-      const response = await fetch(url);
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
+      // Try to download via fetch (preserves filename)
+      try {
+        const response = await fetch(url, { mode: 'cors' });
+        if (response.ok) {
+          const blob = await response.blob();
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = downloadUrl;
+          link.download = filename;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(downloadUrl);
+          return true;
+        }
+      } catch (fetchError) {
+        console.warn("Fetch download failed, falling back to direct link:", fetchError);
+      }
+
+      // Fallback: Direct download link (might open in new tab if cross-origin)
       const link = document.createElement("a");
-      link.href = downloadUrl;
+      link.href = url;
       link.download = filename;
+      link.target = "_blank";
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      window.URL.revokeObjectURL(downloadUrl);
-
-      toast.success(`Downloading ${filename}`);
+      
+      return true;
     } catch (error: any) {
       console.error("Download error:", error);
       toast.error(`Failed to download ${filename}: ${error.message}`);
+      return false;
     }
   }, []);
 
@@ -293,10 +313,11 @@ export const usePropertyMedia = ({ loadProperties, formData, setFormData }: UseP
         items.forEach((item, index) => {
           const itemUrl = typeof item === "string" ? item : item.url;
           if (itemUrl && !itemUrl.startsWith("data:")) {
+            const extension = itemUrl.split('.').pop()?.split(/[?#]/)[0] || 'jpg';
             const itemName =
               typeof item === "string"
-                ? `${folder}/file-${index + 1}`
-                : `${folder}/${item.title || `file-${index + 1}`}`;
+                ? `${folder}/file-${index + 1}.${extension}`
+                : `${folder}/${item.title || `file-${index + 1}`}.${extension}`;
             allMedia.push({ url: itemUrl, name: itemName });
           }
         });
@@ -314,18 +335,27 @@ export const usePropertyMedia = ({ loadProperties, formData, setFormData }: UseP
         return;
       }
 
-      toast.success(`Downloading ${allMedia.length} files from S3...`, {
+      toast.success(`Starting download of ${allMedia.length} files...`, {
         id: toastId,
       });
 
+      let successCount = 0;
       for (const media of allMedia) {
-        await handleDownloadFile(media.url, media.name);
-        await new Promise((resolve) => setTimeout(resolve, 500));
+        const success = await handleDownloadFile(media.url, media.name);
+        if (success) successCount++;
+        // Small delay to prevent browser from blocking multiple downloads
+        await new Promise((resolve) => setTimeout(resolve, 300));
       }
 
-      toast.success(`Downloaded ${allMedia.length} files from S3`, {
-        id: toastId,
-      });
+      if (successCount === allMedia.length) {
+        toast.success(`Successfully downloaded all ${allMedia.length} files`, {
+          id: toastId,
+        });
+      } else {
+        toast.warning(`Downloaded ${successCount} of ${allMedia.length} files. Some files may have opened in new tabs due to security restrictions.`, {
+          id: toastId,
+        });
+      }
     } catch (error: any) {
       toast.error(`Failed to download media: ${error.message}`, {
         id: toastId,

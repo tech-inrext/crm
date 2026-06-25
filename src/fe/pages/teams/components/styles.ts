@@ -67,6 +67,23 @@ export const actionButtonSx: SxProps<Theme> = {
   "& .MuiButton-startIcon": { mr: { xs: 0.5, md: 1 } },
 };
 
+export const infoLabelSx: SxProps<Theme> = {
+  display: "flex",
+  alignItems: "center",
+  gap: 1,
+  px: { xs: 1.5, md: 2 },
+  py: 0.75,
+  borderRadius: "6px",
+  bgcolor: "#fafbfcff",
+  color: "#3f51b5",
+  fontWeight: 600,
+  fontSize: "0.875rem",
+  border: "1px solid",
+  borderColor: "#e0e7ff",
+  whiteSpace: "nowrap",
+  "& svg": { fontSize: "1.1rem" },
+};
+
 export const textActionButtonSx: SxProps<Theme> = {
   fontWeight: 600,
   fontSize: { xs: "0.75rem", md: "0.875rem" },

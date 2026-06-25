@@ -8,3 +8,8 @@ export interface DocumentConfig {
   fieldName: string;
   labelKey: keyof typeof FIELD_LABELS;
 }
+
+export interface ForFreelancerProps {
+  loggedInSlab?: string;
+  isAdmin?: boolean;
+}

@@ -39,7 +39,7 @@ const PhotoUpload: React.FC = () => (
               ) : (
                 <div className="text-center text-slate-500">
                   <CameraAlt className="text-2xl" />
-                  <p className="mt-1 text-[10px]">Click to upload</p>
+                  <p className="mt-1 text-[8px]">Click to upload</p>
                 </div>
               )}
 

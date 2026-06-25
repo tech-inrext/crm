@@ -12,7 +12,7 @@ class PillarService extends Service {
     try {
       const {
         page = 1,
-        limit = 12,
+        limit = 30,
         category = "",
         search = "",
         activeOnly = "true",

@@ -107,6 +107,11 @@ export const HierarchyNode: React.FC<HierarchyNodeProps> = ({
                   size="small"
                   color="primary"
                   variant="filled"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onToggle(node._id);
+                  }}
+                  sx={{ cursor: "pointer" }}
                 />
               </Tooltip>
             )}

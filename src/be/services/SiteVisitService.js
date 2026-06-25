@@ -63,6 +63,17 @@ class SiteVisitService extends Service {
         return res.status(404).json({ success: false, message: "Lead not found" });
       }
 
+      // 3.5 Check for pending site visits
+      const pendingVisit = await FollowUp.findOne({
+        leadId: targetLeadId,
+        followUpType: "site visit",
+        $or: [{ outcome: "pending" }, { outcome: { $exists: false } }]
+      });
+
+      if (pendingVisit) {
+        return res.status(400).json({ success: false, message: "A previous site visit is still pending. Please update its outcome before scheduling a new one." });
+      }
+
       // 4. Get Current User
       const currentUser = req.employee || req.user;
       if (!currentUser) {

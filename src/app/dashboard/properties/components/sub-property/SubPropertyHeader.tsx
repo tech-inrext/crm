@@ -186,7 +186,21 @@ const SubPropertyHeader: React.FC<SubPropertyHeaderProps> = ({
             justifyContent: { xs: 'flex-start', md: 'flex-end' },
             fontSize: { xs: '1.5rem', md: '2rem' }
           }}>
-            ₹{property.price ? `${property.price}` : 'Contact for Price'}
+            {property.price ? `${property.price}` : 'Contact for Price'}
+            {property.price && property.price !== 'Contact for Price' && property.sizeUnit && (
+              <Typography 
+                component="span" 
+                variant="h5" 
+                sx={{ 
+                  ml: 1, 
+                  opacity: 0.8,
+                  fontSize: { xs: '1rem', md: '1.2rem' },
+                  fontWeight: 500
+                }}
+              >
+                / {property.sizeUnit}
+              </Typography>
+            )}
           </Typography>
         </Box>
       </Box>

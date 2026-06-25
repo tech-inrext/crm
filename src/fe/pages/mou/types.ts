@@ -34,8 +34,6 @@ export interface MouListProps {
 export interface MouActionBarProps {
   search: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  view: MouView;
-  onViewChange: (view: MouView) => void;
 }
 
 export interface MouCardProps {

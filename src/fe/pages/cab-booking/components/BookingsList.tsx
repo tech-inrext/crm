@@ -3,15 +3,12 @@ import { Booking } from "@/fe/pages/cab-booking/types/cab-booking";
 import BookingCard from "./BookingCard";
 import BookingDetailsDialog from "./BookingDetailsDialog";
 import Pagination from "@/components/ui/Navigation/Pagination";
+import { useDebounce } from "@/hooks/useDebounce";
 
 interface BookingsListProps {
-  /** Pass the current status value from your dropdown.
-   *  Use "", "all", or undefined to fetch all.
-   *  Else pass one of: pending|approved|rejected|active|completed|cancelled
-   */
   statusFilter?: string;
-  // optional key that forces the list to refetch when incremented
   refreshKey?: number;
+  search?: string;
 }
 
 type ApiResponse = {
@@ -28,12 +25,14 @@ type ApiResponse = {
 const BookingsList: React.FC<BookingsListProps> = ({
   statusFilter = "",
   refreshKey,
+  search = "",
 }) => {
   const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
+  const debouncedSearch = useDebounce(search, 500);
 
   // server-side pagination controls
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(6);
+  const [pageSize, setPageSize] = useState(8);
 
   // data from API
   const [rows, setRows] = useState<Booking[]>([]);
@@ -42,10 +41,10 @@ const BookingsList: React.FC<BookingsListProps> = ({
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  // reset to page 1 whenever filter changes
+  // reset to page 1 whenever filter or search changes
   useEffect(() => {
     setPage(1);
-  }, [statusFilter]);
+  }, [statusFilter, debouncedSearch]);
 
   // build query
   const url = useMemo(() => {
@@ -53,11 +52,13 @@ const BookingsList: React.FC<BookingsListProps> = ({
     params.set("page", String(page));
     params.set("limit", String(pageSize));
 
+    if (debouncedSearch) params.set("search", debouncedSearch);
+
     const s = (statusFilter || "").toLowerCase().trim();
     if (s && s !== "all") params.set("status", s);
 
     return `/api/v0/cab-booking?${params.toString()}`;
-  }, [page, pageSize, statusFilter]);
+  }, [page, pageSize, statusFilter, debouncedSearch]);
 
   // fetch page
   useEffect(() => {
@@ -105,25 +106,27 @@ const BookingsList: React.FC<BookingsListProps> = ({
   if (!rows.length) return <div>No bookings found.</div>;
 
   return (
-    <>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {rows.map((booking) => (
-          <BookingCard
-            key={booking._id}
-            booking={booking}
-            onViewDetails={handleViewDetails}
-          />
-        ))}
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto pr-2 pb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {rows.map((booking) => (
+            <BookingCard
+              key={booking._id}
+              booking={booking}
+              onViewDetails={handleViewDetails}
+            />
+          ))}
+        </div>
       </div>
 
-      <div className="flex justify-center mt-4">
+      <div className="pt-4 pb-2 border-t border-gray-100 sticky bottom-0 z-10">
         <Pagination
           page={page}
           pageSize={pageSize}
           total={totalItems}
           onPageChange={handlePageChange}
           onPageSizeChange={handlePageSizeChange}
-          pageSizeOptions={[6, 12, 24, 36]}
+          pageSizeOptions={[8, 16, 24, 32]}
         />
       </div>
 
@@ -132,7 +135,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
         open={!!viewingBooking}
         onClose={handleCloseDialog}
       />
-    </>
+    </div>
   );
 };
 

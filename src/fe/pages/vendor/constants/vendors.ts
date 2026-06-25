@@ -7,8 +7,8 @@ export const VENDOR_CACHE_KEYS = {
   VENDORS: VENDOR_API_BASE,
 } as const;
 
-export const VENDORS_ROWS_PER_PAGE_OPTIONS = [5, 10, 15, 25] as const;
-export const DEFAULT_PAGE_SIZE = 10;
+export const VENDORS_ROWS_PER_PAGE_OPTIONS = [8, 16, 24, 32] as const;
+export const DEFAULT_PAGE_SIZE = 8;
 
 export const DEFAULT_VENDOR_FORM = {
   name: "",

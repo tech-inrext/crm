@@ -20,6 +20,8 @@ const MODULES = [
   "notifications",
   "analytics",
   "mou",
+  "notice",
+  "landing-popup",
 ];
 
 // Configure which actions on which modules should be allowed for roles
@@ -126,13 +128,17 @@ export async function userAuth(req, res, next) {
       hasAccess = true;
     }
 
-    // Special-case: allow all authenticated users to access analytics
+    // Special-case: allow all authenticated users to access analytics only in staging
     if (!hasAccess && moduleName === "analytics") {
-      hasAccess = true;
+      hasAccess = process.env.NEXT_PUBLIC_APP_ENV === "staging";
     }
 
     // Special-case: allow all authenticated users to access mou module
     if (!hasAccess && moduleName === "mou") {
+      hasAccess = true;
+    }
+    // ✅ Allow notice
+    if (!hasAccess && moduleName === "notice") {
       hasAccess = true;
     }
 

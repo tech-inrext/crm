@@ -343,3 +343,61 @@ a:focus {
     border-color: #444;
   }
 }
+/* ===== RICH TEXT GLOBAL STYLES ===== */
+
+.prose {
+  @apply text-gray-700 text-[13px] leading-relaxed;
+}
+
+.prose p {
+  @apply mb-2;
+}
+
+.prose strong {
+  @apply font-semibold text-gray-900;
+}
+
+.prose h1 {
+  @apply text-lg font-bold mb-2;
+}
+
+.prose h2 {
+  @apply text-base font-semibold mb-1;
+}
+
+.prose h3 {
+  @apply text-sm font-semibold mb-1;
+}
+
+.prose ul {
+  @apply pl-4 list-disc;
+}
+
+.prose ol {
+  @apply pl-4 list-decimal;
+}
+
+.prose li {
+  @apply mb-1;
+}
+
+.prose a {
+  @apply text-blue-600 hover:underline;
+}
+
+.prose img {
+  @apply rounded-lg my-2;
+}
+
+.prose blockquote {
+  @apply border-l-4 border-gray-300 pl-3 italic text-gray-600;
+}
+
+/* ===== CLAMP TEXT ===== */
+
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

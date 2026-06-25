@@ -105,85 +105,41 @@ const BookingCard: React.FC<BookingCardProps> = ({
         content={
           <Box
             sx={{
-              background: MODULE_STYLES.visual.gradients.card,
-              p: 1.5,
+              background: "white",
+              p: 2,
               display: "flex",
               flexDirection: "column",
-              gap: 1,
+              gap: 1.5,
               width: "100%",
-              maxWidth: 320,
-              minWidth: 200,
-              minHeight: 180,
-              transition: "transform 0.2s ease",
-              "&:hover": { transform: "translateY(-2px)" },
+              minHeight: 160,
+              cursor: "pointer",
+              transition: "all 0.2s ease",
             }}
+            onClick={() => onViewDetails(booking)}
           >
-            {/* Header: Avatar + Name + Status + Action */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: 1,
-                mb: 1,
-              }}
-            >
-              {/* Left side: Avatar + Name */}
-              <Box
+            {/* Top Row: Avatar, Info, Status */}
+            <Box sx={{ display: "flex", gap: 1.5, alignItems: "center" }}>
+              <Avatar
                 sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  minWidth: 0,
-                  flexGrow: 1,
+                  width: 40,
+                  height: 40,
+                  fontWeight: 700,
+                  fontSize: 14,
+                  bgcolor: "primary.main",
+                  color: "white",
                 }}
               >
-                <Avatar
-                  sx={{
-                    width: 40,
-                    height: 40,
-                    fontWeight: 700,
-                    fontSize: 16,
-                    bgcolor: "primary.main",
-                    color: "white",
-                    boxShadow: 2,
-                    flexShrink: 0,
-                  }}
-                >
-                  {avatar}
-                </Avatar>
-                <Box sx={{ minWidth: 0 }}>
-                  <Typography
-                    fontWeight={700}
-                    fontSize={14}
-                    color="text.primary"
-                    noWrap
-                    sx={{ maxWidth: 120 }}
-                  >
-                    {booking.clientName}
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    color="text.secondary"
-                    noWrap
-                    sx={{ maxWidth: 120, fontSize: 12 }}
-                  >
-                    {getProjectName(booking.project)}
-                  </Typography>
-                </Box>
+                {avatar}
+              </Avatar>
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography sx={{ fontSize: "0.95rem", fontWeight: 700, lineHeight: 1.2 }} noWrap>
+                  {booking.clientName}
+                </Typography>
+                <Typography sx={{ fontSize: "0.75rem", color: "text.secondary" }} noWrap>
+                  {getProjectName(booking.project)}
+                </Typography>
               </Box>
-
-              {/* Right side: Status + Eye */}
-              <Box
-                sx={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 1,
-                  flexShrink: 0,
-                  minWidth: 0,
-                }}
-              >
+              <Box onClick={(e) => e.stopPropagation()}>
                 <BookingStatus
                   booking={booking}
                   status={status}
@@ -193,78 +149,57 @@ const BookingCard: React.FC<BookingCardProps> = ({
                   isManager={isManager}
                   onChangeStatus={handleStatusChange}
                 />
-                {/* Assign Icon: Only show for approved bookings */}
-                {isSystemAdmin && (
-                  <PermissionGuard
-                    module="cab-booking"
-                    action="write"
-                    fallback={null}
-                  >
-                    {status === "approved" && (
-                      <Tooltip title="Assign to Vendor">
-                        <IconButton
-                          size="small"
-                          onClick={() => setAssignOpen(true)}
-                          sx={{
-                            background: "#fafafa",
-                            boxShadow: 1,
-                            "&:hover": { background: "#f0f0f0" },
-                          }}
-                        >
-                          <AssignmentInd fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </PermissionGuard>
-                )}
-                <Tooltip title="Share Booking">
-                  <IconButton
-                    size="small"
-                    onClick={() => setShareOpen(true)}
-                    sx={{
-                      background: "#fafafa",
-                      boxShadow: 1,
-                      "&:hover": { background: "#f0f0f0" },
-                    }}
-                  >
-                    <ShareIcon fontSize="small" />
-                  </IconButton>
-                </Tooltip>
-                <Tooltip title="View Details">
-                  <IconButton
-                    size="small"
-                    onClick={() => onViewDetails(booking)}
-                    sx={{
-                      background: "#fafafa",
-                      boxShadow: 1,
-                      "&:hover": { background: "#f0f0f0" },
-                    }}
-                  >
-                    <Visibility fontSize="inherit" style={{ fontSize: 16 }} />
-                  </IconButton>
-                </Tooltip>
               </Box>
             </Box>
 
-            {/* Details Section */}
-            <Box sx={{ display: "flex", flexDirection: "column", gap: 0.7 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.7 }}>
-                <LocationOn sx={{ color: "primary.main", fontSize: 14 }} />
-                <Typography fontSize={12} color="text.primary">
+            {/* Middle Row: Pickup & Drop */}
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1, px: 0.5 }}>
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <LocationOn sx={{ fontSize: 18, color: "primary.main", flexShrink: 0, mr: 1 }} />
+                <Typography sx={{ fontSize: "0.9rem", color: "text.primary", lineHeight: 1 }} noWrap>
                   <b>Pickup:</b> {booking.pickupPoint}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.7 }}>
-                <ArrowForward sx={{ color: "success.main", fontSize: 14 }} />
-                <Typography fontSize={12} color="text.primary">
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <ArrowForward sx={{ fontSize: 18, color: "success.main", flexShrink: 0, mr: 1 }} />
+                <Typography sx={{ fontSize: "0.9rem", color: "text.primary", lineHeight: 1 }} noWrap>
                   <b>Drop:</b> {booking.dropPoint}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 0.7 }}>
-                <Event sx={{ color: "secondary.main", fontSize: 14 }} />
-                <Typography fontSize={12} color="text.primary">
-                  <b>Date/Time:</b> {formatDateTime(booking.requestedDateTime)}
+            </Box>
+
+            {/* Bottom Row: Date & Actions */}
+            <Box
+              sx={{
+                mt: "auto",
+                pt: 1.5,
+                borderTop: "1px solid #f1f5f9",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <Box sx={{ display: "flex", alignItems: "center" }}>
+                <Event sx={{ fontSize: 16, color: "text.secondary", mr: 0.5 }} />
+                <Typography sx={{ fontSize: "0.75rem", fontWeight: 600, color: "text.secondary", lineHeight: 1 }}>
+                  {formatDateTime(booking.requestedDateTime)}
                 </Typography>
+              </Box>
+
+              <Box sx={{ display: "flex", gap: 1 }}>
+                {isSystemAdmin && status === "approved" && (
+                  <PermissionGuard module="cab-booking" action="write" fallback={null}>
+                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); setAssignOpen(true); }}>
+                      <AssignmentInd sx={{ fontSize: 20 }} />
+                    </IconButton>
+                  </PermissionGuard>
+                )}
+                <IconButton size="small" onClick={(e) => { e.stopPropagation(); setShareOpen(true); }}>
+                  <ShareIcon sx={{ fontSize: 20 }} />
+                </IconButton>
+                <IconButton size="small" onClick={(e) => { e.stopPropagation(); onViewDetails(booking); }}>
+                  <Visibility sx={{ fontSize: 20 }} />
+                </IconButton>
               </Box>
             </Box>
           </Box>

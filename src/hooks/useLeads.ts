@@ -21,6 +21,8 @@ export interface LeadFilters {
   budgetRange?: string[];
   assignedTo?: string[];
   assignedToMode?: "direct" | "hierarchy";
+  scheduledEvents?: string[];
+  scheduledRange?: string[];
   search?: string;
 }
 
@@ -37,6 +39,8 @@ export function useLeads(initialFilters: LeadFilters = {}) {
   const [selectedBudgets, setSelectedBudgets] = useState<string[]>(initialFilters.budgetRange || []);
   const [selectedAssignedTo, setSelectedAssignedTo] = useState<string[]>(initialFilters.assignedTo || []);
   const [assignedToMode, setAssignedToMode] = useState<"direct" | "hierarchy">(initialFilters.assignedToMode || "direct");
+  const [selectedScheduledEvents, setSelectedScheduledEvents] = useState<string[]>(initialFilters.scheduledEvents || []);
+  const [selectedScheduledRanges, setSelectedScheduledRanges] = useState<string[]>(initialFilters.scheduledRange || []);
   const [page, setPage] = useState(0); // 0-based for UI
   const [rowsPerPage, setRowsPerPage] = useState(8);
   const [open, setOpen] = useState(false);
@@ -60,7 +64,9 @@ export function useLeads(initialFilters: LeadFilters = {}) {
       propertyParams: string[] = [],
       budgetParams: string[] = [],
       assignedToParams: string[] = [],
-      assignedToModeParam: "direct" | "hierarchy" = "direct"
+      assignedToModeParam: "direct" | "hierarchy" = "direct",
+      scheduledEventsParams: string[] = [],
+      scheduledRangeParams: string[] = []
     ) => {
       const currentVersion = ++requestVersionRef.current;
       setLoading(true);
@@ -75,6 +81,8 @@ export function useLeads(initialFilters: LeadFilters = {}) {
             ...(propertyParams.length > 0 ? { propertyName: propertyParams.join(",") } : {}),
             ...(budgetParams.length > 0 ? { budgetRange: budgetParams.join(",") } : {}),
             ...(assignedToParams.length > 0 ? { assignedTo: assignedToParams.join(",") } : {}),
+            ...(scheduledEventsParams.length > 0 ? { scheduledEvents: scheduledEventsParams.join(",") } : {}),
+            ...(scheduledRangeParams.length > 0 ? { scheduledRange: scheduledRangeParams.join(",") } : {}),
             assignedToMode: assignedToModeParam,
           },
         });
@@ -116,14 +124,14 @@ export function useLeads(initialFilters: LeadFilters = {}) {
         } else {
           await axios.post(API_BASE, payload);
         }
-        await loadLeads(page + 1, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo, assignedToMode);
+        await loadLeads(page + 1, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo, assignedToMode, selectedScheduledEvents, selectedScheduledRanges);
       } catch (error) {
         throw error;
       } finally {
         setSaving(false);
       }
     },
-    [loadLeads, page, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo]
+    [loadLeads, page, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo, assignedToMode, selectedScheduledEvents, selectedScheduledRanges]
   );
 
   const updateLeadStatus = useCallback(
@@ -183,8 +191,8 @@ export function useLeads(initialFilters: LeadFilters = {}) {
   );
 
   useEffect(() => {
-    loadLeads(page + 1, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo, assignedToMode); // API expects 1-based page
-  }, [loadLeads, page, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo, assignedToMode]);
+    loadLeads(page + 1, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo, assignedToMode, selectedScheduledEvents, selectedScheduledRanges); // API expects 1-based page
+  }, [loadLeads, page, rowsPerPage, search, selectedStatuses, selectedLeadTypes, selectedProperties, selectedBudgets, selectedAssignedTo, assignedToMode, selectedScheduledEvents, selectedScheduledRanges]);
 
   return {
     leads,
@@ -221,5 +229,9 @@ export function useLeads(initialFilters: LeadFilters = {}) {
     setSelectedAssignedTo,
     assignedToMode,
     setAssignedToMode,
+    selectedScheduledEvents,
+    setSelectedScheduledEvents,
+    selectedScheduledRanges,
+    setSelectedScheduledRanges,
   };
 }

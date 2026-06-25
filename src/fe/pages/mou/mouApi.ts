@@ -7,7 +7,7 @@ const mouApi = createApi({
     getMous: (params) => ({
       url: "/api/v0/employee",
       isPaginated: true,
-      defaultPageSize: DEFAULT_PAGE_SIZE,
+      defaultPageSize: 8,
       shouldCache: true,
     }),
   },

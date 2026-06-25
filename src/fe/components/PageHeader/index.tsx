@@ -1,7 +1,7 @@
 "use client";
 
 import React from "react";
-import { Paper, Typography, Box } from "@/components/ui/Component";
+import { Paper, Typography, Box, SxProps, Theme } from "@/components/ui/Component";
 
 interface PageHeaderProps {
   /** Page title rendered as an h4 */
@@ -15,48 +15,61 @@ interface PageHeaderProps {
   children?: React.ReactNode;
   /** Extra className applied to the outer Paper */
   className?: string;
+  /** Custom styles for the header */
+  sx?: SxProps<Theme>;
 }
 
 /**
  * PageHeader – shared top-of-page chrome used by every module.
  *
- * Mirrors the existing LeadsActionBar look with proper Material-UI styling
- * but is open for extension via `children` so each page can slot in
- * its own action bar without touching this component.
- *
- * @example
- * <PageHeader title="Users">
- *   <UsersActionBar search={search} onSearchChange={…} onAdd={…} />
- * </PageHeader>
+ * Matches the Leads section layout exactly:
+ *  - White Paper with subtle shadow + border
+ *  - Big bold module title at top (same font weight & size as Leads)
+ *  - Children (search + buttons) rendered below in a responsive row
  */
 const PageHeader: React.FC<PageHeaderProps> = ({
   title,
   subtitle,
   children,
   className = "",
+  sx = {},
 }) => {
   return (
     <Paper
-      elevation={2}
+      elevation={0}
       className={className}
       sx={{
-        p: 2,
-        borderRadius: { xs: 1, sm: 2, md: 3 },
-        mb: { xs: 1.5, sm: 2, md: 3 },
+        p: { xs: 2, sm: 2.5, md: 3 },
+        borderRadius: { xs: 2, sm: 3, md: 4 },
+        mb: 1,
         mt: 0,
-        background: "linear-gradient(135deg, #ffffff 0%, #f8fafc 100%)",
+        background: "#ffffff",
+        boxShadow: "0 1px 3px rgba(0,0,0,0.05), 0 1px 2px rgba(0,0,0,0.1)",
+        border: "1px solid",
+        borderColor: "divider",
+        display: "flex",
+        flexDirection: "column",
+        gap: { xs: 2, md: 3 },
+        alignItems: "flex-start",
+        position: "relative",
         overflow: "visible",
+        ...sx,
       }}
     >
-      <Box sx={{ mb: { xs: 1.5, md: 3 } }}>
+      {/* Title block — matches MODULE_STYLES.layout.moduleTitle */}
+      <Box sx={{ width: "100%" }}>
         <Typography
           variant="h4"
+          component="h1"
           sx={{
-            fontWeight: 700,
-            fontSize: { xs: "1.3rem", sm: "2rem", md: "2.5rem" },
+            fontWeight: 800,
             color: "text.primary",
+            fontSize: { xs: "1.75rem", sm: "2.25rem", md: "2.5rem" },
+            letterSpacing: "-0.02em",
             mb: 0,
-            textAlign: { xs: "center", sm: "left" },
+            textAlign: "left",
+            width: "100%",
+            lineHeight: 1.2,
           }}
         >
           {title}
@@ -67,9 +80,11 @@ const PageHeader: React.FC<PageHeaderProps> = ({
             variant="body2"
             sx={{
               color: "text.secondary",
-              fontSize: { xs: "0.8rem", sm: "0.9rem" },
-              textAlign: { xs: "center", sm: "left" },
+              fontSize: { xs: "0.82rem", sm: "0.9rem" },
               mt: 0.5,
+              fontWeight: 400,
+              opacity: 0.8,
+              lineHeight: 1.5,
             }}
           >
             {subtitle}
@@ -77,15 +92,15 @@ const PageHeader: React.FC<PageHeaderProps> = ({
         )}
       </Box>
 
+      {/* Controls slot — search + buttons row, matching LeadsActionBar wrapper */}
       {children && (
         <Box
           sx={{
-            display: "flex",
-            flexDirection: { xs: "column", sm: "column", md: "row" },
-            gap: { xs: 1.5, sm: 2, md: 3 },
-            alignItems: { xs: "stretch", md: "center" },
             width: "100%",
-            overflow: "visible",
+            display: "flex",
+            flexDirection: { xs: "column", sm: "row" },
+            gap: { xs: 1.5, sm: 2 },
+            alignItems: { xs: "stretch", sm: "center" },
           }}
         >
           {children}
