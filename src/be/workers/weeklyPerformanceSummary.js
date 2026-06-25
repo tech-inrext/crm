@@ -7,7 +7,7 @@ import mongoose from "mongoose";
 
 /**
  * Weekly Performance Summary Job
- * Runs every Monday at 9:00 AM
+ * Runs every Tuesday at 10:00 AM
  */
 const weeklyPerformanceSummary = async (job) => {
   console.log("📊 [Job] Starting weekly performance summary...");
