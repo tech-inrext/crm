@@ -335,10 +335,23 @@ class EmployeeService extends Service {
       const branchChanged = ("branch" in req.body) &&
         hasStringChanged(existingEmployee.branch, req.body.branch);
 
-      // If manager, slab, or branch changed → set MOU status to Pending
+      // Check what the new slab percentage will be
+      const newSlabPercentage = ("slabPercentage" in req.body) 
+        ? req.body.slabPercentage 
+        : existingEmployee.slabPercentage;
+
+      // If manager, slab, or branch changed → handle MOU status
       if (managerChanged || slabChanged || branchChanged) {
-        updateFields.mouStatus = "Pending";
-        updateFields.mouPdfUrl = "";
+        if (!String(newSlabPercentage || "").trim()) {
+          // If slab is empty/removed, they shouldn't have an MOU
+          updateFields.$unset = updateFields.$unset || {};
+          updateFields.$unset.mouStatus = 1;
+          updateFields.$unset.mouPdfUrl = 1;
+        } else {
+          // If they still have a slab, mark MOU as pending
+          updateFields.mouStatus = "Pending";
+          updateFields.mouPdfUrl = "";
+        }
       }
       const oldRoles = existingEmployee.roles.map((r) => ({
         id: r._id.toString(),
