@@ -32,6 +32,7 @@ import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import LeadActivity, { ValueChip } from "./LeadActivity";
 import FollowUpHeader from "./FollowUpHeader";
+import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
 
 // Helper to get initials for avatar
 const getInitials = (name: string) => {
@@ -445,14 +446,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                             direction="row"
                             justifyContent="space-between"
                             alignItems="flex-start"
-                            sx={{ mb: 0.75 }}
+                            sx={{ mb: 0.75, flexWrap: "wrap", rowGap: 1 }}
                           >
                             {/* Footer: Actionable Info */}
                             <Stack
                               direction="row"
                               alignItems="center"
                               justifyContent="space-between"
-                              sx={{ mt: "auto", gap: 1 }}
+                              sx={{ mt: "auto", gap: 1, flexWrap: "wrap" }}
                             >
                               {isCallBack && leadInfo?.phone && (
                                 <Tooltip
@@ -586,6 +587,34 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                   borderRadius: "6px",
                                 }}
                               />
+                              {/* View mForm Feedback Button placed at the top */}
+                              {isSiteVisit && it.feedbackToken && (
+                                <Button
+                                  size="small"
+                                  variant="text"
+                                  onClick={() => handleViewFeedback(it._id)}
+                                  startIcon={<RateReviewOutlinedIcon sx={{ fontSize: "0.9rem" }} />}
+                                  sx={{
+                                    fontSize: "0.65rem",
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    backgroundColor: "#eff6ff",
+                                    color: "#2563eb",
+                                    borderRadius: "4px",
+                                    px: 1,
+                                    height: 22,
+                                    whiteSpace: "nowrap",
+                                    minWidth: "max-content",
+                                    transition: "all 0.2s ease",
+                                    "&:hover": { 
+                                      backgroundColor: "#dbeafe",
+                                      color: "#1d4ed8"
+                                    }
+                                  }}
+                                >
+                                  View Client Feedback
+                                </Button>
+                              )}
                             </Stack>
                             <Typography
                               variant="caption"
@@ -1118,26 +1147,6 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                         <Typography variant="caption" sx={{ color: "#475569", display: "block", mt: 0.25 }}>
                                           <strong>Feedback:</strong> {it.feedbackRemarks || "No remarks provided."}
                                         </Typography>
-                                        {/* View mForm Feedback Button */}
-                                        {it.feedbackToken && (
-                                          <Button
-                                            size="small"
-                                            variant="outlined"
-                                            onClick={() => handleViewFeedback(it._id)}
-                                            sx={{
-                                              mt: 1,
-                                              fontSize: "0.68rem",
-                                              textTransform: "none",
-                                              fontWeight: 600,
-                                              borderColor: "#3b82f6",
-                                              color: "#3b82f6",
-                                              py: 0.25,
-                                              "&:hover": { bgcolor: "#eff6ff" }
-                                            }}
-                                          >
-                                            📋 View Client Feedback
-                                          </Button>
-                                        )}
                                       </Box>
                                     )}
 
