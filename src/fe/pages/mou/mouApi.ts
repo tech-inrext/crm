@@ -33,6 +33,13 @@ const mouApi = createApi({
       url: `/api/v0/mou/resend-mail/${params.id}`,
       method: "post",
     }),
+    /**
+     * Reject an MOU.
+     */
+    rejectMou: (params) => ({
+      url: `/api/v0/mou/reject/${params.id}`,
+      method: "post",
+    }),
   },
 });
 
@@ -41,6 +48,7 @@ export const {
   useUpdateMouMutation,
   useApproveAndSendMutation,
   useResendMailMutation,
+  useRejectMouMutation,
 } = mouApi;
 
 export default mouApi;
