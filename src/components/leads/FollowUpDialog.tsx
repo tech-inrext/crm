@@ -32,6 +32,7 @@ import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
 import LeadActivity, { ValueChip } from "./LeadActivity";
 import FollowUpHeader from "./FollowUpHeader";
+import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
 
 // Helper to get initials for avatar
 const getInitials = (name: string) => {
@@ -445,14 +446,14 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                             direction="row"
                             justifyContent="space-between"
                             alignItems="flex-start"
-                            sx={{ mb: 0.75 }}
+                            sx={{ mb: 0.75, flexWrap: "wrap", rowGap: 1 }}
                           >
                             {/* Footer: Actionable Info */}
                             <Stack
                               direction="row"
                               alignItems="center"
                               justifyContent="space-between"
-                              sx={{ mt: "auto", gap: 1 }}
+                              sx={{ mt: "auto", gap: 1, flexWrap: "wrap" }}
                             >
                               {isCallBack && leadInfo?.phone && (
                                 <Tooltip
@@ -586,6 +587,34 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                   borderRadius: "6px",
                                 }}
                               />
+                              {/* View mForm Feedback Button placed at the top */}
+                              {isSiteVisit && it.feedbackToken && (
+                                <Button
+                                  size="small"
+                                  variant="text"
+                                  onClick={() => handleViewFeedback(it._id)}
+                                  startIcon={<RateReviewOutlinedIcon sx={{ fontSize: "0.9rem" }} />}
+                                  sx={{
+                                    fontSize: "0.65rem",
+                                    textTransform: "none",
+                                    fontWeight: 600,
+                                    backgroundColor: "#eff6ff",
+                                    color: "#2563eb",
+                                    borderRadius: "4px",
+                                    px: 1,
+                                    height: 22,
+                                    whiteSpace: "nowrap",
+                                    minWidth: "max-content",
+                                    transition: "all 0.2s ease",
+                                    "&:hover": { 
+                                      backgroundColor: "#dbeafe",
+                                      color: "#1d4ed8"
+                                    }
+                                  }}
+                                >
+                                  View Client Feedback
+                                </Button>
+                              )}
                             </Stack>
                             <Typography
                               variant="caption"
@@ -975,9 +1004,30 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                       <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 1.5 }}>
                                         <Button
                                           size="small"
-                                          variant="text"
+                                          variant="outlined"
                                           onClick={() => setActiveFeedbackForm(null)}
-                                          sx={{ fontSize: "0.7rem", textTransform: "none", color: "#64748b" }}
+                                          startIcon={
+                                            <Clear sx={{ fontSize: "14px !important", color: "#d32f2f" }} />
+                                          }
+                                          sx={{
+                                            flex: isMobile ? 1 : "initial",
+                                            height: isMobile ? 36 : 28,
+                                            fontSize: isMobile ? "0.75rem" : "0.65rem",
+                                            px: isMobile ? 2 : 1.5,
+                                            fontWeight: 700,
+                                            textTransform: "none",
+                                            borderRadius: isMobile ? "8px" : "6px",
+                                            whiteSpace: "nowrap",
+                                            minWidth: "auto",
+                                            borderColor: "#d74040ff",
+                                            color: "#d32f2f",
+                                            bgcolor: "#fff",
+                                            transition: "all 0.2s ease",
+                                            "&:hover": {
+                                              borderColor: "#d32f2f",
+                                              bgcolor: "#fff5f5",
+                                            }
+                                          }}
                                         >
                                           Cancel
                                         </Button>
@@ -989,6 +1039,11 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                             (activeFeedbackForm?.outcome === "completed" 
                                               ? !feedbackRemarks.trim() || !interestLevel
                                               : !missedReason || !missedReasonDetails.trim())
+                                          }
+                                          startIcon={
+                                            !feedbackSubmitting && (
+                                              <Check sx={{ fontSize: "14px !important" }} />
+                                            )
                                           }
                                           onClick={async () => {
                                             if (!activeFeedbackForm) return;
@@ -1019,18 +1074,35 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                             }
                                           }}
                                           sx={{
-                                            fontSize: "0.7rem",
+                                            flex: isMobile ? 1 : "initial",
+                                            height: isMobile ? 36 : 28,
+                                            fontSize: isMobile ? "0.75rem" : "0.65rem",
+                                            px: isMobile ? 2 : 1.5,
+                                            fontWeight: 700,
                                             textTransform: "none",
-                                            minWidth: 72,
-                                            bgcolor: activeFeedbackForm?.outcome === "completed" ? "#10b981" : "#ef4444",
+                                            borderRadius: isMobile ? "8px" : "6px",
+                                            boxShadow: "none",
+                                            whiteSpace: "nowrap",
+                                            minWidth: "auto",
+                                            bgcolor: activeFeedbackForm?.outcome === "completed" ? "#2e7d32" : "#d32f2f",
                                             color: "#fff",
+                                            transition: "all 0.2s ease",
                                             "&:hover": {
-                                              bgcolor: activeFeedbackForm?.outcome === "completed" ? "#059669" : "#dc2626",
+                                              boxShadow: "none",
+                                              bgcolor: activeFeedbackForm?.outcome === "completed" ? "#1b5e20" : "#b71c1c",
+                                            },
+                                            "&:focus, &:active": {
+                                              outline: "none",
+                                              boxShadow: "none",
+                                            },
+                                            "&.Mui-disabled": {
+                                              bgcolor: "#e2e8f0",
+                                              color: "#94a3b8",
                                             }
                                           }}
                                         >
                                           {feedbackSubmitting ? (
-                                            <CircularProgress size={14} thickness={5} sx={{ color: "#fff" }} />
+                                            <CircularProgress size={14} thickness={5} sx={{ color: "#94a3b8" }} />
                                           ) : (
                                             "Submit"
                                           )}
@@ -1118,26 +1190,6 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                         <Typography variant="caption" sx={{ color: "#475569", display: "block", mt: 0.25 }}>
                                           <strong>Feedback:</strong> {it.feedbackRemarks || "No remarks provided."}
                                         </Typography>
-                                        {/* View mForm Feedback Button */}
-                                        {it.feedbackToken && (
-                                          <Button
-                                            size="small"
-                                            variant="outlined"
-                                            onClick={() => handleViewFeedback(it._id)}
-                                            sx={{
-                                              mt: 1,
-                                              fontSize: "0.68rem",
-                                              textTransform: "none",
-                                              fontWeight: 600,
-                                              borderColor: "#3b82f6",
-                                              color: "#3b82f6",
-                                              py: 0.25,
-                                              "&:hover": { bgcolor: "#eff6ff" }
-                                            }}
-                                          >
-                                            📋 View Client Feedback
-                                          </Button>
-                                        )}
                                       </Box>
                                     )}
 
