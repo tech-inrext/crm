@@ -205,6 +205,57 @@ class FollowUpService extends Service {
     }
   }
 
+  async resendFeedback(req, res) {
+    try {
+      await dbConnect();
+      const { followUpId, channel } = req.body;
+
+      if (!followUpId || !channel) {
+        return res.status(400).json({ success: false, message: "followUpId and channel are required" });
+      }
+
+      const followUp = await FollowUp.findById(followUpId);
+      if (!followUp) {
+        return res.status(404).json({ success: false, message: "Follow-up not found" });
+      }
+
+      if (!followUp.feedbackFormUrl) {
+        return res.status(400).json({ success: false, message: "No feedback link exists for this follow-up" });
+      }
+
+      const leadForFeedback = await Lead.findById(followUp.leadId).populate("assignedTo", "name");
+      if (!leadForFeedback) {
+        return res.status(404).json({ success: false, message: "Lead not found" });
+      }
+
+      if (channel === 'whatsapp') {
+        if (!leadForFeedback.phone) {
+          return res.status(400).json({ success: false, message: "Lead has no phone number" });
+        }
+        const agentName = leadForFeedback.assignedTo?.name || "our agent";
+        await sendSiteVisitFeedbackWhatsappMessage(
+          leadForFeedback.phone,
+          leadForFeedback.fullName,
+          leadForFeedback.propertyName || "the property",
+          agentName,
+          followUp.feedbackFormUrl
+        );
+        return res.status(200).json({ success: true, message: "WhatsApp message sent successfully" });
+      } else if (channel === 'email') {
+        if (!leadForFeedback.email) {
+          return res.status(400).json({ success: false, message: "Lead has no email address" });
+        }
+        await sendSiteVisitFeedbackEmail(leadForFeedback.email, leadForFeedback.fullName, followUp.feedbackFormUrl);
+        return res.status(200).json({ success: true, message: "Email sent successfully" });
+      } else {
+        return res.status(400).json({ success: false, message: "Invalid channel" });
+      }
+    } catch (error) {
+      console.error("[FollowUpService] resendFeedback Error:", error);
+      return res.status(500).json({ success: false, message: error.message });
+    }
+  }
+
   async updateFollowUpOutcome(req, res) {
     try {
       await dbConnect();
