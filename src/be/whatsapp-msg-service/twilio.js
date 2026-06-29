@@ -14,6 +14,7 @@ class Twilio {
       mou_approval_request_avp: "HX153920d289ea98cd2c3f9ea35bb42290",
       lead_site_visit_scheduled: "HX93aae696d7eb13294ee0729e45c45913",
       lead_site_visit_reminder: "HX2285153fb5ed5b14e3af991bc2ca11ac",
+      weekly_performance_summary: "HXf02657ec3bfc5d5ba98fb057377affa0",
       site_visit_feedback: "HXca7aa359cbdd0536edb23f9c45c8e5de"
     }
   }
