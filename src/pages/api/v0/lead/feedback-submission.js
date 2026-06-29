@@ -10,6 +10,10 @@ class FeedbackSubmissionController extends Controller {
   get(req, res) {
     return this.service.getFeedbackSubmission(req, res);
   }
+
+  post(req, res) {
+    return this.service.resendFeedback(req, res);
+  }
 }
 
 export default new FeedbackSubmissionController().handler;
