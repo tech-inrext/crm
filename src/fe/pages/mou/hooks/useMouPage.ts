@@ -12,6 +12,7 @@ import {
   useUpdateMouMutation,
   useApproveAndSendMutation,
   useResendMailMutation,
+  useRejectMouMutation,
 } from "../mouApi";
 import { invalidateQueryCache } from "@/fe/framework/hooks/createApi";
 import { useToast } from "@/fe/components/Toast/ToastContext";
@@ -71,6 +72,7 @@ export function useMouPage() {
   const { mutate: updateMou } = useUpdateMouMutation();
   const { mutate: approveAndSend } = useApproveAndSendMutation();
   const { mutate: resendMail } = useResendMailMutation();
+  const { mutate: rejectMou } = useRejectMouMutation();
 
   // Sync internal API state with local state
   useEffect(() => {
@@ -116,7 +118,7 @@ export function useMouPage() {
   const handleReject = useCallback(
     async (id: string) => {
       try {
-        await updateMou({ id, mouStatus: "Rejected" });
+        await rejectMou({ id });
         invalidateQueryCache("/api/v0/employee");
         await refetch();
         showToast("MOU rejected successfully", "success");
@@ -124,7 +126,7 @@ export function useMouPage() {
         showToast("Failed to reject MOU", "error");
       }
     },
-    [updateMou, refetch, showToast],
+    [rejectMou, refetch, showToast],
   );
 
   const handleResend = useCallback(
