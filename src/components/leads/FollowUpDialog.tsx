@@ -1004,9 +1004,30 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                       <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mt: 1.5 }}>
                                         <Button
                                           size="small"
-                                          variant="text"
+                                          variant="outlined"
                                           onClick={() => setActiveFeedbackForm(null)}
-                                          sx={{ fontSize: "0.7rem", textTransform: "none", color: "#64748b" }}
+                                          startIcon={
+                                            <Clear sx={{ fontSize: "14px !important", color: "#d32f2f" }} />
+                                          }
+                                          sx={{
+                                            flex: isMobile ? 1 : "initial",
+                                            height: isMobile ? 36 : 28,
+                                            fontSize: isMobile ? "0.75rem" : "0.65rem",
+                                            px: isMobile ? 2 : 1.5,
+                                            fontWeight: 700,
+                                            textTransform: "none",
+                                            borderRadius: isMobile ? "8px" : "6px",
+                                            whiteSpace: "nowrap",
+                                            minWidth: "auto",
+                                            borderColor: "#d74040ff",
+                                            color: "#d32f2f",
+                                            bgcolor: "#fff",
+                                            transition: "all 0.2s ease",
+                                            "&:hover": {
+                                              borderColor: "#d32f2f",
+                                              bgcolor: "#fff5f5",
+                                            }
+                                          }}
                                         >
                                           Cancel
                                         </Button>
@@ -1018,6 +1039,11 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                             (activeFeedbackForm?.outcome === "completed" 
                                               ? !feedbackRemarks.trim() || !interestLevel
                                               : !missedReason || !missedReasonDetails.trim())
+                                          }
+                                          startIcon={
+                                            !feedbackSubmitting && (
+                                              <Check sx={{ fontSize: "14px !important" }} />
+                                            )
                                           }
                                           onClick={async () => {
                                             if (!activeFeedbackForm) return;
@@ -1048,18 +1074,35 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                             }
                                           }}
                                           sx={{
-                                            fontSize: "0.7rem",
+                                            flex: isMobile ? 1 : "initial",
+                                            height: isMobile ? 36 : 28,
+                                            fontSize: isMobile ? "0.75rem" : "0.65rem",
+                                            px: isMobile ? 2 : 1.5,
+                                            fontWeight: 700,
                                             textTransform: "none",
-                                            minWidth: 72,
-                                            bgcolor: activeFeedbackForm?.outcome === "completed" ? "#10b981" : "#ef4444",
+                                            borderRadius: isMobile ? "8px" : "6px",
+                                            boxShadow: "none",
+                                            whiteSpace: "nowrap",
+                                            minWidth: "auto",
+                                            bgcolor: activeFeedbackForm?.outcome === "completed" ? "#2e7d32" : "#d32f2f",
                                             color: "#fff",
+                                            transition: "all 0.2s ease",
                                             "&:hover": {
-                                              bgcolor: activeFeedbackForm?.outcome === "completed" ? "#059669" : "#dc2626",
+                                              boxShadow: "none",
+                                              bgcolor: activeFeedbackForm?.outcome === "completed" ? "#1b5e20" : "#b71c1c",
+                                            },
+                                            "&:focus, &:active": {
+                                              outline: "none",
+                                              boxShadow: "none",
+                                            },
+                                            "&.Mui-disabled": {
+                                              bgcolor: "#e2e8f0",
+                                              color: "#94a3b8",
                                             }
                                           }}
                                         >
                                           {feedbackSubmitting ? (
-                                            <CircularProgress size={14} thickness={5} sx={{ color: "#fff" }} />
+                                            <CircularProgress size={14} thickness={5} sx={{ color: "#94a3b8" }} />
                                           ) : (
                                             "Submit"
                                           )}
