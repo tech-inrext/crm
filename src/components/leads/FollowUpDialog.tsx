@@ -35,6 +35,7 @@ import FollowUpHeader from "./FollowUpHeader";
 import RateReviewOutlinedIcon from "@mui/icons-material/RateReviewOutlined";
 import WhatsAppIcon from "@mui/icons-material/WhatsApp";
 import EmailIcon from "@mui/icons-material/Email";
+import MenuItem from "@mui/material/MenuItem";
 import { useToast } from "@/fe/components/Toast/ToastContext";
 import ClientFeedbackDialog from "./ClientFeedbackDialog";
 
@@ -893,25 +894,36 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                             <Typography variant="caption" sx={{ fontWeight: 600, color: "#475569", display: "block", mb: 0.5 }}>
                                               Customer Interest Level
                                             </Typography>
-                                            <select
+                                            <TextField
+                                              select
+                                              fullWidth
+                                              size="small"
                                               value={interestLevel}
                                               onChange={(e) => setInterestLevel(e.target.value as any)}
-                                              style={{
-                                                width: "100%",
-                                                padding: "6px 10px",
-                                                borderRadius: "6px",
-                                                border: "1px solid #cbd5e1",
-                                                fontSize: "0.75rem",
-                                                backgroundColor: "#fff",
-                                                color: "#334155",
-                                                outline: "none",
+                                              SelectProps={{
+                                                displayEmpty: true,
+                                              }}
+                                              sx={{
+                                                "& .MuiOutlinedInput-root": {
+                                                  fontSize: "0.75rem",
+                                                  bgcolor: "#fff",
+                                                  borderRadius: "6px",
+                                                  "& fieldset": {
+                                                    borderColor: "#cbd5e1",
+                                                  },
+                                                },
+                                                "& .MuiSelect-select": {
+                                                  padding: "8.5px 14px",
+                                                }
                                               }}
                                             >
-                                              <option value="">-- Select Interest Level --</option>
-                                              <option value="high">High</option>
-                                              <option value="medium">Medium</option>
-                                              <option value="low">Low</option>
-                                            </select>
+                                              <MenuItem value="" disabled sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                                                -- Select Interest Level --
+                                              </MenuItem>
+                                              <MenuItem value="high" sx={{ fontSize: "0.75rem" }}>High</MenuItem>
+                                              <MenuItem value="medium" sx={{ fontSize: "0.75rem" }}>Medium</MenuItem>
+                                              <MenuItem value="low" sx={{ fontSize: "0.75rem" }}>Low</MenuItem>
+                                            </TextField>
                                           </Box>
 
                                           <Box>
@@ -945,27 +957,38 @@ const FollowUpDialog: React.FC<FollowUpDialogProps> = ({
                                             <Typography variant="caption" sx={{ fontWeight: 600, color: "#475569", display: "block", mb: 0.5 }}>
                                               Select Reason
                                             </Typography>
-                                            <select
+                                            <TextField
+                                              select
+                                              fullWidth
+                                              size="small"
                                               value={missedReason}
                                               onChange={(e) => setMissedReason(e.target.value)}
-                                              style={{
-                                                width: "100%",
-                                                padding: "6px 10px",
-                                                borderRadius: "6px",
-                                                border: "1px solid #cbd5e1",
-                                                fontSize: "0.75rem",
-                                                backgroundColor: "#fff",
-                                                color: "#334155",
-                                                outline: "none",
+                                              SelectProps={{
+                                                displayEmpty: true,
+                                              }}
+                                              sx={{
+                                                "& .MuiOutlinedInput-root": {
+                                                  fontSize: "0.75rem",
+                                                  bgcolor: "#fff",
+                                                  borderRadius: "6px",
+                                                  "& fieldset": {
+                                                    borderColor: "#cbd5e1",
+                                                  },
+                                                },
+                                                "& .MuiSelect-select": {
+                                                  padding: "8.5px 14px",
+                                                }
                                               }}
                                             >
-                                              <option value="">-- Select a Reason --</option>
-                                              <option value="Client Cancelled">Client Cancelled</option>
-                                              <option value="Client No Show">Client No Show / Unreachable</option>
-                                              <option value="Executive Unavailability">Executive/Agent Unavailability</option>
-                                              <option value="Rescheduled">Rescheduled by Client</option>
-                                              <option value="Other">Other</option>
-                                            </select>
+                                              <MenuItem value="" disabled sx={{ fontSize: "0.75rem", color: "#94a3b8" }}>
+                                                -- Select a Reason --
+                                              </MenuItem>
+                                              <MenuItem value="Client Cancelled" sx={{ fontSize: "0.75rem" }}>Client Cancelled</MenuItem>
+                                              <MenuItem value="Client No Show" sx={{ fontSize: "0.75rem" }}>Client No Show / Unreachable</MenuItem>
+                                              <MenuItem value="Executive Unavailability" sx={{ fontSize: "0.75rem" }}>Executive/Agent Unavailability</MenuItem>
+                                              <MenuItem value="Rescheduled" sx={{ fontSize: "0.75rem" }}>Rescheduled by Client</MenuItem>
+                                              <MenuItem value="Other" sx={{ fontSize: "0.75rem" }}>Other</MenuItem>
+                                            </TextField>
                                           </Box>
 
                                           <Box>
