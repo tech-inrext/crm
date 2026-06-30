@@ -16,7 +16,7 @@ export const sendMOUApprovedWhatsappMessage = async (to, name, associateId, down
       Best regards,
       Team Inrext
     */
-    await twilio.client.messages.create({
+    await twilio.sendMessage({
       from: twilio.whatsappNumber,
       to: `whatsapp:+91${to}`,
       contentSid: twilio.templates.mou_notification,
@@ -45,7 +45,7 @@ export const sendMOUApprovalRequestWhatsappMessage = async (to, avpName, associa
       Thank you,
       Team Inrext
     */
-    await twilio.client.messages.create({
+    await twilio.sendMessage({
       from: twilio.whatsappNumber,
       to: `whatsapp:+91${to}`,
       contentSid: twilio.templates.mou_approval_request_avp,

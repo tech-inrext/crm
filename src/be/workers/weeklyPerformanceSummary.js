@@ -129,7 +129,7 @@ export async function sendWeeklySummaryWhatsApp(employee, stats, dateRange) {
     const { overallTotal, overallClosed } = stats.leadStats;
     const conversionRate = overallTotal > 0 ? ((overallClosed / overallTotal) * 100).toFixed(1) : "0.0";
     
-    await twilio.client.messages.create({
+    await twilio.sendMessage({
       from: twilio.whatsappNumber,
       to: `whatsapp:+91${employee.phone}`,
       contentSid: twilio.templates.weekly_performance_summary,

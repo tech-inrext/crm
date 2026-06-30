@@ -6,7 +6,7 @@ import twilio from "../twilio.js";
 export const sendLeadSiteVisitScheduled = async (to, leadName, projectName, dateTime, agentName) => {
   try {
     console.log("📲 [Whatsapp] Sending site visit confirmation to lead:", to);
-    await twilio.client.messages.create({
+    await twilio.sendMessage({
       from: twilio.whatsappNumber,
       to: `whatsapp:+91${to}`,
       contentSid: twilio.templates.lead_site_visit_scheduled,
@@ -28,7 +28,7 @@ export const sendLeadSiteVisitScheduled = async (to, leadName, projectName, date
 export const sendLeadSiteVisitReminder = async (to, leadName, projectName, timeRemaining, displayTime) => {
   try {
     console.log(`📲 [Whatsapp] Sending ${timeRemaining} site visit reminder to lead:`, to);
-    await twilio.client.messages.create({
+    await twilio.sendMessage({
       from: twilio.whatsappNumber,
       to: `whatsapp:+91${to}`,
       contentSid: twilio.templates.lead_site_visit_reminder,

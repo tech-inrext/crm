@@ -3,7 +3,7 @@ import twilio from "../twilio.js";
 export const sendCallReminderWhatsappMessage = async (to, agentName, clientName, timeRemaining, clientContact) => {
   try {
     console.log("sending call reminder whatsapp message to agent", to);
-    await twilio.client.messages.create({
+    await twilio.sendMessage({
       from: twilio.whatsappNumber,
       to: `whatsapp:+91${to}`,
       contentSid: twilio.templates.call_reminder,

@@ -3,7 +3,7 @@ import twilio from "../twilio.js";
 export const sendSiteVisitReminderWhatsappMessage = async (to, agentName, clientName, propertyName, timeRemaining, clientContact) => {
   try {
     console.log("sending site visit reminder whatsapp message to agent", to);
-    await twilio.client.messages.create({
+    await twilio.sendMessage({
       from: twilio.whatsappNumber,
       to: `whatsapp:+91${to}`,
       contentSid: twilio.templates.site_visit_reminder,

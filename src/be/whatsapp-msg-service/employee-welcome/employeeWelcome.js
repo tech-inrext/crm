@@ -14,7 +14,7 @@ export const sendEmployeeWelcomeWhatsappMessage = async (to, name, loginUrl) => 
       Thanks,
       Team Inrext
     */
-    await twilio.client.messages.create({
+    await twilio.sendMessage({
       from: twilio.whatsappNumber,
       to: `whatsapp:+91${to}`,
       contentSid: twilio.templates.employee_welcome,
