@@ -39,7 +39,7 @@ export const sendSiteVisitFeedbackWhatsappMessage = async (
 ) => {
   try {
     console.log("📲 [Whatsapp] Sending site visit feedback request to lead:", to);
-    await twilio.client.messages.create({
+    await twilio.sendMessage({
       from: twilio.whatsappNumber,
       to: `whatsapp:+91${to}`,
       contentSid: twilio.templates.site_visit_feedback,

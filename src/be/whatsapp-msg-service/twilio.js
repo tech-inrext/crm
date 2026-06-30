@@ -17,6 +17,26 @@ class Twilio {
       weekly_performance_summary: "HXf02657ec3bfc5d5ba98fb057377affa0",
       site_visit_feedback: "HXca7aa359cbdd0536edb23f9c45c8e5de"
     }
+    this.currentProcessing = 0;
+  }
+
+  async sendMessage(options) {
+    if (this.currentProcessing >= 5) {
+      // Return a Promise that resolves when the deferred call finishes, so 'await' works correctly
+      return new Promise(resolve => {
+        setTimeout(() => {
+          resolve(this.sendMessage(options));
+        }, 100 + (this.currentProcessing * 50)); // stagger the retries slightly
+      });
+    }
+
+    this.currentProcessing++;
+    try {
+      const result = await this.client.messages.create(options);
+      return result;
+    } finally {
+      this.currentProcessing--;
+    }
   }
 }
 
