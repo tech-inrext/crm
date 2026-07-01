@@ -91,20 +91,23 @@ const SidebarContent = ({ links, onClose }) => {
                   bgcolor: "#0076FF",
                   color: "#fff",
                   "& .MuiListItemIcon-root": {
-                    color: "#90cdf4",
+                    color: "#fff",
                   },
                 },
                 "&:hover": {
                   bgcolor: "#0076FF",
                   color: "#fff",
                   transform: "translateX(2px)",
+                  "& .MuiListItemIcon-root": {
+                    color: "#fff",
+                  },
                 },
               }}
             >
               {link.icon && (
                 <ListItemIcon
                   sx={{
-                    color: "#b0b8c1",
+                    color: "#3785FF",
                     minWidth: { xs: 32, sm: 36, md: 40 }, // Responsive icon spacing
                     "& svg": {
                       fontSize: { xs: 16, sm: 18, md: 20 }, // Smaller icons on mobile
