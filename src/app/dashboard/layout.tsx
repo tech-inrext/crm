@@ -8,6 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import HandshakeIcon from "@mui/icons-material/Handshake";
+import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
 import {
   RealEstateAgent,
   Group as GroupIcon,
@@ -21,7 +22,6 @@ import {
   Person,
   LocalTaxi,
   Apartment,
-  Diversity3,
   Groups,
   GroupAdd,
   Assignment,
@@ -53,100 +53,100 @@ export const DASHBOARD_SIDEBAR_LINKS = [
     label: "Analytics",
     href: "/dashboard/analytics",
     module: "analytics",
-    icon: <Analytics sx={{ color: "#3785FF" }} />,
+    icon: <Analytics />,
   },
   {
     label: "Notice Board",
     href: "/dashboard/Notice-Board",
-icon: <Campaign sx={{ color: "#3785FF" }} />  },
+icon: <Campaign />  },
   {
     label: "Leads",
     href: "/dashboard/leads",
     module: "lead",
-    icon: <ContactPhone sx={{ color: "#3785FF" }} />,
+    icon: <ContactPhone />,
   },
   {
     label: "Business Partners",
     href: "/dashboard/users",
     module: "employee",
-    icon: <Groups sx={{ color: "#3785FF" }} />,
+    icon: <Groups />,
   },
   {
     label: "Roles",
     href: "/dashboard/roles",
     module: "role",
-    icon: <ManageAccounts sx={{ color: "#3785FF" }} />,
+    icon: <ManageAccounts />,
   },
   {
     label: "Teams",
     href: "/dashboard/teams",
     module: "team",
-    icon: <GroupAdd sx={{ color: "#3785FF" }} />,
+    icon: <GroupAdd />,
   },
   {
     label: "Pillars",
     href: "/dashboard/pillars",
     module: "pillar",
-    icon: <People sx={{ color: "#3785FF" }} />,
+    icon: <People />,
   },
   {
     label: "MOU",
     href: "/dashboard/mou",
     module: "mou",
-    icon: <Diversity3 sx={{ color: "#3785FF" }} />,
+    icon: <HistoryEduIcon />,
   },
   {
     label: "Vendors",
     href: "/dashboard/vendor",
     module: "vendor",
-    icon: <Person sx={{ color: "#3785FF" }} />,
+    icon: <Person />,
   },
   {
     label: "Cab Status",
     href: "/dashboard/cab-booking",
     module: "cab-booking",
-    icon: <LocalTaxi sx={{ color: "#3785FF" }} />,
+    icon: <LocalTaxi />,
   },
   {
     label: "Vendor Booking",
     href: "/dashboard/vendor-booking",
     module: "cab-vendor",
-    icon: <Assignment sx={{ color: "#3785FF" }} />,
+    icon: <Assignment />,
   },
   {
     label: "Properties",
     href: "/dashboard/properties",
     module: "property",
-    icon: <Apartment sx={{ color: "#3785FF" }} />,
+    icon: <Apartment />,
   },
   {
     label: "Booking Login",
     href: "/dashboard/booking-login",
     module: "booking-login",
-    icon: <Description sx={{ color: "#3785FF" }} />,
+    icon: <Description />,
   },
   {
     label: "Training Videos",
     href: "/dashboard/training-videos",
     module: "training-videos",
-    icon: <VideoLibrary sx={{ color: "#3785FF" }} />,
+    icon: <VideoLibrary />,
   },
   {
     label: "Landing Popup",
     href: "/dashboard/landing-popup",
     module: "landing-popup",
-    icon: <Campaign sx={{ color: "#3785FF" }} />,
+    icon: <Campaign />,
   },
   {
     label: "Departments",
     href: "/dashboard/department",
     module: "department",
-    icon: <GroupIcon sx={{ color: "#3785FF" }} />,
+    icon: <GroupIcon />,
   },
   {
     label: "Notifications",
     href: "/dashboard/notifications",
-    icon: <Notifications sx={{ color: "#3785FF" }} />,
+    icon: <Notifications />,
   },
 ];
 
