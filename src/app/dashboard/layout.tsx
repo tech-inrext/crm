@@ -8,7 +8,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Image from "next/image";
 import HandshakeIcon from "@mui/icons-material/Handshake";
-import HistoryEduIcon from "@mui/icons-material/HistoryEdu";
+import NoteAltIcon from "@mui/icons-material/NoteAlt";
 import {
   RealEstateAgent,
   Group as GroupIcon,
@@ -93,7 +93,7 @@ icon: <Campaign />  },
     label: "MOU",
     href: "/dashboard/mou",
     module: "mou",
-    icon: <HistoryEduIcon />,
+    icon: <NoteAltIcon />,
   },
   {
     label: "Vendors",
