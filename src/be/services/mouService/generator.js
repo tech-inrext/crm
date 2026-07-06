@@ -542,83 +542,10 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
 
   doc.moveDown(2);
 
-  // Signatures
+  // Signatures (Physical space)
   const currentY = doc.y;
   const sigStartOffset = 8;
-
-  // Prefer facilitatorSignatureUrl param; otherwise leave empty
-  let facilSigUrl = facilitatorSignatureUrl || "";
-
-  try {
-    if (facilSigUrl) {
-      const sigX = 50; // left
-      const sigMaxWidth = 150;
-      const sigMaxHeight = 60;
-      const sigYStart = currentY + sigStartOffset;
-      try {
-        doc.image(facilSigUrl, sigX, sigYStart, {
-          fit: [sigMaxWidth, sigMaxHeight],
-        });
-      } catch (err) {
-        if (
-          facilSigUrl.startsWith("http://") ||
-          facilSigUrl.startsWith("https://")
-        ) {
-          const buf = await fetchImageBufferSimple(facilSigUrl);
-          if (buf) {
-            try {
-              doc.image(buf, sigX, sigYStart, {
-                fit: [sigMaxWidth, sigMaxHeight],
-              });
-            } catch (e) {
-              // ignore
-            }
-          }
-        }
-      }
-    }
-  } catch (e) {
-    // continue
-  }
-
-  // Associate signature
-  const sigUrl =
-    employee?.signatureUrl ||
-    employee?.signatureURL ||
-    employee?.employee?.signatureUrl ||
-    employee?.employee?.signatureURL ||
-    "";
-
-  if (sigUrl) {
-    try {
-      const sigX = 420;
-      const sigMaxWidth = 150;
-      const sigMaxHeight = 80;
-      const sigYStart = currentY + sigStartOffset;
-      try {
-        doc.image(sigUrl, sigX, sigYStart, {
-          fit: [sigMaxWidth, sigMaxHeight],
-        });
-      } catch (e) {
-        if (sigUrl.startsWith("http://") || sigUrl.startsWith("https://")) {
-          const buf = await fetchImageBuffer(sigUrl, 5);
-          if (buf) {
-            try {
-              doc.image(buf, sigX, sigYStart, {
-                fit: [sigMaxWidth, sigMaxHeight],
-              });
-            } catch (err) {
-              // ignore
-            }
-          }
-        }
-      }
-    } catch (err) {
-      // ignore
-    }
-  }
-
-  const sigBlockHeight = Math.max(60, 80);
+  const sigBlockHeight = 60; // Empty space for physical signature
   const sigBlockPadding = 4;
   const afterSigY =
     currentY + sigStartOffset + sigBlockHeight + sigBlockPadding;
