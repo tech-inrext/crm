@@ -1,19 +1,19 @@
 "use client";
 
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useMemo } from "react";
 import NoticeBoardHeader from "@/fe/pages/Notice/component/NoticeBoardHeader";
 import Pagination from "@/components/ui/Navigation/Pagination";
 import { Box, Typography, Stack, Container } from "@mui/material";
-import PushPinIcon from "@mui/icons-material/PushPin";
 import ViewListIcon from "@mui/icons-material/ViewList";
 import NoticeCard from "@/fe/pages/Notice/component/NoticeCard";
 import NoticeShimmer from "@/fe/pages/Notice/component/NoticeShimmer";
 import useNotices from "@/fe/pages/Notice/hooks/useNoticeDashboard";
-import { gridStyles } from "@/fe/pages/Notice/utils/noticeUtils";
+import { gridStyles, categoryColors, priorityColors } from "@/fe/pages/Notice/utils/noticeUtils";
 import { useNoticePagination } from "@/fe/pages/Notice/hooks/useNoticePagination";
 
 export default function NoticesDashboard() {
   const {
+    notices,
     meta,
     loading,
     getAllNotice,
@@ -46,14 +46,27 @@ export default function NoticesDashboard() {
     setRowsPerPage,
   } = useNoticePagination(1, 8);
 
-  useEffect(() => {
-    setTotalItems(regularNotices?.length || 0);
-  }, [regularNotices, setTotalItems]);
+  const combinedNotices = useMemo(() => {
+    return [...(pinnedNotices || []), ...(regularNotices || [])];
+  }, [pinnedNotices, regularNotices]);
 
-  const paginatedNotices = (regularNotices || []).slice(
+  useEffect(() => {
+    setTotalItems(combinedNotices.length);
+  }, [combinedNotices, setTotalItems]);
+
+  const paginatedNotices = combinedNotices.slice(
     (page - 1) * rowsPerPage,
     page * rowsPerPage,
   );
+
+  // Compute stats for header
+  const totalNoticesCount = notices?.length || 0;
+  const urgentCount = notices?.filter((n: any) => n.priority === "Urgent")?.length || 0;
+  const pinnedCount = pinnedNotices?.length || 0;
+  const categoriesCount = new Set(notices?.map((n: any) => n.category)).size;
+
+  const categories = Object.keys(categoryColors);
+  const priorities = Object.keys(priorityColors);
 
   return (
     <Container maxWidth={false} sx={{ bgcolor: "#fafaf9", p: 1 }}>
@@ -61,8 +74,14 @@ export default function NoticesDashboard() {
       <NoticeBoardHeader
         onFilterChange={handleFilterChange}
         onNoticeAdded={handleNoticeAdded}
-        categories={meta?.categories || []}
-        priorities={meta?.priorities || []}
+        categories={categories}
+        priorities={priorities}
+        stats={{
+          totalNotices: totalNoticesCount,
+          urgent: urgentCount,
+          pinned: pinnedCount,
+          categories: categoriesCount
+        }}
       />
 
       {loading ? (
@@ -73,50 +92,8 @@ export default function NoticesDashboard() {
         </Box>
       ) : (
         <>
-          {/* PINNED */}
-          {pinnedNotices?.length > 0 && (
-            <>
-              <Stack
-                direction="row"
-                alignItems="center"
-                spacing={1}
-                mt={4}
-                mb={2}
-              >
-                <PushPinIcon />
-                <Typography variant="h6" fontWeight={600}>
-                  Pinned Notices
-                </Typography>
-              </Stack>
-
-              <Box sx={gridStyles} mb={4}>
-                {pinnedNotices.map((notice) => (
-                  <NoticeCard
-                    key={notice._id}
-                    notice={notice}
-                    getAllNotice={getAllNotice}
-                    updateNoticeLocal={updateNoticeLocal}
-                    onDelete={deleteNoticeLocal}
-                  />
-                ))}
-              </Box>
-            </>
-          )}
-
-          {/* ALL */}
-          <Stack direction="row" justifyContent="space-between" mb={2}>
-            <Stack direction="row" spacing={1}>
-              <ViewListIcon />
-              <Typography variant="h6">All Notices</Typography>
-            </Stack>
-
-            <Box className="bg-white border min-w-[38px] h-[38px] flex items-center justify-center rounded-full">
-              {regularNotices?.length || 0}
-            </Box>
-          </Stack>
-
-          {/* LIST */}
-          <Box sx={gridStyles}>
+          {/* ALL NOTICES */}
+          <Box sx={gridStyles} mb={4}>
             {paginatedNotices.length > 0 ? (
               paginatedNotices.map((notice) => (
                 <NoticeCard
@@ -128,21 +105,23 @@ export default function NoticesDashboard() {
                 />
               ))
             ) : (
-              <Typography textAlign="center">No notices found</Typography>
+              <Typography textAlign="center" width="100%">No notices found</Typography>
             )}
           </Box>
 
           {/* PAGINATION */}
-          <Pagination
-            page={page}
-            pageSize={rowsPerPage}
-            total={totalItems}
-            onPageChange={(p) => setPage(p)}
-            onPageSizeChange={(s) => {
-              setRowsPerPage(s);
-              setPage(1);
-            }}
-          />
+          {combinedNotices.length > 0 && (
+            <Pagination
+              page={page}
+              pageSize={rowsPerPage}
+              total={totalItems}
+              onPageChange={(p) => setPage(p)}
+              onPageSizeChange={(s) => {
+                setRowsPerPage(s);
+                setPage(1);
+              }}
+            />
+          )}
         </>
       )}
     </Container>
