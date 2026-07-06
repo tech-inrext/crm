@@ -132,13 +132,13 @@ export interface UserFormData {
   aadharFile?: File | null;
   panFile?: File | null;
   bankProofFile?: File | null;
-  signatureFile?: File | null;
+  aadharBackFile?: File | null;
   photoFile?: File | null;
   // URLs – present after upload
   aadharUrl?: string;
   panUrl?: string;
   bankProofUrl?: string;
-  signatureUrl?: string;
+  aadharBackUrl?: string;
   photo?: string;
   nominee?: NomineeDetails | null;
 }

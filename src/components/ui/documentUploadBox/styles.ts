@@ -4,6 +4,8 @@ export const documentUploadStyles = {
   container: {
     display: "flex",
     flexDirection: "column",
+    justifyContent: "space-between",
+    height: "100%",
     gap: 0.75,
   } as SxProps<Theme>,
 
@@ -11,6 +13,7 @@ export const documentUploadStyles = {
     fontSize: "0.875rem",
     fontWeight: 500,
     color: "text.primary",
+    textAlign: "center",
   } as SxProps<Theme>,
 
   uploadBox: (hasError: boolean, hasPreview: boolean): SxProps<Theme> => ({

@@ -120,7 +120,7 @@ class EmployeeService extends Service {
       aadharUrl,
       panUrl,
       bankProofUrl,
-      signatureUrl,
+      aadharBackUrl,
       nominee,
       slabPercentage,
       branch,
@@ -288,7 +288,7 @@ class EmployeeService extends Service {
     setIfPresent("aadharUrl", aadharUrl);
     setIfPresent("panUrl", panUrl);
     setIfPresent("bankProofUrl", bankProofUrl);
-    setIfPresent("signatureUrl", signatureUrl);
+    setIfPresent("aadharBackUrl", aadharBackUrl);
     // nominee can be an object; allow clearing by sending null/empty object
     if (Object.prototype.hasOwnProperty.call(req.body, "nominee")) {
       updateFields.nominee = nominee;
@@ -451,7 +451,7 @@ class EmployeeService extends Service {
         aadharUrl,
         panUrl,
         bankProofUrl,
-        signatureUrl,
+        aadharBackUrl,
         nominee,
         slabPercentage,
         branch,
@@ -591,8 +591,8 @@ class EmployeeService extends Service {
         employeeData.panUrl = panUrl;
       if (Object.prototype.hasOwnProperty.call(req.body, "bankProofUrl"))
         employeeData.bankProofUrl = bankProofUrl;
-      if (Object.prototype.hasOwnProperty.call(req.body, "signatureUrl"))
-        employeeData.signatureUrl = signatureUrl;
+      if (Object.prototype.hasOwnProperty.call(req.body, "aadharBackUrl"))
+        employeeData.aadharBackUrl = aadharBackUrl;
       // nominee and freelancer fields
       if (Object.prototype.hasOwnProperty.call(req.body, "nominee"))
         employeeData.nominee = nominee;

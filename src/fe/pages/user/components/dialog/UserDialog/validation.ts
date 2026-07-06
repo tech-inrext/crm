@@ -1,4 +1,4 @@
-﻿import * as Yup from "yup";
+import * as Yup from "yup";
 import {
   GENDER_OPTIONS,
   VALIDATION_RULES,
@@ -146,10 +146,10 @@ export const userValidationSchema = Yup.object({
     })
     .nullable(),
 
-  aadharFile: fileField("Aadhar file"),
+  aadharFile: fileField("Aadhaar card front file"),
   panFile: fileField("PAN file"),
   bankProofFile: fileField("Bank proof file"),
-  signatureFile: fileField("Signature file"),
+  aadharBackFile: fileField("Aadhaar card back file"),
   photoFile: fileField("Photo file"),
 
   panNumber: Yup.string()

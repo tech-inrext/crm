@@ -41,13 +41,13 @@ export const DEFAULT_USER_FORM = {
   aadharFile: null as File | null,
   panFile: null as File | null,
   bankProofFile: null as File | null,
-  signatureFile: null as File | null,
+  aadharBackFile: null as File | null,
   photoFile: null as File | null,
   // Document URLs (post-upload)
   aadharUrl: "",
   panUrl: "",
   bankProofUrl: "",
-  signatureUrl: "",
+  aadharBackUrl: "",
   photo: "",
   nominee: null as null | {
     name?: string;
@@ -118,11 +118,11 @@ export const FIELD_LABELS = {
   BASIC_INFO: "Basic Information",
   ORGANIZATION: "Organization",
   FULL_NAME: "Full Name *",
-  AADHAR: "Aadhar Card (Max 1 MB)",
-  PAN: "PAN Card (Max 1 MB)",
-  BANK_PROOF: "Bank Proof (Max 1 MB)",
-  SIGNATURE: "Signature (Max 1 MB)",
-  PHOTO: "Photo (Max 1 MB)",
+  AADHAR: "Aadhar Card Front",
+  PAN: "PAN Card",
+  BANK_PROOF: "Bank Proof",
+  AADHAR_BACK: "Aadhaar Card Back",
+  PHOTO: "Photo",
   EMAIL: "Email *",
   PHONE: "Phone *",
   ALT_PHONE: "WhatsApp Number",
@@ -157,9 +157,9 @@ export const BUTTON_LABELS = {
 
 export const DOCUMENTS: DocumentConfig[] = [
   { id: "aadhar-upload", fieldName: "aadharFile", labelKey: "AADHAR" },
+  { id: "aadhar-back-upload", fieldName: "aadharBackFile", labelKey: "AADHAR_BACK" },
   { id: "pan-upload", fieldName: "panFile", labelKey: "PAN" },
   { id: "bank-upload", fieldName: "bankProofFile", labelKey: "BANK_PROOF" },
-  { id: "sig-upload", fieldName: "signatureFile", labelKey: "SIGNATURE" },
 ];
 
 export const getContactPersonalFields = () => [
