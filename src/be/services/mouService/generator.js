@@ -159,9 +159,8 @@ async function fetchImageBuffer(url, maxRedirects = 5) {
 export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
   let PDFDocument;
   // Precompute filename and filePath so fallbacks can write a file if pdfkit isn't available
-  const filename = `MOU_${
-    employee?.associateId || employee?._id || "unknown"
-  }.pdf`;
+  const filename = `MOU_${employee?.associateId || employee?._id || "unknown"
+    }.pdf`;
   const filePath = path.join(os.tmpdir(), filename);
   try {
     // Prefer require.resolve to get a clear error if resolution fails
@@ -247,11 +246,11 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
           );
           const e = new Error(
             "Dependency missing or not loadable: 'pdfkit' is not installed and manual PDF fallback failed. Details: " +
-              String(requireErr && requireErr.message) +
-              " | " +
-              String(importErr && importErr.message) +
-              " | " +
-              String(fallbackErr && fallbackErr.message)
+            String(requireErr && requireErr.message) +
+            " | " +
+            String(importErr && importErr.message) +
+            " | " +
+            String(fallbackErr && fallbackErr.message)
           );
           e.code = "MISSING_PDFKIT";
           throw e;
@@ -452,6 +451,7 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
     "30. This MOU will remain valid and effective until any amendments or modifications are made to the brokerage structure, slab, transactional terms, or any specific clauses in the future.",
     "31. Once the Agreement stand cancelled/terminated, in the event neither party shall use each other's intellectual property of the other party.",
     "32. Any dispute and differences arising out of or relating to this contract including interpretation of its terms shall be resolved through joint discussion of the chief executives of both the parties. However, if the dispute is not resolved by joint discussions, then the matter shall be referred to and settled by the party's arbitration and the arbitrator shall be appointed by the first party only. The arbitration proceedings shall be held in accordance with the arbitration and conciliation act, 2013 per any subsequent enactment or amendment thereto. The decision of the arbitrator shall be final and binding upon the parties. The venue of arbitration proceedings shall be at Noida.",
+    "33. Real Estate associates engaged with the Company who do not possess a valid RERA registration certificate shall be considered solely as Point of Contact (POC) representatives for clients. Such individuals are not authorized to undertake any activities that require RERA registration, including but not limited to property marketing, brokerage, negotiation, or facilitation of real estate transactions, except as permitted under applicable laws and regulations.",
     "For all legal matters between the facilitator and associate Courts/Tribunals/Forums at Noida shall have the exclusive jurisdiction.",
   ];
   agreementClauses.forEach((clause) => addWrappedText(doc, clause));
@@ -477,7 +477,7 @@ export async function generateMOUPDF(employee, facilitatorSignatureUrl = "") {
     ["KW Blue Peral (Karol Bagh, Delhi)", "KW Delhi-6 (Ghaziabad)"],
     ["Migsun Rohini Central (Delhi)", "Corbett County (Jim Corbett)"],
     ["Urbainia Trinity NX (G. Noida)", "Migsun Lucknow Central (Lucknow)"],
-    ["Eco Village Resort & Cottage (Dehradun)", "The Adriatico (JP Sports City Yamuna Expressway)"],
+    ["Anugrah Homes (Jattari)", "The Adriatico (JP Sports City Yamuna Expressway)"],
     ["Residential Plot & Farmhouse land", "Skyline (Jattari)"],
   ];
   const projCol1X = 70;
