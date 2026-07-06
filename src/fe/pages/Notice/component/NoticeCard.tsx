@@ -3,6 +3,7 @@
 import React, { useState, useRef, Dispatch, SetStateAction } from "react";
 import DOMPurify from "dompurify";
 import axios from "axios";
+import dayjs from "dayjs";
 
 import {
   Card,
@@ -26,6 +27,9 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
 import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
+import PushPinIcon from "@mui/icons-material/PushPin";
+import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 
 import NoticePreviewModal from "../hooks/NoticePreviewModal";
 import { categoryColors } from "@/fe/pages/Notice/utils/noticeUtils";
@@ -43,6 +47,8 @@ type Notice = {
   category: string;
   createdAt: string;
   attachments?: Attachment[];
+  priority?: string;
+  pinned?: boolean;
 };
 
 export default function NoticeCard({
@@ -126,10 +132,10 @@ export default function NoticeCard({
     <>
       <Card
         onClick={() => setOpen(true)}
-        className="!rounded-2xl w-[90%] max-w-md mx-auto cursor-pointer bg-white flex flex-col h-[380px]"
+        className="!rounded-2xl w-[90%] max-w-md mx-auto cursor-pointer bg-white flex flex-col h-[400px] shadow-sm hover:shadow-md transition-shadow"
       >
         {/* IMAGE */}
-        <Box className="relative h-[200px] flex-shrink-0">
+        <Box className="relative h-[180px] flex-shrink-0">
           {imageAttachments.length > 0 ? (
             <>
               <Box
@@ -164,7 +170,7 @@ export default function NoticeCard({
               )}
             </>
           ) : (
-            <Box className="h-full flex items-center justify-center bg-black">
+            <Box className="h-full flex items-center justify-center bg-[#0f172a]">
               <img
                 src="/inrext white logo png.png"
                 alt="logo"
@@ -175,54 +181,91 @@ export default function NoticeCard({
         </Box>
 
         {/* HEADER */}
-        <Box className="px-3 pt-3 flex items-center justify-between">
+        <Box className="px-4 pt-4 flex items-center justify-between">
           <Chip
             label={notice.category}
             size="small"
             sx={{
-              fontWeight: 600,
+              fontWeight: 700,
+              fontSize: '11px',
               color: color,
-              border: `1px solid ${color}`,
-              backgroundColor: `${color}15`,
+              border: `1px solid ${color}40`,
+              backgroundColor: `${color}10`,
+              textTransform: 'uppercase',
+              letterSpacing: '0.5px'
             }}
           />
 
-          {isAdminOrAVP && (
-            <>
-              <IconButton size="small" onClick={handleMenuOpen}>
-                <MoreVertIcon fontSize="small" />
-              </IconButton>
+          <Box className="flex items-center">
+            {notice.pinned && (
+              <PushPinIcon className="text-blue-600 mr-1" fontSize="small" />
+            )}
+            {isAdminOrAVP && (
+              <>
+                <IconButton size="small" onClick={handleMenuOpen}>
+                  <MoreVertIcon fontSize="small" />
+                </IconButton>
 
-              <Menu
-                anchorEl={anchorEl}
-                open={openMenu}
-                onClose={handleMenuClose}
-                onClick={(e) => e.stopPropagation()}
-              >
-                <MenuItem onClick={() => setOpen(true)}>
-                  <EditIcon fontSize="small" className="mr-2" />
-                  Edit
-                </MenuItem>
+                <Menu
+                  anchorEl={anchorEl}
+                  open={openMenu}
+                  onClose={handleMenuClose}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <MenuItem onClick={() => setOpen(true)}>
+                    <EditIcon fontSize="small" className="mr-2" />
+                    Edit
+                  </MenuItem>
 
-                <MenuItem onClick={handleDeleteClick}>
-                  <DeleteIcon fontSize="small" className="mr-2" />
-                  Delete
-                </MenuItem>
-              </Menu>
-            </>
-          )}
+                  <MenuItem onClick={handleDeleteClick}>
+                    <DeleteIcon fontSize="small" className="mr-2" />
+                    Delete
+                  </MenuItem>
+                </Menu>
+              </>
+            )}
+          </Box>
         </Box>
 
         {/* CONTENT */}
-        <CardContent className="p-4 flex-1 overflow-hidden">
-          <Typography className="font-bold text-[17px] text-slate-800">
+        <CardContent className="px-4 pt-2 pb-4 flex-1 flex flex-col overflow-hidden">
+          <Typography className="font-bold text-[17px] text-slate-800 leading-snug">
             {notice.title}
           </Typography>
 
           <div
-            className="text-sm text-slate-600 mt-2 line-clamp-3"
+            className="text-[13px] text-slate-500 mt-1 line-clamp-2 mb-4 leading-relaxed"
             dangerouslySetInnerHTML={{ __html: sanitizedHTML }}
           />
+
+          <Box className="mt-auto pt-3 border-t border-slate-100 flex items-center justify-between">
+            <Box className="flex items-center text-slate-400">
+              <CalendarTodayIcon sx={{ fontSize: 13 }} className="mr-1.5" />
+              <Typography className="text-[12px] font-medium">
+                {dayjs(notice.createdAt).format("DD MMM YYYY")}
+              </Typography>
+            </Box>
+
+            <Box className="flex items-center gap-2">
+              {notice.priority && notice.priority !== "Normal" && (
+                <Chip
+                  label={notice.priority}
+                  size="small"
+                  sx={{
+                    height: 22,
+                    fontSize: '11px',
+                    fontWeight: 600,
+                    color: notice.priority === 'Urgent' ? '#dc2626' : '#ea580c',
+                    bgcolor: notice.priority === 'Urgent' ? '#fef2f2' : '#fff7ed',
+                    border: `1px solid ${notice.priority === 'Urgent' ? '#fca5a5' : '#fed7aa'}`,
+                  }}
+                />
+              )}
+              <Box className="w-7 h-7 rounded-full bg-slate-50 flex items-center justify-center border border-slate-200">
+                <ArrowForwardIcon sx={{ fontSize: 14 }} className="text-slate-500" />
+              </Box>
+            </Box>
+          </Box>
         </CardContent>
       </Card>
 
@@ -253,3 +296,4 @@ export default function NoticeCard({
     </>
   );
 }
+
