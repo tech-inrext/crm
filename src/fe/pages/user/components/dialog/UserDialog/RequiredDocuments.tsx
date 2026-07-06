@@ -13,7 +13,7 @@ const RequiredDocuments = memo(() => {
         Required Documents
       </Typography>
       <Typography variant="body2" color="textSecondary" sx={styles.subtitle}>
-        Only JPG files allowed
+        Only JPG files allowed (Max 1 MB)
       </Typography>
 
       <Box sx={styles.grid}>

@@ -14,14 +14,14 @@ type FileKeys =
   | "aadharFile"
   | "panFile"
   | "bankProofFile"
-  | "signatureFile"
+  | "aadharBackFile"
   | "photoFile";
 
 type UrlKeys =
   | "aadharUrl"
   | "panUrl"
   | "bankProofUrl"
-  | "signatureUrl"
+  | "aadharBackUrl"
   | "photo";
 
 export type UserPayload = Omit<UserFormData, FileKeys>;
@@ -32,7 +32,7 @@ const FILE_TO_URL_MAP: Record<FileKeys, UrlKeys> = {
   aadharFile: "aadharUrl",
   panFile: "panUrl",
   bankProofFile: "bankProofUrl",
-  signatureFile: "signatureUrl",
+  aadharBackFile: "aadharBackUrl",
   photoFile: "photo",
 };
 
@@ -144,6 +144,7 @@ export const getInitialUserForm = (form: any) => {
     aadharUrl: formData.aadharUrl || "",
     panUrl: formData.panUrl || "",
     bankProofUrl: formData.bankProofUrl || "",
+    aadharBackUrl: formData.aadharBackUrl || "",
     panNumber: formData.panNumber || "",
     nominee: formData.nominee ?? DEFAULT_USER_FORM.nominee,
     slabPercentage: formData.slabPercentage || "",

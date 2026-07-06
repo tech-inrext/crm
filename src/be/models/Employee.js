@@ -165,7 +165,7 @@ const employeeSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
-    signatureUrl: {
+    aadharBackUrl: {
       type: String,
       default: "",
     },
