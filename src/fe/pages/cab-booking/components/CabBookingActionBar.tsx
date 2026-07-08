@@ -9,13 +9,13 @@ import {
   SEARCH_PLACEHOLDER,
   statusOptions,
 } from "@/fe/pages/cab-booking/constants/cab-booking";
-import { FormControl, InputLabel, Select, MenuItem } from "@mui/material";
+import { FormControl, InputLabel, Select, MenuItem, SelectChangeEvent, Checkbox, ListItemText } from "@mui/material";
 
 interface CabBookingActionBarProps {
   search: string;
   onSearchChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
-  statusFilter: string;
-  onStatusChange: (status: string) => void;
+  statusFilter: string[];
+  onStatusChange: (status: string[]) => void;
 }
 
 const CabBookingActionBar: React.FC<CabBookingActionBarProps> = ({
@@ -40,13 +40,21 @@ const CabBookingActionBar: React.FC<CabBookingActionBarProps> = ({
           <Select
             labelId="status-filter-label"
             id="status-filter"
+            multiple
             value={statusFilter}
             label="Status"
-            onChange={(e) => onStatusChange(e.target.value as string)}
+            onChange={(e: SelectChangeEvent<string[]>) => {
+              const value = e.target.value;
+              onStatusChange(typeof value === "string" ? value.split(",") : value);
+            }}
+            renderValue={(selected) => 
+              selected.map(val => statusOptions.find(opt => opt.value === val)?.label || val).join(", ")
+            }
           >
             {statusOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
+                <Checkbox checked={statusFilter.indexOf(opt.value) > -1} />
+                <ListItemText primary={opt.label} />
               </MenuItem>
             ))}
           </Select>
