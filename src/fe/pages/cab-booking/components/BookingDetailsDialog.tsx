@@ -20,6 +20,8 @@ import {
   AssignmentInd,
   MonetizationOn,
 } from "@/components/ui/Component";
+import PhoneIcon from "@mui/icons-material/Phone";
+import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import MODULE_STYLES from "@/styles/moduleStyles";
 import Avatar from "@/components/ui/Component/Avatar";
 import { Booking } from "@/fe/pages/cab-booking/types/cab-booking";
@@ -277,6 +279,18 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
             <Info color="action" fontSize="small" />
             <Typography fontSize={15}>
               <b>DL Number (Driver):</b> {(booking as any).dlNumber || "-"}
+            </Typography>
+          </Box>
+          <Box display="flex" alignItems="center" gap={1}>
+            <PhoneIcon color="action" fontSize="small" />
+            <Typography fontSize={15}>
+              <b>Driver Mobile No.:</b> {(booking as any).driverPhone || "-"}
+            </Typography>
+          </Box>
+          <Box display="flex" alignItems="center" gap={1}>
+            <DirectionsCarIcon color="action" fontSize="small" />
+            <Typography fontSize={15}>
+              <b>Cab Reg. No.:</b> {(booking as any).cabRegistrationNumber || "-"}
             </Typography>
           </Box>
           <Box display="flex" alignItems="center" gap={1}>

@@ -389,10 +389,7 @@ class CabBookingService extends Service {
       if (req.body.vehicle) update.vehicle = req.body.vehicle;
       if (req.body.managerId) update.managerId = req.body.managerId;
 
-      if (
-        update.status === "completed" ||
-        update.status === "payment_due"
-      ) {
+      if (update.status === "completed") {
         const rawFlag =
           req.isSystemAdmin ||
           (res.locals && res.locals.isSystemAdmin) ||
