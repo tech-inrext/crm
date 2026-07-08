@@ -7,7 +7,7 @@ import { CabBookingProps } from "@/fe/pages/cab-booking/types/cab-booking";
 import {
   BookingsList,
   Notification,
-  VendorBookingForm,
+  // VendorBookingForm,
 } from "@/fe/pages/cab-booking/components";
 import BookingDetailsDialog from "@/fe/pages/cab-booking/components/BookingDetailsDialog";
 import { cabBookingApi } from "@/fe/pages/cab-booking/cabBookingApi";
@@ -122,11 +122,13 @@ const CabBooking: React.FC<CabBookingProps> = ({
             },
           }}
         >
+          {/* 
           <DialogContent
             sx={{ p: { xs: 2.5, sm: 2 }, overflowY: "auto", flex: 1 }}
           >
             <VendorBookingForm bookingId={vendorBookingId} />
-          </DialogContent>
+          </DialogContent> 
+          */}
         </Dialog>
 
         <BookingDetailsDialog

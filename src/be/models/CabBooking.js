@@ -105,6 +105,14 @@ const cabBookingSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    driverPhone: {
+      type: String,
+      trim: true,
+    },
+    cabRegistrationNumber: {
+      type: String,
+      trim: true,
+    },
     odometerStartImageUrl: {
       type: String,
       trim: true,
@@ -113,6 +121,14 @@ const cabBookingSchema = new mongoose.Schema(
     odometerEndImageUrl: {
       type: String,
       trim: true,
+      default: null,
+    },
+    startKm: {
+      type: Number,
+      default: null,
+    },
+    endKm: {
+      type: Number,
       default: null,
     },
     fare: {

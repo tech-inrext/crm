@@ -18,7 +18,9 @@ import {
   Event,
   AssignmentInd,
 } from "@/components/ui/Component";
-import AssignVendorDialog from "./AssignVendorDialog";
+// import AssignVendorDialog from "./AssignVendorDialog";
+import AdminAssignCabDialog from "./AdminAssignCabDialog";
+import AgentCompleteTripDialog from "./AgentCompleteTripDialog";
 import BookingStatus from "./BookingStatus";
 import ShareBookingDialog from "./ShareBookingDialog";
 import PermissionGuard from "@/components/PermissionGuard";
@@ -33,7 +35,9 @@ import {
   statusOptions,
 } from "@/fe/pages/cab-booking/constants/cab-booking";
 import { useCabBooking } from "@/fe/pages/cab-booking/hooks/useCabBooking";
+import { cabBookingApi, uploadFileToS3 } from "@/fe/pages/cab-booking/cabBookingApi";
 import { useAuth } from "@/contexts/AuthContext";
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 
 interface BookingCardProps {
   booking: Booking;
@@ -69,11 +73,16 @@ const BookingCard: React.FC<BookingCardProps> = ({
   const [updating, setUpdating] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [assignOpen, setAssignOpen] = useState(false);
+  const [completeTripOpen, setCompleteTripOpen] = useState(false);
+  
   const avatar = booking.clientName
     ? booking.clientName.substring(0, 2).toUpperCase()
     : "CB";
   const shareLink = `${window.location.origin}/dashboard/cab-booking?bookingId=${booking._id}`;
   const isManager = booking.canApprove;
+  
+  const bookedById = typeof booking.cabBookedBy === "string" ? booking.cabBookedBy : (booking.cabBookedBy as any)?._id;
+  const isAgent = Boolean(user && user._id === bookedById);
   // ...existing code...
 
   const handleStatusChange = async (newStatus: string) => {
@@ -86,14 +95,44 @@ const BookingCard: React.FC<BookingCardProps> = ({
     }
   };
 
-  // Assign vendor handler
-  const handleAssignVendor = async (vendorId: string) => {
+  // Assign admin cab handler
+  const handleAssignCabDetails = async (data: any) => {
     setUpdating(true);
     try {
-      // Call backend to assign vendor and set status to 'active'
-      await updateBookingStatus(booking._id, "active", vendorId);
+      await cabBookingApi.updateFields(booking._id, { ...data, status: "active" });
       setStatus("active");
       setAssignOpen(false);
+    } catch (err) {
+      console.error("Failed to assign cab details", err);
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleCompleteTrip = async (data: any) => {
+    setUpdating(true);
+    try {
+      const payload: any = {
+        startKm: data.startKm,
+        endKm: data.endKm,
+        fare: data.fare,
+        status: "payment_due"
+      };
+      
+      if (data.odometerStartFile) {
+        const { fileUrl } = await uploadFileToS3(data.odometerStartFile);
+        payload.odometerStartImageUrl = fileUrl;
+      }
+      if (data.odometerEndFile) {
+        const { fileUrl } = await uploadFileToS3(data.odometerEndFile);
+        payload.odometerEndImageUrl = fileUrl;
+      }
+      
+      await cabBookingApi.updateFields(booking._id, payload);
+      setStatus("payment_due");
+      setCompleteTripOpen(false);
+    } catch (err) {
+      console.error("Failed to complete trip", err);
     } finally {
       setUpdating(false);
     }
@@ -189,10 +228,19 @@ const BookingCard: React.FC<BookingCardProps> = ({
               <Box sx={{ display: "flex", gap: 1 }}>
                 {isSystemAdmin && status === "approved" && (
                   <PermissionGuard module="cab-booking" action="write" fallback={null}>
-                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); setAssignOpen(true); }}>
-                      <AssignmentInd sx={{ fontSize: 20 }} />
-                    </IconButton>
+                    <Tooltip title="Assign Cab Details">
+                      <IconButton size="small" onClick={(e) => { e.stopPropagation(); setAssignOpen(true); }}>
+                        <AssignmentInd sx={{ fontSize: 20 }} color="primary" />
+                      </IconButton>
+                    </Tooltip>
                   </PermissionGuard>
+                )}
+                {isAgent && status === "active" && (
+                  <Tooltip title="Complete Trip">
+                    <IconButton size="small" onClick={(e) => { e.stopPropagation(); setCompleteTripOpen(true); }}>
+                      <CheckCircleIcon sx={{ fontSize: 20 }} color="success" />
+                    </IconButton>
+                  </Tooltip>
                 )}
                 <IconButton size="small" onClick={(e) => { e.stopPropagation(); setShareOpen(true); }}>
                   <ShareIcon sx={{ fontSize: 20 }} />
@@ -211,10 +259,19 @@ const BookingCard: React.FC<BookingCardProps> = ({
         onClose={() => setShareOpen(false)}
       />
       {assignOpen && (
-        <AssignVendorDialog
+        <AdminAssignCabDialog
           open={assignOpen}
           onClose={() => setAssignOpen(false)}
-          onAssign={handleAssignVendor}
+          onSubmit={handleAssignCabDetails}
+          isLoading={updating}
+        />
+      )}
+      {completeTripOpen && (
+        <AgentCompleteTripDialog
+          open={completeTripOpen}
+          onClose={() => setCompleteTripOpen(false)}
+          onSubmit={handleCompleteTrip}
+          isLoading={updating}
         />
       )}
    </>

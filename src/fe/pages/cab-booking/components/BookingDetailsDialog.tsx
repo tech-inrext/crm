@@ -103,6 +103,21 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
     (booking as any).managerName ||
     (typeof booking.managerId === "string" ? booking.managerId : "-");
 
+  let displayName = booking.clientName || "Client";
+  if (booking.leadId) {
+    const lead = booking.leadId;
+    const leadName = lead.fullName || lead.name || (lead.firstName ? `${lead.firstName} ${lead.lastName || ""}`.trim() : null);
+    const leadMobile = lead.mobile || lead.mobileNo || lead.phone || lead.phoneNumber;
+    
+    if (leadName && leadName.toLowerCase() !== "client") {
+      displayName = leadName;
+    } else if (leadMobile) {
+      displayName = leadMobile;
+    }
+  } else if (displayName.trim().toLowerCase() === "client") {
+    displayName = "Client (No Name Provided)";
+  }
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle
@@ -157,11 +172,11 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
               boxShadow: 2,
             }}
           >
-            {booking.clientName?.substring(0, 2).toUpperCase()}
+            {displayName.substring(0, 2).toUpperCase()}
           </Avatar>
           <Box>
             <Typography fontWeight={700} fontSize={20} color="text.primary">
-              {booking.clientName}
+              {displayName}
             </Typography>
             <Typography fontSize={14} color="text.secondary">
               Project: {getProjectName(booking.project)}

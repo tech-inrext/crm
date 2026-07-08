@@ -7,7 +7,7 @@ import {
 
 const CAB_STATUS_CONFIG = {
   approved: { msg: "Your cab booking has been approved!", priority: "HIGH" },
-  rejected: { msg: "Your cab booking has been rejected.", priority: "HIGH" },
+  rejected: { msg: "Your cab booking request was rejected.", priority: "URGENT" },
   active: { msg: "Your cab is on the way!", priority: "URGENT" },
   completed: {
     msg: "Your cab booking has been completed.",
@@ -70,7 +70,9 @@ export const notifyCabBookingStatusChange = async (
     recipients,
     {
       type: `CAB_BOOKING_${newStatus.toUpperCase()}`,
-      title: "Cab Booking Update",
+      title: newStatus === "approved" ? "Booking Approved" : 
+                           newStatus === "active" ? "Cab Active" :
+                           "Booking Rejected",
       message: statusConfig.msg,
       metadata: buildMetadata({
         bookingId,

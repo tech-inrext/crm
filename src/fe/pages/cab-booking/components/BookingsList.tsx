@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Booking } from "@/fe/pages/cab-booking/types/cab-booking";
-import BookingCard from "./BookingCard";
+import CabBookingCard from "./card/CabBookingCard";
 import BookingDetailsDialog from "./BookingDetailsDialog";
 import Pagination from "@/components/ui/Navigation/Pagination";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -40,6 +40,9 @@ const BookingsList: React.FC<BookingsListProps> = ({
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  
+  // Local refresh state for actions performed inside cards
+  const [internalRefresh, setInternalRefresh] = useState(0);
 
   // reset to page 1 whenever filter or search changes
   useEffect(() => {
@@ -91,7 +94,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
     return () => {
       active = false;
     };
-  }, [url, refreshKey, page]);
+  }, [url, refreshKey, internalRefresh, page]);
 
   const handleViewDetails = (booking: Booking) => setViewingBooking(booking);
   const handleCloseDialog = () => setViewingBooking(null);
@@ -110,10 +113,11 @@ const BookingsList: React.FC<BookingsListProps> = ({
       <div className="flex-1 overflow-y-auto pr-2 pb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {rows.map((booking) => (
-            <BookingCard
+            <CabBookingCard
               key={booking._id}
               booking={booking}
               onViewDetails={handleViewDetails}
+              onRefresh={() => setInternalRefresh(prev => prev + 1)}
             />
           ))}
         </div>
