@@ -37,15 +37,54 @@ const AdminAssignCabDialog: React.FC<AdminAssignCabDialogProps> = ({
     cabRegistrationNumber: "",
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    
+    // Only allow digits for phone number and max 10 chars
+    let finalValue = value;
+    if (name === "driverPhone") {
+      finalValue = value.replace(/\D/g, "").slice(0, 10);
+    }
+
+    setFormData((prev) => ({ ...prev, [name]: finalValue }));
+    // Clear error when user types
+    if (errors[name]) {
+      setErrors((prev) => ({ ...prev, [name]: "" }));
+    }
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const newErrors: Record<string, string> = {};
+    if (formData.cabOwner.trim().length < 3) {
+      newErrors.cabOwner = "Must be at least 3 characters";
+    }
+    if (formData.driverName.trim().length < 3) {
+      newErrors.driverName = "Must be at least 3 characters";
+    }
+    if (!/^\d{10}$/.test(formData.driverPhone.trim())) {
+      newErrors.driverPhone = "Must be exactly 10 digits";
+    }
+    if (formData.cabRegistrationNumber.trim().length < 4) {
+      newErrors.cabRegistrationNumber = "Must be at least 4 characters";
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
     onSubmit(formData);
   };
+
+  const isAllFieldsFilled = 
+    formData.cabOwner.trim() !== "" &&
+    formData.driverName.trim() !== "" &&
+    formData.driverPhone.trim() !== "" &&
+    formData.cabRegistrationNumber.trim() !== "";
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -77,6 +116,8 @@ const AdminAssignCabDialog: React.FC<AdminAssignCabDialogProps> = ({
                 value={formData.cabOwner}
                 onChange={handleChange}
                 required
+                error={!!errors.cabOwner}
+                helperText={errors.cabOwner}
                 InputProps={{
                   startAdornment: <InputAdornment position="start"><PersonIcon color="action" fontSize="small" /></InputAdornment>,
                 }}
@@ -88,6 +129,8 @@ const AdminAssignCabDialog: React.FC<AdminAssignCabDialogProps> = ({
                 value={formData.driverName}
                 onChange={handleChange}
                 required
+                error={!!errors.driverName}
+                helperText={errors.driverName}
                 InputProps={{
                   startAdornment: <InputAdornment position="start"><BadgeIcon color="action" fontSize="small" /></InputAdornment>,
                 }}
@@ -99,6 +142,8 @@ const AdminAssignCabDialog: React.FC<AdminAssignCabDialogProps> = ({
                 value={formData.driverPhone}
                 onChange={handleChange}
                 required
+                error={!!errors.driverPhone}
+                helperText={errors.driverPhone}
                 InputProps={{
                   startAdornment: <InputAdornment position="start"><PhoneIcon color="action" fontSize="small" /></InputAdornment>,
                 }}
@@ -110,6 +155,8 @@ const AdminAssignCabDialog: React.FC<AdminAssignCabDialogProps> = ({
                 value={formData.cabRegistrationNumber}
                 onChange={handleChange}
                 required
+                error={!!errors.cabRegistrationNumber}
+                helperText={errors.cabRegistrationNumber}
                 InputProps={{
                   startAdornment: <InputAdornment position="start"><NumbersIcon color="action" fontSize="small" /></InputAdornment>,
                 }}
@@ -127,7 +174,7 @@ const AdminAssignCabDialog: React.FC<AdminAssignCabDialogProps> = ({
           </Button>
           <Button 
             type="submit" 
-            disabled={isLoading} 
+            disabled={isLoading || !isAllFieldsFilled} 
             variant="contained" 
             sx={{ bgcolor: "primary.main", color: "white", "&:hover": { bgcolor: "primary.dark" }, fontWeight: 600, px: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", textTransform: "none" }}
           >

@@ -191,14 +191,16 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
               booking.status
             }
             color={
-              booking.status === "approved"
-                ? "success"
-                : booking.status === "pending"
+              booking.status === "pending"
+                ? "default"
+                : booking.status === "approved"
                 ? "info"
-                : booking.status === "completed"
-                ? "secondary"
+                : booking.status === "active"
+                ? "primary"
                 : booking.status === "payment_due"
                 ? "warning"
+                : booking.status === "completed"
+                ? "success"
                 : "error"
             }
             sx={{
