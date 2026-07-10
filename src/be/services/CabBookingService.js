@@ -157,6 +157,7 @@ class CabBookingService extends Service {
         page = 1,
         limit = 10,
         status,
+        bookedBy,
         sortBy = "createdAt",
         sortOrder = "desc",
       } = req.query;
@@ -211,7 +212,12 @@ class CabBookingService extends Service {
         }
       }
 
-      const mainFilter = { ...visibilityFilter, ...statusFilter };
+      let bookedByFilter = {};
+      if (isSystemAdmin && bookedBy && String(bookedBy).trim() !== "") {
+        bookedByFilter = { cabBookedBy: String(bookedBy).trim() };
+      }
+
+      const mainFilter = { ...visibilityFilter, ...statusFilter, ...bookedByFilter };
 
       const [rows, total] = await Promise.all([
         CabBooking.find(mainFilter)

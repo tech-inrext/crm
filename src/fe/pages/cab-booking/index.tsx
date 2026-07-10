@@ -38,6 +38,9 @@ const CabBooking: React.FC<CabBookingProps> = ({
     const s = searchParamsHook ? searchParamsHook.get("status") : null;
     return s ? s.split(",") : [];
   });
+  const [bookedByFilter, setBookedByFilter] = useState<string>(() => {
+    return searchParamsHook ? searchParamsHook.get("bookedBy") || "" : "";
+  });
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [vendorBookingId, setVendorBookingId] = useState<string | null>(null);
   
@@ -111,6 +114,19 @@ const CabBooking: React.FC<CabBookingProps> = ({
     }
   };
 
+  const handleBookedByChange = (newBookedBy: string) => {
+    setBookedByFilter(newBookedBy);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (newBookedBy) {
+        params.set("bookedBy", newBookedBy);
+      } else {
+        params.delete("bookedBy");
+      }
+      router.replace(`?${params.toString()}`);
+    }
+  };
+
   return (
     <PermissionGuard module="cab-booking">
       <Box sx={containerSx}>
@@ -127,6 +143,9 @@ const CabBooking: React.FC<CabBookingProps> = ({
           onSearchChange={handleSearchChange}
           statusFilter={statusFilter}
           onStatusChange={handleStatusChange}
+          bookedByFilter={bookedByFilter}
+          onBookedByChange={handleBookedByChange}
+          isSystemAdmin={!!isSystemAdmin}
         />
 
         <Box sx={contentGridSx}>
@@ -134,6 +153,7 @@ const CabBooking: React.FC<CabBookingProps> = ({
             {activeView === "tracking" && (
               <BookingsList 
                 statusFilter={statusFilter.join(",")} 
+                bookedByFilter={bookedByFilter}
                 refreshKey={refreshKey} 
                 search={search}
               />

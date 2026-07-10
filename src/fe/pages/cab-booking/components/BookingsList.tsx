@@ -7,6 +7,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 
 interface BookingsListProps {
   statusFilter?: string;
+  bookedByFilter?: string;
   refreshKey?: number;
   search?: string;
 }
@@ -24,6 +25,7 @@ type ApiResponse = {
 
 const BookingsList: React.FC<BookingsListProps> = ({
   statusFilter = "",
+  bookedByFilter = "",
   refreshKey,
   search = "",
 }) => {
@@ -47,7 +49,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
   // reset to page 1 whenever filter or search changes
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, debouncedSearch]);
+  }, [statusFilter, bookedByFilter, debouncedSearch]);
 
   // build query
   const url = useMemo(() => {
@@ -59,9 +61,11 @@ const BookingsList: React.FC<BookingsListProps> = ({
 
     const s = (statusFilter || "").toLowerCase().trim();
     if (s && s !== "all") params.set("status", s);
+    
+    if (bookedByFilter) params.set("bookedBy", bookedByFilter);
 
     return `/api/v0/cab-booking?${params.toString()}`;
-  }, [page, pageSize, statusFilter, debouncedSearch]);
+  }, [page, pageSize, statusFilter, bookedByFilter, debouncedSearch]);
 
   // fetch page
   useEffect(() => {
