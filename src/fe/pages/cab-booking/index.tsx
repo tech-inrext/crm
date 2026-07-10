@@ -1,13 +1,14 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useAuth } from "@/contexts/AuthContext";
 import PermissionGuard from "@/components/PermissionGuard";
 import { useCabBooking } from "@/fe/pages/cab-booking/hooks/useCabBooking";
 import { CabBookingProps } from "@/fe/pages/cab-booking/types/cab-booking";
 import {
   BookingsList,
   Notification,
-  VendorBookingForm,
+  // VendorBookingForm,
 } from "@/fe/pages/cab-booking/components";
 import BookingDetailsDialog from "@/fe/pages/cab-booking/components/BookingDetailsDialog";
 import { cabBookingApi } from "@/fe/pages/cab-booking/cabBookingApi";
@@ -27,15 +28,40 @@ const CabBooking: React.FC<CabBookingProps> = ({
   defaultView = "tracking",
 }) => {
   const router = useRouter();
+  const searchParamsHook = useSearchParams();
+  const { isSystemAdmin } = useAuth();
+  const hasInitializedAdminFilter = React.useRef(false);
+
   const [activeView, setActiveView] =
     useState<CabBookingProps["defaultView"]>(defaultView);
-  const [statusFilter, setStatusFilter] = useState<string>("");
+  const [statusFilter, setStatusFilter] = useState<string[]>(() => {
+    const s = searchParamsHook ? searchParamsHook.get("status") : null;
+    return s ? s.split(",") : [];
+  });
+  const [bookedByFilter, setBookedByFilter] = useState<string>(() => {
+    return searchParamsHook ? searchParamsHook.get("bookedBy") || "" : "";
+  });
   const [showVendorDialog, setShowVendorDialog] = useState(false);
   const [vendorBookingId, setVendorBookingId] = useState<string | null>(null);
   
   const [viewingBooking, setViewingBooking] = useState<Booking | null>(null);
   const [fetchLoading, setFetchLoading] = useState(false);
   const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    if (isSystemAdmin && searchParamsHook && !hasInitializedAdminFilter.current) {
+      hasInitializedAdminFilter.current = true;
+      if (!searchParamsHook.has("status")) {
+        const defaultStatus = ["approved", "payment_due"];
+        setStatusFilter(defaultStatus);
+        if (typeof window !== "undefined") {
+          const params = new URLSearchParams(window.location.search);
+          params.set("status", defaultStatus.join(","));
+          router.replace(`?${params.toString()}`);
+        }
+      }
+    }
+  }, [isSystemAdmin, searchParamsHook, router]);
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -75,6 +101,32 @@ const CabBooking: React.FC<CabBookingProps> = ({
     setSearch(e.target.value);
   };
 
+  const handleStatusChange = (newStatus: string[]) => {
+    setStatusFilter(newStatus);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (newStatus.length > 0) {
+        params.set("status", newStatus.join(","));
+      } else {
+        params.delete("status");
+      }
+      router.replace(`?${params.toString()}`);
+    }
+  };
+
+  const handleBookedByChange = (newBookedBy: string) => {
+    setBookedByFilter(newBookedBy);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      if (newBookedBy) {
+        params.set("bookedBy", newBookedBy);
+      } else {
+        params.delete("bookedBy");
+      }
+      router.replace(`?${params.toString()}`);
+    }
+  };
+
   return (
     <PermissionGuard module="cab-booking">
       <Box sx={containerSx}>
@@ -90,14 +142,18 @@ const CabBooking: React.FC<CabBookingProps> = ({
           search={search}
           onSearchChange={handleSearchChange}
           statusFilter={statusFilter}
-          onStatusChange={setStatusFilter}
+          onStatusChange={handleStatusChange}
+          bookedByFilter={bookedByFilter}
+          onBookedByChange={handleBookedByChange}
+          isSystemAdmin={!!isSystemAdmin}
         />
 
         <Box sx={contentGridSx}>
           <Box sx={listPaperSx}>
             {activeView === "tracking" && (
               <BookingsList 
-                statusFilter={statusFilter} 
+                statusFilter={statusFilter.join(",")} 
+                bookedByFilter={bookedByFilter}
                 refreshKey={refreshKey} 
                 search={search}
               />
@@ -122,11 +178,13 @@ const CabBooking: React.FC<CabBookingProps> = ({
             },
           }}
         >
+          {/* 
           <DialogContent
             sx={{ p: { xs: 2.5, sm: 2 }, overflowY: "auto", flex: 1 }}
           >
             <VendorBookingForm bookingId={vendorBookingId} />
-          </DialogContent>
+          </DialogContent> 
+          */}
         </Dialog>
 
         <BookingDetailsDialog

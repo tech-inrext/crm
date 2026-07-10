@@ -17,6 +17,17 @@ export type Booking = {
   project: string | Project;
   projectDetails?: Project;
   clientName: string;
+  leadId?: {
+    _id: string;
+    fullName?: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    mobile?: string;
+    mobileNo?: string;
+    phone?: string;
+    phoneNumber?: string;
+  };
   numberOfClients: number;
   pickupPoint: string;
   cabBookedBy: string;
@@ -47,12 +58,16 @@ export type Booking = {
   estimatedArrival?: string;
   ownerName?: string;
   driverName?: string;
+  driverPhone?: string;
+  cabRegistrationNumber?: string;
   teamHead?: string;
-  totalKm?: number;
+  startKm?: number;
+  endKm?: number;
+  odometerStartImageUrl?: string;
+  odometerEndImageUrl?: string;
+  fare?: number;
   driver?: string;
   vehicle?: string;
-  managerId?: string;
-  canApprove?: boolean;
   // ✅ managerId can be id or populated object
   managerId?: string | EmployeeLite;
   // ✅ convenience added by API

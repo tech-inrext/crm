@@ -20,6 +20,8 @@ import {
   AssignmentInd,
   MonetizationOn,
 } from "@/components/ui/Component";
+import PhoneIcon from "@mui/icons-material/Phone";
+import DirectionsCarIcon from "@mui/icons-material/DirectionsCar";
 import MODULE_STYLES from "@/styles/moduleStyles";
 import Avatar from "@/components/ui/Component/Avatar";
 import { Booking } from "@/fe/pages/cab-booking/types/cab-booking";
@@ -103,6 +105,21 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
     (booking as any).managerName ||
     (typeof booking.managerId === "string" ? booking.managerId : "-");
 
+  let displayName = booking.clientName || "Client";
+  if (booking.leadId) {
+    const lead = booking.leadId;
+    const leadName = lead.fullName || lead.name || (lead.firstName ? `${lead.firstName} ${lead.lastName || ""}`.trim() : null);
+    const leadMobile = lead.mobile || lead.mobileNo || lead.phone || lead.phoneNumber;
+    
+    if (leadName && leadName.toLowerCase() !== "client") {
+      displayName = leadName;
+    } else if (leadMobile) {
+      displayName = leadMobile;
+    }
+  } else if (displayName.trim().toLowerCase() === "client") {
+    displayName = "Client (No Name Provided)";
+  }
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle
@@ -157,11 +174,11 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
               boxShadow: 2,
             }}
           >
-            {booking.clientName?.substring(0, 2).toUpperCase()}
+            {displayName.substring(0, 2).toUpperCase()}
           </Avatar>
           <Box>
             <Typography fontWeight={700} fontSize={20} color="text.primary">
-              {booking.clientName}
+              {displayName}
             </Typography>
             <Typography fontSize={14} color="text.secondary">
               Project: {getProjectName(booking.project)}
@@ -174,14 +191,16 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
               booking.status
             }
             color={
-              booking.status === "approved"
-                ? "success"
-                : booking.status === "pending"
+              booking.status === "pending"
+                ? "default"
+                : booking.status === "approved"
                 ? "info"
-                : booking.status === "completed"
-                ? "secondary"
+                : booking.status === "active"
+                ? "primary"
                 : booking.status === "payment_due"
                 ? "warning"
+                : booking.status === "completed"
+                ? "success"
                 : "error"
             }
             sx={{
@@ -192,98 +211,106 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
             }}
           />
         </Box>
-        <Divider sx={{ mb: 2 }} />
-        <Box
-          display="grid"
-          gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr" }}
-          gap={2}
-        >
-          <Box display="flex" alignItems="center" gap={1}>
-            <LocationOn color="primary" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>Pickup:</b> {booking.pickupPoint}
+        <Box display="flex" flexDirection="column" gap={2}>
+          {/* Trip Details Section */}
+          <Box sx={{ p: 2, bgcolor: "white", borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
+            <Typography variant="subtitle2" color="primary.main" mb={1.5} fontWeight={700}>
+              Trip & Route Details
             </Typography>
+            <Box display="grid" gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr" }} gap={1.5}>
+              <Box display="flex" alignItems="center" gap={1}>
+                <LocationOn color="action" fontSize="small" />
+                <Typography fontSize={14}><b>Pickup:</b> {booking.pickupPoint}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={1}>
+                <ArrowForward color="action" fontSize="small" />
+                <Typography fontSize={14}><b>Drop:</b> {booking.dropPoint}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Event color="action" fontSize="small" />
+                <Typography fontSize={14}><b>Travel Time:</b> {formatDateTime(booking.requestedDateTime)}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={1}>
+                <MonetizationOn color="action" fontSize="small" />
+                <Typography fontSize={14}>
+                  <b>Fare:</b>{" "}
+                  {typeof (booking as any).fare !== "undefined" && (booking as any).fare !== null
+                    ? `₹ ${(booking as any).fare}`
+                    : "-"}
+                </Typography>
+              </Box>
+            </Box>
           </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <ArrowForward color="success" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>Drop:</b> {booking.dropPoint}
+
+          {/* Assignment Info Section */}
+          <Box sx={{ p: 2, bgcolor: "white", borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
+            <Typography variant="subtitle2" color="secondary.main" mb={1.5} fontWeight={700}>
+              Assignment Information
             </Typography>
+            <Box display="grid" gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr" }} gap={1.5}>
+              <Box display="flex" alignItems="center" gap={1}>
+                <AssignmentInd color="action" fontSize="small" />
+                <Typography fontSize={14}><b>Manager:</b> {resolvedManagerName || "-"}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={1}>
+                <AssignmentInd color="action" fontSize="small" />
+                <Typography fontSize={14}>
+                  <b>Booked By:</b>{" "}
+                  {(() => {
+                    const cabBookedByObj = (booking as any).cabBookedBy;
+                    if (typeof cabBookedByObj === "object" && cabBookedByObj !== null) {
+                      return cabBookedByObj.name || cabBookedByObj.username || cabBookedByObj.email || bookedByName || String(cabBookedByObj._id || cabBookedByObj);
+                    }
+                    return bookedByName || cabBookedByObj || "-";
+                  })()}
+                </Typography>
+              </Box>
+            </Box>
           </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <AssignmentInd color="secondary" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>Manager:</b> {resolvedManagerName || "-"}
+
+          {/* Cab & Driver Info Section */}
+          <Box sx={{ p: 2, bgcolor: "white", borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
+            <Typography variant="subtitle2" color="success.main" mb={1.5} fontWeight={700}>
+              Cab & Driver Details
             </Typography>
+            <Box display="grid" gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr" }} gap={1.5}>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Person color="action" fontSize="small" />
+                <Typography fontSize={14}><b>Cab Owner:</b> {(booking as any).cabOwner || (booking as any).ownerName || "-"}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={1}>
+                <DirectionsCarIcon color="action" fontSize="small" />
+                <Typography fontSize={14}><b>Cab Reg. No.:</b> {(booking as any).cabRegistrationNumber || "-"}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Person color="action" fontSize="small" />
+                <Typography fontSize={14}><b>Driver Name:</b> {(booking as any).driverName || (booking as any).driverDetails?.username || "-"}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={1}>
+                <PhoneIcon color="action" fontSize="small" />
+                <Typography fontSize={14}><b>Mobile No.:</b> {(booking as any).driverPhone || "-"}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Info color="action" fontSize="small" />
+                <Typography fontSize={14}><b>Aadhar No.:</b> {(booking as any).aadharNumber || "-"}</Typography>
+              </Box>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Info color="action" fontSize="small" />
+                <Typography fontSize={14}><b>DL Number:</b> {(booking as any).dlNumber || "-"}</Typography>
+              </Box>
+            </Box>
           </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Event color="secondary" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>Travel Time:</b> {formatDateTime(booking.requestedDateTime)}
-            </Typography>
-          </Box>
-          {/* Vendor / Driver extra details */}
-          <Box display="flex" alignItems="center" gap={1}>
-            <Person color="action" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>Cab Owner:</b>{" "}
-              {(booking as any).cabOwner || (booking as any).ownerName || "-"}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <AssignmentInd color="action" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>Booked By:</b>{" "}
-              {(() => {
-                const cabBookedByObj = (booking as any).cabBookedBy;
-                if (typeof cabBookedByObj === "object" && cabBookedByObj !== null) {
-                  return cabBookedByObj.name || cabBookedByObj.username || cabBookedByObj.email || bookedByName || String(cabBookedByObj._id || cabBookedByObj);
-                }
-                return bookedByName || cabBookedByObj || "-";
-              })()}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <AssignmentInd color="action" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>Driver Name:</b>{" "}
-              {(booking as any).driverName ||
-                (booking as any).driverDetails?.username ||
-                "-"}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Info color="action" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>Aadhar (Driver):</b> {(booking as any).aadharNumber || "-"}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Info color="action" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>DL Number (Driver):</b> {(booking as any).dlNumber || "-"}
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <MonetizationOn color="action" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>Fare:</b>{" "}
-              {typeof (booking as any).fare !== "undefined" &&
-              (booking as any).fare !== null
-                ? `₹ ${booking.fare}`
-                : "-"}
-            </Typography>
-          </Box>
-          {/* Vehicle, Driver, Current Location and Est. Arrival intentionally removed */}
+
+          {booking.notes && (
+            <Box sx={{ p: 2, bgcolor: "warning.50", borderRadius: 2, border: "1px solid", borderColor: "warning.100" }}>
+              <Box display="flex" alignItems="center" gap={1} mb={0.5}>
+                <Notes color="warning" fontSize="small" />
+                <Typography variant="subtitle2" color="warning.dark" fontWeight={700}>Notes</Typography>
+              </Box>
+              <Typography fontSize={14} color="text.secondary" ml={3.5}>{booking.notes}</Typography>
+            </Box>
+          )}
         </Box>
-        {booking.notes && (
-          <Box display="flex" alignItems="center" gap={1} mt={2}>
-            <Notes color="warning" fontSize="small" />
-            <Typography fontSize={15}>
-              <b>Notes:</b> {booking.notes}
-            </Typography>
-          </Box>
-        )}
         <Divider sx={{ my: 2 }} />
         <Box display="flex" flexWrap="wrap" gap={2}>
           {booking.createdAt && (

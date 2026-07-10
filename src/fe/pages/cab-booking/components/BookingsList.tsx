@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { Booking } from "@/fe/pages/cab-booking/types/cab-booking";
-import BookingCard from "./BookingCard";
+import CabBookingCard from "./card/CabBookingCard";
 import BookingDetailsDialog from "./BookingDetailsDialog";
 import Pagination from "@/components/ui/Navigation/Pagination";
 import { useDebounce } from "@/hooks/useDebounce";
 
 interface BookingsListProps {
   statusFilter?: string;
+  bookedByFilter?: string;
   refreshKey?: number;
   search?: string;
 }
@@ -24,6 +25,7 @@ type ApiResponse = {
 
 const BookingsList: React.FC<BookingsListProps> = ({
   statusFilter = "",
+  bookedByFilter = "",
   refreshKey,
   search = "",
 }) => {
@@ -40,11 +42,14 @@ const BookingsList: React.FC<BookingsListProps> = ({
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  
+  // Local refresh state for actions performed inside cards
+  const [internalRefresh, setInternalRefresh] = useState(0);
 
   // reset to page 1 whenever filter or search changes
   useEffect(() => {
     setPage(1);
-  }, [statusFilter, debouncedSearch]);
+  }, [statusFilter, bookedByFilter, debouncedSearch]);
 
   // build query
   const url = useMemo(() => {
@@ -56,9 +61,11 @@ const BookingsList: React.FC<BookingsListProps> = ({
 
     const s = (statusFilter || "").toLowerCase().trim();
     if (s && s !== "all") params.set("status", s);
+    
+    if (bookedByFilter) params.set("bookedBy", bookedByFilter);
 
     return `/api/v0/cab-booking?${params.toString()}`;
-  }, [page, pageSize, statusFilter, debouncedSearch]);
+  }, [page, pageSize, statusFilter, bookedByFilter, debouncedSearch]);
 
   // fetch page
   useEffect(() => {
@@ -91,7 +98,7 @@ const BookingsList: React.FC<BookingsListProps> = ({
     return () => {
       active = false;
     };
-  }, [url, refreshKey, page]);
+  }, [url, refreshKey, internalRefresh, page]);
 
   const handleViewDetails = (booking: Booking) => setViewingBooking(booking);
   const handleCloseDialog = () => setViewingBooking(null);
@@ -110,10 +117,11 @@ const BookingsList: React.FC<BookingsListProps> = ({
       <div className="flex-1 overflow-y-auto pr-2 pb-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {rows.map((booking) => (
-            <BookingCard
+            <CabBookingCard
               key={booking._id}
               booking={booking}
               onViewDetails={handleViewDetails}
+              onRefresh={() => setInternalRefresh(prev => prev + 1)}
             />
           ))}
         </div>

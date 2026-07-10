@@ -157,6 +157,7 @@ class CabBookingService extends Service {
         page = 1,
         limit = 10,
         status,
+        bookedBy,
         sortBy = "createdAt",
         sortOrder = "desc",
       } = req.query;
@@ -211,7 +212,12 @@ class CabBookingService extends Service {
         }
       }
 
-      const mainFilter = { ...visibilityFilter, ...statusFilter };
+      let bookedByFilter = {};
+      if (isSystemAdmin && bookedBy && String(bookedBy).trim() !== "") {
+        bookedByFilter = { cabBookedBy: String(bookedBy).trim() };
+      }
+
+      const mainFilter = { ...visibilityFilter, ...statusFilter, ...bookedByFilter };
 
       const [rows, total] = await Promise.all([
         CabBooking.find(mainFilter)
@@ -237,6 +243,11 @@ class CabBookingService extends Service {
             path: "vehicle",
             model: "Vehicle",
             select: "model registrationNumber type capacity",
+          })
+          .populate({
+            path: "leadId",
+            model: "Lead",
+            select: "fullName name firstName lastName mobile mobileNo phone phoneNumber",
           }),
         CabBooking.countDocuments(mainFilter),
       ]);
@@ -269,6 +280,11 @@ class CabBookingService extends Service {
             path: "vehicle",
             model: "Vehicle",
             select: "model registrationNumber type capacity",
+          })
+          .populate({
+            path: "leadId",
+            model: "Lead",
+            select: "fullName name firstName lastName mobile mobileNo phone phoneNumber",
           });
       }
 
@@ -353,6 +369,18 @@ class CabBookingService extends Service {
         update.aadharNumber = req.body.aadharNumber;
       if (typeof req.body.dlNumber === "string")
         update.dlNumber = req.body.dlNumber;
+      if (typeof req.body.driverPhone === "string")
+        update.driverPhone = req.body.driverPhone;
+      if (typeof req.body.cabRegistrationNumber === "string")
+        update.cabRegistrationNumber = req.body.cabRegistrationNumber;
+      if (req.body.startKm !== undefined && req.body.startKm !== null) {
+        const coerced = Number(req.body.startKm);
+        if (!Number.isNaN(coerced)) update.startKm = coerced;
+      }
+      if (req.body.endKm !== undefined && req.body.endKm !== null) {
+        const coerced = Number(req.body.endKm);
+        if (!Number.isNaN(coerced)) update.endKm = coerced;
+      }
       if (req.body.odometerStartImageUrl) {
         update.odometerStartImageUrl = String(req.body.odometerStartImageUrl);
       }
@@ -367,7 +395,7 @@ class CabBookingService extends Service {
       if (req.body.vehicle) update.vehicle = req.body.vehicle;
       if (req.body.managerId) update.managerId = req.body.managerId;
 
-      if (update.status === "completed" && booking.status === "payment_due") {
+      if (update.status === "completed") {
         const rawFlag =
           req.isSystemAdmin ||
           (res.locals && res.locals.isSystemAdmin) ||
@@ -419,41 +447,41 @@ class CabBookingService extends Service {
         }
       }
 
-      const newVendorId = updated.vendor ? updated.vendor.toString() : null;
-      const vendorChanged = prevVendorId !== newVendorId && !!newVendorId;
+      // const newVendorId = updated.vendor ? updated.vendor.toString() : null;
+      // const vendorChanged = prevVendorId !== newVendorId && !!newVendorId;
 
-      if (vendorChanged) {
-        try {
-          const [vendor, employee, manager] = await Promise.all([
-            Employee.findById(newVendorId).lean(),
-            updated.cabBookedBy
-              ? Employee.findById(updated.cabBookedBy).lean()
-              : null,
-            updated.managerId
-              ? Employee.findById(updated.managerId).lean()
-              : null,
-          ]);
-
-          if (vendor?.email) {
-            await sendCabVendorAssignmentEmail({
-              vendor,
-              booking: updated,
-              employee,
-              manager,
-            });
-          } else {
-            console.warn(
-              "[cab-booking PATCH] Assigned vendor has no email:",
-              newVendorId
-            );
-          }
-        } catch (mailErr) {
-          console.error(
-            "[cab-booking PATCH] Vendor assignment email failed:",
-            mailErr
-          );
-        }
-      }
+      // if (vendorChanged) {
+      //   try {
+      //     const [vendor, employee, manager] = await Promise.all([
+      //       Employee.findById(newVendorId).lean(),
+      //       updated.cabBookedBy
+      //         ? Employee.findById(updated.cabBookedBy).lean()
+      //         : null,
+      //       updated.managerId
+      //         ? Employee.findById(updated.managerId).lean()
+      //         : null,
+      //     ]);
+      //
+      //     if (vendor?.email) {
+      //       await sendCabVendorAssignmentEmail({
+      //         vendor,
+      //         booking: updated,
+      //         employee,
+      //         manager,
+      //       });
+      //     } else {
+      //       console.warn(
+      //         "[cab-booking PATCH] Assigned vendor has no email:",
+      //         newVendorId
+      //       );
+      //     }
+      //   } catch (mailErr) {
+      //     console.error(
+      //       "[cab-booking PATCH] Vendor assignment email failed:",
+      //       mailErr
+      //     );
+      //   }
+      // }
 
       if (statusChanged) {
         try {
@@ -470,22 +498,22 @@ class CabBookingService extends Service {
         }
       }
 
-      if (vendorChanged) {
-        try {
-          await NotificationHelper.notifyCabBookingVendorAssignment(
-            updated._id,
-            updated.toObject(),
-            newVendorId,
-            req.employee?._id
-          );
-          console.log("✅ Cab booking vendor assignment notification sent");
-        } catch (error) {
-          console.error(
-            "❌ Cab booking vendor assignment notification failed:",
-            error
-          );
-        }
-      }
+      // if (vendorChanged) {
+      //   try {
+      //     await NotificationHelper.notifyCabBookingVendorAssignment(
+      //       updated._id,
+      //       updated.toObject(),
+      //       newVendorId,
+      //       req.employee?._id
+      //     );
+      //     console.log("✅ Cab booking vendor assignment notification sent");
+      //   } catch (error) {
+      //     console.error(
+      //       "❌ Cab booking vendor assignment notification failed:",
+      //       error
+      //     );
+      //   }
+      // }
 
       return res.status(200).json({ success: true, data: updated });
     } catch (error) {
@@ -501,6 +529,7 @@ class CabBookingService extends Service {
         .populate("cabBookedBy", "name email phone")
         .populate("managerId", "name email")
         .populate("vendor", "name email phone")
+        .populate("leadId", "fullName name firstName lastName mobile mobileNo phone phoneNumber")
         .lean();
 
       if (!booking) {
