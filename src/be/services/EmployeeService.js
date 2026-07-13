@@ -614,9 +614,10 @@ class EmployeeService extends Service {
 
       // 1.5) Send welcome WhatsApp to employee
       try {
-        if (newEmployee.phone) {
+        if (newEmployee.phone || newEmployee.altPhone) {
+          const targetPhone = newEmployee.altPhone || newEmployee.phone;
           await sendEmployeeWelcomeWhatsappMessage(
-            newEmployee.phone,
+            targetPhone,
             newEmployee.name,
             `${process.env.APP_URL || "https://dashboard.inrext.com"}/login`
           );
@@ -652,9 +653,10 @@ class EmployeeService extends Service {
               }
 
               // Send MOU approval request WhatsApp to AVP
-              if (avpDoc.phone) {
+              if (avpDoc.phone || avpDoc.altPhone) {
+                const targetPhone = avpDoc.altPhone || avpDoc.phone;
                 await sendMOUApprovalRequestWhatsappMessage(
-                  avpDoc.phone,
+                  targetPhone,
                   avpDoc.name,
                   newEmployee.name,
                   newEmployee.employeeProfileId || newEmployee._id,
@@ -663,9 +665,10 @@ class EmployeeService extends Service {
               }
             } else if (managerDoc) {
               // Fallback: Notify immediate manager if no AVP found in higher hierarchy
-              if (managerDoc.phone) {
+              if (managerDoc.phone || managerDoc.altPhone) {
+                const targetPhone = managerDoc.altPhone || managerDoc.phone;
                 await sendMOUApprovalRequestWhatsappMessage(
-                  managerDoc.phone,
+                  targetPhone,
                   managerDoc.name,
                   newEmployee.name,
                   newEmployee.employeeProfileId || newEmployee._id,

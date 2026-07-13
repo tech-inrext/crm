@@ -98,9 +98,10 @@ class MOUOperationsService extends Service {
 
       // send WhatsApp notification
       try {
-        if (mou.phone) {
+        if (mou.phone || mou.altPhone) {
+          const targetPhone = mou.altPhone || mou.phone;
           await sendMOUApprovedWhatsappMessage(
-            mou.phone,
+            targetPhone,
             mou.name,
             mou.employeeProfileId,
             s3Url
@@ -243,9 +244,10 @@ class MOUOperationsService extends Service {
         );
         
         // send WhatsApp notification
-        if (mou.phone) {
+        if (mou.phone || mou.altPhone) {
+          const targetPhone = mou.altPhone || mou.phone;
           await sendMOUApprovedWhatsappMessage(
-            mou.phone,
+            targetPhone,
             mou.name,
             mou.employeeProfileId,
             s3Url
