@@ -58,7 +58,7 @@ async function processWhatsappNotification(job) {
 
     // Get notification with populated data
     const notification = await Notification.findById(notificationId)
-      .populate("recipient", "name phone notificationPreferences")
+      .populate("recipient", "name phone altPhone notificationPreferences")
       .populate("sender", "name email");
 
     if (!notification) {
@@ -81,10 +81,12 @@ async function processWhatsappNotification(job) {
       return;
     }
 
-    if (!recipient.phone) {
+    if (!recipient.phone && !recipient.altPhone) {
       console.log("Recipient has no phone number for whatsapp notification:", recipient.name);
       return;
     }
+
+    const targetPhone = recipient.altPhone || recipient.phone;
 
     // Send whatsapp using appropriate template
     if (notification.type === "LEAD_FOLLOWUP_DUE") {
@@ -111,7 +113,7 @@ async function processWhatsappNotification(job) {
 
       if (type === "site visit") {
         await sendSiteVisitReminderWhatsappMessage(
-          recipient.phone,
+          targetPhone,
           recipient.name,
           lead.fullName || "Valued Client",
           lead.propertyName || "N/A",
@@ -121,7 +123,7 @@ async function processWhatsappNotification(job) {
       } else {
         // Default to call reminder for other types or "call back"
         await sendCallReminderWhatsappMessage(
-          recipient.phone,
+          targetPhone,
           recipient.name,
           lead.fullName || "Valued Client",
           timeRemaining,

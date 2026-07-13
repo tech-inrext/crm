@@ -24,15 +24,17 @@ const weeklyPerformanceSummary = async (job) => {
       try {
         const stats = await calculateEmployeeStats(employee, lastWeek);
         
-        // Send WhatsApp if phone exists
-        if (employee.phone) {
+        // Send WhatsApp if phone or altPhone exists
+        if (employee.altPhone || employee.phone) {
           await sendWeeklySummaryWhatsApp(employee, stats, dateRange);
         }
 
-        // Send Email
+        // Send Email (Temporarily disabled as requested)
+        /*
         if (employee.email) {
           await sendWeeklySummaryEmail(employee, stats, dateRange);
         }
+        */
 
         console.log(`✅ [Job] Summary sent to ${employee.name} (${employee.employeeProfileId})`);
       } catch (err) {
@@ -128,10 +130,11 @@ export async function sendWeeklySummaryWhatsApp(employee, stats, dateRange) {
 
     const { overallTotal, overallClosed } = stats.leadStats;
     const conversionRate = overallTotal > 0 ? ((overallClosed / overallTotal) * 100).toFixed(1) : "0.0";
+    const targetPhone = employee.altPhone || employee.phone;
     
     await twilio.sendMessage({
       from: twilio.whatsappNumber,
-      to: `whatsapp:+91${employee.phone}`,
+      to: `whatsapp:+91${targetPhone}`,
       contentSid: twilio.templates.weekly_performance_summary,
       contentVariables: JSON.stringify({
         1: dateRange,
