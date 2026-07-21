@@ -60,12 +60,40 @@ const CabBookingActionBar: React.FC<CabBookingActionBarProps> = ({
             value={statusFilter}
             label="Status"
             onChange={(e: SelectChangeEvent<string[]>) => {
-              const value = e.target.value;
-              onStatusChange(typeof value === "string" ? value.split(",") : value);
+              const value = e.target.value as string[];
+              const specificStatuses = statusOptions.filter(o => o.value !== '').map(o => o.value);
+              const allValues = ['', ...specificStatuses];
+
+              let newValue = value;
+              const wasAllSelected = statusFilter.includes('');
+              const isAllSelected = value.includes('');
+
+              if (isAllSelected && !wasAllSelected) {
+                // User explicitly clicked "All" to check it
+                newValue = allValues;
+              } else if (!isAllSelected && wasAllSelected) {
+                // User explicitly clicked "All" to uncheck it
+                newValue = [];
+              } else {
+                // User clicked a specific status
+                const selectedSpecifics = value.filter(v => v !== '');
+                if (selectedSpecifics.length === specificStatuses.length) {
+                  newValue = allValues;
+                } else {
+                  newValue = selectedSpecifics;
+                }
+              }
+
+              onStatusChange(newValue);
             }}
-            renderValue={(selected) => 
-              selected.map(val => statusOptions.find(opt => opt.value === val)?.label || val).join(", ")
-            }
+            renderValue={(selected) => {
+              if (selected.includes('')) return "All";
+              if (selected.length === 0) return "";
+              if (selected.length === 1) {
+                return statusOptions.find(opt => opt.value === selected[0])?.label || selected[0];
+              }
+              return `${selected.length} Selected`;
+            }}
           >
             {statusOptions.map((opt) => (
               <MenuItem key={opt.value} value={opt.value}>

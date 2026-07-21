@@ -242,6 +242,32 @@ const BookingDetailsDialog: React.FC<BookingDetailsDialogProps> = ({
             </Box>
           </Box>
 
+          {((booking as any).startKm !== undefined || (booking as any).endKm !== undefined) && (
+            <Box sx={{ p: 2, bgcolor: "white", borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
+              <Typography variant="subtitle2" color="info.main" mb={1.5} fontWeight={700}>
+                Odometer Readings
+              </Typography>
+              <Box display="grid" gridTemplateColumns={{ xs: "1fr", sm: "1fr 1fr" }} gap={1.5}>
+                <Box display="flex" flexDirection="column" gap={0.5}>
+                  <Typography fontSize={14}><b>Start Km:</b> {(booking as any).startKm ?? "-"}</Typography>
+                  {(booking as any).odometerStartImageUrl && (
+                    <Box mt={1}>
+                      <img src={(booking as any).odometerStartImageUrl} alt="Start Odometer" style={{ maxWidth: "100%", maxHeight: "150px", borderRadius: "8px", border: "1px solid #ddd" }} />
+                    </Box>
+                  )}
+                </Box>
+                <Box display="flex" flexDirection="column" gap={0.5}>
+                  <Typography fontSize={14}><b>End Km:</b> {(booking as any).endKm ?? "-"}</Typography>
+                  {(booking as any).odometerEndImageUrl && (
+                    <Box mt={1}>
+                      <img src={(booking as any).odometerEndImageUrl} alt="End Odometer" style={{ maxWidth: "100%", maxHeight: "150px", borderRadius: "8px", border: "1px solid #ddd" }} />
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </Box>
+          )}
+
           {/* Assignment Info Section */}
           <Box sx={{ p: 2, bgcolor: "white", borderRadius: 2, border: "1px solid", borderColor: "grey.200" }}>
             <Typography variant="subtitle2" color="secondary.main" mb={1.5} fontWeight={700}>
