@@ -26,6 +26,7 @@ export function useRoleDialog({ open, role, onSubmit }: UseRoleDialogOptions) {
   const [showCabBookingAnalytics, setShowCabBookingAnalytics] = useState(false);
   const [showScheduleThisWeek, setShowScheduleThisWeek] = useState(false);
   const [isAVP, setIsAVP] = useState(false);
+  const [isHR, setIsHR] = useState(false);
   const [rank, setRank] = useState<number | string>(0);
   const [isClient, setIsClient] = useState(false);
   const [windowWidth, setWindowWidth] = useState(1200);
@@ -54,6 +55,7 @@ export function useRoleDialog({ open, role, onSubmit }: UseRoleDialogOptions) {
       setShowCabBookingAnalytics(coerceBool(role.showCabBookingAnalytics));
       setShowScheduleThisWeek(coerceBool(role.showScheduleThisWeek));
       setIsAVP(coerceBool(role.isAVP));
+      setIsHR(coerceBool(role.isHR));
       setRank(role.rank ?? 0);
       setModulePerms(parseRoleToModulePerms(role, modules));
     } else {
@@ -64,6 +66,7 @@ export function useRoleDialog({ open, role, onSubmit }: UseRoleDialogOptions) {
       setShowCabBookingAnalytics(false);
       setShowScheduleThisWeek(false);
       setIsAVP(false);
+      setIsHR(false);
       setRank(0);
       setModulePerms(
         Object.fromEntries(
@@ -94,6 +97,7 @@ export function useRoleDialog({ open, role, onSubmit }: UseRoleDialogOptions) {
       showCabBookingAnalytics,
       showScheduleThisWeek,
       isAVP,
+      isHR,
       rank: Number(rank) || 0,
     });
   };
@@ -114,6 +118,8 @@ export function useRoleDialog({ open, role, onSubmit }: UseRoleDialogOptions) {
     setShowScheduleThisWeek,
     isAVP,
     setIsAVP,
+    isHR,
+    setIsHR,
     rank,
     setRank,
     isClient,

@@ -72,6 +72,12 @@ icon: <Campaign />  },
     icon: <Groups />,
   },
   {
+    label: "Leave Management",
+    href: "/dashboard/leave",
+    module: "leave",
+    icon: <NoteAltIcon />,
+  },
+  {
     label: "Roles",
     href: "/dashboard/roles",
     module: "role",

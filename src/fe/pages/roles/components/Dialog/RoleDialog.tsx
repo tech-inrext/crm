@@ -67,6 +67,8 @@ const RoleDialog: React.FC<RoleDialogProps> = ({
     setShowScheduleThisWeek,
     isAVP,
     setIsAVP,
+    isHR,
+    setIsHR,
     rank,
     setRank,
     isClient,
@@ -201,6 +203,11 @@ const RoleDialog: React.FC<RoleDialogProps> = ({
               checked: isAVP,
               onChange: setIsAVP,
               label: "isAVP",
+            },
+            {
+              checked: isHR,
+              onChange: setIsHR,
+              label: "HR (Access all employee leave records)",
             },
           ].map(({ checked, onChange, label }) => (
             <Box key={label} sx={specialAccessRowSx}>

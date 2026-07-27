@@ -15,6 +15,7 @@ const modules = [
   "training-videos",
   "pillar",
   "analytics",
+  "leave",
 ];
 
 const roleSchema = new mongoose.Schema(
@@ -46,6 +47,10 @@ const roleSchema = new mongoose.Schema(
       default: false,
     },
     isAVP: {
+      type: Boolean,
+      default: false,
+    },
+    isHR: {
       type: Boolean,
       default: false,
     },

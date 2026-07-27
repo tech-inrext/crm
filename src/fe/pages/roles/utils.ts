@@ -18,6 +18,7 @@ const FRONTEND_TO_BACKEND_MODULE: Record<string, string> = {
   MOU: "mou",
   Branch: "branch",
   Analytics: "analytics",
+  Leave: "leave",
 };
 
 const BACKEND_MODULES = [
@@ -35,6 +36,7 @@ const BACKEND_MODULES = [
   "training-videos",
   "pillar",
   "analytics",
+  "leave",
 ];
 
 export const transformModuleNameToBackend = (name: string): string =>
@@ -78,6 +80,7 @@ export const buildCreateRolePayload = (data: RoleFormData) => {
     showCabBookingAnalytics: !!data.showCabBookingAnalytics,
     showScheduleThisWeek: !!data.showScheduleThisWeek,
     isAVP: !!data.isAVP,
+    isHR: !!data.isHR,
     rank: Number(data.rank) || 0,
   };
 };
@@ -96,6 +99,7 @@ export const buildUpdateRolePayload = (data: RoleFormData) => {
     showCabBookingAnalytics: !!data.showCabBookingAnalytics,
     showScheduleThisWeek: !!data.showScheduleThisWeek,
     isAVP: !!data.isAVP,
+    isHR: !!data.isHR,
     rank: Number(data.rank) || 0,
   };
 };

@@ -25,7 +25,7 @@ class RoleService extends Service {
       const [roles, totalRoles] = await Promise.all([
         Role.find(query)
           .select(
-            "name read write delete isSystemAdmin showTotalUsers showTotalVendorsBilling showCabBookingAnalytics showScheduleThisWeek isAVP rank createdAt updatedAt",
+            "name read write delete isSystemAdmin showTotalUsers showTotalVendorsBilling showCabBookingAnalytics showScheduleThisWeek isAVP isHR rank createdAt updatedAt",
           )
           .skip(skip)
           .limit(itemsPerPage)
@@ -65,6 +65,7 @@ class RoleService extends Service {
         showCabBookingAnalytics,
         showScheduleThisWeek,
         isAVP,
+        isHR,
         rank,
       } = req.body;
 
@@ -86,6 +87,7 @@ class RoleService extends Service {
         showCabBookingAnalytics: !!showCabBookingAnalytics,
         showScheduleThisWeek: !!showScheduleThisWeek,
         isAVP: !!isAVP,
+        isHR: !!isHR,
         rank: Number(rank) || 0,
       });
 
@@ -151,6 +153,7 @@ class RoleService extends Service {
       showCabBookingAnalytics,
       showScheduleThisWeek,
       isAVP,
+      isHR,
       rank,
     } = req.body;
 
@@ -233,6 +236,14 @@ class RoleService extends Service {
             ? isAVP.toLowerCase() === "true"
             : Boolean(isAVP);
         setObj.isAVP = flag;
+      }
+
+      if (typeof isHR !== "undefined") {
+        const flag =
+          typeof isHR === "string"
+            ? isHR.toLowerCase() === "true"
+            : Boolean(isHR);
+        setObj.isHR = flag;
       }
 
       if (typeof rank !== "undefined") {
