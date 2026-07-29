@@ -245,15 +245,17 @@ class LeadService extends Service {
         baseQuery = {};
       } else if (req.isAVP) {
         baseQuery = {
-          $or: [{ managerId: { $in: loggedInUserId } }],
+          $or: [
+            { managerId: { $in: loggedInUserId } },
+            { uploadedBy: { $in: [loggedInUserId] } },
+          ],
         };
       } else {
-        // Managers and Agents see leads from their entire downline hierarchy
+        // Managers and Agents see leads uploaded by themselves or assigned across their downline hierarchy
         const downlineIds = await this.getDownlineIds(loggedInUserId);
         baseQuery = {
           $or: [
-            // { uploadedBy: { $in: downlineIds } },
-            // { managerId: { $in: loggedInUserId } },
+            { uploadedBy: loggedInUserId },
             { assignedTo: { $in: downlineIds } },
           ],
         };

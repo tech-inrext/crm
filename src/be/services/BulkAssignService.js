@@ -17,13 +17,14 @@ class BulkAssignService extends Service {
     try {
       const { status, collectFrom } = req.query;
       const updatedBy = req.employee?._id;
+      const updatedById = updatedBy ? new mongoose.Types.ObjectId(updatedBy) : null;
       const isAVP = req.isAVP;
 
       if (!status) return res.status(400).json({ success: false, message: "Status is required" });
 
       const statuses = status.split(",");
       const query = {
-        status: { $in: statuses },
+        status: { $in: statuses.map((s) => new RegExp(`^${String(s).trim()}$`, "i")) },
       };
 
       if (collectFrom === "unassigned") {
@@ -33,19 +34,19 @@ class BulkAssignService extends Service {
           // System Admin can get all unassigned
         } else if (isAVP) {
           // AVP can only get unassigned leads managed by them
-          query.managerId = updatedBy;
+          query.managerId = updatedById;
         } else {
-          // Other users not allowed
-          query._id = new mongoose.Types.ObjectId(); // Force 0 result
+          // Agents and Managers can get unassigned leads uploaded by themselves
+          query.uploadedBy = updatedById;
         }
       } else if (collectFrom === "me") {
-        query.assignedTo = updatedBy;
+        query.assignedTo = updatedById;
       } else if (collectFrom && mongoose.Types.ObjectId.isValid(collectFrom)) {
         query.assignedTo = new mongoose.Types.ObjectId(collectFrom);
       } else {
         // Fallback for backward compatibility
         query.$or = [{ assignedTo: null }, { assignedTo: { $exists: false } }];
-        query.uploadedBy = updatedBy;
+        query.uploadedBy = updatedById;
       }
 
       const count = await Lead.countDocuments(query);
@@ -60,6 +61,7 @@ class BulkAssignService extends Service {
     try {
       const { limit, assignTo, status, collectFrom } = req.body;
       const updatedBy = req.employee?._id;
+      const updatedById = updatedBy ? new mongoose.Types.ObjectId(updatedBy) : null;
       const isAVP = req.isAVP;
 
       if (!limit || !assignTo || !status || !collectFrom) {
@@ -70,7 +72,7 @@ class BulkAssignService extends Service {
 
       const statuses = Array.isArray(status) ? status : [status];
       const query = {
-        status: { $in: statuses },
+        status: { $in: statuses.map((s) => new RegExp(`^${String(s).trim()}$`, "i")) },
       };
 
       if (collectFrom === "unassigned") {
@@ -80,19 +82,19 @@ class BulkAssignService extends Service {
           // System Admin can get all unassigned
         } else if (isAVP) {
           // AVP can only get unassigned leads managed by them
-          query.managerId = updatedBy;
+          query.managerId = updatedById;
         } else {
-          // Other users not allowed
-          query._id = new mongoose.Types.ObjectId(); // Force 0 result
+          // Agents and Managers can get unassigned leads uploaded by themselves
+          query.uploadedBy = updatedById;
         }
       } else if (collectFrom === "me") {
-        query.assignedTo = updatedBy;
+        query.assignedTo = updatedById;
       } else if (mongoose.Types.ObjectId.isValid(collectFrom)) {
         query.assignedTo = new mongoose.Types.ObjectId(collectFrom);
       } else {
         // Fallback
         query.$or = [{ assignedTo: null }, { assignedTo: { $exists: false } }];
-        query.uploadedBy = updatedBy;
+        query.uploadedBy = updatedById;
       }
 
       const availableCount = await Lead.countDocuments(query);
