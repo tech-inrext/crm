@@ -18,10 +18,13 @@ async function bulkAssignLeads(job) {
       throw new Error("Database connection is not active. State: " + mongoose.connection.readyState);
     }
 
-    // Step 1: Filter leads
+    // Step 1: Cast IDs and Filter leads
+    const assignToId = new mongoose.Types.ObjectId(assignTo);
+    const updatedById = new mongoose.Types.ObjectId(updatedBy);
+
     const statuses = Array.isArray(status) ? status : [status];
     const query = {
-      status: { $in: statuses },
+      status: { $in: statuses.map((s) => new RegExp(`^${String(s).trim()}$`, "i")) },
     };
 
     if (collectFrom === "unassigned") {
@@ -30,24 +33,20 @@ async function bulkAssignLeads(job) {
         // System Admin can get all unassigned
       } else if (isAVP) {
         // AVP can only get unassigned leads managed by them
-        query.managerId = updatedBy;
+        query.managerId = updatedById;
       } else {
-        // Other users not allowed
-        query._id = new mongoose.Types.ObjectId(); // Force 0 result
+        // Agents and Managers can get unassigned leads uploaded by themselves
+        query.uploadedBy = updatedById;
       }
     } else if (collectFrom === "me") {
-      query.assignedTo = updatedBy;
+      query.assignedTo = updatedById;
     } else if (mongoose.Types.ObjectId.isValid(collectFrom)) {
       query.assignedTo = new mongoose.Types.ObjectId(collectFrom);
     } else {
       // Fallback
-      query.uploadedBy = updatedBy;
+      query.uploadedBy = updatedById;
       query.$or = [{ assignedTo: null }, { assignedTo: { $exists: false } }];
     }
-
-    // 🛠️ FIX 3: Cast IDs
-    const assignToId = new mongoose.Types.ObjectId(assignTo);
-    const updatedById = new mongoose.Types.ObjectId(updatedBy);
 
     // Use the minimum of requested limit and known availability to keep things consistent
     const finalLimit = availableCount ? Math.min(parseInt(limit, 10), parseInt(availableCount, 10)) : parseInt(limit, 10);
