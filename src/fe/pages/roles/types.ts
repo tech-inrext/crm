@@ -14,6 +14,7 @@ export interface Role {
   showCabBookingAnalytics?: boolean;
   showScheduleThisWeek?: boolean;
   isAVP?: boolean;
+  isHR?: boolean;
   rank?: number;
   permissions?: string[]; // legacy format from API
 }
@@ -30,6 +31,7 @@ export interface RoleFormData {
   showCabBookingAnalytics?: boolean;
   showScheduleThisWeek?: boolean;
   isAVP?: boolean;
+  isHR?: boolean;
   rank?: number;
 }
 

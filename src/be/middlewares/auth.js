@@ -22,6 +22,7 @@ const MODULES = [
   "mou",
   "notice",
   "landing-popup",
+  "leave",
 ];
 
 // Configure which actions on which modules should be allowed for roles
@@ -117,7 +118,7 @@ export async function userAuth(req, res, next) {
 
     // ✍️ Determine action from method
     let action = "read";
-    if (["POST", "PATCH"].includes(req.method)) action = "write";
+    if (["POST", "PUT", "PATCH"].includes(req.method)) action = "write";
     if (req.method === "DELETE") action = "delete";
 
     // 🛡️ Check permission

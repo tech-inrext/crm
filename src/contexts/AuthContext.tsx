@@ -77,6 +77,7 @@ interface AuthContextType {
   hasAccountsRole: () => boolean;
   isSystemAdmin: boolean;
   isAVP: boolean;
+  isHR: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -495,6 +496,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   (typeof user?.currentRole === "object" && user?.currentRole?.isAVP) ||
   (user?.roles || []).find((r) => r._id === user?.currentRole)?.isAVP
 ),
+    isHR: Boolean(
+      (typeof user?.currentRole === "object" && (user?.currentRole as any)?.isHR) ||
+      (user?.roles || []).some((r: any) => (typeof user?.currentRole === "string" ? r._id === user?.currentRole && r.isHR : r.isHR))
+    ),
   };
 
   return (

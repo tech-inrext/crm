@@ -31,6 +31,11 @@ class BaseService {
         return res.data;
     }
 
+    protected async put<T = unknown>(path: string, payload?: unknown, config?: AxiosRequestConfig): Promise<T> {
+        const res = await this.api.put<T>(path, payload, config);
+        return res.data;
+    }
+
     protected async delete<T = unknown>(path: string, config?: AxiosRequestConfig): Promise<T> {
         const res = await this.api.delete<T>(path, config);
         return res.data;
