@@ -2,12 +2,6 @@ import React, { useEffect, useState } from "react";
 import {
   Box,
   Typography,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Paper,
   Chip,
   CircularProgress,
@@ -15,20 +9,24 @@ import {
   Autocomplete,
   TextField,
   MenuItem,
-  Grid,
+  Divider,
 } from "@mui/material";
 import {
   Badge as HrIcon,
   People as PeopleIcon,
   FilterList as FilterIcon,
   InboxOutlined as InboxIcon,
+  CalendarToday as CalendarTodayIcon,
+  PersonOutline as PersonIcon,
 } from "@mui/icons-material";
 import { leaveApi } from "../leaveApi";
 import { LeaveRequest } from "../types";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import LeaveStatsCards from "./LeaveStatsCards";
-import { tableContainerSx, tableHeaderSx, tableRowSx } from "../styles";
+import LeaveDetailsModal from "./LeaveDetailsModal";
+import { animatedButtonSx } from "../styles";
+import { formatDaysNumber } from "../utils/formatters";
 
 interface EmployeeOption {
   _id: string;
@@ -44,6 +42,7 @@ const HrLeavesOverview: React.FC = () => {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [empLoading, setEmpLoading] = useState(false);
+  const [selectedDetailsLeave, setSelectedDetailsLeave] = useState<LeaveRequest | null>(null);
 
   // Fetch all employees for dropdown selector
   useEffect(() => {
@@ -53,8 +52,7 @@ const HrLeavesOverview: React.FC = () => {
         const res = await fetch("/api/v0/employee/getAllEmployeeList");
         const json = await res.json();
         if (json?.data || json?.employees) {
-          const list = json.data || json.employees;
-          setEmployees(list);
+          setEmployees(json.data || json.employees);
         } else if (Array.isArray(json)) {
           setEmployees(json);
         }
@@ -64,7 +62,6 @@ const HrLeavesOverview: React.FC = () => {
         setEmpLoading(false);
       }
     };
-
     fetchEmployeeList();
   }, []);
 
@@ -102,85 +99,99 @@ const HrLeavesOverview: React.FC = () => {
 
   return (
     <Box>
-      {/* Header & Controls Bar */}
-      <Box sx={{ mb: 3.5, display: "flex", flexDirection: { xs: "column", lg: "row" }, justifyContent: "space-between", alignItems: { xs: "stretch", lg: "center" }, gap: 2.5 }}>
+      {/* Header Bar */}
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
         <Box display="flex" alignItems="center" gap={1.5}>
-          <HrIcon sx={{ color: "#1976d2", fontSize: 36 }} />
-          <Box>
-            <Typography variant="h5" fontWeight="700" color="#1e293b">
-              All Employees Leave Dashboard
-            </Typography>
-            <Typography variant="body2" color="#64748b">
-              HR Portal for leave quotas, history, and status checks
-            </Typography>
-          </Box>
+          <HrIcon sx={{ color: "#1976d2", fontSize: 28 }} />
+          <Typography variant="h5" fontWeight="700" color="#1e293b">
+            HR Leave Management Overview
+          </Typography>
         </Box>
+        <Chip
+          label={`${leaves.length} Record(s)`}
+          size="small"
+          color="primary"
+          sx={{ fontWeight: 700, fontSize: "0.75rem" }}
+        />
+      </Box>
 
-        <Box display="flex" alignItems="center" gap={2} flexWrap="wrap" sx={{ width: { xs: "100%", lg: "auto" } }}>
+      {/* Filter Control Bar */}
+      <Box
+        sx={{
+          p: 2.5,
+          mb: 3,
+          borderRadius: 3,
+          backgroundColor: "#ffffff",
+          border: "1px solid #e2e8f0",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.02)",
+        }}
+      >
+        <Typography variant="subtitle2" fontWeight="700" color="#475569" mb={2} display="flex" alignItems="center" gap={1}>
+          <FilterIcon sx={{ fontSize: 18, color: "#1976d2" }} /> Filter Employee Leaves
+        </Typography>
+
+        <Box display="flex" flexWrap="wrap" gap={2} alignItems="center">
+          {/* Employee Dropdown */}
           <Autocomplete
             options={employees}
-            getOptionLabel={(option) => `${option.name} ${option.employeeProfileId ? `(${option.employeeProfileId})` : ""}`}
+            getOptionLabel={(option) => `${option.name} (${option.employeeProfileId || "No ID"})`}
             value={selectedEmployee}
             onChange={(_, newValue) => setSelectedEmployee(newValue)}
             loading={empLoading}
-            sx={{ minWidth: { xs: "100%", sm: 340 }, flex: { sm: 1, lg: "initial" } }}
-            slotProps={{
-              paper: {
-                sx: {
-                  borderRadius: 2.5,
-                  boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
-                  mt: 1,
-                  minWidth: 350,
-                },
-              },
-            }}
-            renderOption={(props, option) => {
-              const { key, ...optionProps } = props as any;
-              return (
-                <Box component="li" key={option._id} {...optionProps} display="flex" alignItems="center" gap={1.5} py={1}>
-                  <Avatar src={option.photo} sx={{ width: 32, height: 32, bgcolor: "#1976d2", fontSize: 14 }}>
-                    {option.name?.[0]}
-                  </Avatar>
-                  <Box sx={{ overflow: "hidden" }}>
-                    <Typography variant="body2" fontWeight="600" noWrap>{option.name}</Typography>
-                    {option.employeeProfileId && (
-                      <Typography variant="caption" color="text.secondary" display="block" noWrap>{option.employeeProfileId}</Typography>
-                    )}
-                  </Box>
-                </Box>
-              );
-            }}
+            sx={{ width: { xs: "100%", sm: 320 } }}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label="Select Employee"
-                placeholder="All Employees"
-                variant="outlined"
-                sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2.5, backgroundColor: "white" } }}
+                size="small"
+                placeholder="Search by name or ID..."
+                InputProps={{
+                  ...params.InputProps,
+                  startAdornment: (
+                    <>
+                      <PeopleIcon sx={{ color: "#64748b", fontSize: 20, mr: 1 }} />
+                      {params.InputProps.startAdornment}
+                    </>
+                  ),
+                }}
               />
             )}
           />
 
+          {/* Status Filter */}
           <TextField
             select
-            label="Status Filter"
+            size="small"
+            label="Status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            variant="outlined"
-            sx={{ minWidth: { xs: "100%", sm: 200 }, "& .MuiOutlinedInput-root": { borderRadius: 2.5, backgroundColor: "white" } }}
+            sx={{ minWidth: 160 }}
             InputProps={{
-              startAdornment: <FilterIcon sx={{ color: "#94a3b8", mr: 1 }} />,
+              startAdornment: <FilterIcon sx={{ color: "#1976d2", fontSize: 18, mr: 0.8 }} />,
             }}
           >
-            <MenuItem value="ALL">All Statuses</MenuItem>
-            <MenuItem value="Pending">Pending Only</MenuItem>
-            <MenuItem value="Approved">Approved Only</MenuItem>
-            <MenuItem value="Rejected">Rejected Only</MenuItem>
+            <MenuItem value="ALL" sx={{ fontWeight: 600, fontSize: "0.85rem" }}>All Statuses</MenuItem>
+            <MenuItem value="Pending" sx={{ fontWeight: 600, fontSize: "0.85rem", color: "#ed6c02" }}>Pending</MenuItem>
+            <MenuItem value="Approved" sx={{ fontWeight: 600, fontSize: "0.85rem", color: "#2e7d32" }}>Approved</MenuItem>
+            <MenuItem value="Rejected" sx={{ fontWeight: 600, fontSize: "0.85rem", color: "#d32f2f" }}>Rejected</MenuItem>
+            <MenuItem value="Cancelled" sx={{ fontWeight: 600, fontSize: "0.85rem", color: "#757575" }}>Cancelled</MenuItem>
           </TextField>
+
+          {/* Reset Filters */}
+          {(selectedEmployee || statusFilter !== "ALL") && (
+            <Chip
+              label="Reset Filters"
+              onClick={() => { setSelectedEmployee(null); setStatusFilter("ALL"); }}
+              onDelete={() => { setSelectedEmployee(null); setStatusFilter("ALL"); }}
+              color="secondary"
+              variant="outlined"
+              sx={{ fontWeight: 600 }}
+            />
+          )}
         </Box>
       </Box>
 
-      {/* If a specific employee is selected, render their individual quota stats */}
+      {/* Employee Stats (shown when specific employee is selected) */}
       {selectedEmployee && (
         <Box mb={4}>
           <Paper elevation={0} sx={{ p: 2, mb: 2, borderRadius: 2.5, bgcolor: "#e0f2fe", border: "1px solid #bae6fd", display: "flex", alignItems: "center", gap: 1.5 }}>
@@ -193,94 +204,130 @@ const HrLeavesOverview: React.FC = () => {
         </Box>
       )}
 
-      {/* Leave History Master Table */}
+      {/* Card Grid View */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", p: 8, minHeight: 300 }}>
           <CircularProgress size={40} thickness={4} sx={{ color: "#1976d2" }} />
         </Box>
+      ) : leaves.length === 0 ? (
+        <Paper variant="outlined" sx={{ p: 6, textAlign: "center", borderRadius: 3, borderColor: "#e2e8f0" }}>
+          <InboxIcon sx={{ fontSize: 48, mb: 1, color: "#94a3b8" }} />
+          <Typography variant="h6" fontWeight="600" color="#475569">
+            No Leave Records Found
+          </Typography>
+          <Typography variant="body2" color="#94a3b8">
+            No leave records match the selected filters.
+          </Typography>
+        </Paper>
       ) : (
-        <TableContainer component={Paper} sx={tableContainerSx}>
-          <Table>
-            <TableHead sx={tableHeaderSx}>
-              <TableRow>
-                <TableCell>Employee</TableCell>
-                <TableCell>Type</TableCell>
-                <TableCell>Duration</TableCell>
-                <TableCell align="center">Days</TableCell>
-                <TableCell>Reason</TableCell>
-                <TableCell>Approver (Manager)</TableCell>
-                <TableCell align="center">Status</TableCell>
-                <TableCell align="right">Applied Date</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {leaves.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={8} align="center" sx={{ py: 6, color: "#64748b" }}>
-                    <InboxIcon sx={{ fontSize: 40, mb: 1, opacity: 0.5 }} />
-                    <Typography>No leave records found for the selected criteria.</Typography>
-                  </TableCell>
-                </TableRow>
-              ) : (
-                leaves.map((leave) => {
-                  const emp: any = leave.employeeId;
-                  const mgr: any = leave.managerId;
+        <Box display="flex" flexWrap="wrap" gap={3}>
+          {leaves.map((leave) => {
+            const emp: any = leave.employeeId;
+            const mgr: any = leave.managerId;
+            const isLongReason = leave.reason && leave.reason.length > 55;
 
-                  return (
-                    <TableRow key={leave._id} sx={tableRowSx}>
-                      <TableCell>
-                        <Box display="flex" alignItems="center" gap={1.5}>
-                          <Avatar src={emp?.photo} sx={{ width: 34, height: 34, bgcolor: "#1976d2" }}>
-                            {emp?.name?.[0] || "E"}
-                          </Avatar>
-                          <Box>
-                            <Typography variant="body2" fontWeight="600" color="#334155">
-                              {emp?.name || "N/A"}
-                            </Typography>
-                            <Typography variant="caption" color="#94a3b8">
-                              {emp?.employeeProfileId || emp?.email}
-                            </Typography>
-                          </Box>
-                        </Box>
-                      </TableCell>
-                      <TableCell>
-                        <Typography fontWeight="600" color="#334155">{leave.leaveType}</Typography>
-                      </TableCell>
-                      <TableCell sx={{ color: "#64748b" }}>
-                        {format(new Date(leave.startDate), "MMM dd")} - {format(new Date(leave.endDate), "MMM dd, yyyy")}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip label={`${leave.daysRequested} Day(s)`} size="small" variant="outlined" sx={{ fontWeight: 600, borderColor: "#cbd5e1" }} />
-                      </TableCell>
-                      <TableCell sx={{ color: "#475569", maxWidth: 200, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                        {leave.reason}
-                      </TableCell>
-                      <TableCell sx={{ color: "#64748b" }}>
-                        {mgr?.name ? (
-                          <Typography variant="body2">{mgr.name}</Typography>
-                        ) : (
-                          <Typography variant="caption" color="#94a3b8">N/A</Typography>
-                        )}
-                      </TableCell>
-                      <TableCell align="center">
-                        <Chip
-                          size="small"
-                          label={leave.status}
-                          color={getStatusColor(leave.status) as any}
-                          sx={{ fontWeight: 600, px: 1 }}
-                        />
-                      </TableCell>
-                      <TableCell align="right" sx={{ color: "#94a3b8", fontSize: "0.875rem" }}>
-                        {format(new Date(leave.createdAt), "MMM dd, yyyy")}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
-        </TableContainer>
+            return (
+              <Paper
+                key={leave._id}
+                variant="outlined"
+                onClick={() => setSelectedDetailsLeave(leave)}
+                sx={{
+                  p: 2.5,
+                  borderRadius: 3,
+                  borderColor: "#e2e8f0",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
+                  transition: "all 0.3s ease",
+                  display: "flex",
+                  flexDirection: "column",
+                  width: { xs: "100%", sm: "360px" },
+                  maxWidth: "100%",
+                  backgroundColor: "#ffffff",
+                  cursor: "pointer",
+                  "&:hover": {
+                    borderColor: "#cbd5e1",
+                    boxShadow: "0 8px 25px rgba(0,0,0,0.08)",
+                    transform: "translateY(-2px)",
+                  },
+                }}
+              >
+                {/* Employee Header */}
+                <Box display="flex" justifyContent="space-between" alignItems="flex-start" mb={2}>
+                  <Box display="flex" alignItems="center" gap={1.5}>
+                    <Avatar src={emp?.photo} sx={{ width: 44, height: 44, bgcolor: "#1976d2", fontWeight: 700 }}>
+                      {emp?.name?.[0] || "E"}
+                    </Avatar>
+                    <Box>
+                      <Typography variant="subtitle2" fontWeight="700" color="#1e293b">
+                        {emp?.name || "Employee"}
+                      </Typography>
+                      <Typography variant="caption" color="#94a3b8" display="block">
+                        {emp?.employeeProfileId || emp?.email || "—"}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Chip
+                    label={leave.status}
+                    size="small"
+                    color={getStatusColor(leave.status) as any}
+                    sx={{ fontWeight: 700, px: 1 }}
+                  />
+                </Box>
+
+                <Divider sx={{ mb: 2, borderColor: "#f1f5f9" }} />
+
+                {/* Leave Type + Days */}
+                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
+                  <Typography variant="subtitle1" fontWeight="700" color="#0f172a">
+                    {leave.leaveType}
+                  </Typography>
+                  <Chip
+                    label={`${formatDaysNumber(leave.daysRequested)} Day(s)`}
+                    size="small"
+                    sx={{ fontWeight: 700, backgroundColor: "#e0f2fe", color: "#0369a1", borderRadius: 1.5 }}
+                  />
+                </Box>
+
+                {/* Date Range */}
+                <Box display="flex" alignItems="center" gap={1} mb={1.5} color="#475569">
+                  <CalendarTodayIcon sx={{ fontSize: 16, color: "#1976d2" }} />
+                  <Typography variant="body2" fontWeight="600">
+                    {format(new Date(leave.startDate), "MMM dd")} – {format(new Date(leave.endDate), "MMM dd, yyyy")}
+                  </Typography>
+                </Box>
+
+                {/* Reason */}
+                <Box sx={{ p: 1.5, borderRadius: 2, backgroundColor: "#f8fafc", borderLeft: "3px solid #1976d2", mb: 2 }}>
+                  <Typography variant="caption" color="#64748b" fontWeight="700" display="block" mb={0.3}>
+                    Reason:
+                  </Typography>
+                  <Typography variant="body2" color="#334155" sx={{ fontStyle: "italic", lineHeight: 1.45, wordBreak: "break-word" }}>
+                    "{isLongReason ? `${leave.reason.slice(0, 55)}...` : leave.reason}"
+                  </Typography>
+                </Box>
+
+                {/* Footer: Manager + Applied date */}
+                <Box display="flex" justifyContent="space-between" alignItems="center" pt={1.5} borderTop="1px solid #f1f5f9">
+                  <Box display="flex" alignItems="center" gap={0.8}>
+                    <PersonIcon sx={{ fontSize: 15, color: "#94a3b8" }} />
+                    <Typography variant="caption" color="#64748b" fontWeight="600">
+                      {mgr?.name || "No Manager"}
+                    </Typography>
+                  </Box>
+                  <Typography variant="caption" color="#94a3b8">
+                    {format(new Date(leave.createdAt), "MMM dd, yyyy")}
+                  </Typography>
+                </Box>
+              </Paper>
+            );
+          })}
+        </Box>
       )}
+
+      <LeaveDetailsModal
+        open={!!selectedDetailsLeave}
+        leave={selectedDetailsLeave}
+        onClose={() => setSelectedDetailsLeave(null)}
+      />
     </Box>
   );
 };

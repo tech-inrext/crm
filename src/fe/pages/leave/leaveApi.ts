@@ -14,8 +14,9 @@ class LeaveApi extends BaseService {
     return this.get("/my-requests");
   }
 
-  async getManagerPending() {
-    return this.get("/manager/pending");
+  async getManagerPending(status?: string) {
+    const url = status ? `/manager/pending?status=${status}` : "/manager/pending";
+    return this.get(url);
   }
 
   async managerAction(data: LeaveActionPayload) {

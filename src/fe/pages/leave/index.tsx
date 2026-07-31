@@ -1,7 +1,11 @@
-"use client";
-
 import React, { useState } from "react";
-import { Box, Tabs, Tab, useTheme, useMediaQuery } from "@mui/material";
+import { Box, Tabs, Tab, Button, useTheme, useMediaQuery } from "@mui/material";
+import { 
+  AddCircleOutline as AddIcon,
+  CalendarMonth as CalendarMonthIcon,
+  FactCheck as FactCheckIcon,
+  Badge as BadgeIcon,
+} from "@mui/icons-material";
 import {
   containerSx,
   tabsWrapperSx,
@@ -10,10 +14,12 @@ import {
   tabLabelBoxSx,
   tabTextTypographySx,
   tabPanelSx,
+  animatedButtonSx,
 } from "./styles";
 import MyLeavesTable from "./components/MyLeavesTable";
 import ManagerApprovals from "./components/ManagerApprovals";
 import HrLeavesOverview from "./components/HrLeavesOverview";
+import NewLeaveRequestModal from "./components/NewLeaveRequestModal";
 import { useAuth } from "@/contexts/AuthContext";
 
 interface TabPanelProps {
@@ -31,7 +37,7 @@ function CustomTabPanel(props: TabPanelProps) {
       hidden={value !== index}
       id={`leave-tabpanel-${index}`}
       aria-labelledby={`leave-tab-${index}`}
-      style={{ flex: 1, display: value === index ? "flex" : "none", flexDirection: "column", overflow: "hidden" }}
+      style={{ flex: 1, display: value === index ? "flex" : "none", flexDirection: "column", overflow: "visible" }}
       {...other}
     >
       {value === index && (
@@ -45,6 +51,8 @@ function CustomTabPanel(props: TabPanelProps) {
 
 const LeaveManagement = () => {
   const [value, setValue] = useState(0);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [refreshKey, setRefreshKey] = useState(0);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const { isHR } = useAuth();
@@ -55,9 +63,13 @@ const LeaveManagement = () => {
     setValue(newValue);
   };
 
+  const handleSuccess = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
+
   return (
     <Box sx={containerSx}>
-      {/* Tabs Section */}
+      {/* Top Header & Tabs Section */}
       <Box sx={tabsWrapperSx}>
         <Tabs
           value={value}
@@ -72,6 +84,7 @@ const LeaveManagement = () => {
             sx={tabSx}
             label={
               <Box sx={tabLabelBoxSx}>
+                <CalendarMonthIcon sx={{ fontSize: 19 }} />
                 <Box component="span" sx={tabTextTypographySx}>MY LEAVES</Box>
               </Box>
             }
@@ -81,6 +94,7 @@ const LeaveManagement = () => {
             sx={tabSx}
             label={
               <Box sx={tabLabelBoxSx}>
+                <FactCheckIcon sx={{ fontSize: 19 }} />
                 <Box component="span" sx={tabTextTypographySx}>MANAGER APPROVALS</Box>
               </Box>
             }
@@ -91,6 +105,7 @@ const LeaveManagement = () => {
               sx={tabSx}
               label={
                 <Box sx={tabLabelBoxSx}>
+                  <BadgeIcon sx={{ fontSize: 19 }} />
                   <Box component="span" sx={tabTextTypographySx}>HR / ALL LEAVES</Box>
                 </Box>
               }
@@ -101,7 +116,7 @@ const LeaveManagement = () => {
 
       {/* Content Section */}
       <CustomTabPanel value={value} index={0}>
-        <MyLeavesTable />
+        <MyLeavesTable refreshTrigger={refreshKey} />
       </CustomTabPanel>
       <CustomTabPanel value={value} index={1}>
         <ManagerApprovals />
@@ -111,6 +126,13 @@ const LeaveManagement = () => {
           <HrLeavesOverview />
         </CustomTabPanel>
       )}
+
+      {/* Apply Leave Modal */}
+      <NewLeaveRequestModal 
+        open={modalOpen} 
+        onClose={() => setModalOpen(false)} 
+        onSuccess={handleSuccess} 
+      />
     </Box>
   );
 };

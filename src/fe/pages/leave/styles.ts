@@ -1,37 +1,34 @@
 export const containerSx = {
-  p: { xs: 2, md: 4 },
+  p: { xs: 2, md: 3 },
   height: "100%",
   display: "flex",
   flexDirection: "column",
-  backgroundColor: "#f4f7fc", // Soft premium background
+  backgroundColor: "#f8fafc", // Soft subtle background for floating cards
   minHeight: "100vh",
 };
 
 export const tabsWrapperSx = {
-  borderBottom: 1,
-  borderColor: "divider",
+  borderBottom: "1px solid #e2e8f0",
   mb: 3,
-  backgroundColor: "white",
-  borderRadius: "12px 12px 0 0",
-  px: 2,
-  boxShadow: "0px 2px 10px rgba(0,0,0,0.03)",
+  backgroundColor: "transparent",
+  px: 0,
+  boxShadow: "none",
 };
 
 export const tabsSx = {
   "& .MuiTabs-indicator": {
     backgroundColor: "#1976d2",
-    height: 4,
-    borderTopLeftRadius: 4,
-    borderTopRightRadius: 4,
+    height: 3,
+    borderRadius: 3,
   },
 };
 
 export const tabSx = {
   textTransform: "none",
   fontWeight: 600,
-  fontSize: "1rem",
-  minWidth: 140,
-  py: 2,
+  fontSize: "0.95rem",
+  minWidth: 120,
+  py: 1.5,
   color: "#64748b", // Slate 500
   outline: "none",
   "&:focus": {
@@ -43,10 +40,9 @@ export const tabSx = {
   },
   "&:hover": {
     color: "#1976d2",
-    backgroundColor: "rgba(25, 118, 210, 0.04)",
-    borderRadius: "8px 8px 0 0",
+    backgroundColor: "transparent",
   },
-  transition: "all 0.3s ease",
+  transition: "all 0.2s ease",
 };
 
 export const tabLabelBoxSx = {
@@ -61,11 +57,10 @@ export const tabTextTypographySx = {
 
 export const tabPanelSx = {
   flex: 1,
-  overflowY: "auto",
-  p: { xs: 2, md: 3 },
-  backgroundColor: "white",
-  borderRadius: "0 0 12px 12px",
-  boxShadow: "0 8px 30px rgba(0,0,0,0.04)",
+  p: 0,
+  pt: 1,
+  backgroundColor: "transparent",
+  boxShadow: "none",
 };
 
 export const tableContainerSx = {

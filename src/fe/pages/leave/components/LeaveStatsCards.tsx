@@ -17,6 +17,7 @@ import {
 } from "@mui/icons-material";
 import { leaveApi } from "../leaveApi";
 import { LeaveStatsData } from "../types";
+import { formatDaysNumber } from "../utils/formatters";
 
 const TYPE_COLORS: Record<string, { main: string; bg: string }> = {
   "Casual Leave": { main: "#1976d2", bg: "#e3f2fd" },
@@ -24,7 +25,11 @@ const TYPE_COLORS: Record<string, { main: string; bg: string }> = {
   "Earned Leave": { main: "#9c27b0", bg: "#f3e5f5" },
   "Maternity Leave": { main: "#ed6c02", bg: "#fff3e0" },
   "Paternity Leave": { main: "#0288d1", bg: "#e0f7fa" },
-  "Unpaid Leave": { main: "#757575", bg: "#f5f5f5" },
+  "Bereavement Leave": { main: "#43a047", bg: "#e8f5e9" },
+  "Women's Monthly Wellness Leave": { main: "#d81b60", bg: "#fce4ec" },
+  "Compensatory Leave (Comp-Off)": { main: "#8e24aa", bg: "#f3e5f5" },
+  "Loss Of Pay (LOP / LWP)": { main: "#757575", bg: "#f5f5f5" },
+  "Sabbatical Leave": { main: "#546e7a", bg: "#eceff1" },
 };
 
 interface Props {
@@ -71,7 +76,7 @@ const LeaveStatsCards: React.FC<Props> = ({ refreshTrigger, employeeId }) => {
   const mainCards = [
     {
       title: "Total Leaves",
-      value: `${summary.totalAllocated} Days`,
+      value: `${formatDaysNumber(summary.totalAllocated)} Days`,
       subtitle: "Annual Quota",
       icon: <QuotaIcon sx={{ fontSize: 28, color: "#1976d2" }} />,
       bg: "#f0f7ff",
@@ -79,7 +84,7 @@ const LeaveStatsCards: React.FC<Props> = ({ refreshTrigger, employeeId }) => {
     },
     {
       title: "Leaves Taken",
-      value: `${summary.totalTaken} Days`,
+      value: `${formatDaysNumber(summary.totalTaken)} Days`,
       subtitle: "Approved",
       icon: <TakenIcon sx={{ fontSize: 28, color: "#2e7d32" }} />,
       bg: "#f1f8e9",
@@ -87,7 +92,7 @@ const LeaveStatsCards: React.FC<Props> = ({ refreshTrigger, employeeId }) => {
     },
     {
       title: "Pending Approval",
-      value: `${summary.totalPending} Days`,
+      value: `${formatDaysNumber(summary.totalPending)} Days`,
       subtitle: "Awaiting Action",
       icon: <PendingIcon sx={{ fontSize: 28, color: "#ed6c02" }} />,
       bg: "#fff8e1",
@@ -95,7 +100,7 @@ const LeaveStatsCards: React.FC<Props> = ({ refreshTrigger, employeeId }) => {
     },
     {
       title: "Remaining Balance",
-      value: `${summary.totalRemaining} Days`,
+      value: `${formatDaysNumber(summary.totalRemaining)} Days`,
       subtitle: "Available to Use",
       icon: <RemainingIcon sx={{ fontSize: 28, color: "#9c27b0" }} />,
       bg: "#faf0ca",
@@ -201,7 +206,7 @@ const LeaveStatsCards: React.FC<Props> = ({ refreshTrigger, employeeId }) => {
                     </Typography>
                   </Box>
                   <Chip
-                    label={isUnlimited ? "Unlimited" : `${item.remaining} Remaining`}
+                    label={isUnlimited ? "Unlimited" : `${formatDaysNumber(item.remaining)} Remaining`}
                     size="small"
                     sx={{
                       fontWeight: 700,
@@ -216,12 +221,12 @@ const LeaveStatsCards: React.FC<Props> = ({ refreshTrigger, employeeId }) => {
                   <>
                     <Box display="flex" justifyContent="space-between" alignItems="center" my={1.5}>
                       <Typography variant="caption" color="#64748b">
-                        Used: <strong>{item.taken}</strong> / {item.quota} Days
+                        Used: <strong>{formatDaysNumber(item.taken)}</strong> / {formatDaysNumber(item.quota)} Days
                       </Typography>
                       {item.pending > 0 && (
                         <Tooltip title="Days pending manager approval">
                           <Typography variant="caption" color="#ed6c02" fontWeight="600">
-                            ({item.pending} Pending)
+                            ({formatDaysNumber(item.pending)} Pending)
                           </Typography>
                         </Tooltip>
                       )}
@@ -242,7 +247,7 @@ const LeaveStatsCards: React.FC<Props> = ({ refreshTrigger, employeeId }) => {
                   </>
                 ) : (
                   <Typography variant="caption" color="#94a3b8" display="block" mt={1}>
-                    Taken: {item.taken} day(s) • No fixed limit
+                    Taken: {formatDaysNumber(item.taken)} day(s) • No fixed limit
                   </Typography>
                 )}
               </Paper>

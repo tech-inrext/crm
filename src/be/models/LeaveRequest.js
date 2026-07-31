@@ -15,11 +15,16 @@ const leaveRequestSchema = new mongoose.Schema(
     leaveType: {
       type: String,
       enum: [
-        "Sick Leave",
         "Casual Leave",
+        "Sick Leave",
         "Earned Leave",
         "Maternity Leave",
         "Paternity Leave",
+        "Bereavement Leave",
+        "Women's Monthly Wellness Leave",
+        "Compensatory Leave (Comp-Off)",
+        "Loss Of Pay (LOP / LWP)",
+        "Sabbatical Leave",
         "Unpaid Leave",
       ],
       required: true,
@@ -35,6 +40,14 @@ const leaveRequestSchema = new mongoose.Schema(
     daysRequested: {
       type: Number,
       required: true,
+    },
+    isHalfDay: {
+      type: Boolean,
+      default: false,
+    },
+    halfDayOption: {
+      type: String,
+      default: "Full Day",
     },
     reason: {
       type: String,
@@ -54,6 +67,13 @@ const leaveRequestSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true,
+    },
+    actionBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Employee",
+    },
+    actionAt: {
+      type: Date,
     },
   },
   { timestamps: true }
