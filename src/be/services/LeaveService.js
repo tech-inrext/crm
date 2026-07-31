@@ -11,7 +11,7 @@ class LeaveService extends Service {
   // Create a new leave request
   async createLeaveRequest(req, res) {
     try {
-      const { leaveType, startDate, endDate, daysRequested, reason, attachmentUrl } = req.body;
+      const { leaveType, startDate, endDate, daysRequested, reason, attachmentUrl, isHalfDay, halfDayOption } = req.body;
       const employeeId = req.employee?._id || req.user?._id;
 
       if (!employeeId) {
@@ -27,14 +27,18 @@ class LeaveService extends Service {
         return res.status(400).json({ success: false, message: "You don't have a manager assigned to approve this leave." });
       }
 
-      // Quota validation
+      // Quota validation according to official Company Leave Policy
       const DEFAULT_QUOTAS = {
-        "Casual Leave": 12,
+        "Casual Leave": 10.2,
         "Sick Leave": 12,
-        "Earned Leave": 15,
-        "Maternity Leave": 180,
+        "Earned Leave": 12,
+        "Maternity Leave": 182,
         "Paternity Leave": 15,
-        "Unpaid Leave": 0,
+        "Bereavement Leave": 4,
+        "Women's Monthly Wellness Leave": 12,
+        "Compensatory Leave (Comp-Off)": 0,
+        "Loss Of Pay (LOP / LWP)": 0,
+        "Sabbatical Leave": 0,
       };
 
       const requestedDays = Number(daysRequested) || 0;
@@ -66,6 +70,8 @@ class LeaveService extends Service {
         startDate,
         endDate,
         daysRequested,
+        isHalfDay: !!isHalfDay,
+        halfDayOption: halfDayOption || "Full Day",
         reason,
         attachmentUrl,
         status: "Pending",
@@ -80,7 +86,7 @@ class LeaveService extends Service {
     }
   }
 
-  // Get employee's own leave requests
+  // Get logged-in employee's leaves
   async getMyLeaves(req, res) {
     try {
       const employeeId = req.employee?._id || req.user?._id;
@@ -89,6 +95,8 @@ class LeaveService extends Service {
       }
 
       const leaves = await LeaveRequest.find({ employeeId })
+        .populate("employeeId", "name email designation photo employeeProfileId")
+        .populate("actionBy", "name email designation photo employeeProfileId")
         .sort({ createdAt: -1 })
         .lean();
 
@@ -98,7 +106,7 @@ class LeaveService extends Service {
     }
   }
 
-  // Get leaves pending manager's approval (where current user is the manager)
+  // Get leaves assigned to manager for approval (supports status query filter)
   async getManagerPendingLeaves(req, res) {
     try {
       const managerId = req.employee?._id || req.user?._id;
@@ -106,8 +114,17 @@ class LeaveService extends Service {
         return res.status(401).json({ success: false, message: "Unauthorized" });
       }
 
-      const leaves = await LeaveRequest.find({ managerId, status: "Pending" })
+      const { status } = req.query;
+      const query = { managerId };
+      if (status && status !== "ALL") {
+        query.status = status;
+      } else if (!status) {
+        query.status = "Pending";
+      }
+
+      const leaves = await LeaveRequest.find(query)
         .populate("employeeId", "name email phone photo employeeProfileId designation")
+        .populate("actionBy", "name email designation photo employeeProfileId")
         .sort({ createdAt: -1 })
         .lean();
 
@@ -135,9 +152,9 @@ class LeaveService extends Service {
         return res.status(404).json({ success: false, message: "Leave request not found" });
       }
 
-      // Authorization check: must be assigned manager OR system admin
+      // Authorization check: must be assigned manager OR system admin / HR
       const isManager = leave.managerId?.toString() === currentUserId;
-      const isAdmin = req.isSystemAdmin || req.user?.isSystemAdmin;
+      const isAdmin = req.isSystemAdmin || req.user?.isSystemAdmin || req.employee?.isHR || req.user?.isHR;
 
       if (!isManager && !isAdmin) {
         return res.status(403).json({ success: false, message: "You are not authorized to take action on this leave request" });
@@ -148,11 +165,14 @@ class LeaveService extends Service {
       }
 
       leave.status = status;
+      leave.actionBy = currentUserId;
+      leave.actionAt = new Date();
       if (managerRemarks) {
         leave.managerRemarks = managerRemarks;
       }
       
       await leave.save();
+      await leave.populate("actionBy", "name email designation photo employeeProfileId");
 
       return res.status(200).json({ success: true, data: leave });
     } catch (error) {
@@ -171,12 +191,16 @@ class LeaveService extends Service {
 
       // Default Annual Quotas per leave type
       const DEFAULT_QUOTAS = {
-        "Casual Leave": 12,
+        "Casual Leave": 10.2,
         "Sick Leave": 12,
-        "Earned Leave": 15,
-        "Maternity Leave": 180,
+        "Earned Leave": 12,
+        "Maternity Leave": 182,
         "Paternity Leave": 15,
-        "Unpaid Leave": 0,
+        "Bereavement Leave": 4,
+        "Women's Monthly Wellness Leave": 12,
+        "Compensatory Leave (Comp-Off)": 0,
+        "Loss Of Pay (LOP / LWP)": 0,
+        "Sabbatical Leave": 0,
       };
 
       const leaves = await LeaveRequest.find({ employeeId }).lean();
@@ -206,16 +230,18 @@ class LeaveService extends Service {
         }
       });
 
+      const round2 = (val) => Math.round((Number(val || 0) + Number.EPSILON) * 100) / 100;
+
       // Calculate primary categories (Casual, Sick, Earned for standard total)
-      const standardTotalAllocated = DEFAULT_QUOTAS["Casual Leave"] + DEFAULT_QUOTAS["Sick Leave"] + DEFAULT_QUOTAS["Earned Leave"]; // 39 days
-      const standardTaken = usage["Casual Leave"].taken + usage["Sick Leave"].taken + usage["Earned Leave"].taken;
-      const standardRemaining = Math.max(0, standardTotalAllocated - standardTaken);
+      const standardTotalAllocated = round2(DEFAULT_QUOTAS["Casual Leave"] + DEFAULT_QUOTAS["Sick Leave"] + DEFAULT_QUOTAS["Earned Leave"]); // 34.2 Days
+      const standardTaken = round2(usage["Casual Leave"].taken + usage["Sick Leave"].taken + usage["Earned Leave"].taken);
+      const standardRemaining = Math.max(0, round2(standardTotalAllocated - standardTaken));
 
       const breakdown = Object.keys(DEFAULT_QUOTAS).map((type) => {
-        const quota = DEFAULT_QUOTAS[type];
-        const taken = usage[type].taken;
-        const pending = usage[type].pending;
-        const remaining = type === "Unpaid Leave" ? 0 : Math.max(0, quota - taken);
+        const quota = round2(DEFAULT_QUOTAS[type]);
+        const taken = round2(usage[type].taken);
+        const pending = round2(usage[type].pending);
+        const remaining = quota === 0 ? 0 : Math.max(0, round2(quota - taken));
 
         return {
           leaveType: type,
@@ -230,10 +256,10 @@ class LeaveService extends Service {
         success: true,
         data: {
           summary: {
-            totalAllocated: standardTotalAllocated,
-            totalTaken,
-            totalPending,
-            totalRemaining: standardRemaining,
+            totalAllocated: round2(standardTotalAllocated),
+            totalTaken: round2(totalTaken),
+            totalPending: round2(totalPending),
+            totalRemaining: round2(standardRemaining),
           },
           breakdown,
         },
@@ -260,7 +286,8 @@ class LeaveService extends Service {
 
       const leaves = await LeaveRequest.find(query)
         .populate("employeeId", "name email employeeProfileId photo designation")
-        .populate("managerId", "name email")
+        .populate("managerId", "name email designation photo employeeProfileId")
+        .populate("actionBy", "name email designation photo employeeProfileId")
         .sort({ createdAt: -1 })
         .skip(skip)
         .limit(parseInt(limit, 10))

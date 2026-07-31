@@ -3,6 +3,8 @@ export interface LeaveRequestPayload {
   startDate: string | Date;
   endDate: string | Date;
   daysRequested: number;
+  isHalfDay?: boolean;
+  halfDayOption?: string;
   reason: string;
   attachmentUrl?: string;
 }
@@ -26,10 +28,14 @@ export interface LeaveRequest {
   _id: string;
   employeeId: string | EmployeeStub;
   managerId: string | EmployeeStub;
+  actionBy?: string | EmployeeStub;
+  actionAt?: string;
   leaveType: string;
   startDate: string;
   endDate: string;
   daysRequested: number;
+  isHalfDay?: boolean;
+  halfDayOption?: string;
   reason: string;
   attachmentUrl: string;
   status: "Pending" | "Approved" | "Rejected" | "Cancelled";

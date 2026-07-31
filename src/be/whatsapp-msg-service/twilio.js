@@ -15,7 +15,10 @@ class Twilio {
       lead_site_visit_scheduled: "HX93aae696d7eb13294ee0729e45c45913",
       lead_site_visit_reminder: "HX2285153fb5ed5b14e3af991bc2ca11ac",
       weekly_performance_summary: "HXf02657ec3bfc5d5ba98fb057377affa0",
-      site_visit_feedback: "HXca7aa359cbdd0536edb23f9c45c8e5de"
+      site_visit_feedback: "HXca7aa359cbdd0536edb23f9c45c8e5de",
+      // ─── Leave Notifications (register templates in Twilio, then paste SIDs here) ───
+      leave_request_approval: "HX99183c46634c2086778e8016436b4970",   // Notify manager: new leave request submitted
+      leave_status_update: "HX7358ef6674548089a24fe7ea6317a833",   // Notify employee: leave approved / rejected
     }
     this.currentProcessing = 0;
   }
