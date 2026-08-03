@@ -24,9 +24,11 @@ const weeklyPerformanceSummary = async (job) => {
       try {
         const stats = await calculateEmployeeStats(employee, lastWeek);
         
-        // Send WhatsApp if phone or altPhone exists
-        if (employee.altPhone || employee.phone) {
+        // Send WhatsApp only if ENABLE_WHATSAPP=true in .env (set in production only)
+        if (process.env.ENABLE_WHATSAPP === "true" && (employee.altPhone || employee.phone)) {
           await sendWeeklySummaryWhatsApp(employee, stats, dateRange);
+        } else if (process.env.ENABLE_WHATSAPP !== "true") {
+          console.log(`⏭️  [Job] Skipping WhatsApp for ${employee.name} (ENABLE_WHATSAPP is not enabled)`);
         }
 
         // Send Email (Temporarily disabled as requested)
