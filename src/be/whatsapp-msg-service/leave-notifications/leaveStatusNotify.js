@@ -48,8 +48,9 @@ export const sendLeaveStatusToEmployee = async ({
   managerRemarks,
 }) => {
   try {
-    if (!employeePhone) {
-      console.warn("[LeaveNotify] Employee phone not available, skipping WhatsApp notification.");
+    const cleanPhone = String(employeePhone).replace(/\D/g, "").slice(-10);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      console.warn("[LeaveNotify] Invalid employee phone number, skipping WhatsApp:", employeePhone);
       return;
     }
 
@@ -57,11 +58,11 @@ export const sendLeaveStatusToEmployee = async ({
     const employeeFirstName = employeeName?.split(" ")?.[0] || employeeName || "Employee";
     const remarks = managerRemarks?.trim() || "No remarks";
 
-    console.log(`[LeaveNotify] Sending leave ${status} notification to employee: ${employeeName} (${employeePhone})`);
+    console.log(`[LeaveNotify] Sending leave ${status} notification to employee: ${employeeName} (${cleanPhone})`);
 
     await twilio.sendMessage({
       from: twilio.whatsappNumber,
-      to: `whatsapp:+91${employeePhone}`,
+      to: `whatsapp:+91${cleanPhone}`,
       contentSid: twilio.templates.leave_status_update,
       contentVariables: JSON.stringify({
         1: employeeFirstName,

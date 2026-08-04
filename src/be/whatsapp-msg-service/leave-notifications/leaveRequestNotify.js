@@ -45,19 +45,20 @@ export const sendLeaveRequestToManager = async ({
   reason,
 }) => {
   try {
-    if (!managerPhone) {
-      console.warn("[LeaveNotify] Manager phone not available, skipping WhatsApp notification.");
+    const cleanPhone = String(managerPhone).replace(/\D/g, "").slice(-10);
+    if (!cleanPhone || cleanPhone.length < 10) {
+      console.warn("[LeaveNotify] Invalid manager phone number, skipping WhatsApp:", managerPhone);
       return;
     }
 
     const portalUrl = `${process.env.APP_URL || "https://dashboard.inrext.com"}/dashboard/leave`;
     const managerFirstName = managerName?.split(" ")?.[0] || managerName || "Manager";
 
-    console.log(`[LeaveNotify] Sending leave request notification to manager: ${managerName} (${managerPhone})`);
+    console.log(`[LeaveNotify] Sending leave request notification to manager: ${managerName} (${cleanPhone})`);
 
     await twilio.sendMessage({
       from: twilio.whatsappNumber,
-      to: `whatsapp:+91${managerPhone}`,
+      to: `whatsapp:+91${cleanPhone}`,
       contentSid: twilio.templates.leave_request_approval,
       contentVariables: JSON.stringify({
         1: managerFirstName,
