@@ -3,6 +3,85 @@ import LeaveRequest from "../models/LeaveRequest";
 import Employee from "../models/Employee";
 import mongoose from "mongoose";
 
+// Helper to get Financial Year Start and End dates (April 1 to March 31)
+function getFinancialYearBounds(currentDate = new Date()) {
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1; // 1-indexed (1 to 12)
+
+  let fyStartYear, fyEndYear;
+  if (currentMonth >= 4) {
+    fyStartYear = currentYear;
+    fyEndYear = currentYear + 1;
+  } else {
+    fyStartYear = currentYear - 1;
+    fyEndYear = currentYear;
+  }
+
+  const fyStartDate = new Date(fyStartYear, 3, 1, 0, 0, 0, 0); // April 1st
+  const fyEndDate = new Date(fyEndYear, 2, 31, 23, 59, 59, 999); // March 31st
+
+  return { fyStartDate, fyEndDate, fyStartYear, fyEndYear };
+}
+
+// Helper to calculate monthly accrued quotas for current Financial Year (April - March) based on Date of Joining
+function calculateAccruedQuotas(employeeJoiningDate, currentDate = new Date()) {
+  const round2 = (val) => Math.round((Number(val || 0) + Number.EPSILON) * 100) / 100;
+  const { fyStartDate, fyEndDate } = getFinancialYearBounds(currentDate);
+
+  const currentYear = currentDate.getFullYear();
+  const currentMonth = currentDate.getMonth() + 1;
+
+  // Month index within Financial Year (April = 1, May = 2, ..., Dec = 9, Jan = 10, Feb = 11, March = 12)
+  const getFYMonthIndex = (m) => (m >= 4 ? m - 4 + 1 : m + 9);
+
+  let currentFYMonthIndex = getFYMonthIndex(currentMonth);
+  let startFYMonthIndex = 1; // Default: April
+
+  if (employeeJoiningDate) {
+    const doj = new Date(employeeJoiningDate);
+    if (!isNaN(doj.getTime())) {
+      if (doj >= fyStartDate && doj <= fyEndDate) {
+        startFYMonthIndex = getFYMonthIndex(doj.getMonth() + 1);
+      }
+    }
+  }
+
+  // Months elapsed in current Financial Year for this employee
+  let monthsInFY = Math.max(1, currentFYMonthIndex - startFYMonthIndex + 1);
+  monthsInFY = Math.min(12, Math.max(1, monthsInFY));
+
+  // Monthly Accrual Rates according to official Company Leave Policy
+  const MONTHLY_RATES = {
+    "Casual Leave": { rate: 0.85, max: 10.2 },
+    "Sick Leave": { rate: 1.0, max: 12.0 },
+    "Earned Leave": { rate: 1.0, max: 12.0 },
+    "Women's Monthly Wellness Leave": { rate: 1.0, max: 12.0 },
+  };
+
+  const FIXED_QUOTAS = {
+    "Maternity Leave": 182,
+    "Paternity Leave": 15,
+    "Bereavement Leave": 4,
+    "Compensatory Leave (Comp-Off)": 0,
+    "Loss Of Pay (LOP / LWP)": 0,
+    "Sabbatical Leave": 0,
+    "Unpaid Leave": 0,
+  };
+
+  const quotas = {};
+
+  Object.keys(MONTHLY_RATES).forEach((type) => {
+    const { rate, max } = MONTHLY_RATES[type];
+    quotas[type] = round2(Math.min(max, monthsInFY * rate));
+  });
+
+  Object.keys(FIXED_QUOTAS).forEach((type) => {
+    quotas[type] = FIXED_QUOTAS[type];
+  });
+
+  return { quotas, monthsInFY, fyStartDate, fyEndDate };
+}
+
 class LeaveService extends Service {
   constructor() {
     super();
@@ -27,22 +106,11 @@ class LeaveService extends Service {
         return res.status(400).json({ success: false, message: "You don't have a manager assigned to approve this leave." });
       }
 
-      // Quota validation according to official Company Leave Policy
-      const DEFAULT_QUOTAS = {
-        "Casual Leave": 10.2,
-        "Sick Leave": 12,
-        "Earned Leave": 12,
-        "Maternity Leave": 182,
-        "Paternity Leave": 15,
-        "Bereavement Leave": 4,
-        "Women's Monthly Wellness Leave": 12,
-        "Compensatory Leave (Comp-Off)": 0,
-        "Loss Of Pay (LOP / LWP)": 0,
-        "Sabbatical Leave": 0,
-      };
-
+      // Quota validation according to official Company Leave Policy (Financial Year April-March Monthly Accrual)
+      const now = new Date();
+      const { quotas, monthsInFY, fyStartDate, fyEndDate } = calculateAccruedQuotas(employee.joiningDate, now);
       const requestedDays = Number(daysRequested) || 0;
-      const maxQuota = DEFAULT_QUOTAS[leaveType];
+      const maxQuota = quotas[leaveType];
 
       // Check quota limit if leave type has a quota limit (> 0)
       if (typeof maxQuota === "number" && maxQuota > 0) {
@@ -50,15 +118,16 @@ class LeaveService extends Service {
           employeeId,
           leaveType,
           status: { $in: ["Approved", "Pending"] },
+          startDate: { $gte: fyStartDate, $lte: fyEndDate },
         }).lean();
 
-        const usedDays = existingLeaves.reduce((sum, item) => sum + (Number(item.daysRequested) || 0), 0);
-        const remainingDays = Math.max(0, maxQuota - usedDays);
+        const usedDays = Math.round((existingLeaves.reduce((sum, item) => sum + (Number(item.daysRequested) || 0), 0) + Number.EPSILON) * 100) / 100;
+        const remainingDays = Math.max(0, Math.round((maxQuota - usedDays + Number.EPSILON) * 100) / 100);
 
         if (requestedDays > remainingDays) {
           return res.status(400).json({
             success: false,
-            message: `Insufficient ${leaveType} balance. You have ${remainingDays} day(s) remaining (${usedDays}/${maxQuota} used or pending), but requested ${requestedDays} day(s).`,
+            message: `Insufficient ${leaveType} balance. Accrued to date in FY: ${maxQuota} day(s) (${monthsInFY} month(s) elapsed in April-March cycle), Used/Pending: ${usedDays} day(s), Remaining available: ${remainingDays} day(s).`,
           });
         }
       }
@@ -152,11 +221,22 @@ class LeaveService extends Service {
         return res.status(404).json({ success: false, message: "Leave request not found" });
       }
 
-      // Authorization check: must be assigned manager OR system admin / HR
+      // Authorization check: must be assigned manager OR HR / Admin
+      const currentUser = await Employee.findById(currentUserId).lean();
       const isManager = leave.managerId?.toString() === currentUserId;
-      const isAdmin = req.isSystemAdmin || req.user?.isSystemAdmin || req.employee?.isHR || req.user?.isHR;
+      const isHR =
+        req.isSystemAdmin ||
+        req.user?.isSystemAdmin ||
+        req.employee?.isHR ||
+        req.user?.isHR ||
+        currentUser?.isHR ||
+        currentUser?.role?.toLowerCase()?.includes("hr") ||
+        currentUser?.designation?.toLowerCase()?.includes("hr") ||
+        currentUser?.department?.toLowerCase()?.includes("hr") ||
+        currentUser?.role?.toLowerCase()?.includes("admin") ||
+        currentUser?.isSystemAdmin;
 
-      if (!isManager && !isAdmin) {
+      if (!isManager && !isHR) {
         return res.status(403).json({ success: false, message: "You are not authorized to take action on this leave request" });
       }
 
@@ -189,25 +269,20 @@ class LeaveService extends Service {
         return res.status(401).json({ success: false, message: "Unauthorized" });
       }
 
-      // Default Annual Quotas per leave type
-      const DEFAULT_QUOTAS = {
-        "Casual Leave": 10.2,
-        "Sick Leave": 12,
-        "Earned Leave": 12,
-        "Maternity Leave": 182,
-        "Paternity Leave": 15,
-        "Bereavement Leave": 4,
-        "Women's Monthly Wellness Leave": 12,
-        "Compensatory Leave (Comp-Off)": 0,
-        "Loss Of Pay (LOP / LWP)": 0,
-        "Sabbatical Leave": 0,
-      };
+      const employee = await Employee.findById(employeeId).lean();
+      const joiningDate = employee?.joiningDate;
 
-      const leaves = await LeaveRequest.find({ employeeId }).lean();
+      const now = new Date();
+      const { quotas, fyStartDate, fyEndDate } = calculateAccruedQuotas(joiningDate, now);
+
+      const leaves = await LeaveRequest.find({
+        employeeId,
+        startDate: { $gte: fyStartDate, $lte: fyEndDate },
+      }).lean();
 
       // Aggregate taken (Approved) and pending (Pending) days per leave type
       const usage = {};
-      Object.keys(DEFAULT_QUOTAS).forEach((type) => {
+      Object.keys(quotas).forEach((type) => {
         usage[type] = { taken: 0, pending: 0 };
       });
 
@@ -233,12 +308,12 @@ class LeaveService extends Service {
       const round2 = (val) => Math.round((Number(val || 0) + Number.EPSILON) * 100) / 100;
 
       // Calculate primary categories (Casual, Sick, Earned for standard total)
-      const standardTotalAllocated = round2(DEFAULT_QUOTAS["Casual Leave"] + DEFAULT_QUOTAS["Sick Leave"] + DEFAULT_QUOTAS["Earned Leave"]); // 34.2 Days
+      const standardTotalAllocated = round2(quotas["Casual Leave"] + quotas["Sick Leave"] + quotas["Earned Leave"]);
       const standardTaken = round2(usage["Casual Leave"].taken + usage["Sick Leave"].taken + usage["Earned Leave"].taken);
       const standardRemaining = Math.max(0, round2(standardTotalAllocated - standardTaken));
 
-      const breakdown = Object.keys(DEFAULT_QUOTAS).map((type) => {
-        const quota = round2(DEFAULT_QUOTAS[type]);
+      const breakdown = Object.keys(quotas).map((type) => {
+        const quota = round2(quotas[type]);
         const taken = round2(usage[type].taken);
         const pending = round2(usage[type].pending);
         const remaining = quota === 0 ? 0 : Math.max(0, round2(quota - taken));

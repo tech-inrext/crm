@@ -37,7 +37,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import LeaveDetailsModal from "./LeaveDetailsModal";
 import { tableContainerSx, tableHeaderSx, tableRowSx, animatedButtonSx } from "../styles";
-import { formatHalfDayLabel } from "../utils/formatters";
+import { formatHalfDayLabel, formatDaysNumber } from "../utils/formatters";
 
 const ManagerApprovals: React.FC = () => {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
@@ -220,10 +220,11 @@ const ManagerApprovals: React.FC = () => {
                       </Typography>
                     </Box>
                   </Box>
-                  <Chip 
-                    label={`${leave.daysRequested} Day(s)`} 
-                    size="small" 
-                    sx={{ fontWeight: 700, backgroundColor: "#e0f2fe", color: "#0369a1", borderRadius: 1.5 }} 
+                  <Chip
+                    label={leave.status}
+                    size="small"
+                    color={leave.status === "Approved" ? "success" : leave.status === "Rejected" ? "error" : "warning"}
+                    sx={{ fontWeight: 700, px: 1 }}
                   />
                 </Box>
 
@@ -235,6 +236,11 @@ const ManagerApprovals: React.FC = () => {
                     <Typography variant="subtitle1" fontWeight="700" color="#0f172a">
                       {leave.leaveType}
                     </Typography>
+                    <Chip
+                      label={`${formatDaysNumber(leave.daysRequested)} Day(s)`}
+                      size="small"
+                      sx={{ fontWeight: 700, backgroundColor: "#e0f2fe", color: "#0369a1", borderRadius: 1.5 }}
+                    />
                   </Box>
 
                   <Box display="flex" alignItems="center" gap={1} color="#64748b" mb={1.5}>
@@ -289,15 +295,26 @@ const ManagerApprovals: React.FC = () => {
                   </Box>
                 </Box>
 
-                {/* Card Action Buttons or Status Footer */}
-                {leave.status === "Pending" ? (
-                  <Box display="flex" gap={1.5} mt={2}>
+                {/* Footer with Applied Date and Remarks */}
+                <Box display="flex" justifyContent="space-between" alignItems="center" pt={1.5} mt="auto" borderTop="1px solid #f1f5f9">
+                  <Typography variant="caption" color="#64748b" fontWeight="600">
+                    Applied: {format(new Date(leave.createdAt), "MMM dd, yyyy")}
+                  </Typography>
+                  {leave.managerRemarks && (
+                    <Typography variant="caption" color="#64748b" fontStyle="italic" sx={{ maxWidth: 180, textAlign: "right" }}>
+                      Remarks: "{leave.managerRemarks.length > 20 ? `${leave.managerRemarks.slice(0, 20)}...` : leave.managerRemarks}"
+                    </Typography>
+                  )}
+                </Box>
+
+                {leave.status === "Pending" && (
+                  <Box display="flex" gap={1.5} mt={1.5}>
                     <Button 
                       fullWidth
                       color="success" 
                       variant="contained" 
                       startIcon={<ApproveIcon />}
-                      sx={{ ...animatedButtonSx, py: 0.9, fontWeight: 700, borderRadius: 2 }}
+                      sx={{ ...animatedButtonSx, py: 0.8, fontWeight: 700, borderRadius: 2 }}
                       onClick={(e) => handleActionClick(e, leave, "Approved")}
                     >
                       Approve
@@ -307,25 +324,11 @@ const ManagerApprovals: React.FC = () => {
                       color="error" 
                       variant="outlined"
                       startIcon={<RejectIcon />}
-                      sx={{ ...animatedButtonSx, py: 0.9, fontWeight: 700, borderRadius: 2 }}
+                      sx={{ ...animatedButtonSx, py: 0.8, fontWeight: 700, borderRadius: 2 }}
                       onClick={(e) => handleActionClick(e, leave, "Rejected")}
                     >
                       Reject
                     </Button>
-                  </Box>
-                ) : (
-                  <Box display="flex" justifyContent="space-between" alignItems="center" pt={1.5} mt={2} borderTop="1px solid #f1f5f9">
-                    <Chip 
-                      label={leave.status} 
-                      size="small" 
-                      color={leave.status === "Approved" ? "success" : leave.status === "Rejected" ? "error" : "default"} 
-                      sx={{ fontWeight: 700, px: 1 }}
-                    />
-                    {leave.managerRemarks && (
-                      <Typography variant="caption" color="#64748b" fontStyle="italic" sx={{ maxWidth: 180, textAlign: "right" }}>
-                        Remarks: "{leave.managerRemarks.length > 25 ? `${leave.managerRemarks.slice(0, 25)}...` : leave.managerRemarks}"
-                      </Typography>
-                    )}
                   </Box>
                 )}
               </Paper>
