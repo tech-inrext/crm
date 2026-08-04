@@ -10,6 +10,11 @@ import {
   TextField,
   MenuItem,
   Divider,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
 } from "@mui/material";
 import {
   Badge as HrIcon,
@@ -18,6 +23,8 @@ import {
   InboxOutlined as InboxIcon,
   CalendarToday as CalendarTodayIcon,
   PersonOutline as PersonIcon,
+  CheckCircleOutline as ApproveIcon,
+  HighlightOff as RejectIcon,
 } from "@mui/icons-material";
 import { leaveApi } from "../leaveApi";
 import { LeaveRequest } from "../types";
@@ -42,7 +49,13 @@ const HrLeavesOverview: React.FC = () => {
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [empLoading, setEmpLoading] = useState(false);
+
+  // Modal states
   const [selectedDetailsLeave, setSelectedDetailsLeave] = useState<LeaveRequest | null>(null);
+  const [actionModal, setActionModal] = useState<"Approved" | "Rejected" | null>(null);
+  const [selectedLeave, setSelectedLeave] = useState<LeaveRequest | null>(null);
+  const [managerRemarks, setManagerRemarks] = useState("");
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Fetch all employees for dropdown selector
   useEffect(() => {
@@ -87,6 +100,37 @@ const HrLeavesOverview: React.FC = () => {
   useEffect(() => {
     fetchLeaves();
   }, [selectedEmployee, statusFilter]);
+
+  const handleActionClick = (e: React.MouseEvent, leave: LeaveRequest, action: "Approved" | "Rejected") => {
+    e.stopPropagation();
+    setSelectedLeave(leave);
+    setActionModal(action);
+    setManagerRemarks("");
+  };
+
+  const handleConfirmAction = async () => {
+    if (!selectedLeave || !actionModal) return;
+    setActionLoading(true);
+    try {
+      const res = await leaveApi.managerAction({
+        leaveId: selectedLeave._id,
+        status: actionModal,
+        managerRemarks: managerRemarks.trim(),
+      });
+      if (res.success) {
+        toast.success(`Leave request ${actionModal.toLowerCase()} successfully!`);
+        setActionModal(null);
+        setSelectedLeave(null);
+        fetchLeaves();
+      } else {
+        toast.error(res.message || "Failed to update leave status");
+      }
+    } catch (error) {
+      toast.error("An error occurred while processing leave action");
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -305,8 +349,8 @@ const HrLeavesOverview: React.FC = () => {
                   </Typography>
                 </Box>
 
-                {/* Footer: Manager + Applied date */}
-                <Box display="flex" justifyContent="space-between" alignItems="center" pt={1.5} borderTop="1px solid #f1f5f9">
+                {/* Manager Name + Applied Date Footer */}
+                <Box display="flex" justifyContent="space-between" alignItems="center" mt="auto" pt={1.5} borderTop="1px solid #f1f5f9">
                   <Box display="flex" alignItems="center" gap={0.8}>
                     <PersonIcon sx={{ fontSize: 15, color: "#94a3b8" }} />
                     <Typography variant="caption" color="#64748b" fontWeight="600">
@@ -317,11 +361,84 @@ const HrLeavesOverview: React.FC = () => {
                     {format(new Date(leave.createdAt), "MMM dd, yyyy")}
                   </Typography>
                 </Box>
+
+                {/* Card Action Buttons for Pending leaves */}
+                {leave.status === "Pending" && (
+                  <Box display="flex" gap={1.5} mt={1.5}>
+                    <Button
+                      fullWidth
+                      color="success"
+                      variant="contained"
+                      startIcon={<ApproveIcon />}
+                      sx={{ ...animatedButtonSx, py: 0.8, fontWeight: 700, borderRadius: 2 }}
+                      onClick={(e) => handleActionClick(e, leave, "Approved")}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      fullWidth
+                      color="error"
+                      variant="outlined"
+                      startIcon={<RejectIcon />}
+                      sx={{ ...animatedButtonSx, py: 0.8, fontWeight: 700, borderRadius: 2 }}
+                      onClick={(e) => handleActionClick(e, leave, "Rejected")}
+                    >
+                      Reject
+                    </Button>
+                  </Box>
+                )}
               </Paper>
             );
           })}
         </Box>
       )}
+
+      {/* Action Dialog (Approve / Reject) for HR */}
+      <Dialog
+        open={!!actionModal}
+        onClose={() => setActionModal(null)}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3, boxShadow: "0 10px 40px rgba(0,0,0,0.1)" } }}
+      >
+        <DialogTitle sx={{ pb: 1 }}>
+          <Box display="flex" alignItems="center" gap={1}>
+            {actionModal === "Approved" ? <ApproveIcon color="success" /> : <RejectIcon color="error" />}
+            <Typography variant="h6" fontWeight="700">
+              {actionModal === "Approved" ? "Approve" : "Reject"} Leave Request (HR Override)
+            </Typography>
+          </Box>
+        </DialogTitle>
+        <DialogContent sx={{ pt: "16px !important" }}>
+          <Typography mb={3} color="text.secondary">
+            Are you sure you want to <strong>{actionModal?.toLowerCase()}</strong> the leave request for{" "}
+            <strong>{(selectedLeave?.employeeId as any)?.name || "Employee"}</strong> on behalf of manager?
+          </Typography>
+          <TextField
+            fullWidth
+            label="HR Remarks (Optional)"
+            multiline
+            rows={3}
+            value={managerRemarks}
+            onChange={(e) => setManagerRemarks(e.target.value)}
+            placeholder="Enter any remarks or notes..."
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 2.5, pt: 1 }}>
+          <Button onClick={() => setActionModal(null)} disabled={actionLoading} color="inherit">
+            Cancel
+          </Button>
+          <Button
+            onClick={handleConfirmAction}
+            disabled={actionLoading}
+            variant="contained"
+            color={actionModal === "Approved" ? "success" : "error"}
+            sx={{ px: 3, fontWeight: 700 }}
+          >
+            {actionLoading ? <CircularProgress size={24} color="inherit" /> : `Confirm ${actionModal}`}
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <LeaveDetailsModal
         open={!!selectedDetailsLeave}
