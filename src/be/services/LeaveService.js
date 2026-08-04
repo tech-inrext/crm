@@ -392,10 +392,10 @@ class LeaveService extends Service {
     }
   }
 
-  // HR / Admin: View all leaves
+  // HR / Admin: View leaves (Default: Today's leaves, or date range filter / history)
   async getAllLeaves(req, res) {
     try {
-      const { page = 1, limit = 50, status, employeeId } = req.query;
+      const { page = 1, limit = 50, status, employeeId, fromDate, toDate, dateScope = "TODAY" } = req.query;
       const skip = (page - 1) * limit;
       
       const query = {};
@@ -404,6 +404,19 @@ class LeaveService extends Service {
       }
       if (employeeId) {
         query.employeeId = employeeId;
+      }
+
+      // Date Range filtering: Default TODAY, or Date Range (fromDate to toDate), or ALL for full history
+      if (dateScope !== "ALL") {
+        const startTarget = fromDate ? new Date(fromDate) : new Date();
+        const endTarget = toDate ? new Date(toDate) : (fromDate ? new Date(fromDate) : new Date());
+
+        const startOfRange = new Date(startTarget.getFullYear(), startTarget.getMonth(), startTarget.getDate(), 0, 0, 0, 0);
+        const endOfRange = new Date(endTarget.getFullYear(), endTarget.getMonth(), endTarget.getDate(), 23, 59, 59, 999);
+
+        // Matches leaves overlapping the range [startOfRange, endOfRange]
+        query.startDate = { $lte: endOfRange };
+        query.endDate = { $gte: startOfRange };
       }
 
       const leaves = await LeaveRequest.find(query)

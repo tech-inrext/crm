@@ -28,12 +28,15 @@ class LeaveApi extends BaseService {
     return this.get<{ success: boolean; data: any }>(url);
   }
 
-  async getAllLeaves(params?: { page?: number; limit?: number; status?: string; employeeId?: string }) {
+  async getAllLeaves(params?: { page?: number; limit?: number; status?: string; employeeId?: string; fromDate?: string; toDate?: string; dateScope?: string }) {
     const query = new URLSearchParams();
     if (params?.page) query.append("page", params.page.toString());
     if (params?.limit) query.append("limit", params.limit.toString());
     if (params?.status && params.status !== "ALL") query.append("status", params.status);
     if (params?.employeeId) query.append("employeeId", params.employeeId);
+    if (params?.fromDate) query.append("fromDate", params.fromDate);
+    if (params?.toDate) query.append("toDate", params.toDate);
+    if (params?.dateScope) query.append("dateScope", params.dateScope);
 
     const queryString = query.toString();
     const url = queryString ? `/all?${queryString}` : "/all";

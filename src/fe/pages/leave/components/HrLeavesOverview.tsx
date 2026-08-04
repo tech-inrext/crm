@@ -15,21 +15,30 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Tooltip,
 } from "@mui/material";
 import {
   Badge as HrIcon,
   People as PeopleIcon,
-  FilterList as FilterIcon,
+  PersonSearch as PersonSearchIcon,
+  FilterAlt as FilterAltIcon,
   InboxOutlined as InboxIcon,
   CalendarToday as CalendarTodayIcon,
+  Today as TodayIcon,
+  DateRange as DateRangeIcon,
+  CalendarMonth as CalendarMonthIcon,
+  History as HistoryIcon,
+  RestartAlt as ResetIcon,
   PersonOutline as PersonIcon,
   CheckCircleOutline as ApproveIcon,
   HighlightOff as RejectIcon,
+  ArrowForward as ArrowForwardIcon,
+  FileDownload as DownloadIcon,
 } from "@mui/icons-material";
 import { leaveApi } from "../leaveApi";
 import { LeaveRequest } from "../types";
 import { toast } from "sonner";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
 import LeaveStatsCards from "./LeaveStatsCards";
 import LeaveDetailsModal from "./LeaveDetailsModal";
 import { animatedButtonSx } from "../styles";
@@ -43,9 +52,15 @@ interface EmployeeOption {
 }
 
 const HrLeavesOverview: React.FC = () => {
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeOption | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [dateScope, setDateScope] = useState<string>("TODAY");
+  const [fromDate, setFromDate] = useState<string>(todayStr);
+  const [toDate, setToDate] = useState<string>(todayStr);
+
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [empLoading, setEmpLoading] = useState(false);
@@ -78,13 +93,32 @@ const HrLeavesOverview: React.FC = () => {
     fetchEmployeeList();
   }, []);
 
-  // Fetch leaves based on selected employee and status filter
+  // Handle Quick Date Presets
+  const handleScopeChange = (scope: string) => {
+    setDateScope(scope);
+    const now = new Date();
+    if (scope === "TODAY") {
+      setFromDate(todayStr);
+      setToDate(todayStr);
+    } else if (scope === "THIS_WEEK") {
+      setFromDate(format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd"));
+      setToDate(format(endOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd"));
+    } else if (scope === "THIS_MONTH") {
+      setFromDate(format(startOfMonth(now), "yyyy-MM-dd"));
+      setToDate(format(endOfMonth(now), "yyyy-MM-dd"));
+    }
+  };
+
+  // Fetch leaves based on selected employee, date range filter, and status filter
   const fetchLeaves = async () => {
     setLoading(true);
     try {
       const res = await leaveApi.getAllLeaves({
         employeeId: selectedEmployee?._id,
         status: statusFilter,
+        dateScope,
+        fromDate: dateScope === "ALL" ? undefined : fromDate,
+        toDate: dateScope === "ALL" ? undefined : toDate,
         limit: 100,
       });
       if (res?.success) {
@@ -99,7 +133,7 @@ const HrLeavesOverview: React.FC = () => {
 
   useEffect(() => {
     fetchLeaves();
-  }, [selectedEmployee, statusFilter]);
+  }, [selectedEmployee, statusFilter, dateScope, fromDate, toDate]);
 
   const handleActionClick = (e: React.MouseEvent, leave: LeaveRequest, action: "Approved" | "Rejected") => {
     e.stopPropagation();
@@ -132,6 +166,87 @@ const HrLeavesOverview: React.FC = () => {
     }
   };
 
+  // Export current filtered leaves to formatted Excel (.xlsx) file
+  const handleExportExcel = async () => {
+    if (!leaves || leaves.length === 0) {
+      toast.error("No leave records available to export");
+      return;
+    }
+
+    try {
+      const ExcelJS = (await import("exceljs")).default;
+      const workbook = new ExcelJS.Workbook();
+      const worksheet = workbook.addWorksheet("Leave Records");
+
+      // Set Columns
+      worksheet.columns = [
+        { header: "Employee ID", key: "empId", width: 16 },
+        { header: "Employee Name", key: "empName", width: 25 },
+        { header: "Leave Type", key: "leaveType", width: 22 },
+        { header: "Start Date", key: "startDate", width: 15 },
+        { header: "End Date", key: "endDate", width: 15 },
+        { header: "Days", key: "days", width: 12 },
+        { header: "Status", key: "status", width: 15 },
+        { header: "Manager Name", key: "manager", width: 25 },
+        { header: "Action By", key: "actionBy", width: 25 },
+        { header: "Applied Date", key: "appliedDate", width: 15 },
+        { header: "Reason", key: "reason", width: 40 },
+        { header: "Manager Remarks", key: "remarks", width: 35 },
+      ];
+
+      // Format Header Row
+      const headerRow = worksheet.getRow(1);
+      headerRow.font = { bold: true, color: { argb: "FFFFFF" } };
+      headerRow.fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "1976D2" },
+      };
+      headerRow.alignment = { vertical: "middle", horizontal: "center" };
+      headerRow.height = 26;
+
+      // Add Data Rows
+      leaves.forEach((leave) => {
+        const emp: any = leave.employeeId;
+        const mgr: any = leave.managerId;
+        const actionBy: any = leave.actionBy;
+
+        const row = worksheet.addRow({
+          empId: emp?.employeeProfileId || "—",
+          empName: emp?.name || "Employee",
+          leaveType: leave.leaveType,
+          startDate: format(new Date(leave.startDate), "yyyy-MM-dd"),
+          endDate: format(new Date(leave.endDate), "yyyy-MM-dd"),
+          days: leave.daysRequested,
+          status: leave.status,
+          manager: mgr?.name || "No Manager",
+          actionBy: actionBy?.name || "—",
+          appliedDate: format(new Date(leave.createdAt), "yyyy-MM-dd"),
+          reason: leave.reason || "",
+          remarks: leave.managerRemarks || "",
+        });
+
+        row.alignment = { vertical: "middle" };
+      });
+
+      // Write and download file
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], {
+        type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = document.createElement("a");
+      anchor.href = url;
+      anchor.download = `Employee_Leaves_${format(new Date(), "yyyyMMdd_HHmmss")}.xlsx`;
+      anchor.click();
+      window.URL.revokeObjectURL(url);
+      toast.success("Excel report downloaded successfully!");
+    } catch (err) {
+      console.error("Excel Export Error:", err);
+      toast.error("Failed to export Excel report");
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Approved": return "success";
@@ -141,40 +256,66 @@ const HrLeavesOverview: React.FC = () => {
     }
   };
 
+  const getHeaderText = () => {
+    if (dateScope === "TODAY") {
+      return "Today's Leaves";
+    } else if (dateScope === "ALL") {
+      return "All Historical Leaves";
+    }
+    return `Leaves (${format(new Date(fromDate), "MMM dd")} – ${format(new Date(toDate), "MMM dd, yyyy")})`;
+  };
+
   return (
     <Box>
       {/* Header Bar */}
-      <Box display="flex" alignItems="center" justifyContent="space-between" mb={3}>
+      <Box display="flex" alignItems="center" justifyContent="space-between" mb={2.5} flexWrap="wrap" gap={2}>
         <Box display="flex" alignItems="center" gap={1.5}>
           <HrIcon sx={{ color: "#1976d2", fontSize: 28 }} />
           <Typography variant="h5" fontWeight="700" color="#1e293b">
             HR Leave Management Overview
           </Typography>
         </Box>
-        <Chip
-          label={`${leaves.length} Record(s)`}
+
+        <Button
+          variant="contained"
+          color="success"
           size="small"
-          color="primary"
-          sx={{ fontWeight: 700, fontSize: "0.75rem" }}
-        />
+          startIcon={<DownloadIcon />}
+          onClick={handleExportExcel}
+          sx={{
+            fontWeight: 700,
+            borderRadius: 2,
+            px: 2,
+            py: 0.7,
+            bgcolor: "#2e7d32",
+            "&:hover": { bgcolor: "#1b5e20" },
+            boxShadow: "0 2px 8px rgba(46, 125, 50, 0.25)",
+          }}
+        >
+          Export Excel
+        </Button>
       </Box>
 
-      {/* Filter Control Bar */}
-      <Box
+      {/* Ultra-Compact Icon Filter Toolbar */}
+      <Paper
+        elevation={0}
         sx={{
-          p: 2.5,
+          p: 1.5,
+          px: 2,
           mb: 3,
           borderRadius: 3,
           backgroundColor: "#ffffff",
           border: "1px solid #e2e8f0",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.02)",
+          boxShadow: "0 2px 10px rgba(0,0,0,0.02)",
+          display: "flex",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 1.5,
+          justifyContent: "space-between",
         }}
       >
-        <Typography variant="subtitle2" fontWeight="700" color="#475569" mb={2} display="flex" alignItems="center" gap={1}>
-          <FilterIcon sx={{ fontSize: 18, color: "#1976d2" }} /> Filter Employee Leaves
-        </Typography>
-
-        <Box display="flex" flexWrap="wrap" gap={2} alignItems="center">
+        {/* Left Section: Employee Search + Status Filter */}
+        <Box display="flex" alignItems="center" gap={1.5} flexWrap="wrap" flex={1}>
           {/* Employee Dropdown */}
           <Autocomplete
             options={employees}
@@ -182,18 +323,18 @@ const HrLeavesOverview: React.FC = () => {
             value={selectedEmployee}
             onChange={(_, newValue) => setSelectedEmployee(newValue)}
             loading={empLoading}
-            sx={{ width: { xs: "100%", sm: 320 } }}
+            sx={{ minWidth: 220, flex: 1, maxWidth: 280 }}
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Select Employee"
+                label="Employee"
                 size="small"
-                placeholder="Search by name or ID..."
+                placeholder="Search..."
                 InputProps={{
                   ...params.InputProps,
                   startAdornment: (
                     <>
-                      <PeopleIcon sx={{ color: "#64748b", fontSize: 20, mr: 1 }} />
+                      <PersonSearchIcon sx={{ color: "#1976d2", fontSize: 18, mr: 0.5 }} />
                       {params.InputProps.startAdornment}
                     </>
                   ),
@@ -209,9 +350,9 @@ const HrLeavesOverview: React.FC = () => {
             label="Status"
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            sx={{ minWidth: 160 }}
+            sx={{ width: 140 }}
             InputProps={{
-              startAdornment: <FilterIcon sx={{ color: "#1976d2", fontSize: 18, mr: 0.8 }} />,
+              startAdornment: <FilterAltIcon sx={{ color: "#1976d2", fontSize: 18, mr: 0.5 }} />,
             }}
           >
             <MenuItem value="ALL" sx={{ fontWeight: 600, fontSize: "0.85rem" }}>All Statuses</MenuItem>
@@ -220,20 +361,130 @@ const HrLeavesOverview: React.FC = () => {
             <MenuItem value="Rejected" sx={{ fontWeight: 600, fontSize: "0.85rem", color: "#d32f2f" }}>Rejected</MenuItem>
             <MenuItem value="Cancelled" sx={{ fontWeight: 600, fontSize: "0.85rem", color: "#757575" }}>Cancelled</MenuItem>
           </TextField>
+        </Box>
 
-          {/* Reset Filters */}
-          {(selectedEmployee || statusFilter !== "ALL") && (
-            <Chip
-              label="Reset Filters"
-              onClick={() => { setSelectedEmployee(null); setStatusFilter("ALL"); }}
-              onDelete={() => { setSelectedEmployee(null); setStatusFilter("ALL"); }}
-              color="secondary"
-              variant="outlined"
-              sx={{ fontWeight: 600 }}
-            />
+        {/* Right Section: Micro Date Presets + Compact Date Range */}
+        <Box display="flex" alignItems="center" gap={1.2} flexWrap="wrap">
+          {/* Quick Date Presets Chips */}
+          <Box display="flex" alignItems="center" gap={0.6}>
+            <Tooltip title="Today's Leaves">
+              <Chip
+                icon={<TodayIcon sx={{ fontSize: "16px !important" }} />}
+                label="Today"
+                size="small"
+                clickable
+                color={dateScope === "TODAY" ? "primary" : "default"}
+                variant={dateScope === "TODAY" ? "filled" : "outlined"}
+                onClick={() => handleScopeChange("TODAY")}
+                sx={{ fontWeight: 700, borderRadius: 1.5, height: 34 }}
+              />
+            </Tooltip>
+            <Tooltip title="This Week">
+              <Chip
+                icon={<DateRangeIcon sx={{ fontSize: "16px !important" }} />}
+                label="Week"
+                size="small"
+                clickable
+                color={dateScope === "THIS_WEEK" ? "primary" : "default"}
+                variant={dateScope === "THIS_WEEK" ? "filled" : "outlined"}
+                onClick={() => handleScopeChange("THIS_WEEK")}
+                sx={{ fontWeight: 700, borderRadius: 1.5, height: 34 }}
+              />
+            </Tooltip>
+            <Tooltip title="This Month">
+              <Chip
+                icon={<CalendarMonthIcon sx={{ fontSize: "16px !important" }} />}
+                label="Month"
+                size="small"
+                clickable
+                color={dateScope === "THIS_MONTH" ? "primary" : "default"}
+                variant={dateScope === "THIS_MONTH" ? "filled" : "outlined"}
+                onClick={() => handleScopeChange("THIS_MONTH")}
+                sx={{ fontWeight: 700, borderRadius: 1.5, height: 34 }}
+              />
+            </Tooltip>
+            <Tooltip title="All Historical Leaves">
+              <Chip
+                icon={<HistoryIcon sx={{ fontSize: "16px !important" }} />}
+                label="All"
+                size="small"
+                clickable
+                color={dateScope === "ALL" ? "primary" : "default"}
+                variant={dateScope === "ALL" ? "filled" : "outlined"}
+                onClick={() => handleScopeChange("ALL")}
+                sx={{ fontWeight: 700, borderRadius: 1.5, height: 34 }}
+              />
+            </Tooltip>
+          </Box>
+
+          {/* Date Range Picker Pair (From -> To) */}
+          {dateScope !== "ALL" && (
+            <Box
+              display="flex"
+              alignItems="center"
+              gap={0.6}
+              sx={{
+                bgcolor: "#f8fafc",
+                p: 0.4,
+                px: 1,
+                borderRadius: 2,
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <TextField
+                type="date"
+                size="small"
+                value={fromDate}
+                onChange={(e) => {
+                  setFromDate(e.target.value);
+                  setDateScope("CUSTOM");
+                }}
+                sx={{
+                  width: 130,
+                  bgcolor: "#ffffff",
+                  "& .MuiOutlinedInput-root": { borderRadius: 1.5, fontSize: "0.8rem", height: 34 },
+                }}
+              />
+              <ArrowForwardIcon sx={{ color: "#94a3b8", fontSize: 14 }} />
+              <TextField
+                type="date"
+                size="small"
+                value={toDate}
+                onChange={(e) => {
+                  setToDate(e.target.value);
+                  setDateScope("CUSTOM");
+                }}
+                sx={{
+                  width: 130,
+                  bgcolor: "#ffffff",
+                  "& .MuiOutlinedInput-root": { borderRadius: 1.5, fontSize: "0.8rem", height: 34 },
+                }}
+              />
+            </Box>
+          )}
+
+          {/* Reset Filters Icon Button */}
+          {(selectedEmployee || statusFilter !== "ALL" || dateScope !== "TODAY" || fromDate !== todayStr || toDate !== todayStr) && (
+            <Tooltip title="Reset Filters">
+              <Chip
+                icon={<ResetIcon sx={{ fontSize: "16px !important" }} />}
+                label="Reset"
+                size="small"
+                onClick={() => {
+                  setSelectedEmployee(null);
+                  setStatusFilter("ALL");
+                  setDateScope("TODAY");
+                  setFromDate(todayStr);
+                  setToDate(todayStr);
+                }}
+                color="secondary"
+                variant="outlined"
+                sx={{ fontWeight: 700, borderRadius: 1.5, height: 34 }}
+              />
+            </Tooltip>
           )}
         </Box>
-      </Box>
+      </Paper>
 
       {/* Employee Stats (shown when specific employee is selected) */}
       {selectedEmployee && (
@@ -248,6 +499,24 @@ const HrLeavesOverview: React.FC = () => {
         </Box>
       )}
 
+      {/* Section Summary Title */}
+      {!loading && (
+        <Box display="flex" alignItems="center" justifyContent="space-between" mb={2} px={0.5}>
+          <Box display="flex" alignItems="center" gap={1.2}>
+            <CalendarTodayIcon sx={{ color: "#1976d2", fontSize: 20 }} />
+            <Typography variant="h6" fontWeight="700" color="#1e293b">
+              {getHeaderText()}
+            </Typography>
+            <Chip
+              label={`${leaves.length} Record(s)`}
+              size="small"
+              color="primary"
+              sx={{ fontWeight: 700, fontSize: "0.75rem" }}
+            />
+          </Box>
+        </Box>
+      )}
+
       {/* Card Grid View */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", p: 8, minHeight: 300 }}>
@@ -257,10 +526,14 @@ const HrLeavesOverview: React.FC = () => {
         <Paper variant="outlined" sx={{ p: 6, textAlign: "center", borderRadius: 3, borderColor: "#e2e8f0" }}>
           <InboxIcon sx={{ fontSize: 48, mb: 1, color: "#94a3b8" }} />
           <Typography variant="h6" fontWeight="600" color="#475569">
-            No Leave Records Found
+            {dateScope === "TODAY"
+              ? "No Employees on Leave Today"
+              : "No Leave Records Found"}
           </Typography>
-          <Typography variant="body2" color="#94a3b8">
-            No leave records match the selected filters.
+          <Typography variant="body2" color="#94a3b8" mt={0.5}>
+            {dateScope === "TODAY"
+              ? "There are no active or scheduled leave requests for today."
+              : "Try adjusting the employee, date range, or status filters."}
           </Typography>
         </Paper>
       ) : (
