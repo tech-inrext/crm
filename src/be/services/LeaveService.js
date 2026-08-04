@@ -2,6 +2,9 @@ import { Service } from "@framework";
 import LeaveRequest from "../models/LeaveRequest";
 import Employee from "../models/Employee";
 import mongoose from "mongoose";
+import { format } from "date-fns";
+import { sendLeaveRequestToManager } from "../whatsapp-msg-service/leave-notifications/leaveRequestNotify.js";
+import { sendLeaveStatusToEmployee } from "../whatsapp-msg-service/leave-notifications/leaveStatusNotify.js";
 
 // Helper to get Financial Year Start and End dates (April 1 to March 31)
 function getFinancialYearBounds(currentDate = new Date()) {
@@ -148,6 +151,27 @@ class LeaveService extends Service {
 
       await newLeave.save();
 
+      // 📩 Trigger WhatsApp Notification to Manager
+      try {
+        const manager = await Employee.findById(employee.managerId).lean();
+        if (manager && manager.phone) {
+          const formattedStart = format(new Date(startDate), "MMM dd, yyyy");
+          const formattedEnd = format(new Date(endDate), "MMM dd, yyyy");
+          sendLeaveRequestToManager({
+            managerPhone: manager.phone,
+            managerName: manager.name,
+            employeeName: employee.name,
+            leaveType,
+            startDate: formattedStart,
+            endDate: formattedEnd,
+            daysRequested,
+            reason,
+          });
+        }
+      } catch (wsErr) {
+        console.error("Error triggering leave request WhatsApp notification:", wsErr);
+      }
+
       return res.status(201).json({ success: true, data: newLeave });
     } catch (error) {
       console.error("Create Leave Error:", error);
@@ -253,6 +277,29 @@ class LeaveService extends Service {
       
       await leave.save();
       await leave.populate("actionBy", "name email designation photo employeeProfileId");
+
+      // 📩 Trigger WhatsApp Notification to Employee
+      try {
+        const emp = await Employee.findById(leave.employeeId).lean();
+        const actionUser = currentUser?.name ? currentUser : await Employee.findById(currentUserId).lean();
+        if (emp && emp.phone) {
+          const formattedStart = format(new Date(leave.startDate), "MMM dd, yyyy");
+          const formattedEnd = format(new Date(leave.endDate), "MMM dd, yyyy");
+          sendLeaveStatusToEmployee({
+            employeePhone: emp.phone,
+            employeeName: emp.name,
+            status,
+            leaveType: leave.leaveType,
+            startDate: formattedStart,
+            endDate: formattedEnd,
+            daysRequested: leave.daysRequested,
+            actionByName: actionUser?.name || "Manager",
+            managerRemarks: leave.managerRemarks,
+          });
+        }
+      } catch (wsErr) {
+        console.error("Error triggering leave status WhatsApp notification:", wsErr);
+      }
 
       return res.status(200).json({ success: true, data: leave });
     } catch (error) {
