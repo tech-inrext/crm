@@ -56,7 +56,7 @@ const HrLeavesOverview: React.FC = () => {
 
   const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [selectedEmployee, setSelectedEmployee] = useState<EmployeeOption | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>("ALL");
+  const [statusFilter, setStatusFilter] = useState<string>("Approved");
   const [dateScope, setDateScope] = useState<string>("TODAY");
   const [fromDate, setFromDate] = useState<string>(todayStr);
   const [toDate, setToDate] = useState<string>(todayStr);
@@ -464,7 +464,7 @@ const HrLeavesOverview: React.FC = () => {
           )}
 
           {/* Reset Filters Icon Button */}
-          {(selectedEmployee || statusFilter !== "ALL" || dateScope !== "TODAY" || fromDate !== todayStr || toDate !== todayStr) && (
+          {(selectedEmployee || statusFilter !== "Approved" || dateScope !== "TODAY" || fromDate !== todayStr || toDate !== todayStr) && (
             <Tooltip title="Reset Filters">
               <Chip
                 icon={<ResetIcon sx={{ fontSize: "16px !important" }} />}
@@ -472,7 +472,7 @@ const HrLeavesOverview: React.FC = () => {
                 size="small"
                 onClick={() => {
                   setSelectedEmployee(null);
-                  setStatusFilter("ALL");
+                  setStatusFilter("Approved");
                   setDateScope("TODAY");
                   setFromDate(todayStr);
                   setToDate(todayStr);
