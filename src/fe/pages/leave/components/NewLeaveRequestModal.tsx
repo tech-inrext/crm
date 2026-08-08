@@ -19,15 +19,23 @@ import {
   Paper,
   Chip,
   Tooltip,
+  IconButton,
 } from "@mui/material";
 import { 
   EventAvailable as EventAvailableIcon,
   Send as SendIcon,
+  AttachFile as AttachFileIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { leaveApi } from "../leaveApi";
 import { LeaveRequestPayload } from "../types";
 import { toast } from "sonner";
 import { animatedButtonSx } from "../styles";
+
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs, { Dayjs } from "dayjs";
 
 interface Props {
   open: boolean;
@@ -51,6 +59,9 @@ const LEAVE_TYPES = [
 const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // File upload state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Half day checkboxes state for Start Date and End Date
   const [startFirstHalf, setStartFirstHalf] = useState(false);
@@ -78,20 +89,33 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
     }
   }, [isSameDate, startFirstHalf, startSecondHalf]);
 
-  // Calculate days requested and halfDayOption string automatically
+  // Calculate days requested and halfDayOption string automatically (Excluding Sundays as Weekly Off)
   React.useEffect(() => {
     if (!formData.startDate || !formData.endDate) return;
 
-    const start = new Date(formData.startDate);
-    const end = new Date(formData.endDate);
+    const [sY, sM, sD] = (formData.startDate as string).split("-").map(Number);
+    const [eY, eM, eD] = (formData.endDate as string).split("-").map(Number);
+
+    const start = new Date(sY, sM - 1, sD, 0, 0, 0);
+    const end = new Date(eY, eM - 1, eD, 0, 0, 0);
 
     if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return;
 
-    const diffTime = Math.abs(end.getTime() - start.getTime());
-    const totalCalendarDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1; // inclusive count
+    const isSingleDay = start.getTime() === end.getTime();
 
-    if (totalCalendarDays === 1) {
-      // Single Day calculation
+    if (isSingleDay) {
+      if (start.getDay() === 0) {
+        // Selected single date is Sunday
+        setFormData((prev) => ({
+          ...prev,
+          daysRequested: 0,
+          isHalfDay: false,
+          halfDayOption: "Sunday (Weekly Off)",
+        }));
+        setErrorMsg("Selected date is a Sunday (Weekly Off). 0 leave days deducted.");
+        return;
+      }
+
       let dayVal = 1.0;
       let optionStr = "Full Day";
       let isHalf = false;
@@ -112,51 +136,72 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
         isHalfDay: isHalf,
         halfDayOption: optionStr,
       }));
-    } else {
-      // Multi-Day calculation
-      // Portion for Start Date
-      let startPortion = 1.0;
-      let startHalfLabel = "";
-      if (startSecondHalf && !startFirstHalf) {
-        startPortion = 0.5;
-        startHalfLabel = "Start Date: 2nd Half (Afternoon)";
-      } else if (startFirstHalf && !startSecondHalf) {
-        startPortion = 0.5;
-        startHalfLabel = "Start Date: 1st Half (Morning)";
-      }
-
-      // Portion for End Date
-      let endPortion = 1.0;
-      let endHalfLabel = "";
-      if (endFirstHalf && !endSecondHalf) {
-        endPortion = 0.5;
-        endHalfLabel = "End Date: 1st Half (Morning)";
-      } else if (endSecondHalf && !endFirstHalf) {
-        endPortion = 0.5;
-        endHalfLabel = "End Date: 2nd Half (Afternoon)";
-      }
-
-      const intermediateDays = totalCalendarDays - 2; // full days between start and end date
-      const totalCalculated = Math.max(0.5, startPortion + intermediateDays + endPortion);
-
-      const isHalf = startPortion < 1.0 || endPortion < 1.0;
-      let optionStr = "Full Day";
-
-      if (startHalfLabel && endHalfLabel) {
-        optionStr = `${startHalfLabel} & ${endHalfLabel}`;
-      } else if (startHalfLabel) {
-        optionStr = startHalfLabel;
-      } else if (endHalfLabel) {
-        optionStr = endHalfLabel;
-      }
-
-      setFormData((prev) => ({
-        ...prev,
-        daysRequested: totalCalculated,
-        isHalfDay: isHalf,
-        halfDayOption: optionStr,
-      }));
+      return;
     }
+
+    // Multi-day calculation: iterate day by day and exclude Sundays (getDay() === 0)
+    let totalDays = 0;
+    let sundayCount = 0;
+    const curr = new Date(start);
+
+    let startHalfLabel = "";
+    let endHalfLabel = "";
+
+    while (curr <= end) {
+      const isSun = curr.getDay() === 0;
+      const isStartDay = curr.getTime() === start.getTime();
+      const isEndDay = curr.getTime() === end.getTime();
+
+      if (isSun) {
+        sundayCount++;
+      } else {
+        let dayWeight = 1.0;
+
+        if (isStartDay) {
+          if (startSecondHalf && !startFirstHalf) {
+            dayWeight = 0.5;
+            startHalfLabel = "Start Date: 2nd Half (Afternoon)";
+          } else if (startFirstHalf && !startSecondHalf) {
+            dayWeight = 0.5;
+            startHalfLabel = "Start Date: 1st Half (Morning)";
+          }
+        } else if (isEndDay) {
+          if (endFirstHalf && !endSecondHalf) {
+            dayWeight = 0.5;
+            endHalfLabel = "End Date: 1st Half (Morning)";
+          } else if (endSecondHalf && !endFirstHalf) {
+            dayWeight = 0.5;
+            endHalfLabel = "End Date: 2nd Half (Afternoon)";
+          }
+        }
+
+        totalDays += dayWeight;
+      }
+
+      curr.setDate(curr.getDate() + 1);
+    }
+
+    const isHalf = Boolean(startHalfLabel || endHalfLabel);
+    let optionStr = "Full Day";
+
+    if (startHalfLabel && endHalfLabel) {
+      optionStr = `${startHalfLabel} & ${endHalfLabel}`;
+    } else if (startHalfLabel) {
+      optionStr = startHalfLabel;
+    } else if (endHalfLabel) {
+      optionStr = endHalfLabel;
+    }
+
+    if (sundayCount > 0) {
+      optionStr += ` (${sundayCount} Sunday${sundayCount > 1 ? "s" : ""} Excluded)`;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      daysRequested: totalDays,
+      isHalfDay: isHalf,
+      halfDayOption: optionStr,
+    }));
   }, [formData.startDate, formData.endDate, startFirstHalf, startSecondHalf, endFirstHalf, endSecondHalf, isSameDate]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -183,6 +228,7 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
     setStartSecondHalf(false);
     setEndFirstHalf(false);
     setEndSecondHalf(false);
+    setSelectedFile(null);
     onClose();
   };
 
@@ -200,7 +246,41 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
 
     setLoading(true);
     try {
-      const res = await leaveApi.createRequest(formData);
+      let attachmentUrl = "";
+      if (selectedFile) {
+        try {
+          const presignRes = await fetch("/api/v0/s3/upload-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ 
+              fileName: selectedFile.name, 
+              fileType: selectedFile.type, 
+              folder: "leavedoc" 
+            }),
+          });
+          const presignJson = await presignRes.json();
+          if (presignJson.uploadUrl) {
+            await fetch(presignJson.uploadUrl, {
+              method: "PUT",
+              body: selectedFile,
+              headers: { "Content-Type": selectedFile.type },
+            });
+            attachmentUrl = presignJson.fileUrl;
+          }
+        } catch (uploadErr) {
+          console.error("Document upload failed:", uploadErr);
+          toast.error("Failed to upload document");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const payload = {
+        ...formData,
+        attachmentUrl: attachmentUrl || undefined,
+      };
+
+      const res = await leaveApi.createRequest(payload);
       if (res?.success) {
         toast.success("Leave request submitted successfully");
         onSuccess();
@@ -247,7 +327,7 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
                 fontSize: "0.875rem"
               }}
             >
-              <AlertTitle sx={{ fontWeight: 700, fontSize: "0.95rem" }}>Quota Limit Error</AlertTitle>
+              <AlertTitle sx={{ fontWeight: 700, fontSize: "0.95rem" }}>Leave Request Error</AlertTitle>
               {errorMsg}
             </Alert>
           )}
@@ -330,74 +410,101 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
             </Box>
           </Box>
 
-          {/* Row 2: Equal Height Side-by-Side Date Boxes */}
-          <Box display="flex" gap={2} width="100%">
-            <Paper variant="outlined" sx={{ flex: 1, p: 2, borderRadius: 2.5, borderColor: "#e2e8f0" }}>
-              <TextField
-                type="date"
-                label="Start Date"
-                name="startDate"
-                value={formData.startDate}
-                onChange={handleChange}
-                fullWidth
-                required
-                InputLabelProps={{ shrink: true }}
-                variant="outlined"
-                sx={{ mb: 1.5, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              />
-              <Typography variant="caption" fontWeight="700" color="#64748b" display="block" mb={0.5}>
-                Start Date Half Day:
-              </Typography>
-              <FormGroup row>
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={startFirstHalf}
-                      onChange={(e) => {
-                        setErrorMsg(null);
-                        setStartFirstHalf(e.target.checked);
-                        if (e.target.checked) setStartSecondHalf(false);
-                      }}
-                    />
-                  }
-                  label={<Typography variant="body2" fontSize="0.85rem">1st Half</Typography>}
+          {/* Row 2: Equal Height Side-by-Side Date Pickers */}
+          <LocalizationProvider dateAdapter={AdapterDayjs}>
+            <Box display="flex" gap={2} width="100%">
+              <Paper variant="outlined" sx={{ flex: 1, p: 2, borderRadius: 2.5, borderColor: "#e2e8f0" }}>
+                <DatePicker
+                  label="Start Date *"
+                  format="DD/MM/YYYY"
+                  disablePast
+                  value={formData.startDate ? dayjs(formData.startDate) : null}
+                  onChange={(newValue: Dayjs | null) => {
+                    setErrorMsg(null);
+                    const valStr = newValue && newValue.isValid() ? newValue.format("YYYY-MM-DD") : "";
+                    setFormData((prev) => {
+                      const newEndDate = prev.endDate && dayjs(prev.endDate).isBefore(newValue) ? valStr : prev.endDate;
+                      return {
+                        ...prev,
+                        startDate: valStr,
+                        endDate: newEndDate,
+                      };
+                    });
+                  }}
+                  shouldDisableDate={(date: Dayjs) => date.day() === 0}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      required: true,
+                      variant: "outlined",
+                      sx: { mb: 1.5, "& .MuiOutlinedInput-root": { borderRadius: 2 } },
+                    },
+                  }}
                 />
-                <FormControlLabel
-                  control={
-                    <Checkbox
-                      size="small"
-                      checked={startSecondHalf}
-                      onChange={(e) => {
-                        setErrorMsg(null);
-                        setStartSecondHalf(e.target.checked);
-                        if (e.target.checked) setStartFirstHalf(false);
-                      }}
-                    />
-                  }
-                  label={<Typography variant="body2" fontSize="0.85rem">2nd Half</Typography>}
-                />
-              </FormGroup>
-            </Paper>
+                <Typography variant="caption" fontWeight="700" color="#64748b" display="block" mb={0.5}>
+                  Start Date Half Day:
+                </Typography>
+                <FormGroup row>
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={startFirstHalf}
+                        onChange={(e) => {
+                          setErrorMsg(null);
+                          setStartFirstHalf(e.target.checked);
+                          if (e.target.checked) setStartSecondHalf(false);
+                        }}
+                      />
+                    }
+                    label={<Typography variant="body2" fontSize="0.85rem">1st Half</Typography>}
+                  />
+                  <FormControlLabel
+                    control={
+                      <Checkbox
+                        size="small"
+                        checked={startSecondHalf}
+                        onChange={(e) => {
+                          setErrorMsg(null);
+                          setStartSecondHalf(e.target.checked);
+                          if (e.target.checked) setStartFirstHalf(false);
+                        }}
+                      />
+                    }
+                    label={<Typography variant="body2" fontSize="0.85rem">2nd Half</Typography>}
+                  />
+                </FormGroup>
+              </Paper>
 
-            <Paper variant="outlined" sx={{ flex: 1, p: 2, borderRadius: 2.5, borderColor: "#e2e8f0" }}>
-              <TextField
-                type="date"
-                label="End Date"
-                name="endDate"
-                value={formData.endDate}
-                onChange={handleChange}
-                fullWidth
-                required
-                disabled={Boolean(isSameDate && (startFirstHalf || startSecondHalf))}
-                InputLabelProps={{ shrink: true }}
-                inputProps={{ min: formData.startDate }}
-                variant="outlined"
-                sx={{ mb: 1.5, "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
-              />
-              <Typography variant="caption" fontWeight="700" color="#64748b" display="block" mb={0.5}>
-                {isSameDate ? "End Date (Same Day):" : "End Date Half Day:"}
-              </Typography>
+              <Paper variant="outlined" sx={{ flex: 1, p: 2, borderRadius: 2.5, borderColor: "#e2e8f0" }}>
+                <DatePicker
+                  label="End Date *"
+                  format="DD/MM/YYYY"
+                  disablePast
+                  value={formData.endDate ? dayjs(formData.endDate) : null}
+                  minDate={formData.startDate ? dayjs(formData.startDate) : dayjs()}
+                  disabled={Boolean(isSameDate && (startFirstHalf || startSecondHalf))}
+                  onChange={(newValue: Dayjs | null) => {
+                    setErrorMsg(null);
+                    const valStr = newValue && newValue.isValid() ? newValue.format("YYYY-MM-DD") : "";
+                    setFormData((prev) => ({
+                      ...prev,
+                      endDate: valStr,
+                    }));
+                  }}
+                  shouldDisableDate={(date: Dayjs) => date.day() === 0}
+                  slotProps={{
+                    textField: {
+                      fullWidth: true,
+                      required: true,
+                      variant: "outlined",
+                      sx: { mb: 1.5, "& .MuiOutlinedInput-root": { borderRadius: 2 } },
+                    },
+                  }}
+                />
+                <Typography variant="caption" fontWeight="700" color="#64748b" display="block" mb={0.5}>
+                  {isSameDate ? "End Date (Same Day):" : "End Date Half Day:"}
+                </Typography>
               <FormGroup row>
                 <FormControlLabel
                   control={
@@ -432,6 +539,7 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
               </FormGroup>
             </Paper>
           </Box>
+        </LocalizationProvider>
 
           {/* Row 3: Full Width Reason Field */}
           <Box width="100%">
@@ -443,11 +551,79 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
               fullWidth
               required
               multiline
-              rows={3}
+              rows={2}
               placeholder="Provide reason for your leave request..."
               variant="outlined"
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
             />
+          </Box>
+
+          {/* Row 4: Document Attachment Upload */}
+          <Box width="100%">
+            <Typography variant="caption" fontWeight="700" color="#64748b" display="block" mb={0.8}>
+              Attach Document / Medical Certificate (Optional):
+            </Typography>
+            {!selectedFile ? (
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<AttachFileIcon sx={{ color: "#1976d2" }} />}
+                fullWidth
+                sx={{
+                  py: 1.2,
+                  borderRadius: 2,
+                  borderColor: "#cbd5e1",
+                  color: "#475569",
+                  borderStyle: "dashed",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  "&:hover": { borderColor: "#1976d2", bgcolor: "#f0f7ff" },
+                }}
+              >
+                Upload Document (PDF, PNG, JPG, DOC)
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setSelectedFile(e.target.files[0]);
+                    }
+                  }}
+                />
+              </Button>
+            ) : (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 1.2,
+                  px: 2,
+                  borderRadius: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  bgcolor: "#f0f7ff",
+                  borderColor: "#93c5fd",
+                }}
+              >
+                <Box display="flex" alignItems="center" gap={1.2} overflow="hidden">
+                  <AttachFileIcon sx={{ color: "#0288d1", fontSize: 20 }} />
+                  <Box overflow="hidden">
+                    <Typography variant="body2" fontWeight="700" color="#0369a1" noWrap>
+                      {selectedFile.name}
+                    </Typography>
+                    <Typography variant="caption" color="#64748b">
+                      {(selectedFile.size / 1024).toFixed(1)} KB
+                    </Typography>
+                  </Box>
+                </Box>
+                <Tooltip title="Remove attachment">
+                  <IconButton size="small" color="error" onClick={() => setSelectedFile(null)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Paper>
+            )}
           </Box>
         </Box>
       </DialogContent>

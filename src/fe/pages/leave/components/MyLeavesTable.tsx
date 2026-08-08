@@ -28,6 +28,7 @@ import {
   AssessmentOutlined as AssessmentIcon,
   CalendarToday as CalendarTodayIcon,
   FilterList as FilterIcon,
+  AttachFile as AttachFileIcon,
 } from "@mui/icons-material";
 import { leaveApi } from "../leaveApi";
 import { LeaveRequest } from "../types";
@@ -271,9 +272,28 @@ const MyLeavesTable: React.FC<MyLeavesTableProps> = ({ refreshTrigger }) => {
               >
                 {/* Header: Leave Type + Status */}
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
-                  <Typography variant="subtitle1" fontWeight="700" color="#0f172a">
-                    {leave.leaveType}
-                  </Typography>
+                  <Box display="flex" alignItems="center" gap={0.8}>
+                    <Typography variant="subtitle1" fontWeight="700" color="#0f172a">
+                      {leave.leaveType}
+                    </Typography>
+                    {(leave as any).attachmentUrl && (
+                      <Tooltip title="Attachment available. Click card to view or download.">
+                        <Chip
+                          icon={<AttachFileIcon sx={{ fontSize: "14px !important", color: "#0288d1" }} />}
+                          label="Doc"
+                          size="small"
+                          sx={{
+                            height: 20,
+                            fontSize: "0.68rem",
+                            fontWeight: 700,
+                            bgcolor: "#e0f2fe",
+                            color: "#0369a1",
+                            "& .MuiChip-icon": { ml: 0.5 },
+                          }}
+                        />
+                      </Tooltip>
+                    )}
+                  </Box>
                   <Chip 
                     label={leave.status} 
                     size="small" 

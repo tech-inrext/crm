@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { fileName, fileType } = req.body;
+    const { fileName, fileType, folder } = req.body;
 
     if (!fileName || !fileType) {
       return res.status(400).json({ message: "fileName and fileType are required" });
@@ -30,7 +30,8 @@ export default async function handler(req, res) {
       return res.status(500).json({ message: "AWS configuration missing" });
     }
 
-    const key = `uploads/${uuidv4()}_${fileName}`;
+    const targetFolder = folder || "uploads";
+    const key = `${targetFolder}/${uuidv4()}_${fileName}`;
 
     const command = new PutObjectCommand({
       Bucket: process.env.AWS_BUCKET_NAME!,
