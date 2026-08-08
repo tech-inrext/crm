@@ -16,6 +16,7 @@ import {
   DialogContent,
   DialogActions,
   Tooltip,
+  Collapse,
 } from "@mui/material";
 import {
   Badge as HrIcon,
@@ -34,11 +35,14 @@ import {
   HighlightOff as RejectIcon,
   ArrowForward as ArrowForwardIcon,
   FileDownload as DownloadIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  AttachFile as AttachFileIcon,
 } from "@mui/icons-material";
 import { leaveApi } from "../leaveApi";
 import { LeaveRequest } from "../types";
 import { toast } from "sonner";
-import { format, startOfWeek, endOfWeek, startOfMonth, endOfMonth } from "date-fns";
+import { format, subDays, startOfMonth, endOfMonth } from "date-fns";
 import LeaveStatsCards from "./LeaveStatsCards";
 import LeaveDetailsModal from "./LeaveDetailsModal";
 import { animatedButtonSx } from "../styles";
@@ -47,6 +51,7 @@ import { formatDaysNumber } from "../utils/formatters";
 interface EmployeeOption {
   _id: string;
   name: string;
+  email?: string;
   employeeProfileId?: string;
   photo?: string;
 }
@@ -60,6 +65,7 @@ const HrLeavesOverview: React.FC = () => {
   const [dateScope, setDateScope] = useState<string>("TODAY");
   const [fromDate, setFromDate] = useState<string>(todayStr);
   const [toDate, setToDate] = useState<string>(todayStr);
+  const [showEmployeeStats, setShowEmployeeStats] = useState<boolean>(false);
 
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -101,8 +107,9 @@ const HrLeavesOverview: React.FC = () => {
       setFromDate(todayStr);
       setToDate(todayStr);
     } else if (scope === "THIS_WEEK") {
-      setFromDate(format(startOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd"));
-      setToDate(format(endOfWeek(now, { weekStartsOn: 1 }), "yyyy-MM-dd"));
+      // Last 7 Days up to today (e.g. Aug 01 to Aug 07)
+      setFromDate(format(subDays(now, 6), "yyyy-MM-dd"));
+      setToDate(todayStr);
     } else if (scope === "THIS_MONTH") {
       setFromDate(format(startOfMonth(now), "yyyy-MM-dd"));
       setToDate(format(endOfMonth(now), "yyyy-MM-dd"));
@@ -319,11 +326,11 @@ const HrLeavesOverview: React.FC = () => {
           {/* Employee Dropdown */}
           <Autocomplete
             options={employees}
-            getOptionLabel={(option) => `${option.name} (${option.employeeProfileId || "No ID"})`}
+            getOptionLabel={(option) => `${option.name}${option.email ? ` (${option.email})` : option.employeeProfileId ? ` (${option.employeeProfileId})` : ""}`}
             value={selectedEmployee}
             onChange={(_, newValue) => setSelectedEmployee(newValue)}
             loading={empLoading}
-            sx={{ minWidth: 220, flex: 1, maxWidth: 280 }}
+            sx={{ minWidth: 240, flex: 1, maxWidth: 320 }}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -486,16 +493,53 @@ const HrLeavesOverview: React.FC = () => {
         </Box>
       </Paper>
 
-      {/* Employee Stats (shown when specific employee is selected) */}
+      {/* Employee Stats (shown when specific employee is selected, collapsed by default) */}
       {selectedEmployee && (
-        <Box mb={4}>
-          <Paper elevation={0} sx={{ p: 2, mb: 2, borderRadius: 2.5, bgcolor: "#e0f2fe", border: "1px solid #bae6fd", display: "flex", alignItems: "center", gap: 1.5 }}>
-            <PeopleIcon sx={{ color: "#0288d1" }} />
-            <Typography variant="body1" fontWeight="600" color="#0369a1">
-              Showing leave quota and statistics for: <strong>{selectedEmployee.name}</strong>
-            </Typography>
+        <Box mb={3}>
+          <Paper
+            elevation={0}
+            onClick={() => setShowEmployeeStats((prev) => !prev)}
+            sx={{
+              p: 1.8,
+              px: 2.5,
+              borderRadius: 2.5,
+              bgcolor: "#e0f2fe",
+              border: "1px solid #bae6fd",
+              display: "flex",
+              alignItems: "center",
+              justify: "space-between",
+              cursor: "pointer",
+              transition: "all 0.2s ease",
+              "&:hover": {
+                bgcolor: "#bae6fd",
+              },
+            }}
+          >
+            <Box display="flex" alignItems="center" gap={1.5}>
+              <PeopleIcon sx={{ color: "#0288d1" }} />
+              <Typography variant="body1" fontWeight="600" color="#0369a1">
+                Showing leave quota and statistics for: <strong>{selectedEmployee.name}</strong>
+                {selectedEmployee.email && (
+                  <Box component="span" sx={{ opacity: 0.85, fontWeight: 500, ml: 0.8 }}>
+                    ({selectedEmployee.email})
+                  </Box>
+                )}
+              </Typography>
+            </Box>
+            <Button
+              size="small"
+              endIcon={showEmployeeStats ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+              sx={{ fontWeight: 700, color: "#0288d1", textTransform: "none", ml: "auto" }}
+            >
+              {showEmployeeStats ? "Hide Quota Balance" : "View Quota Balance"}
+            </Button>
           </Paper>
-          <LeaveStatsCards employeeId={selectedEmployee._id} />
+
+          <Collapse in={showEmployeeStats}>
+            <Box pt={2}>
+              <LeaveStatsCards employeeId={selectedEmployee._id} />
+            </Box>
+          </Collapse>
         </Box>
       )}
 
@@ -594,9 +638,28 @@ const HrLeavesOverview: React.FC = () => {
 
                 {/* Leave Type + Days */}
                 <Box display="flex" justifyContent="space-between" alignItems="center" mb={1.5}>
-                  <Typography variant="subtitle1" fontWeight="700" color="#0f172a">
-                    {leave.leaveType}
-                  </Typography>
+                  <Box display="flex" alignItems="center" gap={0.8}>
+                    <Typography variant="subtitle1" fontWeight="700" color="#0f172a">
+                      {leave.leaveType}
+                    </Typography>
+                    {leave.attachmentUrl && (
+                      <Tooltip title="Attachment available. Click card to view or download.">
+                        <Chip
+                          icon={<AttachFileIcon sx={{ fontSize: "14px !important", color: "#0288d1" }} />}
+                          label="Doc"
+                          size="small"
+                          sx={{
+                            height: 20,
+                            fontSize: "0.68rem",
+                            fontWeight: 700,
+                            bgcolor: "#e0f2fe",
+                            color: "#0369a1",
+                            "& .MuiChip-icon": { ml: 0.5 },
+                          }}
+                        />
+                      </Tooltip>
+                    )}
+                  </Box>
                   <Chip
                     label={`${formatDaysNumber(leave.daysRequested)} Day(s)`}
                     size="small"

@@ -19,10 +19,13 @@ import {
   Paper,
   Chip,
   Tooltip,
+  IconButton,
 } from "@mui/material";
 import { 
   EventAvailable as EventAvailableIcon,
   Send as SendIcon,
+  AttachFile as AttachFileIcon,
+  Delete as DeleteIcon,
 } from "@mui/icons-material";
 import { leaveApi } from "../leaveApi";
 import { LeaveRequestPayload } from "../types";
@@ -51,6 +54,9 @@ const LEAVE_TYPES = [
 const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // File upload state
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   // Half day checkboxes state for Start Date and End Date
   const [startFirstHalf, setStartFirstHalf] = useState(false);
@@ -183,6 +189,7 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
     setStartSecondHalf(false);
     setEndFirstHalf(false);
     setEndSecondHalf(false);
+    setSelectedFile(null);
     onClose();
   };
 
@@ -200,7 +207,37 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
 
     setLoading(true);
     try {
-      const res = await leaveApi.createRequest(formData);
+      let attachmentUrl = "";
+      if (selectedFile) {
+        try {
+          const presignRes = await fetch("/api/v0/s3/upload-url", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ fileName: selectedFile.name, fileType: selectedFile.type }),
+          });
+          const presignJson = await presignRes.json();
+          if (presignJson.uploadUrl) {
+            await fetch(presignJson.uploadUrl, {
+              method: "PUT",
+              body: selectedFile,
+              headers: { "Content-Type": selectedFile.type },
+            });
+            attachmentUrl = presignJson.fileUrl;
+          }
+        } catch (uploadErr) {
+          console.error("Document upload failed:", uploadErr);
+          toast.error("Failed to upload document");
+          setLoading(false);
+          return;
+        }
+      }
+
+      const payload = {
+        ...formData,
+        attachmentUrl: attachmentUrl || undefined,
+      };
+
+      const res = await leaveApi.createRequest(payload);
       if (res?.success) {
         toast.success("Leave request submitted successfully");
         onSuccess();
@@ -443,11 +480,79 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
               fullWidth
               required
               multiline
-              rows={3}
+              rows={2}
               placeholder="Provide reason for your leave request..."
               variant="outlined"
               sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
             />
+          </Box>
+
+          {/* Row 4: Document Attachment Upload */}
+          <Box width="100%">
+            <Typography variant="caption" fontWeight="700" color="#64748b" display="block" mb={0.8}>
+              Attach Document / Medical Certificate (Optional):
+            </Typography>
+            {!selectedFile ? (
+              <Button
+                variant="outlined"
+                component="label"
+                startIcon={<AttachFileIcon sx={{ color: "#1976d2" }} />}
+                fullWidth
+                sx={{
+                  py: 1.2,
+                  borderRadius: 2,
+                  borderColor: "#cbd5e1",
+                  color: "#475569",
+                  borderStyle: "dashed",
+                  fontWeight: 600,
+                  textTransform: "none",
+                  "&:hover": { borderColor: "#1976d2", bgcolor: "#f0f7ff" },
+                }}
+              >
+                Upload Document (PDF, PNG, JPG, DOC)
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*,.pdf,.doc,.docx"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setSelectedFile(e.target.files[0]);
+                    }
+                  }}
+                />
+              </Button>
+            ) : (
+              <Paper
+                variant="outlined"
+                sx={{
+                  p: 1.2,
+                  px: 2,
+                  borderRadius: 2,
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  bgcolor: "#f0f7ff",
+                  borderColor: "#93c5fd",
+                }}
+              >
+                <Box display="flex" alignItems="center" gap={1.2} overflow="hidden">
+                  <AttachFileIcon sx={{ color: "#0288d1", fontSize: 20 }} />
+                  <Box overflow="hidden">
+                    <Typography variant="body2" fontWeight="700" color="#0369a1" noWrap>
+                      {selectedFile.name}
+                    </Typography>
+                    <Typography variant="caption" color="#64748b">
+                      {(selectedFile.size / 1024).toFixed(1)} KB
+                    </Typography>
+                  </Box>
+                </Box>
+                <Tooltip title="Remove attachment">
+                  <IconButton size="small" color="error" onClick={() => setSelectedFile(null)}>
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </Paper>
+            )}
           </Box>
         </Box>
       </DialogContent>

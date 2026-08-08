@@ -22,6 +22,9 @@ import {
   HourglassEmpty as PendingIcon,
   Schedule as ScheduleIcon,
   Person as PersonIcon,
+  AttachFile as AttachFileIcon,
+  OpenInNew as OpenInNewIcon,
+  FileDownload as DownloadIcon,
 } from "@mui/icons-material";
 import { LeaveRequest, EmployeeStub } from "../types";
 import { format } from "date-fns";
@@ -163,6 +166,65 @@ const LeaveDetailsModal: React.FC<Props> = ({ leave, open, onClose }) => {
               )}
             </Typography>
           </Box>
+
+          {/* Attachment Document (If present) */}
+          {leave.attachmentUrl && (
+            <Paper
+              elevation={0}
+              sx={{
+                mt: 2,
+                p: 1.8,
+                px: 2,
+                borderRadius: 2.5,
+                bgcolor: "#f0f7ff",
+                border: "1px solid #bae6fd",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: 1.5,
+              }}
+            >
+              <Box display="flex" alignItems="center" gap={1.2}>
+                <AttachFileIcon sx={{ color: "#0288d1", fontSize: 22 }} />
+                <Box>
+                  <Typography variant="body2" fontWeight="700" color="#0369a1">
+                    Uploaded Supporting Document
+                  </Typography>
+                  <Typography variant="caption" color="#64748b" display="block">
+                    Attached with leave application
+                  </Typography>
+                </Box>
+              </Box>
+              <Box display="flex" alignItems="center" gap={1}>
+                <Button
+                  size="small"
+                  variant="outlined"
+                  color="primary"
+                  startIcon={<OpenInNewIcon />}
+                  href={leave.attachmentUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ fontWeight: 700, borderRadius: 1.5, textTransform: "none", py: 0.6 }}
+                >
+                  View Document
+                </Button>
+                <Button
+                  size="small"
+                  variant="contained"
+                  color="primary"
+                  startIcon={<DownloadIcon />}
+                  href={leave.attachmentUrl}
+                  download
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  sx={{ fontWeight: 700, borderRadius: 1.5, textTransform: "none", py: 0.6 }}
+                >
+                  Download
+                </Button>
+              </Box>
+            </Paper>
+          )}
         </Paper>
 
         {/* Audit & Decision Timeline */}

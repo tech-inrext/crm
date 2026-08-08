@@ -145,7 +145,8 @@ class LeaveService extends Service {
         isHalfDay: !!isHalfDay,
         halfDayOption: halfDayOption || "Full Day",
         reason,
-        attachmentUrl,
+        attachmentUrl: attachmentUrl || documentUrl || "",
+        documentUrl: documentUrl || attachmentUrl || "",
         status: "Pending",
       });
 
