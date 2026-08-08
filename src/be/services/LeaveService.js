@@ -85,6 +85,44 @@ function calculateAccruedQuotas(employeeJoiningDate, currentDate = new Date()) {
   return { quotas, monthsInFY, fyStartDate, fyEndDate };
 }
 
+// Helper function to calculate working days between two dates, excluding Sundays
+function calculateWorkingDaysExcludingSundays(startDateStr, endDateStr, isHalfDay, halfDayOption) {
+  if (!startDateStr || !endDateStr) return 0;
+
+  const start = new Date(startDateStr);
+  const end = new Date(endDateStr);
+
+  if (isNaN(start.getTime()) || isNaN(end.getTime()) || start > end) return 0;
+
+  const isSingleDay = start.getFullYear() === end.getFullYear() &&
+                      start.getMonth() === end.getMonth() &&
+                      start.getDate() === end.getDate();
+
+  if (isSingleDay) {
+    if (start.getDay() === 0) return 0; // Sunday (Weekly Off)
+    return isHalfDay ? 0.5 : 1.0;
+  }
+
+  let total = 0;
+  const curr = new Date(start);
+  while (curr <= end) {
+    if (curr.getDay() !== 0) { // Exclude Sunday (getDay() === 0)
+      let dayWeight = 1.0;
+      const isStart = curr.getTime() === start.getTime();
+      const isEnd = curr.getTime() === end.getTime();
+
+      if (isStart && isHalfDay && (halfDayOption?.includes("Start Date") || halfDayOption?.includes("2nd Half"))) {
+        dayWeight = 0.5;
+      } else if (isEnd && isHalfDay && (halfDayOption?.includes("End Date") || halfDayOption?.includes("1st Half"))) {
+        dayWeight = 0.5;
+      }
+      total += dayWeight;
+    }
+    curr.setDate(curr.getDate() + 1);
+  }
+  return total;
+}
+
 class LeaveService extends Service {
   constructor() {
     super();
@@ -93,7 +131,7 @@ class LeaveService extends Service {
   // Create a new leave request
   async createLeaveRequest(req, res) {
     try {
-      const { leaveType, startDate, endDate, daysRequested, reason, attachmentUrl, isHalfDay, halfDayOption } = req.body;
+      const { leaveType, startDate, endDate, daysRequested, reason, attachmentUrl, documentUrl, isHalfDay, halfDayOption } = req.body;
       const employeeId = req.employee?._id || req.user?._id;
 
       if (!employeeId) {
@@ -109,10 +147,20 @@ class LeaveService extends Service {
         return res.status(400).json({ success: false, message: "You don't have a manager assigned to approve this leave." });
       }
 
+      // Calculate working days excluding Sundays
+      const calculatedDays = calculateWorkingDaysExcludingSundays(startDate, endDate, isHalfDay, halfDayOption);
+      const requestedDays = calculatedDays > 0 ? calculatedDays : Number(daysRequested) || 0;
+
+      if (requestedDays <= 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Selected date range only contains Sunday (Weekly Off). 0 leave days needed.",
+        });
+      }
+
       // Quota validation according to official Company Leave Policy (Financial Year April-March Monthly Accrual)
       const now = new Date();
       const { quotas, monthsInFY, fyStartDate, fyEndDate } = calculateAccruedQuotas(employee.joiningDate, now);
-      const requestedDays = Number(daysRequested) || 0;
       const maxQuota = quotas[leaveType];
 
       // Check quota limit if leave type has a quota limit (> 0)
@@ -141,7 +189,7 @@ class LeaveService extends Service {
         leaveType,
         startDate,
         endDate,
-        daysRequested,
+        daysRequested: requestedDays,
         isHalfDay: !!isHalfDay,
         halfDayOption: halfDayOption || "Full Day",
         reason,
