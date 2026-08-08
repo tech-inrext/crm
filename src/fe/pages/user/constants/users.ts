@@ -66,7 +66,7 @@ export type BranchKey = "Noida" | "Lucknow" | "Patna" | "Delhi";
 export const BRANCH_LABELS: Record<BranchKey, string> = {
   Noida:
     "Noida: 3rd floor, D4, Block -D, Sector -10, Noida, Uttar Pradesh 201301.",
-  Lucknow: "Lucknow: 312, Felix, Square, Sushant Golf City, Lucknow 226030.",
+  Lucknow: "Lucknow: 12B/286, Awas Vikas, Sector 12b, Vrindavan Colony, Baraulikhalilabad, Lucknow, Uttar Pradesh 226029.",
   Patna:
     "Patna: 4th floor, Pandey Plaza, Exhibition Road, Patna, Bihar 800001.",
   Delhi: "Plot No. 29, 4th Floor, Moti Nagar, New Delhi-110015",
@@ -177,23 +177,23 @@ export const getOrganizationFields = (
   departmentName: string,
   managerName: string
 ) => [
-  { label: "Designation", dataKey: "designation" },
-  { label: "Joining Date", dataKey: "joiningDate", isDate: true },
-  {
-    label: "Department",
-    dataKey: "departmentName",
-    isCustom: true,
-    customValue: departmentName,
-  },
-  {
-    label: "Manager",
-    dataKey: "managerName",
-    isCustom: true,
-    customValue: managerName,
-  },
-  { label: "Branch", dataKey: "branch" },
-  { label: "Slab Percentage", dataKey: "slabPercentage", suffix: "%" },
-];
+    { label: "Designation", dataKey: "designation" },
+    { label: "Joining Date", dataKey: "joiningDate", isDate: true },
+    {
+      label: "Department",
+      dataKey: "departmentName",
+      isCustom: true,
+      customValue: departmentName,
+    },
+    {
+      label: "Manager",
+      dataKey: "managerName",
+      isCustom: true,
+      customValue: managerName,
+    },
+    { label: "Branch", dataKey: "branch" },
+    { label: "Slab Percentage", dataKey: "slabPercentage", suffix: "%" },
+  ];
 
 // ─── Shared style tokens ──────────────────────────────────────────────────────
 export { GRADIENTS, COMMON_STYLES } from "@/constants/leads";

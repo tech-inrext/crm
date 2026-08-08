@@ -11,7 +11,7 @@ const streamFinished = promisify(finished);
 // Constants
 const BRANCH_ADDRESSES = {
   Noida: "D-4, 3rd Floor, Sector-10, Noida, Uttar Pradesh-201301.",
-  Lucknow: "312, Felix, Square, Sushant Golf City, Lucknow 226030.",
+  Lucknow: "12B/286, Awas Vikas, Sector 12b, Vrindavan Colony, Baraulikhalilabad, Lucknow, Uttar Pradesh 226029.",
   Patna: "4th floor, Pandey Plaza, Exhibition Road, Patna, Bihar 800001.",
   Delhi: "Plot No. 29, 4th Floor, Moti Nagar, New Delhi-110015",
 };
