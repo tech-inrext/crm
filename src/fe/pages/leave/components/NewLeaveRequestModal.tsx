@@ -73,13 +73,13 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
     leaveType: "Casual Leave",
     startDate: "",
     endDate: "",
-    daysRequested: 1,
+    daysRequested: 0,
     isHalfDay: false,
     halfDayOption: "Full Day",
     reason: "",
   });
 
-  const isSameDate = formData.startDate && formData.endDate && formData.startDate === formData.endDate;
+  const isSameDate = Boolean(formData.startDate && formData.endDate && formData.startDate === formData.endDate);
 
   // Sync End Date checkboxes with Start Date when single day selected
   React.useEffect(() => {
@@ -91,7 +91,15 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
 
   // Calculate days requested and halfDayOption string automatically (Excluding Sundays as Weekly Off)
   React.useEffect(() => {
-    if (!formData.startDate || !formData.endDate) return;
+    if (!formData.startDate || !formData.endDate) {
+      setFormData((prev) => ({
+        ...prev,
+        daysRequested: 0,
+        isHalfDay: false,
+        halfDayOption: "Full Day",
+      }));
+      return;
+    }
 
     const [sY, sM, sD] = (formData.startDate as string).split("-").map(Number);
     const [eY, eM, eD] = (formData.endDate as string).split("-").map(Number);
@@ -229,12 +237,28 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
     setEndFirstHalf(false);
     setEndSecondHalf(false);
     setSelectedFile(null);
+    setFormData({
+      leaveType: "Casual Leave",
+      startDate: "",
+      endDate: "",
+      daysRequested: 0,
+      isHalfDay: false,
+      halfDayOption: "Full Day",
+      reason: "",
+    });
     onClose();
   };
 
+  const isSubmitDisabled =
+    loading ||
+    !formData.startDate ||
+    !formData.endDate ||
+    !formData.reason?.trim() ||
+    formData.daysRequested <= 0;
+
   const handleSubmit = async () => {
     setErrorMsg(null);
-    if (!formData.startDate || !formData.endDate || !formData.reason) {
+    if (!formData.startDate || !formData.endDate || !formData.reason?.trim()) {
       setErrorMsg("Please fill all required fields");
       return;
     }
@@ -415,7 +439,7 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
             <Box display="flex" gap={2} width="100%">
               <Paper variant="outlined" sx={{ flex: 1, p: 2, borderRadius: 2.5, borderColor: "#e2e8f0" }}>
                 <DatePicker
-                  label="Start Date *"
+                  label="Start Date"
                   format="DD/MM/YYYY"
                   disablePast
                   value={formData.startDate ? dayjs(formData.startDate) : null}
@@ -478,7 +502,7 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
 
               <Paper variant="outlined" sx={{ flex: 1, p: 2, borderRadius: 2.5, borderColor: "#e2e8f0" }}>
                 <DatePicker
-                  label="End Date *"
+                  label="End Date"
                   format="DD/MM/YYYY"
                   disablePast
                   value={formData.endDate ? dayjs(formData.endDate) : null}
@@ -638,7 +662,7 @@ const NewLeaveRequestModal: React.FC<Props> = ({ open, onClose, onSuccess }) => 
         <Button 
           onClick={handleSubmit} 
           variant="contained" 
-          disabled={loading}
+          disabled={isSubmitDisabled}
           startIcon={!loading && <SendIcon />}
           sx={animatedButtonSx}
         >
