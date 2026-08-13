@@ -1,133 +1,73 @@
-// ─── DetailItem styles ─────────────────────────────────────────────────────
+// ─── Field Color Configs ───────────────────────────────────────────────────
 
-export const detailItem = {
-  row: "group flex items-start gap-3 p-3 rounded-lg bg-gray-50/50 hover:bg-blue-50/70 transition-all duration-200 border border-transparent hover:border-blue-100",
-  iconWrap:
-    "flex-shrink-0 w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-sm group-hover:shadow-md group-hover:scale-105 transition-all duration-200",
-  iconEl: "text-sm",
-  body: "flex-1 min-w-0",
-  label: "text-xs font-medium text-gray-500 uppercase tracking-wide mb-1",
-  linkAnchor:
-    "inline-flex items-center gap-1 text-sm font-medium text-blue-600 hover:text-blue-700 transition-colors duration-200 group",
-  linkArrow:
-    "w-3 h-3 opacity-60 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all duration-200",
-  empty: "text-sm text-gray-400 font-medium",
-  value: "text-sm text-gray-800 font-medium break-words",
-} as const;
-
-// ─── SectionCard color map ─────────────────────────────────────────────────
-
-export type SectionColor =
-  | "text-blue-600"
-  | "text-purple-600"
-  | "text-orange-600"
-  | "text-green-600";
-
-export const sectionColorMap: Record<
-  SectionColor,
-  { bg: string; border: string; icon: string; text: string }
-> = {
-  "text-blue-600": {
-    bg: "from-blue-50 to-blue-100/50",
-    border: "border-blue-200",
-    icon: "from-blue-500 to-blue-600",
-    text: "text-blue-700",
-  },
-  "text-purple-600": {
-    bg: "from-purple-50 to-purple-100/50",
-    border: "border-purple-200",
-    icon: "from-purple-500 to-purple-600",
-    text: "text-purple-700",
-  },
-  "text-orange-600": {
-    bg: "from-orange-50 to-orange-100/50",
-    border: "border-orange-200",
-    icon: "from-orange-500 to-orange-600",
-    text: "text-orange-700",
-  },
-  "text-green-600": {
-    bg: "from-green-50 to-green-100/50",
-    border: "border-green-200",
-    icon: "from-green-500 to-green-600",
-    text: "text-green-700",
-  },
+export const iconBadgeColors: Record<string, string> = {
+  blue: "bg-gradient-to-br from-blue-50 to-indigo-50/80 text-blue-600 border border-blue-200/60 shadow-2xs",
+  emerald: "bg-gradient-to-br from-emerald-50 to-teal-50/80 text-emerald-600 border border-emerald-200/60 shadow-2xs",
+  green: "bg-gradient-to-br from-green-50 to-emerald-50/80 text-green-600 border border-green-200/60 shadow-2xs",
+  purple: "bg-gradient-to-br from-purple-50 to-indigo-50/80 text-purple-600 border border-purple-200/60 shadow-2xs",
+  rose: "bg-gradient-to-br from-rose-50 to-pink-50/80 text-rose-600 border border-rose-200/60 shadow-2xs",
+  indigo: "bg-gradient-to-br from-indigo-50 to-blue-50/80 text-indigo-600 border border-indigo-200/60 shadow-2xs",
+  amber: "bg-gradient-to-br from-amber-50 to-orange-50/80 text-amber-600 border border-amber-200/60 shadow-2xs",
+  slate: "bg-gradient-to-br from-slate-100 to-slate-200/80 text-slate-700 border border-slate-300/60 shadow-2xs",
+  sky: "bg-gradient-to-br from-sky-50 to-blue-50/80 text-sky-600 border border-sky-200/60 shadow-2xs",
+  violet: "bg-gradient-to-br from-violet-50 to-purple-50/80 text-violet-600 border border-violet-200/60 shadow-2xs",
+  teal: "bg-gradient-to-br from-teal-50 to-cyan-50/80 text-teal-600 border border-teal-200/60 shadow-2xs",
+  cyan: "bg-gradient-to-br from-cyan-50 to-sky-50/80 text-cyan-600 border border-cyan-200/60 shadow-2xs",
+  orange: "bg-gradient-to-br from-orange-50 to-amber-50/80 text-orange-600 border border-orange-200/60 shadow-2xs",
 };
 
-export const sectionCard = {
-  wrapper:
-    "bg-white rounded-xl shadow-sm hover:shadow-md transition-all duration-300 border border-gray-100 overflow-hidden",
-  headerIconWrap: (icon: string) =>
-    `w-8 h-8 rounded-lg bg-gradient-to-br ${icon} flex items-center justify-center text-white shadow-sm`,
-  headerIcon: "text-sm",
-  headerTitle: (text: string) =>
-    `font-semibold text-sm uppercase tracking-wide ${text}`,
-  body: "p-5",
-  bodyInner: "space-y-3",
-} as const;
-
-// ─── Dialog header styles ──────────────────────────────────────────────────
-
-export const dialogHeader = {
-  banner:
-    "bg-gradient-to-r from-slate-800 to-blue-900 text-white relative overflow-hidden",
-  overlay: "absolute inset-0 bg-white/5 opacity-20",
-  inner: "relative z-10 flex items-center justify-between p-5",
-  titleRow: "flex items-center gap-3",
-  iconWrap:
-    "w-10 h-10 rounded-xl bg-white/10 backdrop-blur-sm flex items-center justify-center",
-  title: "text-lg font-semibold",
-  subtitle: "text-blue-200 text-sm opacity-90",
-  closeBtn:
-    "text-white/70 hover:text-white hover:bg-white/10 rounded-lg p-2 transition-all duration-200",
-} as const;
+// ─── Dialog backdrop & paper ──────────────────────────────────────────────
 
 export const dialogProps = {
   backdrop: {
     sx: {
-      backdropFilter: "blur(1px)",
-      backgroundColor: "rgba(15, 23, 42, 0.4)",
+      backdropFilter: "blur(6px)",
+      backgroundColor: "rgba(15, 23, 42, 0.45)",
     },
   },
   paper: {
     sx: {
-      maxHeight: "90vh",
-      borderRadius: 3,
-      boxShadow: "0 10px 30px rgba(0,0,0,0.12)",
+      maxHeight: { xs: "100vh", sm: "90vh" },
+      borderRadius: { xs: 0, sm: 4 },
+      boxShadow: "0 25px 30px -5px rgba(0, 0, 0, 0.12), 0 15px 15px -5px rgba(0, 0, 0, 0.04)",
+      overflow: "hidden",
+      backgroundColor: "#f8fafc",
     },
   },
 } as const;
 
-// ─── User header card styles ───────────────────────────────────────────────
+// ─── Profile Header ────────────────────────────────────────────────────────
 
-export const userHeaderCard = {
-  wrapper: "bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6",
-  row: "flex flex-col sm:flex-row items-start sm:items-center gap-4",
-  avatarWrap: "flex-shrink-0",
-  avatar:
-    "w-16 h-16 rounded-full bg-gradient-to-br from-blue-600 to-blue-700 text-white flex items-center justify-center text-xl font-bold shadow-lg",
-  photo: "w-full h-full object-cover rounded-full",
-  info: "flex-1 min-w-0",
-  name: "text-2xl font-bold text-gray-900 mb-2",
-  designation: "text-sm text-gray-600 mb-2",
-  metaRow: "flex flex-wrap gap-4 text-sm text-gray-600",
-  metaItem: "flex items-center gap-1.5",
-  metaIcon: "w-4 h-4 text-gray-400",
+export const profileHeader = {
+  container: "relative bg-white rounded-2xl border border-slate-200/80 p-5 sm:p-6 space-y-3.5 shadow-xs hover:border-slate-300/80 transition-all",
+  closeBtn: "text-slate-400 hover:text-slate-800 hover:bg-slate-100 rounded-full p-2 transition-all active:scale-95 shadow-2xs border border-slate-200/60 bg-white",
+  mainCard: "flex flex-col sm:flex-row items-center sm:items-start gap-4 text-center sm:text-left pt-0",
+  avatarWrap: "relative flex-shrink-0",
+  avatarImg: "w-18 h-18 sm:w-20 sm:h-20 rounded-full object-cover shadow-md ring-4 ring-indigo-500/15 border-2 border-white",
+  avatarInitial: "w-18 h-18 sm:w-20 sm:h-20 rounded-full flex items-center justify-center font-black text-2xl bg-gradient-to-tr from-blue-600 via-indigo-600 to-purple-600 text-white shadow-md ring-4 ring-indigo-500/15 border-2 border-white",
+  info: "flex-1 min-w-0 space-y-1.5",
+  name: "text-xl sm:text-2xl font-black text-slate-900 tracking-tight leading-tight",
+  tagGroup: "flex flex-wrap items-center justify-center sm:justify-start gap-2",
+  designationPill: "inline-flex items-center px-3 py-1 rounded-full text-xs font-extrabold bg-gradient-to-r from-blue-50 to-indigo-50 text-indigo-700 border border-indigo-200/80 shadow-2xs",
+  branchPill: "inline-flex items-center px-3 py-1 rounded-full text-xs font-bold bg-slate-100/90 text-slate-700 border border-slate-200/80 shadow-2xs",
+  actionRow: "flex flex-wrap items-center justify-center sm:justify-start gap-2.5 pt-3 border-t border-slate-100/80 mt-1",
+  actionBtn: "inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-700 bg-slate-100/90 hover:bg-indigo-50 hover:text-indigo-700 border border-slate-200/80 transition-all active:scale-95 cursor-pointer shadow-2xs",
 } as const;
 
-// ─── Roles badge styles ────────────────────────────────────────────────────
+// ─── Section & Row Items ───────────────────────────────────────────────────
 
-export const rolesBadge = {
-  wrapper: "p-3 rounded-lg bg-gray-50/50 border border-gray-100",
-  label: "text-xs font-medium text-gray-500 uppercase tracking-wide mb-2",
-  list: "flex flex-wrap gap-1.5",
-  badge:
-    "px-2 py-1 bg-purple-100 text-purple-700 rounded-md text-xs font-medium border border-purple-200",
-  empty: "text-sm text-gray-400",
+export const sectionStyles = {
+  card: "bg-white rounded-2xl p-5 shadow-xs border border-slate-200/80 space-y-4 hover:border-slate-300/80 transition-all",
+  titleRow: "flex items-center gap-3 border-b border-slate-100/90 pb-3",
+  titleIcon: "w-8 h-8 rounded-xl flex items-center justify-center text-white font-extrabold shadow-sm",
+  titleText: "text-xs font-black text-slate-800 tracking-wider uppercase",
+  list: "space-y-2",
 } as const;
 
-// ─── Layout ────────────────────────────────────────────────────────────────
-
-export const layout = {
-  content: "p-6",
-  grid: "grid grid-cols-1 lg:grid-cols-2 gap-6",
+export const infoRowStyles = {
+  row: "flex items-center justify-between gap-4 p-3 rounded-xl bg-slate-50/70 hover:bg-white hover:shadow-2xs border border-slate-100 hover:border-slate-200/90 transition-all min-w-0",
+  leftGroup: "flex items-center gap-3 min-w-0 flex-shrink-0",
+  iconBubble: "w-8.5 h-8.5 rounded-xl flex items-center justify-center flex-shrink-0 font-bold",
+  label: "text-xs font-bold uppercase tracking-wide text-slate-500 truncate",
+  value: "text-xs sm:text-sm font-extrabold text-slate-900 break-all text-right max-w-[60%] leading-snug",
 } as const;

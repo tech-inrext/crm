@@ -1,4 +1,19 @@
-import { Email, Phone } from "@mui/icons-material";
+import {
+  Email,
+  Phone,
+  WhatsApp,
+  Person,
+  Cake,
+  School,
+  Home,
+  Wc,
+  Badge,
+  CalendarMonth,
+  Business,
+  SupervisorAccount,
+  LocationCity,
+  Percent,
+} from "@mui/icons-material";
 import { DocumentConfig } from "@/fe/pages/user/types/documents";
 // ─── API Constants ────────────────────────────────────────────────────────────
 export const USERS_API_BASE = "/api/v0/employee";
@@ -155,6 +170,7 @@ export const BUTTON_LABELS = {
   ADD_USER: "Add User",
 } as const;
 
+// ─── Field Configurations ─────────────────────────────────────────────────────
 export const DOCUMENTS: DocumentConfig[] = [
   { id: "aadhar-upload", fieldName: "aadharFile", labelKey: "AADHAR" },
   { id: "aadhar-back-upload", fieldName: "aadharBackFile", labelKey: "AADHAR_BACK" },
@@ -163,37 +179,41 @@ export const DOCUMENTS: DocumentConfig[] = [
 ];
 
 export const getContactPersonalFields = () => [
-  { label: "Email", dataKey: "email", icon: Email },
-  { label: "Phone", dataKey: "phone", icon: Phone },
-  { label: "WhatsApp", dataKey: "altPhone" },
-  { label: "Gender", dataKey: "gender" },
-  { label: "Date of Birth", dataKey: "dateOfBirth", isDate: true },
-  { label: "Specialization", dataKey: "specialization" },
-  { label: "Father's Name", dataKey: "fatherName" },
-  { label: "Address", dataKey: "address" },
+  { label: "Email", dataKey: "email", icon: Email, color: "blue", isLink: true, linkType: "mailto" },
+  { label: "Phone", dataKey: "phone", icon: Phone, color: "emerald", isLink: true, linkType: "tel" },
+  { label: "WhatsApp", dataKey: "altPhone", icon: WhatsApp, color: "green", isLink: true, linkType: "wa" },
+  { label: "Gender", dataKey: "gender", icon: Wc, color: "purple" },
+  { label: "Date of Birth", dataKey: "dateOfBirth", icon: Cake, color: "rose", isDate: true },
+  { label: "Specialization", dataKey: "specialization", icon: School, color: "indigo" },
+  { label: "Father's Name", dataKey: "fatherName", icon: Person, color: "amber" },
+  { label: "Address", dataKey: "address", icon: Home, color: "slate" },
 ];
 
 export const getOrganizationFields = (
   departmentName: string,
   managerName: string
 ) => [
-    { label: "Designation", dataKey: "designation" },
-    { label: "Joining Date", dataKey: "joiningDate", isDate: true },
-    {
-      label: "Department",
-      dataKey: "departmentName",
-      isCustom: true,
-      customValue: departmentName,
-    },
-    {
-      label: "Manager",
-      dataKey: "managerName",
-      isCustom: true,
-      customValue: managerName,
-    },
-    { label: "Branch", dataKey: "branch" },
-    { label: "Slab Percentage", dataKey: "slabPercentage", suffix: "%" },
-  ];
+  { label: "Designation", dataKey: "designation", icon: Badge, color: "sky" },
+  { label: "Joining Date", dataKey: "joiningDate", icon: CalendarMonth, color: "violet", isDate: true },
+  {
+    label: "Department",
+    dataKey: "departmentName",
+    icon: Business,
+    color: "indigo",
+    isCustom: true,
+    customValue: departmentName,
+  },
+  {
+    label: "Manager",
+    dataKey: "managerName",
+    icon: SupervisorAccount,
+    color: "teal",
+    isCustom: true,
+    customValue: managerName,
+  },
+  { label: "Branch", dataKey: "branch", icon: LocationCity, color: "cyan" },
+  { label: "Slab Percentage", dataKey: "slabPercentage", icon: Percent, color: "orange", suffix: "%" },
+];
 
 // ─── Shared style tokens ──────────────────────────────────────────────────────
 export { GRADIENTS, COMMON_STYLES } from "@/constants/leads";
