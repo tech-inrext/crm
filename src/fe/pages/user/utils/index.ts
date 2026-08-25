@@ -249,8 +249,13 @@ export const formatRoleDisplayName = (
   roleMap: Record<string, string>,
 ) => {
   if (!role) return "";
-  if (typeof role === "string") return roleMap[role] || role;
-  return role.name || role.label || role._id || JSON.stringify(role);
+  if (typeof role === "object") return role.name || role.label || role.title || (role._id ? `Role (${String(role._id).slice(-4)})` : "Role");
+  if (typeof role === "string") {
+    if (roleMap[role]) return roleMap[role];
+    if (/^[0-9a-fA-F]{24}$/.test(role)) return `Role (${role.slice(-4)})`;
+    return role;
+  }
+  return String(role);
 };
 
 export const toDateInputString = (value: any): string => {
