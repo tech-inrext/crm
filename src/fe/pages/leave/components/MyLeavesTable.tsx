@@ -132,45 +132,10 @@ const MyLeavesTable: React.FC<MyLeavesTableProps> = ({ refreshTrigger }) => {
         </Button>
       </Box>
 
-      {/* Expandable Leave Balance Banner */}
-      <Paper 
-        variant="outlined"
-        sx={{
-          p: 2,
-          mb: 3.5,
-          borderRadius: 3,
-          borderColor: showStats ? "#bbdefb" : "#e2e8f0",
-          backgroundColor: showStats ? "#f8fafc" : "#ffffff",
-          boxShadow: "0 2px 12px rgba(0,0,0,0.02)",
-          transition: "all 0.25s ease",
-        }}
-      >
-        <Box 
-          display="flex" 
-          justifyContent="space-between" 
-          alignItems="center"
-          onClick={() => setShowStats(!showStats)}
-          sx={{ cursor: "pointer", userSelect: "none" }}
-        >
-          <Box display="flex" alignItems="center" gap={1.5}>
-            <AssessmentIcon sx={{ color: "#1976d2", fontSize: 24 }} />
-            <Typography variant="subtitle1" fontWeight="700" color="#1e293b">
-              Leave Quota & Balance Overview
-            </Typography>
-          </Box>
-          <Box display="flex" alignItems="center" gap={1}>
-            <Typography variant="caption" fontWeight="600" color="#64748b">
-              {showStats ? "Hide Details" : "View Quotas & Balance"}
-            </Typography>
-            <IconButton size="small" sx={{ color: "#1976d2" }}>
-              {showStats ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-            </IconButton>
-          </Box>
-        </Box>
-        <Collapse in={showStats} timeout="auto" sx={{ mt: showStats ? 2 : 0 }}>
-          <LeaveStatsCards refreshTrigger={statsRefreshKey} />
-        </Collapse>
-      </Paper>
+      {/* Leave Stats Overview (Cards Upfront + Expandable Quota Breakdown) */}
+      <Box mb={2}>
+        <LeaveStatsCards refreshTrigger={statsRefreshKey} />
+      </Box>
 
       {/* My Leave History Section Bar directly above Cards */}
       <Box 
