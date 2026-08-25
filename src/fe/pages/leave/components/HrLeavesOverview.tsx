@@ -65,7 +65,6 @@ const HrLeavesOverview: React.FC = () => {
   const [dateScope, setDateScope] = useState<string>("TODAY");
   const [fromDate, setFromDate] = useState<string>(todayStr);
   const [toDate, setToDate] = useState<string>(todayStr);
-  const [showEmployeeStats, setShowEmployeeStats] = useState<boolean>(false);
 
   const [leaves, setLeaves] = useState<LeaveRequest[]>([]);
   const [loading, setLoading] = useState(true);
@@ -493,26 +492,21 @@ const HrLeavesOverview: React.FC = () => {
         </Box>
       </Paper>
 
-      {/* Employee Stats (shown when specific employee is selected, collapsed by default) */}
+      {/* Employee Stats (shown upfront when specific employee is selected) */}
       {selectedEmployee && (
-        <Box mb={3}>
+        <Box mb={3.5}>
           <Paper
             elevation={0}
-            onClick={() => setShowEmployeeStats((prev) => !prev)}
             sx={{
-              p: 1.8,
+              p: 1.5,
               px: 2.5,
+              mb: 2,
               borderRadius: 2.5,
               bgcolor: "#e0f2fe",
               border: "1px solid #bae6fd",
               display: "flex",
               alignItems: "center",
-              justify: "space-between",
-              cursor: "pointer",
-              transition: "all 0.2s ease",
-              "&:hover": {
-                bgcolor: "#bae6fd",
-              },
+              justifyContent: "space-between",
             }}
           >
             <Box display="flex" alignItems="center" gap={1.5}>
@@ -526,20 +520,9 @@ const HrLeavesOverview: React.FC = () => {
                 )}
               </Typography>
             </Box>
-            <Button
-              size="small"
-              endIcon={showEmployeeStats ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-              sx={{ fontWeight: 700, color: "#0288d1", textTransform: "none", ml: "auto" }}
-            >
-              {showEmployeeStats ? "Hide Quota Balance" : "View Quota Balance"}
-            </Button>
           </Paper>
 
-          <Collapse in={showEmployeeStats}>
-            <Box pt={2}>
-              <LeaveStatsCards employeeId={selectedEmployee._id} />
-            </Box>
-          </Collapse>
+          <LeaveStatsCards employeeId={selectedEmployee._id} />
         </Box>
       )}
 
