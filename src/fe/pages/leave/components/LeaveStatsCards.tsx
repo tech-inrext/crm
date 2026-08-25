@@ -13,6 +13,8 @@ import {
   DialogContent,
   IconButton,
   Divider,
+  Collapse,
+  Button,
 } from "@mui/material";
 import {
   EventAvailable as QuotaIcon,
@@ -22,6 +24,9 @@ import {
   InfoOutlined as InfoIcon,
   Close as CloseIcon,
   CheckCircle as BulletIcon,
+  ExpandMore as ExpandMoreIcon,
+  ExpandLess as ExpandLessIcon,
+  AssessmentOutlined as AssessmentIcon,
 } from "@mui/icons-material";
 import { leaveApi } from "../leaveApi";
 import { LeaveStatsData } from "../types";
@@ -181,6 +186,7 @@ const LeaveStatsCards: React.FC<Props> = ({ refreshTrigger, employeeId }) => {
   const [stats, setStats] = useState<LeaveStatsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedPolicyType, setSelectedPolicyType] = useState<string | null>(null);
+  const [showBreakdown, setShowBreakdown] = useState(false);
 
   useEffect(() => {
     const fetchStats = async () => {
@@ -252,11 +258,11 @@ const LeaveStatsCards: React.FC<Props> = ({ refreshTrigger, employeeId }) => {
 
   return (
     <Box mb={4}>
-      {/* Overview Stat Cards */}
+      {/* Overview Stat Cards (Upfront) */}
       <Typography variant="subtitle2" fontWeight="700" color="#64748b" textTransform="uppercase" letterSpacing="0.05em" mb={2}>
         Leave Overview & Balance
       </Typography>
-      <Grid container spacing={2.5} mb={4}>
+      <Grid container spacing={2.5} mb={3.5}>
         {mainCards.map((card, idx) => (
           <Grid item xs={12} sm={6} md={3} key={idx}>
             <Paper
@@ -306,107 +312,154 @@ const LeaveStatsCards: React.FC<Props> = ({ refreshTrigger, employeeId }) => {
         ))}
       </Grid>
 
-      {/* Quota Breakdown Per Leave Type */}
-      <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
-        <Typography variant="subtitle2" fontWeight="700" color="#64748b" textTransform="uppercase" letterSpacing="0.05em">
-          Leave Type Quota Breakdown
-        </Typography>
-        <Typography variant="caption" color="#94a3b8" fontWeight="600">
-          💡 Click any leave card to view policy details
-        </Typography>
-      </Box>
+      {/* Expandable Banner for Leave Type Quota Breakdown */}
+      <Paper
+        variant="outlined"
+        onClick={() => setShowBreakdown((prev) => !prev)}
+        sx={{
+          p: 2,
+          px: 2.5,
+          borderRadius: 3,
+          borderColor: showBreakdown ? "#bbdefb" : "#e2e8f0",
+          backgroundColor: showBreakdown ? "#f8fafc" : "#ffffff",
+          boxShadow: "0 2px 12px rgba(0,0,0,0.02)",
+          cursor: "pointer",
+          transition: "all 0.25s ease",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          userSelect: "none",
+          "&:hover": {
+            borderColor: "#1976d2",
+            backgroundColor: "#f8fafc",
+          },
+        }}
+      >
+        <Box display="flex" alignItems="center" gap={1.5}>
+          <AssessmentIcon sx={{ color: "#1976d2", fontSize: 24 }} />
+          <Typography variant="subtitle1" fontWeight="700" color="#1e293b">
+            Leave Type Quota Breakdown
+          </Typography>
+          <Chip
+            label={`${breakdown.length} Leave Types`}
+            size="small"
+            sx={{ fontWeight: 700, fontSize: "0.75rem", bgcolor: "#e0f2fe", color: "#0369a1" }}
+          />
+        </Box>
 
-      <Grid container spacing={2}>
-        {breakdown.map((item) => {
-          const colors = TYPE_COLORS[item.leaveType] || { main: "#1976d2", bg: "#e3f2fd" };
-          const isUnlimited = item.quota === 0;
-          const percentage = isUnlimited ? 0 : Math.min(100, Math.round((item.taken / item.quota) * 100));
+        <Box display="flex" alignItems="center" gap={1}>
+          <Typography variant="caption" fontWeight="600" color="#64748b">
+            {showBreakdown ? "Hide Breakdown" : "View Quota Breakdown"}
+          </Typography>
+          <IconButton size="small" sx={{ color: "#1976d2" }}>
+            {showBreakdown ? <ExpandLessIcon /> : <ExpandMoreIcon />}
+          </IconButton>
+        </Box>
+      </Paper>
 
-          return (
-            <Grid item xs={12} sm={6} md={4} key={item.leaveType}>
-              <Paper
-                elevation={0}
-                onClick={() => setSelectedPolicyType(item.leaveType)}
-                sx={{
-                  p: 2,
-                  borderRadius: 2.5,
-                  backgroundColor: "#ffffff",
-                  border: "1px solid #f1f5f9",
-                  boxShadow: "0 2px 12px rgba(0,0,0,0.03)",
-                  transition: "all 0.2s ease",
-                  cursor: "pointer",
-                  position: "relative",
-                  "&:hover": {
-                    borderColor: colors.main,
-                    boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
-                    transform: "translateY(-2px)",
-                  },
-                }}
-              >
-                <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
-                  <Box display="flex" alignItems="center" gap={1}>
-                    <Box
-                      sx={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: "50%",
-                        backgroundColor: colors.main,
-                      }}
-                    />
-                    <Typography variant="body2" fontWeight="700" color="#334155">
-                      {item.leaveType}
-                    </Typography>
-                  </Box>
-                  <Chip
-                    label={isUnlimited ? "Unlimited" : `${formatDaysNumber(item.remaining)} Remaining`}
-                    size="small"
-                    sx={{
-                      fontWeight: 700,
-                      fontSize: "0.75rem",
-                      backgroundColor: colors.bg,
-                      color: colors.main,
-                    }}
-                  />
-                </Box>
+      {/* Expandable Section containing Leave Type Quota Breakdown */}
+      <Collapse in={showBreakdown} timeout="auto" sx={{ mt: 2.5 }}>
+        <Box display="flex" justifyContent="space-between" alignItems="center" mb={2}>
+          <Typography variant="subtitle2" fontWeight="700" color="#64748b" textTransform="uppercase" letterSpacing="0.05em">
+            Detailed Leave Type Quotas
+          </Typography>
+          <Typography variant="caption" color="#94a3b8" fontWeight="600">
+            💡 Click any leave card to view policy details
+          </Typography>
+        </Box>
 
-                {!isUnlimited ? (
-                  <>
-                    <Box display="flex" justifyContent="space-between" alignItems="center" my={1.5}>
-                      <Typography variant="caption" color="#64748b">
-                        Used: <strong>{formatDaysNumber(item.taken)}</strong> / {formatDaysNumber(item.quota)} Days
-                      </Typography>
-                      {item.pending > 0 && (
-                        <Tooltip title="Days pending manager approval">
-                          <Typography variant="caption" color="#ed6c02" fontWeight="600">
-                            ({formatDaysNumber(item.pending)} Pending)
-                          </Typography>
-                        </Tooltip>
-                      )}
-                    </Box>
-                    <LinearProgress
-                      variant="determinate"
-                      value={percentage}
-                      sx={{
-                        height: 7,
-                        borderRadius: 4,
-                        backgroundColor: "#f1f5f9",
-                        "& .MuiLinearProgress-bar": {
+        <Grid container spacing={2}>
+          {breakdown.map((item) => {
+            const colors = TYPE_COLORS[item.leaveType] || { main: "#1976d2", bg: "#e3f2fd" };
+            const isUnlimited = item.quota === 0;
+            const percentage = isUnlimited ? 0 : Math.min(100, Math.round((item.taken / item.quota) * 100));
+
+            return (
+              <Grid item xs={12} sm={6} md={4} key={item.leaveType}>
+                <Paper
+                  elevation={0}
+                  onClick={() => setSelectedPolicyType(item.leaveType)}
+                  sx={{
+                    p: 2,
+                    borderRadius: 2.5,
+                    backgroundColor: "#ffffff",
+                    border: "1px solid #f1f5f9",
+                    boxShadow: "0 2px 12px rgba(0,0,0,0.03)",
+                    transition: "all 0.2s ease",
+                    cursor: "pointer",
+                    position: "relative",
+                    "&:hover": {
+                      borderColor: colors.main,
+                      boxShadow: "0 6px 20px rgba(0,0,0,0.08)",
+                      transform: "translateY(-2px)",
+                    },
+                  }}
+                >
+                  <Box display="flex" justifyContent="space-between" alignItems="center" mb={1}>
+                    <Box display="flex" alignItems="center" gap={1}>
+                      <Box
+                        sx={{
+                          width: 10,
+                          height: 10,
+                          borderRadius: "50%",
                           backgroundColor: colors.main,
-                          borderRadius: 4,
-                        },
+                        }}
+                      />
+                      <Typography variant="body2" fontWeight="700" color="#334155">
+                        {item.leaveType}
+                      </Typography>
+                    </Box>
+                    <Chip
+                      label={isUnlimited ? "Unlimited" : `${formatDaysNumber(item.remaining)} Remaining`}
+                      size="small"
+                      sx={{
+                        fontWeight: 700,
+                        fontSize: "0.75rem",
+                        backgroundColor: colors.bg,
+                        color: colors.main,
                       }}
                     />
-                  </>
-                ) : (
-                  <Typography variant="caption" color="#94a3b8" display="block" mt={1}>
-                    Taken: {formatDaysNumber(item.taken)} day(s) • No fixed limit
-                  </Typography>
-                )}
-              </Paper>
-            </Grid>
-          );
-        })}
-      </Grid>
+                  </Box>
+
+                  {!isUnlimited ? (
+                    <>
+                      <Box display="flex" justifyContent="space-between" alignItems="center" my={1.5}>
+                        <Typography variant="caption" color="#64748b">
+                          Used: <strong>{formatDaysNumber(item.taken)}</strong> / {formatDaysNumber(item.quota)} Days
+                        </Typography>
+                        {item.pending > 0 && (
+                          <Tooltip title="Days pending manager approval">
+                            <Typography variant="caption" color="#ed6c02" fontWeight="600">
+                              ({formatDaysNumber(item.pending)} Pending)
+                            </Typography>
+                          </Tooltip>
+                        )}
+                      </Box>
+                      <LinearProgress
+                        variant="determinate"
+                        value={percentage}
+                        sx={{
+                          height: 7,
+                          borderRadius: 4,
+                          backgroundColor: "#f1f5f9",
+                          "& .MuiLinearProgress-bar": {
+                            backgroundColor: colors.main,
+                            borderRadius: 4,
+                          },
+                        }}
+                      />
+                    </>
+                  ) : (
+                    <Typography variant="caption" color="#94a3b8" display="block" mt={1}>
+                      Taken: {formatDaysNumber(item.taken)} day(s) • No fixed limit
+                    </Typography>
+                  )}
+                </Paper>
+              </Grid>
+            );
+          })}
+        </Grid>
+      </Collapse>
 
       {/* Leave Policy Details Dialog */}
       <Dialog
