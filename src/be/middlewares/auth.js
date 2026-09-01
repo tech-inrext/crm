@@ -129,9 +129,9 @@ export async function userAuth(req, res, next) {
       hasAccess = true;
     }
 
-    // Special-case: allow all authenticated users to access analytics only in staging
+    // Special-case: allow all authenticated users to access analytics
     if (!hasAccess && moduleName === "analytics") {
-      hasAccess = process.env.NEXT_PUBLIC_APP_ENV === "staging";
+      hasAccess = true;
     }
 
     // Special-case: allow all authenticated users to access mou module
