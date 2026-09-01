@@ -171,20 +171,15 @@ export default function DashboardLayout({
 
   // Compute accessible sidebar links
   const sidebarLinks = useMemo(() => {
-    const isStaging = process.env.NEXT_PUBLIC_APP_ENV === "staging";
-
     return user && !pendingRoleSelection
       ? DASHBOARD_SIDEBAR_LINKS.filter((link) => {
-          // Hide Analytics if not staging
-          if (!isStaging && link.module === "analytics") return false;
-
           if (!link.module) return true;
 
           // Roles module only for system admins
           if (link.module === "role") return Boolean(user.isSystemAdmin);
 
           const { hasReadAccess } = getPermissions(link.module);
-          return hasReadAccess;
+          return hasReadAccess || Boolean(user.isSystemAdmin);
         })
       : [];
   }, [user, pendingRoleSelection, getPermissions]);
