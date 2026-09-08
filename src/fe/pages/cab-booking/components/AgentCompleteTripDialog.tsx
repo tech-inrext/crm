@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -38,8 +38,23 @@ const AgentCompleteTripDialog: React.FC<AgentCompleteTripDialogProps> = ({
   const [odometerStartFile, setOdometerStartFile] = useState<File | null>(null);
   const [odometerEndFile, setOdometerEndFile] = useState<File | null>(null);
 
+  useEffect(() => {
+    if (open) {
+      setFormData({ startKm: "", endKm: "" });
+      setOdometerStartFile(null);
+      setOdometerEndFile(null);
+    }
+  }, [open]);
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (["-", "+", "e", "E"].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
+
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
+    if (value.includes("-")) return;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -49,8 +64,33 @@ const AgentCompleteTripDialog: React.FC<AgentCompleteTripDialogProps> = ({
     else setOdometerEndFile(file);
   };
 
+  const startNum = formData.startKm !== "" ? Number(formData.startKm) : null;
+  const endNum = formData.endKm !== "" ? Number(formData.endKm) : null;
+
+  const isInvalidKm =
+    startNum !== null &&
+    endNum !== null &&
+    (endNum < startNum || startNum < 0 || endNum < 0);
+
+  const startError =
+    startNum !== null && startNum < 0
+      ? "Start Km must be a positive number"
+      : "";
+
+  const endError =
+    endNum !== null && endNum < 0
+      ? "End Km must be a positive number"
+      : startNum !== null && endNum !== null && endNum < startNum
+      ? "End Km cannot be less than Start Km"
+      : "";
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const s = Number(formData.startKm);
+    const end = Number(formData.endKm);
+    if (isNaN(s) || isNaN(end) || s < 0 || end < 0 || end < s) {
+      return;
+    }
     onSubmit({
       ...formData,
       odometerStartFile,
@@ -58,7 +98,18 @@ const AgentCompleteTripDialog: React.FC<AgentCompleteTripDialogProps> = ({
     });
   };
 
-  const totalKm = (Number(formData.endKm) || 0) - (Number(formData.startKm) || 0);
+  const totalKm =
+    startNum !== null && endNum !== null && endNum >= startNum
+      ? endNum - startNum
+      : 0;
+
+  const isSubmitDisabled =
+    isLoading ||
+    !formData.startKm ||
+    !formData.endKm ||
+    isInvalidKm ||
+    Boolean(startError) ||
+    Boolean(endError);
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -91,7 +142,11 @@ const AgentCompleteTripDialog: React.FC<AgentCompleteTripDialogProps> = ({
                   type="number"
                   value={formData.startKm}
                   onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  error={Boolean(startError)}
+                  helperText={startError}
                   required
+                  inputProps={{ min: "0", step: "any" }}
                   InputProps={{
                     startAdornment: <InputAdornment position="start"><SpeedIcon color="action" fontSize="small" /></InputAdornment>,
                   }}
@@ -103,19 +158,34 @@ const AgentCompleteTripDialog: React.FC<AgentCompleteTripDialogProps> = ({
                   type="number"
                   value={formData.endKm}
                   onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  error={Boolean(endError)}
+                  helperText={endError}
                   required
+                  inputProps={{ min: "0", step: "any" }}
                   InputProps={{
                     startAdornment: <InputAdornment position="start"><SpeedIcon color="action" fontSize="small" /></InputAdornment>,
                   }}
                 />
               </Box>
               
-              <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", bgcolor: "primary.50", p: 1.5, borderRadius: 2 }}>
-                <Typography variant="body2" color="primary.main" fontWeight={600}>
+              <Box 
+                sx={{ 
+                  display: "flex", 
+                  alignItems: "center", 
+                  justifyContent: "space-between", 
+                  bgcolor: isInvalidKm ? "error.50" : "primary.50", 
+                  border: "1px solid",
+                  borderColor: isInvalidKm ? "error.200" : "primary.100",
+                  p: 1.5, 
+                  borderRadius: 2 
+                }}
+              >
+                <Typography variant="body2" color={isInvalidKm ? "error.main" : "primary.main"} fontWeight={600}>
                   Total Distance Computed:
                 </Typography>
-                <Typography variant="subtitle1" color="primary.dark" fontWeight={700}>
-                  {Math.max(totalKm, 0)} Km
+                <Typography variant="subtitle2" color={isInvalidKm ? "error.main" : "primary.dark"} fontWeight={700}>
+                  {isInvalidKm ? "End Km must be greater than Start Km" : `${totalKm} Km`}
                 </Typography>
               </Box>
 
@@ -194,7 +264,7 @@ const AgentCompleteTripDialog: React.FC<AgentCompleteTripDialogProps> = ({
           </Button>
           <Button 
             type="submit" 
-            disabled={isLoading} 
+            disabled={isSubmitDisabled} 
             variant="contained" 
             sx={{ bgcolor: "primary.main", color: "white", "&:hover": { bgcolor: "primary.dark" }, fontWeight: 600, px: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
           >
