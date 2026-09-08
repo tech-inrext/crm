@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Dialog,
   DialogTitle,
@@ -28,11 +28,53 @@ const AdminSettlePaymentDialog: React.FC<AdminSettlePaymentDialogProps> = ({
   isLoading,
 }) => {
   const [fare, setFare] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setFare("");
+      setError("");
+    }
+  }, [open]);
+
+  const handleFareChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === "") {
+      setFare("");
+      setError("");
+      return;
+    }
+
+    if (value.includes("-")) {
+      return;
+    }
+
+    const num = Number(value);
+    if (isNaN(num) || num <= 0) {
+      setError("Please enter a positive fare amount (greater than 0)");
+    } else {
+      setError("");
+    }
+    setFare(value);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (["-", "+", "e", "E"].includes(e.key)) {
+      e.preventDefault();
+    }
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const numFare = Number(fare);
+    if (!fare || isNaN(numFare) || numFare <= 0) {
+      setError("Please enter a valid positive fare amount (greater than 0)");
+      return;
+    }
     onSubmit({ fare });
   };
+
+  const isInvalid = !fare || Number(fare) <= 0;
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
@@ -62,8 +104,12 @@ const AdminSettlePaymentDialog: React.FC<AdminSettlePaymentDialogProps> = ({
               name="fare"
               type="number"
               value={fare}
-              onChange={(e) => setFare(e.target.value)}
+              onChange={handleFareChange}
+              onKeyDown={handleKeyDown}
+              error={Boolean(error)}
+              helperText={error}
               required
+              inputProps={{ min: "0.01", step: "any" }}
               InputProps={{
                 startAdornment: <InputAdornment position="start"><CurrencyRupeeIcon color="action" fontSize="small" /></InputAdornment>,
               }}
@@ -80,7 +126,7 @@ const AdminSettlePaymentDialog: React.FC<AdminSettlePaymentDialogProps> = ({
           </Button>
           <Button 
             type="submit" 
-            disabled={isLoading} 
+            disabled={isLoading || isInvalid} 
             variant="contained" 
             sx={{ bgcolor: "warning.main", color: "white", "&:hover": { bgcolor: "warning.dark" }, fontWeight: 600, px: 3, boxShadow: "0 4px 12px rgba(0,0,0,0.1)", textTransform: "none" }}
           >
