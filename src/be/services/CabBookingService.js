@@ -141,6 +141,8 @@ class CabBookingService extends Service {
     const isManager = req.isManager || (res.locals && res.locals.isManager);
     const isSystemAdmin =
       req.isSystemAdmin || (res.locals && res.locals.isSystemAdmin);
+    const isAVP =
+      req.isAVP || (res.locals && res.locals.isAVP) || Boolean(req.role?.isAVP);
 
     const ALLOWED_STATUSES = [
       "pending",
@@ -171,15 +173,18 @@ class CabBookingService extends Service {
 
       let visibilityFilter;
       let reportIds = [];
-      if (isSystemAdmin) {
-        visibilityFilter = {};
-      } else if (isManager) {
+      if (isSystemAdmin || isAVP || isManager) {
         const directReports = await Employee.find({
           managerId: String(loggedInUserId),
         })
           .select("_id")
           .lean();
         reportIds = directReports.map((e) => String(e._id));
+      }
+
+      if (isSystemAdmin) {
+        visibilityFilter = {};
+      } else if (isAVP || isManager) {
         visibilityFilter = {
           cabBookedBy: { $in: [String(loggedInUserId), ...reportIds] },
         };
@@ -288,29 +293,27 @@ class CabBookingService extends Service {
           });
       }
 
-      let data;
-      if (isManager) {
-        data = rowsToUse.map((b) => {
-          const obj = b.toObject();
-          return {
-            ...obj,
-            canApprove:
-              String(b.managerId?._id || b.managerId) ===
-                String(loggedInUserId) ||
-              reportIds.includes(String(b.cabBookedBy)),
-            managerName: obj.managerId?.name || obj.managerId?.username || null,
-          };
-        });
-      } else {
-        data = rowsToUse.map((b) => {
-          const obj = b.toObject();
-          return {
-            ...obj,
-            canApprove: false,
-            managerName: obj.managerId?.name || obj.managerId?.username || null,
-          };
-        });
-      }
+      const isAdminOrAVP = Boolean(isSystemAdmin || isAVP);
+
+      const data = rowsToUse.map((b) => {
+        const obj = b.toObject();
+        const bookedById = String(b.cabBookedBy?._id || b.cabBookedBy || "");
+        const managerIdStr = String(b.managerId?._id || b.managerId || "");
+        const isSelf = bookedById === String(loggedInUserId);
+        const isAssignedManager = managerIdStr === String(loggedInUserId);
+        const isDirectReport = reportIds.includes(bookedById);
+
+        const canApprove =
+          isAssignedManager ||
+          isDirectReport ||
+          (isAdminOrAVP && isSelf);
+
+        return {
+          ...obj,
+          canApprove,
+          managerName: obj.managerId?.name || obj.managerId?.username || null,
+        };
+      });
 
       return res.status(200).json({
         success: true,
