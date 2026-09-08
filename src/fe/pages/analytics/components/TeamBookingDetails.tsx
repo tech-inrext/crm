@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Group,
   Search,
@@ -10,6 +10,8 @@ import {
   TableRows,
   FilterAlt,
   Close,
+  Check,
+  KeyboardArrowDown,
 } from "@mui/icons-material";
 
 export interface TeamBookingItem {
@@ -76,6 +78,36 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
   const [selectedMemberKey, setSelectedMemberKey] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "members">("table");
 
+  // Searchable dropdown state
+  const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
+  const [memberSearchQuery, setMemberSearchQuery] = useState("");
+  const memberDropdownRef = useRef<HTMLDivElement>(null);
+  const memberSearchInputRef = useRef<HTMLInputElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (memberDropdownRef.current && !memberDropdownRef.current.contains(event.target as Node)) {
+        setIsMemberDropdownOpen(false);
+      }
+    };
+    if (isMemberDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [isMemberDropdownOpen]);
+
+  // Focus search input when dropdown opens
+  useEffect(() => {
+    if (isMemberDropdownOpen) {
+      setTimeout(() => {
+        memberSearchInputRef.current?.focus();
+      }, 50);
+    }
+  }, [isMemberDropdownOpen]);
+
   // 1. Build master list of unique team members (combining stats.teamMembers and actual booking creators)
   const memberMap: Record<string, { key: string; name: string; email: string; profileId: string; count: number }> = {};
 
@@ -112,6 +144,17 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
   });
 
   const availableTeamMembers = Object.values(memberMap);
+
+  // Filter team members list in the dropdown by search query
+  const filteredTeamMembers = availableTeamMembers.filter((m) => {
+    const q = memberSearchQuery.toLowerCase().trim();
+    if (!q) return true;
+    return (
+      m.name?.toLowerCase().includes(q) ||
+      m.profileId?.toLowerCase().includes(q) ||
+      m.email?.toLowerCase().includes(q)
+    );
+  });
 
   // 2. Filter bookings by selected team member
   const memberFilteredBookings = bookings.filter((item) => {
@@ -304,26 +347,198 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 mb-5 border-b border-gray-100 pb-4">
         {/* Left Side Controls: Dropdown & Status Tabs */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-          {/* Team Member Dropdown Selector */}
-          <div className="relative min-w-[240px]">
-            <div className="absolute left-3 top-2.5 text-purple-600 pointer-events-none flex items-center gap-1 font-bold">
-              <Person className="text-base" />
-            </div>
-            <select
-              value={selectedMemberKey}
-              onChange={(e) => setSelectedMemberKey(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 text-xs font-bold bg-purple-50/70 border border-purple-200 text-purple-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all cursor-pointer appearance-none shadow-2xs"
+          {/* Searchable Team Member Dropdown Selector */}
+          <div ref={memberDropdownRef} className="relative min-w-[260px] sm:min-w-[280px]">
+            {/* Trigger Button */}
+            <button
+              type="button"
+              onClick={() => setIsMemberDropdownOpen((prev) => !prev)}
+              className="w-full flex items-center justify-between pl-3 pr-3 py-2 text-xs font-bold bg-purple-50/80 hover:bg-purple-100/70 border border-purple-200 text-purple-900 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-all cursor-pointer shadow-2xs text-left"
             >
-              <option value="all">👥 All Team Members ({availableTeamMembers.length})</option>
-              {availableTeamMembers.map((m) => (
-                <option key={m.key} value={m.key}>
-                  👤 {m.name} {m.profileId ? `(${m.profileId})` : ""} - {m.count} {m.count === 1 ? "trip" : "trips"}
-                </option>
-              ))}
-            </select>
-            <div className="absolute right-3 top-2.5 text-purple-500 text-[10px] pointer-events-none font-bold">
-              ▼
-            </div>
+              <div className="flex items-center gap-2 truncate pr-2">
+                <div className="w-5 h-5 rounded-md bg-purple-200 text-purple-800 flex items-center justify-center text-[10px] shrink-0">
+                  {isMemberSelected ? (
+                    <Person className="text-sm" />
+                  ) : (
+                    <Group className="text-sm" />
+                  )}
+                </div>
+                <span className="truncate">
+                  {isMemberSelected
+                    ? `${selectedMemberInfo?.name || selectedMemberKey} ${selectedMemberInfo?.profileId ? `(${selectedMemberInfo.profileId})` : ""}`
+                    : `All Team Members (${availableTeamMembers.length})`}
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1 shrink-0">
+                {isMemberSelected && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setSelectedMemberKey("all");
+                    }}
+                    className="hover:bg-purple-200 p-0.5 rounded text-purple-700 hover:text-purple-900 transition-colors cursor-pointer"
+                    title="Reset to all team members"
+                  >
+                    <Close style={{ fontSize: 14 }} />
+                  </span>
+                )}
+                <KeyboardArrowDown
+                  className={`text-purple-600 transition-transform duration-200 ${
+                    isMemberDropdownOpen ? "rotate-180" : ""
+                  }`}
+                  style={{ fontSize: 18 }}
+                />
+              </div>
+            </button>
+
+            {/* Dropdown Menu Popover */}
+            {isMemberDropdownOpen && (
+              <div className="absolute left-0 top-full mt-1.5 w-full min-w-[290px] sm:min-w-[320px] bg-white border border-purple-200 rounded-2xl shadow-xl z-50 overflow-hidden animate-in fade-in-50 duration-150">
+                {/* Search Input Box */}
+                <div className="p-2.5 bg-purple-50/70 border-b border-purple-100 sticky top-0">
+                  <div className="relative flex items-center">
+                    <div className="absolute left-2.5 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-purple-500">
+                      <Search style={{ fontSize: 16 }} />
+                    </div>
+                    <input
+                      ref={memberSearchInputRef}
+                      type="text"
+                      placeholder="Search member by name, ID, email..."
+                      value={memberSearchQuery}
+                      onChange={(e) => setMemberSearchQuery(e.target.value)}
+                      className="w-full pl-8 pr-7 py-1.5 text-xs bg-white border border-purple-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 text-gray-800 placeholder:text-gray-400 font-medium"
+                    />
+                    {memberSearchQuery && (
+                      <button
+                        type="button"
+                        onClick={() => setMemberSearchQuery("")}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors cursor-pointer flex items-center justify-center"
+                      >
+                        <Close style={{ fontSize: 14 }} />
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Options List */}
+                <div className="max-h-60 overflow-y-auto divide-y divide-gray-50 py-1">
+                  {/* All Team Members Option */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedMemberKey("all");
+                      setIsMemberDropdownOpen(false);
+                      setMemberSearchQuery("");
+                    }}
+                    className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 hover:bg-purple-50/70 transition-colors cursor-pointer ${
+                      selectedMemberKey === "all" ? "bg-purple-50 font-bold text-purple-900" : "text-gray-700"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
+                        selectedMemberKey === "all" ? "bg-purple-600 text-white" : "bg-purple-100 text-purple-700"
+                      }`}>
+                        <Group style={{ fontSize: 16 }} />
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold leading-tight">All Team Members</div>
+                        <div className="text-[10px] text-gray-500">
+                          {availableTeamMembers.length} {availableTeamMembers.length === 1 ? "member" : "members"} total
+                        </div>
+                      </div>
+                    </div>
+                    {selectedMemberKey === "all" && (
+                      <Check className="text-purple-600" style={{ fontSize: 16 }} />
+                    )}
+                  </button>
+
+                  {/* Filtered Team Members List */}
+                  {filteredTeamMembers.length > 0 ? (
+                    filteredTeamMembers.map((m) => {
+                      const isSelected = selectedMemberKey === m.key;
+                      return (
+                        <button
+                          key={m.key}
+                          type="button"
+                          onClick={() => {
+                            setSelectedMemberKey(m.key);
+                            setIsMemberDropdownOpen(false);
+                            setMemberSearchQuery("");
+                          }}
+                          className={`w-full text-left px-3 py-2 flex items-center justify-between gap-2 hover:bg-purple-50/70 transition-colors cursor-pointer ${
+                            isSelected ? "bg-purple-50 font-bold text-purple-900" : "text-gray-700"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-extrabold shrink-0 border ${
+                              isSelected ? "bg-purple-600 text-white border-purple-600" : "bg-purple-100 text-purple-800 border-purple-200"
+                            }`}>
+                              {m.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="min-w-0">
+                              <div className="text-xs font-semibold truncate text-gray-900 flex items-center gap-1.5">
+                                <span className="truncate">{m.name}</span>
+                                {m.profileId && (
+                                  <span className="px-1.5 py-0.2 rounded text-[10px] bg-gray-100 text-gray-600 font-mono shrink-0">
+                                    {m.profileId}
+                                  </span>
+                                )}
+                              </div>
+                              {m.email && (
+                                <div className="text-[10px] text-gray-400 truncate">{m.email}</div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 shrink-0">
+                            <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                              m.count > 0 ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-500"
+                            }`}>
+                              {m.count} {m.count === 1 ? "trip" : "trips"}
+                            </span>
+                            {isSelected && (
+                              <Check className="text-purple-600" style={{ fontSize: 16 }} />
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })
+                  ) : (
+                    <div className="py-6 px-4 text-center text-gray-400">
+                      <p className="text-xs font-medium">No team member matches &quot;{memberSearchQuery}&quot;</p>
+                      <button
+                        type="button"
+                        onClick={() => setMemberSearchQuery("")}
+                        className="mt-1.5 text-[11px] text-purple-600 hover:underline font-semibold cursor-pointer"
+                      >
+                        Clear search
+                      </button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Footer info in dropdown */}
+                <div className="px-3 py-1.5 bg-gray-50 border-t border-gray-100 text-[10px] text-gray-500 flex items-center justify-between">
+                  <span>Showing {filteredTeamMembers.length} of {availableTeamMembers.length}</span>
+                  {isMemberSelected && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedMemberKey("all");
+                        setIsMemberDropdownOpen(false);
+                        setMemberSearchQuery("");
+                      }}
+                      className="text-purple-600 hover:underline font-semibold cursor-pointer"
+                    >
+                      Reset filter
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Status Filter Tabs */}
@@ -367,15 +582,27 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
             </div>
           )}
 
-          <div className="relative min-w-[220px] flex-1 sm:flex-initial">
-            <Search className="absolute left-3 top-2.5 text-gray-400 text-sm" />
+          <div className="relative min-w-[240px] sm:min-w-[280px] flex-1 sm:flex-initial flex items-center">
+            <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center justify-center pointer-events-none text-gray-400">
+              <Search style={{ fontSize: 18 }} />
+            </div>
             <input
               type="text"
               placeholder="Search project, client, booking ID..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-1.5 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400"
+              className="w-full pl-9 pr-8 py-2 text-xs bg-gray-50/80 hover:bg-gray-100/50 focus:bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all placeholder:text-gray-400 text-gray-800"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={() => setSearchQuery("")}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-gray-400 hover:text-gray-600 hover:bg-gray-200 transition-colors cursor-pointer flex items-center justify-center"
+                title="Clear search"
+              >
+                <Close style={{ fontSize: 14 }} />
+              </button>
+            )}
           </div>
         </div>
       </div>
