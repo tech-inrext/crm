@@ -12,6 +12,7 @@ import {
   Close,
   Check,
   KeyboardArrowDown,
+  FileDownload,
 } from "@mui/icons-material";
 
 export interface TeamBookingItem {
@@ -77,6 +78,7 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedMemberKey, setSelectedMemberKey] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "members">("table");
+  const [isExporting, setIsExporting] = useState(false);
 
   // Searchable dropdown state
   const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
@@ -253,6 +255,65 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
     }
   };
 
+  // Export current filtered bookings to Excel (.xlsx) sheet
+  const handleExportExcel = async () => {
+    if (filteredBookings.length === 0) return;
+    try {
+      setIsExporting(true);
+      const XLSX = await import("xlsx");
+
+      const excelRows = filteredBookings.map((b) => ({
+        "Booking ID": b.bookingId || "—",
+        "Employee Name": b.employeeName || "—",
+        "Employee ID": b.employeeProfileId || "—",
+        "Email": b.employeeEmail || "—",
+        "Project": b.project || "—",
+        "Client Name": b.clientName || "—",
+        "Pickup Point": b.pickupPoint || "—",
+        "Drop Point": b.dropPoint || "—",
+        "Trip Date & Time": formatDateTime(b.requestedDateTime),
+        "Status": b.status ? b.status.charAt(0).toUpperCase() + b.status.slice(1) : "—",
+        "Vendor": b.vendorName || "Unassigned",
+        "Driver": b.driverName || "Unassigned",
+        "Fare (₹)": b.fare != null ? b.fare : 0,
+        "Created At": formatDateTime(b.createdAt),
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(excelRows);
+
+      // Auto-fit column widths
+      ws["!cols"] = [
+        { wch: 16 }, // Booking ID
+        { wch: 22 }, // Employee Name
+        { wch: 14 }, // Employee ID
+        { wch: 26 }, // Email
+        { wch: 20 }, // Project
+        { wch: 20 }, // Client Name
+        { wch: 26 }, // Pickup Point
+        { wch: 26 }, // Drop Point
+        { wch: 22 }, // Trip Date & Time
+        { wch: 14 }, // Status
+        { wch: 20 }, // Vendor
+        { wch: 18 }, // Driver
+        { wch: 12 }, // Fare
+        { wch: 22 }, // Created At
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Cab Bookings");
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const memberSuffix = isMemberSelected
+        ? `_${(selectedMemberInfo?.name || "Member").replace(/[^a-zA-Z0-9]/g, "_")}`
+        : "";
+      XLSX.writeFile(wb, `Cab_Bookings${memberSuffix}_${dateStr}.xlsx`);
+    } catch (error) {
+      console.error("Failed to export Excel report:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="w-full bg-white rounded-2xl border border-gray-200 p-5 shadow-sm mt-6">
       {/* Header Bar */}
@@ -269,58 +330,37 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
           </div>
         </div>
 
-        {/* View Toggle (Table vs Member Cards) */}
-        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200 self-start sm:self-auto">
+        {/* Header Actions */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {/* Download Excel Button */}
           <button
-            onClick={() => setViewMode("table")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewMode === "table"
-                ? "bg-white text-blue-600 shadow-2xs"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
+            type="button"
+            onClick={handleExportExcel}
+            disabled={isExporting || filteredBookings.length === 0}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            title="Download cab booking records in Excel (.xlsx) sheet"
           >
-            <TableRows className="text-sm" />
-            Bookings List ({filteredBookings.length})
-          </button>
-          <button
-            onClick={() => setViewMode("members")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewMode === "members"
-                ? "bg-white text-blue-600 shadow-2xs"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            <GridView className="text-sm" />
-            Team Summary ({memberList.length})
+            <FileDownload style={{ fontSize: 16 }} />
+            <span>{isExporting ? "Exporting..." : "Download Excel"}</span>
           </button>
         </div>
       </div>
 
       {/* Team Key Metrics Row (Dynamic per selected user) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
           <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-            {isMemberSelected ? "User Bookings" : "Team Bookings"}
+            {isMemberSelected ? "User Cab Bookings" : "All Cab Bookings"}
           </span>
           <div className="text-xl font-bold text-slate-800 mt-1">{dynamicTotalBookings}</div>
-          <span className="text-[10px] text-gray-500 font-medium">
+          <span className="text-[10px] text-gray-500 font-medium truncate block">
             {isMemberSelected ? `Total for ${selectedMemberInfo?.name}` : "Total requests made"}
-          </span>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-purple-50/60 border border-purple-100">
-          <span className="text-[11px] font-semibold text-purple-700 uppercase tracking-wide">
-            {isMemberSelected ? "Selected User" : "Active Members"}
-          </span>
-          <div className="text-xl font-bold text-purple-800 mt-1">{dynamicActiveMembers}</div>
-          <span className="text-[10px] text-purple-600 font-medium truncate">
-            {isMemberSelected ? selectedMemberInfo?.name || "1 Member" : "Members with bookings"}
           </span>
         </div>
 
         <div className="p-3.5 rounded-xl bg-amber-50/60 border border-amber-100">
           <span className="text-[11px] font-semibold text-amber-700 uppercase tracking-wide">
-            {isMemberSelected ? "User Pending" : "Team Pending"}
+            {isMemberSelected ? "User Active/Pending" : "Active/Pending Cab Bookings"}
           </span>
           <div className="text-xl font-bold text-amber-800 mt-1">{dynamicPending}</div>
           <span className="text-[10px] text-amber-600 font-medium">Pending & active</span>
@@ -328,15 +368,15 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
 
         <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-100">
           <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wide">
-            {isMemberSelected ? "User Completed" : "Team Completed"}
+            {isMemberSelected ? "User Completed" : "Completed Cab Bookings"}
           </span>
           <div className="text-xl font-bold text-emerald-800 mt-1">{dynamicCompleted}</div>
           <span className="text-[10px] text-emerald-600 font-medium">Completed trips</span>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-100 col-span-2 sm:col-span-1">
+        <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-100">
           <span className="text-[11px] font-semibold text-blue-700 uppercase tracking-wide">
-            {isMemberSelected ? "User Cab Spend" : "Team Cab Spend"}
+            {isMemberSelected ? "User Cab Spend" : "Total Cab Spend"}
           </span>
           <div className="text-xl font-bold text-blue-800 mt-1">₹{dynamicSpent.toLocaleString("en-IN")}</div>
           <span className="text-[10px] text-blue-600 font-medium">Total cab fare</span>
