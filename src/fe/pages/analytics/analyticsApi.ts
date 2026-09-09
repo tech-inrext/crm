@@ -14,8 +14,8 @@ class AnalyticsApi extends BaseService {
     return this.get("/user/activity");
   }
 
-  async getCabBookingActivity() {
-    return this.get("/cab/bookings");
+  async getCabBookingActivity(params?: Record<string, any>) {
+    return this.get<any>("/cab/bookings", { params });
   }
 }
 

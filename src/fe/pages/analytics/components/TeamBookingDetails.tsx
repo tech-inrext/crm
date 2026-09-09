@@ -12,7 +12,10 @@ import {
   Close,
   Check,
   KeyboardArrowDown,
+  FileDownload,
 } from "@mui/icons-material";
+import Pagination from "@/components/ui/Navigation/Pagination";
+import { analyticsApi } from "../analyticsApi";
 
 export interface TeamBookingItem {
   _id: string;
@@ -58,9 +61,17 @@ export interface TeamStats {
   };
 }
 
+export interface PaginationMeta {
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+}
+
 interface TeamBookingDetailsProps {
   stats?: TeamStats;
   bookings?: TeamBookingItem[];
+  pagination?: PaginationMeta;
 }
 
 const statusBadgeStyles: Record<string, { label: string; bg: string; text: string; dot: string }> = {
@@ -72,17 +83,100 @@ const statusBadgeStyles: Record<string, { label: string; bg: string; text: strin
   rejected: { label: "Rejected", bg: "bg-red-50 border-red-200", text: "text-red-700", dot: "bg-red-500" },
 };
 
-const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings = [] }) => {
+const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({
+  stats: initialStats,
+  bookings: initialBookings = [],
+  pagination: initialPagination,
+}) => {
+  const [teamBookings, setTeamBookings] = useState<TeamBookingItem[]>(initialBookings);
+  const [currentStats, setCurrentStats] = useState<TeamStats | undefined>(initialStats);
+  const [page, setPage] = useState(initialPagination?.currentPage || 1);
+  const [pageSize, setPageSize] = useState(initialPagination?.pageSize || 10);
+  const [totalItems, setTotalItems] = useState(
+    initialPagination?.totalItems ?? initialStats?.totalTeamBookings ?? initialBookings.length
+  );
+  const [totalPages, setTotalPages] = useState(initialPagination?.totalPages || 1);
+  const [isTableLoading, setIsTableLoading] = useState(false);
+
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState("all");
   const [selectedMemberKey, setSelectedMemberKey] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "members">("table");
+  const [isExporting, setIsExporting] = useState(false);
 
   // Searchable dropdown state
   const [isMemberDropdownOpen, setIsMemberDropdownOpen] = useState(false);
   const [memberSearchQuery, setMemberSearchQuery] = useState("");
   const memberDropdownRef = useRef<HTMLDivElement>(null);
   const memberSearchInputRef = useRef<HTMLInputElement>(null);
+
+  // Sync initial props if parent updates
+  useEffect(() => {
+    if (initialBookings) setTeamBookings(initialBookings);
+    if (initialStats) setCurrentStats(initialStats);
+    if (initialPagination) {
+      setPage(initialPagination.currentPage);
+      setPageSize(initialPagination.pageSize);
+      setTotalItems(initialPagination.totalItems);
+      setTotalPages(initialPagination.totalPages);
+    }
+  }, [initialBookings, initialStats, initialPagination]);
+
+  // Debounce search query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(searchQuery);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  // Server-side API fetching when filters or pagination change
+  const isFirstRender = useRef(true);
+
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    let isCancelled = false;
+    const fetchPaginatedData = async () => {
+      try {
+        setIsTableLoading(true);
+        const res = await analyticsApi.getCabBookingActivity({
+          page,
+          limit: pageSize,
+          status: selectedStatus,
+          search: debouncedSearch,
+          memberKey: selectedMemberKey,
+        });
+
+        if (!isCancelled && res?.success && res?.data) {
+          setTeamBookings(res.data.teamBookingsList || []);
+          if (res.data.teamStats) {
+            setCurrentStats(res.data.teamStats);
+          }
+          if (res.data.pagination) {
+            setTotalItems(res.data.pagination.totalItems);
+            setTotalPages(res.data.pagination.totalPages);
+          }
+        }
+      } catch (err) {
+        console.error("Failed to fetch paginated cab bookings:", err);
+      } finally {
+        if (!isCancelled) {
+          setIsTableLoading(false);
+        }
+      }
+    };
+
+    fetchPaginatedData();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [page, pageSize, selectedStatus, selectedMemberKey, debouncedSearch]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -108,13 +202,12 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
     }
   }, [isMemberDropdownOpen]);
 
-  // 1. Build master list of unique team members (combining stats.teamMembers and actual booking creators)
+  // 1. Build master list of unique team members for dropdown
   const memberMap: Record<string, { key: string; name: string; email: string; profileId: string; count: number }> = {};
 
-  // Add members from stats if available
-  if (stats?.teamMembers && Array.isArray(stats.teamMembers)) {
-    stats.teamMembers.forEach((m) => {
-      const key = m.email || m.name;
+  if (currentStats?.teamMembers && Array.isArray(currentStats.teamMembers)) {
+    currentStats.teamMembers.forEach((m) => {
+      const key = m.email || m.name || m._id;
       if (key && !memberMap[key]) {
         memberMap[key] = {
           key,
@@ -126,22 +219,6 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
       }
     });
   }
-
-  // Add members from bookings
-  bookings.forEach((b) => {
-    const key = b.employeeEmail || b.employeeName;
-    if (!memberMap[key]) {
-      memberMap[key] = {
-        key,
-        name: b.employeeName,
-        email: b.employeeEmail || "",
-        profileId: b.employeeProfileId || "",
-        count: 1,
-      };
-    } else {
-      memberMap[key].count++;
-    }
-  });
 
   const availableTeamMembers = Object.values(memberMap);
 
@@ -156,65 +233,24 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
     );
   });
 
-  // 2. Filter bookings by selected team member
-  const memberFilteredBookings = bookings.filter((item) => {
-    if (selectedMemberKey === "all") return true;
-    const itemKey = item.employeeEmail || item.employeeName;
-    return itemKey === selectedMemberKey;
-  });
-
-  // 3. Filter bookings further by status and search query
-  const filteredBookings = memberFilteredBookings.filter((item) => {
-    const statusMatch =
-      selectedStatus === "all" ||
-      item.status?.toLowerCase() === selectedStatus.toLowerCase();
-
-    const query = searchQuery.toLowerCase().trim();
-    const searchMatch =
-      !query ||
-      item.employeeName?.toLowerCase().includes(query) ||
-      item.bookingId?.toLowerCase().includes(query) ||
-      item.project?.toLowerCase().includes(query) ||
-      item.clientName?.toLowerCase().includes(query) ||
-      item.pickupPoint?.toLowerCase().includes(query) ||
-      item.dropPoint?.toLowerCase().includes(query);
-
-    return statusMatch && searchMatch;
-  });
-
-  // 4. Calculate dynamic stats based on selected member filter
+  // Dynamic stats based on backend response
   const isMemberSelected = selectedMemberKey !== "all";
-
-  const dynamicTotalBookings = isMemberSelected
-    ? memberFilteredBookings.length
-    : stats?.totalTeamBookings || bookings.length;
-
-  const dynamicPending = isMemberSelected
-    ? memberFilteredBookings.filter((b) =>
-        ["pending", "approved", "active"].includes(b.status?.toLowerCase())
-      ).length
-    : stats?.pending || 0;
-
-  const dynamicCompleted = isMemberSelected
-    ? memberFilteredBookings.filter((b) =>
-        ["completed", "payment_due"].includes(b.status?.toLowerCase())
-      ).length
-    : stats?.completed || 0;
-
-  const dynamicSpent = isMemberSelected
-    ? memberFilteredBookings
-        .filter((b) => ["completed", "payment_due"].includes(b.status?.toLowerCase()))
-        .reduce((sum, b) => sum + (b.fare || 0), 0)
-    : stats?.totalSpent || 0;
-
-  const dynamicActiveMembers = isMemberSelected
-    ? memberFilteredBookings.length > 0
-      ? 1
-      : 0
-    : stats?.activeMembersCount || availableTeamMembers.filter((m) => m.count > 0).length;
-
-  // Selected member details
   const selectedMemberInfo = isMemberSelected ? memberMap[selectedMemberKey] : null;
+
+  const dynamicTotalBookings = currentStats?.totalTeamBookings ?? totalItems;
+  const dynamicPending = currentStats?.pending ?? 0;
+  const dynamicCompleted = currentStats?.completed ?? 0;
+  const dynamicSpent = currentStats?.totalSpent ?? 0;
+
+  const handleStatusChange = (statusId: string) => {
+    setSelectedStatus(statusId);
+    setPage(1);
+  };
+
+  const handleMemberChange = (memberKey: string) => {
+    setSelectedMemberKey(memberKey);
+    setPage(1);
+  };
 
   // Group bookings per team member for member summary view
   const memberGroupedMap: Record<
@@ -222,7 +258,7 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
     { employeeName: string; email: string; profileId: string; bookings: TeamBookingItem[] }
   > = {};
 
-  memberFilteredBookings.forEach((b) => {
+  teamBookings.forEach((b) => {
     const key = b.employeeEmail || b.employeeName;
     if (!memberGroupedMap[key]) {
       memberGroupedMap[key] = {
@@ -253,6 +289,74 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
     }
   };
 
+  // Export current filtered bookings to Excel (.xlsx) sheet (fetching all matches from server)
+  const handleExportExcel = async () => {
+    try {
+      setIsExporting(true);
+      const res = await analyticsApi.getCabBookingActivity({
+        export: true,
+        status: selectedStatus,
+        search: debouncedSearch,
+        memberKey: selectedMemberKey,
+      });
+
+      const exportRows: TeamBookingItem[] = res?.data?.teamBookingsList || teamBookings;
+      if (!exportRows || exportRows.length === 0) return;
+
+      const XLSX = await import("xlsx");
+
+      const excelRows = exportRows.map((b) => ({
+        "Booking ID": b.bookingId || "—",
+        "Employee Name": b.employeeName || "—",
+        "Employee ID": b.employeeProfileId || "—",
+        "Email": b.employeeEmail || "—",
+        "Project": b.project || "—",
+        "Client Name": b.clientName || "—",
+        "Pickup Point": b.pickupPoint || "—",
+        "Drop Point": b.dropPoint || "—",
+        "Trip Date & Time": formatDateTime(b.requestedDateTime),
+        "Status": b.status ? b.status.charAt(0).toUpperCase() + b.status.slice(1) : "—",
+        "Vendor": b.vendorName || "Unassigned",
+        "Driver": b.driverName || "Unassigned",
+        "Fare (₹)": b.fare != null ? b.fare : 0,
+        "Created At": formatDateTime(b.createdAt),
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(excelRows);
+
+      // Auto-fit column widths
+      ws["!cols"] = [
+        { wch: 16 }, // Booking ID
+        { wch: 22 }, // Employee Name
+        { wch: 14 }, // Employee ID
+        { wch: 26 }, // Email
+        { wch: 20 }, // Project
+        { wch: 20 }, // Client Name
+        { wch: 26 }, // Pickup Point
+        { wch: 26 }, // Drop Point
+        { wch: 22 }, // Trip Date & Time
+        { wch: 14 }, // Status
+        { wch: 20 }, // Vendor
+        { wch: 18 }, // Driver
+        { wch: 12 }, // Fare
+        { wch: 22 }, // Created At
+      ];
+
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Cab Bookings");
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      const memberSuffix = isMemberSelected
+        ? `_${(selectedMemberInfo?.name || "Member").replace(/[^a-zA-Z0-9]/g, "_")}`
+        : "";
+      XLSX.writeFile(wb, `Cab_Bookings${memberSuffix}_${dateStr}.xlsx`);
+    } catch (error) {
+      console.error("Failed to export Excel report:", error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   return (
     <div className="w-full bg-white rounded-2xl border border-gray-200 p-5 shadow-sm mt-6">
       {/* Header Bar */}
@@ -269,58 +373,37 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
           </div>
         </div>
 
-        {/* View Toggle (Table vs Member Cards) */}
-        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-xl border border-gray-200 self-start sm:self-auto">
+        {/* Header Actions */}
+        <div className="flex items-center gap-2 self-start sm:self-auto">
+          {/* Download Excel Button */}
           <button
-            onClick={() => setViewMode("table")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewMode === "table"
-                ? "bg-white text-blue-600 shadow-2xs"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
+            type="button"
+            onClick={handleExportExcel}
+            disabled={isExporting || totalItems === 0}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white shadow-xs hover:shadow transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+            title="Download cab booking records in Excel (.xlsx) sheet"
           >
-            <TableRows className="text-sm" />
-            Bookings List ({filteredBookings.length})
-          </button>
-          <button
-            onClick={() => setViewMode("members")}
-            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
-              viewMode === "members"
-                ? "bg-white text-blue-600 shadow-2xs"
-                : "text-gray-600 hover:text-gray-900"
-            }`}
-          >
-            <GridView className="text-sm" />
-            Team Summary ({memberList.length})
+            <FileDownload style={{ fontSize: 16 }} />
+            <span>{isExporting ? "Exporting..." : "Download Excel"}</span>
           </button>
         </div>
       </div>
 
       {/* Team Key Metrics Row (Dynamic per selected user) */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 mb-6">
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200/80">
           <span className="text-[11px] font-semibold text-gray-500 uppercase tracking-wide">
-            {isMemberSelected ? "User Bookings" : "Team Bookings"}
+            {isMemberSelected ? "User Cab Bookings" : "All Cab Bookings"}
           </span>
           <div className="text-xl font-bold text-slate-800 mt-1">{dynamicTotalBookings}</div>
-          <span className="text-[10px] text-gray-500 font-medium">
+          <span className="text-[10px] text-gray-500 font-medium truncate block">
             {isMemberSelected ? `Total for ${selectedMemberInfo?.name}` : "Total requests made"}
-          </span>
-        </div>
-
-        <div className="p-3.5 rounded-xl bg-purple-50/60 border border-purple-100">
-          <span className="text-[11px] font-semibold text-purple-700 uppercase tracking-wide">
-            {isMemberSelected ? "Selected User" : "Active Members"}
-          </span>
-          <div className="text-xl font-bold text-purple-800 mt-1">{dynamicActiveMembers}</div>
-          <span className="text-[10px] text-purple-600 font-medium truncate">
-            {isMemberSelected ? selectedMemberInfo?.name || "1 Member" : "Members with bookings"}
           </span>
         </div>
 
         <div className="p-3.5 rounded-xl bg-amber-50/60 border border-amber-100">
           <span className="text-[11px] font-semibold text-amber-700 uppercase tracking-wide">
-            {isMemberSelected ? "User Pending" : "Team Pending"}
+            {isMemberSelected ? "User Active/Pending" : "Active/Pending Cab Bookings"}
           </span>
           <div className="text-xl font-bold text-amber-800 mt-1">{dynamicPending}</div>
           <span className="text-[10px] text-amber-600 font-medium">Pending & active</span>
@@ -328,15 +411,15 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
 
         <div className="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-100">
           <span className="text-[11px] font-semibold text-emerald-700 uppercase tracking-wide">
-            {isMemberSelected ? "User Completed" : "Team Completed"}
+            {isMemberSelected ? "User Completed" : "Completed Cab Bookings"}
           </span>
           <div className="text-xl font-bold text-emerald-800 mt-1">{dynamicCompleted}</div>
           <span className="text-[10px] text-emerald-600 font-medium">Completed trips</span>
         </div>
 
-        <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-100 col-span-2 sm:col-span-1">
+        <div className="p-3.5 rounded-xl bg-blue-50/60 border border-blue-100">
           <span className="text-[11px] font-semibold text-blue-700 uppercase tracking-wide">
-            {isMemberSelected ? "User Cab Spend" : "Team Cab Spend"}
+            {isMemberSelected ? "User Cab Spend" : "Total Cab Spend"}
           </span>
           <div className="text-xl font-bold text-blue-800 mt-1">₹{dynamicSpent.toLocaleString("en-IN")}</div>
           <span className="text-[10px] text-blue-600 font-medium">Total cab fare</span>
@@ -377,7 +460,7 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
                     tabIndex={0}
                     onClick={(e) => {
                       e.stopPropagation();
-                      setSelectedMemberKey("all");
+                      handleMemberChange("all");
                     }}
                     className="hover:bg-purple-200 p-0.5 rounded text-purple-700 hover:text-purple-900 transition-colors cursor-pointer"
                     title="Reset to all team members"
@@ -429,7 +512,7 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
                   <button
                     type="button"
                     onClick={() => {
-                      setSelectedMemberKey("all");
+                      handleMemberChange("all");
                       setIsMemberDropdownOpen(false);
                       setMemberSearchQuery("");
                     }}
@@ -464,7 +547,7 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
                           key={m.key}
                           type="button"
                           onClick={() => {
-                            setSelectedMemberKey(m.key);
+                            handleMemberChange(m.key);
                             setIsMemberDropdownOpen(false);
                             setMemberSearchQuery("");
                           }}
@@ -527,7 +610,7 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
                     <button
                       type="button"
                       onClick={() => {
-                        setSelectedMemberKey("all");
+                        handleMemberChange("all");
                         setIsMemberDropdownOpen(false);
                         setMemberSearchQuery("");
                       }}
@@ -553,8 +636,8 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
             ].map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setSelectedStatus(tab.id)}
-                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
+                onClick={() => handleStatusChange(tab.id)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all cursor-pointer ${
                   selectedStatus === tab.id
                     ? "bg-blue-600 text-white shadow-2xs"
                     : "bg-gray-100 text-gray-600 hover:bg-gray-200"
@@ -573,7 +656,7 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
               <FilterAlt className="text-xs" />
               <span className="truncate max-w-[140px]">User: {selectedMemberInfo?.name}</span>
               <button
-                onClick={() => setSelectedMemberKey("all")}
+                onClick={() => handleMemberChange("all")}
                 className="ml-1 hover:bg-purple-200 p-0.5 rounded-full text-purple-700"
                 title="Reset team member filter"
               >
@@ -623,8 +706,51 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 text-gray-700">
-              {filteredBookings.length > 0 ? (
-                filteredBookings.map((item) => {
+              {isTableLoading ? (
+                Array.from({ length: Math.min(pageSize, 8) }).map((_, idx) => (
+                  <tr key={`shimmer-${idx}`}>
+                    {/* Booking Info */}
+                    <td className="py-3.5 px-4">
+                      <div className="h-3.5 w-24 rounded-md animate-shimmer mb-1.5"></div>
+                      <div className="h-2.5 w-28 rounded-md animate-shimmer"></div>
+                    </td>
+                    {/* Team Member */}
+                    <td className="py-3.5 px-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-full animate-shimmer shrink-0"></div>
+                        <div className="space-y-1.5">
+                          <div className="h-3.5 w-24 rounded-md animate-shimmer"></div>
+                          <div className="h-2.5 w-16 rounded-md animate-shimmer"></div>
+                        </div>
+                      </div>
+                    </td>
+                    {/* Project & Client */}
+                    <td className="py-3.5 px-4">
+                      <div className="h-3.5 w-24 rounded-md animate-shimmer mb-1.5"></div>
+                      <div className="h-2.5 w-20 rounded-md animate-shimmer"></div>
+                    </td>
+                    {/* Route */}
+                    <td className="py-3.5 px-4">
+                      <div className="h-3.5 w-36 rounded-md animate-shimmer mb-1.5"></div>
+                      <div className="h-2.5 w-28 rounded-md animate-shimmer"></div>
+                    </td>
+                    {/* Vendor / Driver */}
+                    <td className="py-3.5 px-4">
+                      <div className="h-3.5 w-20 rounded-md animate-shimmer mb-1.5"></div>
+                      <div className="h-2.5 w-24 rounded-md animate-shimmer"></div>
+                    </td>
+                    {/* Fare */}
+                    <td className="py-3.5 px-4">
+                      <div className="h-4 w-14 rounded-md animate-shimmer"></div>
+                    </td>
+                    {/* Status */}
+                    <td className="py-3.5 px-4 text-center">
+                      <div className="inline-block h-5 w-20 rounded-full animate-shimmer"></div>
+                    </td>
+                  </tr>
+                ))
+              ) : teamBookings.length > 0 ? (
+                teamBookings.map((item) => {
                   const statusKey = item.status?.toLowerCase() || "pending";
                   const badge = statusBadgeStyles[statusKey] || statusBadgeStyles.pending;
 
@@ -719,11 +845,68 @@ const TeamBookingDetails: React.FC<TeamBookingDetailsProps> = ({ stats, bookings
               )}
             </tbody>
           </table>
+
+          {/* Pagination Footer */}
+          {totalItems > 0 && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-3 px-4 py-3 bg-gray-50/60 border-t border-gray-200">
+              <div className="text-xs text-gray-500 font-medium">
+                Showing <span className="font-bold text-gray-800">{(page - 1) * pageSize + 1}</span> to{" "}
+                <span className="font-bold text-gray-800">{Math.min(page * pageSize, totalItems)}</span> of{" "}
+                <span className="font-bold text-gray-800">{totalItems}</span> bookings
+              </div>
+              <Pagination
+                page={page}
+                pageSize={pageSize}
+                total={totalItems}
+                onPageChange={(newPage) => setPage(newPage)}
+                pageSizeOptions={[10, 25, 50, 100]}
+                onPageSizeChange={(newSize) => {
+                  setPageSize(newSize);
+                  setPage(1);
+                }}
+              />
+            </div>
+          )}
         </div>
       ) : (
         /* Team Member Summary Cards View */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {memberList.map((m, idx) => {
+          {isTableLoading ? (
+            Array.from({ length: 6 }).map((_, idx) => (
+              <div
+                key={`card-shimmer-${idx}`}
+                className="p-4 rounded-xl border border-gray-200 bg-white shadow-2xs flex flex-col justify-between"
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-10 h-10 rounded-full animate-shimmer shrink-0"></div>
+                  <div className="space-y-1.5 w-full">
+                    <div className="h-4 w-32 rounded-md animate-shimmer"></div>
+                    <div className="h-3 w-44 rounded-md animate-shimmer"></div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2 my-3 text-center">
+                  <div className="p-2.5 bg-gray-50 rounded-lg space-y-1">
+                    <div className="h-2.5 w-8 rounded animate-shimmer mx-auto"></div>
+                    <div className="h-4 w-6 rounded animate-shimmer mx-auto"></div>
+                  </div>
+                  <div className="p-2.5 bg-emerald-50/50 rounded-lg space-y-1">
+                    <div className="h-2.5 w-8 rounded animate-shimmer mx-auto"></div>
+                    <div className="h-4 w-6 rounded animate-shimmer mx-auto"></div>
+                  </div>
+                  <div className="p-2.5 bg-amber-50/50 rounded-lg space-y-1">
+                    <div className="h-2.5 w-8 rounded animate-shimmer mx-auto"></div>
+                    <div className="h-4 w-6 rounded animate-shimmer mx-auto"></div>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                  <div className="h-3 w-16 rounded animate-shimmer"></div>
+                  <div className="h-4 w-20 rounded animate-shimmer"></div>
+                </div>
+              </div>
+            ))
+          ) : memberList.map((m, idx) => {
             const completedCount = m.bookings.filter((b) =>
               ["completed", "payment_due"].includes(b.status?.toLowerCase())
             ).length;
