@@ -401,3 +401,39 @@ a:focus {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+/* ===== MODERN SKELETON SHIMMER EFFECT ===== */
+@keyframes shimmer-sweep {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(241, 245, 249, 0.9) 0%,
+    rgba(226, 232, 240, 0.9) 25%,
+    rgba(248, 250, 252, 1) 50%,
+    rgba(226, 232, 240, 0.9) 75%,
+    rgba(241, 245, 249, 0.9) 100%
+  ) !important;
+  background-size: 250% 100% !important;
+  animation: shimmer-sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+}
+
+.animate-shimmer-purple {
+  background: linear-gradient(
+    90deg,
+    rgba(243, 232, 255, 0.7) 0%,
+    rgba(233, 213, 255, 0.8) 25%,
+    rgba(250, 245, 255, 1) 50%,
+    rgba(233, 213, 255, 0.8) 75%,
+    rgba(243, 232, 255, 0.7) 100%
+  ) !important;
+  background-size: 250% 100% !important;
+  animation: shimmer-sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite !important;
+}

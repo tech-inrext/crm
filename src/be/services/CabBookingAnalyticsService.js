@@ -94,12 +94,102 @@ class CabBookingAnalyticsService extends Service {
         statusBreakdown: myStatusCounts,
       };
 
-      // 3. Fetch Team Bookings
-      const teamBookingsDocs = directReports.length > 0 || isSystemAdmin
-        ? await CabBooking.find(teamVisibilityFilter)
-            .populate({ path: "cabBookedBy", model: "Employee", select: "name email employeeProfileId" })
-            .populate({ path: "vendor", model: "Employee", select: "name phone" })
-            .sort({ createdAt: -1 })
+      // 3. Parse query filters & pagination params
+      const page = Math.max(1, parseInt(req.query.page, 10) || 1);
+      const limit = Math.max(1, parseInt(req.query.limit || req.query.pageSize, 10) || 10);
+      const search = req.query.search ? req.query.search.trim() : "";
+      const selectedStatus = req.query.status || "all";
+      const memberKey = req.query.memberKey || "all";
+      const isExport = req.query.export === "true" || req.query.all === "true";
+
+      // 3a. Member Filter
+      let memberFilter = null;
+      if (memberKey && memberKey !== "all") {
+        const matchedEmp = directReports.find(
+          (e) =>
+            String(e._id) === memberKey ||
+            e.email?.toLowerCase() === memberKey.toLowerCase() ||
+            e.name?.toLowerCase() === memberKey.toLowerCase() ||
+            e.employeeProfileId?.toLowerCase() === memberKey.toLowerCase()
+        );
+
+        if (matchedEmp) {
+          memberFilter = {
+            $or: [
+              { cabBookedBy: matchedEmp._id },
+              { employeeEmail: matchedEmp.email },
+              { employeeName: matchedEmp.name },
+            ],
+          };
+        } else if (mongoose.Types.ObjectId.isValid(memberKey)) {
+          memberFilter = { cabBookedBy: memberKey };
+        } else {
+          memberFilter = {
+            $or: [
+              { employeeEmail: memberKey },
+              { employeeName: memberKey },
+            ],
+          };
+        }
+      }
+
+      // 3b. Status Filter
+      let statusFilter = null;
+      if (selectedStatus && selectedStatus !== "all") {
+        statusFilter = { status: { $regex: new RegExp(`^${selectedStatus}$`, "i") } };
+      }
+
+      // 3c. Search Filter
+      let searchFilter = null;
+      if (search) {
+        const searchRegex = new RegExp(search, "i");
+        const matchingEmployees = await Employee.find({
+          $or: [
+            { name: searchRegex },
+            { email: searchRegex },
+            { employeeProfileId: searchRegex },
+          ],
+        }).select("_id").lean();
+
+        const matchingEmployeeIds = matchingEmployees.map((e) => e._id);
+
+        searchFilter = {
+          $or: [
+            { bookingId: searchRegex },
+            { employeeName: searchRegex },
+            { project: searchRegex },
+            { clientName: searchRegex },
+            { pickupPoint: searchRegex },
+            { dropPoint: searchRegex },
+            { cabOwner: searchRegex },
+            { driverName: searchRegex },
+            ...(matchingEmployeeIds.length > 0 ? [{ cabBookedBy: { $in: matchingEmployeeIds } }] : []),
+          ],
+        };
+      }
+
+      // Combined query for dynamic stats (considers visibility + member filter)
+      const teamStatsFilter = {
+        $and: [
+          teamVisibilityFilter,
+          ...(memberFilter ? [memberFilter] : []),
+        ],
+      };
+
+      // Combined query for table data (considers visibility + member + status + search)
+      const tableQuery = {
+        $and: [
+          teamVisibilityFilter,
+          ...(memberFilter ? [memberFilter] : []),
+          ...(statusFilter ? [statusFilter] : []),
+          ...(searchFilter ? [searchFilter] : []),
+        ],
+      };
+
+      // 3d. Fetch Team Stats (Unpaginated aggregate for metric cards)
+      const allTeamStatsDocs = (directReports.length > 0 || isSystemAdmin)
+        ? await CabBooking.find(teamStatsFilter)
+            .select("status fare cabBookedBy")
             .lean()
         : [];
 
@@ -118,7 +208,7 @@ class CabBookingAnalyticsService extends Service {
         rejected: 0,
       };
 
-      const teamBookingsList = teamBookingsDocs.map((b) => {
+      allTeamStatsDocs.forEach((b) => {
         const s = b.status?.toLowerCase() || "pending";
         if (teamStatusCounts.hasOwnProperty(s)) {
           teamStatusCounts[s]++;
@@ -132,10 +222,48 @@ class CabBookingAnalyticsService extends Service {
           teamCancelled++;
         }
 
-        if (b.cabBookedBy?._id) {
-          activeMemberIds.add(String(b.cabBookedBy._id));
+        if (b.cabBookedBy) {
+          activeMemberIds.add(String(b.cabBookedBy));
         }
+      });
 
+      const teamStats = {
+        totalTeamBookings: allTeamStatsDocs.length,
+        pending: teamPending,
+        completed: teamCompleted,
+        cancelled: teamCancelled,
+        totalSpent: teamSpent,
+        activeMembersCount: activeMemberIds.size,
+        totalTeamMembers: directReports.length,
+        teamMembers: directReports.map((e) => ({
+          _id: String(e._id),
+          name: e.name,
+          email: e.email,
+          employeeProfileId: e.employeeProfileId,
+        })),
+        statusBreakdown: teamStatusCounts,
+      };
+
+      // 3e. Fetch Paginated Team Bookings List for Table
+      const totalItems = (directReports.length > 0 || isSystemAdmin)
+        ? await CabBooking.countDocuments(tableQuery)
+        : 0;
+      const totalPages = Math.max(1, Math.ceil(totalItems / limit));
+
+      let tableDocsQuery = (directReports.length > 0 || isSystemAdmin)
+        ? CabBooking.find(tableQuery)
+            .populate({ path: "cabBookedBy", model: "Employee", select: "name email employeeProfileId" })
+            .populate({ path: "vendor", model: "Employee", select: "name phone" })
+            .sort({ createdAt: -1 })
+        : null;
+
+      if (tableDocsQuery && !isExport) {
+        tableDocsQuery = tableDocsQuery.skip((page - 1) * limit).limit(limit);
+      }
+
+      const teamBookingsDocs = tableDocsQuery ? await tableDocsQuery.lean() : [];
+
+      const teamBookingsList = teamBookingsDocs.map((b) => {
         return {
           _id: b._id,
           bookingId: b.bookingId || `CAB-${b._id.toString().substring(0, 6)}`,
@@ -154,23 +282,6 @@ class CabBookingAnalyticsService extends Service {
           createdAt: b.createdAt,
         };
       });
-
-      const teamStats = {
-        totalTeamBookings: teamBookingsList.length,
-        pending: teamPending,
-        completed: teamCompleted,
-        cancelled: teamCancelled,
-        totalSpent: teamSpent,
-        activeMembersCount: activeMemberIds.size,
-        totalTeamMembers: directReports.length,
-        teamMembers: directReports.map((e) => ({
-          _id: String(e._id),
-          name: e.name,
-          email: e.email,
-          employeeProfileId: e.employeeProfileId,
-        })),
-        statusBreakdown: teamStatusCounts,
-      };
 
       // 4. Overall pipeline and hotspots calculation (combining all visible bookings)
       const allVisibleBookings = await CabBooking.find(
@@ -216,6 +327,12 @@ class CabBookingAnalyticsService extends Service {
           myBookingStats,
           teamStats,
           teamBookingsList,
+          pagination: {
+            currentPage: page,
+            pageSize: limit,
+            totalItems,
+            totalPages,
+          },
           pipeline: {
             totalScheduled: pipelinePending + pipelineCompleted + pipelineCancelled,
             pending: pipelinePending,
